@@ -396,15 +396,18 @@ static baudmap_t baudmap[] = {
     {9600, B9600}, {19200, B19200}, {38400, B38400},
 };
 
-static void _serial_setup(char *devname, int fd, int baud, int databits, 
+/* Set up serial port: 0 on success, <0 on error */
+static int _serial_setup(char *devname, int fd, int baud, int databits, 
         char parity, int stopbits)
 {
     int res;
     struct termios tio;
     int i;
     res = tcgetattr(fd, &tio);
-    if (res < 0)
-        err_exit(TRUE, "%s: error getting serial attributes\n", devname);
+    if (res < 0) {
+        err(TRUE, "%s: error getting serial attributes\n", devname);
+        return -1;
+    }
 
     res = -1;
     for (i = 0; i < sizeof(baudmap)/sizeof(baudmap_t); i++) {
@@ -414,9 +417,10 @@ static void _serial_setup(char *devname, int fd, int baud, int databits,
             break;
         }
     }
-    if (res < 0)
-        err_exit(FALSE, "%s: error setting baud rate to %d\n", 
-                devname, baud);
+    if (res < 0) {
+        err(FALSE, "%s: error setting baud rate to %d\n", devname, baud);
+        return -1;
+    }
 
     switch (databits) {
         case 7:
@@ -428,8 +432,9 @@ static void _serial_setup(char *devname, int fd, int baud, int databits,
             tio.c_cflag |= CS8;
             break;
         default:
-            err_exit(FALSE, "%s: error setting data bits to %d\n", 
+            err(FALSE, "%s: error setting data bits to %d\n", 
                     devname, databits);
+            return -1;
     }
 
     switch (stopbits) {
@@ -440,8 +445,9 @@ static void _serial_setup(char *devname, int fd, int baud, int databits,
             tio.c_cflag |= CSTOPB;
             break;
         default:
-            err_exit(FALSE, "%s: error setting stop bits to %d\n", 
+            err(FALSE, "%s: error setting stop bits to %d\n", 
                     devname, stopbits);
+            return -1;
     }
 
     switch (parity) {
@@ -460,16 +466,20 @@ static void _serial_setup(char *devname, int fd, int baud, int databits,
             tio.c_cflag |= PARODD;
             break;
         default:
-            err_exit(FALSE, "%s: error setting parity to %c\n", 
+            err(FALSE, "%s: error setting parity to %c\n", 
                     devname, parity);
+            return -1;
     }
 
     tio.c_oflag &= ~OPOST; /* turn off post-processing of output */
     tio.c_iflag = tio.c_lflag = 0;
 
 
-    if (tcsetattr(fd, TCSANOW, &tio) < 0)
-        err_exit(TRUE, "%s: error setting serial attributes\n", devname);
+    if (tcsetattr(fd, TCSANOW, &tio) < 0) {
+        err(TRUE, "%s: error setting serial attributes\n", devname);
+        return -1;
+    }
+    return 0;
 }
 
 /*
@@ -479,6 +489,7 @@ static bool _serial_reconnect(Device * dev)
 {
     int baud = 9600, databits = 8, stopbits = 1; 
     char parity = 'N';
+    int res;
 
     assert(dev->magic == DEV_MAGIC);
     assert(dev->type == SERIAL_DEV);
@@ -492,11 +503,12 @@ static bool _serial_reconnect(Device * dev)
         goto out;
     }
 
-    /* parse the serial flags */
+    /* parse the serial flags and set up port accordingly */
     sscanf(dev->u.serial.flags, "%d,%d%c%d", 
             &baud, &databits, &parity, &stopbits);
-    /* exits on failure */
-    _serial_setup(dev->name, dev->fd, baud, databits, parity, stopbits);
+    res = _serial_setup(dev->name, dev->fd, baud, databits, parity, stopbits);
+    if (res < 0)
+        goto out;
 
     dev->connect_status = DEV_CONNECTED;
     dev->stat_successful_connects++;
