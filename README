@@ -1,10 +1,10 @@
-PowerMan version 1.1                                        23 June 2003
+PowerMan version 1.0.17                                       30 June 2003
 
 +--------------+
 | New Features |
 +--------------+
 
-o Telnet protocol is fully supported.  There is now a telnet option processor 
+o Telnet protocol is now fully supported.  There is a telnet option processor 
   which filters telnet escapes out of the device control stream and manages 
   some trivial option negotiation.  Literal telnet escape sequences have been 
   removed from device configurations.
@@ -51,14 +51,15 @@ o Several changes to device script language (non backwards compatable):
     it is treated as a special file, otherwise tcp.  Telnet mode is always
     on even for serial devices, which should be harmless.
 
-o Support added for IBM RSA Remote Supervisor Adapter in telnet debug mode.
+o Support added for late model firmware releases of IBM RSA Remote Supervisor 
+  Adapter in telnet debug mode.
 
 o Support added for Rackable Systems Phantom Remote Management Module.
 
 o Support added for Baytech RPC-28-30NC remote power controller.
 
-o Support added for Baytech RPC-3 remote power controller with new style
-  firwmare.
+o Support added for Baytech RPC-3 remote power controller with "NC" style
+  firwmare interface.
 
 +------------+
 | Bugs fixed |
@@ -93,7 +94,9 @@ o WTI NPS (v3.02) (+*)
 
 o WTI RPS-10 (+*)
 
-o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4) (+*)
+o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4) (+)
+
+o APC MasterSwitch Plus (APP v2.2.0 / AOS v3.0.3) (*)
 
 o IBM RSA Remote Supervisor Adapter (T2ET16- for x335, GEET117A for x345) (*)
 
