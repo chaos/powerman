@@ -4,10 +4,6 @@ Short Term:
 * vpcd --hung_rpc can cause client to hang forever while login action
   repeatedly times out and is reinitiated ("real" action never makes it to 
   head of device queue).
-* Make sure that tcp_wrappers works.
-* Attempt to initiate a command to devices that are delaying between
-  reconnects should cause an immediate connect attempt.
-* Verify that 0 <= match_pos < MAX_MATCH in parser (now we assert in device.c)
 * Replace bogus buffer.c with Chris's generic circular buffer module.
 
 Long term:

@@ -110,9 +110,6 @@ static void _process_ping(Device * dev, struct timeval *timeout);
 static List dev_devices = NULL;
 
 
-#define MAX_MATCH 20
-
-
 static void _dbg_actions(Device * dev)
 {
     char tmpstr[1024];
@@ -139,8 +136,8 @@ static void _dbg_actions(Device * dev)
 static unsigned char *_findregex(regex_t * re, unsigned char *str, int len)
 {
     int n;
-    size_t nmatch = MAX_MATCH;
-    regmatch_t pmatch[MAX_MATCH];
+    size_t nmatch = MAX_MATCH_POS + 1;
+    regmatch_t pmatch[MAX_MATCH_POS + 1];
     int eflags = 0;
 
     n = Regexec(re, str, nmatch, pmatch, eflags);
@@ -458,19 +455,24 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun,
 {
     Device *dev;
     ListIterator itr;
-    int count = 0;
+    int total = 0;
 
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
-        if (!dev->prot->scripts[com])   /* unimplemented script */
+        int count;
+
+        if (!dev->prot->scripts[com])               /* unimplemented script */
             continue;
-        if (hl && !_command_needs_device(dev, hl))      /* uninvolved device */
+        if (hl && !_command_needs_device(dev, hl))  /* uninvolved device */
             continue;
-        count += _enqueue_actions(dev, com, hl, fun, client_id, arglist);
+        count = _enqueue_actions(dev, com, hl, fun, client_id, arglist);
+        if (count > 0 && !(dev->connect_status & DEV_CONNECTED))
+            dev->retry_count = 0;   /* expedite retries on this device */
+        total += count;
     }
     list_iterator_destroy(itr);
 
-    return count;
+    return total;
 }
 
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
@@ -921,8 +923,8 @@ static void _match_subexpressions(Device * dev, Action * act, char *expect)
 {
     Interpretation *interp;
     ListIterator itr;
-    size_t nmatch = MAX_MATCH;
-    regmatch_t pmatch[MAX_MATCH];
+    size_t nmatch = MAX_MATCH_POS + 1;
+    regmatch_t pmatch[MAX_MATCH_POS + 1];
     int eflags = 0;
     int n;
 
@@ -946,7 +948,7 @@ static void _match_subexpressions(Device * dev, Action * act, char *expect)
 
         if (interp->node == NULL)       /* unused plug? */
             continue;
-        assert(interp->match_pos >= 0 && interp->match_pos < MAX_MATCH);
+        assert(interp->match_pos >= 0 && interp->match_pos <= MAX_MATCH_POS);
 
         str = _copy_pmatch(expect, pmatch[interp->match_pos]);
 

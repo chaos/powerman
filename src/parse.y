@@ -560,7 +560,7 @@ static Interpretation *makeMapLine(char *s3, char *s4)
 
     interp = conf_interp_create(s4);
     interp->match_pos = _strtolong(s3);
-    if (interp->match_pos < 1)
+    if (interp->match_pos < 1 || interp->match_pos >= MAX_MATCH_POS)
         _errormsg("invalid match position value");
     return interp;
 }

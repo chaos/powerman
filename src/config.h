@@ -117,6 +117,7 @@ typedef struct {
 /*
  * Interpretation - a Script_El map entry.
  */
+#define MAX_MATCH_POS   20
 typedef struct {
     char *plug_name;            /* plug name e.g. "10" */
     int match_pos;              /* index into pmatch array after regex call */

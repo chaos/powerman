@@ -1,7 +1,12 @@
+2002-10-26 garlick
+    * Fix bug where inappropriate match ($N) values caused a runtime assert.
+    * Attempting to initiate a command to a device now short circuits
+      exponential reconnect backoff.
+
 2002-10-24 garlick
     * Changed magic vim comment at bottom of each file for tab expansion.
     * Tagged before-2nd-indent
-    * Ran indent -no-tabs -kr *.[ch] on everything in src except 
+    * Ran indent --no-tabs -kr *.[ch] on everything in src except 
       hostlist.[ch] and list.[ch] 
     * Tagged after-2nd-indent
     * Removed /etc/powerman/powerman.conf from RPM so powermand won't start
