@@ -196,7 +196,6 @@ do_Action(Globals *g, Action *act)
 {
 	Device *dev;
 	ListIterator dev_i;
-	int dev_com = PM_ERROR;
 
 	assert(g != NULL);
 	CHECK_MAGIC(g);
@@ -220,7 +219,6 @@ do_Action(Globals *g, Action *act)
 	case PM_POWER_OFF :
 	case PM_POWER_CYCLE :
 	case PM_RESET :
-		dev_com = act->com;
 		break;
 	default :
 		assert(FALSE);
