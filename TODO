@@ -1,4 +1,7 @@
 Short Term:
+* Bug: investigate why "pm -1 test" turns on test[0-43] (whole cluster).
+  Also "pm -q test" returns on/off/unknown with empty set.  Should generate
+  "No such nodes: test" error.
 * Store scripts in a list and search the list for the script name, rather than
   hard code the list.  
 * Reformat code w/out tabs
