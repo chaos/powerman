@@ -4,6 +4,8 @@
 
     * man/powerman.conf.5: document the three forms of device specification.
 
+    * : tag powerman-1-0-17
+
 2003-08-04 Jim Garlick <garlick@llnl.gov>
 
     * src/client.c: clean up disconnect logic.
