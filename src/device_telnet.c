@@ -115,9 +115,11 @@ void telnet_init(Device * dev)
 {
     dev->u.tcp.tstate = TELNET_NONE;
     dev->u.tcp.tcmd = 0;
+#if 0
     _telnet_sendopt(dev, DONT, TELOPT_NAWS);
     _telnet_sendopt(dev, DONT, TELOPT_TTYPE);
     _telnet_sendopt(dev, DONT, TELOPT_ECHO);
+#endif
 }
 
 /*
