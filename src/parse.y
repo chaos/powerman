@@ -101,26 +101,26 @@ static void _doubletotv(struct timeval *tv, double val);
 %token TOK_ON_STRING
 %token TOK_ALL_STRING
 %token TOK_PLUG_COUNT
-%token TOK_B_PM_LOG_IN
+%token TOK_B_LOGIN
 %token TOK_EXPECT
 %token TOK_MAP
 %token TOK_SEND
 %token TOK_DELAY
-%token TOK_E_PM_LOG_IN
-%token TOK_B_PM_LOG_OUT
-%token TOK_E_PM_LOG_OUT
-%token TOK_B_PM_UPDATE_PLUGS
-%token TOK_E_PM_UPDATE_PLUGS
-%token TOK_B_PM_UPDATE_NODES
-%token TOK_E_PM_UPDATE_NODES
-%token TOK_B_PM_POWER_ON
-%token TOK_E_PM_POWER_ON
-%token TOK_B_PM_POWER_OFF
-%token TOK_E_PM_POWER_OFF
-%token TOK_B_PM_POWER_CYCLE
-%token TOK_E_PM_POWER_CYCLE
-%token TOK_B_PM_RESET
-%token TOK_E_PM_RESET
+%token TOK_E_LOGIN
+%token TOK_B_LOGOUT
+%token TOK_E_LOGOUT
+%token TOK_B_STATUS
+%token TOK_E_STATUS
+%token TOK_B_STATUS_SOFT
+%token TOK_E_STATUS_SOFT
+%token TOK_B_ON
+%token TOK_E_ON
+%token TOK_B_OFF
+%token TOK_E_OFF
+%token TOK_B_CYCLE
+%token TOK_E_CYCLE
+%token TOK_B_RESET
+%token TOK_E_RESET
 %token TOK_E_SPEC
 %right TOK_DEVICE
 %token TOK_E_GLOBAL
@@ -205,28 +205,28 @@ dev_timeout	: TOK_DEV_TIMEOUT TOK_NUMERIC_VAL {
 spec_script_list : spec_script_list spec_script 
                 | spec_script 
 ;
-spec_script	: TOK_B_PM_LOG_IN script_list TOK_E_PM_LOG_IN {
+spec_script	: TOK_B_LOGIN script_list TOK_E_LOGIN {
     $$ = (char *)makeLogInSec($2);
 }
-		| TOK_B_PM_LOG_OUT script_list TOK_E_PM_LOG_OUT {
+		| TOK_B_LOGOUT script_list TOK_E_LOGOUT {
     $$ = (char *)makeLogOutSec($2);
 }
-		| TOK_B_PM_UPDATE_PLUGS script_list TOK_E_PM_UPDATE_PLUGS {
+		| TOK_B_STATUS script_list TOK_E_STATUS {
     $$ = (char *)makeUpdatePlugsSec($2);
 } 
-		| TOK_B_PM_UPDATE_NODES script_list TOK_E_PM_UPDATE_NODES {
+		| TOK_B_STATUS_SOFT script_list TOK_E_STATUS_SOFT {
     $$ = (char *)makeUpdateNodesSec($2);
 }
-		| TOK_B_PM_POWER_ON script_list TOK_E_PM_POWER_ON {
+		| TOK_B_ON script_list TOK_E_ON {
     $$ = (char *)makePowerOnSec($2);
 }
-		| TOK_B_PM_POWER_OFF script_list TOK_E_PM_POWER_OFF {
+		| TOK_B_OFF script_list TOK_E_OFF {
     $$ = (char *)makePowerOffSec($2);
 }
-		| TOK_B_PM_POWER_CYCLE script_list TOK_E_PM_POWER_CYCLE {
+		| TOK_B_CYCLE script_list TOK_E_CYCLE {
     $$ = (char *)makePowerCycleSec($2);
 }
-		| TOK_B_PM_RESET script_list TOK_E_PM_RESET {
+		| TOK_B_RESET script_list TOK_E_RESET {
     $$ = (char *)makeResetSec($2);
 }
 ;
@@ -371,20 +371,8 @@ static void _spec_missing(char *msg)
 static Spec *check_Spec()
 {
     Spec *this_spec;
-    int i;
     char *name;
 
-    /* 
-     * perahps some commands are unimplemented.  Put empty lists in their
-     * array spots.
-     */
-#if 0 /* XXX */
-    for (i = 0; i < NUM_SCRIPTS; i++) {
-	if( current_spec->scripts[i] == NULL ) {
-	    current_spec->scripts[i] = list_create((ListDelF) conf_spec_el_destroy);
-	}
-    }
-#endif
     name = current_spec->name;
     if( current_spec->type == NO_DEV )
 	_spec_missing("specification type");

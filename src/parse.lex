@@ -182,22 +182,22 @@ expect                            {   return TOK_EXPECT; }
 map                               {   return TOK_MAP; }
 send                              {   return TOK_SEND; }
 delay                             {   return TOK_DELAY; }
-begin[ \t]+LOGIN_SCRIPT           {   return TOK_B_PM_LOG_IN; }
-end[ \t]+LOGIN_SCRIPT             {   return TOK_E_PM_LOG_IN; }
-begin[ \t]+LOGOUT_SCRIPT          {   return TOK_B_PM_LOG_OUT; }
-end[ \t]+LOGOUT_SCRIPT            {   return TOK_E_PM_LOG_OUT; }
-begin[ \t]+STATUS_SCRIPT          {   return TOK_B_PM_UPDATE_PLUGS; }
-end[ \t]+STATUS_SCRIPT            {   return TOK_E_PM_UPDATE_PLUGS; }
-begin[ \t]+STATUS_SOFT_SCRIPT     {   return TOK_B_PM_UPDATE_NODES; }
-end[ \t]+STATUS_SOFT_SCRIPT       {   return TOK_E_PM_UPDATE_NODES; }
-begin[ \t]+ON_SCRIPT              {   return TOK_B_PM_POWER_ON; }
-end[ \t]+ON_SCRIPT                {   return TOK_E_PM_POWER_ON; }
-begin[ \t]+OFF_SCRIPT             {   return TOK_B_PM_POWER_OFF; }
-end[ \t]+OFF_SCRIPT               {   return TOK_E_PM_POWER_OFF; }
-begin[ \t]+CYCLE_SCRIPT           {   return TOK_B_PM_POWER_CYCLE; }
-end[ \t]+CYCLE_SCRIPT             {   return TOK_E_PM_POWER_CYCLE; }
-begin[ \t]+RESET_SCRIPT           {   return TOK_B_PM_RESET; }
-end[ \t]+RESET_SCRIPT             {   return TOK_E_PM_RESET; }
+begin[ \t]+LOGIN_SCRIPT           {   return TOK_B_LOGIN; }
+end[ \t]+LOGIN_SCRIPT             {   return TOK_E_LOGIN; }
+begin[ \t]+LOGOUT_SCRIPT          {   return TOK_B_LOGOUT; }
+end[ \t]+LOGOUT_SCRIPT            {   return TOK_E_LOGOUT; }
+begin[ \t]+STATUS_SCRIPT          {   return TOK_B_STATUS; }
+end[ \t]+STATUS_SCRIPT            {   return TOK_E_STATUS; }
+begin[ \t]+STATUS_SOFT_SCRIPT     {   return TOK_B_STATUS_SOFT; }
+end[ \t]+STATUS_SOFT_SCRIPT       {   return TOK_E_STATUS_SOFT; }
+begin[ \t]+ON_SCRIPT              {   return TOK_B_ON; }
+end[ \t]+ON_SCRIPT                {   return TOK_E_ON; }
+begin[ \t]+OFF_SCRIPT             {   return TOK_B_OFF; }
+end[ \t]+OFF_SCRIPT               {   return TOK_E_OFF; }
+begin[ \t]+CYCLE_SCRIPT           {   return TOK_B_CYCLE; }
+end[ \t]+CYCLE_SCRIPT             {   return TOK_E_CYCLE; }
+begin[ \t]+RESET_SCRIPT           {   return TOK_B_RESET; }
+end[ \t]+RESET_SCRIPT             {   return TOK_E_RESET; }
 end[ \t]+protocol[ \t]+specification   {   return TOK_E_SPEC; }
 device                            {   return TOK_DEVICE; }
 end[ \t]+global                   {   return TOK_E_GLOBAL; }
