@@ -1,3 +1,6 @@
+2002-09-29 garlick
+	* Tagged powerman-1-0-6.
+
 2002-09-25 garlick
 	* Reimplement _process_delay() so it uses the select loop to time out.
 	* Incomplete work on _process_expect() so it uses the select loop
