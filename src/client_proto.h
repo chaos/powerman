@@ -70,8 +70,20 @@
 /* success */
 #define CP_RSP_SUCCESS	"100 Success"			CP_EOL	/* generic */
 #define CP_RSP_NODES	"101 %s" 			CP_EOL	/* hostlist */
-#define CP_RSP_STATUS	"102 %s:%s:%s"			CP_EOL	/* on:off:unk */
 #define CP_RSP_QUIT	"103 Goodbye"			CP_EOL
+#define CP_RSP_STATUS	\
+	"102 on:      %s"				CP_EOL	\
+       	"102 off:     %s" 				CP_EOL	\
+	"102 unknown: %s" 				CP_EOL	/* hostlists */
+#define CP_RSP_HELP 	\
+	"104 query-status         - query power status"	CP_EOL	\
+	"104 query-nodes          - query node list" 	CP_EOL	\
+	"104 on <nodes>           - hard power on" 	CP_EOL	\
+	"104 off <nodes>          - hard power off"	CP_EOL	\
+	"104 cycle <nodes>        - hard power cycle"	CP_EOL	\
+	"104 reset <nodes>        - soft power reset"	CP_EOL	\
+	"104 help                 - display help"	CP_EOL	\
+	"104 quit                 - logout"		CP_EOL
 
 /* failure */
 #define CP_ERR_FAILURE	"200 Failure"			CP_EOL /* generic */
@@ -82,15 +94,7 @@
 #define CP_ERR_HLRANGE	"205 Too many hosts in range"	CP_EOL
 #define CP_ERR_HLINVAL	"206 Invalid hostlist range"	CP_EOL
 #define CP_ERR_HLUNK	"207 hostlist error"		CP_EOL
+#define CP_ERR_NOSUCHNODE "208 no such node: %s"	CP_EOL
 
-#define CP_RSP_HELP 	CP_RSP_SUCCESS				\
-	"query-status <nodes> - query power status"	CP_EOL	\
-	"query-nodes          - query node list" 	CP_EOL	\
-	"on <nodes>           - hard power on" 		CP_EOL	\
-	"off <nodes>          - hard power off"		CP_EOL	\
-	"cycle <nodes>        - hard power cycle"	CP_EOL	\
-	"reset <nodes>        - soft power reset"	CP_EOL	\
-	"help                 - display help"		CP_EOL	\
-	"quit                 - logout"			CP_EOL
 
 #endif /* CLIENT_PROTO_H */
