@@ -7,15 +7,14 @@
   simultaneous status queries will return unpredictable results.
   (NOTE: workaround applied in client.c::_parse_input() which depends on
   the "cannot make progress toward timing out" bug above.  See note there.)
+* Bug: query for N-1 plug states from an N plug device results in N-1
+  queries (should always be one).
 * PM_LOG_OFF action is not used - remove from the code.
 * Build failure simulator test suite
 * Package with autoconf
 * Still several small memory leaks, find them
 * Reformat code w/out tabs
-* Power sequencing, e.g. max number of devices doing on/off/cycle in parallel
-  per subpanel (and express device-subpanel relationship and subpanel max 
-  parallelism in config file)
-* powerman client needs to implement option for expanding hostranges
+* Powerman client needs to implement option for expanding hostranges
 * Make "soft" power status query possible again in server
 * Client should have option for verifying soft power status (expand hostranges
   and issue warnings where plug is on but node is off).  Needs to be optional
@@ -27,3 +26,5 @@
   a single command.
 * Consider a way for users to arbitrarily map a device script to a server 
   command (e.g. don't hard code the number of scripts?)
+* Power sequencing.  Provide a way of expressing the max number of outlets
+  or power control devices which can be powered on in parallel.

@@ -28,7 +28,7 @@
 
 2002-10-05 garlick
 	* More man page updates
-	* Updated TODO, moved README to d1oc/Overview.txt, removed Retagging.
+	* Updated TODO, moved README to doc/Overview.txt, removed Retagging.
 	* Removed various outdated scripts in scripts subdir.
 	* Added --off_rpc and --hung_rpc options to vpcd for testing.
 	* Updated timeouts from 0.3 to 0.5 in icebox3.dev (determined to be
