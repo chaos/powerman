@@ -135,7 +135,6 @@ void telnet_process(Device * dev)
     int len, i, k;
 
     assert(dev->type == TELNET_DEV);
-    assert(dev->u.tcp.from_telnet != NULL);
 
     len = cbuf_peek(dev->from, peek, MAX_DEV_BUF);
     for (i = 0, k = 0; i < len; i++) {

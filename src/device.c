@@ -58,7 +58,7 @@ typedef struct {
     int com;                    /* one of the PM_* above */
     ListIterator itr;           /* next place in the script sequence */
     Stmt *cur;                  /* current place in the script sequence */
-    char *target;               /* native device represenation of target plug(s) */
+    Plug *target;               /* target of action or NULL for all */
     ActionCB complete_fun;      /* callback for action completion */
     VerbosePrintf vpf_fun;      /* callback for device telemetry */
     int client_id;              /* client id so completion can find client */
@@ -89,7 +89,7 @@ static int _get_all_script(Device * dev, int com);
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
                             ActionCB complete_fun, VerbosePrintf vpf_fun,
                             int client_id, ArgList * arglist);
-static Action *_create_action(Device * dev, int com, char *target,
+static Action *_create_action(Device * dev, int com, Plug *target,
                               ActionCB complete_fun, VerbosePrintf vpf_fun,
                               int client_id, ArgList * arglist);
 static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
@@ -195,7 +195,7 @@ static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[])
     return str;
 }
 
-static Action *_create_action(Device * dev, int com, char *target,
+static Action *_create_action(Device * dev, int com, Plug *target,
                               ActionCB complete_fun, VerbosePrintf vpf_fun,
                               int client_id, ArgList * arglist)
 {
@@ -210,11 +210,10 @@ static Action *_create_action(Device * dev, int com, char *target,
     act->client_id = client_id;
     act->itr = list_iterator_create(dev->scripts[act->com]);
     act->cur = NULL;
-    act->target = target ? Strdup(target) : NULL;
+    act->target = target;
     act->errnum = ACT_ESUCCESS;
     act->arglist = arglist ? dev_link_arglist(arglist) : NULL;
     timerclear(&act->time_stamp);
-
     return act;
 }
 
@@ -223,8 +222,6 @@ static void _destroy_action(Action * act)
     assert(act->magic == ACT_MAGIC);
     act->magic = 0;
     dbg(DBG_ACTION, "_destroy_action: %d", act->com);
-    if (act->target != NULL)
-        Free(act->target);
     act->target = NULL;
     if (act->itr != NULL)
         list_iterator_destroy(act->itr);
@@ -557,11 +554,9 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
             all = FALSE;
             continue;
         }
-        if (plug->name == NULL)
-            continue;
         /* append action to 'new_acts' */
         if (dev->scripts[com] != NULL) { /* maybe we only have _ALL... */
-            act = _create_action(dev, com, plug->name, complete_fun, vpf_fun,
+            act = _create_action(dev, com, plug, complete_fun, vpf_fun,
                         client_id, arglist);
             list_append(new_acts, act);
         }
@@ -887,13 +882,16 @@ static bool _process_setstatus(Device * dev)
         plug_name = Strdup(act->cur->u.setstatus.plug_name);
     if (!plug_name)                         /* regex match */
         plug_name = _copy_pmatch(dev, act->cur->u.setstatus.plug_mp);
-    if (!plug_name && act->target != NULL)  /* missing (use target) */
-        plug_name = Strdup(act->target);
+    if (!plug_name && (act->target && act->target->name != NULL))
+        plug_name = Strdup(act->target->name);/* use action target */
     /* if no plug name, do nothing */
 
     if (plug_name) {
         char *str = _copy_pmatch(dev, act->cur->u.setstatus.stat_mp);
         char *node = _plug_to_node(dev, plug_name);
+
+        printf("XXX setstatus node %s plug %s stat %s\n", 
+                node, plug_name, str);
 
         if (str && node) {
             if (_findregex(&dev->on_re, str, strlen(str), 0, NULL))
@@ -918,7 +916,7 @@ static bool _process_setplugname(Device * dev)
 
     assert(act != NULL);
     assert(act->cur != NULL);
-    assert(act->cur->type == STMT_SETSTATUS);
+    assert(act->cur->type == STMT_SETPLUGNAME);
 
     /* 
      * Usage: setplugname node plug
@@ -944,8 +942,6 @@ static bool _process_setplugname(Device * dev)
 
             /* update the plug name */
             if (plug) {
-                printf("XXX node %s old %s new %s\n", 
-                        node_name, plug->name, plug_name);
                 if (plug->name)                 /* free old plug name */
                     Free(plug->name);
                 plug->name = Strdup(plug_name); /* store new plug name */
@@ -1028,13 +1024,11 @@ static bool _process_send(Device * dev)
     assert(act->cur != NULL);
     assert(act->cur->type == STMT_SEND);
 
-    if (!act->target)
-        err(FALSE, "_process_send(%s): attempt to take action on unnamed plug");
-
     /* first time through? */
     if (!(dev->script_status & DEV_SENDING)) {
         int dropped = 0;
-        char *str = _malloc_sprintf(act->cur->u.send.fmt, act->target);
+        char *str = _malloc_sprintf(act->cur->u.send.fmt, act->target ? 
+                (act->target->name ? act->target->name : "[unresolved]") : 0);
         int written = cbuf_write(dev->to, str, strlen(str), &dropped);
 
         if (written < 0)
@@ -1124,8 +1118,6 @@ Device *dev_create(const char *name, DevType type)
     cbuf_opt_set(dev->from, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
 
     if (dev->type == TELNET_DEV) {
-        dev->u.tcp.from_telnet = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
-        cbuf_opt_set(dev->u.tcp.from_telnet, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
         dev->u.tcp.tstate = TELNET_NONE;
         dev->u.tcp.tcmd = 0;
     }
@@ -1164,8 +1156,6 @@ void dev_destroy(Device * dev)
     regfree(&(dev->off_re));
     switch (dev->type) {
     case TELNET_DEV:
-        cbuf_destroy(dev->u.tcp.from_telnet);
-        /*FALLTHROUGH*/
     case TCP_DEV:
         Free(dev->u.tcp.host);
         Free(dev->u.tcp.service);

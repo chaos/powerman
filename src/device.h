@@ -78,7 +78,6 @@ typedef struct {
         struct {                /* TCP_DEV | TELNET_DEV */
             char *host;
             char *service;
-            cbuf_t from_telnet; /* buffer <- device, for telnet escapes */
             TelnetState tstate; /* state of telnet processing */
             unsigned char tcmd; /* buffered command */
         } tcp;

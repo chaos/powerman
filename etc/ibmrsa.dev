@@ -32,60 +32,62 @@ specification {
 		delay 1
 		send "\004"  			# ^D to enter "debug mode"
 		expect "==> "
+
+		send "remotesp\r\n"
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
+		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+		setplugname $1 $2
 	}
 	script logout {
 		send "\004"  			# ^D to log completely off
 	}
-	# refresh table of hostnames vs plug names
-	script resolve {
-		send "remotesp\r\n"
-		foreachplug {
-		  expect "[:alnum:]{2}[ ]+([:alnum:]+)[ ]+Hawk[ ]+([0-9A-F]{2})"
-		  setplugname $1 $2  # hostname plugname
-		}
-	}
-	script status_all {
-		send "power 2 0\r\n"
-		foreachplug {
-		  expect "Server (0x[0-9A-F]{2}) Status = (on|off)"
-		  setstatus $1 $2    # plugname status
-		}	
-	}
 	script status {
 		send "power 2 %s\r\n"
-		expect "Status = (on|off)\r\n"
-		setstatus $1
-	}
-	script on_all {
-		send "power 1 0\r\n"
-		foreachplug {
-		  expect "Status = on\r\n"
-		}
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
 	}
 	script on {
 		send "power 1 %s\r\n"
 		expect "Status = on\r\n"
 	}
-	script off_all {
-		send "power 0 0\r\n"
-		foreachplug {
-		  expect "Status = off\r\n"
-		}
-	}
 	script off {
 		send "power 0 %s\r\n"
 		expect "Status = off\r\n"
-	}
-	script cycle_all {
-		send "power 0 0\r\n"
-		foreachplug {
-		  expect "Status = off\r\n"
-		}
-		delay 2
-		send "power 1 0\r\n"
-		foreachplug {
-		  expect "Status = on\r\n"
-		}
 	}
 	script cycle {
 		send "power 0 %s\r\n"
@@ -94,5 +96,4 @@ specification {
 		send "power 1 %s\r\n"
 		expect "Status = on\r\n"
 	}
-# No plug names - the names will come from the 'node' entrise in powerman.conf
 }

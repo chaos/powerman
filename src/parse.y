@@ -341,8 +341,8 @@ stmt            : TOK_EXPECT TOK_STRING_VAL {
     $$ = (char *)makeStmt(STMT_DELAY, NULL, $2, NULL, NULL);
 }
                 | TOK_SETPLUGNAME TOK_MATCHPOS TOK_NUMERIC_VAL TOK_MATCHPOS TOK_NUMERIC_VAL {
-    /* setplugname $m $n */
-    $$ = (char *)makeStmt(STMT_SETPLUGNAME, NULL, NULL, $3, $5);
+    /* setplugname $m(node) $n(plug) */
+    $$ = (char *)makeStmt(STMT_SETPLUGNAME, NULL, NULL, $5, $3);
 }
                 | TOK_SETSTATUS TOK_STRING_VAL TOK_MATCHPOS TOK_NUMERIC_VAL {
     /* setstatus "plug" $n */
