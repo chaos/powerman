@@ -31,10 +31,11 @@
 #include "buffer.h"
 
 #define DEV_NOT_CONNECTED 0
-#define DEV_CONNECTED     1
-#define DEV_LOGGED_IN     2
-#define DEV_SENDING       4
-#define DEV_EXPECTING     8
+#define DEV_CONNECTING    1
+#define DEV_CONNECTED     2
+#define DEV_LOGGED_IN     4
+#define DEV_SENDING       8
+#define DEV_EXPECTING     16
 
 
 

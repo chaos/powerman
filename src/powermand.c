@@ -71,10 +71,11 @@ static void sig_hup_handler(int signum);
 static void exit_handler(int signum);
 static void read_Config_file(Globals *g);
 
-Globals *cheat;  /* This is synonymous with the Globals *g declared in */
-                 /* main().  I call attention to global access as      */
-                 /* "cheat".  This only happens in exit_error() and in */
-                 /* the parser.    */
+/* This is synonymous with the Globals *g declared in main().
+ * I call attention to global access as "cheat".  This only
+ * happens in exit_error() and in the parser.
+ */
+Globals *cheat;
 
 static const char *powerman_license = \
     "Copyright (C) 2001-2002 The Regents of the University of California.\n"  \
@@ -139,7 +140,7 @@ main(int argc, char **argv)
 				/*   and tells exit_error to use syslog */
 
 	dev_i = list_iterator_create(g->devs);
-	while( (dev = (Device *)list_next(dev_i)) )
+	while( (dev = list_next(dev_i)) )
 		init_Device(dev, debug_telemetry);
 	list_iterator_destroy(dev_i);
 
@@ -238,7 +239,7 @@ do_select_loop(Globals *g)
 	int maxfd = 0;
 	struct timeval tv;
 	Client *client;
-	ListIterator c_iter;
+	ListIterator cli_i;
 	Device  *dev;
 	ListIterator dev_i;
 	int n;
@@ -251,7 +252,7 @@ do_select_loop(Globals *g)
 
 	CHECK_MAGIC(g);
 
-	c_iter = list_iterator_create(g->clients);
+	cli_i = list_iterator_create(g->clients);
 	dev_i  = list_iterator_create(g->devs);
 
 	while ( 1 ) 
@@ -279,9 +280,12 @@ do_select_loop(Globals *g)
 			handle_Listener(g);
 
                 /* Client reading and writing?  */
-		list_iterator_reset(c_iter);
-		while( ((void *)client) = list_next(c_iter) )
+		list_iterator_reset(cli_i);
+		while( (client = list_next(cli_i)) )
 		{
+			if (client->fd < 0)
+				continue;
+
 			if (FD_ISSET(client->fd, &rset))
 				handle_Client_read(g->client_prot, g->cluster, 
 						   g->acts, client);
@@ -290,36 +294,50 @@ do_select_loop(Globals *g)
                         /* Is this connection done? */
 			if ( (client->read_status == CLI_DONE) && 
 			     (client->write_status == CLI_IDLE) )
-				list_delete(c_iter);
+				list_delete(cli_i);
 		}
 		
-		/* update_interval may be set in the config file. */
-                /* Any activity will suppress updates for that    */
-		/* period, not just other updates.                */
-		over_time = overdue(&(g->cluster->time_stamp), &(g->cluster->update_interval));
+		/* update_interval may be set in the config file.
+		 * Any activity will suppress updates for that
+		 * period, not just other updates.
+		 */
+		over_time = overdue(
+			&(g->cluster->time_stamp),
+			&(g->cluster->update_interval) );
 		
                 /* Device reading and writing? */
 		list_iterator_reset(dev_i);
-		while( (dev = (Device *)list_next(dev_i)) )
+		while( (dev = list_next(dev_i)) )
 		{
+			/* we only initiate device recover once per
+			 * update period.  Otherwise we can get
+			 * swamped with reconnect messages.
+			 */
+			if( over_time && (dev->status == DEV_NOT_CONNECTED) )
+				initiate_nonblocking_connect(dev);
+
+			if (dev->fd < 0)
+				continue;
+
 		        activity = FALSE;
-			/* Any active device is sufficient to  */
-			/* suppress starting the next action   */
+
+			/* Any active device is sufficient to
+			 * suppress starting the next action
+                         */
 			if( dev->status & (DEV_SENDING | DEV_EXPECTING) )
 			     active_devs = TRUE;
 
-			/* The first activity is always the signal  */
-			/* of a newly connected device.  We'll have */
-			/* run the log in script to get back into   */
-			/* business as usual.                       */
-			if( (dev->status & DEV_CONNECTED) == 0 )
+			/* The first activity is always the signal
+			 * of a newly connected device.  We'll have
+			 * run the log in script to get back into
+			 * business as usual.
+			 */
+			if( (dev->status == DEV_CONNECTING) )
 			  {
-			    if( (FD_ISSET(dev->fd, &rset) || 
-				 FD_ISSET(dev->fd, &wset)) 
-				&&
-				(!dev->error || over_time) )
-			      do_Device_connect(dev);
-			    continue;
+			    if ( FD_ISSET(dev->fd, &rset) ||
+				 FD_ISSET(dev->fd, &wset) )
+				do_Device_connect(dev);
+				continue;
 			  }
 			if(FD_ISSET(dev->fd, &rset) )
 			  {
@@ -329,23 +347,24 @@ do_select_loop(Globals *g)
 			if(FD_ISSET(dev->fd, &wset))
 			  {
 				handle_Device_write(dev);
-				/* We may want to pace the commands */
-				/* sent to the cluster.  interDev   */
-				/* may be set in the config file.   */
+				/*
+				 * We may want to pace the commands
+				 * sent to the cluster.  interDev
+				 * may be set in the config file.
+				 */
 				Delay( &(g->interDev) );
 				activity = TRUE;
 			  }
-			/* Since some I/O took place we need to see  */
-			/* if the scripts need to be nudged along    */
+			/*
+			 * Since some I/O took place we need to see
+			 * if the scripts need to be nudged along
+			 */
 			if(activity) process_script(dev);
-			/* dev->timeout may be set in the config file. */
+			/*
+			 * dev->timeout may be set in the config file.
+			 */
 			if( stalled_Device(dev) )
 				recover_Device(dev);
-			/* we only initiate device recover once per */
-			/* update period.  Otherwise we can get     */
-			/* swamped with reconnect messages.         */
-			if( over_time && dev->error )
-				initiate_nonblocking_connect(dev);
 		}
 		/* queue up an update action */
 		if( over_time )
@@ -354,32 +373,34 @@ do_select_loop(Globals *g)
 		if ( (!active_devs) & 
 		     ((act = find_Action(g->acts, g->clients)) != NULL) )
 		{
-			/* A previous action may need a reply sent */
-			/* back to a client.                       */
+			/* A previous action may need a reply sent
+			 * back to a client.
+			 */
 			if (g->status == Occupied)
 				finish_Action(g, act);
-			/* Double check.  If there really was an */
-			/* action in the queue, launch it.       */
+			/*
+			 * Double check.  If there really was an
+			 * action in the queue, launch it.
+			 */
 			if ( (act = find_Action(g->acts, g->clients)) != NULL ) 
 				do_Action(g, act);
 		}
 	}
 }
 
-
 /*
  *   This not only generates the needed maxfd for the select loop.
  * It sets the read and write fd_sets as well.  log write is always on,
- * listener read is always on, each client maintains READIN and WRITING
+ * listener read is always on, each client maintains READING and WRITING
  * status in its data structure, device read is always on, and device
  * write stsus is also maintained in the device structure.  
  */ 
 static int
 find_max_fd(Globals *g, fd_set *rs, fd_set *ws)
 {
-	Device *dev;
 	Client *client;
-	ListIterator c_iter;
+	Device *dev;
+	ListIterator cli_i;
 	ListIterator dev_i;
 	int maxfd = 0; 
 
@@ -391,29 +412,48 @@ find_max_fd(Globals *g, fd_set *rs, fd_set *ws)
 	FD_ZERO(rs);
 	FD_ZERO(ws);
 	if (g->listener->read)  {
+		assert(g->listener->fd >= 0);
 		FD_SET(g->listener->fd, rs);
 		maxfd = MAX(maxfd, g->listener->fd);
 	}
-	c_iter = list_iterator_create(g->clients);
-	while( (((Client *)client) = list_next(c_iter)) )
+	cli_i = list_iterator_create(g->clients);
+	while( (client = list_next(cli_i)) )
 	{
+		if (client->fd < 0)
+			continue;
+
 		if (client->read_status == CLI_READING)
+                {
 			FD_SET(client->fd, rs);
+			maxfd = MAX(maxfd, client->fd);
+                }
 		if (client->write_status == CLI_WRITING) 
+                {
 			FD_SET(client->fd, ws);
-		maxfd = MAX(maxfd, client->fd);
+			maxfd = MAX(maxfd, client->fd);
+		}
 	}
-	list_iterator_destroy(c_iter);
+	list_iterator_destroy(cli_i);
 
 	dev_i = list_iterator_create(g->devs);
-	while( (dev = (Device *)list_next(dev_i)) )
+	while( (dev = list_next(dev_i)) )
 	{
-	  /* To handle telnet I'm having it always ready to read */
+		if (dev->fd < 0)
+			continue;
+
+		/* To handle telnet I'm having it always ready to read.
+                 */
 	        FD_SET(dev->fd, rs);
-		if ( ((dev->status & DEV_CONNECTED) == 0) ||
-		     (dev->status & DEV_SENDING) ) 
-			FD_SET(dev->fd, ws);
 		maxfd = MAX(maxfd, dev->fd);
+
+                /* The descriptor becomes writable when a non-blocking
+                 * connect (ie, DEV_CONNECTING) completes.
+                 */
+		if ( (dev->status & DEV_CONNECTING) ||
+		     (dev->status & DEV_SENDING) )
+                {
+	        	FD_SET(dev->fd, ws);
+                }
 	}
 	list_iterator_destroy(dev_i);
 
@@ -505,7 +545,7 @@ make_Globals()
 	g->devs                     = list_create(free_Device);
 	g->config_file              = NULL;
 	g->cf                       = NULL;
-	g->cluster = make_Cluster();
+	g->cluster                  = make_Cluster();
 	return g;
 }
 
@@ -519,7 +559,7 @@ dump_Globals(void)
 {
 	ListIterator    act_iter;
 	Action         *act;
-	ListIterator    c_iter;
+	ListIterator    cli_i;
 	Client         *client;
 	ListIterator    d_iter;
 	Device         *dev;
@@ -545,19 +585,19 @@ dump_Globals(void)
 	dump_Cluster(g->cluster);
 	dump_Server_Status(g->status);
 	act_iter = list_iterator_create(g->acts);
-	while( (act = (Action *)list_next(act_iter)) )
+	while( (act = list_next(act_iter)) )
 		dump_Action((List)act);
 	list_iterator_destroy(act_iter);
 	dump_Listener(g->listener);
-	c_iter = list_iterator_create(g->clients);
-	while( (client = (Client *)list_next(c_iter)) )
+	cli_i = list_iterator_create(g->clients);
+	while( (client = list_next(cli_i)) )
 		dump_Client(client);
-	list_iterator_destroy(c_iter);
+	list_iterator_destroy(cli_i);
 	fprintf(stderr, "\tClient Scripts:\n");
 	for (i = 0; i < g->client_prot->num_scripts; i++)
 		dump_Script(g->client_prot->scripts[i], i);
 	d_iter = list_iterator_create(g->devs);
-	while( (dev = (Device *)list_next(d_iter)) )
+	while( (dev = list_next(d_iter)) )
 		dump_Device(dev);
 	list_iterator_destroy(d_iter);
 	Report_Memory();

@@ -33,6 +33,7 @@
 #include <sys/socket.h>
 #include <syslog.h>
 #include <assert.h>
+#include <unistd.h>
 
 #include "powerman.h"
 #include "list.h"
@@ -134,10 +135,8 @@ initiate_nonblocking_connect(Device *dev)
 	CHECK_MAGIC(dev);
 	assert( (dev->type == TCP_DEV) || (dev->type == PMD_DEV) || 
 		(dev->type == TELNET_DEV) );
-
+	assert(dev->status == DEV_NOT_CONNECTED);
 	assert(dev->fd == -1);
-	assert(dev->to == NULL);
-	assert(dev->from == NULL);
 
 	memset(&hints, 0, sizeof(struct addrinfo));
 	addrinfo = &hints;
@@ -163,10 +162,16 @@ initiate_nonblocking_connect(Device *dev)
 	dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
 			      addrinfo->ai_protocol);
 
-	dev->to = make_Buffer(dev->fd, MAX_BUF, 
+	if (!dev->to)
+	{
+		dev->to = make_Buffer(dev->fd, MAX_BUF, 
 			dev->logit ? _buflogfun_to : NULL, dev);
-	dev->from = make_Buffer(dev->fd, MAX_BUF, 
+	}
+        if (!dev->from)
+	{
+		dev->from = make_Buffer(dev->fd, MAX_BUF, 
 			dev->logit ? _buflogfun_from : NULL, dev);
+        }
 
 /* set up and initiate a non-blocking connect */
 
@@ -182,10 +187,14 @@ initiate_nonblocking_connect(Device *dev)
 	{
 		Action *act;
 
+		dev->error = FALSE;
 		dev->status = DEV_CONNECTED;
-		syslog(LOG_INFO, "Early device connect");
 		act = make_Action(PM_LOG_IN);
 		map_Action_to_Device(dev, act);
+	}
+	else
+	{
+		dev->status = DEV_CONNECTING;
 	}
 	freeaddrinfo(addrinfo);
 }
@@ -224,7 +233,7 @@ map_Action_to_Device(Device *dev, Action *sact)
 
 	/* Look at action at the head of the Device's queue */
 	/* and start its script */ 
-	act = (Action *)list_peek(dev->acts);
+	act = list_peek(dev->acts);
 	if (act == NULL) return;
 	assert( act->itr != NULL );
 	/* act->itr is always pointing at the next unconsumed Script_El */
@@ -235,7 +244,7 @@ map_Action_to_Device(Device *dev, Action *sact)
 	/* FIXME:  Review this and explain why we can move this */
 	/* startup processing down to process_script() where it */
 	/* belongs. */
-	while( (act->cur = (Script_El *)list_next(act->itr)) )
+	while( (act->cur = list_next(act->itr)) )
 	{
 		switch ( act->cur->type )
 		{
@@ -287,7 +296,7 @@ set_targets(Device *dev, Action *sact)
 /* reset script of preempted action so it starts over */
 		if (!list_is_empty(dev->acts))
 		{
-			act = (Action *)list_peek(dev->acts);
+			act = list_peek(dev->acts);
 			list_iterator_reset(act->itr);
 		}
 		act = do_target_copy(dev, sact, NULL);
@@ -377,7 +386,7 @@ do_target_some(Device *dev, Action *sact)
 	new_acts = list_create(free_Action);
 	Regcomp( &nre, get_String(sact->target), cflags );
 	plug_i = list_iterator_create(dev->plugs);
-	while( (plug = (Plug *)list_next(plug_i)) )
+	while( (plug = list_next(plug_i)) )
 	{
 		/* If plug->node == NULL it means that there is no */
 		/* node pluged into that plug (or that node is not */
@@ -413,7 +422,7 @@ do_target_some(Device *dev, Action *sact)
 	else if ( any )
 	{
 /* we have some but not all so we need to stick them all on the queue */
-		while( (act = (Action *)list_pop(new_acts)) )
+		while( (act = list_pop(new_acts)) )
 		{
 			list_append(dev->acts, (void *)act);
 		}
@@ -431,32 +440,40 @@ do_target_some(Device *dev, Action *sact)
 void
 do_Device_connect(Device *dev)
 {
-	int error;
-	int s = sizeof(error);
+	int rc;
+	int err = 0;
+	int len = sizeof(err);
 	Action *act;
 	
-	if ( (getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &error, &s) < 0) 
-	     || (error != 0) )
-	{
-/* 
- * Here is my effort to be resilient to device failure.  The device will
- * start (in the main select loop) another initiate_nonblocking_connect()
- * after the update interval.
- */
-		if( dev->error )
-			syslog(LOG_WARNING, "Failure attempting to connect to %s: %m\n", get_String(dev->name));
-		else
-		{
-			dev->error = TRUE;
-			syslog(LOG_ERR, "Failure attempting to connect to %s: %m\n", get_String(dev->name));
-		}
+	rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &err, &len);
+	/*
+	 *  If an error occurred, Berkeley-derived implementations
+	 *    return 0 with the pending error in 'err'.  But Solaris
+	 *    returns -1 with the pending error in 'errno'.  -dun
+	 */
+	if (rc < 0)
+		err = errno;
+	if (err) {
+		close(dev->fd);
+		dev->fd = -1;
+		dev->error = TRUE;
+		dev->status = DEV_NOT_CONNECTED;
+		clear_Buffer(dev->to);
+		clear_Buffer(dev->from);
+		syslog(LOG_INFO,
+			"Failure attempting to connect to %s: %m\n",
+			get_String(dev->name));
+		/*
+		 *  Back in the main loop after the update interval has passed,
+		 *  device will attempt another initiate_nonblocking_connect().
+		 */
 		return;
 	}
-	if( dev->error )
-	{
-		syslog(LOG_WARNING, "Connection to %s reestablished\n", get_String(dev->name));
-		dev->error = FALSE;
+	else if (dev->error) {
+		syslog(LOG_INFO, "Connection to %s re-established\n",
+			get_String(dev->name));
 	}
+	dev->error = FALSE;
 	dev->status = DEV_CONNECTED;
 	act = make_Action(PM_LOG_IN);
 	map_Action_to_Device(dev, act);
@@ -517,7 +534,7 @@ do_Device_reconnect(Device *dev)
 
 	dev->status   = DEV_NOT_CONNECTED;
 	dev->loggedin = FALSE;
-	if ( ((act = (Action *)list_peek(dev->acts)) != NULL) && 
+	if ( ((act = list_peek(dev->acts)) != NULL) && 
 	     (act->com == PM_LOG_IN) )
 	{
 		del_Action(dev->acts);
@@ -537,7 +554,7 @@ do_Device_reconnect(Device *dev)
 void
 process_script(Device *dev)
 {
-	Action *act = (Action *)list_peek(dev->acts);
+	Action *act = list_peek(dev->acts);
 	bool done = FALSE;
 
 	if (act == NULL) return;
@@ -582,7 +599,7 @@ process_script(Device *dev)
 			exit_msg("unrecognized Script_El type %d", 
 					act->cur->type);
 		}
-		if( (act->cur = (Script_El *)list_next(act->itr)) == NULL )
+		if( (act->cur = list_next(act->itr)) == NULL )
 		{
 			if (act->com == PM_LOG_IN) 
 				dev->loggedin = TRUE;
@@ -596,11 +613,11 @@ process_script(Device *dev)
 				dev->status |= DEV_EXPECTING;
 			}
 		}
-		act = (Action *)list_peek(dev->acts);
+		act = list_peek(dev->acts);
 		if(act == NULL) 
 			done = TRUE;
 		else if( act->cur == NULL ) 
-			act->cur = (Script_El *)list_next(act->itr);
+			act->cur = list_next(act->itr);
 	}
 }
 /*
@@ -617,7 +634,7 @@ bool
 process_expect(Device *dev)
 {
 	regex_t *re;
-	Action *act = (Action *)list_peek(dev->acts);
+	Action *act = list_peek(dev->acts);
 	String expect;
 	bool res;
 
@@ -681,7 +698,7 @@ process_send(Device *dev)
 
 	CHECK_MAGIC(dev);
 
-	act  = (Action *)list_peek(dev->acts);
+	act  = list_peek(dev->acts);
 	assert(act != NULL);
 	CHECK_MAGIC(act);
 	assert(act->cur != NULL);
@@ -707,7 +724,7 @@ process_send(Device *dev)
 bool
 process_delay(Device *dev)
 {
-	Action *act = (Action *)list_peek(dev->acts);
+	Action *act = list_peek(dev->acts);
 	struct timeval tv = act->cur->s_or_e.delay.tv;
 	
 	assert (act != NULL);
@@ -742,11 +759,11 @@ do_PMD_semantics(Device *dev, List map)
 	char *ch;
 	Plug *plug;
 	ListIterator plug_i;
-	Interpretation *interp = (Interpretation *)list_peek(map);
+	Interpretation *interp = list_peek(map);
 
 	CHECK_MAGIC(dev);
 
-	act = (Action *)list_peek(dev->acts);
+	act = list_peek(dev->acts);
 	assert(act != NULL);
 
 	ch = interp->val;
@@ -754,7 +771,7 @@ do_PMD_semantics(Device *dev, List map)
 	switch(act->com)
 	{
 	case PM_UPDATE_PLUGS :
-		while( (plug = (Plug *)list_next(plug_i)) )
+		while( (plug = list_next(plug_i)) )
 		{
 			if (plug->node == NULL) continue;
 			plug->node->p_state = ST_UNKNOWN;
@@ -766,7 +783,7 @@ do_PMD_semantics(Device *dev, List map)
 		}
 		break;
 	case PM_UPDATE_NODES :
-		while( (plug = (Plug *)list_next(plug_i)) )
+		while( (plug = list_next(plug_i)) )
 		{
 			if (plug->node == NULL) continue;
 			plug->node->n_state = ST_UNKNOWN;
@@ -803,7 +820,7 @@ do_Device_semantics(Device *dev, List map)
 
 	CHECK_MAGIC(dev);
 
-	act = (Action *)list_peek(dev->acts);
+	act = list_peek(dev->acts);
 	assert(act != NULL);
 	assert( map != NULL );
 	map_i = list_iterator_create(map);
@@ -895,7 +912,6 @@ recover_Device(Device *dev)
 	Plug *plug;
 	ListIterator plug_i;
 
-
 	assert( dev != NULL );
 
 	syslog(LOG_ERR, "Expect timed out, reconnecting to %s", 
@@ -906,7 +922,7 @@ recover_Device(Device *dev)
 	while( !list_is_empty(dev->acts) )
 		del_Action(dev->acts);
 	plug_i = list_iterator_create(dev->plugs);
-	while( (plug = (Plug *)list_next(plug_i)) )
+	while( (plug = list_next(plug_i)) )
 	{
 		if( plug->node != NULL )
 		{
@@ -1042,7 +1058,7 @@ dump_Device(Device *dev)
 	fprintf(stderr, "\t\tnumber of nodes: %d\n", dev->num_plugs);
 	fprintf(stderr, "\t\tPlugs:\n");
 	plug_i = list_iterator_create(dev->plugs);
-	while( (plug = (Plug *)list_next(plug_i)) )
+	while( (plug = list_next(plug_i)) )
 	{
 		dump_Plug(plug);
 	}
@@ -1169,7 +1185,7 @@ match_RegEx(Device *dev, String expect)
 	int len = length_String(expect);
 
 	CHECK_MAGIC(dev);
-	act = (Action *)list_peek(dev->acts);
+	act = list_peek(dev->acts);
 	assert(act != NULL);
 	CHECK_MAGIC(act);
 	assert(act->cur != NULL);
@@ -1210,12 +1226,12 @@ match_RegEx(Device *dev, String expect)
 
 	if (dev->type == PMD_DEV)
 	{
-		interp = (Interpretation *)list_peek(act->cur->s_or_e.expect.map);
+		interp = list_peek(act->cur->s_or_e.expect.map);
 		interp->val = str;
 		return TRUE;
 	}
 	map_i = list_iterator_create(act->cur->s_or_e.expect.map);
-	while( (interp = (Interpretation *)list_next(map_i)) )
+	while( (interp = list_next(map_i)) )
 	{
 		assert( (pmatch[interp->match_pos].rm_so < MAX_BUF) &&
 			(pmatch[interp->match_pos].rm_so >= 0) );

@@ -1,3 +1,6 @@
+2002-09-06 dun
+	* Fixed bug where downed network device would cause select to spin.
+
 2002-08-16 auselton
 	* Chris tells me he updated the date format in the "make rpm"
 	  target stuff.
