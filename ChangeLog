@@ -3,6 +3,8 @@
     * etc/baytech-rpc3.dev: New for ilx RPC3's with new/different firmware
     than expected in baytech.dev.
 
+    * README, Makefile, powerman.spec: Cleanup.
+
 2003-06-06 Jim Garlick <garlick@llnl.gov>
 
     * etc/README: New doc for specification syntax.
