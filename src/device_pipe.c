@@ -150,7 +150,7 @@ bool pipe_connect(Device * dev)
 
     pid = pty_fork(&fd, ptyname);
     if (pid < 0) {
-        err(TRUE, "pty_fork error");
+        err(TRUE, "_pipe_connect(%s): pty_fork error", dev->name);
         /*NOTREACHED*/
 
     } else if (pid == 0) {      /* child */
@@ -167,12 +167,10 @@ bool pipe_connect(Device * dev)
 
         dev->connect_state = DEV_CONNECTED;
         dev->stat_successful_connects++;
-        /*dev->retry_count = 0;*/
 
         pd->cpid = pid;
 
-        err(FALSE, "_pipe_connect: %s opened on %s", dev->name, ptyname);
-
+        err(FALSE, "_pipe_connect(%s): opened on %s", dev->name, ptyname);
     }
 
     return (dev->connect_state == DEV_CONNECTED);
@@ -200,11 +198,14 @@ void pipe_disconnect(Device * dev)
 
         Waitpid(pd->cpid, &wstat, 0);
         if (WIFEXITED(wstat)) {
-            err(FALSE, "pipe_disconnect: %s: %s exited with status %d", 
+            err(FALSE, "pipe_disconnect(%s): %s exited with status %d", 
                     dev->name, pd->argv[0], WEXITSTATUS(wstat));
         } else if (WIFSIGNALED(wstat)) {
-            err(FALSE, "pipe_disconnect: %s: %s terminated with signal %d", 
+            err(FALSE, "pipe_disconnect(%s): %s terminated with signal %d", 
                     dev->name, pd->argv[0], WTERMSIG(wstat));
+        } else {
+            err(FALSE, "pipe_disconnect(%s): %s terminated",
+                    dev->name, pd->argv[0]);
         }
         pd->cpid = -1;
     }

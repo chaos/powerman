@@ -92,8 +92,8 @@ static bool _process_delay(Device * dev, Action *act, ExecCtx *e,
 static void _set_argval(ArgList * arglist, char *node, char *val, List interps);
 static InterpState _get_argval(ArgList *arglist, char *node);
 static int _match_name(Device * dev, void *key);
-static void _handle_read(Device * dev);
-static void _handle_write(Device * dev);
+static void _handle_read(Device * dev, struct timeval *timeout);
+static void _handle_write(Device * dev, struct timeval *timeout);
 static void _process_action(Device * dev, struct timeval *timeout);
 static bool _timeout(struct timeval *timestamp, struct timeval *timeout,
                      struct timeval *timeleft);
@@ -116,6 +116,7 @@ static void _process_ping(Device * dev, struct timeval *timeout);
 static void _login(Device *dev);
 static void _disconnect(Device * dev);
 static bool _connect(Device * dev);
+static bool _reconnect(Device * dev, struct timeval *timeout);
 static bool _time_to_reconnect(Device * dev, struct timeval *timeout);
 
 static List dev_devices = NULL;
@@ -362,6 +363,7 @@ void _update_timeout(struct timeval *timeout, struct timeval *tv)
 }
 
 /* 
+ * Helper for _reconnect().
  * Return TRUE if OK to attempt reconnect.  If FALSE, put the time left 
  * in timeout if it is less than timeout or if timeout is zero.
  */
@@ -391,10 +393,27 @@ static bool _connect(Device * dev)
     bool connected;
 
     assert(dev->connect != NULL);
+
+    Gettimeofday(&dev->last_retry, NULL);
+    dev->retry_count++;
+
     connected = dev->connect(dev);
 
     if (connected)
         _login(dev);
+
+    return connected;
+}
+
+static bool _reconnect(Device *dev, struct timeval *timeout)
+{
+    bool connected = FALSE;
+
+    if (dev->connect_state != DEV_NOT_CONNECTED)
+        _disconnect(dev);
+
+    if (_time_to_reconnect(dev, timeout))
+        connected = _connect(dev);
 
     return connected;
 }
@@ -655,7 +674,7 @@ static void _login(Device *dev)
 /*
  * Select says device is ready for reading.
  */
-static void _handle_read(Device * dev)
+static void _handle_read(Device * dev, struct timeval *timeout)
 {
     int n;
     int dropped;
@@ -664,28 +683,25 @@ static void _handle_read(Device * dev)
     n = cbuf_write_from_fd(dev->from, dev->fd, -1, &dropped);
     if (n < 0) {
         err(TRUE, "read error on %s", dev->name);
-        _disconnect(dev);
-        _connect(dev);
-        return;
+        goto err;
     }
     if (dropped > 0) {
         err(FALSE, "buffer space for %s exhausted", dev->name);
-        _disconnect(dev);
-        _connect(dev);
-        return;
+        goto err;
     }
     if (n == 0) {
         err(FALSE, "read returned EOF on %s", dev->name);
-        _disconnect(dev);
-        _connect(dev);
-        return;
+        goto err;
     }
+    return;
+err:
+    _reconnect(dev, timeout);
 }
 
 /*
  * Select says device is ready for writing.
  */
-static void _handle_write(Device * dev)
+static void _handle_write(Device * dev, struct timeval *timeout)
 {
     int n;
 
@@ -693,15 +709,15 @@ static void _handle_write(Device * dev)
     n = cbuf_read_to_fd(dev->to, dev->fd, -1);
     if (n < 0) {
         err(TRUE, "write error on %s", dev->name);
-        _disconnect(dev);
-        _connect(dev);
+        goto err;
     }
     if (n == 0) {
         err(FALSE, "write sent no data on %s", dev->name);
-        _disconnect(dev);
-        _connect(dev);
-        /* XXX: is this even possible? */
+        goto err;
     }
+    return;
+err:
+    _reconnect(dev, timeout);
 }
 
 static void _disconnect(Device * dev)
@@ -882,8 +898,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
             /* reconnect/login if expect timed out */
             if ((dev->connect_state == DEV_CONNECTED)) {
                 dbg(DBG_DEVICE, "_process_action: disconnecting due to error");
-                _disconnect(dev);
-                _connect(dev);
+                _reconnect(dev, timeout);
                 break;
             }
         }
@@ -1529,8 +1544,7 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
 
         /* reconnect if necessary */
         if (dev->connect_state == DEV_NOT_CONNECTED) {
-            if (_time_to_reconnect(dev, timeout))
-                _connect(dev);
+            _reconnect(dev, timeout);
         /* complete non-blocking connect if ready */
         } else if ((dev->connect_state == DEV_CONNECTING)) {
             assert(dev->fd != NO_FD);
@@ -1539,9 +1553,7 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
                 if (dev->finish_connect(dev)) {
                     _login(dev);
                 } else {
-                    _disconnect(dev);
-                    if (_time_to_reconnect(dev, timeout))
-                        _connect(dev);
+                    _reconnect(dev, timeout);
                 } 
                 if (dev->fd != NO_FD)
                     FD_CLR(dev->fd, wset);      /* avoid _handle_write error */
@@ -1556,9 +1568,12 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
         /* read/write from/to buffer */
         if (dev->connect_state == DEV_CONNECTED) {
             if (dev->fd != NO_FD && FD_ISSET(dev->fd, rset))
-                _handle_read(dev);      /* also handles ECONNRESET */
+                _handle_read(dev, timeout); /* also handles ECONNRESET */
+        }
+        /* could have disconnected in _handle_read */
+        if (dev->connect_state == DEV_CONNECTED) {
             if (dev->fd != NO_FD && FD_ISSET(dev->fd, wset))
-                _handle_write(dev);
+                _handle_write(dev, timeout);
         }
 
         /* handle device-specific preprocessing such as telnet escapes */

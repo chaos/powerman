@@ -190,12 +190,11 @@ bool serial_connect(Device * dev)
 
     dev->fd = open(ser->special, O_RDWR | O_NONBLOCK | O_NOCTTY);
     if (dev->fd < 0) {
-        dbg(DBG_DEVICE, "_serial_connect: %s open %s failed", 
-                dev->name, ser->special);
+        err(TRUE, "_serial_connect(%s): open %s\n", dev->name);
         goto out;
     }
     if (!isatty(dev->fd)) {
-        err(FALSE, "_serial_connect: %s is not a tty\n", dev->name);
+        err(FALSE, "_serial_connect(%s): not a tty\n", dev->name);
         goto out;
     }
     /*  [lifted from conman] According to the UNIX Programming FAQ v1.37
@@ -218,9 +217,8 @@ bool serial_connect(Device * dev)
 
     dev->connect_state = DEV_CONNECTED;
     dev->stat_successful_connects++;
-    dev->retry_count = 0;
 
-    err(FALSE, "_serial_connect: %s opened", dev->name);
+    err(FALSE, "_serial_connect(%s): opened", dev->name);
 out: 
     return (dev->connect_state == DEV_CONNECTED);
 }
@@ -239,6 +237,8 @@ void serial_disconnect(Device * dev)
         Close(dev->fd);
         dev->fd = NO_FD;
     }
+
+    err(FALSE, "_serial_disconnect(%s): closed", dev->name);
 }
 
 /*

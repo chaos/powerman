@@ -1,3 +1,10 @@
+2003-08-03 Jim Garlick <garlick@llnl.gov>
+
+    * src/device*.c: move all retry logic to device.c and enforce backoff on
+    all reconnects whether they be due to inability to establish a connection
+    or a script timeout.  The only thing that resets the reconnect backoff
+    count is a client request.
+
 2003-08-02 Jim Garlick <garlick@llnl.gov>
 
     * src/device.c: print useful error message in process_setplugname if

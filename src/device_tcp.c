@@ -109,12 +109,11 @@ bool tcp_finish_connect(Device * dev)
     if (rc < 0)
         error = errno;
     if (error) {
-        err(FALSE, "tcp_finish_connect: %s: %s", dev->name, strerror(error));
+        err(FALSE, "tcp_finish_connect(%s): %s", dev->name, strerror(error));
     } else {
-        err(FALSE, "tcp_finish_connect: %s: connected", dev->name);
+        err(FALSE, "tcp_finish_connect(%s): connected", dev->name);
         dev->connect_state = DEV_CONNECTED;
         dev->stat_successful_connects++;
-        dev->retry_count = 0;
         _telnet_init(dev);
     }
 
@@ -137,9 +136,6 @@ bool tcp_connect(Device * dev)
     assert(dev->fd == NO_FD);
 
     tcp = (TcpDev *)dev->data;
-
-    Gettimeofday(&dev->last_retry, NULL);
-    dev->retry_count++;
 
     memset(&hints, 0, sizeof(struct addrinfo));
     addrinfo = &hints;
@@ -167,6 +163,9 @@ bool tcp_connect(Device * dev)
         tcp_finish_connect(dev);
     freeaddrinfo(addrinfo);
 
+    err(FALSE, "tcp_connect(%s): %s", dev->name,
+            dev->connect_state == DEV_CONNECTED ? "connected" : "connecting");
+
     return (dev->connect_state == DEV_CONNECTED);
 }
 
@@ -178,7 +177,6 @@ void tcp_disconnect(Device * dev)
     assert(dev->connect_state == DEV_CONNECTING
            || dev->connect_state == DEV_CONNECTED);
 
-    err(FALSE, "tcp_disconnect: %s: disconnected", dev->name);
     dbg(DBG_DEVICE, "tcp_disconnect: %s on fd %d", dev->name, dev->fd);
 
     /* close socket if open */
@@ -186,6 +184,8 @@ void tcp_disconnect(Device * dev)
         Close(dev->fd);
         dev->fd = NO_FD;
     }
+
+    err(FALSE, "tcp_disconnect(%s): disconnected", dev->name);
 }
 
 void tcp_preprocess(Device *dev)
