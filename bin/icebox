@@ -349,48 +349,46 @@ for tty_name in sorted_tty_list:
         box = tty.boxes[box_name]
         if (box.num_requested == ICEBOX_SIZE):
             target = 'c' + box.name + com + '\r\n'
-            response = ''
-            log("say:  " + target)
-            f.write(target)
-            time.sleep(BOX_DELAY)
-            response = f.readline()
-            log("hear:  " + response)
-            while ((response[-1:] == '\n') or (response[-1:] == '\r')):
-                response = response[:-1]
-            if ((com == 'ph') or (com == 'pl') or (com == 'rp')):
-                if (string.lower(response) != 'ok'):
-                    exit_error(15, box.name)
-            elif(com == 'ns'):
-                try:
-                    list = string.split(response)
-                except ValueError:
-                    exit_error(16, box.name)
-                for resp in list:
-                    try:
-                        p,state = string.split(resp, ':')
-                    except ValueError:
-                        exit_error(17, box.name)
-                    if (((state == '0') and reverse) or ((state == '1') and not reverse)):
+            retry_count = 0
+            good_response = 0
+            while (not good_response and (retry_count < 10)):
+                log("say:  " + target)
+                f.write(target)
+                time.sleep(BOX_DELAY)
+                response = f.readline()
+                while ((response[-1:] == '\n') or (response[-1:] == '\r')):
+                    response = response[:-1]
+                f.readline()
+                retry_count = retry_count + 1
+                log("hear:  " + response)
+                if(response != ''):
+                    if ((com == 'ph') or (com == 'pl') or (com == 'rp')):
+                        if (string.lower(response) == 'ok'):
+                            good_response = 1
+                    else:
                         try:
-                            nm = box.ports[p[1:2]].node.name
-                        except KeyError:
+                            list = string.split(response)
+                        except ValueError:
                             continue
-                        print nm
-            elif((com == 'ts') or (com == 'tsf')):
-                try:
-                    list = string.split(response)
-                except ValueError:
-                    exit_error(18, box.name)
-                for resp in list:
-                    try:
-                        p,temps = string.split(resp, ':')
-                    except ValueError:
-                        exit_error(19, box.name)
-                        try:
-                            nm = box.ports[p[1:2]].node.name
-                        except KeyError:
-                            continue
-                        print nm + ":" + temps
+                        for resp in list:
+                            try:
+                                p,val = string.split(resp, ':')
+                            except ValueError:
+                                continue
+                            if(p[0:1] == 'N'):
+                                this_port = p[1:2]
+                                try:
+                                    nm = box.ports[this_port].node.name
+                                    good_response = 1
+                                except KeyError:
+                                    continue
+                                if (com = 'ns'):
+                                    state = val
+                                    if (((state == '0') and reverse) or ((state == '1') and not reverse)):
+                                        print nm
+                                elif((com == 'ts') or (com == 'tsf')):
+                                    temps = val
+                                    print nm + ":" + temps
         else:
             # (num_requested != ICEBOX_SIZE):
             for port_name in box.sorted_port_list:

@@ -197,7 +197,6 @@ class ClusterClass:
                     pass
             if(c_sep_list):
                 command = c_str + " -w " + c_sep_list + " " + opts + com
-                print command
                 stat, message = commands.getstatusoutput(command)
                 if (stat == 0):
                     # this is confirming that something
