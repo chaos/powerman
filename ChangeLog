@@ -73,3 +73,6 @@
 
 2002-07-29 garlick
 	* Make --queryon, --queryoff work with or without targets on cmd line.
+
+2002-07-29 dun
+	* Fixed parms to gethostbyaddr().
