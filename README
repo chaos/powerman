@@ -667,22 +667,17 @@ o If you have access to the CVS repository containing PowerMan you can
 ---
   > http://www.llnl.gov/linux/powerman
 ---
-  and skip the next step about making the RPM.  If you are using CVS
-  you'll want to verify that old rpms aren't lying around.
----
-  > ls *.tgz *.rpm
-  powerman-1.0.0-200207171715.i386.rpm
-  powerman-1.0.0-200207171715.src.rpm
-  powerman-1.0.0-200207171715.tgz
-  > rm -f *.tgz *.rpm
----
+  and skip the next step about making the RPM.  
 
 o During development I'll make RPMs from the CVS HEAD, usually you
   will want to make the default tagged version.  If there already are
-  RPMs present you may want to remove them.  This step will also
+  RPMs present you may want to remove them.  This step will also 
   require access to the CVS repository.   
 ---
   > ls *.rpm *.tgz
+  powerman-version-date.i386.rpm
+  powerman-version-date.src.rpm
+  powerman-version-date.tgz
   > make distclean
   > make rpm (tag=HEAD)
 ---
@@ -691,17 +686,21 @@ o You'll have to be root-equivalent to install the RPMs, and you may
   want to get rid of any previously installed pieces.
 ---
   > su <root-equiv>
-  # rm -rf /usr/src/redhat/BUILD/powerman*
-  # rm -rf /usr/src/redhat/RPMS/i386/powerman*
-  # rm -rf /usr/src/redhat/SOURCES/powerman*
-  # rm -rf /usr/src/redhat/SPECS/powerman*
-  # rm -rf /usr/src/redhat/SRPMS/powerman*
+  # RED=/usr/src/redhat
+  # export RED
+  # rm -rf $RED/BUILD/powerman*
+  # rm -rf $RED/RPMS/i386/powerman*
+  # rm -rf $RED/SOURCES/powerman*
+  # rm -rf $RED/SPECS/powerman*
+  # rm -rf $RED/SRPMS/powerman*
   # ls *.src.rpm
+  powerman-version-date.src.rpm
   # rpm -i powerman-version-date.src.rpm
-  # rpm -ba /usr/src/redhat/SPECS/powerman.spec
-  # ls /usr/src/redhat/RPMS/i386/powerman*
-  # rpm -i /usr/src/redhat/RPMS/i386/powerman-version-date.i386.rpm
-  # PMDIR=/usr/src/redhat/BUILD/powerman-version
+  # rpm -ba $RED/SPECS/powerman.spec
+  # ls $RED/RPMS/i386/powerman*
+  powerman-version-date.i386.rpm
+  # rpm -i $RED/RPMS/i386/powerman-version-date.i386.rpm
+  # PMDIR=$RED/BUILD/powerman-version
   # export PMDIR
   # cd $PMDIR
 ---
@@ -816,3 +815,8 @@ o  To finish up this demonstration exercise the powermand "kill"
   "tail -f" sessions.  To uninstall the code:
 ---
   W1# rpm -e powerman
+  W1# rm -rf $RED/BUILD/powerman*
+  W1# rm -rf $RED/RPMS/i386/powerman*
+  W1# rm -rf $RED/SOURCES/powerman*
+  W1# rm -rf $RED/SPECS/powerman*
+  W1# rm -rf $RED/SRPMS/powerman*

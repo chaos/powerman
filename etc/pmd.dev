@@ -32,6 +32,7 @@ begin protocol specification
 	all string "*"
 # PMD type devices are a special case.  size is determined dynamically
 #	size "0"
+	device timeout "100.0"
 	string interpretation mode "REGEX"
 	begin PM_LOG_IN 
 		expect "word> " "> "

@@ -11,7 +11,7 @@ begin global
 	log file "/tmp/powermand.log.16x16-02" "0"
 	client listener port "10002"
 	timeout interval "1.0"
-	inter-device delay "0.2"
+	inter-device delay "0.0"
 	update interval "100.0"
 end global
 device "ViceBox00" "vicebox" "localhost" "20200"
