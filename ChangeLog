@@ -1,5 +1,6 @@
 2002-12-30 garlick
     * More refinement of device error handling.
+    * Strip out unused DBG_* flags and redundant DBG_SCRIPT printfs.
 
 2002-12-27 garlick
     * Clean up passing of errors to client action completion callback.
@@ -232,9 +233,7 @@
 2002-09-25 garlick
     * Reimplement _process_delay() so it uses the select loop to time out.
     * Incomplete work on _process_expect() so it uses the select loop
-      to time out. TODO: 
-      - no response does not cause a timeout
-      - results need to be included in the client reply
+      to time out.
     * Added separate ice box v3 config - i think the timeouts/delays
       are going to be subtly different but worth caring about at MCR scale.
 
@@ -334,8 +333,7 @@
     * Made some globals local to powermand.c
 
 2002-09-13 garlick
-    * Ran indent -kr *.[ch] on everything in src except hostlist.[ch]
-      and list.[ch] 
+    * Ran indent -kr *.[ch] on everything in src except hostlist.[ch], list.[ch]
     * Tagged src with after-indent.
     * Got rid of NDUMP code (deprecated debugging stuff).
     * Added "vi:softtabstop=4" to *.c
@@ -380,8 +378,7 @@
     * Fix dump_Plug() function in device.c to print node name only if
       variable plug->node is not NULL.
     * The match_Regex() function in device.c had duplicate tests for
-      "pmatch[0].rm_so == -1". Changed second one to
-      "pmatch[0].rm_se == -1"
+      "pmatch[0].rm_so == -1". Changed second one to "pmatch[0].rm_se == -1"
     * Removed local variable <dev_com> which was set but never used in
       do_Action() in action.c.  
 
@@ -392,7 +389,7 @@
 
 2002-08-08 garlick
     * Make some char *'s into unsigned char *'s that are carrying
-      non-printable values such as \376 (baytech telnet telnet handshake)).
+      non-printable values such as \376 (baytech telnet handshake).
     * Redo telemetry logging to support callback at the Buffer level.
     * Fixed a memory leak where buffers were reallocated on a device
       reconnect but old ones weren't freed.
