@@ -1,3 +1,8 @@
+2002-10-19 garlick
+	* Fixded bug in _update_timeout where usecs were not checked for zero
+	  when testing if timer is set.
+	* Tagged powerman-1-0-12
+
 2002-10-18 garlick
 	* Added several new script types and factored code for building scripts
 	  in parse.y (now there is one function - makeScriptSec()).
@@ -10,8 +15,6 @@
 	* Changed logic for "all" plug processing.  If _ALL version of
 	  script is defined, use that.  If all string "*" is defined, use
 	  that.  If neither is defined, use one command per plug.
-	* Fixded bug in _update_timeout where usecs were not checked for zero
-	  when testing if timer is set.
 
 2002-10-16 garlick
 	* Make Action struct private to device.c
