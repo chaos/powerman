@@ -49,21 +49,28 @@
 #include "device_serial.h"
 #include "device_tcp.h"
 
+/* ExecCtx's are the state for the execution of a block of statements.
+ * They are stacked on the Action (new ExecCtx pushed when executing an
+ * inner block).
+ */
 typedef struct {
-    Plug *target;               /* target->name used for %s substitution */
+    Plug *target;               /* target->name used for send "%s" (NULL=all) */
     List block;                 /* List of stmts */
     ListIterator itr;           /* next stmt in block */
     Stmt *cur;                  /* current stmt */
     ListIterator plugitr;
 } ExecCtx;
 
+/* Actions are queued on a device and executed one at a time.  Each action
+ * represents a request to run a particular script on a device, for a set of
+ * plugs.  Actions can be enqueued by the client or internally (e.g. login).
+ */
 #define ACT_MAGIC 0xb00bb000
 #define MAX_LEVELS 2
 typedef struct {
     int magic;
     int com;                    /* one of the PM_* above */
     List exec;                  /* stack of ExecCtxs (outer block is first) */
-    Plug *target;               /* target of action or NULL for all */
     ActionCB complete_fun;      /* callback for action completion */
     VerbosePrintf vpf_fun;      /* callback for device telemetry */
     int client_id;              /* client id so completion can find client */
@@ -261,9 +268,9 @@ static Action *_create_action(Device * dev, int com, Plug *target,
     act->vpf_fun = vpf_fun;
     act->client_id = client_id;
 
-    act->target = target;
+    /*act->target = target;*/
     act->exec = list_create((ListDelF)_destroy_exec_ctx);
-    e = _create_exec_ctx(dev, dev->scripts[act->com], act->target);
+    e = _create_exec_ctx(dev, dev->scripts[act->com], target);
     list_push(act->exec, e);
 
     act->errnum = ACT_ESUCCESS;
@@ -277,7 +284,7 @@ static void _destroy_action(Action * act)
     assert(act->magic == ACT_MAGIC);
     act->magic = 0;
     dbg(DBG_ACTION, "_destroy_action: %d", act->com);
-    act->target = NULL;
+    /*act->target = NULL;*/
     if (act->exec)
         list_destroy(act->exec);
     act->exec = NULL;
@@ -402,7 +409,6 @@ static bool _command_needs_device(Device * dev, hostlist_t hl)
     bool needed = FALSE;
     ListIterator itr;
     Plug *plug;
-
 
     itr = list_iterator_create(dev->plugs);
     while ((plug = list_next(itr))) {

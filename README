@@ -4,15 +4,38 @@ PowerMan version 1.0.17                                        26 April 2003
 | New Features |
 +--------------+
 
-o There is now a "telnet" device type which filters telnet escapes out of
+o There is now a TELNET device type which filters telnet escapes out of
   the device control stream and manages some trivial option negotiation.
   Telnet escape sequences have been removed from device configurations.
 
-o Plug names may be omitted from device configuration, in which case
-  node configuration lines provide the plug names for each instantiation
-  of the device.
+o For devices which dynamically assign "plug names" it is now possible to 
+  omit the plug name from the node lines in powerman.conf, and leave off 
+  the definition of all possible plug names in the device config.  A new 
+  script construct "setplugname" can be used to associate plug names with 
+  node names during script execution.
+
+o To make it possible to support devices that have variable numbers of plugs
+  PowerMan scripts can now utilize a "foreachplug" or "foreachnode" construct 
+  to iterate over the configured plugs or plugs that have configured nodes for
+  a device, executing an inner block of script on each iteration.  These
+  constructs also reduce repetition in scripts with a fixed number of plugs.
 
 o Support added for IBM RSA Remote Supervisor Adapter in telnet debug mode.
+  The ibmrsa.dev script utilizes the three features listed above.
+
+o In addition to the new constructs described above, the device script syntax
+  has changed in the following non-backwards compatible way:
+  - Instead of repeating 'plug name "name"' statements, all the plug names
+    can now be specified on one line, e.g. 'plug name { "name" "name" ... }.
+  - The plugcount line is no longer necessary (or allowed).
+  - The name line is no longer necessary; device names are specified between
+    "specification" and the open brace for the device specification.
+  - Device types are no longer quoted strings.
+  - The "map" command was renamed to "setstatus" and there can now be
+    intervening statements between an "expect" and "setstatus" lines that
+    reference subexpression matches
+  - The "setstatus" command can take a subexpression offset for the plug
+    name parameter in lieu of the literal plug name (quoted string).
 
 +------------+
 | Bugs fixed |
@@ -20,6 +43,9 @@ o Support added for IBM RSA Remote Supervisor Adapter in telnet debug mode.
 
 o Increased power cycle time to 2 seconds on all power controllers.  The
   ICE box previous value of 0.7 sec caused problems on some nodes.
+
+o Serial connections were made non-blocking (blocking in an open would
+  hang powermand).
 
 +-----------------+
 | Supported RPC's |
