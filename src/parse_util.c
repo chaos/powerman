@@ -354,27 +354,42 @@ static int _alias_match(alias_t *a, char *name)
     return (strcmp(a->name, name) == 0);
 }
 
+/* Expand any aliases present in hostlist.  
+ * N.B. Aliases cannot contain other aliases.
+ */
 void conf_exp_aliases(hostlist_t hl)
 {
     hostlist_iterator_t itr = NULL;
+    hostlist_t newhosts = hostlist_create(NULL);
     char *host;
-    
+  
+    if (newhosts == NULL) {
+        err(FALSE, "conf_exp_aliases: error craeting hostlist");
+        return;
+    }
     if ((itr = hostlist_iterator_create(hl)) == NULL) {
         err(FALSE, "conf_exp_aliases: error craeting hostlist iterator");
         return;
     }
 
+    /* Put the expansion of any aliases into 'newhosts', deleting the original
+     * reference.
+     */
     while ((host = hostlist_next(itr)) != NULL) {
         alias_t *a;
             
         a = list_find_first(conf_aliases, (ListFindF) _alias_match, host);
         if (a) {
             hostlist_delete_host(hl, host); 
-            hostlist_push_list(hl, a->hl);
+            hostlist_push_list(newhosts, a->hl);
             hostlist_iterator_reset(itr);
         }
     }
     hostlist_iterator_destroy(itr);
+
+    /* Add 'newhosts' to the hostlist. */
+    hostlist_push_list(hl, newhosts);
+    hostlist_destroy(newhosts);
 }
 
 static void _alias_destroy(alias_t *a)
