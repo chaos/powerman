@@ -24,6 +24,14 @@
 #   with PowerMan; if not, write to the Free Software Foundation, Inc.,
 #   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 ####################################################################
+# Tested the following firmware versions: 
+#    v3.02
+# Assumes: 
+# 1. password: "wti" (/g general parms, 1 system passwd)
+# 2. command echo: on (/g general parms, 6 command echo)
+# 3. command confirmation: off (/g general parms, 8 command confirmation)
+# 4. disconnect timeout: default of 2 minutes
+#
 begin protocol specification
 	specification name "wti"
 	specification type "TCP"
