@@ -108,15 +108,23 @@ static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
     }
 }
 
+/*
+ * Called just after a connect so we can perform any option requests.
+ */
 void telnet_init(Device * dev)
 {
+    dev->u.tcp.tstate = TELNET_NONE;
+    dev->u.tcp.tcmd = 0;
     _telnet_sendopt(dev, DONT, TELOPT_NAWS);
     _telnet_sendopt(dev, DONT, TELOPT_TTYPE);
     _telnet_sendopt(dev, DONT, TELOPT_ECHO);
 }
 
 /*
- * Telnet state machine.
+ * Telnet state machine.  This is called when new data has arrived in the
+ * input buffer.  We get to look first to process any telnet escapes.
+ * Except for a little bit of state stored in the dev->u.tcp union, 
+ * we do all the processing now.
  */
 void telnet_process(Device * dev)
 {
