@@ -1,0 +1,21 @@
+# Config file for the new PowerMan daemon
+begin global
+	cluster name "tux"
+	log file "/tmp/powermand.log.wti" "0"
+	client listener port "10101"
+	timeout interval "1.0"
+	inter-device delay "0.2"
+	update interval "100.0"
+	include "wti.spec"
+	device "WTI" "wti" "wti2" "23"
+end global
+begin nodes
+	node "tux0" "WTI" "1"
+	node "tux1" "WTI" "2"
+	node "tux2" "WTI" "3"
+	node "tux3" "WTI" "4"
+	node "tux4" "WTI" "5"
+	node "tux5" "WTI" "6"
+	node "tux6" "WTI" "7"
+	node "tux7" "WTI" "8"
+end nodes

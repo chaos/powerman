@@ -1,0 +1,78 @@
+begin protocol specification
+	specification name "icebox"
+	specification type "TCP"
+	off string "0"
+	on string  "1"
+	all string "*"
+	size "10"
+	device timeout "1.0"
+	string interpretation mode "LITERAL"
+	begin PM_LOG_IN 
+		expect "V2\.2\r\n" "\n"
+		send "auth icebox\r\n"
+		expect "OK\r\n" "\n"
+	end PM_LOG_IN
+	begin PM_CHECK_LOGIN
+		send "\r\n"
+		expect "OK\r\n" "\n"
+	end PM_CHECK_LOGIN
+	begin PM_LOG_OUT
+		send "q\r\n"
+	end PM_LOG_OUT
+	begin PM_UPDATE_PLUGS 
+		send "ps *\r\n"
+		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n" "\n"
+			map "1" "1"
+			map "2" "2"
+			map "3" "3"
+			map "4" "4"
+			map "5" "5"
+			map "6" "6"
+			map "7" "7"
+			map "8" "8"
+			map "9" "9"
+			map "10" "10"
+	end PM_UPDATE_PLUGS 
+	begin PM_UPDATE_NODES 
+		send "ns *\r\n"
+		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n" "\n"
+			map "1" "1"
+			map "2" "2"
+			map "3" "3"
+			map "4" "4"
+			map "5" "5"
+			map "6" "6"
+			map "7" "7"
+			map "8" "8"
+			map "9" "9"
+			map "10" "10"
+	end PM_UPDATE_NODES 
+	begin PM_POWER_ON
+		send "ph %s\r\n"
+		expect "OK\r\n" "\n"
+	end PM_POWER_ON
+	begin PM_POWER_OFF
+		send "pl %s\r\n"
+		expect "OK\r\n" "\n"
+	end PM_POWER_OFF
+	begin PM_POWER_CYCLE
+		send "pl %s\r\n"
+		expect "OK\r\n" "\n"
+		send "ph %s\r\n"
+		expect "OK\r\n" "\n"
+	end PM_POWER_CYCLE
+	begin PM_RESET
+		send "rp %s\r\n"
+		expect "OK\r\n" "\n"
+	end PM_RESET
+	plug name "1"
+	plug name "2"
+	plug name "3"
+	plug name "4"
+	plug name "5"
+	plug name "6"
+	plug name "7"
+	plug name "8"
+	plug name "9"
+	plug name "10"
+end protocol specification

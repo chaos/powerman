@@ -1,0 +1,13 @@
+*** parse_tab.c	Thu Jun  6 10:12:28 2002
+--- parse_tab.c.patch	Thu Jun  6 10:13:22 2002
+***************
+*** 595,600 ****
+--- 595,602 ----
+  
+    int yylen;
+  
++   yyval = NULL;
++ 
+  #if YYDEBUG != 0
+    if (yydebug)
+      fprintf(stderr, "Starting parse\n");
