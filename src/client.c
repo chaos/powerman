@@ -679,7 +679,7 @@ static void _create_client(void)
 static void _handle_client_read(Client * c)
 {
     int n;
-    char buf[CP_LINEMAX];
+    char buf[MAX_BUF];
 
     CHECK_MAGIC(c);
 

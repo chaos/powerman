@@ -1,3 +1,7 @@
+2002-10-22 garlick
+	* Fixed bug where buf_readline() would occasionally assert on the 
+	  size of destination buffer on client read (gnat powerman/123)
+
 2002-10-21 garlick
 	* Added "devices" query to get mapping of devices to nodes and
 	  per-device statistics (reconnects, successful actions).
