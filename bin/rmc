@@ -7,10 +7,12 @@
 # v. 0-1-0:  2001-08-20
 #            This just wraps Chris's expect scripts to make an 
 #            executable for power on/off/reset
+# v. 0-1-1:  2001-08-31
+#            renovation in support of rpm builds
 ####################################################################
 # rmc -w node,... [on | off | reset]
 
-set Version "rmc:powerman v0.1.0"
+set Version "rmc:powerman v0.1.1"
 
 source /usr/lib/conman/conman.exp
 

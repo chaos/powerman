@@ -10,6 +10,8 @@
 #            special tty.  Given the port and the correct "password"
 #            one may power on, power off, or reset.
 #            See "usage" for protoytpe.
+# v. 0-1-1:  2001-08-31
+#            renovation in support of rpm builds
 ####################################################################
 
 import sys
@@ -45,7 +47,7 @@ def init(f):
         ports[tokens[0]] = tokens[1]
     return ports
 
-Version = "wti:Powerman 0.1.0"
+Version = "wti:Powerman 0.1.1"
 
 # initialize globals
 powermandir  = '/usr/lib/powerman/'

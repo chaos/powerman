@@ -7,6 +7,12 @@
 # v. 0-1-0:  2001-08-27
 #            Initial Python embodiment of the PowerMan project
 #            see "usage" for protoytpe
+# Changes from 0-1-0 tagging:
+# 1)  $POWERMANCONF environment variable was appended to $POWERMANDIR
+#     rather than searched independently.  Now it is treated as an
+#     independent relative or absolute path.
+# v. 0-1-1:  2001-08-31
+#            renovation in support of rpm builds
 ####################################################################
 
 import sys
@@ -328,7 +334,7 @@ def usage(msg):
 
 # Begin main routine processing.
 
-Version = "pm: Powerman 0.1.0"
+Version = "pm: Powerman 0.1.1"
 
 # initialize globals
 powermandir = '/usr/lib/powerman/'
@@ -354,7 +360,7 @@ except KeyError:
 
 try:
     test = os.environ['POWERMANCONF']
-    if (os.path.isfile(powermandir + test)):
+    if (os.path.isfile(test)):
         config_file = test
 except KeyError:
     pass
@@ -471,7 +477,6 @@ except IOError :
     if(verbose):
         sys.stderr.write("pm: Couldn\'t open configuration file: " + config_file + "\n")
     sys.exit(1)
-
 
 if(all):
     names = theCluster.names

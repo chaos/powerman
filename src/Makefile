@@ -5,6 +5,8 @@
 # See ../DISCLAIMER
 # v. 0-1-0:  2001-08-28
 #            $POWERMANDIR/src/Makefile
+# v. 0-1-1:  2001-08-31
+#            renovation in support of rpm builds
 ####################################################################
 
 CC    = gcc

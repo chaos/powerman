@@ -6,6 +6,8 @@
 # See ../DISCLAIMER
 # v. 0-1-0:  2001-08-28
 #            A few hints on getting started and experimenting
+# v. 0-1-1:  2001-08-31
+#            renovation in support of rpm builds
 ####################################################################
 
 echo "Read through this file and run its commands one at a time."
@@ -15,16 +17,16 @@ echo "  -Andrew"
 exit
 # modify POWERMANDIR to point wherever you are.
 export POWERMANCONF="etc/powerman.conf"
-export POWERMANDIR="/home/auselton/src/pm"
+export POWERMANDIR="/home/auselton/src/powerman"
 cd $POWERMANDIR
 
 # set up alternate directory for -l tests
 cd ..
-tar cvfz pm.tgz pm
+tar cvfz pm.tgz powerman
 mv pm.tgz ..
 cd ..
 tar xvfz pm.tgz
-mv pm poop
+mv powerman poop
 su
 chown root poop/bin/digi
 chmod 4755 poop/bin/digi
@@ -65,13 +67,14 @@ pm -v
 # following control commands.
 # in another shell enter:
 export POWERMANCONF="etc/powerman.conf"
-export POWERMANDIR="/home/auselton/src/pm"
+export POWERMANDIR="/home/auselton/src/powerman"
 cd $POWERMANDIR
 while [ 1 ]
 do
   pm -b
   sleep 1
 done 
+
 # Then back in the first shell:
 # control mode
 pm -a -v on
@@ -110,7 +113,7 @@ cp etc/slc.wti.conf /home/auselton/poop/etc/wti.conf
 
 # open a shell on tritium
 export POWERMANCONF="etc/powerman.conf"
-export POWERMANDIR="/home/auselton/src/pm"
+export POWERMANDIR="/home/auselton/src/powerman"
 cd $POWERMANDIR
 
 # usage message
@@ -140,7 +143,7 @@ pm -v
 
 # in another shell enter:
 export POWERMANCONF="etc/powerman.conf"
-export POWERMANDIR="/home/auselton/src/pm"
+export POWERMANDIR="/home/auselton/src/powerman"
 cd $POWERMANDIR
 while [ 1 ]
 do
@@ -185,7 +188,7 @@ cp etc/fc.powerman.conf /home/auselton/poop/etc/powerman.conf
 
 # open a shell on useltonium
 export POWERMANCONF="etc/powerman.conf"
-export POWERMANDIR="/home/auselton/src/pm"
+export POWERMANDIR="/home/auselton/src/powerman"
 cd $POWERMANDIR
 
 # usage message
@@ -215,7 +218,7 @@ pm -v
 
 # in another shell enter:
 export POWERMANCONF="etc/powerman.conf"
-export POWERMANDIR="/home/auselton/src/pm"
+export POWERMANDIR="/home/auselton/src/powerman"
 cd $POWERMANDIR
 while [ 1 ]
 do

@@ -19,6 +19,8 @@
 #            use of this function could disrupt a cluster by
 #            unintantionally powering off nodes that you though were
 #            off, but were in fact already on.
+# v. 0-1-1:  2001-08-31
+#            renovation in support of rpm builds
 ####################################################################
 
 import sys
@@ -59,7 +61,7 @@ def init(f):
         macs[tokens[0]] = tokens[1]
     return macs
 
-Version = "etherwake:Powerman 0.1.0"
+Version = "etherwake:Powerman 0.1.1"
 
 # Check for level of permision and restrict activities for non-root users
 

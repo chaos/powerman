@@ -5,6 +5,8 @@
 # See ../DISCLAIMER
 # v. 0-1-0:  2001-08-28
 #            $POWERMANDIR/README
+# v. 0-1-1:  2001-08-31
+#            renovation in support of rpm builds
 ####################################################################
 
 Abstract
@@ -53,7 +55,7 @@ when the action is requested.
 1.  Packing list
   In a typical installation $powermandir is "/usr/lib/powerman", and
 $powermanconf is "/etc/powerman.conf".  The current version of
-powerman is 0.1.0, so the files installed by the "binary" RPM would
+powerman is 0.1.1, so the files installed by the "binary" RPM would
 be:
 /usr/bin/pm				The command line interface
 /usr/man/man1/digi.1			man pages for executables
@@ -66,9 +68,9 @@ be:
 /usr/man/man5/powerman.conf.5		""
 /usr/man/man5/wti.conf.5		""
 /etc/powerman.conf			primary configuration file
-/usr/doc/powerman-0.1.0/DISCLAIMER	same disclaimer as below
-/usr/doc/powerman-0.1.0/README		this file
-/usr/doc/powerman-0.1.0/TOUR.SH		a short tour of the operations
+/usr/doc/powerman-0.1.1/DISCLAIMER	same disclaimer as below
+/usr/doc/powerman-0.1.1/README		this file
+/usr/doc/powerman-0.1.1/TOUR.SH		a short tour of the operations
 /usr/lib/powerman/bin/bogus_check	Fake cluster management for
 /usr/lib/powerman/bin/bogus_set		  testing purposes
 /usr/lib/powerman/bin/digi		power monitoring function
