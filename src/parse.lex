@@ -192,12 +192,22 @@ begin[ \t]+STATUS_SOFT_SCRIPT     {   return TOK_B_STATUS_SOFT; }
 end[ \t]+STATUS_SOFT_SCRIPT       {   return TOK_E_STATUS_SOFT; }
 begin[ \t]+ON_SCRIPT              {   return TOK_B_ON; }
 end[ \t]+ON_SCRIPT                {   return TOK_E_ON; }
+begin[ \t]+ON_ALL_SCRIPT          {   return TOK_B_ON_ALL; }
+end[ \t]+ON_ALL_SCRIPT            {   return TOK_E_ON_ALL; }
 begin[ \t]+OFF_SCRIPT             {   return TOK_B_OFF; }
 end[ \t]+OFF_SCRIPT               {   return TOK_E_OFF; }
+begin[ \t]+OFF_ALL_SCRIPT         {   return TOK_B_OFF_ALL; }
+end[ \t]+OFF_ALL_SCRIPT           {   return TOK_E_OFF_ALL; }
 begin[ \t]+CYCLE_SCRIPT           {   return TOK_B_CYCLE; }
 end[ \t]+CYCLE_SCRIPT             {   return TOK_E_CYCLE; }
+begin[ \t]+CYCLE_ALL_SCRIPT       {   return TOK_B_CYCLE_ALL; }
+end[ \t]+CYCLE_ALL_SCRIPT         {   return TOK_E_CYCLE_ALL; }
 begin[ \t]+RESET_SCRIPT           {   return TOK_B_RESET; }
 end[ \t]+RESET_SCRIPT             {   return TOK_E_RESET; }
+begin[ \t]+RESET_ALL_SCRIPT       {   return TOK_B_RESET_ALL; }
+end[ \t]+RESET_ALL_SCRIPT         {   return TOK_E_RESET_ALL; }
+begin[ \t]+PING_SCRIPT            {   return TOK_B_PING; }
+end[ \t]+PING_SCRIPT              {   return TOK_E_PING; }
 end[ \t]+protocol[ \t]+specification   {   return TOK_E_SPEC; }
 device                            {   return TOK_DEVICE; }
 end[ \t]+global                   {   return TOK_E_GLOBAL; }

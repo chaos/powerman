@@ -42,6 +42,9 @@ begin protocol specification
 	all string "0"
 	plug count 8
 	device timeout 15  # "reboot all" command takes about 13 seconds 
+	begin PING_SCRIPT
+		send "\NOP"
+	end PING_SCRIPT
 	begin LOGIN_SCRIPT
 		expect "\n"
 		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA"

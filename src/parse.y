@@ -49,18 +49,14 @@
 static char *makeNode(char *s2, char *s3, char *s4);
 static char *makeDevice(char *s2, char *s3, char *s4, char *s5);
 static char *makePlugNameLine(char *s2);
-static char *makeResetSec(char *s2);
-static char *makePowerCycleSec(char *s2);
-static char *makePowerOffSec(char *s2);
-static char *makePowerOnSec(char *s2);
-static char *makeUpdateNodesSec(char *s2);
-static char *makeUpdatePlugsSec(char *s2);
-static char *makeLogOutSec(char *s2);
+
+static char *makeScriptSec(char *s2, int com);
+
 static Interpretation *makeMapLine(char *s2, char *s3);
 static List makeMapSecHead(Interpretation *s1);
 static List makeMapSec(List s1, Interpretation *s2);
 static char *makeScriptEl(Script_El_Type mode, char *s2, List s3);
-static char *makeLogInSec(char *s2);
+
 static char *makeSpecSize(char *s2);
 static char *makeSpecAll(char *s2);
 static char *makeSpecOn(char *s2);
@@ -115,12 +111,22 @@ static void _doubletotv(struct timeval *tv, double val);
 %token TOK_E_STATUS_SOFT
 %token TOK_B_ON
 %token TOK_E_ON
+%token TOK_B_ON_ALL
+%token TOK_E_ON_ALL
 %token TOK_B_OFF
 %token TOK_E_OFF
+%token TOK_B_OFF_ALL
+%token TOK_E_OFF_ALL
 %token TOK_B_CYCLE
 %token TOK_E_CYCLE
+%token TOK_B_CYCLE_ALL
+%token TOK_E_CYCLE_ALL
 %token TOK_B_RESET
 %token TOK_E_RESET
+%token TOK_B_RESET_ALL
+%token TOK_E_RESET_ALL
+%token TOK_B_PING
+%token TOK_E_PING
 %token TOK_E_SPEC
 %right TOK_DEVICE
 %token TOK_E_GLOBAL
@@ -206,28 +212,43 @@ spec_script_list : spec_script_list spec_script
                 | spec_script 
 ;
 spec_script	: TOK_B_LOGIN script_list TOK_E_LOGIN {
-    $$ = (char *)makeLogInSec($2);
+    $$ = (char *)makeScriptSec($2, PM_LOG_IN);
 }
 		| TOK_B_LOGOUT script_list TOK_E_LOGOUT {
-    $$ = (char *)makeLogOutSec($2);
+    $$ = (char *)makeScriptSec($2, PM_LOG_OUT);
 }
 		| TOK_B_STATUS script_list TOK_E_STATUS {
-    $$ = (char *)makeUpdatePlugsSec($2);
+    $$ = (char *)makeScriptSec($2, PM_UPDATE_PLUGS);
 } 
 		| TOK_B_STATUS_SOFT script_list TOK_E_STATUS_SOFT {
-    $$ = (char *)makeUpdateNodesSec($2);
+    $$ = (char *)makeScriptSec($2, PM_UPDATE_NODES);
 }
 		| TOK_B_ON script_list TOK_E_ON {
-    $$ = (char *)makePowerOnSec($2);
+    $$ = (char *)makeScriptSec($2, PM_POWER_ON);
+}
+		| TOK_B_ON_ALL script_list TOK_E_ON_ALL {
+    $$ = (char *)makeScriptSec($2, PM_POWER_ON_ALL);
 }
 		| TOK_B_OFF script_list TOK_E_OFF {
-    $$ = (char *)makePowerOffSec($2);
+    $$ = (char *)makeScriptSec($2, PM_POWER_OFF);
+}
+		| TOK_B_OFF_ALL script_list TOK_E_OFF_ALL {
+    $$ = (char *)makeScriptSec($2, PM_POWER_OFF_ALL);
 }
 		| TOK_B_CYCLE script_list TOK_E_CYCLE {
-    $$ = (char *)makePowerCycleSec($2);
+    $$ = (char *)makeScriptSec($2, PM_POWER_CYCLE);
+}
+		| TOK_B_CYCLE_ALL script_list TOK_E_CYCLE_ALL {
+    $$ = (char *)makeScriptSec($2, PM_POWER_CYCLE_ALL);
 }
 		| TOK_B_RESET script_list TOK_E_RESET {
-    $$ = (char *)makeResetSec($2);
+    $$ = (char *)makeScriptSec($2, PM_RESET);
+}
+		| TOK_B_RESET_ALL script_list TOK_E_RESET_ALL {
+    $$ = (char *)makeScriptSec($2, PM_RESET_ALL);
+}
+		| TOK_B_PING script_list TOK_E_PING {
+    $$ = (char *)makeScriptSec($2, PM_PING);
 }
 ;
 script_list	: script_list script_el 
@@ -463,16 +484,6 @@ static char *makeDevTimeout(char *s2)
     return s2;
 }
 
-static char *makeLogInSec(char *s2)
-{
-    if( current_spec->scripts[PM_LOG_IN] != NULL )
-	_errormsg("duplicate log_in script");
-
-    current_spec->scripts[PM_LOG_IN] = current_script;
-    current_script = NULL;
-    return s2;
-}
-
 static char *makeScriptEl(Script_El_Type mode, char *s2, List s3)
 {
     Spec_El *specl;
@@ -523,69 +534,16 @@ static Interpretation *makeMapLine(char *s3, char *s4)
     return interp;
 }
 
-static char *makeLogOutSec(char *s2)
+static char *makeScriptSec(char *s2, int com)
 {
-    if( current_spec->scripts[PM_LOG_OUT] != NULL )
-	_errormsg("duplicate log_out script");
-
-    current_spec->scripts[PM_LOG_OUT] = current_script;
+    if( current_spec->scripts[com] != NULL )
+	_errormsg("duplicate script");
+    current_spec->scripts[com] = current_script;
     current_script = NULL;
     return s2;
 }
+    
 
-static char *makeUpdatePlugsSec(char *s2)
-{
-    if( current_spec->scripts[PM_UPDATE_PLUGS] != NULL )
-	_errormsg("duplicate update_plugs script");
-    current_spec->scripts[PM_UPDATE_PLUGS] = current_script;
-    current_script = NULL;
-    return s2;
-}
-
-static char *makeUpdateNodesSec(char *s2)
-{
-    if( current_spec->scripts[PM_UPDATE_NODES] != NULL )
-	_errormsg("duplicate update_nodes script");
-    current_spec->scripts[PM_UPDATE_NODES] = current_script;
-    current_script = NULL;
-    return s2;
-}
-
-static char *makePowerOnSec(char *s2)
-{
-    if( current_spec->scripts[PM_POWER_ON] != NULL )
-	_errormsg("duplicate power_on script");
-    current_spec->scripts[PM_POWER_ON] = current_script;
-    current_script = NULL;
-    return s2;
-}
-
-static char *makePowerOffSec(char *s2)
-{
-    if( current_spec->scripts[PM_POWER_OFF] != NULL )
-	_errormsg("duplicate power_off script");
-    current_spec->scripts[PM_POWER_OFF] = current_script;
-    current_script = NULL;
-    return s2;
-}
-
-static char *makePowerCycleSec(char *s2)
-{
-    if( current_spec->scripts[PM_POWER_CYCLE] != NULL )
-	_errormsg("duplicate power_cycle script");
-    current_spec->scripts[PM_POWER_CYCLE] = current_script;
-    current_script = NULL;
-    return s2;
-}
-
-static char *makeResetSec(char *s2)
-{
-    if( current_spec->scripts[PM_RESET] != NULL )
-	_errormsg("duplicate reset script");
-    current_spec->scripts[PM_RESET] = current_script;
-    current_script = NULL;
-    return s2;
-}
 
 static char *makePlugNameLine(char *s2)
 {

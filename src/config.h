@@ -44,12 +44,17 @@
 #define PM_LOG_OUT          1
 #define PM_UPDATE_PLUGS     2
 #define PM_UPDATE_NODES     3
-#define PM_POWER_ON         4
-#define PM_POWER_OFF        5
-#define PM_POWER_CYCLE      6
-#define PM_RESET            7
+#define PM_PING		    4
+#define PM_POWER_ON         5
+#define PM_POWER_ON_ALL	    6
+#define PM_POWER_OFF        7
+#define PM_POWER_OFF_ALL    8
+#define PM_POWER_CYCLE      9
+#define PM_POWER_CYCLE_ALL  10
+#define PM_RESET            11
+#define PM_RESET_ALL        12
 /* count of scripts above */
-#define NUM_SCRIPTS	    8
+#define NUM_SCRIPTS	    13
 
 /*
  * Script element (send, expect, or delay).

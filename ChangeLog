@@ -1,3 +1,7 @@
+2002-10-18 garlick
+	* Added several new script types and factored code for building scripts
+	  in parse.y (now there is one function - makeScriptSec()).
+
 2002-10-16 garlick
 	* Make Action struct private to device.c
 	* Move script names to config.h.
