@@ -28,17 +28,15 @@
 .TH PowerMan 1 "Release 1.0.0" "LLNL" "PowerMan"
 
 .SH NAME
-powerman \- issue power monitoring queries and power control commands
+powermand \- power control and monitoring daemon
 
 .SH SYNOPSIS
-.B powerman
+.B powermand
 .I "[-options]"
 .LP
-.B pm
-.I "[-options] [targets]"
 
 .SH DESCRIPTION
-.B powerman
+.B powermand
 allows power monitoring and power management on a 
 cluster of nodes to be performed independent of the underlying hardware.
 Options are described -in
@@ -49,16 +47,16 @@ below.
 .LP
 For an option in 
 .I [--on, --off, --reset, --cycle]
-.B powerman
+.B powermand
 will power on, power off, reset, or power cycle, respectively, the 
 target nodes.  If none of the above commands is provided 
-.B powerman [--whoson, --whosoff]
+.B powermand [--whoson, --whosoff]
 queries the target nodes for their power status and prints the names of 
 those that are on, one per line (but see -t and -r below).
 .LP
-.B powerman 
+.B powermand 
 runs anywhere allowed by TCP wrappers and communicates with the 
-.B powermand daemon on a management workstation equipped with power 
+.B powermandd daemon on a management workstation equipped with power 
 monitoring and control hardware.
 .LP
 
@@ -83,7 +81,7 @@ Provide an alternate name or location for the configuration file.
 .I "-f number"
 Set the maximum concurrency for underlying utilities.  The default is 256.
 .I "-l powermandir"
-Provide an alternate location for the PowerMan libraries.
+Provide an alternate location for the Powermand libraries.
 .I "-L"
 Log interactions to /tmp/powerman.conf.  N.B. Only the icebox module logs
 its interactions at this time.
@@ -112,10 +110,10 @@ $powermandir/<utility-support>
 .SH "ENVIRONMENT"
 The environment variable
 .B POWERMANDIR
-gives an alternative location for the powerman libraries and hardware specific
-modules, overriding the default "/usr/lib/powerman".  The "-l" option, 
+gives an alternative location for the powermand libraries and hardware specific
+modules, overriding the default "/usr/lib/powermand".  The "-l" option, 
 in turn, overrides the environment variable.  Similarly,
-.B POWERMANCONF
+.B POWERMANDCONF
 gives an alternative file for cluster configuration details.  It 
 overrides the default "/etc/powerman.conf" and is, in turn, overridden 
 by the "-c" option.   If the 
