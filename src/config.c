@@ -60,7 +60,6 @@ static List		tmp_specs = NULL;
  * Some configurable values - accessor functions defined below.
  */
 static struct timeval	conf_select_timeout = { 0L, 0L };
-static struct timeval	conf_write_pause = { 0L, 0L };
 static struct timeval	conf_update_inter = { 0L, 0L };
 static bool		conf_use_tcp_wrap = FALSE;
 static int		conf_listen_port = NO_PORT;
@@ -421,8 +420,6 @@ void conf_strtotv(struct timeval *tv, char *s)
 
 void conf_set_select_timeout(struct timeval *tv) { conf_select_timeout = *tv; }
 void conf_get_select_timeout(struct timeval *tv) { *tv = conf_select_timeout; }
-void conf_set_write_pause(struct timeval *tv)	{ conf_write_pause = *tv; }
-void conf_get_write_pause(struct timeval *tv)	{ *tv = conf_write_pause; }
 void conf_set_update_interval(struct timeval *tv) { conf_update_inter = *tv; }
 void conf_get_update_interval(struct timeval *tv) { *tv = conf_update_inter; }
 bool conf_get_use_tcp_wrappers(void)	        { return conf_use_tcp_wrap; }

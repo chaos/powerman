@@ -74,7 +74,6 @@ static Spec *check_Spec();
 static char *makeClientPort(char *s2);
 static char *makeDevTimeout(char *s2);
 static char *makeUpdate(char *s2);
-static char *makeInterDev(char *s2);
 static char *makeTimeOut(char *s2);
 static char *makeTCPWrappers();
 static char *makeGlobalSec(char *s2);
@@ -290,7 +289,6 @@ global_item_list : global_item_list global_item
 global_item	: TCP_wrappers
 		| client_port 
 		| timeout          /* select() loop pace */
-		| interdev         /* delay batween device commands */
 		| update           /* cluster update interval */
 ;
 TCP_wrappers	: TOK_TCP_WRAPPERS {
@@ -303,10 +301,6 @@ client_port	: TOK_CLIENT_PORT TOK_STRING_VAL {
 ;
 timeout		: TOK_TIMEOUT TOK_STRING_VAL {
     $$ = (char *)makeTimeOut($2);
-}
-;
-interdev	: TOK_INTERDEV TOK_STRING_VAL {
-    $$ = (char *)makeInterDev($2);
 }
 ;
 update		: TOK_UPDATE TOK_STRING_VAL {
@@ -390,15 +384,6 @@ static char *makeTimeOut(char *s2)
 
     conf_strtotv(&tv, s2);
     conf_set_select_timeout(&tv);
-    return s2;
-}
-
-static char *makeInterDev(char *s2)
-{
-    struct timeval tv;
-
-    conf_strtotv(&tv, s2);
-    conf_set_write_pause(&tv);
     return s2;
 }
 

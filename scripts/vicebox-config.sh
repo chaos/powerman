@@ -22,7 +22,6 @@ echo ""                                     >>$PM_CONFIG
 echo "begin global"                         >>$PM_CONFIG
 echo "  client listener port \"10101\""     >>$PM_CONFIG
 echo "  timeout interval \"0.1\""           >>$PM_CONFIG
-echo "  inter-device delay \"0.5\""         >>$PM_CONFIG
 echo "  update interval \"100.0\""          >>$PM_CONFIG
 echo "end global"                           >>$PM_CONFIG
 echo ""                                     >>$PM_CONFIG

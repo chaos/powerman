@@ -167,9 +167,6 @@ List conf_getnodes(void);
 void conf_set_select_timeout(struct timeval *tv);
 void conf_get_select_timeout(struct timeval *tv);
 
-void conf_set_write_pause(struct timeval *tv);
-void conf_get_write_pause(struct timeval *tv);
-
 void conf_set_update_interval(struct timeval *tv);
 void conf_get_update_interval(struct timeval *tv);
 

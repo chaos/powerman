@@ -1154,11 +1154,7 @@ bool dev_process_select(fd_set *rset, fd_set *wset, bool over_time)
 	    activity = TRUE;
 	}
 	if (FD_ISSET(dev->fd, wset)) {
-	    struct timeval tv_delay;
-
 	    dev_handle_write(dev);
-	    conf_get_write_pause(&tv_delay);
-	    Delay(&tv_delay);		/* FIXME: blocks whole select loop! */
 	    activity = TRUE;
 	}
 	/* Since I/O took place we need to see if the scripts should run */
