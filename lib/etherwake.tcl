@@ -12,9 +12,9 @@
 # etherwake
 ####################################################################
 
-namespace eval etherwake {}
+namespace eval etherwake {
 
-proc etherwake::power {command node_list} {
+proc power {command node_list} {
     set dir ""
     if { $command == "on" } {
         set dir "off"
@@ -24,15 +24,15 @@ proc etherwake::power {command node_list} {
     }
     if { $command == "reset" } {
         set dir "both"
-	etherwake::power "off" $node_list
-	if {$tkdanger} {
-	    set ::etherwake::delay_list $node_list
+	::powerlib::etherwake::power "off" $node_list
+	if {$::app::tkdanger} {
+	    set ::powerlib::etherwake::delay_list $node_list
 	    after 3000 {
-		etherwake::power "on" $::etherwake::delay_list
+		::powerlib::etherwake::power "on" $::etherwake::delay_list
 	    }
 	} else {
 	    after 3000 
-	    etherwake::power "on" $node_list
+	    ::powerlib::etherwake::power "on" $node_list
 	}
 	return
     }
@@ -40,12 +40,13 @@ proc etherwake::power {command node_list} {
         puts "etherwake::power does not understand $command"
     } else {
 	foreach node $node_list {
-	    if {[llength [powerlib::check $node $dir]] > 0} {	
-		set mac_addr [lindex $powerlib::control($node) 1]
-		set etherwake_command [format "exec %s/ether-wake %s" $app::lib_dir $mac_addr]
+	    if {[llength [::powerlib::check $node $dir]] > 0} {	
+		set mac_addr [lindex $::powerlib::control($node) 1]
+		set etherwake_command [format "exec %s/ether-wake %s" $::app::lib_dir $mac_addr]
 		eval $etherwake_command
 	    }
 	}
     }
 }
 
+}

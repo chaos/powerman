@@ -22,37 +22,37 @@ proc usage msg {
 
 namespace eval app {}
 
-set app::config_file "/etc/powerman.conf"
+set ::app::config_file "/etc/powerman.conf"
 if {[info exists env(POWERMANCONF)]} {
-    set app::config_file $env(POWERMANCONF)
+    set ::app::config_file $env(POWERMANCONF)
 }
-set app::lib_dir "/usr/lib/powerman"
+set ::app::lib_dir "/usr/lib/powerman"
 if {[info exists env(POWERMANLIBDIR)]} {
-    set app::lib_dir $env(POWERMANLIBDIR)
+    set ::app::lib_dir $env(POWERMANLIBDIR)
 }
-set debug 0
-set app::verbose 0
-set app::tkdanger 0
+set ::app::debug 0
+set ::app::verbose 0
+set ::app::tkdanger 0
 for {set i 0} {$i < $argc} {incr i} {
   switch -- [lindex $argv $i] {
       "-c" { 
 	  incr i
-	  set app::config_file [lindex $argv $i]
+	  set ::app::config_file [lindex $argv $i]
       }
       "-d" {set debug 1}
       "-l" { 
 	  incr i
-	  set app::lib_dir [lindex $argv $i]
+	  set ::app::lib_dir [lindex $argv $i]
       }
       "-q" {set query 1}
-      "-v" {set app::verbose 1}
+      "-v" {set ::app::verbose 1}
       default {
 	usage [format "Unrecognized argument: %s" [lindex $argv $i]]
       }
   } 
 }
 
-if {![file exists $app::config_file]} {
+if {![file exists $::app::config_file]} {
    usage "Can't find config file $app::config_file"
 }
 
@@ -74,13 +74,13 @@ if {[file exists $powerlib]} {
 
 # Assemble the list of nodes in the cluster
 
-if {[llength $powerlib::nodes] < 1} {usage "I don't see any nodes"}
+if {[llength $::powerlib::nodes] < 1} {usage "I don't see any nodes"}
 
 # Sequence through nodes printing a 1 for on and a 0 for off
 
-set response [powerlib::check $powerlib::nodes on]
+set response [::powerlib::check $::powerlib::nodes on]
 set status_line ""
-foreach node $powerlib::nodes {
+foreach node $::powerlib::nodes {
     if {[lsearch -exact $response $node] < 0} {
 	set status_line [format "%s%s" $status_line "0"]
     } else {
