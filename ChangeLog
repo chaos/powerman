@@ -9,7 +9,7 @@
     * src/client.c: sort the list of nodes returned by pm --list.
 
     * src/device.c: emit warning if node does not have plug name assigned
-    after login script completes.
+    after login script completes (successfully or with timeout).
 
 2003-08-01 Jim Garlick <garlick@llnl.gov>
 

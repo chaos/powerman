@@ -751,7 +751,7 @@ static void _act_completion(Action *act, Device *dev)
     }
 }
 
-static void _verify_plugsassigned(Device *dev)
+static void _verify_plugassign(Device *dev)
 {
     Plug *plug;
     ListIterator itr;
@@ -759,7 +759,7 @@ static void _verify_plugsassigned(Device *dev)
     itr = list_iterator_create(dev->plugs);
     while ((plug = list_next(itr))) {
         if (plug->name == NULL) {
-            err(FALSE, "_verify_plugsassigned(%s): node %s: not found\n", 
+            err(FALSE, "_verify_plugassign(%s): node %s: not found\n", 
                     dev->name, plug->node);
         }
     }
@@ -793,9 +793,11 @@ static void _process_action(Device * dev, struct timeval *timeout)
         if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
             if (!(dev->connect_state == DEV_CONNECTED)) 
                 act->errnum = ACT_ECONNECTTIMEOUT;
-            else if (!dev->logged_in)
+            else if (!dev->logged_in) {
                 act->errnum = ACT_ELOGINTIMEOUT;
-            else
+                /* Need a warning here for any unassigned plug names */
+                _verify_plugassign(dev);
+            } else
                 act->errnum = ACT_EEXPFAIL;
 
             if (act->vpf_fun) {
@@ -851,7 +853,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 if (act->com == PM_LOG_IN) {
                     dev->logged_in = TRUE;
                     /* Need a warning here for any unassigned plug names */
-                    _verify_plugsassigned(dev);
+                    _verify_plugassign(dev);
                 }
                 if (act->complete_fun)
                     _act_completion(act, dev);
