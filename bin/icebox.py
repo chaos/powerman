@@ -86,9 +86,9 @@ class PortClass:
         good_response = 0
         while (not good_response and (retry_count < 10)):
             retry_count = retry_count + 1
-            delay = 0
+            delay = 0.1
             if (setting):
-                delay = PORT_DELAY
+                delay = self.PORT_DELAY
             response = pm_utils.prompt(tty, target, delay)
             if(response == ''):
                 continue
@@ -120,6 +120,7 @@ class BoxClass:
     ports            = {}
     ICEBOX_SIZE      = 10
     BOX_DELAY        = 3.5
+    REBOOT_DELAY        = 3.5
 
     def __init__(self, name):
         "Box class initialization"
@@ -139,7 +140,7 @@ class BoxClass:
             if (port.node.is_marked()):
                 if (not req): req = port.node.message
                 num_requested = num_requested + 1
-        if (num_requested == self.ICEBOX_SIZE):
+        if ((num_requested == self.ICEBOX_SIZE) or (req == 'hwreset'):
             # print "Doing whole box command", com
             for port_name in self.ports.keys():
                 self.ports[port_name].node.unmark()
@@ -148,7 +149,7 @@ class BoxClass:
             if (req == 'query'):
                 com = 'ns'
             elif (req == 'rquery'):
-                revers = 1
+                reverse = 1
                 com = 'ns'
             elif (req == 'off'):
                 setting = 1
@@ -163,6 +164,9 @@ class BoxClass:
                 com = 'ts'
             elif (req == 'tempf'):
                 com = 'tsf'
+            elif (req == 'hwreset'):
+                com = 'rb'
+                setting = 1
             else:
                 pm_utils.exit_error(3, req)
             target = 'c' + self.name + com
@@ -170,9 +174,12 @@ class BoxClass:
             good_response = 0
             while (not (good_response == 10) and (retry_count < 10)):
                 retry_count = retry_count + 1
-                delay = 0
+                delay = 0.1
                 if (setting):
-                    delay = BOX_DELAY
+                    if (com == 'rb'):
+                        delay = self.REBOOT_DELAY
+                    else:
+                        delay = self.BOX_DELAY
                 response = pm_utils.prompt(tty, target, delay)
                 if(response == ''):
                     continue
@@ -199,24 +206,29 @@ class BoxClass:
                         port = self.ports[port_name]
                     except KeyError:
                         continue
-                    if(not port.node.is_marked()):
+                    node = port.node
+                    if(not node.is_marked()):
+                        # If it is marked then this is a second or
+                        # later try to get all ten responses from the
+                        # box, i.e. some of the response was garbled.
                         good_response = good_response + 1
-                        nm = port.node.name
                         if (com == 'ns'):
-                            state = val
-                            port.node.state = state
-                            if (((state == '0') and reverse) or ((state == '1') and not reverse)):
-                                port.node.mark(nm)
+                            node.state = val
+                            if (((node.state == '0') and reverse) or ((node.state == '1') and not reverse)):
+                                node.mark(node.name)
+                                # pm_utils.log("node %s in state .%s." % (node.name, node.state))
                             else:
-                                port.node.mark("skip")
+                                node.mark("skip")
+                                # pm_utils.log("temprarily mark %s" % node.name)
                         elif((com == 'ts') or (com == 'tsf')):
                             temps = val
-                            port.node.mark("%s:%s" % (nm,temps))
+                            node.mark("%s:%s" % (node.name,temps))
             if (good_response == 10):
                 for port_name in self.ports.keys():
                     port = self.ports[port_name]
                     if (port.node.message == "skip"):
                         port.node.unmark()
+                        # pm_utils.log("now unmark %s" % port.node.name)
             else:
                 pm_utils.exit_error(21, "box " + self.name)
         else:
@@ -230,7 +242,6 @@ class TtyClass:
     name       = ""
     boxes      = {}
     locked     = 0
-    prev_attrs = None
 
     def __init__(self, name):
         "Tty class initialization"

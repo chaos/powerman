@@ -16,7 +16,7 @@ import time
 
 def usage(msg):
     "Tha usage message"
-    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-L] [-q] [-r] [-t] [-T] [-V] [-w node,...] [on | off | reset]"
+    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-L] [-q] [-r] [-R] [-t] [-T] [-V] [-w node,...] [on | off | reset]"
     print "-a       = on/off/reset all nodes"
     print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
     print "-f fan   = fanout for parallelism (default: 256 where implemented)"
@@ -24,6 +24,7 @@ def usage(msg):
     print "-L       = log commands and replies to /tmp/log_file (icebox only)"
     print "-q       = be quiet about any errors that may have occurred"
     print "-r       = reverse sense, i.e. check for  nodes that are off"
+    print "-R       = reset power control hardware (icebox only)"
     print "-t       = query temperatur rather than power status"
     print "-T       = print a trace of icebox replies to /tmp/powerman.trace"
     print "-V       = print version and exit"
@@ -81,7 +82,7 @@ except KeyError:
 # Parse the command line, check for sanity, and set globals
 
 try:
-    options, args = getopt.getopt(sys.argv[1:], 'ac:f:l:LqrtTVw:')
+    options, args = getopt.getopt(sys.argv[1:], 'ac:f:l:LqrRtTVw:')
 except getopt.error:
     usage("Error processing options")
 
@@ -103,6 +104,8 @@ for opt in options:
         verbose = 0
     elif (op == '-r'):
         reverse = 1
+    elif (op == -R):
+        com = "hwreset"
     elif (op == '-t'):
         com = "temp"
     elif (op == '-T'):
@@ -130,7 +133,7 @@ if (not com):
         com = "rquery"
     else:
         com = "query"
-if (not ((com == 'off') or (com == 'on') or (com == 'reset') or (com == 'temp') or (com == 'query') or (com == 'rquery'))):
+if (not ((com == 'off') or (com == 'on') or (com == 'reset') or (com == 'temp') or (com == 'query') or (com == 'rquery') or (com == 'hwreset'))):
     usage ("\n\nUnrecognized command.")
     
         

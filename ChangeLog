@@ -119,4 +119,8 @@
 #	rather than self.locked in the tty class method "do_command".
 #	The comm == 'temp' case was misshandled in pm.  The "message"
 #	for temperature checking a single node had a syntax error.
+#
+#	2001-10-08
+#	          Added the '-R' option to reset power control hardware.
+#	Applicable to iceboxes only at this point.
 ####################################################################

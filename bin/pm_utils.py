@@ -112,8 +112,7 @@ def node_cmp(n1, n2):
 def prompt(fd, string, delay):
     log("say:  " + string)
     os.write(fd, string + '\r\n')
-    if (delay > 0):
-        time.sleep(delay)
+    if (delay): time.sleep(delay)
     done = 0
     retry_count = 0
     response = ""
@@ -135,6 +134,7 @@ def prompt(fd, string, delay):
         else:
             log("icebox needs its firmware updated")
             signal.alarm(READ_TIMEOUT)
+            extra = ''
             try:
                 extra = os.read(fd, BUF_SIZE)
             except OSError:
