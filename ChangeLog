@@ -85,3 +85,4 @@
 	* Convert completely over to hostlist.c routines in client.
 	* Remove --soft option and always warn if plug=on and node=off.
 	* Removed duplicate hostlist handling from pm_string.c.
+	* Added powerman init script

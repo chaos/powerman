@@ -742,7 +742,7 @@ print_readable(Config *conf, List cluster)
 	list_iterator_destroy(itr);
 
 	/* Report the status */
-	if (! hostlist_is_empty(off)) {
+	if (! hostlist_is_empty(on)) {
 		hostlist_ranged_string(on, sizeof(tmpstr), tmpstr);
 		printf("on\t%s\n", tmpstr);
 	}

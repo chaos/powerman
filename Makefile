@@ -88,6 +88,12 @@ install: all
 	$(INSTALL) -m 644 man/powerman.conf.5  	$(DESTDIR)$(mandir)/man5
 	$(mkinstalldirs)			$(DESTDIR)$(piddir)
 	$(mkinstalldirs)			$(DESTDIR)$(docdir)
+	if ! test -f $(DESTDIR)/etc/rc.d/init.d/powerman; then \
+	  $(mkinstalldirs) $(DESTDIR)/etc/rc.d/init.d; \
+	  $(INSTALL) -m 755 scripts/powerman.init \
+	  $(DESTDIR)/etc/rc.d/init.d/powerman; \
+	fi
+
 
 uninstall: distclean
 	rm -f $(DESTDIR)$(bindir)/powerman

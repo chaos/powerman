@@ -68,14 +68,32 @@ DESTDIR="$RPM_BUILD_ROOT" make install
 rm -rf "$RPM_BUILD_ROOT"
 
 %pre
+if [ -x /etc/rc.d/init.d/powerman ]; then
+  if /etc/rc.d/init.d/powerman status | grep running >/dev/null 2>&1; then
+    /etc/rc.d/init.d/powerman stop
+  fi
+fi
 
 %post
-# Once I have a good powerman configuration script I'll probably want to
-# run it here.
+if [ -x /etc/rc.d/init.d/powerman ]; then
+  [ -x /sbin/chkconfig ] && /sbin/chkconfig --del powerman
+  [ -x /sbin/chkconfig ] && /sbin/chkconfig --add powerman
+  if ! /etc/rc.d/init.d/powerman status | grep running >/dev/null 2>&1; then
+    /etc/rc.d/init.d/powerman start
+  fi
+fi
 
 %preun
-# If there'e anything in post that needs to be undone, or a backup of
-# a config file to be made, I can perhaps do it here.
+if [ "$1" = 0 ]; then
+  if [ -x /etc/rc.d/init.d/powerman ]; then
+    [ -x /sbin/chkconfig ] && /sbin/chkconfig --del powerman
+    if /etc/rc.d/init.d/powerman status | grep running >/dev/null 2>&1; then
+      /etc/rc.d/init.d/powerman stop
+    fi
+  fi
+fi
+
+
 
 %files
 %defattr(0644,root,root)
@@ -86,6 +104,7 @@ rm -rf "$RPM_BUILD_ROOT"
 /etc/powerman/wti.dev
 /etc/powerman/vicebox.dev
 %config(noreplace) /etc/powerman/powerman.conf
+%config(noreplace) /etc/rc.d/init.d/powerman
 /usr/man/man1/powerman.1*
 /usr/man/man1/powermand.1*
 /usr/man/man5/powerman.conf.5*
