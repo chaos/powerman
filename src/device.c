@@ -1273,10 +1273,24 @@ static void _match_subexpressions(Device * dev, Action * act, char *expect)
 
     itr = list_iterator_create(act->cur->u.expect.map);
     while ((interp = list_next(itr))) {
-        char *str;          
-        char *plug_name = strcmp(interp->plug_name, "%s") == 0 
-            ? act->target : interp->plug_name;
-        char *node = _plug_to_node(dev, plug_name);
+        char *str, *plug_name, *node;          
+
+        /* Command: map $1 "1"
+         *   Copy the results of the regex match to the arglist for the 
+         *   node associated with plug 1. 
+         * Command: map $1 "%s"
+         *   Copy the results of the regex match to the arglist for the
+         *   target node.  This is used in the single-plug status command
+         *   where the node's plug name is passed in.
+         * Command: map $1 $variable
+         *   Copy the results of the regex match to a variable whose scope
+         *   is local to the script.
+         */
+        if (!strcmp(interp->plug_name, "%s"))
+            plug_name = act->target;
+        else 
+            plug_name = interp->plug_name;
+        node = _plug_to_node(dev, plug_name);
 
         if (node == NULL)   /* unused plug? */
             continue;

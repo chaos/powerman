@@ -702,12 +702,15 @@ static char *makeNode(char *s2, char *s3, char *s4)
     if(dev == NULL) 
         _errormsg("unknown device");
     /*
-     * Plugs are defined in Spec, and they must be searched to match the node
+     * Plugs are defined in Spec, and they must be searched to match the node,
+     * unless no plugs are defined and then anything goes.
      */
-    plug = list_find_first(dev->plugs, (ListFindF) dev_plug_match, s4);
-    if( plug == NULL )  {
-        fprintf(stderr, "%s\n", s4);
-        _errormsg("unknown plug");
+    if (!list_is_empty(dev->plugs)) { 
+        plug = list_find_first(dev->plugs, (ListFindF) dev_plug_match, s4);
+        if( plug == NULL )  {
+            fprintf(stderr, "%s\n", s4);
+            _errormsg("unknown plug");
+        }
     }
     plug->node = Strdup(s2);
     return s2;

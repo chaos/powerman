@@ -1,3 +1,9 @@
+2003-04-10 garlick
+    * Moved ibmasm.dev to ibmrsa.dev and implemented first cut on RSA telnet
+      protocol.
+    * If no plugs defined in device config, allow arbitrary plug names in
+      the node config lines.
+
 2003-03-31 garlick
     * Adjust power cycle for all devices to wait at least 2 sec between off/on.
       Was 0.7sec on icebox and this seemed to cause initialization problems 
