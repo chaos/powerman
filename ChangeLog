@@ -57,3 +57,4 @@
 	* Merged general code review suggestions in to TODO file
 	  (but not the specific yet)
 	* Added support for quadrics style host ranges in powerman client.
+	* Move powermand from bin to sbin.
