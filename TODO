@@ -2,6 +2,10 @@
 # $Id$
 ####################################################################
 
+New stuff:
+	* ./powerman  -x --list --noexec snerg[1-4.] snerg5
+	  powerman: Assertion failed: pm_string.c, line 109
+
 Andrew's old list:
 	* telnet based query and control for icebox
 	* introduce configuration generator (2 days)

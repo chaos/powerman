@@ -70,11 +70,12 @@ static const struct option long_options[] =
 static const struct option *longopts = long_options;
 
 typedef enum {
-	CMD_ERROR, CMD_WHOSON, CMD_WHOSOFF, CMD_POWER_ON, 
-	CMD_POWER_OFF, CMD_POWER_CYCLE, CMD_RESET, CMD_NAMES,
+	CMD_ERROR, CMD_QUERY_ON, CMD_QUERY_OFF, CMD_POWER_ON, 
+	CMD_POWER_OFF, CMD_POWER_CYCLE, CMD_RESET, CMD_LISTTARG,
 } _command_t;
 
-typedef struct config_struct {
+/* config is the result of argument processing */
+typedef struct {
 	String host;
 	String service;
 	int port;
@@ -88,8 +89,9 @@ typedef struct config_struct {
 	List reply;
 	hostlist_t ntarg;
 	bool noexec;
-}Config;
+} Config;
 
+static void dump_Conf(Config *conf);
 static Config *process_command_line(int argc, char ** argv);
 static void usage(char *prog);
 static void read_Targets(Config *conf, char *name);
@@ -177,22 +179,26 @@ process_command_line(int argc, char **argv)
 	while ((c = getopt_long(argc, argv, OPT_STRING, longopts, &longindex)) != -1) 
 	{
 		switch(c) {
+		/* 
+		 * These just do something quick and exit.
+		 */
+		case 'V':	/* --version */
+			printf("%s-%s\n", PROJECT, VERSION);
+			exit(0);
+		case 'L':	/* --license */
+			printf("%s", powerman_license);
+			exit(0);
+		case 'h':	/* --help */
+			usage(argv[0]);
+			exit(0);
+		/* 
+		 * The main commands.
+		 */
 		case 'c':	/* --cycle */
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_POWER_CYCLE;
 			break;
-		case 'd':	/* --host */
-			if (conf->host != NULL)
-				free_String( (void *)conf->host );
-			conf->host = make_String(optarg);
-			break;
-		case 'F':	/* --file */
-			read_Targets(conf, optarg);
-			break;
-		case 'h':	/* --help */
-			usage(argv[0]);
-			exit(0);
 		case '1':	/* --on */
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
@@ -203,13 +209,36 @@ process_command_line(int argc, char **argv)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_POWER_OFF;
 			break;
-		case 'L':	/* --license */
-			printf("%s", powerman_license);
-			exit(0);
+		case 'q':	/* --queryon */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_QUERY_ON;
+			break;
+		case 'Q':	/* --queryoff */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_QUERY_OFF;
+			break;
+		case 'r':	/* --reset */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_RESET;
+			break;
 		case 'l':	/* --list */
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
-			conf->com = CMD_NAMES;
+			conf->com = CMD_LISTTARG;
+			break;
+		/* 
+		 * Modifiers.
+		 */
+		case 'd':	/* --host */
+			if (conf->host != NULL)
+				free_String( (void *)conf->host );
+			conf->host = make_String(optarg);
+			break;
+		case 'F':	/* --file */
+			read_Targets(conf, optarg);
 			break;
 		case 'p':	/* --port */
 			/* Is optarg a legal service value integer? */
@@ -222,30 +251,12 @@ process_command_line(int argc, char **argv)
 		case 'n':	/* --noexec */
 			conf->noexec = TRUE;
 			break;
-		case 'q':	/* --queryon */
-			if (conf->com != CMD_ERROR)
-				exit_msg(EXACTLY_ONE_MSG);
-			conf->com = CMD_WHOSON;
-			break;
-		case 'Q':	/* --queryoff */
-			if (conf->com != CMD_ERROR)
-				exit_msg(EXACTLY_ONE_MSG);
-			conf->com = CMD_WHOSOFF;
-			break;
-		case 'r':	/* --reset */
-			if (conf->com != CMD_ERROR)
-				exit_msg(EXACTLY_ONE_MSG);
-			conf->com = CMD_RESET;
-			break;
 		case 's':	/* --soft */
 			conf->soft = TRUE;
 			break;
 		case 'v':	/* --verify */
 			conf->verify = TRUE;
 			break;
-		case 'V':	/* --version */
-			printf("%s-%s\n", PROJECT, VERSION);
-			exit(0);
 		case 'x':	/* --regex */
 			conf->regex = TRUE;
 			break;
@@ -261,33 +272,37 @@ process_command_line(int argc, char **argv)
 		exit_msg(EXACTLY_ONE_MSG);
 
 	/*
-	 * This code used to push args directly onto conf->targ.
-	 * Now we build conf->ntarg with Mark's hostlist_t package to
-	 * get support for Quadrics style host ranges and push the members
-	 * of this list onto the native powerman list one by one afterwards.
-	 * Globs and regexes understdood by powerman should pass right through.
-	 * XXX I think the plan is to support Mark's hostlist_t type throughout
-	 * powerman eventually, but we're not there yet.
+	 * Prior code pushed args directly onto conf->targ.
+	 * This code builds conf->ntarg with Mark's hostlist_t package to
+	 * get support for Quadrics style host ranges.  
 	 */
 	while (optind < argc)
 	{
-		hostlist_push(conf->ntarg, argv[optind]);
+		if (conf->regex)
+			hostlist_push_host(conf->ntarg, argv[optind]);
+		else
+			hostlist_push(conf->ntarg, argv[optind]);
 		optind++;
 	}
-	/* Now deconstruct conf->ntarg and build conf->targ */
 	if (hostlist_count(conf->ntarg) > 0) 
 	{
 		char *host;
+		hostlist_iterator_t iter;
 
-		while ((host = hostlist_shift(conf->ntarg))) {
+		iter = hostlist_iterator_create(conf->ntarg);
+		while ((host = hostlist_next(iter)) != NULL) {
 			targ = make_String(host);
 			list_append(conf->targ, (void *)targ);
+			free(host);
 		}
+		hostlist_iterator_destroy(iter);
 	}
+
+	/* If --noexec, just say what we would have done but don't contact
+	 * the server.
+	 */
 	if (conf->noexec) {
-		/* show conf->targ */
-		print_Targets(conf->targ);
-		exit(0);
+		dump_Conf(conf);
 	}
 	return conf;
 }
@@ -303,7 +318,7 @@ usage(char * prog)
   -c --cycle     Power cycle targets   -r --reset    Reset targets\n\
   -1 --on        Power on targets      -0 --off      Power off targets\n\
   -q --queryon   List on targets       -Q --queryoff List off targets\n\
-  -z --report    List on/off/unknown   -l --list     List targets (no action)\n\
+  -z --report    List on/off/unknown   -l --list     List targets\n\
   -h --help      Display this help\n");
     printf("MODIFIER OPTIONS:\n\
   -s --soft      Use soft power status   -v --verify    Verify state change\n\
@@ -314,6 +329,25 @@ usage(char * prog)
   Target hostname arguments - may contain glob [default] or regex [-x]\n");
 }
 
+static void
+dump_Conf(Config *conf)
+{
+	char tmpstr[1024];
+
+	printf("Command: %s\n", 
+			conf->com == CMD_RESET ? "Reset targets" :
+			conf->com == CMD_POWER_ON ? "Power on targets" :
+			conf->com == CMD_POWER_OFF ? "Power off targets" :
+			conf->com == CMD_POWER_CYCLE ? "Power cycle targets" :
+			conf->com == CMD_QUERY_ON ? "List on targets" :
+			conf->com == CMD_QUERY_OFF ? "List off targets" :
+			conf->com == CMD_LISTTARG ? "List targets" : "Error");
+
+	hostlist_ranged_string(conf->ntarg, sizeof(tmpstr), tmpstr);
+	printf("Targets: %s\n", tmpstr);
+	/*print_Targets(conf->targ);*/
+	exit(0);
+}
 /* 
  *   This should be changed to allow for a '-' in place of the 
  * file name, which would then cause it to read from stdin.
@@ -557,9 +591,9 @@ send_server(Config *conf, String str)
 
 	switch(conf->com)
 	{
-	case CMD_WHOSON      :
-	case CMD_WHOSOFF     :
-	case CMD_NAMES       :
+	case CMD_QUERY_ON      :
+	case CMD_QUERY_OFF     :
+	case CMD_LISTTARG       :
 		sprintf(buf, GET_NAMES_FMT, get_String(str));
 		break;
 	case CMD_POWER_ON    :
@@ -588,9 +622,9 @@ publish_reply(Config *conf, List cluster, List reply)
 
 	switch(conf->com)
 	{
-	case CMD_WHOSON      :
+	case CMD_QUERY_ON      :
 		state = ON;
-	case CMD_WHOSOFF     :
+	case CMD_QUERY_OFF     :
 		if( conf->readable == TRUE ) 
 			print_readable(conf, cluster);
 		else
@@ -606,7 +640,7 @@ publish_reply(Config *conf, List cluster, List reply)
 			print_readable(conf, cluster);
 		}
 		break;
-	case CMD_NAMES       :
+	case CMD_LISTTARG       :
 		print_Targets(reply);
 		break;
 	default :
