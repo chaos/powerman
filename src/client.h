@@ -57,13 +57,15 @@ struct client_struct {
      MAGIC;
 };
 
-void cli_handle_read(Protocol * client_prot, Cluster * cluster,
-			List acts, Client * c);
+void cli_handle_read(Cluster * cluster, List acts, Client * c);
 void cli_handle_write(Client * c);
 void cli_reply(Cluster * cluster, Action * act);
 
 Client *cli_create();
 int cli_match(Client * client, void *key);
 void cli_destroy(Client * client);
+
+void cli_init(void);
+void cli_fini(void);
 
 #endif				/* CLIENT_H */

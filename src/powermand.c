@@ -40,7 +40,6 @@
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/stat.h>
 #include <syslog.h>
 #include <stdio.h>
 #include <assert.h>
@@ -93,16 +92,6 @@ static const struct option long_options[] = {
     {"telemetry", no_argument, 0, 't'},
     {0, 0, 0, 0}
 };
-
-void _validate_config_file(char *filename)
-{
-    struct stat stbuf;
-
-    if (stat(filename, &stbuf) < 0)
-	err_exit(TRUE, "%s", filename);
-    if ((stbuf.st_mode & S_IFMT) != S_IFREG)
-	err_exit(FALSE, "%s is not a regular file\n", filename);
-}
 
 /* initialize all the power control devices */
 void _initialize_devs(List devs, bool debug_telemetry)
@@ -171,20 +160,14 @@ int main(int argc, char **argv)
     if (geteuid() != 0)
 	err_exit(FALSE, "must be root");
 
-    if (config_filename == NULL)
-	config_filename = DFLT_CONFIG_FILE;
-    _validate_config_file(config_filename);
-
     Signal(SIGHUP, noop_handler);
     Signal(SIGTERM, exit_handler);
 
-    /* build the client protocol */
-    g->client_prot = conf_init_client_protocol();
+    cli_init();
 
-    /* call yacc/lex parser */
-    parse_config_file(config_filename);
+    /* parses config file */
+    conf_init(config_filename ? config_filename : DFLT_CONFIG_FILE);
 
-    /* drop controlling tty, open syslog, etc */
     if (daemonize)
 	daemon_init();
 
@@ -280,8 +263,7 @@ static void do_select_loop(Globals * g)
 		continue;
 
 	    if (FD_ISSET(client->fd, &rset))
-		cli_handle_read(g->client_prot, g->cluster,
-				   g->acts, client);
+		cli_handle_read(g->cluster, g->acts, client);
 	    if (FD_ISSET(client->fd, &wset))
 		cli_handle_write(client);
 	    /* Is this connection done? */
@@ -464,7 +446,6 @@ static Globals *make_Globals()
     g->clients = list_create((ListDelF) cli_destroy);
     g->status = Quiescent;
     g->acts = list_create((ListDelF) act_destroy);
-    g->client_prot = NULL;
     g->specs = list_create((ListDelF) conf_spec_destroy);
     g->devs = list_create((ListDelF) dev_destroy);
     g->cluster = conf_cluster_create();
@@ -474,17 +455,12 @@ static Globals *make_Globals()
 #if 0
 static void free_Globals(Globals * g)
 {
-    int i;
-
     list_destroy(g->specs);
     conf_cluster_destroy(g->cluster);
     list_destroy(g->acts);
     listen_destroy(g->listener);
     list_iterator_create(g->clients);
     list_destroy(g->clients);
-    for (i = 0; i < g->client_prot->num_scripts; i++)
-	list_destroy(g->client_prot->scripts[i]);
-    Free(g->client_prot);
     list_destroy(g->devs);
     Free(g);
 }

@@ -226,7 +226,7 @@ int conf_interp_match(Interpretation * interp, void *key);
 void conf_interp_destroy(Interpretation * interp);
 void conf_strtotv(struct timeval *tv, char *s);
 
-/* Bison generated code's externs */
-int parse_config_file(char *filename);
+void conf_init(char *filename);
+void conf_fini(void);
 
 #endif				/* CONFIG_H */
