@@ -16,3 +16,4 @@
 * Redesign the device language to be more general.
 * Fix hostlist_* error handling to use lsd errors
 * Spec file should restart daemon if already running (see swmlogger.spec)
+* Turn off debugging in production release and make -d option go away.
