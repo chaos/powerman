@@ -6,6 +6,8 @@
 
     * etc/ipmipower.dev: Last regex didn't compile - try this one?
 
+    * powerman.spec: fix test in %post scriptlet
+
 2003-01-09 Albert Chu <chu11@llnl.gov>
 
     * etc/ipmipower.dev: Added additional expressions that result

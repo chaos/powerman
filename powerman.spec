@@ -64,7 +64,7 @@ if [ -x /etc/rc.d/init.d/powerman ]; then
   fi
   [ -x /sbin/chkconfig ] && /sbin/chkconfig --del powerman
   [ -x /sbin/chkconfig ] && /sbin/chkconfig --add powerman
-  if test $WASRUNNING = 1; then
+  if test x$WASRUNNING = x1; then
     /etc/rc.d/init.d/powerman start
   fi
 fi
