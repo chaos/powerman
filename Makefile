@@ -28,8 +28,6 @@ tests :
 install: all
 	$(mkinstalldirs) 			$(DESTDIR)$(bindir)
 	$(INSTALL) src/powerman			$(DESTDIR)$(bindir)/
-	ln -s $(bindir)/powerman		$(DESTDIR)$(bindir)/off
-	ln -s $(bindir)/powerman		$(DESTDIR)$(bindir)/on
 	ln -s $(bindir)/powerman		$(DESTDIR)$(bindir)/pm
 	$(mkinstalldirs) 			$(DESTDIR)$(sbindir)
 	$(INSTALL) src/powermand		$(DESTDIR)$(sbindir)/
