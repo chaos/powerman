@@ -238,7 +238,7 @@ def usage(msg):
 
 # Begin main routine processing.
 
-Version = "pm: Powerman 0.1.7"
+Version = "pm: Powerman 0.1.8"
 
 # Check for level of permision and exit for non-root users
 

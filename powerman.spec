@@ -6,8 +6,8 @@
 ####################################################################
  
 %define name    powerman
-%define version 0.1.7
-%define release 4
+%define version 0.1.8
+%define release 1
 
 Name: %name
 Version: %version
