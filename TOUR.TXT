@@ -1,3 +1,4 @@
+CVSROOT="/slc/cvs"
 POWERMANSRCDIR="/home/auselton/src/powerman"
 cd $POWERMANSRCDIR
 ls -l 
