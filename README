@@ -1,56 +1,25 @@
-PowerMan version 1.0.16                                     26 December 2002
+PowerMan version 1.0.17                                        26 April 2003
 
 +--------------+
 | New Features |
 +--------------+
 
-o Changes to powerman.conf (deprecated syntax works, warnings issued):
-  - "tcpwrappers" now takes "on" or "off" argument
-  - "client listener port"  shortened to "port"
-  - "begin nodes", "end nodes", "begin global", "end global" no longer needed.
-  Syntax for device specifications has changed (old syntax not supported).
+o There is now a "telnet" device type which filters telnet escapes out of
+  the device control stream and manages some trivial option negotiation.
+  Telnet escape sequences have been removed from device configurations.
 
-o --device client option dumps server statistics for each RPC.
-  This option can also be used by firmware update scripts to create a list
-  of RPC's  The output is one line as follows per RPC:
+o Plug names may be omitted from device configuration, in which case
+  node configuration lines provide the plug names for each instantiation
+  of the device.
 
-     rpc_name: reconnects=N actions=M type=device_type hosts=host_range
-
-o --telemetry client option facilitates debugging of device scripts by 
-  displaying the powermand<->RPC communication for the action being performed
-  by the client.  This option may also be useful in diagnosing a malfunctioning
-  RPC (since PowerMan cannot distinguish between "no response" and 
-  "unexpected response" - it simply times out and reconnects in either case -
-  it is useful to know what an RPC is saying to powermand when timeouts are
-  occurring).
-
-o --exprange client option displays query results in one-node-per-line
-  format, rather than the compressed summary format that is the default.
-  This option affects the --list, --query, --node, and --beacon client options.
-
-o --version option in both client and server displays the powerman version
-  and exits.  Also, the client now displays a warning if the client and server
-  versions do not match exactly.
-
-o powerman.conf file can specify target aliases.  This can be used to
-  group plugs that are often manipulated together such as all the equipment 
-  in a rack, or the redundant suppiles for a single piece of hardware.
-  The aliases are only used in target specifications; queries show the
-  underlying names which have a 1-1 correspondence to plugs.
-
-o Add support for serial-attached RPC's, including the WTI RPS-10.
-
-o Support added for APC MasterSwitch.
+o Support added for IBM RSA Remote Supervisor Adapter in telnet debug mode.
 
 +------------+
 | Bugs fixed |
 +------------+
 
-o Baytech RPC-3 cycle left target plugs in the "off" state if the initial state
-  was off.
-
-o ICE box V3 beacon command would produce undefined results when acting on 
-  multiple beacons in a single ICE box.  
+o Increased power cycle time to 2 seconds on all power controllers.  The
+  ICE box previous value of 0.7 sec caused problems on some nodes.
 
 +-----------------+
 | Supported RPC's |
@@ -69,6 +38,8 @@ o WTI NPS (v3.02)
 o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4)
 
 o WTI RPS-10
+
+o IBM RSA Remote Supervisor Adapter (T2ET16- for x335, GEET117A for x345) (*)
 
 Devices marked with an asterisk (*) are deployed on LLNL production clusters 
 of substantial size.

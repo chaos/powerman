@@ -1,3 +1,6 @@
+2003-04-13 garlick
+    * README: began update for 1.0.17 release.
+
 2003-04-12 garlick
     * If no plugs defined in device config, allow the plug names to come from
       the node config lines.
