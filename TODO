@@ -15,3 +15,4 @@
   powerman using existing capabilities.
 * Support HTTP_DEV for devices such as the IBM RSA adapter that are most 
   efficiently managed that way.
+* Open serial ports with O_NDELAY
