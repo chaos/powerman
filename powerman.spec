@@ -60,14 +60,14 @@ rm -rf "$RPM_BUILD_ROOT"
 %doc README
 %doc TOUR.SH
 /usr/lib/powerman/
-/usr/man/man1/digi.1.gz
-/usr/man/man1/etherwake.1.gz
-/usr/man/man1/pm.1.gz
-/usr/man/man1/rmc.1.gz
-/usr/man/man1/wti.1.gz
-/usr/man/man5/digi.conf.5.gz
-/usr/man/man5/etherwake.conf.5.gz
-/usr/man/man5/powerman.conf.5.gz
-/usr/man/man5/wti.conf.5.gz
+/usr/man/man1/digi.1
+/usr/man/man1/etherwake.1
+/usr/man/man1/pm.1
+/usr/man/man1/rmc.1
+/usr/man/man1/wti.1
+/usr/man/man5/digi.conf.5
+/usr/man/man5/etherwake.conf.5
+/usr/man/man5/powerman.conf.5
+/usr/man/man5/wti.conf.5
 
 
