@@ -352,7 +352,7 @@ node_line : TOK_NODE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL
 /* 
  *   Virtually everything that follows is in one-to-one correspondence
  * with something from the config file.  The names match.  It's easy to 
- * tell.  parse_config_file(0 is the root of the parser.  It's the
+ * tell.  parse_config_file() is the root of the parser.  It's the
  * only function the outside world needs to see.
  */
 int 
