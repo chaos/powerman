@@ -6,8 +6,7 @@ MAKE=    /usr/bin/make
 CC=      gcc
 INSTALL= /usr/bin/install -c
 mkinstalldirs=	 $(SHELL) $(top_srcdir)/aux/mkinstalldirs
-COPTS=   -g -O2 -Wall
-INC= 
+CFLAGS=   -g -O2 -Wall
 
 top_srcdir	=	.
 prefix		=	/usr
@@ -25,9 +24,6 @@ progs :
 
 tests : 
 	$(MAKE) -C test
-
-.c.o:
-	$(CC) $(COPTS) $< -o $@ $(INC) $(LIB)
 
 install: all
 	$(mkinstalldirs)			$(DESTDIR)$(bindir)
