@@ -71,8 +71,9 @@ docs :
 
 install: all
 	$(mkinstalldirs)			$(DESTDIR)$(bindir)
+	$(mkinstalldirs)			$(DESTDIR)$(sbindir)
 	$(INSTALL) bin/powerman			$(DESTDIR)$(bindir)/
-	$(INSTALL) bin/powermand		$(DESTDIR)$(bindir)/
+	$(INSTALL) bin/powermand		$(DESTDIR)$(sbindir)/
 	$(mkinstalldirs)			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/baytech.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/icebox.dev		$(DESTDIR)$(packagedir)
@@ -90,7 +91,7 @@ install: all
 
 uninstall: distclean
 	rm -f $(DESTDIR)$(bindir)/powerman
-	rm -f $(DESTDIR)$(bindir)/powermand
+	rm -f $(DESTDIR)$(sbindir)/powermand
 	rm -f $(DESTDIR)$(packagedir)/baytech.dev
 	rm -f $(DESTDIR)$(packagedir)/icebox.dev
 	rm -f $(DESTDIR)$(packagedir)/pmd.dev
