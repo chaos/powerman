@@ -11,10 +11,12 @@
 #            Add the Post Install step setting digi to suid root
 # v. 0-1-3:  2001-09-05
 #            Update version to current value
+# v. 0-1-4:  2001-09-05
+#            Fix man page references so they can be ".1" or ".1.gz"
 ####################################################################
  
 %define name    powerman
-%define version 0.1.3
+%define version 0.1.4
 %define release 1
 
 Name: %name
@@ -60,17 +62,18 @@ chmod 4755 /usr/lib/powerman/bin/digi
 %files
 %defattr(-,root,root,0755)
 %config(noreplace) /etc/powerman.conf
+%config(noreplace) /usr/lib/powerman/etc/*.conf
 /usr/bin/pm
 %doc DISCLAIMER
 %doc README
 %doc TOUR.SH
 /usr/lib/powerman/
-/usr/man/man1/digi.1.gz
-/usr/man/man1/etherwake.1.gz
-/usr/man/man1/pm.1.gz
-/usr/man/man1/rmc.1.gz
-/usr/man/man1/wti.1.gz
-/usr/man/man5/digi.conf.5.gz
-/usr/man/man5/etherwake.conf.5.gz
-/usr/man/man5/powerman.conf.5.gz
-/usr/man/man5/wti.conf.5.gz
+/usr/man/man1/digi.1*
+/usr/man/man1/etherwake.1*
+/usr/man/man1/pm.1*
+/usr/man/man1/rmc.1*
+/usr/man/man1/wti.1*
+/usr/man/man5/digi.conf.5*
+/usr/man/man5/etherwake.conf.5*
+/usr/man/man5/powerman.conf.5*
+/usr/man/man5/wti.conf.5*
