@@ -762,12 +762,19 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
     if (hostlist_count(nodelist) > 1) {
         ListIterator itr = list_iterator_create(dev->plugs);
         hostlist_iterator_t hitr = hostlist_iterator_create(nodelist);
+        hostlist_t pluglist = NULL;
+        hostlist_iterator_t pitr = NULL;
 
-        if (plugstr != NULL)
-            _errormsg("multiple nodes assigned to one plug");
+        if (plugstr != NULL) {
+            pluglist = hostlist_create(plugstr);
+            pitr = hostlist_iterator_create(pluglist);
+        }
 
         while ((nodestr = hostlist_next(hitr))) {
-            if (dev->plugnames_hardwired) {
+            if (pluglist != NULL) {
+                if ((plugstr = hostlist_next(pitr)) == NULL)
+                    _errormsg("more nodes than plugs");
+            } else if (dev->plugnames_hardwired) {
                 if ((plug = list_next(itr)) == NULL)
                     _errormsg("more nodes than plugs");
                 plugstr = plug->name;
@@ -776,8 +783,11 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
         }
         hostlist_iterator_destroy(hitr);
         list_iterator_destroy(itr);
-
         hostlist_destroy(nodelist);
+        if (pluglist)
+            hostlist_destroy(pluglist);
+        if (pitr)
+            hostlist_iterator_destroy(pitr);
         return;
     }
     hostlist_destroy(nodelist);

@@ -1,3 +1,9 @@
+2003-01-10 Jim Garlick <garlick@llnl.gov>
+
+    * src/parse.y: allow hostlists in the 'plug name' field of a node
+    specification, e.g. this now works:
+      node "thunder[0-63]" "i0" "pthunder[0-63]"
+
 2003-01-09 Albert Chu <chu11@llnl.gov>
 
     * etc/ipmipower.dev: Added additional expressions that result
