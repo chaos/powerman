@@ -1,3 +1,6 @@
+2002-10-21 grondo
+	* hostlist.c : fixed bug where test matches testN
+
 2002-10-20 garlick
 	* Added temperature support for icebox.dev.
 	* Added temperature and beacon support for icebox3.dev.
