@@ -164,12 +164,12 @@ find_Action(List acts, List clients)
 
 	while ( (! list_is_empty(acts)) && (act == NULL) ) 
 	{
-		act = (Action  *)list_peek(acts);
+		act = list_peek(acts);
 /* act->client == NULL is a special internally generated action */
 		if ( act->client == NULL ) continue;
 
 /* What if the client has disappeared since enqueuing the action? */
-		client = (Client *)list_find_first(clients, match_Client, (void *)(act->client) );
+		client = list_find_first(clients, match_Client, (void *)(act->client) );
 		if (client != NULL) continue;
 
 /* I could log an event here: "client abort prior to action completion"  */
@@ -225,7 +225,7 @@ do_Action(Globals *g, Action *act)
 	}
 	g->status = Occupied;
 	dev_i = list_iterator_create(g->devs);
-	while( (dev = (Device *)list_next(dev_i)) )
+	while( (dev = list_next(dev_i)) )
 		map_Action_to_Device(dev, act);
 	list_iterator_destroy(dev_i);
 }
@@ -281,7 +281,7 @@ make_Action(int com)
 void
 dump_Action(List acts)
 {
-	Action *act = (Action *)list_peek(acts);
+	Action *act = list_peek(acts);
 
 	fprintf(stderr, "\tAction: %x\n", (unsigned int)act);
 	if( act->client == NULL )
@@ -334,6 +334,6 @@ del_Action(List acts)
 {
 	Action *act;
 
-	act = (Action *)list_pop(acts);
+	act = list_pop(acts);
 	free_Action(act);
 }

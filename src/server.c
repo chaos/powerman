@@ -287,7 +287,7 @@ client_reply(Cluster *cluster, Action *act)
 		case PM_LOG_OUT :
 			break;
 		case PM_UPDATE_PLUGS :
-			while( (node = (Node *)list_next(node_i)) )
+			while( (node = list_next(node_i)) )
 			{
 				if (node->p_state == ST_ON)
 					send_Buffer(client->to, "1");
@@ -299,7 +299,7 @@ client_reply(Cluster *cluster, Action *act)
 			send_Buffer(client->to, "\r\n%d PowerMan> ", seq);
 			break;
 		case PM_UPDATE_NODES :
-			while( (node = (Node *)list_next(node_i)) )
+			while( (node = list_next(node_i)) )
 			{
 				if (node->n_state == ST_ON)
 					send_Buffer(client->to, "1");
@@ -318,7 +318,7 @@ client_reply(Cluster *cluster, Action *act)
 			break;
 		case PM_NAMES :
 			Regcomp( &nre, get_String(act->target), cflags );
-			while( (node = (Node *)list_next(node_i)) )
+			while( (node = list_next(node_i)) )
 			{
 				n = Regexec( &nre, get_String(node->name), nm, pm, eflags );
 				if( (n != REG_NOMATCH) && ((pm[0].rm_eo - pm[0].rm_so) == length_String(node->name)) )

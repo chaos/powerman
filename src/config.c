@@ -205,7 +205,7 @@ dump_Script(List script, int num)
 	fprintf(stderr, "\t\tScript %s: %0x\n", 
 		pm_coms[num], (unsigned int)script);
 	script_itr = list_iterator_create(script);
-	while( (script_el = (Script_El *)list_next(script_itr)) )
+	while( (script_el = list_next(script_itr)) )
 	{
 		fprintf(stderr, "\t\t\ttype: ");
 		switch( script_el->type )
@@ -257,7 +257,7 @@ dump_Expect(Expect_T *expect)
 	else 
 	{
 		map_i = list_iterator_create(expect->map);
-		while( (interp = (Interpretation *)list_next(map_i)) )
+		while( (interp = list_next(map_i)) )
 		{
 			dump_Interpretation(interp);
 		}
@@ -387,7 +387,7 @@ dump_Spec(Spec *spec)
 	{
 		fprintf(stderr, "\t\t%s script:\n", pm_coms[i]);
 		script = list_iterator_create(spec->scripts[i]);
-		while( (specl = (Spec_El *)list_next(script)) )
+		while( (specl = list_next(script)) )
 			dump_Spec_El(specl);
 	}
 }
@@ -547,7 +547,7 @@ dump_Cluster(Cluster *cluster)
 	fprintf(stderr, "\tCluster:%0x\n", (unsigned int)cluster);
 	fprintf(stderr, "\t\tNumber of nodes: %d\n", cluster->num);
 	node_i = list_iterator_create(cluster->nodes);
-	while( (node = (Node *)list_next(node_i)) ) 
+	while( (node = list_next(node_i)) ) 
 		dump_Node(node);
 	list_iterator_destroy(node_i);
 	fprintf(stderr, "\t\tTime stamp: %s", ctime(&(cluster->time_stamp.tv_sec)));

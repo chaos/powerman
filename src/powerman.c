@@ -594,7 +594,7 @@ dialog(int fd, const char *str)
 		String tmpstr;
 
 		ListIterator itr = list_iterator_create(reply);
-		while( (tmpstr = (String)list_next(itr)) )
+		while( (tmpstr = list_next(itr)) )
 			printf("S: '%s'\n", get_String(tmpstr));
 		list_iterator_destroy(itr);
 	}
@@ -754,7 +754,7 @@ print_readable(Config *conf, List cluster)
 
 	/* Sort nodes into three hostlist bins */
 	itr = list_iterator_create(cluster);
-	while( (node = (Node *)list_next(itr)))
+	while( (node = list_next(itr)))
 	{
 		switch (node->p_state) 
 		{
@@ -803,7 +803,7 @@ print_list(Config *conf, List cluster, State_Val state)
 	ListIterator itr;
 
 	itr = list_iterator_create(cluster);
-	while( (node = (Node *)list_next(itr)))
+	while( (node = list_next(itr)))
 	{
 		if( node->p_state == state ) 
 			printf("%s\n", get_String(node->name));
@@ -821,7 +821,7 @@ print_Targets(List targ)
 
 	assert( targ != NULL );
 	itr = list_iterator_create(targ);
-	while( (t = (String )list_next(itr)) && !is_prompt(t) )
+	while( (t = list_next(itr)) && !is_prompt(t) )
 	{
 		printf("%s\n", get_String(t));
 	}
@@ -906,7 +906,7 @@ append_Nodes(List cluster, List reply)
 	
 	assert( reply != NULL );
 	itr = list_iterator_create(reply);
-	while( (targ = (String)list_next(itr)) && !is_prompt(targ) )
+	while( (targ = list_next(itr)) && !is_prompt(targ) )
 	{
 		node = xmake_Node(get_String(targ));
 		list_append(cluster, node);
@@ -929,12 +929,12 @@ update_Nodes_soft_state(List cluster, List reply)
 	String targ;
 
 	assert( reply != NULL );
-	targ = (String)list_pop(reply); /* reply list is always one String */
+	targ = list_pop(reply); /* reply list is always one String */
 	assert( targ != NULL );
 	assert( !empty_String(targ) );
 
 	node_i = list_iterator_create(cluster);
-	node = (Node *)list_next(node_i);
+	node = list_next(node_i);
 	for(i = 0; i < length_String(targ); i++)
 	{
 		assert( node != NULL );
@@ -952,7 +952,7 @@ update_Nodes_soft_state(List cluster, List reply)
 		default :
 			exit_msg("Illegal soft state value.");
 		}
-		node = (Node *)list_next(node_i);
+		node = list_next(node_i);
 	}
 	list_iterator_destroy(node_i);
 }
@@ -972,12 +972,12 @@ update_Nodes_hard_state(List cluster, List reply)
 	String targ;
 
 	assert( reply != NULL );
-	targ = (String)list_pop(reply);	/* reply list is always one String */
+	targ = list_pop(reply);	/* reply list is always one String */
 	assert( targ != NULL );
 	assert( !empty_String(targ) );
 
 	node_i = list_iterator_create(cluster);
-	node = (Node *)list_next(node_i);
+	node = list_next(node_i);
 	for (i = 0; i < length_String(targ); i++)
 	{
 		assert( node != NULL );
@@ -995,7 +995,7 @@ update_Nodes_hard_state(List cluster, List reply)
 		default :
 			exit_msg("Illegal hard state value.");
 		}
-		node = (Node *)list_next(node_i);
+		node = list_next(node_i);
 	}
 	list_iterator_destroy(node_i);
 }
