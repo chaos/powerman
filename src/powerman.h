@@ -55,8 +55,12 @@ typedef enum { FALSE=0, TRUE=1 } bool;
 #  define CLEAR_MAGIC(x)   
 #endif
 
-#define MAX(x, y) (((x) > (y))? (x) : (y))
-#define MIN(x, y) (((x) < (y))? (x) : (y))
+#ifndef MAX
+#  define MAX(x, y) (((x) > (y))? (x) : (y))
+#endif /* MAX */
+#ifndef MIN
+#  define MIN(x, y) (((x) < (y))? (x) : (y))
+#endif /* MIN */
 
 #define DAEMON_NAME   		"powermand"
 #define PID_FILE_NAME 		"/var/run/powerman/powerman.pid"
