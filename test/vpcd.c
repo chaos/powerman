@@ -33,6 +33,8 @@ static int logged_in = 0;
 
 static int opt_drop_command = 0;
 static int opt_bad_response = 0;
+static int opt_off_rpc = 0;
+static int opt_hung_rpc = 0;
 
 static int errcount = 0;
 
@@ -91,6 +93,11 @@ static void _prompt_loop(int num, int fd)
 
     for (seq = 0; ; seq++) {
 	char buf[128];
+
+	if (num == 0 && opt_hung_rpc) {
+	    printf("vpcd: vpcd%d is hung\n", num);
+	    pause();
+	}
 
 	dprintf(fd, "%d vpc> ", seq);		/* prompt */
 	if (_dgets(buf, sizeof(buf), fd) < 0) {
@@ -245,10 +252,12 @@ static void *_vpc_thread(void *arg)
     return NULL;
 }
 
-#define OPT_STR "db"
+#define OPT_STR "dbho"
 static const struct option long_options[] = {
     {"drop_command", no_argument, 0, 'd'},
     {"bad_response", no_argument, 0, 'b'},
+    {"hung_rpc", no_argument, 0, 'h'},
+    {"off_rpc", no_argument, 0, 'o'},
     {0, 0, 0, 0}
 };
 static const struct option *longopts = long_options;
@@ -257,7 +266,9 @@ static void _usage(void)
 {
     fprintf(stderr, "Usage: vpcd [one option]\n"
 "--drop_command       drop response to first \"on\" command\n"
-"--bad_response       respond to first \"on\" command with UNKNOWN\n");
+"--bad_response       respond to first \"on\" command with UNKNOWN\n"
+"--hung_rpc           vpc0 is unresponsive after connect\n"
+"--off_rpc            vpc0 is not started\n");
     exit(1);	    
 }
 
@@ -279,12 +290,20 @@ main(int argc, char *argv[])
     opterr = 0;
     while ((c = getopt_long(argc, argv, OPT_STR, longopts, &longindex)) != -1) {
 	switch (c) {
-	    case 'd':	/* --drop_command */
+	    case 'd':	/* --drop_command (drop first "on" command) */
 		opt_drop_command++;
 		optcount++;
 		break;
-	    case 'b':	/* --bad_response */
+	    case 'b':	/* --bad_response (one bad response to "on") */
 		opt_bad_response++;
+		optcount++;
+		break;
+	    case 'h':	/* --hung_rpc (vpc0 nonresponsive) */
+		opt_hung_rpc++;
+		optcount++;
+		break;
+	    case 'o':	/* --off_rpc (vpc0 "turned off") */
+		opt_off_rpc++;
 		optcount++;
 		break;
 	    default:
@@ -302,6 +321,10 @@ main(int argc, char *argv[])
     memset(dev, 0, sizeof(dev));
 
     for (i = 0; i < NUM_THREADS; i++) {
+	if (opt_off_rpc && i == 0) {
+	    printf("vpcd: not starting vpcd%d\n", i);
+	    continue;
+	}
 	pthread_attr_init(&vpc_attr[i]);
 	pthread_attr_setdetachstate(&vpc_attr[i], PTHREAD_CREATE_DETACHED);
 	pthread_create(&vpc_thd[i], &vpc_attr[i], _vpc_thread, (void *)i);

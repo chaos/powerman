@@ -10,13 +10,15 @@
   For example, PM_RESET script should be optional, and the user should be told
   of a PM_CYCLE is the only thing available, then they can try that.
 * Issuing a command involving an RPC that is currently in connect-retry mode
-  causes the client to hang forever.
-* Make "soft" power status query possible in server
+  causes the client to hang forever.  Device timeouts should perhaps be
+  separate from action timeouts.
+* Make "soft" power status query possible again in server
 * Client should have option for verifying soft power status (expand hostranges
   and issue warnings where plug is on but node is off).  Needs to be optional
   since would double cluster query latency.  
 * Consider supporting additional ICE commands such as querying temperature and 
   beacon status in ice box, toggling beacon, extracting firmware version, 
   updating firmware, etc.  
+* Support ice ability to sequence >1 plug (e.g. ph 1,2,3) in a single command
 * Consider a way for users to arbitrarily map a device script to a server 
   command (e.g. don't hard code the number of scripts?)

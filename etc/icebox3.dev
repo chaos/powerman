@@ -53,25 +53,25 @@ begin protocol specification
 	begin ON_SCRIPT
 		send "ph %s\r\n"
 		expect "OK\r\n"
-		delay 0.3
+		delay 0.5
 	end ON_SCRIPT
 	begin OFF_SCRIPT
 		send "pl %s\r\n"
 		expect "OK\r\n"
-		delay 0.3
+		delay 0.5
 	end OFF_SCRIPT
 	begin CYCLE_SCRIPT
 		send "pl %s\r\n"
 		expect "OK\r\n"
-		delay 0.3
+		delay 0.5
 		send "ph %s\r\n"
 		expect "OK\r\n"
-		delay 0.3
+		delay 0.5
 	end CYCLE_SCRIPT
 	begin RESET_SCRIPT
 		send "rp %s\r\n"
 		expect "OK\r\n"
-		delay 0.3
+		delay 0.5
 	end RESET_SCRIPT
 	plug name "1"
 	plug name "2"
