@@ -47,7 +47,7 @@
 #include "debug.h"
 #include "client_proto.h"
 
-#define MIN_DEV_BUF     1024
+#define MIN_DEV_BUF     512
 #define MAX_DEV_BUF     8192
 
 /*
@@ -180,8 +180,10 @@ static char *_getregex_buf(cbuf_t b, regex_t * re)
     }
     str[bytes_peeked] = '\0';           /* null terminate result */
     match_end = _findregex(re, str, bytes_peeked);
-    if (match_end == NULL)
+    if (match_end == NULL) {
+        Free(str);
         return NULL;
+    }
     assert(match_end - str <= strlen(str));
     *match_end = '\0';
                                         /* match: consume that much buffer */
@@ -638,11 +640,18 @@ static bool _finish_connect(Device * dev, struct timeval *timeout)
 static void _handle_read(Device * dev)
 {
     int n;
+    int dropped;
 
     CHECK_MAGIC(dev);
-    n = cbuf_write_from_fd(dev->from, dev->fd, -1, NULL);
+    n = cbuf_write_from_fd(dev->from, dev->fd, MAX_DEV_BUF, &dropped);
     if (n < 0) {
         err(TRUE, "read error on %s", dev->name);
+        _disconnect(dev);
+        _reconnect(dev);
+        return;
+    }
+    if (dropped > 0) {
+        err(FALSE, "buffer space for %s exhausted", dev->name);
         _disconnect(dev);
         _reconnect(dev);
         return;
@@ -664,7 +673,7 @@ static void _handle_write(Device * dev)
 
     CHECK_MAGIC(dev);
 
-    n = cbuf_read_to_fd(dev->to, dev->fd, -1);
+    n = cbuf_read_to_fd(dev->to, dev->fd, MAX_DEV_BUF);
     if (n < 0) {
         err(TRUE, "write error on %s", dev->name);
         _disconnect(dev);
@@ -882,7 +891,7 @@ static bool _process_send(Device * dev)
         if (written < 0)
             err(TRUE, "_process_send(%s): cbuf_write returned %d", 
                     dev->name, written);
-        else if (written != strlen(str))
+        else if (dropped > 0)
             err(FALSE, "_process_send(%s): buffer overrun, %d dropped", 
                     dev->name, dropped);
         else {

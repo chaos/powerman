@@ -117,7 +117,7 @@ static void _client_printf(Client *c, const char *fmt, ...)
     written = cbuf_write(c->to, str, len, &dropped);
     if (written < 0)
         err(TRUE, "_client_printf: cbuf_write returned %d", written);
-    else if (written != len)
+    else if (dropped > 0)
         err(FALSE, "_client_printf: cbuf_write dropped %d chars", dropped);
 
     /* Free the tmp string */
@@ -714,7 +714,7 @@ static void _handle_read(Client * c)
     int dropped;
 
     CHECK_MAGIC(c);
-    n = cbuf_write_from_fd(c->from, c->fd, -1, &dropped);
+    n = cbuf_write_from_fd(c->from, c->fd, MAX_CLIENT_BUF, &dropped);
     if (n < 0) {
         err(TRUE, "client read error");
         c->read_status = CLI_DONE;
@@ -738,7 +738,7 @@ static void _handle_write(Client * c)
     int n;
 
     CHECK_MAGIC(c);
-    n = cbuf_read_to_fd(c->to, c->fd, -1);
+    n = cbuf_read_to_fd(c->to, c->fd, MAX_CLIENT_BUF);
     if (n < 0) {
         err(TRUE, "write error on client");
         return;

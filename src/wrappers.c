@@ -224,17 +224,19 @@ char *Realloc(char *item , int newsize)
 
     assert(item != NULL);
     assert(newsize > 0 && newsize <= INT_MAX);
+    assert(p[0] == MALLOC_MAGIC);
+    oldsize = p[1];
     p = (int *)realloc(p, newsize + 2*sizeof(int));
     if (p == NULL)
         err_exit(FALSE, "out of memory");
     assert(p[0] == MALLOC_MAGIC);
-    oldsize = p[1];
     p[1] = newsize;
 #ifndef NDEBUG
     memory_alloc += (newsize - oldsize);
 #endif
     new = (char *) &p[2];
-    memset(new + oldsize, 0, newsize - oldsize);
+    if (newsize > oldsize)
+        memset(new + oldsize, 0, newsize - oldsize);
     return new;
 }
 
