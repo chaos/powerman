@@ -107,7 +107,6 @@ fi
 /etc/powerman/icebox3.dev
 /etc/powerman/wti.dev
 /etc/powerman/vpc.dev
-%config(noreplace) /etc/powerman/powerman.conf
 %config(noreplace) %attr(0755,root,root)/etc/rc.d/init.d/powerman
 /usr/man/man1/powerman.1*
 /usr/man/man1/powermand.1*

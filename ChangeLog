@@ -4,6 +4,8 @@
     * Ran indent -no-tabs -kr *.[ch] on everything in src except 
       hostlist.[ch] and list.[ch] 
     * Tagged after-2nd-indent
+    * Removed /etc/powerman/powerman.conf from RPM so powermand won't start
+      unless it has been properly configured.
 
 2002-10-22 garlick
     * Fixed bug where buf_readline() would occasionally assert on the 
@@ -450,7 +452,4 @@
       entirely rewritten.  ChangeLog truncated.
     * Tagged powerman-1-0-0.
 
-#
-# vi:tabstop=4 shiftwidth=4 expandtab
-#
-
+#  vi:tabstop=4 shiftwidth=4 expandtab
