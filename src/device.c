@@ -1108,7 +1108,7 @@ bool dev_process_select(fd_set *rset, fd_set *wset, bool over_time)
 {
     Device *dev;
     ListIterator itr;
-    bool active_devs;           /* active_devs == FALSE => Quiescent */
+    bool active_devs = FALSE;   /* active_devs == FALSE => Quiescent */
     bool activity;              /* activity == TRUE => scripts need service */
 
     itr = list_iterator_create(powerman_devs);

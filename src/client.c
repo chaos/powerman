@@ -208,7 +208,6 @@ static Action *_process_input(Client * c)
 	return NULL;
 
     act = _find_cli_script(expect);
-    printf("_process_input: %s (%s)\n", str_get(expect), act ? "GOOD" : "BAD");  /* XXX */
     str_destroy(expect);
     if (act != NULL) {
 	act->client = c;
