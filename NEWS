@@ -1,4 +1,4 @@
-PowerMan version 1.0.17                                       6 Aug 2003
+PowerMan version 1.0.19                                       18 Sep 2003
 
 +--------------+
 | New Features |
@@ -20,12 +20,10 @@ o The powerman.conf "device" entry now determines whether a device is directly
   can either be directly connected or connected through a terminal server
   and still use the same device scripts.
 
+o In the powerman.conf, if the plug name is omitted from node lines in the 
+  config file, the node name is used as the plug name.
+
 o Several changes to device script language (non backwards compatable):
-  - For devices which dynamically assign "plug names" it is now possible to 
-    omit the plug name from the node lines in powerman.conf, and leave off 
-    the definition of all possible plug names in the device config.  A new 
-    script construct "setplugname" can be used to associate plug names with 
-    node names during script execution.
   - To make it possible to support devices that have variable numbers of plugs
     PowerMan scripts can now utilize a "foreachplug" or "foreachnode" construct 
     to iterate over the configured plugs or plugs that have configured nodes for
@@ -36,6 +34,8 @@ o Several changes to device script language (non backwards compatable):
     if the plug is on or off respectively.
   - Instead of repeating 'plug name "name"' statements, all the plug names
     can now be specified on one line, e.g. 'plug name { "name" "name" ... }.
+    The 'plug name' line is also now optional, in which case there will be 
+    no checking of plug names specified on node lines in the config file.
   - The plugcount line is no longer necessary (or allowed).
   - The name line is no longer necessary; device names are specified between
     "specification" and the open brace for the device specification.

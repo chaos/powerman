@@ -1,11 +1,24 @@
+2003-09-18 Jim Garlick <garlick@llnl.gov>
+
+    * src/device.c, src/parse.y, etc/ibmh8.dev: removed support for setplugname
+    statement.  Now if the 'plug name' line is omittted from the device.dev 
+    file, any plug name can be specified in the config file.  Also, if the
+    plug name is omitted int the config file, the node name is used.
+      
+    * NEWS: updated for 1.0.19 release.  Include as news everything since
+    1.0.16 since 17 and 18 were not widely distributed.
+
 2003-09-17 Jim Garlick <garlick@llnl.gov>
 
     * src/hprintf.[ch], src/argv.[ch], src/wrappers.[ch]: import stuff
     from h8power project.
 
+    * src/device_serial.c: lockf serial devices, close fd on error path.
+
 2003-09-03 Jim Garlick <garlick@llnl.gov>
 
-    * etc/ibmrsa.dev, etc/ibmrsa-smc.dev: Removed support for IBM RSA adapter.
+    * etc/ibmrsa.dev, etc/ibmrsa-smc.dev: Removed support for IBM RSA adapter
+    per request of IBM.
 
     * : tag powerman-1-0-18
 

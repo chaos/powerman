@@ -13,16 +13,9 @@ specification "ibmh8" {
 
 	script login {
 		expect "h8power> "
-		send "list\r"
-		expect "list\r\n"
-		foreachnode {
-			expect "([^:]*): [^\r]*\r\n"
-			setplugname $1 $1       # <plug> <node>
-		}
-		expect "h8power> "
 	}
 	script logout {
-		send "\004"  			# ^D to log off
+		send "quit\r"
 	}
 	script status_all {
 		send "stat\r"

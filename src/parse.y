@@ -58,8 +58,8 @@ typedef struct {
     StmtType type;              /* delay/expect/send */
     char *str;                  /* expect string, send fmt, setplugstate plug */
     struct timeval tv;          /* delay value */
-    int mp1;                    /* setplugstate plug, setplugname plug match pos */
-    int mp2;                    /* settatus stat, setplugname node match pos */
+    int mp1;                    /* setplugstate plug match position */
+    int mp2;                    /* setplugstate state match position */
     List prestmts;              /* subblock */
     List interps;               /* interpretations for setplugstate */
 } PreStmt;
@@ -123,7 +123,7 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 %token TOK_RESET_ALL TOK_PING TOK_SPEC 
 
 /* script statements */
-%token TOK_EXPECT TOK_SETPLUGSTATE TOK_SETPLUGNAME TOK_SEND TOK_DELAY
+%token TOK_EXPECT TOK_SETPLUGSTATE TOK_SEND TOK_DELAY
 %token TOK_FOREACHPLUG TOK_FOREACHNODE TOK_IFOFF TOK_IFON
 
 /* other device configuration stuff */
@@ -196,7 +196,7 @@ device          : TOK_DEVICE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL
 node            : TOK_NODE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL {
     makeNode($2, $3, $4);
 }               | TOK_NODE TOK_STRING_VAL TOK_STRING_VAL {
-    makeNode($2, $3, NULL);
+    makeNode($2, $3, $2);
 }
 ;
 alias           : TOK_ALIAS TOK_STRING_VAL TOK_STRING_VAL {
@@ -310,8 +310,6 @@ stmt            : TOK_EXPECT TOK_STRING_VAL {
     $$ = (char *)makePreStmt(STMT_SEND, $2, NULL, NULL, NULL, NULL, NULL);
 }               | TOK_DELAY TOK_NUMERIC_VAL {
     $$ = (char *)makePreStmt(STMT_DELAY, NULL, $2, NULL, NULL, NULL, NULL);
-}               | TOK_SETPLUGNAME regmatch regmatch {
-    $$ = (char *)makePreStmt(STMT_SETPLUGNAME, NULL, NULL, $2, $3, NULL, NULL);
 }               | TOK_SETPLUGSTATE TOK_STRING_VAL regmatch {
     $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, $2, NULL, NULL, $3, NULL, NULL);
 }               | TOK_SETPLUGSTATE TOK_STRING_VAL regmatch interp_list {
@@ -604,10 +602,6 @@ static Stmt *makeStmt(PreStmt *p)
             stmt->u.setplugstate.plug_mp = p->mp1;
         stmt->u.setplugstate.interps = copyInterpList(p->interps);
         break;
-    case STMT_SETPLUGNAME:
-        stmt->u.setplugname.plug_mp = p->mp1;
-        stmt->u.setplugname.node_mp = p->mp2;
-        break;
     case STMT_DELAY:
         stmt->u.delay.tv = p->tv;
         break;
@@ -711,6 +705,7 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
 
     /* create plugs */
     if (spec->plugs) {
+        dev->plugnames_hardwired = TRUE;
         itr = list_iterator_create(spec->plugs);
         while((plugname = list_next(itr))) {
             Plug *plug = dev_plug_create(plugname);
@@ -760,11 +755,13 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
         _errormsg("unknown device");
 
     /* 
-     * Legal plugs are specified in advance with 'plug name' line in the device
-     * configuration file.  Node line references to plug names must match
-     * these names.
+     * Legal plugs are optionally specified in advance with 'plug name' line 
+     * in the device.dev file.  If this was done, dev->plugnames_hardwired 
+     * will be TRUE, dev->plugs will contain an element for every valid 
+     * plug, and creating a node consists of finding a matching plug name with
+     * a NULL node field, and filling in plug->node.   
      */
-    if (plugstr) {
+    if (dev->plugnames_hardwired) {
         plug = list_find_first(dev->plugs, (ListFindF) dev_plug_match_plugname, 
                                plugstr);
         if (plug == NULL)
@@ -772,16 +769,17 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
         if (plug->node)
             _errormsg("plug already assigned");
         plug->node = Strdup(nodestr);
-
     /* 
-     * Some devices do not specify plug names in advance.  For these devices,
-     * a Node line must not reference a plug name (that field is omitted).
-     * Instead, we simply create a plug entry for each node configured for 
-     * the device.  The names will be filled in later via 'setplugname' 
-     * statements (see ibmrsa.dev).
+     * Otherwise, dev->plugs starts out empty and we create a dev->plugs entry 
+     * for every 'node' line in the config file without checking whether the 
+     * plug names are valid (just that they are unique).
      */
     } else {
-        plug = dev_plug_create(NULL);
+        plug = list_find_first(dev->plugs, (ListFindF) dev_plug_match_plugname, 
+                               plugstr);
+        if (plug != NULL)
+            _errormsg("duplicate plug name");
+        plug = dev_plug_create(plugstr);
         plug->node = Strdup(nodestr);
         list_append(dev->plugs, plug);
     }

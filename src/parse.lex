@@ -116,7 +116,6 @@ pingperiod                        {   return TOK_PING_PERIOD; }
 specification                     {   return TOK_SPEC; }
 expect                            {   return TOK_EXPECT; }
 setplugstate                      {   return TOK_SETPLUGSTATE; }
-setplugname                       {   return TOK_SETPLUGNAME; }
 foreachnode                       {   return TOK_FOREACHNODE; }
 foreachplug                       {   return TOK_FOREACHPLUG; }
 ifoff                             {   return TOK_IFOFF; }

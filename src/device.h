@@ -71,7 +71,7 @@ typedef struct {
  */
 #define MAX_MATCH_POS   20
 typedef enum { STMT_SEND, STMT_EXPECT, STMT_SETPLUGSTATE, STMT_DELAY, 
-    STMT_SETPLUGNAME, STMT_FOREACHPLUG, STMT_FOREACHNODE, STMT_IFOFF, 
+    STMT_FOREACHPLUG, STMT_FOREACHNODE, STMT_IFOFF, 
     STMT_IFON  } StmtType;
 typedef struct {
     StmtType type;
@@ -88,10 +88,6 @@ typedef struct {
             int stat_mp;        /* regex subexp match pos of plug status */
             List interps;       /* list of possible interpretations */
         } setplugstate;
-        struct {                /* SETPLUGNAME (regexes refer to prev expect) */
-            int plug_mp;        /* regex match position of plug name */
-            int node_mp;        /* regex match position of node name */
-        } setplugname;
         struct {                /* DELAY */
             struct timeval tv;  /* delay at this point in the script */
         } delay;
@@ -154,6 +150,7 @@ typedef struct _device {
     cbuf_t from;                /* buffer <- device */
 
     List plugs;                 /* list of Plugs (node name <-> plug name) */
+    bool plugnames_hardwired;   /* If true, plug names listed in dev spec */
     Script scripts[NUM_SCRIPTS]; /* array of scripts */
 
     struct timeval last_retry;  /* time of last reconnect retry */

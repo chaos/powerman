@@ -85,7 +85,6 @@ static bool _process_stmt(Device *dev, Action *act, ExecCtx *e,
 static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e);
 static bool _process_foreach(Device *dev, Action *act, ExecCtx *e);
 static bool _process_setplugstate(Device * dev, Action *act, ExecCtx *e);
-static bool _process_setplugname(Device * dev, Action *act, ExecCtx *e);
 static bool _process_expect(Device * dev, Action *act, ExecCtx *e);
 static bool _process_send(Device * dev, Action *act, ExecCtx *e);
 static bool _process_delay(Device * dev, Action *act, ExecCtx *e, 
@@ -920,9 +919,6 @@ bool _process_stmt(Device *dev, Action *act, ExecCtx *e,
     case STMT_SETPLUGSTATE:
         finished = _process_setplugstate(dev, act, e);
         break;
-    case STMT_SETPLUGNAME:
-        finished = _process_setplugname(dev, act, e);
-        break;
     case STMT_DELAY:
         finished = _process_delay(dev, act, e, timeout);
         break;
@@ -1086,51 +1082,6 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
     return finished;
 }
 
-static bool _process_setplugname(Device* dev, Action *act, ExecCtx *e)
-{
-    bool finished = TRUE;
-    char *node_name = NULL;
-
-    /* 
-     * Usage: setplugname node plug
-     * Both node and plug are regex matches.
-     */
-    node_name = _copy_pmatch(dev, e->cur->u.setplugname.node_mp);
-    /* if no node name, do nothing */
-
-    if (node_name) {
-        char *plug_name = _copy_pmatch(dev, e->cur->u.setplugname.plug_mp);
-
-        if (plug_name) {
-            Plug *plug;
-            ListIterator itr;
-
-            /* find the right plug:node tuple for this node */
-            itr = list_iterator_create(dev->plugs);
-            while ((plug = list_next(itr))) {
-                if (plug->node && strcmp(plug->node, node_name) == 0)
-                    break;
-            }
-            list_iterator_destroy(itr);
-
-            /* update the plug name */
-            if (plug) {
-                if (plug->name)                 /* free old plug name */
-                    Free(plug->name);
-                plug->name = Strdup(plug_name); /* store new plug name */
-            } else {
-                err(FALSE, "_process_setplugname(%s): node %s: unknown\n", 
-                        dev->name, node_name);
-            }
-            Free(plug_name);
-        }
-        /* if no match, do nothing */
-        Free(node_name); 
-    }
-
-    return finished;
-}
-
 /* return TRUE if expect is finished */
 static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
 {
@@ -1258,6 +1209,7 @@ Device *dev_create(const char *name)
         dev->scripts[i] = NULL;
 
     dev->plugs = list_create((ListDelF) dev_plug_destroy);
+    dev->plugnames_hardwired = FALSE;
     dev->retry_count = 0;
     dev->stat_successful_connects = 0;
     dev->stat_successful_actions = 0;
@@ -1304,7 +1256,7 @@ Plug *dev_plug_create(const char *name)
     Plug *plug;
 
     plug = (Plug *) Malloc(sizeof(Plug));
-    plug->name = name ? Strdup(name) : NULL;
+    plug->name = Strdup(name);
     plug->node = NULL;
     return plug;
 }
