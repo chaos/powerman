@@ -48,7 +48,8 @@
  * device scripts along when new state develops (e.g. data in cbufs).
  *
  * FIXME: the Device type is not externally opaque as it ought to be:
- * - parser threads plugs on to the device after it is created
+ * - parser creates Device with dev_create() but then initializes lots
+ *   of Device fields based on parsed device specification
  * - client pulls out plug names & stats for --device response
  */
 
@@ -67,6 +68,7 @@
 #include "list.h"
 #include "parse_util.h"
 #include "wrappers.h"
+#include "pluglist.h"
 #include "device.h"
 #include "error.h"
 #include "cbuf.h"
@@ -83,9 +85,9 @@
 typedef struct {
     Plug *target;               /* target->name used for send "%s" (NULL=all) */
     List block;                 /* List of stmts */
-    ListIterator itr;           /* next stmt in block */
+    ListIterator stmtitr;       /* next stmt in block */
     Stmt *cur;                  /* current stmt */
-    ListIterator plugitr;       /* used by foreach */
+    PlugListIterator plugitr;   /* used by foreach */
     bool processing;            /* flag used by stmts, ifon/ifoff */
 } ExecCtx;
 
@@ -245,8 +247,8 @@ static ExecCtx *_create_exec_ctx(Device *dev, List block, Plug *target)
 {
     ExecCtx *new = (ExecCtx *)Malloc(sizeof(ExecCtx));
 
-    new->itr = list_iterator_create(block);
-    new->cur = list_next(new->itr); 
+    new->stmtitr = list_iterator_create(block);
+    new->cur = list_next(new->stmtitr); 
     new->block = block;
     new->target = target;
     new->plugitr = NULL;
@@ -257,9 +259,9 @@ static ExecCtx *_create_exec_ctx(Device *dev, List block, Plug *target)
 
 static void _destroy_exec_ctx(ExecCtx *e)
 {
-    if (e->itr != NULL)
-        list_iterator_destroy(e->itr);
-    e->itr = NULL;
+    if (e->stmtitr != NULL)
+        list_iterator_destroy(e->stmtitr);
+    e->stmtitr = NULL;
     e->cur = NULL;
     e->target = NULL;
     Free(e);
@@ -279,8 +281,8 @@ static void _rewind_action(Action *act)
     }
     /* reset outer block iterator and current pointer */
     if (e) {
-        list_iterator_reset(e->itr);
-        e->cur = list_next(e->itr); 
+        list_iterator_reset(e->stmtitr);
+        e->cur = list_next(e->stmtitr); 
     }
 }
 
@@ -447,17 +449,17 @@ static bool _reconnect(Device *dev, struct timeval *timeout)
 static bool _command_needs_device(Device * dev, hostlist_t hl)
 {
     bool needed = FALSE;
-    ListIterator itr;
+    PlugListIterator itr;
     Plug *plug;
 
-    itr = list_iterator_create(dev->plugs);
-    while ((plug = list_next(itr))) {
+    itr = pluglist_iterator_create(dev->plugs);
+    while ((plug = pluglist_next(itr))) {
         if (plug->node != NULL && hostlist_find(hl, plug->node) != -1) {
             needed = TRUE;
             break;
         }
     }
-    list_iterator_destroy(itr);
+    pluglist_iterator_destroy(itr);
     return needed;
 }
 
@@ -636,14 +638,14 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
     List new_acts = list_create((ListDelF) _destroy_action);
     bool all = TRUE;
     Plug *plug;
-    ListIterator itr;
+    PlugListIterator itr;
     int count = 0;
     Action *act;
 
     assert(hl != NULL);
 
-    itr = list_iterator_create(dev->plugs);
-    while ((plug = list_next(itr))) {
+    itr = pluglist_iterator_create(dev->plugs);
+    while ((plug = pluglist_next(itr))) {
 
         /* antisocial to gratuitously turn on/off unused plug */
         if (plug->node == NULL) {
@@ -662,7 +664,7 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
             list_append(new_acts, act);
         }
     }
-    list_iterator_destroy(itr);
+    pluglist_iterator_destroy(itr);
 
     /* See if we can use a command targetted at all plugs 
      * (discard 'new_acts' later on if so)
@@ -817,7 +819,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
 
         /* most recently attempted stmt completed successfully */
         } else if (act->errnum == ACT_ESUCCESS) {
-            e->cur = list_next(e->itr);     /* next stmt this block */
+            e->cur = list_next(e->stmtitr);     /* next stmt this block */
             if (!e->cur) {                  /* ...or new block */
                 ExecCtx *e2 = list_pop(act->exec);
 
@@ -903,16 +905,16 @@ static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
 
     /* we store a plug iterator in the ExecCtx */
     if (e->plugitr == NULL)  
-        e->plugitr = list_iterator_create(dev->plugs);
+        e->plugitr = pluglist_iterator_create(dev->plugs);
 
     /* Each time the inner block is executed, its argument will be
      * a new plug name.  Pick that up here.
      */
     if (e->cur->type == STMT_FOREACHPLUG) {
-        plug = list_next(e->plugitr);
+        plug = pluglist_next(e->plugitr);
     } else if (e->cur->type == STMT_FOREACHNODE) {
         do {
-            plug = list_next(e->plugitr);
+            plug = pluglist_next(e->plugitr);
         } while (plug && plug->node == NULL);
     } else {
         assert(0);
@@ -923,7 +925,7 @@ static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
         new = _create_exec_ctx(dev, e->cur->u.foreach.stmts, plug);
         list_push(act->exec, new);
     } else {
-        list_iterator_destroy(e->plugitr);
+        pluglist_iterator_destroy(e->plugitr);
         e->plugitr = NULL;
     }
 
@@ -1000,21 +1002,6 @@ static char *_copy_pmatch(Device *dev, int mp)
     return new;
 }
 
-static char *_plug_to_node(Device *dev, char *plug_name)
-{
-    ListIterator itr;
-    char *node = NULL;
-    Plug *plug;
-
-    itr = list_iterator_create(dev->plugs);
-    while ((plug = list_next(itr))) {
-        if (plug->name && strcmp(plug->name, plug_name) == 0)
-            node = plug->node;
-    }
-    list_iterator_destroy(itr);
-    return node;
-}
-
 static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
 {
     bool finished = TRUE;
@@ -1035,9 +1022,9 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
 
     if (plug_name) {
         char *str = _copy_pmatch(dev, e->cur->u.setplugstate.stat_mp);
-        char *node = _plug_to_node(dev, plug_name);
+        Plug *plug = pluglist_find(dev->plugs, plug_name);
 
-        if (str && node) {
+        if (str && plug && plug->node) {
             InterpState state = ST_UNKNOWN;
             ListIterator itr;
             Interp *i;
@@ -1052,7 +1039,7 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
             }
             list_iterator_destroy(itr);
 
-            if ((arg = arglist_find(act->arglist, node))) {
+            if ((arg = arglist_find(act->arglist, plug->node))) {
                 arg->state = state;
                 if (arg->val) 
                     Free(arg->val);
@@ -1194,8 +1181,7 @@ Device *dev_create(const char *name)
     for (i = 0; i < NUM_SCRIPTS; i++)
         dev->scripts[i] = NULL;
 
-    dev->plugs = list_create((ListDelF) dev_plug_destroy);
-    dev->plugnames_hardwired = FALSE;
+    dev->plugs = NULL;
     dev->retry_count = 0;
     dev->stat_successful_connects = 0;
     dev->stat_successful_actions = 0;
@@ -1227,7 +1213,8 @@ void dev_destroy(Device * dev)
         dev->destroy(dev->data);
     }
     list_destroy(dev->acts);
-    list_destroy(dev->plugs);
+    if (dev->plugs)
+        pluglist_destroy(dev->plugs);
     for (i = 0; i < NUM_SCRIPTS; i++)
         if (dev->scripts[i] != NULL)
             list_destroy(dev->scripts[i]);
@@ -1235,31 +1222,6 @@ void dev_destroy(Device * dev)
     cbuf_destroy(dev->to);
     cbuf_destroy(dev->from);
     Free(dev);
-}
-
-Plug *dev_plug_create(const char *name)
-{
-    Plug *plug;
-
-    plug = (Plug *) Malloc(sizeof(Plug));
-    plug->name = Strdup(name);
-    plug->node = NULL;
-    return plug;
-}
-
-/* used with list_find_first() in parser */
-int dev_plug_match_plugname(Plug * plug, void *key)
-{
-    return (plug->name == NULL ? 0 : (strcmp(plug->name, (char *) key) == 0));
-}
-
-/* helper for dev_create */
-void dev_plug_destroy(Plug * plug)
-{
-    if (plug->name)
-        Free(plug->name);
-    Free(plug->node);
-    Free(plug);
 }
 
 static void _enqueue_ping(Device * dev, struct timeval *timeout)

@@ -40,6 +40,7 @@
 #include "list.h"
 #include "parse_util.h"
 #include "wrappers.h"
+#include "pluglist.h"
 #include "device.h"
 #include "daemon.h"
 #include "client.h"

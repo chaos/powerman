@@ -42,6 +42,7 @@
 #include "list.h"
 #include "parse_util.h"
 #include "wrappers.h"
+#include "pluglist.h"
 #include "device.h"
 #include "device_serial.h"
 #include "device_pipe.h"
@@ -687,7 +688,6 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
     ListIterator itr;
     Device *dev;
     Spec *spec;
-    char *plugname;
     int i;
 
     /* find that spec */
@@ -703,17 +703,8 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
 
     _parse_hoststr(dev, hoststr, flagstr);
 
-    /* create plugs */
-    if (spec->plugs) {
-        dev->plugnames_hardwired = TRUE;
-        itr = list_iterator_create(spec->plugs);
-        while((plugname = list_next(itr))) {
-            Plug *plug = dev_plug_create(plugname);
-
-            list_append(dev->plugs, plug);
-        }
-        list_iterator_destroy(itr);
-    }
+    /* create plugs (spec->plugs may be NULL) */
+    dev->plugs = pluglist_create(spec->plugs);
 
     /* transfer remaining info from the spec to the device */
     for (i = 0; i < NUM_SCRIPTS; i++) {
@@ -746,94 +737,27 @@ static void makeAlias(char *namestr, char *hostsstr)
 static void makeNode(char *nodestr, char *devstr, char *plugstr)
 {
     Device *dev = dev_findbyname(devstr);
-    hostlist_t nodelist;
-    Plug *plug;
 
-    if(dev == NULL) 
+    if (dev == NULL) 
         _errormsg("unknown device");
 
-    /*
-     * If 'nodestr' is a hostlist, recurse.
-     * If the device has hardwired plug names, assign the plugs in the order
-     * listed.  If not, plug name will be passed in as NULL, which will
-     * be fixed up later (== node name).
-     */
-    nodelist = hostlist_create(nodestr);
-    if (hostlist_count(nodelist) > 1) {
-        ListIterator itr = list_iterator_create(dev->plugs);
-        hostlist_iterator_t hitr = hostlist_iterator_create(nodelist);
-        hostlist_t pluglist = NULL;
-        hostlist_iterator_t pitr = NULL;
-
-        if (plugstr != NULL) {
-            pluglist = hostlist_create(plugstr);
-            pitr = hostlist_iterator_create(pluglist);
-        }
-
-        while ((nodestr = hostlist_next(hitr))) {
-            if (pluglist != NULL) {
-                if ((plugstr = hostlist_next(pitr)) == NULL)
-                    _errormsg("more nodes than plugs");
-            } else if (dev->plugnames_hardwired) {
-                if ((plug = list_next(itr)) == NULL)
-                    _errormsg("more nodes than plugs");
-                plugstr = plug->name;
-            }
-            makeNode(nodestr, devstr, plugstr);
-        }
-        hostlist_iterator_destroy(hitr);
-        list_iterator_destroy(itr);
-        hostlist_destroy(nodelist);
-        if (pluglist) {
-            hostlist_iterator_destroy(pitr);
-            hostlist_destroy(pluglist);
-        }
-        return;
-    }
-    hostlist_destroy(nodelist);
-    /* recursion handled - moving on to the non-recursive case... */ 
-
-    /* if 'plugstr' was omitted, plug name == node name */
-    if (plugstr == NULL)
-        plugstr = nodestr;
-
-    if (!conf_addnode(nodestr))
-        _errormsg("duplicate node");
-
-    /* 
-     * Legal plugs are optionally specified in advance with 'plug name' line 
-     * in the device.dev file.  If this was done, dev->plugnames_hardwired 
-     * will be TRUE, dev->plugs will contain an element for every valid 
-     * plug, and creating a node consists of finding a matching plug name with
-     * a NULL node field, and filling in plug->node.   
-     */
-    if (dev->plugnames_hardwired) {
-        plug = list_find_first(dev->plugs, (ListFindF) dev_plug_match_plugname, 
-                               plugstr);
-        if (plug == NULL)
+    /* plugstr can be NULL - see comment in pluglist.h */
+    switch (pluglist_map(dev->plugs, nodestr, plugstr)) {
+        case EPL_DUPNODE:
+            _errormsg("duplicate node");
+        case EPL_UNKPLUG:
             _errormsg("unknown plug name");
-        if (plug->node)
+        case EPL_DUPPLUG:
             _errormsg("plug already assigned");
-        plug->node = Strdup(nodestr);
-    /* 
-     * Otherwise, dev->plugs starts out empty and we create a dev->plugs entry 
-     * for every 'node' line in the config file without checking whether the 
-     * plug names are valid (just that they are unique).
-     */
-    } else {
-        plug = list_find_first(dev->plugs, (ListFindF) dev_plug_match_plugname, 
-                               plugstr);
-        if (plug != NULL)
-            _errormsg("duplicate plug name");
-        plug = dev_plug_create(plugstr);
-        plug->node = Strdup(nodestr);
-        list_append(dev->plugs, plug);
+        case EPL_NOPLUGS:
+            _errormsg("more nodes than plugs");
+        case EPL_NONODES:
+            _errormsg("more plugs than nodes");
+        default:
     }
 
-    /* NOTE: every plug has a name at this point, unlike when we ware
-     * playing with the 'setplugname' script command.  We don't need to
-     * handle that error condition elsewhere anymore.
-     */
+    if (!conf_addnodes(nodestr))
+        _errormsg("duplicate node name");
 }
 
 static void makeClientPort(char *s2)

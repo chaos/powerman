@@ -1,20 +1,32 @@
-CFLAGS= -g -Wall -I../src
-VICEOBJS = vicebox.o wrappers.o error.o debug.o
+CFLAGS= -g -Wall -I../src -DHAVE_CONFIG_H
+
+COMMON_OBJS = wrappers.o error.o debug.o
+VICEOBJS = vicebox.o $(COMMON_OBJS)
+TPLOBJS = tpl.o pluglist.o hostlist.o list.o $(COMMON_OBJS)
 
 all: vpcd
 
 vpcd: vpcd.o
 	$(CC) -o $@ $< -lpthread
 
-vicebox : $(VICEOBJS)
-	$(CC) $(CFLAGS) -o $@ $(VICEOBJS)
+tpl: $(TPLOBJS)
+	$(CC) $(CFLAGS) -o $@ $(TPLOBJS)
+
 wrappers.o : ../src/wrappers.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 error.o : ../src/error.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 debug.o : ../src/debug.c
 	$(CC) $(CFLAGS) -c -o $@ $<
+pluglist.o : ../src/pluglist.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+hostlist.o : ../src/hostlist.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+list.o : ../src/list.c
+	$(CC) $(CFLAGS) -c -o $@ $<
 
+vicebox : $(VICEOBJS)
+	$(CC) $(CFLAGS) -o $@ $(VICEOBJS)
 svicebox : svicebox.c
 	$(CC) $(CFLAGS) -o $@ $<
 
@@ -75,5 +87,5 @@ run16384: test16384.conf
 
 clean :
 	rm -f *~ *.o
-	rm -f vicebox svicebox vpcd
+	rm -f vicebox svicebox vpcd tpl
 	rm -f *.conf

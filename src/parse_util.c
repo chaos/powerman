@@ -39,6 +39,7 @@
 #include "list.h"
 #include "parse_util.h"
 #include "wrappers.h"
+#include "pluglist.h"
 #include "device.h"
 #include "client.h"
 
@@ -143,12 +144,24 @@ bool conf_node_exists(char *node)
     return (res == -1 ? FALSE : TRUE);
 }
 
-bool conf_addnode(char *node)
+bool conf_addnodes(char *nodelist)
 {
-    if (conf_node_exists(node))
-        return FALSE;
-    hostlist_push(conf_nodes, node);
-    return TRUE;
+    hostlist_t hl = hostlist_create(nodelist);
+    hostlist_iterator_t itr = hostlist_iterator_create(hl);
+    char *node;
+    int res = TRUE;
+
+    while ((node = hostlist_next(itr))) {
+        if (conf_node_exists(node)) {
+            res = FALSE;
+            break; 
+        }
+        hostlist_push(conf_nodes, node);
+    }
+    hostlist_iterator_destroy(itr);
+    hostlist_destroy(hl);
+
+    return res;
 }
 
 hostlist_t conf_getnodes(void)

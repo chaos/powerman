@@ -17,7 +17,7 @@
     { DBG_MEMORY,       "memory" },         \
     { DBG_TELNET,       "telnet" },         \
     { 0, NULL }                             \
-    }
+}
 
 void dbg_notty(void);
 void dbg_setmask(unsigned long mask);

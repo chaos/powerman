@@ -48,6 +48,7 @@
 #include "list.h"
 #include "parse_util.h"
 #include "wrappers.h"
+#include "pluglist.h"
 #include "device.h"
 #include "error.h"
 #include "debug.h"

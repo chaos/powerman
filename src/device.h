@@ -102,14 +102,6 @@ typedef struct {
 typedef List Script;
 
 /*
- * Plug maps plug name/number to a node name.  Each device maintains a list.
- */
-typedef struct {
-    char *name;                 /* how the plug is known to the device */
-    char *node;                 /* node name */
-} Plug;
-
-/*
  * Device
  */
 typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectState;
@@ -136,8 +128,7 @@ typedef struct _device {
     cbuf_t to;                  /* buffer -> device */
     cbuf_t from;                /* buffer <- device */
 
-    List plugs;                 /* list of Plugs (node name <-> plug name) */
-    bool plugnames_hardwired;   /* If true, plug names listed in dev spec */
+    PlugList plugs;             /* list of Plugs (node name <-> plug name) */
     Script scripts[NUM_SCRIPTS]; /* array of scripts */
 
     struct timeval last_retry;  /* time of last reconnect retry */
@@ -178,11 +169,6 @@ Device *dev_create(const char *name);
 void dev_destroy(Device * dev);
 Device *dev_findbyname(char *name);
 List dev_getdevices(void);
-
-Plug *dev_plug_create(const char *name);
-int dev_plug_match_plugname(Plug * plug, void *key);
-int dev_plug_match_noname(Plug * plug, void *key);
-void dev_plug_destroy(Plug * plug);
 
 void dev_pre_poll(Pollfd_t pfd);
 void dev_post_poll(Pollfd_t pfd, struct timeval *tv);

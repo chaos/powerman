@@ -46,6 +46,7 @@
 #include "hostlist.h"
 #include "client_proto.h"
 #include "debug.h"
+#include "pluglist.h"
 #include "device.h"
 #include "hprintf.h"
 #include "arglist.h"
@@ -254,17 +255,17 @@ static void _client_query_nodes_reply(Client * c)
 static bool _make_pluglist(Device * dev, char *str, int len)
 {
     hostlist_t hl = hostlist_create(NULL);
-    ListIterator itr;
+    PlugListIterator itr;
     bool res = FALSE;
     Plug *plug;
 
     if (hl != NULL) {
-        itr = list_iterator_create(dev->plugs);
-        while ((plug = list_next(itr))) {
+        itr = pluglist_iterator_create(dev->plugs);
+        while ((plug = pluglist_next(itr))) {
             assert(plug->name != NULL);
             hostlist_push(hl, plug->node);
         }
-        list_iterator_destroy(itr);
+        pluglist_iterator_destroy(itr);
 
         hostlist_sort(hl);
         if (hostlist_ranged_string(hl, len, str) != -1)
@@ -281,19 +282,19 @@ static bool _make_pluglist(Device * dev, char *str, int len)
 static bool _device_matches_targets(Device *dev, char *arg)
 {
     hostlist_t targ = hostlist_create(arg);
-    ListIterator itr;
+    PlugListIterator itr;
     Plug *plug;
     bool res = FALSE;
 
     if (targ != NULL) {
-        itr = list_iterator_create(dev->plugs);
-        while ((plug = list_next(itr))) {
+        itr = pluglist_iterator_create(dev->plugs);
+        while ((plug = pluglist_next(itr))) {
             if (hostlist_find(targ, plug->node) != -1) {
                 res = TRUE;
                 break;
             }
         }
-        list_iterator_destroy(itr);
+        pluglist_iterator_destroy(itr);
         hostlist_destroy(targ);
     }
     return res;

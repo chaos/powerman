@@ -39,6 +39,7 @@
 #include "powerman.h"
 #include "parse_util.h"
 #include "wrappers.h"
+#include "pluglist.h"
 #include "device.h"
 #include "device_serial.h"
 #include "error.h"

@@ -1,3 +1,11 @@
+2003-02-19 Jim Garlick <garlick@llnl.gov>
+
+    * src/pluglist.[ch]: new PlugList abstraction for lists of Plugs.
+
+    * src/device.c, src/parse.y, src/client.c: use new PlugList code.
+
+    * test/tpl.c: test driver for pluglist code.
+
 2003-02-09 Jim Garlick <garlick@llnl.gov>
 
     * src/parse.lex: fixed for gnat 323: powerman core dumps on incorrect 

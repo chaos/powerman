@@ -38,7 +38,7 @@
 void conf_init(char *filename);
 void conf_fini(void);
 
-bool conf_addnode(char *node);
+bool conf_addnodes(char *nodelist);
 bool conf_node_exists(char *node);
 hostlist_t conf_getnodes(void);
 
