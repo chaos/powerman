@@ -212,10 +212,8 @@ static void _spec_destroy(Spec * spec)
 	    str_destroy(spec->plugname[i]);
 	Free(spec->plugname);
     }
-    for (i = 0; i < spec->num_scripts; i++) {
-	if (spec->scripts[i] != NULL)
-	    list_destroy(spec->scripts[i]);
-    }
+    for (i = 0; i < spec->num_scripts; i++)
+	list_destroy(spec->scripts[i]);
     Free(spec->scripts);
     Free(spec);
 }
@@ -274,7 +272,8 @@ void conf_spec_el_destroy(Spec_El * specl)
     assert(specl->string1 != NULL);
     str_destroy(specl->string1);
     specl->string1 = NULL;
-    list_destroy(specl->map);
+    if (specl->map != NULL)
+	list_destroy(specl->map);
     specl->map = NULL;
     Free(specl);
 }

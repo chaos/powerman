@@ -194,9 +194,9 @@ static void _select_loop(void)
     bool active_devs;		/* active_devs == FALSE => Quiescent */
     Action *act;
     struct timeval time_stamp;	/* last update */
-    /* Only when all device are devices are idle is the cluster Quiescent */
-    /* and only then can a new action be initiated from the queue.        */
-    enum { Quiescent, Occupied } status = Quiescent;
+    /* Only when all device are idle is the cluster Quiescent */
+    /* and only then can a new action be initiated from the queue. */
+    enum { STAT_QUIESCENT, STAT_OCCUPIED } status = STAT_QUIESCENT;
 
     Gettimeofday(&time_stamp, NULL);
     while (1) {
@@ -230,18 +230,18 @@ static void _select_loop(void)
 	}
 
 	/* launch the next action in the queue */
-	if ((!active_devs) & ((act = act_find()) != NULL)) {
-	    /* d previous action may need a reply sent back to a client */
-	    if (status == Occupied) {
+	if ((!active_devs) && ((act = act_find()) != NULL)) {
+	    /* a previous action may need a reply sent back to a client */
+	    if (status == STAT_OCCUPIED) {
 		act_finish(act);
-		status = Quiescent;
 		Gettimeofday(&time_stamp, NULL);
+		status = STAT_QUIESCENT;
 	    }
 
 	    /* double check - if there was an action in the queue, launch it */
 	    if ((act = act_find()) != NULL) {
 		act_initiate(act);
-		status = Occupied;
+		status = STAT_OCCUPIED;
 	    }
 	}
     }

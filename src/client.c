@@ -181,10 +181,8 @@ static void _handle_client_read(Client * c)
          */
 	act = _process_input(c);
 	if (act != NULL)
-	act_add(act);
-    }
-    while (act != NULL);
-
+	    act_add(act);
+    } while (act != NULL);
 }
 
 
@@ -210,6 +208,7 @@ static Action *_process_input(Client * c)
 	return NULL;
 
     act = _find_cli_script(expect);
+    printf("_process_input: %s (%s)\n", str_get(expect), act ? "GOOD" : "BAD");  /* XXX */
     str_destroy(expect);
     if (act != NULL) {
 	act->client = c;
@@ -604,10 +603,12 @@ void cli_process_select(fd_set *rset, fd_set *wset, bool over_time)
 	while ((client = list_next(itr))) {
 	    if (client->fd < 0)
 		continue;
-	    if (FD_ISSET(client->fd, rset))
+	    if (FD_ISSET(client->fd, rset)) {
 		_handle_client_read(client);
-	    if (FD_ISSET(client->fd, wset))
+	    }
+	    if (FD_ISSET(client->fd, wset)) {
 		_handle_client_write(client);
+	    }
 
 	    /* Is this connection done? */
 	    if ((client->read_status == CLI_DONE) &&
