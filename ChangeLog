@@ -1,7 +1,9 @@
 2003-12-17 Jim Garlick <garlick@llnl.gov>
 
-    * etc/device.c: remove _verify_plugassign (hold over from when we had
+    * src/device.c: remove _verify_plugassign (hold over from when we had
     setplugname commands in scripts).
+
+    * src/device_pipe.c: assert no string overflow from forkpty().
 
 2003-12-08 Jim Garlick <garlick@llnl.gov>
 

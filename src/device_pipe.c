@@ -86,12 +86,15 @@ bool pipe_connect(Device * dev)
     int fd;
     pid_t pid;
     PipeDev *pd = (PipeDev *)dev->data;
-    char ptyname[20]; /* FIXME */
+    char ptyname[64]; /* XXX forkpty doesn't have a 'len' parameter */
 
     assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
     pid = forkpty(&fd, ptyname, NULL, NULL);
+    if (pid > 0) {
+        assert(strlen(ptyname) < sizeof(ptyname));
+    }
 
     if (pid < 0) {
         err(FALSE, "_pipe_connect(%s): forkpty error", dev->name);
