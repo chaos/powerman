@@ -37,7 +37,7 @@
 
 #include "powerman.h"
 #include "list.h"
-#include "config.h"
+#include "parse_util.h"
 #include "device.h"
 #include "client.h"
 #include "error.h"

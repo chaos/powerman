@@ -34,6 +34,9 @@ void err_notty(void);
 void err_exit(bool errno_valid, const char *fmt, ...);
 void err(bool errno_valid, const char *fmt, ...);
 
+void lsd_fatal_error(char *file, int line, char *mesg);
+void *lsd_nomem_error(char *file, int line, char *mesg);
+
 #endif                          /* EXIT_ERROR_H */
 
 /*

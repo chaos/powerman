@@ -39,7 +39,7 @@
 #include "powerman.h"
 #include "wrappers.h"
 #include "list.h"
-#include "config.h"
+#include "parse_util.h"
 #include "client.h"
 #include "cbuf.h"
 #include "error.h"

@@ -1,5 +1,6 @@
 /*****************************************************************************\
- *  hostlist.h - hostname list manipulation routines
+ *  $LSDId: hostlist.h,v 1.1 2002/11/08 00:39:05 grondo Exp $
+ *  $Id$
  *****************************************************************************
  *  Copyright (C) 2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).

@@ -1,30 +1,29 @@
-/*****************************************************************************\
- *  $Id$
+/*****************************************************************************
+ *  $LSDId: list.c,v 1.25 2002/11/07 19:51:06 dun Exp $
+ *  $Id$ 
  *****************************************************************************
  *  Copyright (C) 2001-2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Chris Dunlap <cdunlap@llnl.gov>.
- *  UCRL-CODE-2002-009.
  *  
- *  This file is part of ConMan, a remote console management program.
- *  For details, see <http://www.llnl.gov/linux/conman/>.
- *  
- *  ConMan is free software; you can redistribute it and/or modify it under
+ *  This file is from LSD-Tools, the LLNL Software Development Toolbox.
+ *
+ *  LSD-Tools is free software; you can redistribute it and/or modify it under
  *  the terms of the GNU General Public License as published by the Free
  *  Software Foundation; either version 2 of the License, or (at your option)
  *  any later version.
- *  
- *  ConMan is distributed in the hope that it will be useful, but WITHOUT ANY
- *  WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- *  FOR A PARTICULAR PURPOSE.  See the GNU General Public License for more
- *  details.
- *  
+ *
+ *  LSD-Tools is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License for
+ *  more details.
+ *
  *  You should have received a copy of the GNU General Public License along
- *  with ConMan; if not, write to the Free Software Foundation, Inc.,
+ *  with LSD-Tools; if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
  *****************************************************************************
  *  Refer to "list.h" for documentation on public functions.
-\*****************************************************************************/
+ *****************************************************************************/
 
 
 #ifdef HAVE_CONFIG_H
@@ -32,30 +31,49 @@
 #endif /* HAVE_CONFIG_H */
 
 #ifdef WITH_PTHREADS
-#  include <errno.h>
 #  include <pthread.h>
-#  include <stdio.h>
-#  include <unistd.h>
 #endif /* WITH_PTHREADS */
 
 #include <assert.h>
+#include <errno.h>
 #include <stdlib.h>
 #include <string.h>
 #include "list.h"
 
 
-/*******************
- *  Out of Memory  *
- *******************/
+/*********************
+ *  lsd_fatal_error  *
+ *********************/
 
-#ifdef WITH_OOMF
-#  undef out_of_memory
-   extern void * out_of_memory(void);
-#else /* !WITH_OOMF */
-#  ifndef out_of_memory
-#    define out_of_memory() (NULL)
-#  endif /* !out_of_memory */
-#endif /* !WITH_OOMF */
+#ifdef WITH_LSD_FATAL_ERROR_FUNC
+#  undef lsd_fatal_error
+   extern void lsd_fatal_error(char *file, int line, char *mesg);
+#else /* !WITH_LSD_FATAL_ERROR_FUNC */
+#  ifndef lsd_fatal_error
+#    include <errno.h>
+#    include <stdio.h>
+#    include <string.h>
+#    define lsd_fatal_error(file, line, mesg)                                 \
+       do {                                                                   \
+           fprintf(stderr, "ERROR: [%s:%d] %s: %s\n",                         \
+                   file, line, mesg, strerror(errno));                        \
+       } while (0)
+#  endif /* !lsd_fatal_error */
+#endif /* !WITH_LSD_FATAL_ERROR_FUNC */
+
+
+/*********************
+ *  lsd_nomem_error  *
+ *********************/
+
+#ifdef WITH_LSD_NOMEM_ERROR_FUNC
+#  undef lsd_nomem_error
+   extern void * lsd_nomem_error(char *file, int line, char *mesg);
+#else /* !WITH_LSD_NOMEM_ERROR_FUNC */
+#  ifndef lsd_nomem_error
+#    define lsd_nomem_error(file, line, mesg) (NULL)
+#  endif /* !lsd_nomem_error */
+#endif /* !WITH_LSD_NOMEM_ERROR_FUNC */
 
 
 /***************
@@ -106,16 +124,16 @@ typedef struct listNode * ListNode;
  *  Prototypes  *
  ****************/
 
-static void * list_node_create(List l, ListNode *pp, void *x);
-static void * list_node_destroy(List l, ListNode *pp);
-static List list_alloc(void);
-static void list_free(List l);
-static ListNode list_node_alloc(void);
-static void list_node_free(ListNode p);
-static ListIterator list_iterator_alloc(void);
-static void list_iterator_free(ListIterator i);
-static void * list_alloc_aux(int size, void *pfreelist);
-static void list_free_aux(void *x, void *pfreelist);
+static void * list_node_create (List l, ListNode *pp, void *x);
+static void * list_node_destroy (List l, ListNode *pp);
+static List list_alloc (void);
+static void list_free (List l);
+static ListNode list_node_alloc (void);
+static void list_node_free (ListNode p);
+static ListIterator list_iterator_alloc (void);
+static void list_iterator_free (ListIterator i);
+static void * list_alloc_aux (int size, void *pfreelist);
+static void list_free_aux (void *x, void *pfreelist);
 
 
 /***************
@@ -125,6 +143,7 @@ static void list_free_aux(void *x, void *pfreelist);
 static List list_free_lists = NULL;
 static ListNode list_free_nodes = NULL;
 static ListIterator list_free_iterators = NULL;
+
 #ifdef WITH_PTHREADS
 static pthread_mutex_t list_free_lock = PTHREAD_MUTEX_INITIALIZER;
 #endif /* WITH_PTHREADS */
@@ -138,27 +157,47 @@ static pthread_mutex_t list_free_lock = PTHREAD_MUTEX_INITIALIZER;
 
 #  define list_mutex_init(mutex)                                              \
      do {                                                                     \
-         if ((errno = pthread_mutex_init(mutex, NULL)) != 0)                  \
-             perror("ERROR: pthread_mutex_init() failed"), exit(1);           \
+         int e = pthread_mutex_init(mutex, NULL);                             \
+         if (e != 0) {                                                        \
+             errno = e;                                                       \
+             lsd_fatal_error(__FILE__, __LINE__, "list mutex init");          \
+             abort();                                                         \
+         }                                                                    \
      } while (0)
 
 #  define list_mutex_lock(mutex)                                              \
      do {                                                                     \
-         if ((errno = pthread_mutex_lock(mutex)) != 0)                        \
-             perror("ERROR: pthread_mutex_lock() failed"), exit(1);           \
+         int e = pthread_mutex_lock(mutex);                                   \
+         if (e != 0) {                                                        \
+             errno = e;                                                       \
+             lsd_fatal_error(__FILE__, __LINE__, "list mutex lock");          \
+             abort();                                                         \
+         }                                                                    \
      } while (0)
 
 #  define list_mutex_unlock(mutex)                                            \
      do {                                                                     \
-         if ((errno = pthread_mutex_unlock(mutex)) != 0)                      \
-             perror("ERROR: pthread_mutex_unlock() failed"), exit(1);         \
+         int e = pthread_mutex_unlock(mutex);                                 \
+         if (e != 0) {                                                        \
+             errno = e;                                                       \
+             lsd_fatal_error(__FILE__, __LINE__, "list mutex unlock");        \
+             abort();                                                         \
+         }                                                                    \
      } while (0)
 
 #  define list_mutex_destroy(mutex)                                           \
      do {                                                                     \
-         if ((errno = pthread_mutex_destroy(mutex)) != 0)                     \
-             perror("ERROR: pthread_mutex_destroy() failed"), exit(1);        \
+         int e = pthread_mutex_destroy(mutex);                                \
+         if (e != 0) {                                                        \
+             errno = e;                                                       \
+             lsd_fatal_error(__FILE__, __LINE__, "list mutex destroy");       \
+             abort();                                                         \
+         }                                                                    \
      } while (0)
+
+#  ifndef NDEBUG
+     static int list_mutex_is_locked (pthread_mutex_t *mutex);
+#  endif /* !NDEBUG */
 
 #else /* !WITH_PTHREADS */
 
@@ -166,6 +205,7 @@ static pthread_mutex_t list_free_lock = PTHREAD_MUTEX_INITIALIZER;
 #  define list_mutex_lock(mutex)
 #  define list_mutex_unlock(mutex)
 #  define list_mutex_destroy(mutex)
+#  define list_mutex_is_locked(mutex) (1)
 
 #endif /* !WITH_PTHREADS */
 
@@ -174,12 +214,13 @@ static pthread_mutex_t list_free_lock = PTHREAD_MUTEX_INITIALIZER;
  *  Functions  *
  ***************/
 
-List list_create(ListDelF f)
+List
+list_create (ListDelF f)
 {
     List l;
 
     if (!(l = list_alloc()))
-        return(out_of_memory());
+        return(lsd_nomem_error(__FILE__, __LINE__, "list create"));
     l->head = NULL;
     l->tail = &l->head;
     l->iNext = NULL;
@@ -191,7 +232,8 @@ List list_create(ListDelF f)
 }
 
 
-void list_destroy(List l)
+void
+list_destroy (List l)
 {
     ListIterator i, iTmp;
     ListNode p, pTmp;
@@ -203,7 +245,7 @@ void list_destroy(List l)
     while (i) {
         assert(i->magic == LIST_MAGIC);
         iTmp = i->iNext;
-        assert(i->magic = 1);           /* clear magic via assert abuse */
+        assert(i->magic = ~LIST_MAGIC); /* clear magic via assert abuse */
         list_iterator_free(i);
         i = iTmp;
     }
@@ -215,7 +257,7 @@ void list_destroy(List l)
         list_node_free(p);
         p = pTmp;
     }
-    assert(l->magic = 1);               /* clear magic via assert abuse */
+    assert(l->magic = ~LIST_MAGIC);     /* clear magic via assert abuse */
     list_mutex_unlock(&l->mutex);
     list_mutex_destroy(&l->mutex);
     list_free(l);
@@ -223,7 +265,8 @@ void list_destroy(List l)
 }
 
 
-int list_is_empty(List l)
+int
+list_is_empty (List l)
 {
     int n;
 
@@ -236,7 +279,8 @@ int list_is_empty(List l)
 }
 
 
-int list_count(List l)
+int
+list_count (List l)
 {
     int n;
 
@@ -249,7 +293,8 @@ int list_count(List l)
 }
 
 
-void * list_append(List l, void *x)
+void *
+list_append (List l, void *x)
 {
     void *v;
 
@@ -263,7 +308,8 @@ void * list_append(List l, void *x)
 }
 
 
-void * list_prepend(List l, void *x)
+void *
+list_prepend (List l, void *x)
 {
     void *v;
 
@@ -277,7 +323,8 @@ void * list_prepend(List l, void *x)
 }
 
 
-void * list_find_first(List l, ListFindF f, void *key)
+void *
+list_find_first (List l, ListFindF f, void *key)
 {
     ListNode p;
     void *v = NULL;
@@ -298,7 +345,8 @@ void * list_find_first(List l, ListFindF f, void *key)
 }
 
 
-int list_delete_all(List l, ListFindF f, void *key)
+int
+list_delete_all (List l, ListFindF f, void *key)
 {
     ListNode *pp;
     void *v;
@@ -327,7 +375,8 @@ int list_delete_all(List l, ListFindF f, void *key)
 }
 
 
-void list_sort(List l, ListCmpF f)
+void
+list_sort (List l, ListCmpF f)
 {
 /*  Note: Time complexity O(n^2).
  */
@@ -371,7 +420,8 @@ void list_sort(List l, ListCmpF f)
 }
 
 
-void * list_push(List l, void *x)
+void *
+list_push (List l, void *x)
 {
     void *v;
 
@@ -385,7 +435,8 @@ void * list_push(List l, void *x)
 }
 
 
-void * list_pop(List l)
+void *
+list_pop (List l)
 {
     void *v;
 
@@ -398,7 +449,8 @@ void * list_pop(List l)
 }
 
 
-void * list_peek(List l)
+void *
+list_peek (List l)
 {
     void *v;
 
@@ -411,7 +463,8 @@ void * list_peek(List l)
 }
 
 
-void * list_enqueue(List l, void *x)
+void *
+list_enqueue (List l, void *x)
 {
     void *v;
 
@@ -425,7 +478,8 @@ void * list_enqueue(List l, void *x)
 }
 
 
-void * list_dequeue(List l)
+void *
+list_dequeue (List l)
 {
     void *v;
 
@@ -438,13 +492,14 @@ void * list_dequeue(List l)
 }
 
 
-ListIterator list_iterator_create(List l)
+ListIterator
+list_iterator_create (List l)
 {
     ListIterator i;
 
     assert(l != NULL);
     if (!(i = list_iterator_alloc()))
-        return(out_of_memory());
+        return(lsd_nomem_error(__FILE__, __LINE__, "list iterator create"));
     i->list = l;
     list_mutex_lock(&l->mutex);
     assert(l->magic == LIST_MAGIC);
@@ -452,13 +507,14 @@ ListIterator list_iterator_create(List l)
     i->prev = &l->head;
     i->iNext = l->iNext;
     l->iNext = i;
-    list_mutex_unlock(&l->mutex);
     assert(i->magic = LIST_MAGIC);      /* set magic via assert abuse */
+    list_mutex_unlock(&l->mutex);
     return(i);
 }
 
 
-void list_iterator_reset(ListIterator i)
+void
+list_iterator_reset (ListIterator i)
 {
     assert(i != NULL);
     assert(i->magic == LIST_MAGIC);
@@ -471,7 +527,8 @@ void list_iterator_reset(ListIterator i)
 }
 
 
-void list_iterator_destroy(ListIterator i)
+void
+list_iterator_destroy (ListIterator i)
 {
     ListIterator *pi;
 
@@ -487,13 +544,14 @@ void list_iterator_destroy(ListIterator i)
         }
     }
     list_mutex_unlock(&i->list->mutex);
-    assert(i->magic = 1);               /* clear magic via assert abuse */
+    assert(i->magic = ~LIST_MAGIC);     /* clear magic via assert abuse */
     list_iterator_free(i);
     return;
 }
 
 
-void * list_next(ListIterator i)
+void *
+list_next (ListIterator i)
 {
     ListNode p;
 
@@ -510,7 +568,8 @@ void * list_next(ListIterator i)
 }
 
 
-void * list_insert(ListIterator i, void *x)
+void *
+list_insert (ListIterator i, void *x)
 {
     void *v;
 
@@ -525,7 +584,8 @@ void * list_insert(ListIterator i, void *x)
 }
 
 
-void * list_find(ListIterator i, ListFindF f, void *key)
+void *
+list_find (ListIterator i, ListFindF f, void *key)
 {
     void *v;
 
@@ -538,7 +598,8 @@ void * list_find(ListIterator i, ListFindF f, void *key)
 }
 
 
-void * list_remove(ListIterator i)
+void *
+list_remove (ListIterator i)
 {
     void *v = NULL;
 
@@ -553,7 +614,8 @@ void * list_remove(ListIterator i)
 }
 
 
-int list_delete(ListIterator i)
+int
+list_delete (ListIterator i)
 {
     void *v;
 
@@ -568,11 +630,12 @@ int list_delete(ListIterator i)
 }
 
 
-static void * list_node_create(List l, ListNode *pp, void *x)
+static void *
+list_node_create (List l, ListNode *pp, void *x)
 {
-/*  Inserts data pointed to by (x) into list (l) after (pp),
+/*  Inserts data pointed to by [x] into list [l] after [pp],
  *    the address of the previous node's "next" ptr.
- *  Returns a ptr to data (x), or NULL if insertion fails.
+ *  Returns a ptr to data [x], or NULL if insertion fails.
  *  This routine assumes the list is already locked upon entry.
  */
     ListNode p;
@@ -580,10 +643,11 @@ static void * list_node_create(List l, ListNode *pp, void *x)
 
     assert(l != NULL);
     assert(l->magic == LIST_MAGIC);
+    assert(list_mutex_is_locked(&l->mutex));
     assert(pp != NULL);
     assert(x != NULL);
     if (!(p = list_node_alloc()))
-        return(out_of_memory());
+        return(lsd_nomem_error(__FILE__, __LINE__, "list node create"));
     p->data = x;
     if (!(p->next = *pp))
         l->tail = &p->next;
@@ -601,12 +665,13 @@ static void * list_node_create(List l, ListNode *pp, void *x)
 }
 
 
-static void * list_node_destroy(List l, ListNode *pp)
+static void *
+list_node_destroy (List l, ListNode *pp)
 {
-/*  Removes the node pointed to by (*pp) from from list (l),
- *    where (pp) is the address of the previous node's "next" ptr.
+/*  Removes the node pointed to by [*pp] from from list [l],
+ *    where [pp] is the address of the previous node's "next" ptr.
  *  Returns the data ptr associated with list item being removed,
- *    or NULL if (*pp) points to the NULL element.
+ *    or NULL if [*pp] points to the NULL element.
  *  This routine assumes the list is already locked upon entry.
  */
     void *v;
@@ -615,6 +680,7 @@ static void * list_node_destroy(List l, ListNode *pp)
 
     assert(l != NULL);
     assert(l->magic == LIST_MAGIC);
+    assert(list_mutex_is_locked(&l->mutex));
     assert(pp != NULL);
     if (!(p = *pp))
         return(NULL);
@@ -635,45 +701,52 @@ static void * list_node_destroy(List l, ListNode *pp)
 }
 
 
-static List list_alloc(void)
+static List
+list_alloc (void)
 {
     return(list_alloc_aux(sizeof(struct list), &list_free_lists));
 }
 
 
-static void list_free(List l)
+static void
+list_free (List l)
 {
     return(list_free_aux(l, &list_free_lists));
 }
 
 
-static ListNode list_node_alloc(void)
+static ListNode
+list_node_alloc (void)
 {
     return(list_alloc_aux(sizeof(struct listNode), &list_free_nodes));
 }
 
 
-static void list_node_free(ListNode p)
+static void
+list_node_free (ListNode p)
 {
     return(list_free_aux(p, &list_free_nodes));
 }
 
 
-static ListIterator list_iterator_alloc(void)
+static ListIterator
+list_iterator_alloc (void)
 {
     return(list_alloc_aux(sizeof(struct listIterator), &list_free_iterators));
 }
 
 
-static void list_iterator_free(ListIterator i)
+static void
+list_iterator_free (ListIterator i)
 {
     return(list_free_aux(i, &list_free_iterators));
 }
 
 
-static void * list_alloc_aux(int size, void *pfreelist)
+static void *
+list_alloc_aux (int size, void *pfreelist)
 {
-/*  Allocates an object from the specified freelist (*pfreelist).
+/*  Allocates an object of [size] bytes from the freelist [*pfreelist].
  *  Memory is added to the freelist in chunks of size LIST_ALLOC.
  *  Returns a ptr to the object, or NULL if the memory request fails.
  */
@@ -681,6 +754,7 @@ static void * list_alloc_aux(int size, void *pfreelist)
     void **pfree = pfreelist;
     void **plast;
 
+    assert(sizeof(char) == 1);
     assert(size >= sizeof(void *));
     assert(pfreelist != NULL);
     assert(LIST_ALLOC > 0);
@@ -696,14 +770,17 @@ static void * list_alloc_aux(int size, void *pfreelist)
     }
     if ((px = *pfree))
         *pfree = *px;
+    else
+        errno = ENOMEM;
     list_mutex_unlock(&list_free_lock);
     return(px);
 }
 
 
-static void list_free_aux(void *x, void *pfreelist)
+static void
+list_free_aux (void *x, void *pfreelist)
 {
-/*  Frees the object (x), returning it to the specified freelist (*pfreelist).
+/*  Frees the object [x], returning it to the freelist [*pfreelist].
  */
     void **px = x;
     void **pfree = pfreelist;
@@ -716,3 +793,20 @@ static void list_free_aux(void *x, void *pfreelist)
     list_mutex_unlock(&list_free_lock);
     return;
 }
+
+
+#ifndef NDEBUG
+#ifdef WITH_PTHREADS
+static int
+list_mutex_is_locked (pthread_mutex_t *mutex)
+{
+/*  Returns true if the mutex is locked; o/w, returns false.
+ */
+    int rc;
+
+    assert(mutex != NULL);
+    rc = pthread_mutex_trylock(mutex);
+    return(rc == EBUSY ? 1 : 0);
+}
+#endif /* WITH_PTHREADS */
+#endif /* !NDEBUG */

@@ -39,7 +39,7 @@
 #include "list.h"
 #include "wrappers.h"
 #include "error.h"
-#include "config.h"
+#include "parse_util.h"
 extern void yyerror();
 
 #define MAX_INCLUDE_DEPTH 10

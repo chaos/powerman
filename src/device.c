@@ -38,7 +38,7 @@
 
 #include "powerman.h"
 #include "list.h"
-#include "config.h"
+#include "parse_util.h"
 #include "device.h"
 #include "error.h"
 #include "wrappers.h"
@@ -1023,7 +1023,9 @@ Device *dev_create(const char *name)
     timerclear(&dev->last_ping);
     timerclear(&dev->ping_period);
     dev->to = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
+    cbuf_opt_set(dev->to, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
     dev->from = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
+    cbuf_opt_set(dev->to, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
     for (i = 0; i < NUM_SCRIPTS; i++)
         dev->scripts[i] = NULL;
     dev->plugs = list_create((ListDelF) dev_plug_destroy);

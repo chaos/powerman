@@ -115,6 +115,17 @@ void err(bool errno_valid, const char *fmt, ...)
     va_end(ap);
 }
 
+void lsd_fatal_error(char *file, int line, char *mesg)
+{
+    err_exit(FALSE, "fatal error: %s: %s::%d", mesg, file, line);
+}
+
+void *lsd_nomem_error(char *file, int line, char *mesg)
+{
+    err_exit(FALSE, "out of memory: %s: %s::%d", mesg, file, line);
+    /*NOTREACHED*/
+    return NULL;
+}
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

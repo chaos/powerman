@@ -1,6 +1,6 @@
 /*****************************************************************************\
- *  hostlist.c - hostname list manipulation routines
- *  See hostlist.h for documentation of public interface.
+ *  $LSDId: hostlist.c,v 1.1 2002/11/08 00:39:05 grondo Exp $
+ *  $Id$
  *****************************************************************************
  *  Copyright (C) 2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -46,14 +46,17 @@
 #include <ctype.h>
 #include <sys/param.h>
 #include <unistd.h>
+#include <string.h>
 
 #include "hostlist.h"
-#include "error.h"
 
 /* printf-style error function -- redefine to your project's error 
  * reporting facility. Should take args like _err(char *, ...)
  */
-#define _err(fmt, args...) 	err_exit(FALSE, fmt, ## args) 
+#ifndef _err
+#include "err.h"
+#define _err(fmt, args...) 	err(fmt, ## args)
+#endif
 
 /* number of elements to allocate when extending the hostlist array */
 #define HOSTLIST_CHUNK	16
@@ -447,7 +450,7 @@ static inline int hostname_suffix_is_valid(hostname_t hn)
  */
 static inline int hostname_suffix_width(hostname_t hn)
 {
-	assert(hostname_suffix_is_valid(hn));
+	assert(hn->suffix != NULL);
 	return (int) strlen(hn->suffix);
 }
 
