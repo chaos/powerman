@@ -74,9 +74,10 @@ depend:
 	-makedepend -- $(COPTS) $(DEFS) *.[ch] 2>/dev/null
 
 clean:
-	-rm -f *~ *.o .\#* parse_* cscope*.out tags TAGS
+	-rm -f *~ *.o .\#* parse_*
 
 realclean: clean
+	-rm -f cscope*.out tags TAGS
 	-rm -f powerman powermand
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
