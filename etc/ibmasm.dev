@@ -2,9 +2,14 @@
 # $Id$
 # $Source$
 #
-begin protocol specification
-	specification name "ibmasm"
-	specification type "TCP"
+# This is just a start - not working yet.  In fact it seems that the
+# telnet interface can't access chains of nodes on our setup
+# (x335 / x345 nodes), so all you get here is access to the node
+# that has the RSA card in it. Sigh.
+#
+begin specification
+	name "ibmasm"
+	type "TCP"
 	off string "Off"
 	on string  "On"
 	all string "*"
@@ -81,4 +86,4 @@ begin protocol specification
 	end CYCLE_SCRIPT
 	plug name "1"
 
-end protocol specification
+end specification

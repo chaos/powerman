@@ -11,9 +11,9 @@
 # 3. net: prompt for password : enabled (3/configuration, 5/access, 2/...)
 # Note: prompt is not returned until device is ready to accept another commmand
 #
-begin protocol specification
-	specification name "baytech"
-	specification type "TCP"
+begin specification
+	name "baytech"
+	type "TCP"
 	off string "Off"
 	on string  "On"
 	plug count 8
@@ -99,4 +99,4 @@ begin protocol specification
 	plug name "6"
 	plug name "7"
 	plug name "8"
-end protocol specification
+end specification

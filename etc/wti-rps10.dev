@@ -7,10 +7,14 @@
 # If 2400 - wait 1.5 sec before sending next command
 # Format of commands is ^X^X^B^X^X^B^X^XPC\r
 #   where P is port number (0-9) and C is command (0,1,T,?)
+#
+# Note: I seem to get good responses from the master node but the slaves
+# tend to intersperse garbage in the reply, e.g. "Complete" doesn't usually
+# make it.
 #   
-begin protocol specification
-	specification name "wti-rps10"
-	specification type "serial"
+begin specification
+	name "wti-rps10"
+	type "serial"
 	off string "Off"
 	on string  "On"
 	plug count 10
@@ -59,4 +63,4 @@ begin protocol specification
 	plug name "7"
 	plug name "8"
 	plug name "9"
-end protocol specification
+end specification

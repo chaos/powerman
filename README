@@ -4,6 +4,9 @@ PowerMan version 1.0.16                                     26 December 2002
 | New Features |
 +--------------+
 
+o powerman.conf no longer requres redundant "global" and "nodes" stanzas,
+  Warn the user if they are present but otherwise ignore them.
+
 o --device client option dumps server statistics for each RPC.
   This option can also be used by firmware update scripts to create a list
   of RPC's  The output is one line as follows per RPC:
@@ -26,7 +29,9 @@ o --version option in both client and server displays the powerman version
   and exits.  Also, the client now displays a warning if the client and server
   versions do not match exactly.
 
-o Support added for APC MasterSwitch.
+o Add support for serial-attached RPC's.
+
+o Support added for APC MasterSwitch and WTI RPS-10.
 
 +------------+
 | Bugs fixed |

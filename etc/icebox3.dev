@@ -5,9 +5,9 @@
 # Linux Networx ICE Box firmware version 3.x
 # Beacon scripts assume 3.0 B70 or greater.
 #
-begin protocol specification
-	specification name "icebox3"
-	specification type "TCP"
+begin specification
+	name "icebox3"
+	type "TCP"
 	off string "0|OFF"		# 0/1 for STATUS and STATUS_SOFT
 	on string  "1|ON"		#     and OFF/ON for STATUS_BEACON
 	plug count 10
@@ -143,4 +143,4 @@ begin protocol specification
 	plug name "8"
 	plug name "9"
 	plug name "10"
-end protocol specification
+end specification

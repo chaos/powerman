@@ -2,9 +2,9 @@
 # $Id$
 # $Source$
 #
-begin protocol specification
-	specification name "vicebox"
-	specification type "TCP"
+begin specification
+	name "vicebox"
+	type "TCP"
 	off string "0"
 	on string  "1"
 	plug count 10
@@ -91,4 +91,4 @@ begin protocol specification
 	plug name "8"
 	plug name "9"
 	plug name "10"
-end protocol specification
+end specification

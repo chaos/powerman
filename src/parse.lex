@@ -165,14 +165,18 @@ static List line_ptrs;
             *string_buf_ptr++ = *yptr++;
     }
 }
-begin[ \t]+global                 {   return TOK_B_GLOBAL; }
+client[ \t]+listener[ \t]+port    {   return TOK_OLD_PORT;      /* old */ }
+begin[ \t]+global                 {   return TOK_B_GLOBAL;      /* old */ }
+end[ \t]+global                   {   return TOK_E_GLOBAL;      /* old */ }
+begin[ \t]+nodes                  {   return TOK_B_NODES;       /* old */ }
+end[ \t]+nodes                    {   return TOK_E_NODES;       /* old */ }
+port                              {   return TOK_PORT ; }
 tcpwrappers                       {   return TOK_TCP_WRAPPERS; }
 device[ \t]+timeout               {   return TOK_DEV_TIMEOUT; }
 ping[ \t]+period                  {   return TOK_PING_PERIOD; }
-client[ \t]+listener[ \t]+port    {   return TOK_CLIENT_PORT; }
-begin[ \t]+protocol[ \t]+specification {   return TOK_B_SPEC; }
-specification[ \t]+name           {   return TOK_SPEC_NAME; }
-specification[ \t]+type           {   return TOK_SPEC_TYPE; }
+begin[ \t]+specification          {   return TOK_B_SPEC; }
+name                              {   return TOK_SPEC_NAME; }
+type                              {   return TOK_SPEC_TYPE; }
 off[ \t]+string                   {   return TOK_OFF_STRING; }
 on[ \t]+string                    {   return TOK_ON_STRING; }
 plug[ \t]+count                   {   return TOK_PLUG_COUNT; }
@@ -222,13 +226,12 @@ begin[ \t]+BEACON_ON_SCRIPT       {   return TOK_B_BEACON_ON; }
 end[ \t]+BEACON_ON_SCRIPT         {   return TOK_E_BEACON_ON; }
 begin[ \t]+BEACON_OFF_SCRIPT      {   return TOK_B_BEACON_OFF; }
 end[ \t]+BEACON_OFF_SCRIPT        {   return TOK_E_BEACON_OFF; }
-end[ \t]+protocol[ \t]+specification   {   return TOK_E_SPEC; }
+end[ \t]+specification            {   return TOK_E_SPEC; }
 device                            {   return TOK_DEVICE; }
-end[ \t]+global                   {   return TOK_E_GLOBAL; }
-begin[ \t]+nodes                  {   return TOK_B_NODES; }
 plug[ \t]+name                    {   return TOK_PLUG_NAME; }
 node                              {   return TOK_NODE; }
-end[ \t]+nodes                    {   return TOK_E_NODES; }
+yes                               {   return TOK_YES; }
+no                                {   return TOK_NO; }
 include                        BEGIN(lex_incl);
 <lex_incl>[ \t]*             {    /* eat white space */ }
 <lex_incl>[\n]               { linenum[include_stack_ptr]++; }
