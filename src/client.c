@@ -73,7 +73,7 @@ static void _act_finish(int client_id, char *errfmt, char *errarg);
 #define _client_prompt(c)   _client_printf((c), CP_PROMPT)
 
 #define MIN_CLIENT_BUF     1024
-#define MAX_CLIENT_BUF     8192
+#define MAX_CLIENT_BUF     1024*1024
 
 /* tcp wrappers support */
 extern int hosts_ctl(char *daemon, char *client_name, char *client_addr,
