@@ -1,3 +1,6 @@
+2002-11-12 garlick
+    * Added etc/apc.dev for APC MasterSwitch
+
 2002-11-09 garlick
     * Updated list.[ch], hostlist.[ch], and cbuf.[ch] from lsd-tools.
     * Renamed config.[ch] to parse_util.[ch] and created config.h.
