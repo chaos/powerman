@@ -137,3 +137,18 @@
 	* Sort hostlists before display in powerman.c
 	* Comment out baytech password expect/send in baytech.dev.
 	  Pengra doesn't use passwords.
+
+2002-08-10 hommes
+	* Modify do_PMD_semantics() in device.c to set plug->node->p_state
+	  and plug->node->n_state only if the plug is associated with node.
+	  (previous behavior was assertion failure)
+	* Modify loops in do_Device_semantics() in device.c to skip iteration
+	  if variable interp->node is NULL. (previous behavior was assertion
+	  failure)
+	* Fix dump_Plug() function in device.c to print node name only if
+	  variable plug->node is not NULL.
+	* The match_Regex() function in device.c had duplicate tests for
+	  "pmatch[0].rm_so == -1". Changed second one to
+	  "pmatch[0].rm_se == -1"
+	* Removed local variable <dev_com> which was set but never used in
+	  do_Action() in action.c.  
