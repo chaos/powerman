@@ -398,11 +398,17 @@ set delay_list {}
 
 proc tux_power_power_reset node_list {
     global delay_list
+    global tkdanger
 
     tux_power $node_list "off"
     set delay_list $node_list
-    after 3000 {
-      tux_power $delay_list "on"
+    if {$tkdanger} {
+	after 3000 {
+	    tux_power $delay_list "on"
+	}
+    } else {
+	after 3000 
+	tux_power $delay_list "on"
     }
 }
 
