@@ -29,12 +29,12 @@
 static struct {
 	int plug[NUM_PLUGS];
 } dev[NUM_THREADS];
-static int logged_in = 0;
 
 static int opt_drop_command = 0;
 static int opt_bad_response = 0;
 static int opt_off_rpc = 0;
 static int opt_hung_rpc = 0;
+static int opt_soft_off = 0;
 
 static int errcount = 0;
 
@@ -90,6 +90,7 @@ static void _prompt_loop(int num, int fd)
     int seq;
     int i;
     int n1;
+    int logged_in = 0;
 
     for (seq = 0; ; seq++) {
 	char buf[128];
@@ -124,7 +125,20 @@ static void _prompt_loop(int num, int fd)
 
 	if (strcmp(buf, "stat") == 0) {		/* stat */
 	    for (i = 0; i < NUM_PLUGS; i++)
-		dprintf(fd, "plug %d: %s\n", i, dev[num].plug[i] ? "ON":"OFF");
+		dprintf(fd, "plug %d: %s\n", i, 
+				dev[num].plug[i] ? "ON":"OFF");
+	    printf("%d: stat\n", num);
+	    goto ok;
+	}
+	if (strcmp(buf, "stat_soft") == 0) {	/* stat_soft */
+	    for (i = 0; i < NUM_PLUGS; i++) {
+		if (opt_soft_off && num == 0 && i == 0) {
+		    printf("vpcd: stat_soft forced OFF for vpcd0 plug 0\n");
+		    dprintf(fd, "plug %d: %s\n", i, "OFF");
+		} else
+		    dprintf(fd, "plug %d: %s\n", i, 
+				    dev[num].plug[i] ? "ON":"OFF");
+	    }
 	    printf("%d: stat\n", num);
 	    goto ok;
 	}
@@ -252,12 +266,13 @@ static void *_vpc_thread(void *arg)
     return NULL;
 }
 
-#define OPT_STR "dbho"
+#define OPT_STR "dbhos"
 static const struct option long_options[] = {
     {"drop_command", no_argument, 0, 'd'},
     {"bad_response", no_argument, 0, 'b'},
     {"hung_rpc", no_argument, 0, 'h'},
     {"off_rpc", no_argument, 0, 'o'},
+    {"soft_off", no_argument, 0, 's'},
     {0, 0, 0, 0}
 };
 static const struct option *longopts = long_options;
@@ -268,7 +283,8 @@ static void _usage(void)
 "--drop_command       drop response to first \"on\" command\n"
 "--bad_response       respond to first \"on\" command with UNKNOWN\n"
 "--hung_rpc           vpc0 is unresponsive after connect\n"
-"--off_rpc            vpc0 is not started\n");
+"--off_rpc            vpc0 is not started\n"
+"--soft_off           vpc0 plug 0 soft status forced to OFF\n");
     exit(1);	    
 }
 
@@ -304,6 +320,10 @@ main(int argc, char *argv[])
 		break;
 	    case 'o':	/* --off_rpc (vpc0 "turned off") */
 		opt_off_rpc++;
+		optcount++;
+		break;
+	    case 's':	/* --soft_off (vpc0 plug 0 soft state forced to off) */
+		opt_soft_off++;
 		optcount++;
 		break;
 	    default:

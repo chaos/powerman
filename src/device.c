@@ -1105,12 +1105,13 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 	    assert(dev->fd != NO_FD);
 	    if (FD_ISSET(dev->fd, wset)) {
 		_finish_connect(dev, timeout);
-		FD_CLR(dev->fd, wset); /* avoid _handle_write error */
+		if (dev->fd != NO_FD)
+		    FD_CLR(dev->fd, wset); /* avoid _handle_write error */
 	    }
 	}
 
 	/* read/write from/to buffer */
-	if (dev->fd != NO_FD) {
+	if (dev->fd != NO_FD && (dev->connect_status & DEV_CONNECTED)) {
 	    if (FD_ISSET(dev->fd, rset))
 		_handle_read(dev); /* also handles ECONNRESET */
 	    if (FD_ISSET(dev->fd, wset))

@@ -35,6 +35,27 @@ begin protocol specification
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
 	end STATUS_SCRIPT
+	begin STATUS_SOFT_SCRIPT
+		send "stat_soft\r\n"
+		expect "plug 0: (ON|OFF)"
+			map $1 "0"
+		expect "plug 1: (ON|OFF)"
+			map $1 "1"
+		expect "plug 2: (ON|OFF)"
+			map $1 "2"
+		expect "plug 3: (ON|OFF)"
+			map $1 "3"
+		expect "plug 4: (ON|OFF)"
+			map $1 "4"
+		expect "plug 5: (ON|OFF)"
+			map $1 "5"
+		expect "plug 6: (ON|OFF)"
+			map $1 "6"
+		expect "plug 7: (ON|OFF)"
+			map $1 "7"
+		expect "[0-9]* OK"
+		expect "[0-9]* vpc> "
+	end STATUS_SOFT_SCRIPT
 	begin ON_SCRIPT
 		send "on %s\r\n"
 		expect "[0-9]* OK"
@@ -54,15 +75,6 @@ begin protocol specification
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
 	end CYCLE_SCRIPT
-	begin RESET_SCRIPT
-		send "off %s\r\n"
-		expect "[0-9]* OK"
-		expect "[0-9]* vpc> "
-		delay 1.0
-		send "on %s\r\n"
-		expect "[0-9]* OK"
-		expect "[0-9]* vpc> "
-	end RESET_SCRIPT
 	plug name "0"
 	plug name "1"
 	plug name "2"

@@ -5,6 +5,9 @@
 	* _handle_write now handles errors from buf_write.
 	* Client now returns error on unimplemented commands.
 	* Changed powerman "-z --report" option to "-q --query"
+	* Added soft power status support to vpc, fixed login logic in vpc,
+	  Added --soft-off test.
+	* Don't clear wset bit after finish_connect unless fd != -1.
 
 2002-10-05 garlick
 	* More man page updates
