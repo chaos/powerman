@@ -70,7 +70,7 @@ typedef struct {
  * A Script is a list of Stmts.
  */
 #define MAX_MATCH_POS   20
-typedef enum { STMT_SEND, STMT_EXPECT, STMT_SETSTATUS, STMT_DELAY, 
+typedef enum { STMT_SEND, STMT_EXPECT, STMT_SETPLUGSTATE, STMT_DELAY, 
     STMT_SETPLUGNAME, STMT_FOREACHPLUG, STMT_FOREACHNODE, STMT_IFOFF, 
     STMT_IFON  } StmtType;
 typedef struct {
@@ -82,12 +82,12 @@ typedef struct {
         struct {                /* EXPECT */
             regex_t exp;        /* compiled regex */
         } expect;
-        struct {                /* SETSTATUS (regexes refer to prev expect) */
+        struct {                /* SETPLUGSTATE (regexs refer to prev expect) */
             char *plug_name;    /* plug name if literally specified */
             int plug_mp;        /* regex subexp match pos of plug name if not */
             int stat_mp;        /* regex subexp match pos of plug status */
             List interps;       /* list of possible interpretations */
-        } setstatus;
+        } setplugstate;
         struct {                /* SETPLUGNAME (regexes refer to prev expect) */
             int plug_mp;        /* regex match position of plug name */
             int node_mp;        /* regex match position of node name */

@@ -31,7 +31,7 @@ specification "wti" {
 		expect "\\+\r\n"
 		foreachplug {
 			expect " ([0-9]+)[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
-			setstatus $1 $2 off="OFF" on="ON"
+			setplugstate $1 $2 off="OFF" on="ON"
 		}
 		expect "\\+\r\n"
 		expect "NPS> "

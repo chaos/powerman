@@ -51,12 +51,12 @@
 typedef struct {
     int magic;
     StmtType type;              /* delay/expect/send */
-    char *str;                  /* expect string, send fmt, setstatus plug */
+    char *str;                  /* expect string, send fmt, setplugstate plug */
     struct timeval tv;          /* delay value */
-    int mp1;                    /* setstatus plug, setplugname plug match pos */
+    int mp1;                    /* setplugstate plug, setplugname plug match pos */
     int mp2;                    /* settatus stat, setplugname node match pos */
     List prestmts;              /* subblock */
-    List interps;               /* interpretations for setstatus */
+    List interps;               /* interpretations for setplugstate */
 } PreStmt;
 typedef List PreScript;
 
@@ -119,7 +119,7 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 %token TOK_RESET_ALL TOK_PING TOK_SPEC 
 
 /* script statements */
-%token TOK_EXPECT TOK_SETSTATUS TOK_SETPLUGNAME TOK_SEND TOK_DELAY
+%token TOK_EXPECT TOK_SETPLUGSTATE TOK_SETPLUGNAME TOK_SEND TOK_DELAY
 %token TOK_FOREACHPLUG TOK_FOREACHNODE TOK_IFOFF TOK_IFON
 
 /* other device configuration stuff */
@@ -318,18 +318,19 @@ stmt            : TOK_EXPECT TOK_STRING_VAL {
     $$ = (char *)makePreStmt(STMT_DELAY, NULL, $2, NULL, NULL, NULL, NULL);
 }               | TOK_SETPLUGNAME regmatch regmatch {
     $$ = (char *)makePreStmt(STMT_SETPLUGNAME, NULL, NULL, $2, $3, NULL, NULL);
-}               | TOK_SETSTATUS TOK_STRING_VAL regmatch {
-    $$ = (char *)makePreStmt(STMT_SETSTATUS, $2, NULL, NULL, $3, NULL, NULL);
-}               | TOK_SETSTATUS TOK_STRING_VAL regmatch interp_list {
-    $$ = (char *)makePreStmt(STMT_SETSTATUS, $2, NULL, NULL, $3, NULL,(List)$4);
-}               | TOK_SETSTATUS regmatch regmatch {
-    $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, $2, $3, NULL, NULL);
-}               | TOK_SETSTATUS regmatch regmatch interp_list {
-    $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, $2, $3, NULL,(List)$4);
-}               | TOK_SETSTATUS regmatch {
-    $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, NULL, $2, NULL, NULL);
-}               | TOK_SETSTATUS regmatch interp_list {
-    $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, NULL,$2,NULL,(List)$3);
+}               | TOK_SETPLUGSTATE TOK_STRING_VAL regmatch {
+    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, $2, NULL, NULL, $3, NULL, NULL);
+}               | TOK_SETPLUGSTATE TOK_STRING_VAL regmatch interp_list {
+    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, $2, NULL, NULL, $3, NULL,
+                             (List)$4);
+}               | TOK_SETPLUGSTATE regmatch regmatch {
+    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, $2, $3, NULL, NULL);
+}               | TOK_SETPLUGSTATE regmatch regmatch interp_list {
+    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, $2, $3, NULL,(List)$4);
+}               | TOK_SETPLUGSTATE regmatch {
+    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL, $2, NULL, NULL);
+}               | TOK_SETPLUGSTATE regmatch interp_list {
+    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL,$2,NULL,(List)$3);
 }               | TOK_FOREACHNODE stmt_block {
     $$ = (char *)makePreStmt(STMT_FOREACHNODE, NULL, NULL, NULL, NULL, 
                              (List)$2, NULL);
@@ -579,8 +580,8 @@ static void destroyStmt(Stmt *stmt)
         break;
     case STMT_DELAY:
         break;
-    case STMT_SETSTATUS:
-        list_destroy(stmt->u.setstatus.interps);
+    case STMT_SETPLUGSTATE:
+        list_destroy(stmt->u.setplugstate.interps);
         break;
     case STMT_FOREACHNODE:
     case STMT_FOREACHPLUG:
@@ -611,13 +612,13 @@ static Stmt *makeStmt(PreStmt *p)
     case STMT_EXPECT:
         Regcomp(&stmt->u.expect.exp, p->str, cflags);
         break;
-    case STMT_SETSTATUS:
-        stmt->u.setstatus.stat_mp = p->mp2;
+    case STMT_SETPLUGSTATE:
+        stmt->u.setplugstate.stat_mp = p->mp2;
         if (p->str)
-            stmt->u.setstatus.plug_name = Strdup(p->str);
+            stmt->u.setplugstate.plug_name = Strdup(p->str);
         else
-            stmt->u.setstatus.plug_mp = p->mp1;
-        stmt->u.setstatus.interps = copyInterpList(p->interps);
+            stmt->u.setplugstate.plug_mp = p->mp1;
+        stmt->u.setplugstate.interps = copyInterpList(p->interps);
         break;
     case STMT_SETPLUGNAME:
         stmt->u.setplugname.plug_mp = p->mp1;

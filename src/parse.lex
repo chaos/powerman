@@ -123,7 +123,7 @@ offstring                         {   return TOK_OFF_STRING; }
 onstring                          {   return TOK_ON_STRING; }
 maxplugcount                      {   return TOK_MAX_PLUG_COUNT; }
 expect                            {   return TOK_EXPECT; }
-setstatus                         {   return TOK_SETSTATUS; }
+setplugstate                      {   return TOK_SETPLUGSTATE; }
 setplugname                       {   return TOK_SETPLUGNAME; }
 foreachnode                       {   return TOK_FOREACHNODE; }
 foreachplug                       {   return TOK_FOREACHPLUG; }

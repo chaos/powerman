@@ -21,44 +21,44 @@ specification "icebox" {
 	script status_all {
 		send "ps *\r\n"
 		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
-		setstatus "1" $1 off="0" on="1"
-		setstatus "2" $2 off="0" on="1"
-		setstatus "3" $3 off="0" on="1"
-		setstatus "4" $4 off="0" on="1"
-		setstatus "5" $5 off="0" on="1"
-		setstatus "6" $6 off="0" on="1"
-		setstatus "7" $7 off="0" on="1"
-		setstatus "8" $8 off="0" on="1"
-		setstatus "9" $9 off="0" on="1"
-		setstatus "10" $10 off="0" on="1"
+		setplugstate "1" $1 off="0" on="1"
+		setplugstate "2" $2 off="0" on="1"
+		setplugstate "3" $3 off="0" on="1"
+		setplugstate "4" $4 off="0" on="1"
+		setplugstate "5" $5 off="0" on="1"
+		setplugstate "6" $6 off="0" on="1"
+		setplugstate "7" $7 off="0" on="1"
+		setplugstate "8" $8 off="0" on="1"
+		setplugstate "9" $9 off="0" on="1"
+		setplugstate "10" $10 off="0" on="1"
 	}
 	script status_soft_all {
 		send "ns *\r\n"
 		expect "N1:([012]) N2:([012]) N3:([012]) N4:([012]) N5:([012]) N6:([012]) N7:([012]) N8:([012]) N9:([012]) N10:([012])[[:space:]]*\r\n"
-		setstatus "1" $1 off="0" on="1"
-		setstatus "2" $2 off="0" on="1"
-		setstatus "3" $3 off="0" on="1"
-		setstatus "4" $4 off="0" on="1"
-		setstatus "5" $5 off="0" on="1"
-		setstatus "6" $6 off="0" on="1"
-		setstatus "7" $7 off="0" on="1"
-		setstatus "8" $8 off="0" on="1"
-		setstatus "9" $9 off="0" on="1"
-		setstatus "10" $10 off="0" on="1"
+		setplugstate "1" $1 off="0" on="1"
+		setplugstate "2" $2 off="0" on="1"
+		setplugstate "3" $3 off="0" on="1"
+		setplugstate "4" $4 off="0" on="1"
+		setplugstate "5" $5 off="0" on="1"
+		setplugstate "6" $6 off="0" on="1"
+		setplugstate "7" $7 off="0" on="1"
+		setplugstate "8" $8 off="0" on="1"
+		setplugstate "9" $9 off="0" on="1"
+		setplugstate "10" $10 off="0" on="1"
 	}
 	script status_temp_all {
 		send "ts *\r\n"
 		expect "N1:([0-9,]+) N2:([0-9,]+) N3:([0-9,]+) N4:([0-9,]+) N5:([0-9,]+) N6:([0-9,]+) N7:([0-9,]+) N8:([0-9,]+) N9:([0-9,]+) N10:([0-9,]+) N11:[0-9,]+ N12:[0-9,]+[[:space:]]*\r\n"
-		setstatus "1" $1 
-		setstatus "2" $2
-		setstatus "3" $3
-		setstatus "4" $4
-		setstatus "5" $5
-		setstatus "6" $6
-		setstatus "7" $7
-		setstatus "8" $8
-		setstatus "9" $9
-		setstatus "10" $10
+		setplugstate "1" $1 
+		setplugstate "2" $2
+		setplugstate "3" $3
+		setplugstate "4" $4
+		setplugstate "5" $5
+		setplugstate "6" $6
+		setplugstate "7" $7
+		setplugstate "8" $8
+		setplugstate "9" $9
+		setplugstate "10" $10
 	}
 	script on {
 		send "ph %s\r\n"

@@ -30,7 +30,7 @@ specification "apc" {
 		send "\r\n"  # refresh
 		foreachplug {
 			expect "([0-9]+)-[^\n]*(ON|OFF)[^\n]*\r\n"
-			setstatus $1 $2 on="ON" off="OFF"
+			setplugstate $1 $2 on="ON" off="OFF"
 		}
 		expect "> "
 	}

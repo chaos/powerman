@@ -1,3 +1,9 @@
+2003-04-23 Jim Garlick <garlick@llnl.gov>
+
+    * src/*: rename "setstatus" to "setplugstate".
+
+    * etc/ibmrsa.dev: fix reversed regex parameters to setplugname command.
+
 2003-04-21 Jim Garlick <garlick@llnl.gov>
 
     * src/{parse.y,parse.lex,device.c}: Add "ifon" and "ifoff" conditionals.

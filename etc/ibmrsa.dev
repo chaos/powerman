@@ -32,7 +32,7 @@ specification "ibmrsa" {
 		send "remotesp\r\n"
 		foreachnode {
 			expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-			setplugname $1 $2
+			setplugname $2 $1	# node plug
 		}
 	}
 	script logout {
@@ -42,7 +42,7 @@ specification "ibmrsa" {
 		send "power 2 0\r\n"
 		foreachnode {
 			expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-			setstatus $1 $2 on="on" off="off"
+			setplugstate $1 $2 on="on" off="off"
 		}
 	}
 	script on {

@@ -40,7 +40,7 @@ specification "baytech" {
 		expect "Circuit Breaker:[^\n]*\r\n"	
 		foreachplug {
 			expect "([0-9]+)[ ]+(On|Off)"
-			setstatus $1 $2 on="On" off="Off"
+			setplugstate $1 $2 on="On" off="Off"
 		}
 		expect "RPC-3>"
 	}

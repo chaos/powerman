@@ -86,7 +86,7 @@ static bool _process_stmt(Device *dev, Action *act, ExecCtx *e,
         struct timeval *timeout);
 static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e);
 static bool _process_foreach(Device *dev, Action *act, ExecCtx *e);
-static bool _process_setstatus(Device * dev, Action *act, ExecCtx *e);
+static bool _process_setplugstate(Device * dev, Action *act, ExecCtx *e);
 static bool _process_setplugname(Device * dev, Action *act, ExecCtx *e);
 static bool _process_expect(Device * dev, Action *act, ExecCtx *e);
 static bool _process_send(Device * dev, Action *act, ExecCtx *e);
@@ -900,8 +900,8 @@ bool _process_stmt(Device *dev, Action *act, ExecCtx *e,
     case STMT_SEND:
         finished = _process_send(dev, act, e);
         break;
-    case STMT_SETSTATUS:
-        finished = _process_setstatus(dev, act, e);
+    case STMT_SETPLUGSTATE:
+        finished = _process_setplugstate(dev, act, e);
         break;
     case STMT_SETPLUGNAME:
         finished = _process_setplugname(dev, act, e);
@@ -1036,30 +1036,30 @@ static char *_plug_to_node(Device *dev, char *plug_name)
     return node;
 }
 
-static bool _process_setstatus(Device *dev, Action *act, ExecCtx *e)
+static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
 {
     bool finished = TRUE;
     char *plug_name = NULL;
 
     /* 
-     * Usage: setstatus [plug] status [interps]
+     * Usage: setplugstate [plug] status [interps]
      * plug can be literal plug name, or regex match, or omitted, 
      * (implying target plug name).
      */
-    if (e->cur->u.setstatus.plug_name)    /* literal */
-        plug_name = Strdup(e->cur->u.setstatus.plug_name);
+    if (e->cur->u.setplugstate.plug_name)    /* literal */
+        plug_name = Strdup(e->cur->u.setplugstate.plug_name);
     if (!plug_name)                         /* regex match */
-        plug_name = _copy_pmatch(dev, e->cur->u.setstatus.plug_mp);
+        plug_name = _copy_pmatch(dev, e->cur->u.setplugstate.plug_mp);
     if (!plug_name && (e->target && e->target->name != NULL))
         plug_name = Strdup(e->target->name);/* use action target */
     /* if no plug name, do nothing */
 
     if (plug_name) {
-        char *str = _copy_pmatch(dev, e->cur->u.setstatus.stat_mp);
+        char *str = _copy_pmatch(dev, e->cur->u.setplugstate.stat_mp);
         char *node = _plug_to_node(dev, plug_name);
 
         if (str && node) {
-            _set_argval(act->arglist, node, str, e->cur->u.setstatus.interps);
+            _set_argval(act->arglist, node, str, e->cur->u.setplugstate.interps);
             Free(str);
         } 
         /* if no match, do nothing */
@@ -1101,6 +1101,10 @@ static bool _process_setplugname(Device* dev, Action *act, ExecCtx *e)
                 if (plug->name)                 /* free old plug name */
                     Free(plug->name);
                 plug->name = Strdup(plug_name); /* store new plug name */
+                printf("XXX setplugname %s: setting to %s\n", 
+                    plug->node, plug->name);
+            } else {
+                printf("XXX setplugname %s: not found\n", node_name);
             }
             Free(plug_name);
         }

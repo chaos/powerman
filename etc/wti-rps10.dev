@@ -26,7 +26,7 @@ specification  "wti-rps10" {
 	script status {
 		send "\030\030\002\030\030\002\030\030%s?\r"
 		expect "Plug ([0-9]) (On|Off)"
-		setstatus $1 $2 off="Off" on="On"
+		setplugstate $1 $2 off="Off" on="On"
 		expect "Complete"
 		#delay 0.5
 	}
