@@ -195,6 +195,8 @@ bool serial_connect(Device * dev)
     }
     if (!isatty(dev->fd)) {
         err(FALSE, "_serial_connect(%s): not a tty\n", dev->name);
+        Close(dev->fd);
+        dev->fd = -1;
         goto out;
     }
     /*  [lifted from conman] According to the UNIX Programming FAQ v1.37
@@ -208,12 +210,21 @@ bool serial_connect(Device * dev)
     Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
 
     /* FIXME: take an flock F_WRLOCK to coexist with conman */
+    if (lockf(dev->fd, F_TLOCK, 0) < 0) {
+        err(TRUE, "_serial_connect(%s): could not lock device\n", dev->name);
+        Close(dev->fd);
+        dev->fd = -1;
+        goto out;
+    }
 
     /* parse the serial flags and set up port accordingly */
     sscanf(ser->flags, "%d,%d%c%d", &baud, &databits, &parity, &stopbits);
     res = _serial_setup(dev->name, dev->fd, baud, databits, parity, stopbits);
-    if (res < 0)
+    if (res < 0) {
+        Close(dev->fd);
+        dev->fd = -1;
         goto out;
+    }
 
     dev->connect_state = DEV_CONNECTED;
     dev->stat_successful_connects++;
