@@ -55,7 +55,7 @@ docdir		=	${prefix}/share/doc
 # I'm pretty sure the the %doc directive in the rpm spec file does that for 
 # me.
 
-all: progs docs
+all: progs
 
 progs : 
 	$(MAKE) -C src
