@@ -7,6 +7,7 @@
 #            $POWERMANDIR/bin/Makefile
 # v. 0-1-1:  2001-08-31
 #            renovation in support of rpm builds
+# v. 0-1-2:  2001-09-05
 ####################################################################
 # I'll eventually want to exclude "rmc", since it depends on the 
 # conman package.  It should be in another rpm by itself.

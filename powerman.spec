@@ -1,13 +1,15 @@
+####################################################################
 # $Id$
-#
-# In the binary RPM build step we're still getting some lines like:
-#  shell-init: could not get current directory
-#  job-working-directory: could not get current directory
-# This may be the result of the rm -rf in the clean section
+# by Andrew C. Uselton <uselton2@llnl.gov> 
+# Copyright (C) 2000 Regents of the University of California
+# See ../DISCLAIMER
 #
 # I may want to return to this preamble and define some more of the 
 # standard tags.
 #
+# v. 0-1-2:  2001-09-05
+#            Add the Post Install step setting digi to suid root
+####################################################################
  
 %define name    powerman
 %define version 0.1.1
@@ -45,6 +47,7 @@ rm -rf "$RPM_BUILD_ROOT"
 %pre
 
 %post
+chmod 4755 /usr/lib/powerman/bin/digi
 # Once I have a good powerman configuration script I'll probably want to
 # run it here.
 

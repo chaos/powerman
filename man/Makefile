@@ -7,10 +7,11 @@
 #            $POWERMANDIR/man/Makefile
 # v. 0-1-1:  2001-08-31
 #            renovation in support of rpm builds
+# v. 0-1-2:  2001-09-05
 ####################################################################
 
 PACKAGE= powerman
-VERSION= 0.1.1
+VERSION= 0.1.2
 SHELL=   /bin/sh
 CC=      gcc
 DEFS=

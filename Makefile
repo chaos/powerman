@@ -7,10 +7,14 @@
 #            $POWERMANDIR/Makefile
 # v. 0-1-1:  2001-08-31
 #            renovation in support of rpm builds
+# v. 0-1-2:  2001-09-05
+#            make targets no longer (necessarily) need root 
+#            priveleges, and no longer check.  suid of digi 
+#            now happens in RPM post install sript
 ####################################################################
 
 PACKAGE= powerman
-VERSION= 0.1.1
+VERSION= 0.1.2
 SHELL=   /bin/sh
 MAKE=    /usr/bin/make
 CC=      gcc
@@ -35,20 +39,14 @@ packagedir=     ${libdir}/${PACKAGE}
 # me.
 
 all: 
-	@if test `id -u` != 0 ; then \
-	echo "You must be root to do this" ; exit 1 ; fi ; \
 	cd src; make; cd ..
 	mv src/digi bin
-	chown root bin/digi
-	chmod 4755 bin/digi
 	mv src/ether-wake lib
 
 %:%.c
 	$(CC) $(COPTS) $< -o $@ $(INC) $(LIB)
 
 install: 
-	@if test `id -u` != 0 ; then \
-	echo "You must be root to do this" ; exit 1 ; fi ; \
 	$(mkinstalldirs) $(DESTDIR)$(bindir)
 	$(INSTALL) pm    $(DESTDIR)$(bindir)/
 	cd bin; make install; cd ..

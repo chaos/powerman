@@ -13,6 +13,7 @@
 #     independent relative or absolute path.
 # v. 0-1-1:  2001-08-31
 #            renovation in support of rpm builds
+# v. 0-1-2:  2001-09-05
 ####################################################################
 
 import sys
@@ -320,7 +321,7 @@ def usage(msg):
 
 # Begin main routine processing.
 
-Version = "pm: Powerman 0.1.1"
+Version = "pm: Powerman 0.1.2"
 
 # initialize globals
 powermandir = '/usr/lib/powerman/'
