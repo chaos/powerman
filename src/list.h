@@ -1,11 +1,13 @@
 /* 
  * $Id$
- *   This file was incorporated in this project from the excellent ConMan
- * utility documented below.
+ *
+ * This file was incorporated into the project from the ConMan utility.
+ *
+ * ChangeLog:
+ *   - added list_iterator_peek().
  */
-
 /*****************************************************************************\
- *  Id: list.h,v 1.1 2002/07/05 21:37:41 dun Exp 
+ *  Id: list.h,v 1.10 2002/05/12 19:20:29 dun Exp 
  *****************************************************************************
  *  Copyright (C) 2001-2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
