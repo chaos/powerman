@@ -40,6 +40,8 @@
   the include directive and report file::line (introduce an error and see).
 * Audit code for reconnecting to power control devices.  Failure case: start
   powermand with vpcd config.  Start vpcd.  Reconnect does not occur for about
-  five minutes; subsequently, daemon does not prompt for commands.
+  five minutes; subsequently, daemon does not prompt for commands.  SIGINT 
+  in the debugger shows code is in dev_process_select -> dev_handle_read 
+  -> dev_read -> ?? -> read.
 * Reconnect algorithm should be sane: exponential backoff & retry with cap
   of one minute or so.
