@@ -1184,8 +1184,8 @@ match_RegEx(Device *dev, String expect)
 	Action *act;
 	regex_t *re;
 	int n;
-	size_t nmatch = 1;
-	regmatch_t pmatch[1];
+	size_t nmatch = MAX_MATCH;
+	regmatch_t pmatch[MAX_MATCH];
 	int eflags = 0;
 	Interpretation *interp;
 	ListIterator map_i;
