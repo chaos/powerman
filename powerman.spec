@@ -80,8 +80,8 @@ if [ "$1" = 0 ]; then
 fi
 
 %files
-%doc ChangeLog DISCLAIMER
 %defattr(0644,root,root)
+%doc ChangeLog DISCLAIMER
 %attr(0755,root,root)/usr/bin/powerman
 %attr(0755,root,root)/usr/bin/pm
 %attr(0755,root,root)/usr/sbin/powermand
