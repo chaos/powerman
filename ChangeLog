@@ -1,3 +1,6 @@
+2002-11-21 garlick
+    * Fixed etc/icebox3.dev to handle flashing multiple beacons.
+
 2002-11-12 garlick
     * Added etc/apc.dev for APC MasterSwitch
 
