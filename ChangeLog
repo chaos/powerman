@@ -1,3 +1,7 @@
+2002-10-16 garlick
+	* Make Action struct private to device.c
+	* Move script names to config.h.
+
 2002-10-14 garlick
 	* Remove RESET_SCRIPT definitions in wti and baytech device files.
 	* Got rid of Cluster and Node data structures.

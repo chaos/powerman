@@ -46,6 +46,33 @@
 #include "debug.h"
 #include "client_proto.h"
 
+
+/* bitwise values for dev->script_status */
+#define DEV_LOGGED_IN	    0x01
+#define DEV_SENDING	    0x02
+#define DEV_EXPECTING	    0x04
+#define DEV_DELAYING	    0x08
+
+/*
+ * Actions are appended to a per device list in dev->acts
+ */
+typedef struct {
+    int          com;     /* one of the PM_* above */
+    ListIterator itr;     /* next place in the script sequence */
+    Script_El    *cur;    /* current place in the script sequence */
+    char         *target; /* native device represenation of target plug(s) */
+    ActionCB	 cb_fun;  /* callback for action completion */
+    int		 client_id; /* client id so completion can find client */
+    bool	 error;	  /* error flag for action */
+    struct timeval  time_stamp; /* time stamp for timeouts */
+    struct timeval  delay_start; /* time stamp for delay completion */
+    bool	 started;  /* TRUE if action has reached head of queue */
+    ArgList      *arglist; /* argument for query actions (list of Arg's) */
+    MAGIC;
+} Action;
+
+
+
 static bool _reconnect(Device * dev);
 static bool _finish_connect(Device * dev, struct timeval *timeout);
 static bool _time_to_reconnect(Device *dev, struct timeval *timeout);
@@ -821,7 +848,7 @@ static void _match_subexpressions(Device * dev, List map, ArgList *arglist)
 {
     Action *act;
     Interpretation *interp;
-    ListIterator map_i;
+    ListIterator itr;
     regex_t *re;
     char *str;
     char *end;
@@ -834,11 +861,11 @@ static void _match_subexpressions(Device * dev, List map, ArgList *arglist)
     act = list_peek(dev->acts);
     assert(act != NULL);
     assert(map != NULL);
-    map_i = list_iterator_create(map);
+    itr = list_iterator_create(map);
 
     switch (act->com) {
     case PM_UPDATE_PLUGS:
-	while (((Interpretation *) interp = list_next(map_i))) {
+	while (((Interpretation *) interp = list_next(itr))) {
 	    if (interp->node == NULL)
 		continue;
 	    re = &(dev->on_re);
@@ -858,8 +885,9 @@ static void _match_subexpressions(Device * dev, List map, ArgList *arglist)
 	    *end = tmp;
 	}
 	break;
+#if 0
     case PM_UPDATE_NODES:
-	while (((Interpretation *) interp = list_next(map_i))) {
+	while (((Interpretation *) interp = list_next(itr))) {
 	    if (interp->node == NULL)
 		continue;
 	    re = &(dev->on_re);
@@ -879,9 +907,10 @@ static void _match_subexpressions(Device * dev, List map, ArgList *arglist)
 	    *end = tmp;
 	}
 	break;
+#endif
     default:
     }
-    list_iterator_destroy(map_i);
+    list_iterator_destroy(itr);
 }
 
 Device *dev_create(const char *name)
@@ -987,7 +1016,7 @@ static bool _match_regex(Device * dev, char *expect)
     regmatch_t pmatch[MAX_MATCH];
     int eflags = 0;
     Interpretation *interp;
-    ListIterator map_i;
+    ListIterator itr;
 
     CHECK_MAGIC(dev);
     act = list_peek(dev->acts);
@@ -1015,15 +1044,15 @@ static bool _match_regex(Device * dev, char *expect)
     if (act->cur->s_or_e.expect.map == NULL)
 	return TRUE;
 
-    map_i = list_iterator_create(act->cur->s_or_e.expect.map);
-    while ((interp = list_next(map_i))) {
+    itr = list_iterator_create(act->cur->s_or_e.expect.map);
+    while ((interp = list_next(itr))) {
 	assert((pmatch[interp->match_pos].rm_so < MAX_BUF) &&
 	       (pmatch[interp->match_pos].rm_so >= 0));
 	assert((pmatch[interp->match_pos].rm_eo < MAX_BUF) &&
 	       (pmatch[interp->match_pos].rm_eo >= 0));
 	interp->val = expect + pmatch[interp->match_pos].rm_so;
     }
-    list_iterator_destroy(map_i);
+    list_iterator_destroy(itr);
     return TRUE;
 }
 

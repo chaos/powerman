@@ -31,64 +31,22 @@
 #include "buffer.h"
 #include "hostlist.h"
 
-/* bitwise values for dev->script_status */
-#define DEV_LOGGED_IN	    0x01
-#define DEV_SENDING	    0x02
-#define DEV_EXPECTING	    0x04
-#define DEV_DELAYING	    0x08
-
 /*
- * Action
+ * Query actions fill ArgList with values and return them to the client.
  */
-
-/* Indices into script arrays */
-/* Note: keep in sync with command_str[] array in device.c */
-/* Note: NUM_SCRIPTS in config.h should also agree */
-#define PM_LOG_IN           0
-#define PM_LOG_OUT          1
-#define PM_UPDATE_PLUGS     2
-#define PM_UPDATE_NODES     3
-#define PM_POWER_ON         4
-#define PM_POWER_OFF        5
-#define PM_POWER_CYCLE      6
-#define PM_RESET            7
-
 typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } ArgState;
-
 typedef struct {
     char         *node;   /* key */
-    ArgState     state;   /* value */
+    char	 *value;  /* value as returned by the device */
+    ArgState     state;   /* interpreted value, if appropriate */
 } Arg;
-
 typedef struct {
     List	 argv;    /* list of Arg structures */
     int          refcount;/* free when refcount == 0 */
 } ArgList;
 
-typedef void (*ActionCB)(int client_id, char *errfmt, char *errarg);
-
 /*
- * Actions are appended to a per device list in dev->acts
- */
-typedef struct {
-    int          com;     /* one of the PM_* above */
-    ListIterator itr;     /* next place in the script sequence */
-    Script_El    *cur;    /* current place in the script sequence */
-    char         *target; /* native device represenation of target plug(s) */
-    ActionCB	 cb_fun;  /* callback for action completion */
-    int		 client_id; /* client id so completion can find client */
-    bool	 error;	  /* error flag for action */
-    struct timeval  time_stamp; /* time stamp for timeouts */
-    struct timeval  delay_start; /* time stamp for delay completion */
-    bool	 started;  /* TRUE if action has reached head of queue */
-    ArgList      *arglist; /* argument for query actions (list of Arg's) */
-    MAGIC;
-} Action;
-
-typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectStat;
-
-/*
- * Plug
+ * Plug maps plug name/number to a node name.  Each device maintains a list.
  */
 typedef struct {
     char	    *name;	    /* how the plug is known to the device */
@@ -98,6 +56,7 @@ typedef struct {
 /*
  * Device
  */
+typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectStat;
 typedef struct {
     char	    *name;	    /* name of device */
     char	    *all;	    /* string for to select all plugs */
@@ -130,6 +89,8 @@ typedef struct {
     int		    reconnect_count;/* number of reconnects attempted */
     MAGIC;
 } Device;
+
+typedef void (*ActionCB)(int client_id, char *errfmt, char *errarg);
 
 void dev_init(void);
 void dev_fini(void);

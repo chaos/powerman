@@ -39,10 +39,19 @@
 #include "hostlist.h"
 #include "string.h"
 
-#define NUM_SCRIPTS	8
+/* Indices into script array */
+#define PM_LOG_IN           0
+#define PM_LOG_OUT          1
+#define PM_UPDATE_PLUGS     2
+#define PM_UPDATE_NODES     3
+#define PM_POWER_ON         4
+#define PM_POWER_OFF        5
+#define PM_POWER_CYCLE      6
+#define PM_RESET            7
+/* count of scripts above */
+#define NUM_SCRIPTS	    8
 
-#define UPDATE_SECONDS	300
-#define NOT_SET		(-1)
+#define UPDATE_SECONDS	    300
 
 /*
  * Script element (send, expect, or delay).
@@ -100,6 +109,7 @@ typedef struct {
 /*
  * Interpretation - a Script_El map entry.
  */
+#define INTERP_MATCH_POS_NOT_SET (-1) /* match_pos value if not set */
 typedef struct {
     char	    *plug_name;	/* plug name e.g. "10" */
     int		    match_pos;	/* offset into string where match is */
