@@ -70,3 +70,6 @@
 	* Commenting out the "log file" config line now disables logging.
 	* Made wrapper Malloc/Free more robust (embed size/magic cookie in
 	  each buffer allocated).  Size is no longer a parameter to Free.
+
+2002-07-29 garlick
+	* Make --queryon, --queryoff work with or without targets on cmd line.

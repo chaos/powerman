@@ -71,7 +71,7 @@ static const struct option long_options[] =
 static const struct option *longopts = long_options;
 
 typedef enum {
-	CMD_ERROR, CMD_QUERY_ON, CMD_QUERY_OFF, CMD_POWER_ON, 
+	CMD_ERROR, CMD_QUERY_ON, CMD_QUERY_OFF, CMD_QUERY_ALL, CMD_POWER_ON, 
 	CMD_POWER_OFF, CMD_POWER_CYCLE, CMD_RESET, CMD_LISTTARG,
 } _command_t;
 
@@ -84,7 +84,6 @@ typedef struct {
 	_command_t com;
 	bool regex;
 	bool soft;
-	bool readable;
 	bool verify;
 	List targ;
 	List reply;
@@ -121,7 +120,6 @@ static int cmp_Nodes(void *node1, void *node2);
 static int xmatch_Node(void *node, void *key);
 static void xfree_Node(void *node);
 static bool is_prompt(String targ);
-static void print_Cluster(List cluster);
 
 const char *powerman_license = \
     "Copyright (C) 2001-2002 The Regents of the University of California.\n"  \
@@ -158,7 +156,6 @@ main(int argc, char **argv)
 	cluster = connect_to_server(conf);
 	if( list_is_empty(cluster) ) 
 		exit_msg("No cluster members found");
-	/*print_Cluster(cluster);*/ /* XXX debug */
 	process_targets(conf, cluster);
 	free_Config(conf);
 	list_destroy(cluster);
@@ -236,7 +233,11 @@ process_command_line(int argc, char **argv)
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_LISTTARG;
-			targs_required = TRUE;
+			break;
+		case 'z':	/* --report */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_QUERY_ALL;
 			break;
 		/* 
 		 * Modifiers.
@@ -268,9 +269,6 @@ process_command_line(int argc, char **argv)
 			break;
 		case 'x':	/* --regex */
 			conf->regex = TRUE;
-			break;
-		case 'z':	/* --report */
-			conf->readable = TRUE;
 			break;
 		default:
 			exit_msg("Unrecognized command line option (see --help)");
@@ -307,9 +305,14 @@ process_command_line(int argc, char **argv)
 		hostlist_iterator_destroy(iter);
 	}
 
-	if (targs_required && list_is_empty(conf->targ))
-		exit_msg("command requires target(s)");
-
+	if (list_is_empty(conf->targ)) {
+		if (targs_required)
+			exit_msg("command requires target(s)");
+		else {
+			targ = make_String("*");
+			list_append(conf->targ, (void *)targ);
+		}
+	}
 	/* If --noexec, just say what we would have done but don't contact
 	 * the server.
 	 */
@@ -605,21 +608,22 @@ send_server(Config *conf, String str)
 
 	switch(conf->com)
 	{
-	case CMD_QUERY_ON      :
-	case CMD_QUERY_OFF     :
-	case CMD_LISTTARG       :
+	case CMD_QUERY_ON:
+	case CMD_QUERY_OFF:
+	case CMD_QUERY_ALL:
+	case CMD_LISTTARG:
 		sprintf(buf, GET_NAMES_FMT, get_String(str));
 		break;
-	case CMD_POWER_ON    :
+	case CMD_POWER_ON:
 		sprintf(buf, DO_POWER_ON_FMT, get_String(str));
 		break;
-	case CMD_POWER_OFF   :
+	case CMD_POWER_OFF:
 		sprintf(buf, DO_POWER_OFF_FMT, get_String(str));
 		break;
-	case CMD_POWER_CYCLE :
+	case CMD_POWER_CYCLE:
 		sprintf(buf, DO_POWER_CYCLE_FMT, get_String(str));
 		break;
-	case CMD_RESET       :
+	case CMD_RESET:
 		sprintf(buf, DO_RESET_FMT, get_String(str));
 		break;
 	default :
@@ -636,18 +640,17 @@ publish_reply(Config *conf, List cluster, List reply)
 
 	switch(conf->com)
 	{
-	case CMD_QUERY_ON      :
+	case CMD_QUERY_ON:
 		state = ON;
-	case CMD_QUERY_OFF     :
-		if( conf->readable == TRUE ) 
-			print_readable(conf, cluster);
-		else
-			print_list(conf, cluster, reply, state);
+	case CMD_QUERY_OFF:
+		print_list(conf, cluster, reply, state);
 		break;
-	case CMD_POWER_ON    :
-	case CMD_POWER_OFF   :
-	case CMD_POWER_CYCLE :
-	case CMD_RESET       :
+	case CMD_QUERY_ALL:
+		print_readable(conf, cluster);
+	case CMD_POWER_ON:
+	case CMD_POWER_OFF:
+	case CMD_POWER_CYCLE:
+	case CMD_RESET:
 		if( conf->verify == TRUE )
 		{
 			get_State(conf->fd, cluster);
@@ -835,20 +838,6 @@ print_Targets(List targ)
 	list_iterator_destroy(itr);
 }
 
-static void
-print_Cluster(List cluster)
-{
-	Node *node;
-	ListIterator itr;
-
-	assert( cluster != NULL );
-	itr = list_iterator_create(cluster);
-	while( (node = (Node *)list_next(itr)) )
-	{
-		printf("%s\n", get_String(node->name));
-	}
-	list_iterator_destroy(itr);
-}
 
 /*
  * Config source
@@ -898,7 +887,6 @@ make_Config(void)
 	}
 	conf->com = CMD_ERROR;
 	conf->regex = FALSE;
-	conf->readable = FALSE;
 	conf->verify = FALSE;
 	conf->targ = list_create(free_String);
 	conf->ntarg = hostlist_create(NULL);
