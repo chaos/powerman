@@ -1,0 +1,69 @@
+PowerMan device specifications are rather wierd.  For this reason, we suggest 
+that you leave the writing of these scripts to the PowerMan authors.  However, 
+if you insist, here is how they work.  [Note: the authors do not guarantee that
+the PowerMan specification language will not change, however we are open to
+taking on maintenance of scripts submitted by PowerMan users.  We can't 
+guarantee that we'll be able to get hold of a particular model RPC to add
+to our PowerMan test fixture but we'll try if it is a common one].
+
+By convention, device scripts are one device per file and are included 
+as needed from a powerman.conf file, like this:
+
+  include "/etc/powerman/icebox3.dev"
+
+A device script is surrounded by an outer block:
+
+  specification "my_device_name" {
+	# the specification block should contain device-specific 
+	# configuration settings and scripts for individual operations
+  }
+
+The possible configuration settings are:
+
+  # (optional) device script timeout in seconds - applies to each script,
+  # the whole thing, not just a particular "expect" for example
+  timeout <float>   
+
+  # (optional) if plug names are static (e.g. not an ibmrsa.dev), they
+  # should be defined.  Any reference to a plug name in the powerman.conf must
+  # match one of the defined plug names.  Devices with dynamic plug names
+  # should not include a plug name directive, and the plug reference should
+  # be left off in the powerman.conf
+  plug name { <string list> }
+
+  # (optional) if a ping script is defined, and pingperiod is nonzero, the
+  # ping script will be executed periodically, every <float> seconds.
+  pingperiod <float>
+
+Script blocks should all be grouped together with no config lines in between.
+Scripts are for performing particular operations such as power on, get power
+status, etc.  Scripts have inputs and outputs depending on <script_name>
+(which is one place where things get pretty kludgey).  Each script block has 
+the form:
+
+  script <script_name> {
+ 	# statements
+  }
+
+XXX not done yet
+
+______________________
+General config file info:
+
+<float>        decimal number
+
+<string>       text surrounded by double quotes
+               May contain C style special characters:
+               \nnn (octal constant), \a, \b, \e, \f, \n, \r, \t, \v.
+
+<string list>  multiple <string> values seperated by white space
+
+<script_name>  name of script which implies particular inputs and outputs.
+               May be: login, logout, status, status_all , [XXX finish list]
+
+The '#' comment character may appear any where in a line and "comments out"
+text until the end of line.
+
+
+
+
