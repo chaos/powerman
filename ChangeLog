@@ -1,6 +1,6 @@
 2003-06-04 Jim Garlick <garlick@llnl.gov>
 
-    * etc/apcnew.sh: New.
+    * etc/apcnew.dev: New device type for newer firmware APC masterswitches.
 
 2003-05-20 Jim Garlick <garlick@llnl.gov>
 
