@@ -185,7 +185,7 @@ def prompt(string):
         trace(response)
         if (response[-1:] == '\n'):
             done = 1
-    if (done and (retry_count > 1)):
+    if (retry_count > 1):
         log("   after " + str(retry_count) + " reads")
     if((len(response) > 0) and (response[-1:] == '\n')):
         response = response[:-1]
