@@ -106,6 +106,7 @@ uninstall: distclean
 	rm -f $(DESTDIR)$(packagedir)/icebox.dev
 	rm -f $(DESTDIR)$(packagedir)/pmd.dev
 	rm -f $(DESTDIR)$(packagedir)/wti.dev
+	rm -f $(DESTDIR)$(packagedir)/wti-rps10.dev
 	rm -f $(DESTDIR)$(packagedir)/vicebox.dev
 	rm -f $(DESTDIR)$(packagedir)/vpc.dev
 	rm -f $(DESTDIR)$(mandir)/man1/powerman.1
