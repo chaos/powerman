@@ -13,10 +13,12 @@
 #            Update version to current value
 # v. 0-1-4:  2001-09-05
 #            Fix man page references so they can be ".1" or ".1.gz"
+#            Make powerman/etc/*.conf be "noreplace" config files
+# v. 0-1-5:  2001-09-05
 ####################################################################
  
 %define name    powerman
-%define version 0.1.4
+%define version 0.1.5
 %define release 1
 
 Name: %name
@@ -67,7 +69,8 @@ chmod 4755 /usr/lib/powerman/bin/digi
 %doc DISCLAIMER
 %doc README
 %doc TOUR.SH
-/usr/lib/powerman/
+/usr/lib/powerman/bin
+/usr/lib/powerman/lib
 /usr/man/man1/digi.1*
 /usr/man/man1/etherwake.1*
 /usr/man/man1/pm.1*

@@ -16,6 +16,7 @@
 # v. 0-1-2:  2001-09-05
 # v. 0-1-3:  2001-09-05
 # v. 0-1-4:  2001-09-05
+# v. 0-1-5:  2001-09-05
 ####################################################################
 
 import sys
@@ -323,7 +324,7 @@ def usage(msg):
 
 # Begin main routine processing.
 
-Version = "pm: Powerman 0.1.4"
+Version = "pm: Powerman 0.1.5"
 
 # initialize globals
 powermandir = '/usr/lib/powerman/'
