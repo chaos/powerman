@@ -52,11 +52,12 @@ rm -rf "$RPM_BUILD_ROOT"
 %defattr(-,root,root,0755)
 %config(noreplace) /etc/powerman.conf
 /usr/bin/pm
+/usr/bin/pmkill
+%doc ChangeLog
 %doc DISCLAIMER
 %doc README
-%doc TOUR.SH
 %doc TODO
-%doc ChangeLog
+%doc TOUR.SH
 /usr/lib/powerman
 /usr/man/man1/pm.1*
 /usr/man/man5/powerman.conf.5*

@@ -39,19 +39,22 @@ all:
 	$(CC) $(COPTS) $< -o $@ $(INC) $(LIB)
 
 install: 
-	$(mkinstalldirs)	$(DESTDIR)$(bindir)
-	$(INSTALL) pm		$(DESTDIR)$(bindir)/
-	$(mkinstalldirs)	$(DESTDIR)$(packagedir)
+	$(mkinstalldirs)		$(DESTDIR)$(bindir)
+	$(INSTALL) bin/pm		$(DESTDIR)$(bindir)/
+	$(INSTALL) bin/pmkill		$(DESTDIR)$(bindir)/
+	$(mkinstalldirs)		$(DESTDIR)$(packagedir)
 	$(INSTALL) bin/digi.py		$(DESTDIR)$(packagedir)
 	$(INSTALL) bin/etherwake.py	$(DESTDIR)$(packagedir)
 	$(INSTALL) src/ether-wake	$(DESTDIR)$(packagedir)
 	$(INSTALL) bin/icebox.py	$(DESTDIR)$(packagedir)
-	$(INSTALL) bin/rmc.py		$(DESTDIR)$(packagedir)
+	$(INSTALL) bin/pm_classes.py	$(DESTDIR)$(packagedir)
+	$(INSTALL) bin/pm_utils.py	$(DESTDIR)$(packagedir)
 	$(INSTALL) bin/rmc		$(DESTDIR)$(packagedir)
+	$(INSTALL) bin/rmc.py		$(DESTDIR)$(packagedir)
 	$(INSTALL) bin/wti.py		$(DESTDIR)$(packagedir)
 	$(mkinstalldirs)		$(DESTDIR)$(etcdir)
 	$(INSTALL) -m 644 etc/powerman.conf  $(DESTDIR)$(etcdir)
-	$(mkinstalldirs)	      $(DESTDIR)$(mandir)/man1
+	$(mkinstalldirs)		$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/pm.1	$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/powerman.conf.5  $(DESTDIR)$(mandir)/man5
 
