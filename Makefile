@@ -75,8 +75,7 @@ install: all
 	$(INSTALL) src/powerman			$(DESTDIR)$(bindir)/
 	$(INSTALL) src/powermand		$(DESTDIR)$(sbindir)/
 	$(mkinstalldirs)			$(DESTDIR)$(packagedir)
-	$(INSTALL) etc/baytechF500.dev		$(DESTDIR)$(packagedir)
-	$(INSTALL) etc/baytechF501.dev		$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/baytech.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/icebox.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/pmd.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/wti.dev			$(DESTDIR)$(packagedir)
@@ -99,8 +98,7 @@ install: all
 uninstall: distclean
 	rm -f $(DESTDIR)$(bindir)/powerman
 	rm -f $(DESTDIR)$(sbindir)/powermand
-	rm -f $(DESTDIR)$(packagedir)/baytechF500.dev
-	rm -f $(DESTDIR)$(packagedir)/baytechF501.dev
+	rm -f $(DESTDIR)$(packagedir)/baytech.dev
 	rm -f $(DESTDIR)$(packagedir)/icebox.dev
 	rm -f $(DESTDIR)$(packagedir)/pmd.dev
 	rm -f $(DESTDIR)$(packagedir)/wti.dev
