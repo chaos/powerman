@@ -2,11 +2,12 @@
 # $Id$
 # $Source$
 #
-# Direct H8 control in IBM xSeries nodes (see ibmrsa.dev for background).
+# Direct H8 control in IBM xSeries nodes
 #
 # This device configuration supports direct control of IBM xSeries H8
 # service processors via an RS485-RS232 converter and the 'h8power'
-# utility.
+# utility (not publicly released due to concerns about reverse engineered
+# IBM IP)
 #
 specification "ibmh8" {
 	timeout  	30
