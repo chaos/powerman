@@ -475,7 +475,7 @@ handle_Device_read(Device *dev, int debug)
 		if (len > 0)
 		{
 			char *bstr = _binstr(str, len);
-			printf("D: %s\n", bstr);
+			printf("D(%s): %s\n", get_String(dev->name), bstr);
 			Free(bstr);
 		}
 	}
@@ -836,7 +836,7 @@ handle_Device_write(Device *dev, int debug)
 		if (len > 0)
 		{
 			char *bstr = _binstr(str, len);
-			printf("S: %s\n", bstr);
+			printf("S(%s): %s\n", get_String(dev->name), bstr);
 			Free(bstr);
 		}
 	}

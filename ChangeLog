@@ -104,3 +104,6 @@
 	* Took vicebox.dev out of spec file install.
 	* Made a general helper function for wrapped regcomp special
 	  character expansion.
+
+2002-08-06
+	* Added --telemetry option to server.
