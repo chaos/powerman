@@ -59,6 +59,7 @@ typedef struct {
     ListIterator itr;           /* next stmt in block */
     Stmt *cur;                  /* current stmt */
     ListIterator plugitr;
+    bool subblock;              /* return from subblock flag */
 } ExecCtx;
 
 /* Actions are queued on a device and executed one at a time.  Each action
@@ -83,6 +84,7 @@ typedef struct {
 
 static bool _process_stmt(Device *dev, Action *act, ExecCtx *e, 
         struct timeval *timeout);
+static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e);
 static bool _process_foreach(Device *dev, Action *act, ExecCtx *e);
 static bool _process_setstatus(Device * dev, Action *act, ExecCtx *e);
 static bool _process_setplugname(Device * dev, Action *act, ExecCtx *e);
@@ -91,6 +93,7 @@ static bool _process_send(Device * dev, Action *act, ExecCtx *e);
 static bool _process_delay(Device * dev, Action *act, ExecCtx *e, 
         struct timeval *timeout);
 static void _set_argval(ArgList * arglist, char *node, char *val, List interps);
+static InterpState _get_argval(ArgList *arglist, char *node);
 static int _match_name(Device * dev, void *key);
 static void _handle_read(Device * dev);
 static void _handle_write(Device * dev);
@@ -218,6 +221,7 @@ static ExecCtx *_create_exec_ctx(Device *dev, List block, Plug *target)
     new->block = block;
     new->target = target;
     new->plugitr = NULL;
+    new->subblock = FALSE;
 
     return new;
 }
@@ -857,7 +861,6 @@ static void _process_action(Device * dev, struct timeval *timeout)
         /* most recently attempted stmt completed with error */
         } else {
             ActError res = act->errnum; /* save for ref after _destroy_action */
-            Action *act; 
 
             if (act->complete_fun)
                 _act_completion(act, dev);
@@ -910,6 +913,10 @@ bool _process_stmt(Device *dev, Action *act, ExecCtx *e,
     case STMT_FOREACHNODE:
         finished = _process_foreach(dev, act, e);
         break;
+    case STMT_IFON:
+    case STMT_IFOFF:
+        finished = _process_ifonoff(dev, act, e);
+        break;
     }
     return finished;
 }
@@ -941,8 +948,44 @@ static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
     if (plug != NULL) {
         new = _create_exec_ctx(dev, e->cur->u.foreach.stmts, plug);
         list_push(act->exec, new);
+    } else {
+        list_iterator_destroy(e->plugitr);
+        e->plugitr = NULL;
     }
+
     /* we won't be called again if we don't push a new context */
+
+    return finished;
+}
+
+static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
+{
+    bool finished = TRUE;
+
+    if (e->subblock) { /* if returning from subblock, we are done */
+        e->subblock = FALSE; 
+
+    } else {
+        InterpState state = _get_argval(act->arglist, 
+                e->target ? e->target->node : NULL);
+        bool condition = FALSE;
+        ExecCtx *new;
+
+        if (e->cur->type == STMT_IFON && state == ST_ON)
+            condition = TRUE;
+        else if (e->cur->type == STMT_IFOFF && state == ST_OFF)
+            condition = TRUE;
+        else if (state == ST_UNKNOWN) {
+            act->errnum = ACT_EEXPFAIL; /* FIXME */
+        }
+
+        /* condition met? start a new execution context for this block */
+        if (condition) {
+            e->subblock = TRUE;
+            new = _create_exec_ctx(dev, e->cur->u.ifonoff.stmts, e->target);
+            list_push(act->exec, new);
+        } 
+    } 
 
     return finished;
 }
@@ -1367,14 +1410,25 @@ ArgList *dev_link_arglist(ArgList * arglist)
 /* helper for _set_argval */
 static int _arg_match(Arg * arg, void *key)
 {
-    return (strcmp(arg->node, (char *) key) == 0 
-            && (arg->state == ST_UNKNOWN || arg->val == NULL));
+    return (key != NULL && strcmp(arg->node, (char *) key) == 0 
+            /* && (arg->state == ST_UNKNOWN || arg->val == NULL) */);
+}
+
+static InterpState _get_argval(ArgList *arglist, char *node)
+{
+    Arg *arg;
+    InterpState state = ST_UNKNOWN;
+
+    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node))) {
+        state = arg->state;
+    }
+    return state;
 }
 
 /*
  * Set the value of the argument with key = node.
  */
-static void _set_argval(ArgList * arglist, char *node, char *val, List interps)
+static void _set_argval(ArgList *arglist, char *node, char *val, List interps)
 {
     Arg *arg;
 

@@ -95,7 +95,6 @@ static void makeScript(int com, List stmts);
 static void destroyInterp(Interp *i);
 static Interp *makeInterp(InterpState state, char *str);
 static List copyInterpList(List ilist);
-static void _dbg_interp(char *str, List il);
 
 /* utility functions */
 static void _errormsg(char *msg);
@@ -121,7 +120,7 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 
 /* script statements */
 %token TOK_EXPECT TOK_SETSTATUS TOK_SETPLUGNAME TOK_SEND TOK_DELAY
-%token TOK_FOREACHPLUG TOK_FOREACHNODE
+%token TOK_FOREACHPLUG TOK_FOREACHNODE TOK_IFOFF TOK_IFON
 
 /* other device configuration stuff */
 %token TOK_SPEC_NAME TOK_SPEC_TYPE TOK_OFF_STRING TOK_ON_STRING
@@ -337,6 +336,12 @@ stmt            : TOK_EXPECT TOK_STRING_VAL {
 }               | TOK_FOREACHPLUG stmt_block {
     $$ = (char *)makePreStmt(STMT_FOREACHPLUG, NULL, NULL, NULL, NULL, 
                              (List)$2, NULL);
+}               | TOK_IFOFF stmt_block {
+    $$ = (char *)makePreStmt(STMT_IFOFF, NULL, NULL, NULL, NULL, 
+                             (List)$2, NULL);
+}               | TOK_IFON stmt_block {
+    $$ = (char *)makePreStmt(STMT_IFON, NULL, NULL, NULL, NULL, 
+                             (List)$2, NULL);
 }
 ;
 interp_list       : interp_list interp { 
@@ -508,24 +513,6 @@ static void makeScript(int com, List stmts)
     current_spec.prescripts[com] = stmts;
 }
 
-static void _dbg_interp(char *str, List il)
-{
-    Interp *i;
-    ListIterator itr;
-
-    if (il != NULL) {
-        printf("XXX %s: ", str);
-        itr = list_iterator_create(il);
-        while ((i = list_next(itr))) {
-            assert(i->magic == INTERP_MAGIC);
-            printf("%s %d ", i->str, i->state);
-        }
-        list_iterator_destroy(itr);
-        printf("\n");
-    } else
-        printf("XXX %s: [empty]\n", str);
-}
-
 static Interp *makeInterp(InterpState state, char *str)
 {
     Interp *new = (Interp *)Malloc(sizeof(Interp));
@@ -597,9 +584,12 @@ static void destroyStmt(Stmt *stmt)
         break;
     case STMT_FOREACHNODE:
     case STMT_FOREACHPLUG:
+    case STMT_IFON:
+    case STMT_IFOFF:
         list_destroy(stmt->u.foreach.stmts);
         break;
     default:
+        break;
     }
     Free(stmt);
 }
@@ -646,7 +636,18 @@ static Stmt *makeStmt(PreStmt *p)
         }
         list_iterator_destroy(itr);
         break;
+    case STMT_IFON:
+    case STMT_IFOFF:
+        stmt->u.ifonoff.stmts = list_create((ListDelF) destroyStmt);
+        itr = list_iterator_create(p->prestmts);
+        while((subp = list_next(itr))) {
+            assert(subp->magic == PRESTMT_MAGIC);
+            list_append(stmt->u.ifonoff.stmts, makeStmt(subp));
+        }
+        list_iterator_destroy(itr);
+        break;
     default:
+        break;
     }
     return stmt;
 }

@@ -127,6 +127,8 @@ setstatus                         {   return TOK_SETSTATUS; }
 setplugname                       {   return TOK_SETPLUGNAME; }
 foreachnode                       {   return TOK_FOREACHNODE; }
 foreachplug                       {   return TOK_FOREACHPLUG; }
+ifoff                             {   return TOK_IFOFF; }
+ifon                              {   return TOK_IFON; }
 send                              {   return TOK_SEND; }
 delay                             {   return TOK_DELAY; }
 login                             {   return TOK_LOGIN; }

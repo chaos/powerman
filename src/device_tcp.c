@@ -91,7 +91,6 @@ bool tcp_finish_connect(Device * dev, struct timeval *timeout)
     return (dev->connect_status == DEV_CONNECTED);
 }
 
-
 /*
  * Nonblocking TCP connect.
  * tcp_finish_connect will finish the job.

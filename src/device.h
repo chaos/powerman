@@ -71,7 +71,8 @@ typedef struct {
  */
 #define MAX_MATCH_POS   20
 typedef enum { STMT_SEND, STMT_EXPECT, STMT_SETSTATUS, STMT_DELAY, 
-    STMT_SETPLUGNAME, STMT_FOREACHPLUG, STMT_FOREACHNODE  } StmtType;
+    STMT_SETPLUGNAME, STMT_FOREACHPLUG, STMT_FOREACHNODE, STMT_IFOFF, 
+    STMT_IFON  } StmtType;
 typedef struct {
     StmtType type;
     union {
@@ -95,8 +96,11 @@ typedef struct {
             struct timeval tv;  /* delay at this point in the script */
         } delay;
         struct {                /* FOREACHPLUG | FOREACHNODE */
-            List stmts;         /* list of statements to execute in a loop */
+            List stmts;         /* list of statements to exec in a loop */
         } foreach;
+        struct {                /* IFON | IFOFF */
+            List stmts;         /* list of statements to exec conditionally */
+        } ifonoff;
     } u;
 } Stmt;
 typedef List Script;

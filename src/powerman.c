@@ -83,7 +83,7 @@ int main(int argc, char **argv)
 {
     int c;
     int longindex;
-    hostlist_t targets;
+    hostlist_t targets = NULL;
     bool have_targets = FALSE;
     char targstr[CP_LINEMAX];
     int res = 0;

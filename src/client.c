@@ -98,7 +98,7 @@ static void _client_printf(Client *c, const char *fmt, ...)
 {
     va_list ap;
     int len, size = 0;
-    char *str;
+    char *str = NULL;
     int written, dropped;
 
     /* build tmp string */
@@ -440,14 +440,13 @@ static Command *_create_command(Client * c, int com, char *arg1)
         _client_printf(c, CP_ERR_UNIMPL);
         cmd = NULL;
     }
-    /* NOTE: cmd->arglist has a reference count and can persist after we 
+    /* NOTE 1: cmd->arglist has a reference count and can persist after we 
      * unlink from it in _destroy_command().  If client goes away prematurely,
-     * query actions still have valid pointers.
+     * actions that write to arglist will still have valid pointers.
+     * NOTE 2: we create arglist for all actions, rather than just query
+     * actions, because we want to allow 'setstatus' in any context.
      */
-    if (cmd && (cmd->com == PM_STATUS_PLUGS
-                || cmd->com == PM_STATUS_NODES
-                || cmd->com == PM_STATUS_TEMP
-                || cmd->com == PM_STATUS_BEACON)) {
+    if (cmd) {
         cmd->arglist = dev_create_arglist(cmd->hl);
         if (cmd->arglist == NULL) {
             _destroy_command(cmd);
