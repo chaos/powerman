@@ -949,7 +949,7 @@ update_Nodes_soft_state(List cluster, List reply)
 
 	node_i = list_iterator_create(cluster);
 	node = (Node *)list_next(node_i);
-	for(i = 0; length_String(targ); i++)
+	for(i = 0; i < length_String(targ); i++)
 	{
 		ASSERT( node != NULL );
 		switch(byte_String(targ, i))
