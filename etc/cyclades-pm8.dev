@@ -23,8 +23,9 @@ specification "pm8" {
 	}
 	script status_all {
 		send "status 1-8\r"
+#  3\t\t\t\tUnlocked ON\t\r\n
 		foreachplug {
-			expect " ([1-8]+).*(ON|OFF)"
+			expect " ([1-8]+)\t\t\t\tUnlocked (ON|OFF)"
 			setplugstate $1 $2 on="ON" off="OFF"
 		}
 		expect "pm>"

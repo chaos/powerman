@@ -1,3 +1,8 @@
+2003-12-04 Jim Garlick <garlick@llnl.gov>
+
+    * etc/cyclades-pm8.dev: fixed status script to not fail intermittently
+    depending on breakdown of partial reads.
+
 2003-12-03 Albert Chu <chu11@llnl.gov>
 
     * /etc/ipmipower.dev: Removed "timed out" as acceptable message to
