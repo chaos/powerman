@@ -1068,7 +1068,6 @@ static void _process_ping(Device *dev, struct timeval *timeout)
 	if (_timeout(&dev->last_ping, &dev->ping_period, &timeleft)) {
 	    _enqueue_actions(dev, PM_PING, NULL, NULL, 0, NULL);
 	    Gettimeofday(&dev->last_ping, NULL);
-	    printf("enqueuing ping\n"); /* XXX */
 	} else
 	    _update_timeout(timeout, &timeleft);
     }
