@@ -29,7 +29,7 @@ namespace eval tux_check {
 	    set state_file_name [format "/tmp/%s.state" $config_file_base_name]
 	    
 	    if { ! [file exists $state_file_name] } {
-		::tux_check::make_state_file $state_file_name
+		::powerlib::tux_check::make_state_file $state_file_name
 	    }
 	    set file_fid [open $state_file_name r]
 	    while { ! [eof $file_fid]} {

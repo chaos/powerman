@@ -27,14 +27,23 @@ namespace eval gui {
     variable prefs_index
     variable fixed_index
     variable bg_index
-    variable font_index
     variable delay_index
 # The r, g, and b values of the selected background
     variable bg_r
     variable bg_g
     variable bg_b
 # Other preference controlled values
-    variable font "helvb18dgr"
+    variable font_index
+    variable font_family helvetica
+    variable current_font {helvb18dgr 11 normal}
+    variable font_desc
+    variable font_list
+    variable size_index
+    variable font_size 11
+    variable size_list
+    variable style_index
+    variable font_style normal
+    variable style_list
 
     set namespace "::gui"
     if {$::app::debug} {puts "$namespace"}
@@ -107,7 +116,6 @@ namespace eval gui {
 	variable bg_g
 	variable bg_b
 	# Other preference controlled values
-	variable font
 	
 	set proc "::gui::init"
 	if {$::app::debug} {puts "$proc"}
@@ -117,6 +125,12 @@ namespace eval gui {
 	    ::app::usage "Can't find $panellib library"
 	}
 	source $panellib
+
+	set racklib [format "%s/rack.tk" $::app::lib_dir]
+	if {![file exists $racklib]} {
+	    ::app::usage "Can't find $racklib library"
+	}
+	source $racklib
 
 # These aren't in sepatate files yet, since they're just stubs right now/
 #	set setslib [format "%s/sets.tk" $::app::lib_dir]
@@ -174,6 +188,8 @@ namespace eval gui {
 		-command ::gui::[set mode]::preferences
 
 	set mbar_view_menu [menu .mbar.view.menu]
+	.mbar.view.menu add command -label "rack" \
+		-command {::gui::change "rack"}
 	.mbar.view.menu add command -label "panel" \
 		-command {::gui::change "panel"}
 	.mbar.view.menu add command -label "sets" \
@@ -215,6 +231,7 @@ namespace eval gui {
 	variable mode
 
 	switch $mode {
+		"rack"     {::gui::rack::fini}
 		"panel"    {::gui::panel::fini}
 		"sets"     {::gui::sets::fini}
 		"activity" {::gui::activity::fini}
@@ -222,9 +239,10 @@ namespace eval gui {
 	}
 	.mbar.edit.menu delete last
 	set mode $new_mode
-	.mbar.edit.menu add command -label "View Prefs" \
+	.mbar.edit.menu add command -label "View Mode Prefs" \
 		-command ::gui::[set mode]::preferences
 	switch $mode {
+		"rack"     {::gui::rack::init}
 		"panel"    {::gui::panel::init}
 		"sets"     {::gui::sets::init}
 		"activity" {::gui::activity::init}
@@ -264,6 +282,7 @@ namespace eval gui {
 	    set ::gui::Viewport::Width  $w
 	    set ::gui::Viewport::Height $h
 	    switch $mode {
+		"rack"     {::gui::rack::init}
 		"panel"     {::gui::panel::init}
 		"sets"      {::gui::sets::init}
 		"activity"  {::gui::activity::init}
@@ -306,8 +325,6 @@ namespace eval gui {
 		    -command ".prefs.scroll_list.list yview"
 	    set prefs_index 0
 	    .prefs.scroll_list.list insert end "fixed viewport"
-	    .prefs.scroll_list.list activate $prefs_index
-	    .prefs.scroll_list.list selection set $prefs_index
 	    set fixed_index $prefs_index
 	    incr prefs_index
 	    
@@ -367,9 +384,6 @@ namespace eval gui {
 	destroy .prefs.expl.vals
 	destroy .prefs.expl.text_frame
 
-	.prefs.scroll_list.list selection clear 0 $prefs_index
-	.prefs.scroll_list.list selection set $fixed_index
-	.prefs.scroll_list.list activate $fixed_index
 	frame .prefs.expl.vals
 	radiobutton .prefs.expl.vals.yes -text "yes" \
 		-variable ::gui::Viewport::fixed -value 1 -anchor n
@@ -439,9 +453,6 @@ namespace eval gui {
 
 	destroy .prefs.expl.vals
 
-	.prefs.scroll_list.list selection clear 0 $prefs_index
-	.prefs.scroll_list.list selection set $bg_index
-	.prefs.scroll_list.list activate $bg_index
 	frame .prefs.expl.vals
 # This should be three slides 0 .. 255 for colors
 	scale .prefs.expl.vals.r  -from 0 -to 255 -label "R" -showvalue 1 \
@@ -474,7 +485,7 @@ namespace eval gui {
 	    "b" {set bg_b $val}
 	}
 	set hex_color [format "\#%02x%02x%02x" $bg_r $bg_g $bg_b]
-	message .prefs.expl.text_frame -aspect 20 -width 40 \
+	message .prefs.expl.text_frame -aspect 4000 -width 4000 \
 		-background $hex_color \
 		-text "Background color for panel"
 	pack .prefs.expl.text_frame -before .prefs.expl.done_frame \
@@ -484,38 +495,112 @@ namespace eval gui {
     proc make_font {} {
 	variable prefs_index
 	variable font_index
-	variable font
+	variable font_list
+	variable font_family
+	variable current_font
+	variable font_desc
+	variable size_index
+	variable font_size
+	variable size_list
+	variable style_index
+	variable font_style
+	variable style_list
 
-	set proc "::gui::make_button_color"
+	set proc "::gui::make_font"
 	if {$::app::debug} {puts "$proc"}
 
 	destroy .prefs.expl.vals
 	destroy .prefs.expl.text_frame
+	if {[info exists font_list]} {
+	    unset font_list
+	}
 
-	.prefs.scroll_list.list selection clear 0 $prefs_index
-	.prefs.scroll_list.list selection set $font_index
-	.prefs.scroll_list.list activate $font_index
 	frame .prefs.expl.vals
 
-	listbox .prefs.expl.vals.list -height 5 -selectmode single \
-		-width 0 -yscrollcommand ".prefs.expl.vals.scroll set"
-	scrollbar .prefs.expl.vals.scroll  \
-		-command ".prefs.expl.vals.list yview"
-	.prefs.expl.vals.list insert end $font
-	.prefs.expl.vals.list activate 0
-	.prefs.expl.vals.list selection set 0
+	frame .prefs.expl.vals.font
+	listbox .prefs.expl.vals.font.list -height 5 -selectmode single \
+		-width 0 -yscrollcommand ".prefs.expl.vals.font.scroll set"
+	scrollbar .prefs.expl.vals.font.scroll  \
+		-command ".prefs.expl.vals.font.list yview"
+	set font_index 0
+	.prefs.expl.vals.font.list insert end $font_family
+	set font_list($font_index) $current_font
+	incr font_index
 
-	pack .prefs.expl.vals.list -side left
-	pack .prefs.expl.vals.scroll -side right -fill y
-	pack .prefs.expl.vals -before .prefs.expl.done_frame
-	bind .prefs.expl.vals.list <Button-1> {
-	    set ::gui::font [.prefs.expl.vals.list nearest %y]
-	}
-	foreach sys_font [font names] {
-	    .prefs.expl.vals.list insert end $sys_font
+	foreach f [font families] {
+	    .prefs.expl.vals.font.list insert end $f
+	    set font_list($font_index) $f
+	    incr font_index
 	}
 	
-	message .prefs.expl.text_frame -aspect 20 -width 40 \
+	bind .prefs.expl.vals.font.list <Button-1> {
+	    set ::gui::font_family $::gui::font_list([.prefs.expl.vals.font.list nearest %y])
+	    set ::gui::current_font [list $::gui::font_family [expr -$::gui::font_size] $::gui::font_style]
+	}
+
+	pack .prefs.expl.vals.font.list -side left
+	pack .prefs.expl.vals.font.scroll -side right -fill y
+	pack .prefs.expl.vals.font -side left
+
+# End of font start of size
+
+	frame .prefs.expl.vals.size
+	listbox .prefs.expl.vals.size.list -height 5 -selectmode single \
+		-width 0 -yscrollcommand ".prefs.expl.vals.size.scroll set"
+	scrollbar .prefs.expl.vals.size.scroll  \
+		-command ".prefs.expl.vals.size.list yview"
+	set size_index 0
+	.prefs.expl.vals.size.list insert end $font_size
+	set size_list($size_index) $font_size
+	incr size_index
+
+	foreach s [list 5 6 8 9 10 11 12 14 18 24 36 48] {
+	    .prefs.expl.vals.size.list insert end $s
+	    set size_list($size_index) $s
+	    incr size_index
+	}
+	
+	bind .prefs.expl.vals.size.list <Button-1> {
+	    set ::gui::font_size $::gui::size_list([.prefs.expl.vals.size.list nearest %y])
+	    set ::gui::current_font [list $::gui::font_family [expr -$::gui::font_size] $::gui::font_style]
+	}
+
+	pack .prefs.expl.vals.size.list -side left
+	pack .prefs.expl.vals.size.scroll -side right -fill y
+	pack .prefs.expl.vals.size -side left
+
+# End of size start of style
+
+	frame .prefs.expl.vals.style
+	listbox .prefs.expl.vals.style.list -height 5 -selectmode single \
+		-width 0 -yscrollcommand ".prefs.expl.vals.style.scroll set"
+	scrollbar .prefs.expl.vals.style.scroll  \
+		-command ".prefs.expl.vals.style.list yview"
+	set style_index 0
+	.prefs.expl.vals.style.list insert end $font_style
+	set style_list($style_index) $font_style
+	incr style_index
+
+	foreach s [list normal bold roman italic underline overstrike] {
+	    .prefs.expl.vals.style.list insert end $s
+	    set style_list($style_index) $s
+	    incr style_index
+	}
+	
+	bind .prefs.expl.vals.style.list <Button-1> {
+	    set ::gui::font_style $::gui::style_list([.prefs.expl.vals.style.list nearest %y])
+	    set ::gui::current_font [list $::gui::font_family [expr -$::gui::font_size] $::gui::font_style]
+	}
+
+	pack .prefs.expl.vals.style.list -side left
+	pack .prefs.expl.vals.style.scroll -side right -fill y
+	pack .prefs.expl.vals.style -side left
+
+# end of style
+
+	pack .prefs.expl.vals -before .prefs.expl.done_frame
+
+	message .prefs.expl.text_frame -aspect 4000 -width 4000 \
 		-text "Select a font"
 	pack .prefs.expl.text_frame -before .prefs.expl.done_frame
 
@@ -532,9 +617,6 @@ namespace eval gui {
 	destroy .prefs.expl.vals
 	destroy .prefs.expl.text_frame
 
-	.prefs.scroll_list.list selection clear 0 $prefs_index
-	.prefs.scroll_list.list selection set $delay_index
-	.prefs.scroll_list.list activate $delay_index
 	frame .prefs.expl.vals
 
 	label .prefs.expl.vals.label -text "dealy in ms"
@@ -548,7 +630,7 @@ namespace eval gui {
 	pack .prefs.expl.vals.label .prefs.expl.vals.delay -side left -fill x
 	pack .prefs.expl.vals -side top -fill x -expand 1 \
 		-before .prefs.expl.done_frame
-	message .prefs.expl.text_frame -aspect 20 -width 40 \
+	message .prefs.expl.text_frame -aspect 4000 -width 4000 \
 		-text "enter a value for delay"
 	pack .prefs.expl.text_frame -before .prefs.expl.done_frame \
 		-fill x -expand 1
@@ -679,7 +761,6 @@ namespace eval gui {
 	    
 	    set mode "play"
 	    
-	    set font helvb18gr
 	    set w [expr $::gui::Canvas::Width/2]
 	    set h [expr $::gui::Canvas::Height/2]
 	    
@@ -751,7 +832,7 @@ namespace eval gui {
 		    [expr $w+(0.8*$size)] \
 		    [expr $h - (2*$size)] \
 		    -text $name \
-		    -font $font -fill black -anchor sw]
+		    -font $::gui::current_font -fill black -anchor sw]
 	    
 	}
 	# end of "proc play" 

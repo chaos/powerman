@@ -1,0 +1,209 @@
+namespace eval rack {
+    variable mode
+# The size of 1 U in pixels
+    variable U
+    variable U_min
+# Node width measured in U is actually 76/7 (19" over 1 3/4")
+    variable node_width_U 10
+# Rack height measured in U is usually 40
+    variable rack_height_U 40
+# The size of the edge around the cluster measured in pixels
+    variable cluster_boundary 40
+# The size of the rack itself around the nodes in pixels
+    variable rack_boundary 10
+# The gap between nodes in pixels
+    variable rack_gap 10
+# The r, g, and b values of the selected button color for on nodes
+    variable bc_r
+    variable bc_g
+    variable bc_b
+# The r, g, and b values of the selected rack label color
+    variable rlc_r
+    variable rlc_g
+    variable rlc_b
+# The r, g, and b values of the selected node color for off nodes
+    variable nc_r
+    variable nc_g
+    variable nc_b
+
+    proc init {} {
+	variable mode
+# The size of 1 U in pixels
+	variable U
+	variable U_min
+# Node width measured in U is actually 76/7 (19" over 1 3/4")
+	variable node_width_U 10
+# Rack height measured in U is usually 40
+	variable rack_height_U 40
+# The size of the edge around the cluster measured in pixels
+	variable cluster_boundary 40
+# The size of the rack itself around the nodes in pixels
+	variable rack_boundary 10
+# The gap between nodes in pixels
+	variable rack_gap 10
+# The r, g, and b values of the selected rack border color
+	variable rbc_r
+	variable rbc_g
+	variable rbc_b
+# The r, g, and b values of the selected rack label color
+	variable rlc_r
+	variable rlc_g
+	variable rlc_b
+# The r, g, and b values of the selected node color for off nodes
+	variable nc_r
+	variable nc_g
+	variable nc_b
+# The r, g, and b values of the selected node label color
+	variable nlc_r
+	variable nlc_g
+	variable nlc_b
+
+	set proc "::gui::rack::init"
+	if {$::app::debug} {puts "$proc"}
+	
+	set mode "rack"
+
+	if {![info exists rbc_r]}  {set rbc_r 0}
+	if {![info exists rbc_g]}  {set rbc_g 0}
+	if {![info exists rbc_b]}  {set rbc_b 0}
+	if {![info exists rlc_r]}  {set rlc_r 255}
+	if {![info exists rlc_g]}  {set rlc_g 255}
+	if {![info exists rlc_b]}  {set rlc_b 255}
+	if {![info exists noc_r]}  {set nc_r 0}
+	if {![info exists noc_g]}  {set nc_g 0}
+	if {![info exists noc_b]}  {set nc_b 255}
+	if {![info exists nlc_r]}  {set nlc_r 0}
+	if {![info exists nlc_g]}  {set nlc_g 0}
+	if {![info exists nlc_b]}  {set nlc_b 0}
+# The thinnest node that will allow it to be written on
+	set U_min [expr $::gui::font_size + 5]
+	set last [llength $::powerlib::nodes]
+	if {$last > 0} {
+	    set test_name [lindex $::powerlib::nodes $last]
+	} else {
+	    set test_name "node100"
+	}
+	set min_node_width  [font measure $::gui::current_font \
+		[format "%s: %s" $test_name "inactive"]]
+	set test_U [expr $min_node_width / $node_width_U]
+# The least wide node that can still get both name and console state written in
+	if {$test_U > $U_min} {
+	    set U_min $test_U
+	}
+
+	set num_racks [llength $::powerlib::locations]
+	set U_1 [expr (($::gui::Canvas::Width - 2 * $cluster_boundary \
+		- $rack_gap * ($num_racks - 1))/$num_racks \
+		- 2 * $rack_boundary) / $node_width_U]
+
+	set U_2 [expr ($::gui::Canvas::Height - 2 * $rack_boundary - \
+		2 * $cluster_boundary)/$rack_height_U]
+
+# The largest node that will fit entirely on the canvas
+	set U [expr ($U_1 < $U_2) ? $U_1 : $U_2]
+
+	if { $U < $U_min } {
+	    puts "We are in fixed Viewport mode due to overlarge U = $U"
+	    set U $U_min
+	    set ::gui::Viewport::fixed 1
+# Anything else needed to initialize fixed viewport operation including
+# setting the Viewport parameters, creating scrollbars, and setting their 
+# values.
+	} else {
+	    if {$::gui::Viewport::fixed} {
+		puts "We arrived here in fixed Viewport mode"
+# stuff to set up fixed viewport, or to turn the mode back to adjustable
+# mode and get rid of scrollbars and such
+	    } else {
+# This is where I always want to end up for now...
+# There may be a little extra room up-down or left-right after the U
+# is determined, so spread it out in the boundary and/or gap between racks.
+		set extra_y [expr ($::gui::Canvas::Height - \
+			$rack_height_U * $U - 2 * $rack_boundary - \
+			2 *  $cluster_boundary) / 2]
+		set cluster_boundary_y [expr $cluster_boundary + $extra_y]
+		set extra_x [expr ($::gui::Canvas::Width - \
+			$num_racks * $node_width_U * $U - \
+			($num_racks - 1) * $rack_gap - \
+			$num_racks * 2 * $rack_boundary - \
+			2 * $cluster_boundary) / ($num_racks + 1)]
+		set cluster_boundary_x [expr $cluster_boundary + $extra_x]
+		set rack_gap [expr $rack_gap + $extra_x]
+		set rack_off_x [expr $::gui::Viewport::LeftOff + \
+			$cluster_boundary_x]
+		set rack_off_y [expr $::gui::Viewport::TopOff + \
+			$cluster_boundary + 2 * $rack_boundary + \
+			$rack_height_U * $U]
+		foreach rack $::powerlib::locations {
+		    mkRack $rack $rack_off_x $rack_off_y 
+		    set rack_off_x [expr $rack_off_x + \
+			    $node_width_U * $U + 2 * $rack_boundary + \
+			    $rack_gap]
+		} 
+	    }
+	}
+    }
+    # end of "proc init"
+    
+    proc mkRack {rack x y} {
+	variable rack_height_U
+	variable node_width_U
+	variable U
+	variable rack_boundary
+# The r, g, and b values of the selected rack border color
+	variable rbc_r
+	variable rbc_g
+	variable rbc_b
+# The r, g, and b values of the selected rack label color
+	variable rlc_r
+	variable rlc_g
+	variable rlc_b
+
+	set rack_height [expr $rack_height_U * $U + 2 * $rack_boundary]
+	set rack_width  [expr $node_width_U  * $U + 2 * $rack_boundary]
+	set border_color [format "\#%02x%02x%02x" $rbc_r $rbc_g $rbc_b]
+	set label_color [format "\#%02x%02x%02x" $rlc_r $rlc_g $rlc_b]
+
+	.cvcan create rectangle $x [expr $y - $rack_height] \
+		[expr $x + $rack_width] $y -fill $border_color -tags rack
+	.cvcan create text [expr $x + 2] [expr $y - $rack_height +2] \
+		-text $rack -font $::gui::current_font \
+		-anchor nw -fill $label_color -tags rack_label 
+	foreach node $::powerlib::nodes {
+	    if {$rack == [lindex $::powerlib::location($node) 0]} {
+		set node_off_x [expr $x + $rack_boundary]
+		set node_off_y [expr $y - $rack_boundary - \
+			[lindex $::powerlib::location($node) 1] * $U]
+		set node_height_U [lindex $::powerlib::location($node) 2]
+		mkNode $node $node_off_x $node_off_y $node_height_U
+	    }
+	}
+    }
+
+    proc mkNode {node x y h} {
+	variable node_width_U 
+	variable U
+# The r, g, and b values of the selected rack label color
+	variable nc_r
+	variable nc_g
+	variable nc_b
+# The r, g, and b values of the selected rack label color
+	variable nlc_r
+	variable nlc_g
+	variable nlc_b
+
+	set node_color [format "\#%02x%02x%02x" $nc_r $nc_g $nc_b]
+	set label_color [format "\#%02x%02x%02x" $nlc_r $nlc_g $nlc_b]
+	.cvcan create rectangle $x [expr $y - $h * $U] \
+		[expr $x + $node_width_U * $U] $y -fill $node_color -tags node
+	.cvcan create text [expr $x + 2] [expr $y -2] \
+		-text $node -font $::gui::current_font \
+		-anchor sw -fill $label_color -tags rack_label 
+    }
+
+    proc fini {} {
+	.cvcan delete all
+    }
+}
+# end of namespace rack
+	

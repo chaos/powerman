@@ -139,7 +139,8 @@ namespace eval panel {
 	    .cvcan bind tile <Enter> {
                 set node $::gui::panel::Index([.cvcan find withtag current])
 		set ::gui::panel::floating_label [.cvcan create text %x \
-			[expr %y - 2] -text $::gui::panel::label($node) -fill black -anchor sw \
+			[expr %y - 2] -text $::gui::panel::label($node) \
+			-font $::gui::current_font -fill black -anchor sw \
 			-tags floating_label]
 		set ::gui::panel::floating_label_x %x
 		set ::gui::panel::floating_label_y %y
@@ -239,8 +240,9 @@ namespace eval panel {
 	    set y [expr [winfo rooty .] + [winfo height .] /5]
 	    wm geometry .panel_prefs +$x+$y
 	    frame .panel_prefs.scroll_list
-	    listbox .panel_prefs.scroll_list.list -height 5 -selectmode single \
-		    -width 0 -yscrollcommand ".panel_prefs.scroll_list.scroll set"
+	    listbox .panel_prefs.scroll_list.list -height 5 \
+		    -selectmode single -width 0 \
+		    -yscrollcommand ".panel_prefs.scroll_list.scroll set"
 	    scrollbar .panel_prefs.scroll_list.scroll  \
 		    -command ".panel_prefs.scroll_list.list yview"
 	    set prefs_index 0
@@ -275,7 +277,7 @@ namespace eval panel {
 	    
 	    frame .panel_prefs.expl.done_frame
 	    button .panel_prefs.expl.done_frame.done -text "done" \
-		    -command ::gui::panel::prefs_done
+		    -font $::gui::current_font -command ::gui::panel::prefs_done
 	    pack .panel_prefs.expl.done_frame.done -side top -fill x -expand 1
 	    pack .panel_prefs.expl.done_frame
 	    
@@ -325,15 +327,18 @@ namespace eval panel {
 	.panel_prefs.scroll_list.list activate $button_color_index
 	frame .panel_prefs.expl.vals
 # This should be three slides 0 .. 255 for colors
-	scale .panel_prefs.expl.vals.r  -from 0 -to 255 -label "R" -showvalue 1 \
+	scale .panel_prefs.expl.vals.r  -from 0 -to 255 -label "R" \
+		-showvalue 1 -font $::gui::current_font \
 		-variable ::gui::Viewport::bc_r \
 		-command {::gui::panel::set_bc "r"}
 	.panel_prefs.expl.vals.r set $bc_r
-	scale .panel_prefs.expl.vals.g  -from 0 -to 255 -label "G" -showvalue 1 \
+	scale .panel_prefs.expl.vals.g  -from 0 -to 255 -label "G" \
+		-showvalue 1 -font $::gui::current_font \
 		-variable ::gui::Viewport::bc_g \
 		-command {::gui::panel::set_bc "g"}
 	.panel_prefs.expl.vals.g set $bc_g
-	scale .panel_prefs.expl.vals.b  -from 0 -to 255 -label "B" -showvalue 1 \
+	scale .panel_prefs.expl.vals.b  -from 0 -to 255 -label "B" \
+		-showvalue 1 -font $::gui::current_font \
 		-variable ::gui::Viewport::bc_b \
 		-command {::gui::panel::set_bc "b"}
 	.panel_prefs.expl.vals.b set $bc_b
@@ -355,9 +360,9 @@ namespace eval panel {
 	    "b" {set bc_b $val}
 	}
 	set hex_color [format "\#%02x%02x%02x" $bc_r $bc_g $bc_b]
-	message .panel_prefs.expl.text_frame -aspect 20 -width 40 \
+	message .panel_prefs.expl.text_frame -aspect 4000 -width 4000 \
 		-background $hex_color \
-		-text "Button color in panel"
+		-text "Button color in panel" -font $::gui::current_font 
 	pack .panel_prefs.expl.text_frame -before .panel_prefs.expl.done_frame \
 		-fill x -expand 1
     }
@@ -379,19 +384,23 @@ namespace eval panel {
 	.panel_prefs.scroll_list.list activate $button_color_off_index
 	frame .panel_prefs.expl.vals
 # This should be three slides 0 .. 255 for colors
-	scale .panel_prefs.expl.vals.r  -from 0 -to 255 -label "R" -showvalue 1 \
+	scale .panel_prefs.expl.vals.r  -from 0 -to 255 -label "R" \
+		-showvalue 1 -font $::gui::current_font \
 		-variable ::gui::Viewport::boc_r \
 		-command {::gui::panel::set_boc "r"}
 	.panel_prefs.expl.vals.r set $boc_r
-	scale .panel_prefs.expl.vals.g  -from 0 -to 255 -label "G" -showvalue 1 \
+	scale .panel_prefs.expl.vals.g  -from 0 -to 255 -label "G" \
+		-showvalue 1 -font $::gui::current_font \
 		-variable ::gui::Viewport::boc_g \
 		-command {::gui::panel::set_boc "g"}
 	.panel_prefs.expl.vals.g set $boc_g
-	scale .panel_prefs.expl.vals.b  -from 0 -to 255 -label "B" -showvalue 1 \
+	scale .panel_prefs.expl.vals.b  -from 0 -to 255 -label "B" \
+		-showvalue 1 -font $::gui::current_font \
 		-variable ::gui::Viewport::boc_b \
 		-command {::gui::panel::set_boc "b"}
 	.panel_prefs.expl.vals.b set $boc_b
-	pack .panel_prefs.expl.vals.r .panel_prefs.expl.vals.g .panel_prefs.expl.vals.b \
+	pack .panel_prefs.expl.vals.r .panel_prefs.expl.vals.g \
+		.panel_prefs.expl.vals.b \
 		-side left -fill x -expand 1
 	pack .panel_prefs.expl.vals -side top -fill x -expand 1 \
 		-before .panel_prefs.expl.done_frame
@@ -409,8 +418,8 @@ namespace eval panel {
 	    "b" {set boc_b $val}
 	}
 	set hex_color [format "\#%02x%02x%02x" $boc_r $boc_g $boc_b]
-	message .panel_prefs.expl.text_frame -aspect 20 -width 40 \
-		-background $hex_color \
+	message .panel_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-background $hex_color -font $::gui::current_font \
 		-text "tile color for off node in panel"
 	pack .panel_prefs.expl.text_frame -before .panel_prefs.expl.done_frame \
 		-fill x -expand 1
@@ -433,19 +442,23 @@ namespace eval panel {
 	.panel_prefs.scroll_list.list activate $button_border_color_index
 	frame .panel_prefs.expl.vals
 # This should be three slides 0 .. 255 for colors
-	scale .panel_prefs.expl.vals.r  -from 0 -to 255 -label "R" -showvalue 1 \
+	scale .panel_prefs.expl.vals.r  -from 0 -to 255 -label "R" \
+		-showvalue 1 -font $::gui::current_font \
 		-variable ::gui::Viewport::bbc_r \
 		-command {::gui::panel::set_bbc "r"}
 	.panel_prefs.expl.vals.r set $bbc_r
-	scale .panel_prefs.expl.vals.g  -from 0 -to 255 -label "G" -showvalue 1 \
+	scale .panel_prefs.expl.vals.g  -from 0 -to 255 -label "G" \
+		-showvalue 1 -font $::gui::current_font \
 		-variable ::gui::Viewport::bbc_g \
 		-command {::gui::panel::set_bbc "g"}
 	.panel_prefs.expl.vals.g set $bbc_g
-	scale .panel_prefs.expl.vals.b  -from 0 -to 255 -label "B" -showvalue 1 \
+	scale .panel_prefs.expl.vals.b  -from 0 -to 255 -label "B" \
+		-font $::gui::current_font -showvalue 1 \
 		-variable ::gui::Viewport::bbc_b \
 		-command {::gui::panel::set_bbc "b"}
 	.panel_prefs.expl.vals.b set $bbc_b
-	pack .panel_prefs.expl.vals.r .panel_prefs.expl.vals.g .panel_prefs.expl.vals.b \
+	pack .panel_prefs.expl.vals.r .panel_prefs.expl.vals.g \
+		.panel_prefs.expl.vals.b \
 		-side left -fill x -expand 1
 	pack .panel_prefs.expl.vals -side top -fill x -expand 1 \
 		-before .panel_prefs.expl.done_frame
@@ -463,8 +476,8 @@ namespace eval panel {
 	    "b" {set bbc_b $val}
 	}
 	set hex_color [format "\#%02x%02x%02x" $bbc_r $bbc_g $bbc_b]
-	message .panel_prefs.expl.text_frame -aspect 20 -width 40 \
-		-background $hex_color \
+	message .panel_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-background $hex_color -font $::gui::current_font \
 		-text "tile border color for panel"
 	pack .panel_prefs.expl.text_frame -before .panel_prefs.expl.done_frame \
 		-fill x -expand 1
@@ -492,7 +505,7 @@ namespace eval panel {
 
 	scale .panel_prefs.expl.vals.panel_boundary  \
 		-from 0 -to $::gui::panel::tile_width \
-		-label "panel boundary" -showvalue 1 \
+		-label "panel boundary" -showvalue 1 -font $::gui::current_font \
 		-variable ::gui::panel::panel_boundary \
 		-command {set ::gui::panel::panel_boundary}
 	.panel_prefs.expl.vals.panel_boundary set $panel_boundary
@@ -500,9 +513,10 @@ namespace eval panel {
 		-side left -fill x -expand 1
 	pack .panel_prefs.expl.vals -side top -fill x -expand 1 \
 		-before .panel_prefs.expl.done_frame
-	message .panel_prefs.expl.text_frame -aspect 20 -width 40 \
-		-text "panel bounadary size"
-	pack .panel_prefs.expl.text_frame -before .panel_prefs.expl.done_frame \
+	message .panel_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-text "panel bounadary size" -font $::gui::current_font 
+	pack .panel_prefs.expl.text_frame \
+		-before .panel_prefs.expl.done_frame \
 		-fill x -expand 1
 
     }
@@ -526,8 +540,9 @@ namespace eval panel {
 	.panel_prefs.scroll_list.list activate $tile_gap_index
 	frame .panel_prefs.expl.vals
 
-	scale .panel_prefs.expl.vals.tile_gap  -from 0 -to $::gui::panel::tile_width \
-		-label "til_gap" -showvalue 1 \
+	scale .panel_prefs.expl.vals.tile_gap  -from 0 \
+		-to $::gui::panel::tile_width \
+		-label "til_gap" -showvalue 1 -font $::gui::current_font \
 		-variable ::gui::panel::tile_gap \
 		-command {set tile_gap}
 	.panel_prefs.expl.vals.tile_gap set $tile_gap
@@ -535,8 +550,8 @@ namespace eval panel {
 		-side left -fill x -expand 1
 	pack .panel_prefs.expl.vals -side top -fill x -expand 1 \
 		-before .panel_prefs.expl.done_frame
-	message .panel_prefs.expl.text_frame -aspect 20 -width 40 \
-		-text "tile_gap size"
+	message .panel_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-text "tile_gap size" -font $::gui::current_font 
 	pack .panel_prefs.expl.text_frame -before .panel_prefs.expl.done_frame \
 		-fill x -expand 1
     }
@@ -685,16 +700,16 @@ namespace eval panel {
 	    }
 	} else {
 	    set panel_popup [menu .p_pop -takefocus 1]
-	    .p_pop add command -label "never mind" 
-	    .p_pop add command -label "sticky label" \
+	    .p_pop add command -label "never mind" -font $::gui::current_font 
+	    .p_pop add command -label "sticky label" -font $::gui::current_font \
 		    -command {::gui::panel::panel_sticky $::gui::panel::panel_node_list}
-	    .p_pop add command -label "console" \
+	    .p_pop add command -label "console" -font $::gui::current_font \
 		    -command {::gui::panel::panel_console $::gui::panel::panel_node_list}
-	    .p_pop add command -label "console_status" \
+	    .p_pop add command -label "console_status" -font $::gui::current_font \
 		    -command {
 		::gui::panel::panel_console_stat $::gui::panel::panel_node_list
 	    }
-	    .p_pop add command -label "power on/off" \
+	    .p_pop add command -label "power on/off" -font $::gui::current_font \
 		    -command {::gui::panel::panel_power $::gui::panel::panel_node_list}
 	    .p_pop post [expr $x + [winfo rootx .]] \
 			[expr $y + [winfo rooty .]]
@@ -716,8 +731,8 @@ namespace eval panel {
 		set x [expr $l($node) + 2]
 		set y [expr $b($node) - 2]
 		set fixed_label($node) [.cvcan create text $x $y \
-			-text $label($node) -fill black -anchor sw \
-			-tags fixed_label]
+			-text $label($node) -font $::gui::current_font \
+			-fill black -anchor sw -tags fixed_label] 
 	    }
 	}
     }
@@ -748,7 +763,7 @@ namespace eval panel {
 	    set x [expr $l($node) + 2]
 	    set y [expr $t($node) + 2]
 	    .cvcan create text $x $y -text $stat($node) -fill black \
-		    -anchor nw -tags stat_up
+		    -anchor nw -tags stat_up -font $::gui::current_font 
 	}	
     }
 
@@ -765,19 +780,19 @@ namespace eval panel {
 	    set x [winfo pointerx .]
 	    set y [winfo pointery .]
 	    wm geometry .power_popup +$x+$y
-	    button .power_popup.on -text "on" \
+	    button .power_popup.on -text "on" -font $::gui::current_font \
 		    -command {
 		::powerlib::power $::gui::panel::panel_power_node_list "on"
 	    }
-	    button .power_popup.off -text "off" \
+	    button .power_popup.off -text "off" -font $::gui::current_font \
 		    -command {
 		::powerlib::power $::gui::panel::panel_power_node_list "off"
 	    }
-	    button .power_popup.reset -text "reset" \
+	    button .power_popup.reset -text "reset" -font $::gui::current_font \
 		    -command {
 		::powerlib::power $::gui::panel::panel_power_node_list "reset"
 	    }
-	    button .power_popup.cancel -text "cancel" \
+	    button .power_popup.cancel -text "cancel" -font $::gui::current_font \
 		    -command {
 		destroy .power_popup
 		unset ::gui::panel::power_popup

@@ -11,43 +11,58 @@
 # quack_check
 ####################################################################
 
-namespace eval quack_check {}
+namespace eval quack_check {
+    # an array over nodes
+    variable state
+}
 
 proc quack_check::check {dir node_list} {
+    set proc "::powerlib::quack_check::check"
+    if {$::app::debug == 1} {
+	puts "Entering $proc"
+    }
+
+    # This will spin while quack_power is operating
+    if {[info exists ::powerlib::quack_power::quack_lock]} {
+	while {$::powerlib::quack_power::quack_lock} {
+	    update idletasks
+	}
+    }
     set return_val {}
     set code ""
     if { $dir == "on" } {
-        set code "1"
+	set code "1"
     }
     if { $dir == "off" } {
-        set code "0"
+	set code "0"
     }
     if { $code == "" } {
-        puts "quack_check::check does not understand $dir"
+	puts "quack_check::check does not understand $dir"
     } else {    
 	set config_file_base_name [file tail $app::config_file]
 	set state_file_name [format "/tmp/%s.state" $config_file_base_name]
-    
+	
 	if { ! [file exists $state_file_name] } {
-	    quack_check::make_state_file $state_file_name
+	    ::powerlib::quack_check::make_state_file $state_file_name
 	}
 	set file_fid [open $state_file_name r]
 	while { ! [eof $file_fid]} {
 	    set line [gets $file_fid]
-	    set mark [string first " " $line]
-	    incr mark -1
-	    if {$mark > 0} {
-		set node [string range $line 0 $mark]
-		foreach n $node_list {
-		    if {$node == $n} {
-			if {[string first $dir $line] >= 0} {
-			    lappend return_val $node
-			}
-		    }
+	    scan $line "%s %s" node dir
+	    if {$dir == "on"} {
+		set state($node) 1
+	    } else {
+		set state($node) 0
+	    }
+	}
+	close $file_fid
+	foreach node $node_list {
+	    if {[info exists state($node)]} {
+		if {$state($node) == $code} {
+		    lappend return_val $node
 		}
 	    }
-	}                    ;# while
-	close $file_fid
+	}
     }
     return $return_val
 }

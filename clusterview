@@ -73,7 +73,7 @@ proc check_all {} {
 
     set response [powerlib::check $powerlib::nodes on]
     foreach node $powerlib::nodes {
-        set rack $powerlib::location($node)
+        set rack [lindex $powerlib::location($node) 0]
 	if {[lsearch -exact $response $node] < 0} {
             .middle.$rack.nf($node).control configure -image $image_off($node)
 	    .middle.$rack.nf($node).name configure -foreground red
@@ -120,7 +120,7 @@ proc check_consoles {} {
     foreach line $console_status {
 	set node [string range $line 0 [expr [string first ":" $line] - 1]]
 	set stat [string range $line [expr [string first ":" $line] + 1] end]
-        set rack $powerlib::location($node)
+        set rack [lindex $powerlib::location($node) 0]
 #	pack forget .middle.$rack.nf($node).consolee .middle.$rack.nf($node) .middle.$rack
 	switch $stat {
 	    "unknown" {
@@ -319,7 +319,7 @@ foreach node $powerlib::nodes {
       set image $image_on($node)
     }
 
-    set rack $powerlib::location($node)
+    set rack [lindex $powerlib::location($node) 0]
     frame .middle.$rack.nf($node)
     label .middle.$rack.nf($node).name -text "$node"
     button .middle.$rack.nf($node).control  -text "$node" -image $image -command "toggle_node $node"

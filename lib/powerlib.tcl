@@ -57,6 +57,10 @@ namespace eval powerlib {
 # These are arrays indexed by a node
 	variable check
 
+	set proc "::powerlib::check"
+	if {$::app::debug == 1} {
+	    puts "Entering $proc"
+	}
 	set return_val {}
 	foreach type $check_types {
 	    set check_nodes {}
@@ -88,6 +92,10 @@ namespace eval powerlib {
 # These are arrays indexed by a node
 	variable control
 
+	set proc "::powerlib::power"
+	if {$::app::debug == 1} {
+	    puts "Entering $proc"
+	}
 	foreach type $control_types {
 	    set do_nodes {}
 	    foreach node $node_list {
@@ -138,7 +146,7 @@ namespace eval powerlib {
 	    set node [lindex $node_struct 0]
 	    lappend nodes $node
 	    set location($node) [lindex $node_struct 1]
-	    lappend locations $location($node)
+	    lappend locations [lindex $location($node) 0]
 	    set control($node) [lindex $node_struct 2]
 	    lappend control_types [lindex $control($node) 0]
 	    set check($node) [lindex $node_struct 3]
