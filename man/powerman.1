@@ -143,6 +143,14 @@ Power on hosts bar,foo7,foo9,foo10
 .LP
 Power on foo0,foo4,foo5
     powerman --on foo[0-5]
+.LP
+As a reminder to the reader, some shells will interpret brackets ([
+and ]) for pattern matching.  Depending on your shell, it may be
+necessary to enclose ranged lists within quotes.  For example, in
+tcsh, the last example above should be executed as:
+.nf
+    powerman --on "foo[0-5]"
+.fi
 .SH "FILES"
 /usr/sbin/powermand
 .br
