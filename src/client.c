@@ -291,9 +291,12 @@ static void _client_query_device_reply(Client * c, char *arg)
 
             /* FIXME: replace "devtype" with actual device type e.g. icebox3 */
             if (_make_pluglist(dev, nodelist, sizeof(nodelist))) {
-                _client_printf(c, CP_RSP_DEVICE, dev->name, "devtype", 
-                        nodelist, con > 0 ? con - 1 : 0, 
-                        dev->stat_successful_actions);
+                _client_printf(c, CP_RSP_DEVICE, 
+                        dev->name,
+                        con > 0 ? con - 1 : 0, 
+                        dev->stat_successful_actions,
+                        "devtype",
+                        nodelist);
             }
         }
         list_iterator_destroy(itr);

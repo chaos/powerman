@@ -103,7 +103,8 @@
  "104 quit               - logout"                                  CP_EOL
 #define CP_RSP_COMPLETE     "105 Command completed successfully"    CP_EOL
 #define CP_RSP_RAW          "305 %s: %s"                            CP_EOL
-#define CP_RSP_DEVICE       "306 %s: %s %s reconnects=%d actions=%d" CP_EOL
+#define CP_RSP_DEVICE       "306 %s: reconnects=%-3.3d actions=%-3.3d %s %s" \
+                                                                    CP_EOL
 #define CP_RSP_QUERY_COMPLETE "106 Query complete"                  CP_EOL
 
 /* failure */
@@ -124,4 +125,4 @@
 
 #endif                          /* CLIENT_PROTO_H */
 
-/* * vi:tabstop=4 shiftwidth=4 expandtab */
+/* vi:tabstop=4 shiftwidth=4 expandtab */
