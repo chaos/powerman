@@ -76,8 +76,49 @@ specification {
 	script logout {
 		send "\004"  			# ^D to log completely off
 	}
-	script status {
-		send "power 2 %s\r\n"
+#	script status {
+#		send "power 2 %s\r\n"
+#		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+#		setstatus $1 $2 
+#	}
+	script status_all {
+		send "power 2 0\r\n"
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
+		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		setstatus $1 $2 
 		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
 		setstatus $1 $2 
 	}

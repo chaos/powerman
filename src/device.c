@@ -890,9 +890,6 @@ static bool _process_setstatus(Device * dev)
         char *str = _copy_pmatch(dev, act->cur->u.setstatus.stat_mp);
         char *node = _plug_to_node(dev, plug_name);
 
-        printf("XXX setstatus node %s plug %s stat %s\n", 
-                node, plug_name, str);
-
         if (str && node) {
             if (_findregex(&dev->on_re, str, strlen(str), 0, NULL))
                 _set_argval_state(act->arglist, node, ST_ON);
