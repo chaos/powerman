@@ -53,7 +53,7 @@ typedef struct {
     cbuf_t from;                /* in buffer */
     Command *cmd;               /* command (there can be only one) */
     int client_id;              /* client identifier */
-    bool verbose;               /* client wants verbose debugging info */
+    bool telemetry;             /* client wants telemetry debugging info */
     bool exprange;              /* client wants host ranges expanded */
      MAGIC;
 } Client;

@@ -57,7 +57,7 @@ static void _process_version(void);
 
 static int server_fd = -1;
 
-#define OPT_STRING "01crlqfubntLd:VDvx"
+#define OPT_STRING "01crlqfubntLd:VDvxT"
 static const struct option long_options[] = {
     {"on", no_argument, 0, '1'},
     {"off", no_argument, 0, '0'},
@@ -74,7 +74,7 @@ static const struct option long_options[] = {
     {"destination", required_argument, 0, 'd'},
     {"version", no_argument, 0, 'V'},
     {"device", no_argument, 0, 'D'},
-    {"verbose", no_argument, 0, 'v'},
+    {"telemetry", no_argument, 0, 'T'},
     {"exprange", no_argument, 0, 'x'},
     {0, 0, 0, 0}
 };
@@ -96,7 +96,7 @@ int main(int argc, char **argv)
     } cmd = CMD_NONE;
     char *port = NULL;
     char *host = NULL;
-    bool verbose = FALSE;
+    bool telemetry = FALSE;
     bool exprange = FALSE;
 
     prog = basename(argv[0]);
@@ -163,8 +163,8 @@ int main(int argc, char **argv)
             _version();
             /*NOTREACHED*/
             break;
-        case 'v':              /* --verbose */
-            verbose = TRUE;
+        case 'T':              /* --telemetry */
+            telemetry = TRUE;
             break;
         case 'x':              /* --exprange */
             exprange = TRUE;
@@ -196,8 +196,8 @@ int main(int argc, char **argv)
     _connect_to_server(host ? host : SERVER_HOSTNAME, 
                        port ? port : SERVER_PORT);
 
-    if (verbose) {
-        dprintf(server_fd, CP_VERBOSE CP_EOL);
+    if (telemetry) {
+        dprintf(server_fd, CP_TELEMETRY CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         if (res != 0)
@@ -329,8 +329,8 @@ static void _usage(void)
  "-f --flash     Turn beacon on        -u --unflash   Turn beacon off\n"
  "-b --beacon    Query beacon status   -n --node      Query node status\n"
  "-t --temp      Query temperature     -V --version   Report powerman version\n"
- "-D --device    Report device status  -v --verbose   Include debugging info\n"
- "-x --exprange  Long query response\n"
+ "-D --device    Report device status  -T --telemetry Show device telemetry\n"
+ "-x --exprange  Expand host ranges\n"
   );
     exit(1);
 }
@@ -397,7 +397,7 @@ static void _disconnect_from_server(void)
  */
 static bool _supress(int num)
 {
-    char *ignoreme[] = { CP_RSP_QUERY_COMPLETE, CP_RSP_VERBOSE, 
+    char *ignoreme[] = { CP_RSP_QUERY_COMPLETE, CP_RSP_TELEMETRY, 
         CP_RSP_EXPRANGE };
     bool res = FALSE;
     int i;

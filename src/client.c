@@ -69,7 +69,7 @@ static void _parse_input(Client * c, char *input);
 static void _destroy_client(Client * client);
 static void _create_client(void);
 static void _act_finish(int client_id, char *errfmt, char *errarg);
-static void _verbose_printf(int client_id, const char *fmt, ...);
+static void _telemetry_printf(int client_id, const char *fmt, ...);
 
 #define MIN_CLIENT_BUF     1024
 #define MAX_CLIENT_BUF     1024*1024
@@ -498,9 +498,9 @@ static void _parse_input(Client * c, char *input)
         _client_printf(c, CP_RSP_HELP);                 /* help */
     } else if (!strncasecmp(str, CP_NODES, strlen(CP_NODES))) {
         _client_query_nodes_reply(c);                   /* nodes */
-    } else if (!strncasecmp(str, CP_VERBOSE, strlen(CP_VERBOSE))) {
-        c->verbose = !c->verbose;                       /* verbose */
-        _client_printf(c, CP_RSP_VERBOSE, c->verbose ? "ON" : "OFF");
+    } else if (!strncasecmp(str, CP_TELEMETRY, strlen(CP_TELEMETRY))) {
+        c->telemetry = !c->telemetry;                   /* telemetry */
+        _client_printf(c, CP_RSP_TELEMETRY, c->telemetry ? "ON" : "OFF");
     } else if (!strncasecmp(str, CP_EXPRANGE, strlen(CP_EXPRANGE))) {
         c->exprange = !c->exprange;                     /* exprange */
         _client_printf(c, CP_RSP_EXPRANGE, c->exprange ? "ON" : "OFF");
@@ -551,7 +551,7 @@ static void _parse_input(Client * c, char *input)
     if (cmd) {
         dbg(DBG_CLIENT, "_parse_input: enqueuing actions");
         cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish, 
-                c->verbose ? _verbose_printf : NULL, 
+                c->telemetry ? _telemetry_printf : NULL, 
                 c->client_id, cmd->arglist);
         if (cmd->pending == 0) {
             _client_printf(c, CP_ERR_UNIMPL);
@@ -568,9 +568,9 @@ static void _parse_input(Client * c, char *input)
 }
 
 /*
- * Callback for device debugging printfs (sent to client if --verbose)
+ * Callback for device debugging printfs (sent to client if --telemetry)
  */
-static void _verbose_printf(int client_id, const char *fmt, ...)
+static void _telemetry_printf(int client_id, const char *fmt, ...)
 {
     va_list ap;
     Client *c;
@@ -582,7 +582,7 @@ static void _verbose_printf(int client_id, const char *fmt, ...)
         vsnprintf(buf, CP_LINEMAX, fmt, ap); /* ignore truncation */
         va_end(ap);
 
-        _client_printf(c, CP_RSP_VERBMSG, buf);
+        _client_printf(c, CP_RSP_TELEMETRYMSG, buf);
     }
 }
 
@@ -743,7 +743,8 @@ static void _create_client(void)
     client->from = NULL;
     client->cmd = NULL;
     client->client_id = _next_cli_id();
-    client->verbose = FALSE;
+    client->telemetry = FALSE;
+    client->exprange = FALSE;
 
     client->fd = Accept(listen_fd, &saddr, &saddr_size);
     /* client died after it initiated connect and before we could accept */

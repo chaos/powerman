@@ -13,3 +13,5 @@ OTHER:
 * Client should have option for verifying soft power status (expand hostranges
   and issue warnings where plug is on but node is off).  Needs to be optional
   since would double cluster query latency.  
+* Support redundant power supplies where one node has multiple, independently
+  controllable plugs (requested by Dave Fox)

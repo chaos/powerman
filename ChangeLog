@@ -1,9 +1,10 @@
 2002-12-26 garlick
     * Beginnings of redundant power supply support.
-    * Increase CP_LINEMAX to accomodate longer lines returned by --verbose
+    * Increase CP_LINEMAX to accomodate longer lines returned by --telemetry
     * Return powerman version in banner string and warn if version mismatch
       between server and client.
-    * Add --exprange option for long query responses.
+    * Add --exprange option to select one-line-per-node query responses
+    * Added README
 
 2002-12-25 garlick
     * Baytech cycle script based on 'reboot' is a no-op if plug is off.  
@@ -12,7 +13,7 @@
 2002-12-24 garlick
     * Fix POWERMAN_VERSION string to include %{release} when building
       with make rpm tag=HEAD.
-    * Added --verbose option for device telemetry
+    * Added --telemetry option for device telemetry
 
 2002-12-23 garlick
     * Added -D,--device [targets] command for getting status of RPC

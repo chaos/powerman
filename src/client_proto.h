@@ -64,7 +64,7 @@
 #define CP_BEACON_ALL "beacon"
 #define CP_BEACON_ON  "flash %s"
 #define CP_BEACON_OFF "unflash %s"
-#define CP_VERBOSE    "verbose"
+#define CP_TELEMETRY  "telemetry"
 #define CP_EXPRANGE   "exprange"
 
 /* 
@@ -100,8 +100,8 @@
  "304 beacon [<nodes>]   - query beacon status (if available)"      CP_EOL \
  "304 flash <nodes>      - set beacon to ON (if available)"         CP_EOL \
  "304 unflash <nodes>    - set beacon to OFF (if available)"        CP_EOL \
- "304 verbose            - toggle server verbosity"                 CP_EOL \
- "304 exprange           - toggle server host range expansion"      CP_EOL \
+ "304 telemetry          - toggle telemetry display"                CP_EOL \
+ "304 exprange           - toggle host range expansion"             CP_EOL \
  "304 help               - display help"                            CP_EOL \
  "104 quit               - logout"                                  CP_EOL
 #define CP_RSP_COMPLETE     "105 Command completed successfully"    CP_EOL
@@ -109,9 +109,9 @@
 #define CP_RSP_DEVICE  \
  "306 %s: reconnects=%-3.3d actions=%-3.3d type=%s hosts=%s"        CP_EOL
 #define CP_RSP_QUERY_COMPLETE "106 Query complete"                  CP_EOL
-#define CP_RSP_VERBOSE      "107 Server verbosity %s"               CP_EOL
-#define CP_RSP_VERBMSG      "306 %s"                                CP_EOL
-#define CP_RSP_EXPRANGE     "108 Server hostrange expansion %s"     CP_EOL
+#define CP_RSP_TELEMETRY    "107 Telemetry %s"                      CP_EOL
+#define CP_RSP_TELEMETRYMSG "306 %s"                                CP_EOL
+#define CP_RSP_EXPRANGE     "108 Hostrange expansion %s"            CP_EOL
 #define CP_RSP_RAW_NODES    "307 %s"                                CP_EOL
 
 /* failure */
