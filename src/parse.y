@@ -52,10 +52,10 @@ static char *makePlugNameLine(char *s2);
 
 static char *makeScriptSec(char *s2, int com);
 
-static Interpretation *makeMapLine(char *s2, char *s3);
-static List makeMapSecHead(Interpretation *s1);
-static List makeMapSec(List s1, Interpretation *s2);
-static char *makeScriptEl(Script_El_Type mode, char *s2, List s3);
+static Interp *makeMapLine(char *s2, char *s3);
+static List makeMapSecHead(Interp *s1);
+static List makeMapSec(List s1, Interp *s2);
+static char *makeStmt(StmtType mode, char *s2, List s3);
 
 static char *makeSpecSize(char *s2);
 static char *makeSpecAll(char *s2);
@@ -78,7 +78,7 @@ static double _strtodouble(char *str);
 static void _doubletotv(struct timeval *tv, double val);
 
  Spec *current_spec = NULL;  /* Holds a Spec as it is built */
- List current_script = NULL; /* Holds a script as it is built */
+ Script current_script = NULL; /* Holds a script as it is built */
 %}
 
 /* BISON Declatrations */
@@ -276,27 +276,27 @@ spec_script    : TOK_B_LOGIN script_list TOK_E_LOGIN {
     $$ = (char *)makeScriptSec($2, PM_PING);
 }
 ;
-script_list    : script_list script_el 
-        | script_el 
+script_list    : script_list stmt
+        | stmt
 ;
-script_el    : TOK_EXPECT TOK_STRING_VAL {
-    $$ = (char *)makeScriptEl(EL_EXPECT, $2, NULL);
+stmt    : TOK_EXPECT TOK_STRING_VAL {
+    $$ = (char *)makeStmt(STMT_EXPECT, $2, NULL);
 }
         | TOK_EXPECT TOK_STRING_VAL map_sec {
-    $$ = (char *)makeScriptEl(EL_EXPECT, $2, (List)$3);
+    $$ = (char *)makeStmt(STMT_EXPECT, $2, (List)$3);
 }
         | TOK_SEND TOK_STRING_VAL {
-    $$ = (char *)makeScriptEl(EL_SEND, $2, NULL);
+    $$ = (char *)makeStmt(STMT_SEND, $2, NULL);
 }
         | TOK_DELAY TOK_NUMERIC_VAL {
-    $$ = (char *)makeScriptEl(EL_DELAY, $2, NULL);
+    $$ = (char *)makeStmt(STMT_DELAY, $2, NULL);
 }
 ;
 map_sec        : map_sec map_line {
-    $$ = (char *)makeMapSec((List)$1, (Interpretation *)$2);
+    $$ = (char *)makeMapSec((List)$1, (Interp *)$2);
 }
         | map_line {
-    $$ = (char *)makeMapSecHead((Interpretation *)$1);
+    $$ = (char *)makeMapSecHead((Interp *)$1);
 }
 ;
 map_line : TOK_MAP TOK_MATCHPOS TOK_NUMERIC_VAL TOK_STRING_VAL {
@@ -515,9 +515,9 @@ static char *makePingPeriod(char *s2)
     return s2;
 }
 
-static char *makeScriptEl(Script_El_Type mode, char *s2, List s3)
+static char *makeStmt(StmtType mode, char *s2, List s3)
 {
-    Spec_El *specl;
+    PreStmt *specl;
     struct timeval tv;
 
     /*
@@ -527,25 +527,25 @@ static char *makeScriptEl(Script_El_Type mode, char *s2, List s3)
      * - SEND (s2, NULL)   (s2 may contain a "%s") 
      * - DELAY (s2, NULL)
      */
-    if (mode == EL_DELAY) {
+    if (mode == STMT_DELAY) {
         _doubletotv(&tv, _strtodouble(s2));
-        specl = conf_spec_el_create(mode, NULL, &tv, s3);
+        specl = conf_prestmt_create(mode, NULL, &tv, s3);
     } else {
-        specl = conf_spec_el_create(mode, s2, NULL, s3);
+        specl = conf_prestmt_create(mode, s2, NULL, s3);
     }
     if (current_script == NULL)
-        current_script = list_create((ListDelF) conf_spec_el_destroy);
+        current_script = list_create((ListDelF) conf_prestmt_destroy);
     list_append(current_script, specl);
     return s2;
 }
 
-static List makeMapSec(List s1, Interpretation *s2)
+static List makeMapSec(List s1, Interp *s2)
 {
     list_append(s1, s2);
     return s1;
 }
 
-static List makeMapSecHead(Interpretation *s1)
+static List makeMapSecHead(Interp *s1)
 {
     List map;
 
@@ -554,9 +554,9 @@ static List makeMapSecHead(Interpretation *s1)
     return map;
 }
 
-static Interpretation *makeMapLine(char *s3, char *s4)
+static Interp *makeMapLine(char *s3, char *s4)
 {
-    Interpretation *interp;
+    Interp *interp;
 
     interp = conf_interp_create(s4);
     interp->match_pos = _strtolong(s3);
@@ -567,9 +567,9 @@ static Interpretation *makeMapLine(char *s3, char *s4)
 
 static char *makeScriptSec(char *s2, int com)
 {
-    if( current_spec->scripts[com] != NULL )
+    if( current_spec->prescripts[com] != NULL )
         _errormsg("duplicate script");
-    current_spec->scripts[com] = current_script;
+    current_spec->prescripts[com] = current_script;
     current_script = NULL;
     return s2;
 }
@@ -638,29 +638,28 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
     Regcomp( &(dev->on_re), spec->on, cflags);
     Regcomp( &(dev->off_re), spec->off, cflags);
-    dev->prot = (Protocol *)Malloc(sizeof(Protocol));
     
     /* 
-     * Each script needs to be transferred and any Interpretations need to 
-     * be set up.  The conf_script_el_create() call transforms the EXPECT 
+     * Each script needs to be transferred and any Interps need to 
+     * be set up.  The conf_stmt_create() call transforms the EXPECT 
      * strings into compiled RegEx recognizers. 
      */
     for (i = 0; i < NUM_SCRIPTS; i++) {
         ListIterator script;
-        Spec_El *specl;
-        Script_El *script_el;
-        Interpretation *interp;
-        Interpretation *new;
+        PreStmt *specl;
+        Stmt *stmt;
+        Interp *interp;
+        Interp *new;
         List map;
         ListIterator map_i;
 
-        if (spec->scripts[i] == NULL) {
-            dev->prot->scripts[i] = NULL;
+        if (spec->prescripts[i] == NULL) {
+            dev->scripts[i] = NULL;
             continue; /* unimplemented */
         }
 
-        dev->prot->scripts[i] = list_create((ListDelF) conf_script_el_destroy);
-        script = list_iterator_create(spec->scripts[i]);
+        dev->scripts[i] = list_create((ListDelF) conf_stmt_destroy);
+        script = list_iterator_create(spec->prescripts[i]);
         while( (specl = list_next(script)) ) {
             if( specl->map == NULL )
                 map = NULL;
@@ -674,9 +673,9 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
                 }
                 list_iterator_destroy(map_i);
             }
-            script_el = conf_script_el_create(specl->type, specl->string1, 
+            stmt = conf_stmt_create(specl->type, specl->string1, 
                                           map, specl->tv);
-            list_append(dev->prot->scripts[i], script_el);
+            list_append(dev->scripts[i], stmt);
         }
     }
 
@@ -693,10 +692,10 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 static char *makeNode(char *s2, char *s3, char *s4)
 {
     int i;
-    Interpretation *interp;
+    Interp *interp;
     List script;
     ListIterator itr;
-    Script_El *script_el;
+    Stmt *stmt;
     Plug *plug;
     Device *dev;
 
@@ -722,27 +721,26 @@ static char *makeNode(char *s2, char *s3, char *s4)
         _errormsg("unimplemented device type");
     }
     /*
-     * Finally an exhaustive search of the Interpretations in a device
+     * Finally an exhaustive search of the Interps in a device
      * is required because this node will be the target of some
      */
     for (i = 0; i < NUM_SCRIPTS; i++) {
-    if ((script = dev->prot->scripts[i]) == NULL)
+    if ((script = dev->scripts[i]) == NULL)
         continue; /* unimplemented */
     itr = list_iterator_create(script);
-    while( (script_el = list_next(itr)) ) {
-        switch( script_el->type ) {
-        case EL_SEND :
-        case EL_DELAY :
+    while( (stmt = list_next(itr)) ) {
+        switch( stmt->type ) {
+        case STMT_SEND :
+        case STMT_DELAY :
             break;
-        case EL_EXPECT :
-            if( script_el->s_or_e.expect.map == NULL ) 
+        case STMT_EXPECT :
+            if( stmt->u.expect.map == NULL ) 
                 continue;
-            interp = list_find_first(script_el->s_or_e.expect.map, 
+            interp = list_find_first(stmt->u.expect.map, 
                                      (ListFindF) conf_interp_match, s4);
             if( interp != NULL )
                 interp->node = Strdup(s2);
             break;
-        case EL_NONE :
         default :
         }
     }

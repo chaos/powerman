@@ -1,3 +1,6 @@
+2002-10-28 garlick
+    * Minor cosmetic cleanup of data structures
+
 2002-10-27 garlick
     * Added client options -d host[:port] (use alt server/port), 
       -L (display license).  

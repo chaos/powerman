@@ -41,8 +41,7 @@ typedef struct {
     ArgList *arglist;           /* argument for query commands */
 } Command;
 
-typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING,
-        CLI_DONE } Client_Status;
+typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE } Client_Status;
 typedef struct {
     Client_Status read_status;
     Client_Status write_status;

@@ -53,7 +53,7 @@
 typedef struct {
     int com;                    /* one of the PM_* above */
     ListIterator itr;           /* next place in the script sequence */
-    Script_El *cur;             /* current place in the script sequence */
+    Stmt *cur;                  /* current place in the script sequence */
     char *target;               /* native device represenation of target plug(s) */
     ActionCB cb_fun;            /* callback for action completion */
     int client_id;              /* client id so completion can find client */
@@ -184,7 +184,7 @@ static Action *_create_action(Device * dev, int com, char *target,
     act->com = com;
     act->cb_fun = fun;
     act->client_id = client_id;
-    act->itr = list_iterator_create(dev->prot->scripts[act->com]);
+    act->itr = list_iterator_create(dev->scripts[act->com]);
     act->cur = NULL;
     act->target = target ? Strdup(target) : NULL;
     act->error = FALSE;
@@ -428,7 +428,7 @@ bool dev_check_actions(int com, hostlist_t hl)
         itr = list_iterator_create(dev_devices);
         while ((dev = list_next(itr))) {
             if (_command_needs_device(dev, hl)) {
-                if (dev->prot->scripts[com] == NULL) {  /* unimplemented */
+                if (dev->scripts[com] == NULL) {  /* unimplemented */
                     valid = FALSE;
                     break;
                 }
@@ -455,7 +455,7 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun,
     while ((dev = list_next(itr))) {
         int count;
 
-        if (!dev->prot->scripts[com])               /* unimplemented script */
+        if (!dev->scripts[com])               /* unimplemented script */
             continue;
         if (hl && !_command_needs_device(dev, hl))  /* uninvolved device */
             continue;
@@ -522,19 +522,19 @@ static int _get_all_script(Device * dev, int com)
 
     switch (com) {
     case PM_POWER_ON:
-        if (dev->prot->scripts[PM_POWER_ON_ALL])
+        if (dev->scripts[PM_POWER_ON_ALL])
             new = PM_POWER_ON_ALL;
         break;
     case PM_POWER_OFF:
-        if (dev->prot->scripts[PM_POWER_OFF_ALL])
+        if (dev->scripts[PM_POWER_OFF_ALL])
             new = PM_POWER_OFF_ALL;
         break;
     case PM_POWER_CYCLE:
-        if (dev->prot->scripts[PM_POWER_CYCLE_ALL])
+        if (dev->scripts[PM_POWER_CYCLE_ALL])
             new = PM_POWER_CYCLE_ALL;
         break;
     case PM_RESET:
-        if (dev->prot->scripts[PM_RESET_ALL])
+        if (dev->scripts[PM_RESET_ALL])
             new = PM_RESET_ALL;
         break;
     default:
@@ -753,17 +753,17 @@ static void _process_action(Device * dev, struct timeval *timeout)
         /* process actions */
         if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
             dbg(DBG_SCRIPT, "_process_action(%s): %s timeout - aborting",
-                dev->name, act->cur->type == EL_EXPECT ? "expect"
-                : act->cur->type == EL_SEND ? "send" : "delay");
+                dev->name, act->cur->type == STMT_EXPECT ? "expect"
+                : act->cur->type == STMT_SEND ? "send" : "delay");
             act->error = TRUE;  /* timed out */
         } else if (!(dev->connect_status & DEV_CONNECTED)) {
             stalled = TRUE;     /* not connnected */
-        } else if (act->cur->type == EL_EXPECT) {
+        } else if (act->cur->type == STMT_EXPECT) {
             stalled = !_process_expect(dev);    /* do expect */
-        } else if (act->cur->type == EL_SEND) {
+        } else if (act->cur->type == STMT_SEND) {
             stalled = !_process_send(dev);      /* do send */
         } else {
-            assert(act->cur->type == EL_DELAY);
+            assert(act->cur->type == STMT_DELAY);
             stalled = !_process_delay(dev, timeout);    /* do delay */
         }
 
@@ -823,9 +823,9 @@ static bool _process_expect(Device * dev)
 
     assert(act != NULL);
     assert(act->cur != NULL);
-    assert(act->cur->type == EL_EXPECT);
+    assert(act->cur->type == STMT_EXPECT);
 
-    re = &act->cur->s_or_e.expect.exp;
+    re = &act->cur->u.expect.exp;
 
     if ((expect = _getregex_buf(dev->from, re))) {      /* match */
         dbg(DBG_SCRIPT, "_process_expect(%s): match", dev->name);
@@ -856,9 +856,9 @@ static bool _process_send(Device * dev)
     assert(act != NULL);
     CHECK_MAGIC(act);
     assert(act->cur != NULL);
-    assert(act->cur->type == EL_SEND);
+    assert(act->cur->type == STMT_SEND);
 
-    fmt = act->cur->s_or_e.send.fmt;
+    fmt = act->cur->u.send.fmt;
 
     /* first time through? */
     if (!(dev->script_status & DEV_SENDING)) {
@@ -888,9 +888,9 @@ static bool _process_delay(Device * dev, struct timeval *timeout)
 
     assert(act != NULL);
     assert(act->cur != NULL);
-    assert(act->cur->type == EL_DELAY);
+    assert(act->cur->type == STMT_DELAY);
 
-    delay = act->cur->s_or_e.delay.tv;
+    delay = act->cur->u.delay.tv;
 
     /* first time */
     if (!(dev->script_status & DEV_DELAYING)) {
@@ -927,7 +927,7 @@ static char *_copy_pmatch(char *str, regmatch_t m)
 
 static void _match_subexpressions(Device * dev, Action * act, char *expect)
 {
-    Interpretation *interp;
+    Interp *interp;
     ListIterator itr;
     size_t nmatch = MAX_MATCH_POS + 1;
     regmatch_t pmatch[MAX_MATCH_POS + 1];
@@ -938,17 +938,17 @@ static void _match_subexpressions(Device * dev, Action * act, char *expect)
         && act->com != PM_STATUS_NODES
         && act->com != PM_STATUS_TEMP && act->com != PM_STATUS_BEACON)
         return;
-    if (act->cur->s_or_e.expect.map == NULL)
+    if (act->cur->u.expect.map == NULL)
         return;
 
     /* match regex against expect - must succede, we checked before */
-    n = Regexec(&act->cur->s_or_e.expect.exp, expect, nmatch, pmatch,
+    n = Regexec(&act->cur->u.expect.exp, expect, nmatch, pmatch,
                 eflags);
     assert(n == REG_NOERROR);
     assert(pmatch[0].rm_so != -1 && pmatch[0].rm_eo != -1);
     assert(pmatch[0].rm_so <= strlen(expect));
 
-    itr = list_iterator_create(act->cur->s_or_e.expect.map);
+    itr = list_iterator_create(act->cur->u.expect.map);
     while ((interp = list_next(itr))) {
         char *str;
 
@@ -972,6 +972,7 @@ static void _match_subexpressions(Device * dev, Action * act, char *expect)
 Device *dev_create(const char *name)
 {
     Device *dev;
+    int i;
 
     dev = (Device *) Malloc(sizeof(Device));
     INIT_MAGIC(dev);
@@ -987,7 +988,8 @@ Device *dev_create(const char *name)
     timerclear(&dev->ping_period);
     dev->to = NULL;
     dev->from = NULL;
-    dev->prot = NULL;
+    for (i = 0; i < NUM_SCRIPTS; i++)
+        dev->scripts[i] = NULL;
     dev->plugs = list_create((ListDelF) dev_plug_destroy);
     dev->retry_count = 0;
     dev->stat_successful_connects = 0;
@@ -1023,10 +1025,9 @@ void dev_destroy(Device * dev)
     list_destroy(dev->acts);
     list_destroy(dev->plugs);
 
-    if (dev->prot != NULL)
-        for (i = 0; i < NUM_SCRIPTS; i++)
-            if (dev->prot->scripts[i] != NULL)
-                list_destroy(dev->prot->scripts[i]);
+    for (i = 0; i < NUM_SCRIPTS; i++)
+        if (dev->scripts[i] != NULL)
+            list_destroy(dev->scripts[i]);
 
     CLEAR_MAGIC(dev);
     if (dev->to != NULL)
@@ -1154,7 +1155,7 @@ static void _process_ping(Device * dev, struct timeval *timeout)
 {
     struct timeval timeleft;
 
-    if (dev->prot->scripts[PM_PING] != NULL
+    if (dev->scripts[PM_PING] != NULL
         && timerisset(&dev->ping_period)) {
         if (_timeout(&dev->last_ping, &dev->ping_period, &timeleft)) {
             _enqueue_actions(dev, PM_PING, NULL, NULL, 0, NULL);

@@ -61,41 +61,47 @@
 #define NUM_SCRIPTS	    17
 
 /*
- * Script element (send, expect, or delay).
+ * A Map is a list of Interps.
  */
-typedef enum { EL_NONE, EL_SEND, EL_EXPECT, EL_DELAY } Script_El_Type;
+#define MAX_MATCH_POS   20
 typedef struct {
-    Script_El_Type type;
+    char *plug_name;            /* plug name e.g. "10" */
+    int match_pos;              /* index into pmatch array after regex call */
+    char *node;                 /* where to update matched values */
+} Interp;
+typedef List Map;               /* a map is a list of Interps */
+
+/*
+ * A Script is a list of Stmts.
+ */
+typedef enum { STMT_SEND, STMT_EXPECT, STMT_DELAY } StmtType;
+typedef struct {
+    StmtType type;
     union {
         struct {                /* SEND */
             char *fmt;          /* printf(fmt, ...) style format string */
         } send;
         struct {                /* EXPECT */
             regex_t exp;        /* compiled regex */
-            List map;           /* list of Interpretation structures */
+            Map map;            /* list of Interp structures */
         } expect;
         struct {                /* DELAY */
             struct timeval tv;  /* delay at this point in the script */
         } delay;
-    } s_or_e;
-} Script_El;
+    } u;
+} Stmt;
+typedef List Script;
 
 /*
- * Set of scripts - each script is a list of expect/send/delays.
+ * A PreScript is a list of PreStmts.
  */
 typedef struct {
-    List scripts[NUM_SCRIPTS];  /* array of lists of Script_El's */
-} Protocol;
-
-/*
- * Unprocessed Script_El (used during parsing).
- */
-typedef struct {
-    Script_El_Type type;        /* delay/expect/send */
+    StmtType type;              /* delay/expect/send */
     char *string1;              /* expect string, send fmt */
     struct timeval tv;          /* delay value */
     List map;                   /* interpretations */
-} Spec_El;
+} PreStmt;
+typedef List PreScript;
 
 /*
  * Unprocessed Protocol (used during parsing).
@@ -103,7 +109,7 @@ typedef struct {
  */
 typedef struct {
     char *name;                 /* specification name, e.g. "icebox" */
-    Dev_Type type;              /* device type, e.g. TCP_DEV */
+    DevType type;               /* device type, e.g. TCP_DEV */
     char *off;                  /* off string, e.g. "OFF" */
     char *on;                   /* on string, e.g. "ON" */
     char *all;                  /* all string, e.g. "*" */
@@ -111,36 +117,24 @@ typedef struct {
     struct timeval timeout;     /* timeout for this device */
     struct timeval ping_period; /* ping period for this device 0.0 = none */
     char **plugname;            /* list of plug names (e.g. "1" thru "10") */
-    List scripts[NUM_SCRIPTS];  /* array of lists of Spec_El's */
+    PreScript prescripts[NUM_SCRIPTS];  /* array of PreScripts */
 } Spec;
 
-/*
- * Interpretation - a Script_El map entry.
- */
-#define MAX_MATCH_POS   20
-typedef struct {
-    char *plug_name;            /* plug name e.g. "10" */
-    int match_pos;              /* index into pmatch array after regex call */
-    char *node;                 /* where to update matched values */
-} Interpretation;
-
-Protocol *conf_init_client_protocol(void);
-
-Script_El *conf_script_el_create(Script_El_Type type, char *s1, List map,
+Stmt *conf_stmt_create(StmtType type, char *s1, List map,
                                  struct timeval tv);
-void conf_script_el_destroy(Script_El * script_el);
+void conf_stmt_destroy(Stmt * stmt);
 
 Spec *conf_spec_create(char *name);
 int conf_spec_match(Spec * spec, void *key);
 void conf_spec_destroy(Spec * spec);
 
-Spec_El *conf_spec_el_create(Script_El_Type type, char *str1,
+PreStmt *conf_prestmt_create(StmtType type, char *str1,
                              struct timeval *tv, List map);
-void conf_spec_el_destroy(Spec_El * specl);
+void conf_prestmt_destroy(PreStmt * specl);
 
-Interpretation *conf_interp_create(char *name);
-int conf_interp_match(Interpretation * interp, void *key);
-void conf_interp_destroy(Interpretation * interp);
+Interp *conf_interp_create(char *name);
+int conf_interp_match(Interp * interp, void *key);
+void conf_interp_destroy(Interp * interp);
 
 void conf_init(char *filename);
 void conf_fini(void);

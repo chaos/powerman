@@ -99,53 +99,53 @@ void conf_fini(void)
 
 /*******************************************************************
  *                                                                 *
- * Script_El                                                       *
- *   A Script_El structure is an element in a script.  The script  *
+ * Stmt                                                       *
+ *   A Stmt structure is an element in a script.  The script  *
  * is a list of these elemments that implements one of the actions *
  * that clients may request of devices.                            *
  *                                                                 *
  *******************************************************************/
 
-Script_El *conf_script_el_create(Script_El_Type type, char *s1,
+Stmt *conf_stmt_create(StmtType type, char *s1,
                                  List map, struct timeval tv)
 {
-    Script_El *script_el;
+    Stmt *stmt;
     reg_syntax_t cflags = REG_EXTENDED;
 
-    script_el = (Script_El *) Malloc(sizeof(Script_El));
-    script_el->type = type;
+    stmt = (Stmt *) Malloc(sizeof(Stmt));
+    stmt->type = type;
     switch (type) {
-    case EL_SEND:
-        script_el->s_or_e.send.fmt = Strdup(s1);
+    case STMT_SEND:
+        stmt->u.send.fmt = Strdup(s1);
         break;
-    case EL_EXPECT:
-        Regcomp(&(script_el->s_or_e.expect.exp), s1, cflags);
-        script_el->s_or_e.expect.map = map;
+    case STMT_EXPECT:
+        Regcomp(&(stmt->u.expect.exp), s1, cflags);
+        stmt->u.expect.map = map;
         break;
-    case EL_DELAY:
-        script_el->s_or_e.delay.tv = tv;
+    case STMT_DELAY:
+        stmt->u.delay.tv = tv;
         break;
     default:
     }
-    return script_el;
+    return stmt;
 }
 
-void conf_script_el_destroy(Script_El * script_el)
+void conf_stmt_destroy(Stmt * stmt)
 {
-    assert(script_el != NULL);
+    assert(stmt != NULL);
 
-    switch (script_el->type) {
-    case EL_SEND:
-        Free(script_el->s_or_e.send.fmt);
+    switch (stmt->type) {
+    case STMT_SEND:
+        Free(stmt->u.send.fmt);
         break;
-    case EL_EXPECT:
-        if (script_el->s_or_e.expect.map != NULL)
-            list_destroy(script_el->s_or_e.expect.map);
+    case STMT_EXPECT:
+        if (stmt->u.expect.map != NULL)
+            list_destroy(stmt->u.expect.map);
         break;
-    case EL_DELAY:
+    case STMT_DELAY:
     default:
     }
-    Free(script_el);
+    Free(stmt);
 }
 
 /*******************************************************************
@@ -171,7 +171,7 @@ Spec *conf_spec_create(char *name)
     timerclear(&spec->timeout);
     timerclear(&spec->ping_period);
     for (i = 0; i < NUM_SCRIPTS; i++)
-        spec->scripts[i] = NULL;
+        spec->prescripts[i] = NULL;
     return spec;
 }
 
@@ -196,8 +196,8 @@ static void _spec_destroy(Spec * spec)
         Free(spec->plugname[i]);
     Free(spec->plugname);
     for (i = 0; i < NUM_SCRIPTS; i++)
-        if (spec->scripts[i])
-            list_destroy(spec->scripts[i]);
+        if (spec->prescripts[i])
+            list_destroy(spec->prescripts[i]);
     Free(spec);
 }
 
@@ -216,30 +216,30 @@ Spec *conf_find_spec(char *name)
 
 /*******************************************************************
  *                                                                 *
- * Spec_El                                                         *
- *   A Spec_El structure is an object associated with a Spec       *
- * that holds information for a Script_El.  The Script_El itself   *
+ * PreStmt                                                         *
+ *   A PreStmt structure is an object associated with a Spec       *
+ * that holds information for a Stmt.  The Stmt itself   *
  * cannot be constructed unitl it is added to the device's         *
- * protocol.  All the infromation the Script_El needs at that time *
- * is present in the Spec_El.                                      *
+ * protocol.  All the infromation the Stmt needs at that time *
+ * is present in the PreStmt.                                      *
  *                                                                 *
  *******************************************************************/
 
-Spec_El *conf_spec_el_create(Script_El_Type type, char *str1,
+PreStmt *conf_prestmt_create(StmtType type, char *str1,
                              struct timeval * tv, List map)
 {
-    Spec_El *specl;
+    PreStmt *specl;
 
-    specl = (Spec_El *) Malloc(sizeof(Spec_El));
-    memset(specl, 0, sizeof(Spec_El));
+    specl = (PreStmt *) Malloc(sizeof(PreStmt));
+    memset(specl, 0, sizeof(PreStmt));
     specl->type = type;
     switch (type) {
-    case EL_SEND:
-    case EL_EXPECT:
+    case STMT_SEND:
+    case STMT_EXPECT:
         assert(str1 != NULL && tv == NULL);
         specl->string1 = Strdup(str1);
         break;
-    case EL_DELAY:
+    case STMT_DELAY:
         assert(str1 == NULL && tv != NULL);
         specl->tv = *tv;
         break;
@@ -250,7 +250,7 @@ Spec_El *conf_spec_el_create(Script_El_Type type, char *str1,
     return specl;
 }
 
-void conf_spec_el_destroy(Spec_El * specl)
+void conf_prestmt_destroy(PreStmt * specl)
 {
     if (specl->string1 != NULL)
         Free(specl->string1);
@@ -286,30 +286,30 @@ hostlist_t conf_getnodes(void)
 
 /*******************************************************************
  *                                                                 *
- * Interpretation                                                  *
- *   An Interpretation structure is the means by which an EXPECT   *
+ * Interp                                                  *
+ *   An Interp structure is the means by which an EXPECT   *
  * script element identifies the pieces of the RegEx matched in an *
  * may be interpreted to give state information.                   *
  *                                                                 *
  *******************************************************************/
 
-Interpretation *conf_interp_create(char *name)
+Interp *conf_interp_create(char *name)
 {
-    Interpretation *interp;
+    Interp *interp;
 
-    interp = (Interpretation *) Malloc(sizeof(Interpretation));
+    interp = (Interp *) Malloc(sizeof(Interp));
     interp->plug_name = Strdup(name);
     interp->match_pos = -1;
     interp->node = NULL;
     return interp;
 }
 
-int conf_interp_match(Interpretation * interp, void *key)
+int conf_interp_match(Interp * interp, void *key)
 {
     return (strcmp(interp->plug_name, (char *) key) == 0);
 }
 
-void conf_interp_destroy(Interpretation * interp)
+void conf_interp_destroy(Interp * interp)
 {
     Free(interp->plug_name);
     Free(interp->node);

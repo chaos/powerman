@@ -70,7 +70,7 @@ typedef struct {
     regex_t on_re;              /* regex to match "on" in query */
     regex_t off_re;             /* regex to match "off" in query */
 
-    Dev_Type type;              /* type of device e.g. TCP_DEV */
+    DevType type;               /* type of device e.g. TCP_DEV */
     union {                     /* type-specific device information */
         struct {
             char *host;
@@ -90,7 +90,7 @@ typedef struct {
     Buffer from;                /* buffer <- device */
 
     List plugs;                 /* list of Plugs */
-    Protocol *prot;             /* array of expect/send scripts */
+    Script scripts[NUM_SCRIPTS]; /* array of scripts */
 
     struct timeval last_retry;  /* time of last reconnect retry */
     int retry_count;            /* number of retries attempted */
