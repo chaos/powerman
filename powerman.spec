@@ -99,6 +99,9 @@ fi
 %defattr(0644,root,root)
 %attr(0755,root,root)/usr/bin/powerman
 %attr(0755,root,root)/usr/sbin/powermand
+%attr(0755,root,root)/usr/sbin/pm
+%attr(0755,root,root)/usr/sbin/off
+%attr(0755,root,root)/usr/sbin/on
 /etc/powerman/baytech.dev
 /etc/powerman/icebox.dev
 /etc/powerman/wti.dev

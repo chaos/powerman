@@ -1,4 +1,11 @@
 2002-10-04 garlick
+	* Client now performs on and off command if executable is 
+	  linked to "on" and "off".  Install links "on", "off", and "pm"
+	  in spec file.
+	* Set all plug/node state to ST_UNKNOWN prior to status query command.
+	* Updated client man page.
+
+2002-10-04 garlick
 	* Now properly handles the case of one ice box hanging.
 	  (tested with vpcd --bad_response)
 	* Don't call action callback from within dev_enqueue_actions

@@ -57,6 +57,7 @@ static int _match_nodename(Node* node, void *key);
 static bool _node_exists(char *name);
 static hostlist_t _hostlist_create_validated(Client *c, char *str);
 static void _client_query_nodes_reply(Client *c);
+static void _client_query_status_init(void);
 static void _client_query_status_reply(Client *c);
 static void _handle_client_read(Client * c);
 static void _handle_client_write(Client * c);
@@ -214,6 +215,20 @@ static void _client_query_nodes_reply(Client *c)
     list_iterator_destroy(itr);
 }
 
+static void _client_query_status_init(void)
+{
+    List nodes = conf_getnodes();
+    ListIterator itr;
+    Node *node;
+
+    itr = list_iterator_create(nodes);
+    while ((node = list_next(itr))) {
+	node->p_state = ST_UNKNOWN;
+	node->n_state = ST_UNKNOWN;
+    }
+    list_iterator_destroy(itr);
+}
+
 /* 
  * Reply to client request for node status.
  */
@@ -351,8 +366,10 @@ static void _parse_input(Client *c, char *input)
     } else if (sscanf(str, CP_RESET, arg1) == 1) {	/* reset hostlist */
 	cmd = _create_command(c, PM_RESET, arg1);
     } else if (sscanf(str, CP_STATUS, arg1) == 1) {	/* status [hostlist] */
+	_client_query_status_init(); /* set state to unknown */
 	cmd = _create_command(c, PM_UPDATE_PLUGS, arg1);
     } else if (!strncasecmp(str, CP_STATUS_ALL, strlen(CP_STATUS_ALL))) {
+	_client_query_status_init(); /* set state to unknown */
 	cmd = _create_command(c, PM_UPDATE_PLUGS, NULL);
     } else {						/* error: unknown */
 	_client_msg(c, CP_ERR_UNKNOWN);

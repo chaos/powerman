@@ -73,6 +73,9 @@ install: all
 	$(mkinstalldirs)			$(DESTDIR)$(bindir)
 	$(mkinstalldirs)			$(DESTDIR)$(sbindir)
 	$(INSTALL) src/powerman			$(DESTDIR)$(bindir)/
+	ln -s $(bindir)/powerman		$(DESTDIR)$(bindir)/off
+	ln -s $(bindir)/powerman		$(DESTDIR)$(bindir)/on
+	ln -s $(bindir)/powerman		$(DESTDIR)$(bindir)/pm
 	$(INSTALL) src/powermand		$(DESTDIR)$(sbindir)/
 	$(mkinstalldirs)			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/baytech.dev		$(DESTDIR)$(packagedir)

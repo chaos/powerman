@@ -28,199 +28,98 @@
 .TH PowerMan 1 "Release 1.0.0" "LLNL" "PowerMan"
 
 .SH NAME
-powerman \- issue power monitoring queries and power control commands
+powerman \- power on/off/cycle nodes
 
 .SH SYNOPSIS
 .B powerman
 .I "[-options] [targets]"
+.br
+.B pm
+.I "[-options] [targets]"
+.br
+.B on
+.I "[targets]"
+.br
+.B off
+.I "[targets]"
 
 .SH DESCRIPTION
 .B powerman
-provides power management on a cluster of nodes.
-For an option in 
-.I [--on, --off, --reset, --cycle]
-.B powerman
-will power on, power off, reset, or power cycle, respectively, the 
-target nodes.  Each node gets its power from a device that can 
-be remotely controlled.  The controllable outlet supplying power
-is referred to as a 
-.I plug.  A node may be on or off when its plug is on.  Obviously a 
-node will be off if its plug is.  Nodes are (in general) configured
-to boot automatically when power is supplied from the plug.  A 
-.I shutdown
-could leave the node off and the plug on.  When the distinction is 
-important node power status is referred to as 
-.I soft
-power status and plug power status is referred to as 
-.I hard
-power status.  Hard power status is reported by default.
-.LP
-.B powerman [--queryon, --queryoff]
-queries the target nodes for their power status and prints the names of 
-those that are on (resp. off), one per line (but see --report below).
-.LP
-.B powerman 
-runs anywhere allowed by TCP wrappers and communicates with the 
-.B powermand daemon on a management workstation equipped with power 
-monitoring and control hardware.
-.LP
-
-.SH TARGETS
-The targets of the power control commands and queries are the host names
-of the nodes under power control on the management work station.  The
-.B powermand
-daemon gets those host names from a configuration file, usually 
-.I /etc/powerman/powerman.conf.
-See the 
-.I --names
-option below if there is any doubt about the host names.  There may be
-a list (whitespace delimited) of targets and the names may be glob,
-or optionally regex, expanded. 
-
+provides power management on a cluster of nodes.  It performs operations
+such as power on, power off, power cycle, and hardware reset on nodes.
+Nodes are typically node hostnames which are mapped to plugs on remote 
+power control (RPC) units in
+.I powerman.conf(5).
+.br
 .SH OPTIONS
 .LP
+.I "-r"
+.I "--reset"
+Reset targets.
+.LP
 .I "-c"
-.br
 .I "--cycle"
-.br
-Power cycle nodes.  Issue an "off" command followed by an "on".  Some 
-power control hardware offers this option.  For others it may be 
-implemented in the configuration file script for power cyling.  See
-.I powerman.conf(5)
-for more details.  A node whose plug is on will have its power turned 
-off and after a short delay the plug is turned back on, thus initiating
-a boot of the node.  A node whose plug was initially off will be turned 
-on.
-.LP
-.I "-d HOST"
-.br
-.I "--host HOST"
-.br
-Specify the hostname of the management workstation running the daemon.  
-This is 
-.I localhost
-by default.
-.LP
-.I "-F FILE"
-.br
-.I "--file FILE"
-.br
-Read the targets from a file instead of from the command line.
-.LP
-.I "-h"
-.br
-.I "--help"
-.br
-Print a usage message and exit.
+Power cycle targets.
 .LP
 .I "-1"
-.br
 .I "--on"
-.br
-Power on the target nodes if their plugs were off, thus initiating a 
-boot of the node as well.  No effect on nodes whose plugs are already 
-on.  
+Power on targets.
 .LP
 .I "-0"
-.br
 .I "--off"
-.br
-Power off the target nodes if their plugs were on.  Should probably be 
-preceded by a shutdown, though this is not required or even possible
-in the case of a hung node.  No effect on nodes whose plugs were 
-already off.  
+Power off targets.
 .LP
-.I "-L"
-.br
-.I "--license"
-.br
-Print information about the license, which is a Gnu GPL.
-.LP
-.I "-n"
-.br
+.I "-l"
 .I "--list"
-.br
-Expand the target glob or regex expressions and list all of the matching
-host names of nodes under power control by the daemon on the management 
-workstation.
-.LP
-.I "-p PORT"
-.br
-.I "--port PORT"
-.br
-Specify the TCP port on the management host to which the client will
-connect.  This is currently 10101 by default, though that may change.  The
-value must be a number.  The daemon can change its port number in its 
-configuration file. 
-.LP
-.I "-q"
-.br
-.I "--queryon"
-.br
-Ask the daemon if the target nodes are on.  The client prints the names,
-one per line, of those nodes among the targets whose plugs are on.  
-.LP
-.I "-r"
-.br
-.I "--reset"
-.br
-Issue a reset to the target nodes.  On hardware that supports it this 
-command asserts the motherboard 
-.I reset
-line of the node.  A node whose plug is off or whose (soft) power is
-off will not respond to this.  On the other hand, some hardware does 
-not support this operation, and it could be implemented as a power
-cycle operation in the script for the device (see powerman.conf(5)).
-.LP
-.I "-s"
-.br
-.I "--soft"
-.br
-Use soft power status rather than hard power status in a query.
-.LP
-.I "-v"
-.br
-.I "--verify"
-.br
-Issue a power status query after a power control command and print 
-the result in the report format (see the --report option).
-.LP
-.I "-V"
-.br
-.I "--version"
-.br
-Print the version of the program and exit.
-.LP
-.I "-Q"
-.br
-.I "--queryoff"
-.br
-Ask the daemon if the target nodes are off.  The client prints the names,
-one per line, of those nodes among the targets whose plugs are off.  
-.LP
-.I "-x"
-.br
-.I "--regex"
-.br
-Interpret the targets via regex expressions rather than glob expressions.
+List available targets.  If possible, output will be compressed into
+a host range (see HOST RANGES below).
 .LP
 .I "-z"
-.br
-.I "--report"
-.br
-Print the results of a query in a compact form.  The client prints 
-up to three lines.  All of the target nodes whose plugs are on are listed
-using a shorthand for node ranges.  Next all of the target nodes whose
-plugs are off are printed in the same form.  Finally all of the nodes
-whose sates are unknown are printed in the same form.  An empty list 
-suppresses printing that line.
+.I "--report [host range]"
+Report power status of all targets (or if host range is provided,
+only obtain status for those targets).  Status is not cached; each
+time this option is used, powermand contacts the appropriate RPC's.
+
+.SH "HOST RANGES"
+As noted in sections above,
+.B powerman
+accepts ranges of hostnames in
+the general form: prefix[n-m,l-k,...], where n < m and l < k, etc.,
+as an alternative to explicit lists of hosts.  This form should not
+be confused with regular expression character classes (also denoted
+by ``[]''). For example, foo[19] does not represent foo1 or foo9, but
+rather represents a degenerate range: foo19.
+
+This range syntax is meant
+only as a convenience on clusters with a prefixNN naming convention and
+specification of ranges should not be considered necessary -- the list
+foo1,foo9 could be specified as such, or by the range foo[1,9].
+
+Some examples of range usage follow:
+
+Power on hosts foo01,foo02,...,foo05
+    powerman --on foo[01-05]
+
+Power on hosts foo7,foo9,foo10
+    powerman --on foo[7,9-10]
+
+Power on foo0,foo4,foo5
+    powerman --on foo[0-5]
 
 .SH "FILES"
-/usr/bin/powermand
+/usr/sbin/powermand
 .br
 /usr/bin/powerman
 .br
+/usr/bin/pm
+.br
+/usr/bin/on
+.br
+/usr/bin/off
+.br
 /etc/powerman/powerman.conf
+.br
+/etc/powerman/*.dev
 .br
 
 .SH "ORIGIN"

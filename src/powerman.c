@@ -83,11 +83,18 @@ int main(int argc, char **argv)
     bool have_targets = FALSE;
     char targstr[CP_LINEMAX];
     int res = 0;
+    char *prog;
     enum { CMD_NONE, CMD_ON, CMD_OFF, CMD_LIST, CMD_CYCLE, CMD_RESET,
 	    CMD_REPORT } cmd = CMD_NONE;
 
-    err_init(argv[0]);
+    prog = basename(argv[0]);
+    err_init(prog);
 
+    if (strcmp(prog, "on") == 0)
+	cmd = CMD_ON;
+    else if (strcmp(prog, "off") == 0)
+	cmd = CMD_OFF;
+	    
     /*
      * Parse options.
      */
