@@ -1,7 +1,8 @@
 2003-04-12 garlick
     * If no plugs defined in device config, allow the plug names to come from
       the node config lines.
-    * Create new device type "TELNET_DEV" with telnet state machine.
+    * Implement TELNET_DEV and remove all the telnet escapes from device
+      configurations.
 
 2003-04-10 garlick
     * Moved ibmasm.dev to ibmrsa.dev and implemented first cut on RSA telnet

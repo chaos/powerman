@@ -7,7 +7,7 @@
 #
 specification {
 	name 		"apc"
-	type 		"TCP"
+	type 		"telnet"
 	offstring 	"OFF"
 	onstring  	"ON"
 	plugcount 	8
@@ -15,7 +15,6 @@ specification {
 
 	script login {
 		expect "\n"
-		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA\IAC\DONT\TELOPT_TTYPE"
 		expect "User Name : "
 		send "apc\r\n"
 		expect "Password  : "

@@ -1153,14 +1153,14 @@ static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
     {
     case DO:
         switch (opt) {
+#if 0
             case TELOPT_NAWS:
             case TELOPT_TTYPE:
             case TELOPT_TM:
+            case TELOPT_ECHO:
                 _telnet_sendopt(dev, WONT, opt);
                 break;
-            case TELOPT_SGA:    /* suppress go ahead */
-                _telnet_sendopt(dev, WILL, opt);
-                break;
+#endif
             default:
                 break;
         }
@@ -1172,8 +1172,10 @@ static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
 
 static void _init_telnet(Device * dev)
 {
+#if 0
     _telnet_sendopt(dev, DONT, TELOPT_NAWS);
     _telnet_sendopt(dev, DONT, TELOPT_TTYPE);
+#endif
 }
 
 static void _process_telnet(Device * dev)
@@ -1768,7 +1770,7 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
         }
 
         /* If telnet device, process telnet escapes */
-        if (dev->type == TELNET_DEV);
+        if (dev->type == TELNET_DEV)
             _process_telnet(dev);
 
         /* process actions */

@@ -13,7 +13,7 @@
 #
 specification {
 	name 		"baytech"
-	type 		"TCP"
+	type 		"telnet"
 	offstring 	"Off"
 	onstring  	"On"
 	plugcount 	8
@@ -26,7 +26,6 @@ specification {
 	}
 	script login {
 		expect "\n"
-		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA"
 		expect "Enter password>"
 		send "baytech\r\n"
 		expect "Enter Selection>"

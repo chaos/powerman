@@ -4,7 +4,6 @@
 * Package with autoconf
 * Power sequencing.  Provide a way of expressing the max number of outlets
   or power control devices which can be powered on in parallel.
-* Move telnet protocol from device configuration into powermand (TELNET_DEV)
 * Client should have option for verifying soft power status (expand hostranges
   and issue warnings where plug is on but node is off).  Needs to be optional
   since would double cluster query latency.  

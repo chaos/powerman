@@ -33,7 +33,6 @@ specification {
 	timeout  	20
 
 	script login {
-#		send "\IAC\DONT\TELOPT_NAWS\IAC\DONT\TELOPTTTYPE"
 		expect "Login ID:"
 		send "USERID\r\n"
 		send "PASSW0RD\r\n"
