@@ -1,0 +1,65 @@
+#
+# $Id$
+# $Source$
+# 
+# Baytech RPC28-30NC 
+# Default config, then disable confirmation, and disable status menu.
+#
+# Firmware version: F3.01 (C) 2000
+#
+specification "baytech-rpc28" {
+	timeout 	10   # about 5 sec for cycle command
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" 
+		    "12" "13" "14" "15" "16" "17" "18" "19" "20" }
+
+	script login {
+		send "\r\n"
+		expect "RPC-28>"
+	}
+	script logout {
+		send "exit\r\n"
+	}
+	script status_all {
+		send "status\r\n"
+		expect "Internal Temperature[^C]+ C"
+		foreachplug {
+			expect "([0-9]+)[^:]+: (On|Off)"
+			setplugstate $1 $2 on="On" off="Off"
+		}
+		expect "RPC-28>"
+	}
+	script on {
+		send "on %s\r\n"
+		expect "RPC-28>"
+	}
+	script on_all {
+		send "on 0\r\n"
+		expect "RPC-28>"
+	}
+	script off {
+		send "off %s\r\n"
+		expect "RPC-28>"
+	}
+	script off_all {
+		send "off 0\r\n"
+		expect "RPC-28>"
+	}
+# If outlet is initially off, "reboot" will leave it off.
+# This doesn't match PowerMan's semantics for cycle, so explicitly power
+# off then on.
+	script cycle {
+		send "off %s\r\n"
+		expect "RPC-28>"
+		delay 2
+		send "on %s\r\n"
+		expect "RPC-28>"
+	}
+	script cycle_all {
+		send "off 0\r\n"
+		expect "RPC-28>"
+		delay 2
+		send "on 0\r\n"
+		expect "RPC-28>"
+	}
+}

@@ -55,6 +55,8 @@ o Devices specified in powerman.conf now should combine the host and port
   hostname field, the port is taken from the flags field and a warning about
   deprecated usage is emitted to stdout.
 
+o Supported added for Baytech RPC-28-30NC remote power controller.
+
 +------------+
 | Bugs fixed |
 +------------+
@@ -80,15 +82,18 @@ o Linux NetworX ICE Box version 3 (V3.0 B70) (*)
 
 o Baytech RPC-3 (Revision F 5.00 and F 5.01) (*)
 
+o Baytech RPC-28-30NC
+
 o WTI NPS (v3.02)
 
-o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4)
-
 o WTI RPS-10
+
+o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4)
 
 o IBM RSA Remote Supervisor Adapter (T2ET16- for x335, GEET117A for x345) (*)
 
 o Rackable Systems Phantom Remote Management Module (v3.0.4)
+
 
 Devices marked with an asterisk (*) are deployed on LLNL production clusters 
 of substantial size.
