@@ -25,7 +25,7 @@
 \."  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \."#################################################################
 .\"
-.TH PowerMan 1 "Release 1.0.0" "LLNL" "PowerMan"
+.TH PowerMan 1 "Release 1.0" "LLNL" "PowerMan"
 .SH NAME
 powermand \- power control and monitoring daemon
 .SH SYNOPSIS
@@ -34,29 +34,25 @@ powermand \- power control and monitoring daemon
 .LP
 .SH DESCRIPTION
 .B powermand
-provides power monitoring and power management on a 
-cluster of nodes.  
+provides power management in a data center or compute cluster environment.
 .SH OPTIONS
 .TP
-.I "-c file, --config_file file"
+.I "-c, --conf filename"
 Override the default location of the powerman configuration file
 .I /etc/powerman/powerman.conf.
 .TP
 .I "-f, --foreground"
 Do not daemonize, and send debugging/error messages to stderr instead of syslog.
 .TP
+.I "-d, --debug mask"
+Set mask for debugging output.
+.TP
 .I "-h, --help"
 Provide a synopsis of the command options.
-.TP
-.I "-L, --license"
-Print license information about 
 .B PowerMan
 and exit.
-.TP
-.I "-V, --version"
-Print the version of the program and exit.
 .SH "FILES"
-/usr/bin/powermand
+/usr/sbin/powermand
 .br
 /usr/bin/powerman
 .br

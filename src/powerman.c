@@ -43,16 +43,17 @@
 #define SERVER_HOSTNAME "localhost"
 #define SERVER_PORT     "10101"
 
-static void _connect_to_server(void);
+static void _connect_to_server(char *host, char *port);
 static void _disconnect_from_server(void);
 static void _usage(void);
+static void _license(void);
 static int _getline(void);
 static void _expect(char *str);
 static int _process_response(void);
 
 static int server_fd = -1;
 
-#define OPT_STRING "01crlqfubnt"
+#define OPT_STRING "01crlqfubntLd:"
 static const struct option long_options[] = {
     {"on", no_argument, 0, '1'},
     {"off", no_argument, 0, '0'},
@@ -65,20 +66,12 @@ static const struct option long_options[] = {
     {"beacon", no_argument, 0, 'b'},
     {"node", no_argument, 0, 'n'},
     {"temp", no_argument, 0, 't'},
+    {"license", no_argument, 0, 'L'},
+    {"destination", required_argument, 0, 'd'},
     {0, 0, 0, 0}
 };
 
 static const struct option *longopts = long_options;
-
-const char *powerman_license =
-    "Copyright (C) 2001-2002 The Regents of the University of California.\n"
-    "Produced at Lawrence Livermore National Laboratory.\n"
-    "Written by Andrew Uselton <uselton2@llnl.gov>.\n"
-    "http://www.llnl.gov/linux/powerman/\n"
-    "UCRL-CODE-2002-008\n\n"
-    "PowerMan is free software; you can redistribute it and/or modify it\n"
-    "under the terms of the GNU General Public License as published by\n"
-    "the Free Software Foundation.\n";
 
 int main(int argc, char **argv)
 {
@@ -92,6 +85,8 @@ int main(int argc, char **argv)
     enum { CMD_NONE, CMD_ON, CMD_OFF, CMD_LIST, CMD_CYCLE, CMD_RESET,
         CMD_QUERY, CMD_FLASH, CMD_UNFLASH, CMD_BEACON, CMD_TEMP, CMD_NODE
     } cmd = CMD_NONE;
+    char *port = NULL;
+    char *host = NULL;
 
     prog = basename(argv[0]);
     err_init(prog);
@@ -105,8 +100,7 @@ int main(int argc, char **argv)
      * Parse options.
      */
     opterr = 0;
-    while ((c =
-            getopt_long(argc, argv, OPT_STRING, longopts,
+    while ((c = getopt_long(argc, argv, OPT_STRING, longopts,
                         &longindex)) != -1) {
         switch (c) {
         case 'l':              /* --list */
@@ -142,8 +136,18 @@ int main(int argc, char **argv)
         case 't':              /* --temp */
             cmd = CMD_TEMP;
             break;
+        case 'd':              /* --destination host[:port] */
+            if ((port = strchr(optarg, ':')))
+                *port++ = '\0';  
+            host = optarg;
+            break;
+        case 'L':              /* --license */
+            _license();
+            /*NOTREACHED*/
+            break;
         default:
             _usage();
+            /*NOTREACHED*/
             break;
         }
     }
@@ -165,7 +169,8 @@ int main(int argc, char **argv)
         hostlist_ranged_string(targets, sizeof(targstr), targstr);
     }
 
-    _connect_to_server();
+    _connect_to_server(host ? host : SERVER_HOSTNAME, 
+                       port ? port : SERVER_PORT);
 
     /*
      * Execute the commands.
@@ -274,14 +279,33 @@ static void _usage(void)
   "-c --cycle     Power cycle targets   -r --reset     Reset targets\n"
   "-f --flash     Turn beacon on        -u --unflash   Turn beacon off\n"
   "-b --beacon    Query beacon status   -n --node      Query node status\n"
-  "-t --temp      Query temperature     -h --help      Display this help\n");
+  "-t --temp      Query temperature\n"
+  );
+    exit(1);
+}
+
+
+/*
+ * Display powerman license and exit.
+ */
+static void _license(void)
+{
+    printf(
+ "Copyright (C) 2001-2002 The Regents of the University of California.\n"
+ "Produced at Lawrence Livermore National Laboratory.\n"
+ "Written by Andrew Uselton <uselton2@llnl.gov>.\n"
+ "http://www.llnl.gov/linux/powerman/\n"
+ "UCRL-CODE-2002-008\n\n"
+ "PowerMan is free software; you can redistribute it and/or modify it\n"
+ "under the terms of the GNU General Public License as published by\n"
+ "the Free Software Foundation.\n");
     exit(1);
 }
 
 /*
  * Set up connection to server and get to the command prompt.
  */
-static void _connect_to_server(void)
+static void _connect_to_server(char *host, char *port)
 {
     struct addrinfo hints, *addrinfo;
 
@@ -290,7 +314,7 @@ static void _connect_to_server(void)
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
 
-    Getaddrinfo(SERVER_HOSTNAME, SERVER_PORT, &hints, &addrinfo);
+    Getaddrinfo(host, port, &hints, &addrinfo);
 
     server_fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
                        addrinfo->ai_protocol);

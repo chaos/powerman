@@ -52,23 +52,11 @@ static void _noop_handler(int signum);
 static void _exit_handler(int signum);
 static void _select_loop(void);
 
-static const char *powerman_license =
-    "Copyright (C) 2001-2002 The Regents of the University of California.\n"
-    "Produced at Lawrence Livermore National Laboratory.\n"
-    "Written by Andrew Uselton <uselton2@llnl.gov>.\n"
-    "http://www.llnl.gov/linux/powerman/\n"
-    "UCRL-CODE-2002-008\n\n"
-    "PowerMan is free software; you can redistribute it and/or modify it\n"
-    "under the terms of the GNU General Public License as published by\n"
-    "the Free Software Foundation.\n";
-
-#define OPT_STRING "c:fhLVd:"
+#define OPT_STRING "c:fhd:"
 static const struct option long_options[] = {
-    {"config_file", required_argument, 0, 'c'},
+    {"conf", required_argument, 0, 'c'},
     {"foreground", no_argument, 0, 'f'},
     {"help", no_argument, 0, 'h'},
-    {"license", no_argument, 0, 'L'},
-    {"version", no_argument, 0, 'V'},
     {"debug", required_argument, 0, 'd'},
     {0, 0, 0, 0}
 };
@@ -84,30 +72,23 @@ int main(int argc, char **argv)
 
     /* initialize various modules */
     err_init(argv[0]);
-    /*act_init(); */
     dev_init();
     cli_init();
 
     /* parse command line options */
-    opterr = 0;
-    while ((c =
-            getopt_long(argc, argv, OPT_STRING, longopts,
+    while ((c = getopt_long(argc, argv, OPT_STRING, longopts,
                         &lindex)) != -1) {
         switch (c) {
-        case 'c':              /* --config_file */
-            if (config_filename != NULL)
+        case 'c':              /* --conf */
+            if (config_filename != NULL) {
                 _usage(argv[0]);
+                /*NOTREACHED*/
+            }
             config_filename = Strdup(optarg);
             break;
         case 'f':              /* --foreground */
             daemonize = FALSE;
             break;
-        case 'h':              /* --help */
-            _usage(argv[0]);
-            exit(0);
-        case 'L':              /* --license */
-            printf("%s", powerman_license);
-            exit(0);
         case 'd':              /* --debug */
             {
                 unsigned long val = strtol(optarg, NULL, 0);
@@ -118,14 +99,10 @@ int main(int argc, char **argv)
                 dbg_setmask(val);
             }
             break;
-#if 0
-        case 'V':
-            printf("%s-%s\n", PROJECT, VERSION);
-            exit(0);
-#endif
+        case 'h':              /* --help */
         default:
-            err_exit(FALSE, "unrecognized cmd line option (see --help).");
-            exit(0);
+            _usage(argv[0]);
+            /*NOTREACHED*/
             break;
         }
     }
@@ -152,18 +129,18 @@ int main(int argc, char **argv)
     /* We now have a socket at listener fd running in listen mode */
     /* and a file descriptor for communicating with each device */
     _select_loop();
-     /*NOTREACHED*/ return 0;
+     /*NOTREACHED*/ 
+    return 0;
 }
 
 static void _usage(char *prog)
 {
     printf("Usage: %s [OPTIONS]\n", prog);
-    printf("  -c --config_file FILE\tSpecify configuration [%s]\n",
+    printf("  -c --conf <filename>   Specify config file path [%s]\n",
            DFLT_CONFIG_FILE);
-    printf("  -f --foreground\tDon't daemonize\n");
-    printf("  -h --help\t\tDisplay this help\n");
-    printf("  -L --license\t\tDisplay license information\n");
-    printf("  -V --version\t\tDisplay version information\n");
+    printf("  -d --debug <mask>      Set debug mask [0]\n");
+    printf("  -f --foreground        Don't daemonize\n");
+    exit(0);
 }
 
 /*
@@ -223,7 +200,8 @@ static void _select_loop(void)
         cli_post_select(&rset, &wset);
         dev_post_select(&rset, &wset, &tmout);
     }
- /*NOTREACHED*/}
+    /*NOTREACHED*/
+}
 
 static void _noop_handler(int signum)
 {
@@ -233,7 +211,6 @@ static void _noop_handler(int signum)
 static void _exit_handler(int signum)
 {
     cli_fini();
-    /*act_fini(); */
     dev_fini();
     conf_fini();
     err_exit(FALSE, "exiting on signal %d", signum);
@@ -243,7 +220,8 @@ static void _exit_handler(int signum)
 void *out_of_memory(void)
 {
     err_exit(FALSE, "list routines out of memory");
-     /*NOTREACHED*/ return NULL;
+    /*NOTREACHED*/ 
+    return NULL;
 }
 
 /*

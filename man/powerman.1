@@ -25,9 +25,9 @@
 \."  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \."#################################################################
 .\"
-.TH PowerMan 1 "Release 1.0.0" "LLNL" "PowerMan"
+.TH PowerMan 1 "Release 1.0" "LLNL" "PowerMan"
 .SH NAME
-powerman \- power on/off/cycle nodes
+powerman \- power on/off nodes
 .SH SYNOPSIS
 .B powerman
 .I "[-option] [targets]"
@@ -43,35 +43,67 @@ powerman \- power on/off/cycle nodes
 .SH DESCRIPTION
 .B powerman
 provides power management in a data center or compute cluster environment.  
-It performs operations such as power on, power off, power cycle, and 
-hardware reset via remote power controller (RPC) devices.
+It performs operations such as power on, power off, and power cycle
+via remote power controller (RPC) devices.
 Target hostnames are mapped to plugs on RPC devices in 
 .I powerman.conf(5).
 .SH OPTIONS
 .TP
-.I "-r, --reset"
-Reset targets.
+.I "-1, --on"
+Power ON targets.
+.TP
+.I "-0, --off"
+Power OFF targets.
 .TP
 .I "-c, --cycle"
 Power cycle targets.
 .TP
-.I "-1, --on"
-Power on targets.
+.I "-r, --reset"
+Assert hardware reset for targets (if implemented by RPC).
 .TP
-.I "-0, --off"
-Power off targets.
+.I "-f, --flash"
+Turn beacon ON for targets (if implemented by RPC).
+.TP
+.I "-u, --unflash"
+Turn beacon OFF for targets (if implemented by RPC).
 .TP
 .I "-l, --list"
 List available targets.  If possible, output will be compressed into
 a host range (see TARGET SPECIFICATION below).
 .TP
 .I "-q, --query"
-Query power status of targets (if none specified, query all targets).
+Query plug status of targets.  If none specified, query all targets.
 Status is not cached;  each time this option is used, powermand 
 queries the appropriate RPC's.  Targets connected to RPC's that could
 not be contacted (e.g. due to network failure) are reported as 
 status "unknown".  If possible, output will be compressed into host
 ranges.
+.TP
+.I "-n, --node"
+Query node power status of targets (if implemented by RPC).  If no targets
+specified, query all targets.
+In this context, a node in the OFF state could be ON at the plug but 
+operating in standby power mode.
+.TP
+.I "-b, --beacon"
+Query beacon status (if implemented by RPC).  If no targets are
+specified, query all targets.
+.TP
+.I "-t, --temp"
+Query node temperature (if implemented by RPC).  If no targets are
+specified, query all targets.
+Temperature information is not interpreted by powerman and is reported
+as received from the RPC on one line per target, prefixed by target name.
+.TP
+.I "-h, --help"
+Display option summary.
+.TP
+.I "-L, --license"
+Show powerman license information.
+.TP
+.I "-d, --destination host[:port]"
+Connect to a powerman daemon on non-default host and optionally port.
+
 .SH "TARGET SPECIFICATION"
 .B powerman
 target hostnames may be specified as comma separated or space separated

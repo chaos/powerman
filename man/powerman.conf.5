@@ -25,198 +25,61 @@
 \."  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \."#################################################################
 .\"
-.TH POWERMAN.CONF 1 "Release 1.0.0" "LLNL" "POWERMAN.CONF"
+.TH POWERMAN.CONF 1 "Release 1.0" "LLNL" "POWERMAN.CONF"
 
 .SH NAME
 powerman.conf \- configuration file for PowerMan
 
 .SH DESCRIPTION
+The powerman.conf file typically includes one or more of the remote power 
+controller (RPC) device files provided in the /etc/powerman directory; 
+sets a few global options; 
+instantiates RPC devices with unique names, hostnames, and ports;  
+and maps node names to RPC's and plug numbers.
+.SH EXAMPLE
+The following example is a 16-node cluster that uses two 8-plug
+Baytech RPC-3 remote power controllers.
 .LP
-A PowerMan config file consists of four sections:
-.br
-.I Device Specification List
-.br
-.I Global Configuration
-.br
-.I Device List
-.br
-.I Node List 
-.LP
-Each section comprises several fields of the form 
-.RS
-	<keyword(s)> <strings>
-.RE
-Keywords are always lower-case and unquoted, and strings are 
-always quoted.  The quoted strings give values to the fields 
-identified by the keyword(s).  Keywords and strings are free 
-format and white space delimitted, though by convention there is 
-one field with its string(s) per line, and lines are indented in 
-subsections.  The grammar for the configuration file parser 
-requires the four sections to be in order.  Additional constriants 
-will be mentioned below.
+.nf \fI
+include "/etc/powerman/baytech.dev"  # include def for "baytech" RPC
 
-.SH Device Specification List
-
-  The device specification lists all the kinds of devices that 
-may be used later in the Device List.  Each specification has
-a few general configuration details, a list of scripts - each
-of which details how a particular device command is carried
-out - and a list of plugs.
-.LP
-.RS
-  include "<path>"
-.RE
-An include directive may appear anywhere in the configuration file
-but is most commonly used (one each) for one or more device 
-specification files (.dev files), where a .dev file holds the 
-entirety of one device specification.  See the individual .dev 
-files for hints on their contents.  An extended discussion of the
-device specification for an Icebox is included at the end of this 
-man page.  
-.LP
-The path must be absolute.  The standard distribution of 
-.B PowerMan
-includes the following .dev files: 
-.LP
-include "/etc/powerman/icebox.dev"
-.br
-include "/etc/powerman/icebox3.dev"
-.br
-include "/etc/powerman/wti.dev"
-.br
-include "/etc/powerman/baytech.dev"
-.br
-
-.SH Global Configuration
-
-The global section begins and end with "begin global" and "end global" keywords:
-.RS
 begin global
-.RE
-.LP
-.I client listener port <port>
-.br
-This field is required.  Port is the well-known port value 
-on which the daemon will listen for new connections.  For now
-it must be a number.  A service name of "powerman" is planned.
-.RS
-	client listener port 10101
-.RE
-.RS
+        client listener port 10101   # use powerman default port
+        tcpwrappers                  # enable TCP wrappers
 end global
-.RE
 
-.SH Device List
+# Power controller: device <name> <type> <hostname> <port>
+device "pow0" "baytech" "pow0" "23"  # instantiate pow0
+device "pow1" "baytech" "pow1" "23"  # instantiate pow1
 
-This section has a list (only one in this case) of device
-entries.  There is a separate entry for each physical device.
-
-.LP
-.I  device "<DevName>" "<SpecName>" "<hostname>" "<port>"
-.br
-A device entry is required for each physical device used for
-power monitoring and/or power control.
-.br
-o The DevName field identifies this particular device and is how
-the nodes section below refers to it.  
-.br
-o The SpecName field identifies which device specification from
-the list above (in one of the .dev files) characterizes this 
-device.
-.br
-o The hostname field gives the host name that will be the 
-target of communications.
-.br
-o The port is the number for the well-know port on which the 
-device is listening for connections.  Named services will
-be supported in a future version.
-.br
-The combination of hostaname and port must be unique for each 
-device, as must be the DevName it is given.
-
-.RS
-device "Icebox" "icebox" "ice0-0.llnl.gov" "1010"
-.RE
-
-.SH Node List
-
-This section has a list of the nodes in the cluster.  There is
-a separate entry for each node.
-
-.LP
-.I  node "<NodeName>" "<DevName>" "<plug>" ["<DevName>" "<plug>"]
-.br
-o A node entry is required for each node in the cluster.  The 
-second DevName, plug pair is for systems with separate devices 
-for hard power control and monitoring (the first pair) and soft 
-power monitoring (the second pair).
-.br
-o The NodeName is the name by which the node is known in the 
-cluster, which may be an indexed name as shown here, but 
-does not have to be.
-.br
-o The DevName must match a device entry.  It is the device the 
-the node is plugged into.
-.br
-o The plug field identifies the unique position on the device
-for that node. It is often a number but does not have to be.
-It must correspond to one of the plug entries from the 
-device specification for the device DevName.
-
-.RS
+# Plugs: node <name> <device> <plug>
 begin nodes
-.RE
-.RS
-	node "tux0" "Icebox" "1"
-.RE
-.RS
-	node "tux1" "Icebox" "2"
-.RE
-.RS
-	node "tux2" "Icebox" "3"
-.RE
-.RS
-	node "tux3" "Icebox" "4"
-.RE
-.RS
-	node "tux4" "Icebox" "5"
-.RE
-.RS
-	node "tux5" "Icebox" "6"
-.RE
-.RS
-	node "tux6" "Icebox" "7"
-.RE
-.RS
-	node "tux7" "Icebox" "8"
-.RE
-.RS
-	node "tux8" "Icebox" "9"
-.RE
-.RS
-	node "tux9" "Icebox" "10"
-.RE
-.RS
-end nodes
-.RE
-
-.SH "DEVICE SPECIFICATION"
-
-See the examples provided in /etc/powerman/*.dev.
-
+        node "pengra0" "pow0" "1"    # map pengra0 to pow0 plug 1
+        node "pengra1" "pow0" "2"    # map pengra0 to pow0 plug 2
+        node "pengra2" "pow0" "3"    # ...
+        node "pengra3" "pow0" "4"
+        node "pengra4" "pow0" "5"
+        node "pengra5" "pow0" "6"
+        node "pengra6" "pow0" "7"
+        node "pengra7" "pow0" "8"
+        node "pengra8" "pow1" "1"    # map pengra8 to pow1 plug 1
+        node "pengra9" "pow1" "2"    # map pengra9 to pow1 plug 2
+        node "pengra10" "pow1" "3"   # ...
+        node "pengra11" "pow1" "4"
+        node "pengra12" "pow1" "5"
+        node "pengra13" "pow1" "6"
+        node "pengra14" "pow1" "7"
+        node "pengra15" "pow1" "8"
+end nodes \fR
+.fi
 .SH "FILES"
-/usr/sbin/powermand
-.br
-/usr/bin/powerman
-.br
 /etc/powerman/powerman.conf
 .br
-
+/etc/powerman/*.dev
 .SH "ORIGIN"
 Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Linux 
 clusters.  This software is open source and distributed under
 the terms of the Gnu GPL.  
-
 .SH "SEE ALSO"
-powermand(1) powerman.conf(5)
+powermand(1) powerman(1)
 

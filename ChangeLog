@@ -1,3 +1,9 @@
+2002-10-27 garlick
+    * Added client options -d host[:port] (use alt server/port), 
+      -L (display license).  
+    * Cleaned up server options.
+    * Updated man pages.
+
 2002-10-26 garlick
     * Fix bug where inappropriate match ($N) values caused a runtime assert.
     * Attempting to initiate a command to a device now short circuits
@@ -5,7 +11,8 @@
     * Implemented --beacon, --flash, --unflash, --temp, and --node in client.
     * Fix bug where actions never make it to the head of the device queue
       to time out when the device is hung trying to login (e.g. 
-      vpcd --hung_rpc).
+      vpcd --hung_rpc).  Now all actions queued up behind a timing out action
+      on a device are also timed out.
 
 2002-10-24 garlick
     * Changed magic vim comment at bottom of each file for tab expansion.
