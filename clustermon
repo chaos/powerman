@@ -20,10 +20,6 @@ proc usage msg {
   exit
 }
 
-if { [exec id -u] } {
-    usage "You must be root to run this"
-}
-
 namespace eval app {}
 
 set app::config_file "/etc/powerman.conf"

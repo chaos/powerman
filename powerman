@@ -60,7 +60,9 @@ proc read_nodes node_list {
 
 
 if { [exec id -u] } {
-    usage "You must be root to run this"
+	set unlockable 0
+} else {
+ 	set unlockable 1
 }
 
 namespace eval app {}
@@ -79,7 +81,6 @@ set configed 0
 set debug 0
 set regex 0
 set force 0
-set query 0
 set reset 0
 set app::verbose 0
 set node_list   {}
@@ -102,8 +103,8 @@ for {set i 0} {$i < $argc} {incr i} {
       "-q" {set query 1}
       "-r" {set reset 1}
       "-v" {set app::verbose 1}
-      "-on" {set on 1}
-      "-off" {set off 1}
+      "-on"  {if { $unlockable } {set on  1} else {puts "Root Only"}}
+      "-off" {if { $unlockable } {set off 1} else {puts "Root Only"}}
       default {
 	  if {!$configed} {
 	      if {![file exists $app::config_file]} {

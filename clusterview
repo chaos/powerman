@@ -29,16 +29,19 @@ proc usage msg {
 
 proc toggle_lockout {} {
     global lockout_val
+    global unlockable
 
-    set lockout_val [expr 1 - $lockout_val]
-    if {$lockout_val} {
-      .bottom.lockout configure -text "unlocked"
-      .bottom.lockout configure -foreground red
-    } else {
-      .bottom.lockout configure -text "locked"
-      .bottom.lockout configure -foreground black
+    if {$unlockable} {
+	set lockout_val [expr 1 - $lockout_val]
+	if {$lockout_val} {
+	.bottom.lockout configure -text "unlocked"
+	.bottom.lockout configure -foreground red
+	} else {
+	.bottom.lockout configure -text "locked"
+	.bottom.lockout configure -foreground black
+	}
+	pack .bottom.lockout
     }
-    pack .bottom.lockout
 }
 
 proc toggle_node node {
@@ -107,7 +110,7 @@ proc check_consoles {} {
   global lockout_val
 
   if {$lockout_val} {
-    set console_status [eval exec $app::lib_dir/wtf.exp $powerlib::nodes]
+    set console_status [eval exec $app::lib_dir/wtf.exp -j $powerlib::nodes]
 #    pack forget .middle
     foreach line $console_status {
 	set node [string range $line 0 [expr [string first ":" $line] - 1]]
@@ -156,7 +159,9 @@ proc check_consoles {} {
 ####################################################################
 
 if { [exec id -u] } {
-    usage "You must be root to run this"
+    set unlockable 0
+} else {
+    set unlockable 1
 }
 
 # This namespace is for variables that must be set here but are mainly 
@@ -216,7 +221,6 @@ if {[file exists $powerlib]} {
 }
 
 set response [powerlib::check $powerlib::nodes "on"]
-set lockout_val 1
 
 frame .top
 button .top.all_on -text "All On" -command all_on
@@ -320,6 +324,7 @@ foreach rack $powerlib::locations {
 }
 pack .middle
 
+set lockout_val $unlockable
 frame .bottom
 button .bottom.lockout -text "unlocked" -command toggle_lockout
 if {$lockout_val} {

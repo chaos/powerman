@@ -17,12 +17,24 @@ then
   echo "You must be root to run this!"
   exit
 fi
+if [ -d src ]
+then
+  cd src
+  make
+  if [ ! -f ether-wake -o \
+       ! -f dsr-check -o \
+       ! -f dsr-scan ]
+  then
+    echo "Missing files.  Did the \"make\" succeed?"
+    exit
+  fi
+  cd ..
+fi
 if [ -f README -a \
      -f DISCLAIMER -a \
      -f check -a \
      -f clustermon -a \
      -f clusterview -a \
-     -f ether-wake -a \
      -f powerman -a \
      -d etc -a \
      -f etc/powerman.conf -a \
@@ -60,7 +72,7 @@ if [ -f README -a \
 then
   echo "Files and directories look okay.  Proceeding ..."
 else
-  echo "Missing files.  Is this the correct directory?  Do you need to make etherwake?"
+  echo "Missing files.  Is this the correct directory?"
   exit
 fi
 if [ ! -d $DOC ]
@@ -107,6 +119,14 @@ cp powerman $BIN
 echo "copy etc/powerman.conf to $ETC"
 cp etc/powerman.conf $ETC
 
+echo "copy ether-wake to $LIB"
+cp src/ether-wake $LIB
+echo "copy dsr-check to $LIB"
+cp src/dsr-check $LIB
+echo "copy dsr-scan to $LIB"
+cp src/dsr-scan $LIB
+chmod 4755 $LIB/dsr-scan
+
 echo "copy lib/powerlib.tcl to $LIB"
 cp lib/powerlib.tcl $LIB
 echo "copy lib/digi.tcl to $LIB"
@@ -145,8 +165,6 @@ echo "copy lib/srm.gif to $LIB"
 cp lib/srm.gif $LIB
 echo "copy lib/unknown.gif to $LIB"
 cp lib/unknown.gif $LIB
-echo "copy ether-wake to $LIB"
-cp ether-wake $LIB
 echo "copy lib/cs20_off.gif to $LIB"
 cp lib/cs20_off.gif $LIB
 echo "copy lib/cs20_on.gif to $LIB"

@@ -30,8 +30,8 @@ proc wti::power {command node_list} {
     } else {    
 	foreach node $node_list {
 	    set wti_dev [lindex $powerlib::control($node) 1]
-	    set wti_passwd [lindex $control($node) 2]
-	    set wti_port [lindex $control($node) 3]
+	    set wti_passwd [lindex $powerlib::control($node) 2]
+	    set wti_port [lindex $powerlib::control($node) 3]
 	    set wti_fid [open $wti_dev r+]
 	    # There should be a check here for a failed open
 	    # alternatively, this could become an expect script
