@@ -41,8 +41,8 @@ class SetDataClass:
         self.cluster = cluster
         self.nodes        = []
         self.etherwake = pm_utils.powermandir + 'ether-wake'
-        if (not os.path.isfile(etherwake)):
-            pm_utils.exit_error(20, etherwake)
+        if (not os.path.isfile(self.etherwake)):
+            pm_utils.exit_error(20, self.etherwake)
         
     def add(self, node):
         self.nodes.append(node)

@@ -60,10 +60,8 @@ class SetDataClass:
                     tty = open(tty_name, 'r+')
                 except IOError:
                     pm_utils.exit_error(18, tty_name)
-                try:
-                    fcntl.lockf(tty.fileno(), FCNTL.LOCK_EX | FCNTL.LOCK_NB)
                 except IOError:
-                    pm_utils.exit_error(19, self.name)
+                    pm_utils.exit_error(19, tty_name)
                 modem = '0000'
                 retval = ''
                 retval = fcntl.ioctl(tty.fileno(), self.TIOCMGET, modem)
@@ -72,7 +70,6 @@ class SetDataClass:
                 # print "Checking node", node.name, "status =", status
                 if((status and not reverse) or (not status and reverse)):
                     node.mark(node.name)
-                fcntl.lockf(tty.fileno(), FCNTL.LOCK_UN)
                 tty.close()
                 
 
