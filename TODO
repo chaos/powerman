@@ -1,6 +1,7 @@
-* Bug: was able to kill powerman by running "while true; do pm -q; done"
-  and interrupting with ^C after many iterations:
-  client.c:416: _act_finish: Assertion `(c)->magic == 0xdeadbee0' failed.
+* Bug: since plug state is global and is reset before each status query, 
+  simultaneous status queries will return unpredictable results.
+* Bug: while running "while true; do pm -q; done", commands to power on/off
+  nodes will occasionally results in disconnect/reconnect to device.
 * Build failure simulator test suite
 * Package with autoconf
 * Still several small memory leaks, find them

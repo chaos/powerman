@@ -62,11 +62,11 @@ static void _process_action(Device * dev, struct timeval *timeout);
 static bool _timeout(struct timeval * timestamp, struct timeval * timeout,
 		struct timeval *timeleft);
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl, 
-		ActionCB fun, void *arg);
+		ActionCB fun, int client_id);
 static Action *_create_action(Device *dev, int com, char *target,
-		ActionCB fun, void *arg);
+		ActionCB fun, int client_id);
 static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
-		ActionCB fun, void *arg);
+		ActionCB fun, int client_id);
 static unsigned char *_findregex(regex_t * re, unsigned char *str, int len);
 static char *_getregex_buf(Buffer b, regex_t * re);
 static bool _command_needs_device(Device *dev, hostlist_t hl);
@@ -146,7 +146,7 @@ static char *_getregex_buf(Buffer b, regex_t * re)
 }
 
 static Action *_create_action(Device *dev, int com, char *target,
-		ActionCB fun, void *arg)
+		ActionCB fun, int client_id)
 {
     Action *act;
 
@@ -155,7 +155,7 @@ static Action *_create_action(Device *dev, int com, char *target,
     INIT_MAGIC(act);
     act->com = com;
     act->cb_fun = fun;
-    act->cb_arg = arg;
+    act->client_id = client_id;
     act->itr = list_iterator_create(dev->prot->scripts[act->com]);
     act->cur = NULL;
     act->target = target ? Strdup(target) : NULL;
@@ -400,7 +400,7 @@ bool dev_check_actions(int com, hostlist_t hl)
  * Return an action count so the client be notified when all the
  * actions "check in".
  */
-int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, void *arg)
+int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, int client_id)
 {
     Device *dev;
     ListIterator itr;
@@ -409,7 +409,7 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, void *arg)
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
 	if (dev->prot->scripts[com] != NULL) { /* unimplemented commands */
-	    count += _enqueue_actions(dev, com, hl, fun, arg);
+	    count += _enqueue_actions(dev, com, hl, fun, client_id);
 	}
     }
     list_iterator_destroy(itr);
@@ -418,7 +418,7 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, void *arg)
 }
 
 static int _enqueue_actions(Device *dev, int com, hostlist_t hl, 
-		ActionCB fun, void *arg)
+		ActionCB fun, int client_id)
 {
     Action *act;
     int count = 0;
@@ -431,12 +431,12 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
                 list_iterator_reset(act->itr);
 		dbg(DBG_ACTION, "resetting iterator for non-login action");
             } 
-            act = _create_action(dev, com, NULL, fun, arg);
+            act = _create_action(dev, com, NULL, fun, client_id);
             list_prepend(dev->acts, act);
 	    count++;
             break;
         case PM_LOG_OUT:
-            act = _create_action(dev, com, NULL, fun, arg);
+            act = _create_action(dev, com, NULL, fun, client_id);
             list_append(dev->acts, act);
 	    count++;
             break;
@@ -447,9 +447,10 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
         case PM_POWER_CYCLE:
         case PM_RESET:
 	    if (hl != NULL) {
-		count += _enqueue_targetted_actions(dev, com, hl, fun, arg);
+		count += _enqueue_targetted_actions(dev, com, hl, fun, 
+				client_id);
 	    } else {
-		act = _create_action(dev, com, NULL, fun, arg); 
+		act = _create_action(dev, com, NULL, fun, client_id); 
 		list_append(dev->acts, act);
 		count++;
 	    }
@@ -463,7 +464,7 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
 
 
 static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
-		ActionCB fun, void *arg)
+		ActionCB fun, int client_id)
 {
     List new_acts = list_create((ListDelF) _destroy_action);
     Action *act;
@@ -485,12 +486,12 @@ static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
 	    continue;
 	}
 	/* match! */
-	act = _create_action(dev, com, plug->name, fun, arg);
+	act = _create_action(dev, com, plug->name, fun, client_id);
 	list_append(new_acts, act);
     }
 
     if (all) {
-	act = _create_action(dev, com, dev->all, fun, arg);
+	act = _create_action(dev, com, dev->all, fun, client_id);
         list_append(dev->acts, act);
 	count++;
     } else {
@@ -537,7 +538,7 @@ static bool _finish_connect(Device *dev, struct timeval *timeout)
 	err(FALSE, "_finish_connect: %s connected", dev->name);
 	dev->connect_status = DEV_CONNECTED;
 	dev->reconnect_count = 0;
-        _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL);
+        _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, 0);
     }
 
     return (dev->connect_status == DEV_CONNECTED);
@@ -658,7 +659,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
 			dev->script_status |= DEV_LOGGED_IN;
 		} 
 		if (act->cb_fun)			/* notify client */
-		    act->cb_fun(act->cb_arg, act->error);
+		    act->cb_fun(act->client_id, act->error);
 		_destroy_action(list_dequeue(dev->acts));
 	    }
 

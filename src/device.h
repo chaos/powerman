@@ -54,7 +54,7 @@
 #define PM_RESET            7
 
 
-typedef void (*ActionCB)(void *arg, bool error);
+typedef void (*ActionCB)(int client_id, bool error);
 
 /*
  * Actions are appended to a per device list in dev->acts
@@ -65,7 +65,7 @@ typedef struct {
     Script_El    *cur;    /* current place in the script sequence */
     char         *target; /* native device represenation of target plug(s) */
     ActionCB	 cb_fun;  /* callback for action completion */
-    void	 *cb_arg; /* opaque argument for above */
+    int		 client_id; /* client id so completion can find client */
     bool	 error;	  /* error flag for action */
     struct timeval  time_stamp; /* time stamp for timeouts */
     MAGIC;
@@ -120,7 +120,7 @@ typedef struct {
 void dev_init(void);
 void dev_fini(void);
 void dev_add(Device *dev);
-int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, void *arg);
+int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, int client_id);
 bool dev_check_actions(int com, hostlist_t hl);
 void dev_initial_connect(void);
 

@@ -1,3 +1,8 @@
+2002-10-08 garlick
+	* Fixed bug where Action "found" client by client struct address, but
+	  if client had died, address could still be valid.  Now we use a 
+	  unique integer identifier to find client.
+
 2002-10-06 garlick
 	* More man page edits.
 

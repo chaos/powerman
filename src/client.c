@@ -54,7 +54,7 @@ static Command *_create_command(Client *c, int com, char *arg1);
 static void _destroy_command(Command *cmd);
 static void _hostlist_error(Client *c);
 static int _match_client(Client * client, void *key);
-static bool _client_exists(Client *cli);
+static Client *_find_client(int client_id);
 static int _match_nodename(Node* node, void *key);
 static bool _node_exists(char *name);
 static hostlist_t _hostlist_create_validated(Client *c, char *str);
@@ -67,7 +67,7 @@ static char *_strip_whitespace(char *str);
 static void _parse_input(Client *c, char *input);
 static void _destroy_client(Client * client);
 static void _create_client(void);
-static void _act_finish(void *arg, bool error);
+static void _act_finish(int client_id, bool error);
 
 #define _client_msg(c,args...) do {  \
     (c)->write_status = CLI_WRITING; \
@@ -84,6 +84,9 @@ int deny_severity = LOG_WARNING;	/* logging level for rejected reqs */
 static int listen_fd = NO_FD;		/* powermand listen socket */
 static List cli_clients = NULL;		/* list of clients */
 
+static int cli_id_seq = 1;		/* range 1...INT_MAX */
+#define _next_cli_id() \
+    (cli_id_seq < INT_MAX ? cli_id_seq++ : (cli_id_seq = 1, INT_MAX))
 
 /*
  * Initialize module.
@@ -391,7 +394,8 @@ static void _parse_input(Client *c, char *input)
     /* Note: cmd->hl may be NULL */
     if (cmd) {
 	dbg(DBG_CLIENT, "_parse_input: enqueuing actions");
-	cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish, c);
+	cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish, 
+			c->client_id);
 	if (cmd->pending == 0) {
 	    _client_msg(c, CP_ERR_NOACTION);		
 	    _destroy_command(cmd);
@@ -409,15 +413,14 @@ static void _parse_input(Client *c, char *input)
 /*
  * Callback for device action completion.
  */
-static void _act_finish(void *arg, bool error)
+static void _act_finish(int client_id, bool error)
 {
-    Client *c = (Client *)arg;
-
-    CHECK_MAGIC(c);
+    Client *c;
 
     /* if client has gone away do nothing */
-    if (!_client_exists(c))
+    if (!(c = _find_client(client_id)))
 	return;
+    CHECK_MAGIC(c);
     assert(c->cmd != NULL);
 
     if (error) {		    /* flag any errors for the final report */
@@ -484,21 +487,18 @@ static void _destroy_client(Client * client)
     Free(client);
 }
 
-/* helper for _client_exists */
+/* helper for _find_client */
 static int _match_client(Client * client, void *key)
 {
-    return (client == key);
+    return (client->client_id == *(int *)key);
 }
 
 /*
- * Test if a client still exists (by address).
+ * Test if a client still exists (by sequence).
  */
-static bool _client_exists(Client *cli)
+static Client *_find_client(int seq)
 {
-    Client *client;
-
-    client = list_find_first(cli_clients, (ListFindF) _match_client, cli);
-    return (client == NULL ? FALSE : TRUE);
+    return list_find_first(cli_clients, (ListFindF) _match_client, &seq);
 }
 
 
@@ -566,6 +566,7 @@ static void _create_client(void)
     client->to = NULL;
     client->from = NULL;
     client->cmd = NULL;
+    client->client_id = _next_cli_id();
 
     client->fd = Accept(listen_fd, &saddr, &saddr_size);
     /* client died after it initiated connect and before we could accept */

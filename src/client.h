@@ -50,6 +50,7 @@ typedef struct {
     Buffer 		to;		/* out buffer */
     Buffer 		from;		/* in buffer */
     Command		*cmd;		/* command (there can be only one) */
+    int			client_id;	/* client identifier */
     MAGIC;
 } Client;
 
