@@ -9,10 +9,14 @@
   since would double cluster query latency.  
 * Make it possible to access a power control device via conman to support 
   in-band "service processor" arrangements e.g. Compaq RMC on AlphaServcer 
-  line.  Perhaps spawn the conman client on a pipe for each power operation 
-  or have conman create a unix domain socket that could be accessed by 
-  powerman using existing capabilities.
+  line.  For example, the following could all be legal devices:
+	device "ph" "phantom" "/usr/bin/conman -j %s" "ondemand"
+	device "ph" "phantom" "/dev/ttyS0"
+	device "ph" "phantom" "cyclades:7001"
 * Take an flock F_WRLCK on serial devices to peacefully coexist with conman.
 * Support IPMI 1.5 using a built-in device called "impi1.5".  Device 
   instantiations would be per network interface.  Plug names would be 
   ethernet addresses.
+* Connect on demand option.
+* Add a way to execute external scripts to do power control.
+

@@ -40,13 +40,14 @@ o In addition to the new constructs described above, the device script syntax
   - The "map" command was renamed to "setplugstate" and there can now be
     intervening statements between an "expect" and "setplugstate" lines.  
     Subexpression match lines persist until the next "expect" in the script.
-  - The "setplugstate" command can now take a subexpression offset for the plug
-    name parameter in lieu of the literal plug name (quoted string).
+  - The "setplugstate" command can now take either subexpression number for 
+    the plug name parameter or a literal plug name (quoted string).
   - The "onstring" and "offstring" constructs are replaced with off="regex"/
     on="regex" arguments to "setplugstate".
   - Devices no longer have a "type".  This is deduced from the "hostname"
     field for the device in the powerman.conf.  If it starts with a slash
-    it is treated as a special file.
+    it is treated as a special file, otherwise tcp.  Telnet mode is always
+    on even for serial devices, which should be harmless.
 
 o Devices specified in powerman.conf now should combine the host and port
   in the hostname field, e.g. "hostname:port".  What was the port field is
