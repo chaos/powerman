@@ -40,11 +40,11 @@ o Baytech RPC-3 cycle left target plugs in the "off" state if the initial state
 o ICE box V3 beacon command would produce undefined results when acting on 
   multiple beacons in a single ICE box.
 
-+---------+
-| Testing |
-+---------+
++-----------------+
+| Supported RPC's |
++-----------------+
 
-PowerMan development takes place on the following RPC devices:
+PowerMan development and testing takes place on the following RPC devices:
 
 o Linux NetworX ICE Box version 2 (V2.2-LLNL B208) (*)
 
@@ -64,6 +64,6 @@ of substantial size.
 +-------------+
 
 For further information, refer to man pages and the source.
-The contents of the doc directory is useful in understanding the basic 
-design of PowerMan but the code and some data structures have changed 
+The contents of the doc directory are useful in understanding the basic 
+design of PowerMan but the code and data structures have changed 
 substantially since that information was created.
