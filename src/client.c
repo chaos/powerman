@@ -280,7 +280,9 @@ void cli_reply(Action * act)
             break;
         case PM_LOG_OUT:
             buf_printf(client->to, "Goodbye\r\n");
-            _destroy_client(client); 
+            _handle_client_write(client);
+            client->read_status = CLI_DONE;
+            client->write_status = CLI_IDLE;
             break;
         case PM_UPDATE_PLUGS:  /* query-soft */
             while ((node = list_next(itr)))
@@ -348,6 +350,7 @@ static void _destroy_client(Client * client)
 
     if (client->fd != NO_FD) {
         Close(client->fd);
+        client->fd = NO_FD;
         syslog(LOG_DEBUG, "client on descriptor %d signs off",
             ((Client *) client)->fd);
     }

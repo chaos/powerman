@@ -1,3 +1,17 @@
+2002-09-18 behlendorf
+  * Fixed segfault related to quit command, client connections are
+    now properly cleaned up on the daemon side.
+
+2002-09-18 behlendorf
+  * Fixed coalescing of actions to the devices.
+
+2002-09-17 behlendorf
+  * Reworked the powerman client/server protocol (highlights follow)
+  * Removed send/expect parsing, replaced with a simple switch.
+  * Host lists have replaced regexs in the protocol.
+  * Powerman authentication step removed.
+  * Check login command removed.
+
 2002-09-17 garlick
 	* Reformatting, cleanup, doc of data structures
 	* Made device list static in device.c
