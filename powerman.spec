@@ -1,18 +1,38 @@
 ####################################################################
 # $Id$
 # by Andrew C. Uselton <uselton2@llnl.gov> 
-# Copyright (C) 2000 Regents of the University of California
-# See ../DISCLAIMER
+####################################################################
+#   Copyright (C) 2001-2002 The Regents of the University of California.
+#   Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
+#   Written by Andrew Uselton (uselton2@llnl.gov>
+#   UCRL-CODE-2002-008.
+#   
+#   This file is part of PowerMan, a remote power management program.
+#   For details, see <http://www.llnl.gov/linux/powerman/>.
+#   
+#   PowerMan is free software; you can redistribute it and/or modify it under
+#   the terms of the GNU General Public License as published by the Free
+#   Software Foundation; either version 2 of the License, or (at your option)
+#   any later version.
+#   
+#   PowerMan is distributed in the hope that it will be useful, but WITHOUT 
+#   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+#   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
+#   for more details.
+#   
+#   You should have received a copy of the GNU General Public License along
+#   with PowerMan; if not, write to the Free Software Foundation, Inc.,
+#   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 ####################################################################
  
 %define name    powerman
-%define version 0.2.0
+%define version 1.0.0
 %define release 1
 
 Name: %name
 Version: %version
 Release: %release
-Summary: PowerMan - Cluster Power Management
+Summary: PowerMan - Power to the Cluster 
 #URL: FOO
 Group: Applications/System
 Copyright: LLNL/Internal-Use-Only
@@ -21,8 +41,8 @@ BuildRoot: %{_tmppath}/%{name}-%{version}
 Source0: %{name}-%{version}.tgz
 
 %description
-PowerMan is currently available for LLNL internal use only.
-An unrestricted GPL release of PowerMan is pending Review & Release.
+PowerMan is an open source project for power management of the
+nodes in a cluster.
 
 %prep
 %setup
@@ -47,19 +67,15 @@ rm -rf "$RPM_BUILD_ROOT"
 %preun
 # If there'e anything in post that needs to be undone, or a backup of
 # a config file to be made, I can perhaps do it here.
-rm -f /usr/lib/powerman/*.pyc
-rm -f /usr/lib/powerman/*~
 
 %files
 %defattr(-,root,root,0755)
 %config(noreplace) /etc/powerman.conf
-/usr/bin/pm
-/usr/bin/pmkill
+/usr/bin/powerman
+/usr/bin/powermand
 %doc ChangeLog
 %doc DISCLAIMER
 %doc README
 %doc TODO
-%doc TOUR.SH
-/usr/lib/powerman
 /usr/man/man1/pm.1*
 /usr/man/man5/powerman.conf.5*

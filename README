@@ -1,324 +1,637 @@
-####################################################################
-# $Id$
-# by Andrew C. Uselton <uselton2@llnl.gov> 
-# Copyright (C) 2000 Regents of the University of California
-# See ../DISCLAIMER
-####################################################################
+/*****************************************************************************\
+ *  $Id$
+ *****************************************************************************
+ *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
+ *  Written by Andrew Uselton (uselton2@llnl.gov>
+ *  UCRL-CODE-2002-008.
+ *  
+ *  This file is part of PowerMan, a remote power management program.
+ *  For details, see <http://www.llnl.gov/linux/powerman/>.
+ *  
+ *  PowerMan is free software; you can redistribute it and/or modify it under
+ *  the terms of the GNU General Public License as published by the Free
+ *  Software Foundation; either version 2 of the License, or (at your option)
+ *  any later version.
+ *  
+ *  PowerMan is distributed in the hope that it will be useful, but WITHOUT 
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
+ *  for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License along
+ *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
+ *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+\*****************************************************************************/
 
-Abstract
-  PowerMan is a tool for monitoring and controlling the power status
-of a cluster.  The program "pm" provides a uniform interface for
-checking power status as well as turning nodes on or off or resetting
-them.  There is a man page for "pm" that should give most of its
-operational details.  This file goes into more depth in order to
-explain how "pm" works, how power monitoring and control work, and how
-to extend "pm" with new modules for new hardware.  
+
+                           PowerMan
+			Andrew Uselton
+			July 11, 2002
+
+		     Power to the Cluster
+
+This is a snapshot (CVS tag powermand-review-2) of the PowerMan project
+prepared for the benefit of the code review committee.  It contains
+source code and some initial documentation.  It is unlikely that this
+code could be put into production service without extensive assistance
+from the author.  Running "make" in the project directory will produce
+some figures in the "figs" directory that code reviewers may find of
+interest. 
+
+Contents
+1.  Overview of the PowerMan project
+1.1  History
+1.2  Design
+1.3  The PowerMan project
+1.3.1  "powermand"
+1.3.2  "powerman"
+1.3.3  "powerman.conf"
+1.4  The structure of the "powermand" daemon
+1.4.1  "main.h" and "main.c"
+1.4.2  "listener.h" and "listener.c"
+1.4.3  "server.h" and "server.c"
+1.4.4  "action.h" and "action.c"
+1.4.5  "device.h" and "device.c"
+1.4.6  "config.h", "parse.lex", "parse.y" and "config.c"
+1.4.7  "log.h" and "log.c"
+1.4.8  "exit_error.h" and "exit_error.c"
+1.4.9  "buffer.h"  and "buffer.c"
+1.4.10  "daemon_init.h" and "daemon_init.c"
+1.4.11  "pm_string.h" and "pm_string.c"
+1.4.12  "wrappers.h" and "wrappers.c"
+1.4.13  "client.h" and "client.c"
+2.  Installation instructions
+2.1  The "vicebox" virtual power control device
+2.2  "powerman.conf" - An example configuration file
+2.3  "vicebox.dev" - An example device specification
+2.4  powermand - Invoking the daemon
+2.5  resources for monitoring the daemon's behavior
+2.6  "powerman" - Invoking the client
+
+
+
+
+
+1.  Overview of the PowerMan project
+
+1.1  History
+
+  PowerMan was originally developed as a collection of Python scripts
+communicating via serial link, or other means, with a variety of power
+control devices whose purpose was to monitor and control a group of
+computers, usually in a "cluster" environment.  PowerMan was developed
+in a heterogeneous environment that included a wide variety of
+computers.  Some of those computers lacked explicit, remote "on" and
+"off" commands and instead had a "toggle" command that would change
+the computer's state without revealing or checking its current state.  
+Thus, PowerMan was initially designed to work in conjunction with a
+secondary "soft" power state interface.  The model PowerMan uses for
+monitoring computer power has two values, the hard power state - "is
+the plug on?", and soft power state - "is the node on?".  PowerMan was
+extended to work with the "Icebox" power control hardware in the "PCR"
+clusters, and has been in production in that capacity for nearly a
+year.
+  The power control hardware available on the market has become
+ethernet based in the last year.  For that reason, and due to
+scalability and serviceability concerns, PowerMan came under scrutiny
+for a major rewrite.  This README documents a late stage in that
+development process.  In the rest of this document PowerMan will
+be called version 1.0.  Prior versions were in the series 0.1.0 to
+0.1.10.  
+
+1.2  Design
+  The revised PowerMan is written entirely in C.  It still targets a
+cluster of computer "nodes".  It is no longer targeted at controlling
+computers via "Etherwake" toggle or the "RMC" service processor
+interface.  All communication with target power control hardware is
+expected to be via TCP, or perhaps Telnet.  An interface to purely
+serial connected hardware is a simple extension and may be included in
+a version 1.1.
+  To accommodate the variety of power control hardware interfaces on
+the market PowerMan understands a powerful "expect" style
+specification language.  A device specification lays out the expected
+queries and responses that allow PowerMan to get power status
+information from a power control device.  
+
+1.3  The PowerMan project
+
+  PowerMan comprises two primary executables and one configuration
+file.  The figure "powerman.jpeg" in the "figs" directory gives a
+simple block diagram of the pieces of the PowerMan project and how
+they fit together.  N.B  If you didn't compile the sources there may
+only be the figure "powerman.fig".  That file is viewable with the
+"xfig" tool on most *NIX systems.  On the other hand you may safely
+ignore the figures, since their content is covered in detail in this
+discussion. 
+
+1.3.1  "powermand"
+
+  The program "powermand" is a daemon, that is, it runs continually in
+the background.  It monitors the state of the power control hardware
+attached to it.  From powermand's perspective all power control
+hardware is alike.  It is amenable to the commands "Logon",
+"CheckLogon", "Logout", "HardPowerStatus", "SoftPowerStatus",
+"PowerOn", "PowerOff", "PowerCyle", and "Reset".  Left to itself,
+"powermand" periodically queries for the status (hard and soft) of
+every node in the cluster.  If it encounters a problem it sends a note
+to a log file and optionally syslog.  "powermand" is also continually
+listening on a well-known tcp port for queries from client software.
+When a client arrives and is vetted through the TCP wrappers and
+authentication process "powermand" accepts and carries out commands on
+the client's behalf.  The powermand daemon is built from the modules
+in "action.c", "config.c", "daemon_init.c", "device.c", "listener.c",
+"main.c", and "server.c", along with some support modules. 
+
+1.3.2  "powerman"
+
+  The program "powerman" is a simple command line tool that implements
+the PowerMan client protocol.  The protocol is all clear text and
+human readable, and resembles the command set "powermand" uses to
+control the underlying power control hardware.  It has commands for
+"Logon", "CheckLogon", "Logout", "HardPowerStatus", "SoftPowerStatus",
+"PowerOn", "PowerOff", "PowerCyle", "Reset", and "Names".  The last
+command is necessary because "powerman" has no configuration file or
+other a-priori knowledge of the cluster "powermand" is controlling.
+Thus the first thing it must always ask "powermand" is "What are the
+names of the nodes you control?"  In general, "powerman" can be run
+from anywhere that TCP wrappers allows, and from one location may
+communicate with many different daemons.   The "powerman" program is
+built from the "client.c" module and support modules.
+
+1.3.3  "powerman.conf"
+
+  The configuration file for PowerMan can have any name and be in any
+location, but, by default, resides in "/etc/powerman".  PowerMan uses
+a directory, since the configuration file may actually comprise many
+distinct files.  This comes about because the configuration file
+syntax allows for an "include" directive.  A configuration file has
+four parts.  A device specification section will have at least one and
+potentially several device specifications.  Each specification gives
+the details for how a particular device implements each of the
+standard commands: "Logon", ..., "Reset".  It tends to be large and
+arcane and is usually the target of an "include" directive.  Next, A
+"globals" section specifies things like the "well-know port" to use
+and the location for the log file.  The "devices" section lists the
+power control units being managed.  The "cluster" section names all
+the nodes in the cluster and tells how they are connected to power
+control units.
+
+1.4  The structure of the "powermand" daemon
+
+  The heart of the PowerMan project is the "powermand" daemon.  The
+figure "powermand.jpeg" in the "figs" directory gives a simple block
+diagram of the main modules in "powermand" and how they fit together.
+N.B If you didn't compile the sources there may only be the figure
+"powermand.fig".  That file is viewable with the "xfig" tool on most
+*NIX systems.
+  There is a close relation between the boxes in the figure and the
+files in the "powermand" "Makefile" target.  In particular,
+"action.c", "device.c", "listener.c", "server.c" and carry out the
+most important activities in the program, and each largely operates in
+isolation from the others.  The file "main.c" is responsible for
+coordinating the other modules' activities.
+  The other important modules are "config.c", which reads the
+configuration file (along with "parse.lex", and "parse.y") and builds the
+internal data structures; "log.c" and "exit_error.c" for getting
+out-of-band information back to the author and/or the administrator;
+and a collection of service modules that implement useful
+abstractions: "buffer.c", "daemon_init.c", "pm_string.c", "list.c", 
+and "wrappers.c". 
+  The two circles in the diagram represent the two data structures in
+"powermand".  The "Cluster Info" data is the dynamic state of the
+nodes as last queried.  The Server Action List holds all the, as yet,
+incomplete requests from clients, or from the daemon itself in the
+case of its periodic update.  "timeout" is the one box in the figure
+that doesn't get a module.  There is a single "timeout" support
+function in "main.c", but it doesn't really merit its own module.  
  
-Table of Contents
-0.  Introduction
-1.  Packing list
-2.  Licensing: GPL
-3.  Disclaimer
-4.  Architecture
-5.  pm command line parameters
-6.  Interface to low-level utilites
-7.  Low-level utilites in the present package
-8.  The theory of power monitoring
-9.  The theory of power control
+1.4.1  "main.h" and "main.c"
 
-0.  Introduction
-  The PowerMan utility seeks to assist a system administrator for a
-(potentially) large collection of computers with managing the power
-status of those computers.  PowerMan is intended to run entirely on a
-single management workstation, which, in turn, has access to power
-monitoring and power control facilities.  During devopment PowerMan
-was integrated with a Linux Cluster management package.  On other
-platforms some localization may be called for.  The code is written
-primarily in Python, but the low level utility for the Ether-Wake
-function of the API CS20s is written in C, and the low level utility
-for Alpha-based computers with the RMC service processor interface is
-written in Expect/TCL.   
-  One goal of the project is to support easy customization to
-alternative hardware environments.  This is accomplished via
-hardware-specific utility functions that conform to a simple
-inteface.  One such function is need for each variety of power control
-hardware, and one is need for each variety of power monitoring
-hardware.  Powerman is configured with a file that names each node and
-gives the name of the power control function and of the power
-monitoring function.  In some cases the power monitoring and power
-control hardware may be the same (eg. IceBox).  Each monitoring and
-control type has its own Python module in the /usr/lib/powerman
-directory.  In the case of etherwake.py and rmc.py these are just
-small wrappers for the underlying ether-wake and rmc functions.  In
-other cases the Python module carries out the task, usually by
-communication over one or more serial port interfaces from the
-management workstation to the underlying device.  
+  The daemon operates entirely via non-blocking I/O, so the heart of
+the "powermand" program is a select() loop.  There are file
+descriptors for the listener, the log, all the clients, and all the
+devices.  As soon as there's any activity on any of them, the select() 
+function "returns" to let progress be made on whatever I/O is in
+play.  The select() will also time out after a short interval, and
+while going through its loop checking on the various file descriptors
+it also has an opportunity to carry out any housekeeping that is
+needed.  It is the responsibility of the other modules to ensure that
+they are always able to make progress, what Lynch calls "input
+enabled" [Lynch, Tuttle, "I/O Automata", CWI '89].  
+  In addition to the select() loop the main module allocates the
+"Globals" data structure that will hold the cluster and action info as
+well as the descriptors for the listener, the clients, and the
+devices.  The "main" module is responsible for interpreting any
+command line parameters, esp. the name of the config file to use.  The
+main() calls the "config" modules, the "log" initialization routine,
+and the "daemon_init" module prior to entering the select() loop.
+  A planned, but unimplemented, feature is the ability of the "main"
+module to field a "SIGHUP", reread its config file, and reinitialize
+its "Globals" data structure.  
 
-1.  Packing list
-  In a typical installation $powermandir is "/usr/lib/powerman", and
-$powermanconf is "/etc/powerman.conf".  The current version of
-powerman is 0.1.9, so the files installed by the "binary" RPM would
-be:
-/usr/bin/pm				The command line interface
-/usr/man/man1/pm.1			man page for the executable
-/usr/man/man5/powerman.conf.5		man page for configuration file
-/etc/powerman.conf			primary configuration file
-/usr/doc/powerman-0.1.1/DISCLAIMER	same disclaimer as below
-/usr/doc/powerman-0.1.1/README		this file
-/usr/doc/powerman-0.1.1/TOUR.SH		a short tour of the operations
-/usr/doc/powerman-0.1.1/ChangeLog	a short tour of the changes in pm
-/usr/lib/powerman/digi.py		power monitoring function
-/usr/lib/powerman/etherwake.py		power management function
-/usr/lib/powerman/ether-wake		actual controlling function
-/usr/lib/powerman/icebox		monitoring and management both
-/usr/lib/powerman/rmc.py		power management function
-/usr/lib/powerman/rmc			actual contrlling function
-/usr/lib/powerman/wti.py		power management function
+1.4.2  "listener.h" and "listener.c"
 
-The "source" RPM contains essentially all the same files (with a few
-extras) but gathered in a single development directory tree rooted at
-$powermanroot:
-$powermanroot/ChangeLog
-$powermanroot/DISCLAIMER
-$powermanroot/Makefile
-$powermanroot/README
-$powermanroot/TODO
-$powermanroot/TOUR.SH
-$powermanroot/Makefile
-$powermanroot/aux/mkinstalldirs
-$powermanroot/bin/digi.py
-$powermanroot/bin/etherwake.py
-$powermanroot/bin/icebox.py
-$powermanroot/bin/pm
-$powermanroot/bin/pm_classes.py
-$powermanroot/bin/pm_utils.py
-$powermanroot/bin/pmkill
-$powermanroot/bin/rmc
-$powermanroot/bin/rmc.py
-$powermanroot/bin/wti.py
-$powermanroot/etc/fc.powerman.conf
-$powermanroot/etc/powerman.conf
-$powermanroot/etc/slc.powerman.conf
-$powermanroot/etc/pcra.powerman.conf
-$powermanroot/etc/pcrb.powerman.conf
-$powermanroot/etc/dev.powerman.conf
-$powermanroot/local_env
-$powermanroot/man/pm.1
-$powermanroot/man/powerman.conf.5
-$powermanroot/powerman.spec
-$powermanroot/src/Makefile
-$powermanroot/src/ether-wake.c
+  The "listener" module is a simple implementation of a non-blocking
+acceptor of connections.  As a client arrives it is vetted through TCP
+wrappers and its "Client" data structure is initialized.  
 
-Note that the $powermanroot/etc directory has alternative
-configuration files for clusters named "fc", "slc", and others.  The
-Makefiles manages creation and installation.  The file local_env is
-just a convenience to set the two PowerMan environment variables when
-testing the code in the development directory rather than fully
-installed.
+1.4.3  "server.h" and "server.c"
 
-2.  Licensing: GPL
+  The protocol for the client interface is initialized in "config",
+and the "server" module waits for and responds to requests.  It is
+responsible for managing the "Client" structure after "listener"
+creates them.  It interact with the "action" module as it creates new
+actions, and carries out the reply once an action completes.
 
+1.4.4  "action.h" and "action.c"
 
-3.  Disclaimer
-The following disclaimer also appears in the PowerMan source
-directory, the doc directory, and is included by reference in each
-source file: 
+  There is a global queue of actions that have been requested by
+clients and by the internal update process.  The "action" module is a
+set of routines for managing those actions, sending completion notices
+back to the client, and passing on requests to the devices.
 
-This work was produced at the University of California, Lawrence Livermore 
-National Laboratory (UC LLNL) under contract no. W-7405-ENG-48 (Contract 48) 
-between the U.S. Department of Energy (DOE) and The Regents of the 
-University of California (University) for the operation of UC LLNL.  
-The rights of the Federal Government are reserved under Contract 48 subject 
-to the restrictions agreed upon by the DOE and University.
+1.4.5  "device.h" and "device.c"
 
-                             DISCLAIMER
+  The "device" module has a "Device" data structure for each
+device being managed.  When a client passes a request to the "action"
+module there may end up being many actions, one or more per device,
+queued up at each device.  The "device" module is responsible for
+establishing a connection to a device, responding to lost connections or
+timed out connections, and managing a "script" that carries out a
+client request as it applies to the particular device.  
 
-This software was prepared as an account of work sponsored by an agency of 
-the United States Government.  Neither the United States Government nor the 
-University of California nor any of their employees, makes any warranty, 
-express or implied, or assumes any liability or responsibility for the 
-accuracy, completeness, or usefulness of any information, apparatus, 
-product, or process disclosed, or represents that its specific commercial 
-products, process, or service by trade name, trademark, manufacturer, or 
-otherwise, does not necessarily constitute or imply its endorsement, 
-recommendation, or favoring by the United States Government or the 
-University of California.  The views and opinions of the authors expressed 
-herein do not necessarily state or reflect those of the United States 
-Government or the University of California, and shall not be used for 
-advertising or product endorsement purposes.
+1.4.6  "config.h", "parse.lex", "parse.y" and "config.c"
 
-                   NOTIFICATION OF COMMERCIAL USE
+The "parse" modules define a formal grammar for the config file.  The
+"config" module defines some of the intermediate structures used
+during the construction of the final "Globals" data structure.  
 
-Commercialization of this product is prohibited without notifying the 
-Department of Energy (DOE) or Lawrence Livermore National Laboratory (LLNL).
-----------
-Code Release Number xxxxxx
+1.4.7  "log.h" and "log.c"
 
-N.B. At the time of this writing PowerMan had not finished the "Review
-and Release" process.  Until such time as it has completed and a Code
-Release Number appears above, this software is for internal LLNL use
-only.
+  The "log" module is defined as a global structure.  Any function in
+all of "powermand" has the ability to post a message via "log_it".
+The messages implement a simple priority scheme.  Every message with a
+severity number above the cutoff is ignored.  The cutoff is specified
+in the config file.  Each pass through the select() loop allows the
+log to empty its buffer.
 
+1.4.8  "exit_error.h" and "exit_error.c"
 
-4.  Architecture
-  The pm program provides a uniform interface to a cluster of nodes
-even if power monitoring and control is performed differently on
-varius nodes.  The powerman configuration file specifies a monitoring
-and a control function for each node in the cluster.  The named
-modules are then used to dispatch a monitoring or control request to
-the underlying hardware.  Each low level function responds to the same
-interface, thus hiding the hardware differences from the user.  If a
-new variety of hardware is introduced to the cluster it is relatively
-easy to provide a new function for accessing that hardware in
-conformance with the interface.  Then the powerman configuration file
-can be amended and the new hardware will be integrated into the pm
-program.  
+  Error handling in "powermand" is simpler than I'd like it to be.
+Currently, if any ASSERT fails or any error condition is encountered,
+the program calls "exit_error".  I don't know if error recovery is
+realistic in most cases, but I would like to distinguish between,
+apparent internal bugs,  errors due to external hardware problems, and
+errors due to mishandling or misconfiguration.  As the code is
+written, one either can handle the condition and it is not an error,
+or one aborts.  
+  The "exit_error" module operates in two phases.  For the brief
+interval before the program "daemonizes" itself "exit_error" writes to
+"stderr", after daemonizing it writes to "syslog".
 
-5.  pm command line parameters
-  The pm man page documents "target node list" options and "other"
-options.  The target node list options are:
-                     "-w host,host,..."
-which will target the specified nodes.  No spaces are allowed in the
-comma-separated list.  Substituting the "-" character for the list
-causes the target nodes to be read from stdin, one per line.
-                          "-a"
-will target "all" nodes in the cluster.  
-  The other options are:
-                       "-c configfile"
-Provide an alternate name or location for the configuration file.
-                       "-f number"
-Set the maximum concurrency for underlying utilities.  The default is
-256.  Concurrency is poorly supported in the current version.  Many
-low level utilities ignore the -f option.
-                       "-l powermandir"
-Provide an alternate location for the PowerMan libraries.
-                       "-r"
-reverse, i.e. print nodes that are off rather than on
-                            "-q"
-be quiet, i.e. suppress error messages and dye quietly.  
-  It may be usefull to browse the man page for pm to learn about the 
-environment variables as well.  
+1.4.9  ""buffer.h"  and "buffer.c"
 
-6.  Interface to low-level utilites
+  Buffer handling for the log, the clients, and the devices is all
+carried out via the "buffer" module.  One wart is the workaround for
+the infinite regress that would result if the buffer code were to log
+an error.  The buffer code explicitely tests for this situation and
+refuses to log the error.  
 
-  All the query and control types are governed each by its own module,
-which is imported when the config file mentions it.  Specialized data
-is carried in objects defined in these modules.  Each module must have
-a SetDataClass for clusterwide type information, and a NodeDataClass
-for per node special data.  In addition pm expects the NodeDataClass
-__init__ function to have the profile (self, type, vals) where type is
-a string and vals is a list of strings.  Similarly, in
-        SetDataClass.__init__(self, cluster) 
-cluster is a reference to powerman's global ClusterClass structure,
-which has information (like fanout) that may be needed in the low
-level handler.  The following are also required:
-        SetDataClass.add(self, node) 
-        SetDataClass.do_com(self) 
-node is reference to a NodeClass object.
+1.4.10  "daemon_init.h" and "daemon_init.c"
 
-7.  Low-level utilites in the present package
-  The following utilities for checking power status exist in the
-current release:
-	digi.py - is an example of a cluster monitoring low
-level function.  Its operation will be discussed at length in the
-"theory of power monitoring" section.  The digi program sends an ioctl
-to a tty that its configuration file tells it corresponds to the target
-node.  That ioctl provides information (the state of the tty's DSR
-handshake line) that can be used to infer its power status.  
-	icebox.py - is an example of a monitoring and control module.
-The IceBox product from Linux Networks Inc implements a protocol over
-a serial connection by which one may query power status and
-temperatures as well as issue power control commands.
-  The following utilities for setting power status exist in the
-current release: 
-	etherwake - is a python program that wraps a compliant
-interface around the "ether-wake" C-based function that just sends a
-"magic" packet to a given MAC address.  The configuration
-file associates the MAC addresses with the corresponding nodes.  As
-implemented in the hardware here at Livermore Lab the ethernet
-wake-on-LAN magic packet is a TOGGLE.  It will power a node off as
-well as on.  This could be a very bad thing in a production
-environment.  As implemented, etherwake.py makes no provision for
-protecting you from this possible catastrophy, however pm checks for
-calls to toggle the power via etherwake and will not try to turn on a
-node that is already on, or turn off or reset a node that is already
-off.  Note that this is not true for other power control functions,
-i.e. a command to power off a node that is already off will proceed
-for node not controlled by ehterwake.  
-	icebox.py - (again) The power control part of the serial
-communications based protocol allows for power on, power off, and
-reset.  The reset function asserts the motherboard's reset line, thus
-achieving a reset without the harfull power off/power on cycle some
-power control devices require.  
-	rmc - is a TCL/Expect script wrapping a call to the conman
-utility for console management.  In that call (wich can be carried out
-with a high degree of concurrency via the -f option) a console session
-opens and shifts the serial port console into the RMC service
-processor mode (on nodes so equiped, of course).  From the RMC prompt
-the expect script can generate power on, power off, and reset actions.
-	wti - is a brand of remote power controller or RPC.  A
-collection of RPCs are controlled from a management workstation via a
-daisy-chained set of serial lines.  wti issues a coded command to the
-tty for the RPCs giving the command, a "password", and the port
-corresponding to the target node.  The association between nodes and
-ports is provided by the wti configuration file.
+  I've reviewed Chris' two stage daemonization scheme, but it was a
+little too much for my first time out.  I've implemented a fairly
+literal translation of Stevens' code.
 
-8.  The theory of power monitoring
-  In a cluster of computers it is desirable to montior and control
-them all remotely.  It is also desirable to dispense with the
-keyboard, mouse, and monitor at each node.  Thus a good cluster
-design relies on serial based consoles communicating back to a
-management workstation via some sort of serial concentrator.  With
-proper cabling and a reasonable serial concentrator it is possible to
-infer the power state of a node via the state of one of the incoming
-signal control lines, DSR is a good target.  
-  One fly crawls into the ointment when the serial concentrator does
-not distinguish all three states of the serial signal +10 volts
-(RS232 logical off) -10 volts (RS232 logical on) and 0 volts (power
-off).  Our digi serial concentrator interprts these three signals as
-follows:
-+10 volts --> DSR+
-  0 volts --> DSR-
--10 volts --> DSR-
-The confusion between DSR+ and RS232 logical on may safely be
-ignored, but there is a problem with assinging the same interpretation
-to both -10 volts and 0 volts.  Twice during firmware initialization
-and once during kernel boot the DSR hadshake line is driven to -10
-volts, thus it looks briefly, to the serial conetrator,  as though the
-node is off.  In an environment with automated monitoring and control
-functions this could lead to potentially disasterous results (cf. the
-wake-on-LAN implementation that toggles the power state, if you are
-mistaken about a node being off you might end up shutting down a node
-when you thought you were starting it).  Our solution to this
-difficulty was to assemble a special cable that draws the status line
-for the parallel port interface (TTL signal levels that accurately
-track the power status) and feeds it to the DSR line on the serial
-conetrator.  The digi serial concentrator seemed to have no difficulty
-reading the lower ttl signal levels, so we ended up with accurate
-power status.  It is likely that most serial concentrators will have
-this problem, so keep it in mind when you plan your cluster.
+1.4.11  "pm_string.h" and "pm_string.c"
 
-9.  The theory of power control
-  We have seen power control take three distinct forms.  A wake-on-LAN
-enabled ethernet interface can be signalled from a secure management
-workstation over a private management network.  In the case of our
-cluster of API CS20s the "ether-wake" packet toggled the power status,
-so some care (and accurate power monitoring) was required in building
-a power control user interface.  
-  Remote power controllers (RPCs) may be controlled from a management
-workstation via a direct serial connection or via a telnet session.
-For serial connected RPCs one sends the appropriate command
-to the correct tty and it's as though you'd unplugged the target node
-(which is plugged into the RPC, of course).   A telnet connection for
-power control to an RPC is also possible, but we have yet to try
-implementing one.  Our thought is that a telnet session per node for a
-large cluster is too heavy a load and too slow ofor our purposes.
-Thus we confine the design of our clusters to those with more direct
-power control.  
-  Some of the nodes we've dealt with had built in "service processors."
-RMC on the Compaq DS10, DS20, and ES40 is an example of this.  One may
-communicate with the RMC interface via a special escape sequence on
-the serial console.  We use the conman console management package,
-which is equiped with an "expect" interface for running arbitrary
-scripts on managed nodes.  With it we could contact RMC on the target
-node and issue "power on", "power off", and "reset" commands.  
+  This string handling module probably looks a lot like what Mark is
+producing with his host-names module.  I'll probably adopt that one
+when it's mature.  The "pm_string" module has some more general
+applications as well.
+
+1.4.12  "wrappers.h" and "wrappers.c"
+
+  This module implements Stevens' wrappers for network programming,
+and is very nearly verbatim.  
+
+1.4.13  "client.h" and "client.c"
+
+  The "powerman" client is implemented via the "client" module.  It is
+a command line tool for sending messages to the "powermand" daemon and
+printing the results in a usefull fashion.  The client has not a
+priori knowledge of the cluster and begins operation by asking the
+indicated server (on the command line) for the names of the nodes it
+manages.  The client interprets a "command" and "targets" from its
+command line.  The targets are names of nodes to which the command
+should be applied.  The targets are taken to be glob style unless an
+option is invoked to force regex interpretation.  Node ranges on the
+command line are not yet supported.  Once the command is carried out
+the results (if any) are printed with one node name per line, or
+optionally in a terse report in node range form.  
+
+2.  Installation instructions
+
+  It occurred to me late that people might expect the code 
+to install, run, and do something interesting.  That is not the case
+at present.  It could be made to do so if there is strong interest.
+The following are the hypothetical steps for installation assuming all
+the necessary pieces were available.   
+  If the binaries for the PowerMan project were installed in the
+test-bed lab somewhere then there are several devices that could be
+controlled.  Alternatively, all of PowerMan's capabilities may be
+exhibited via the "vicebox" utility.  I have not made vicebox widely
+available, simply because I didn't think to.  At this late date it
+would be a distraction to package up vicebox.  I'll do it under
+duress, though.  
+
+2.1  The "vicebox" virtual power control device
+
+  Once vicebox is installed, run it with a command line specifying its
+well-known port.  As in:
+
+user> vicebox 11000 &
+
+Vicebox logs traffic to "/tmp/vicebox.log.[port]" if you want to track
+what it thinks it is seeing.  The interface to vicebox is just like an
+Icebox, if you've used one.  You can telnet to it and log in (the
+secret pass phrase is "auth password") and see all the same commands
+as on a real Icebox (well I leave out a few obscure ones).  Several
+instances of vicebox may run simultaneously on the same platform as
+long as they have distinct well-known ports.  I've run 256 before
+without seeing my desktop getting loaded down.
+ 
+2.2  "powerman.conf" - An example configuration file
+
+  If you have one vicebox running on port 11000 and want to run
+"powermand" the following config file will work:
+
+---powerman.conf------------------------------------------------
+# Config file for the new PowerMan daemon
+include "/etc/powerman/vicebox.dev"
+begin global
+	cluster name "tux"
+	log file "/tmp/powermand.log" "0"
+	client listener port "10101"
+	timeout interval "1.0"
+	inter-device delay "0.2"
+	update interval "100.0"
+end global
+device "ViceBox" "vicebox" "localhost" "11000"
+begin nodes
+	node "tux0" "ViceBox" "1"
+	node "tux1" "ViceBox" "2"
+	node "tux2" "ViceBox" "3"
+	node "tux3" "ViceBox" "4"
+	node "tux4" "ViceBox" "5"
+	node "tux5" "ViceBox" "6"
+	node "tux6" "ViceBox" "7"
+	node "tux7" "ViceBox" "8"
+	node "tux8" "ViceBox" "9"
+	node "tux9" "ViceBox" "10"
+end nodes
+------------------------------------------------------------------
+
+I'll amend this document to explain the config file, line-by-line, as
+time permits.  The next section talks about 
+	include "/etc/powerman/vicebox.dev"
+
+2.3  "vicebox.dev" - An example device specification
+
+  The "device" line in the above config file tells powerman to look
+through all the device specifications it knows about for one named
+"vicebox" (case significant).  The "powermand" daemon does not know
+about any device specifications natively.  They all come from the
+config file.  In particular "vicebox" was defined in
+"/etc/powerman/vicebox.dev".  The following is the device
+specification file for a "vicebox":
+
+--------vicebox.dev-----------------------------------------------
+begin protocol specification
+	specification name "vicebox"
+	specification type "TCP"
+	off string "0"
+	on string  "1"
+	all string "*"
+	size "10"
+	device timeout "1.0"
+	string interpretation mode "LITERAL"
+	begin PM_LOG_IN 
+		expect "V2\.2\r\n" "\n"
+		send "auth password\r\n"
+		expect "OK\r\n" "\n"
+	end PM_LOG_IN
+	begin PM_CHECK_LOGIN
+		send "\r\n"
+		expect "OK\r\n" "\n"
+	end PM_CHECK_LOGIN
+	begin PM_LOG_OUT
+		send "q\r\n"
+	end PM_LOG_OUT
+	begin PM_UPDATE_PLUGS 
+		send "ps *\r\n"
+		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n" "\n"
+			map "1" "1"
+			map "2" "2"
+			map "3" "3"
+			map "4" "4"
+			map "5" "5"
+			map "6" "6"
+			map "7" "7"
+			map "8" "8"
+			map "9" "9"
+			map "10" "10"
+	end PM_UPDATE_PLUGS 
+	begin PM_UPDATE_NODES 
+		send "ns *\r\n"
+		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n" "\n"
+			map "1" "1"
+			map "2" "2"
+			map "3" "3"
+			map "4" "4"
+			map "5" "5"
+			map "6" "6"
+			map "7" "7"
+			map "8" "8"
+			map "9" "9"
+			map "10" "10"
+	end PM_UPDATE_NODES 
+	begin PM_POWER_ON
+		send "ph %s\r\n"
+		expect "OK\r\n" "\n"
+	end PM_POWER_ON
+	begin PM_POWER_OFF
+		send "pl %s\r\n"
+		expect "OK\r\n" "\n"
+	end PM_POWER_OFF
+	begin PM_POWER_CYCLE
+		send "pl %s\r\n"
+		expect "OK\r\n" "\n"
+		send "ph %s\r\n"
+		expect "OK\r\n" "\n"
+	end PM_POWER_CYCLE
+	begin PM_RESET
+		send "rp %s\r\n"
+		expect "OK\r\n" "\n"
+	end PM_RESET
+	plug name "1"
+	plug name "2"
+	plug name "3"
+	plug name "4"
+	plug name "5"
+	plug name "6"
+	plug name "7"
+	plug name "8"
+	plug name "9"
+	plug name "10"
+end protocol specification
+----------------------------------------------------------------------   
+
+I'll amend this document to explain the above, line-by-line, as time
+permits.  N.B.  there is nothing special about having "vicebox.dev"
+included in this way.  It could have appeared in the powerman.conf
+file, and anything else could have been in other "include" files.  The
+"include" directive is entirely general.
+
+2.4  powermand - Invoking the daemon
+
+  You must be root to invoke either powermand or powerman (though not
+"vicebox").  If you've installed the binaries and set up a directory
+"/etc/powerman" with the above two files, and you've started the one
+"vicebox 11000", then the following command should install the PowerMan
+daemon:
+
+root> powermand -c /etc/powerman/powerman.conf
+
+No final '&' is necessary, since it's a daemon.  If you do the above a
+whole lot of nothing then happens (unless you were clever and looked
+at the vicebox log mentioned above).  The following section tells how
+you can get the satisfaction of seeing powermand actually do
+something.  
+
+2.5  Resources for monitoring the daemon's behavior
+
+  The best way to see that "powermand" is doing something sensible is
+to monitor its log.  If the above guidelines have been followed then
+
+user> tail -f /tmp/powermand.log 
+
+should show you all sorts of useful operational detail.  Once the
+daemon has unhooked itself from the terminal it will also send a few
+messages (mostly death poems) to syslog, so:
+
+root> tail -f /var/log/messages
+
+is a useful thing to have running in a window.  Finally, to see
+powermand actually respond to your own very orders you can telnet to
+its well-known port and type in commands directly:
+
+user> telnet localhost 10101
+Trying 127.0.0.1...
+Connected to localhost.localdomain (127.0.0.1).
+Escape character is '^]'.
+PowerMan V0.2.0
+password> 
+
+at this point you type "powerman" (the password) and you get:
+
+password> powerman
+0 PowerMan> 
+
+at which point you can type in any of the client protocol commands.
+The protocol speaks "RegEX" natively so you could say:
+
+0 PowerMan> names .*
+tux0
+tux1
+tux2
+tux3
+tux4
+tux5
+tux6
+tux7
+tux8
+tux9
+1 PowerMan> 
+
+and you can turn on any node with a "5" in its name (and then see the
+result) with:
+
+1 PowerMan> on .*5.*
+2 PowerMan> update plugs
+0000010000
+3 PowerMan> 
+
+Other commands are:
+
+- update nodes
+- off [regex]
+- cycle [regex]
+- reset [regex]
+
+  N.B.  as soon as I am comfortable with Mark's node range library I
+plan to adopt it in place of RegEx, which is a little _too_
+powerful.  
+
+2.6  "powerman" - Invoking the client
+
+  If all the foregoing has been a success and you really want to carry
+through the campaign to its end then it's time to actually run the
+client.  Remember, you must be root.  The following script has examples
+of many commands and their expected result.  Run this script at the
+command line to get a rudimentary functionality test.  See "powerman
+--help" for details.
+
+#-----tests for powerman client---------------------------------------
+#!/bin/bash
+#In all of the following you have to escape the glob special
+# characters so the shell won't expand them.  The "set args ..."
+# bit is what you say in gdb to put it on the command line.
+#
+# "set args -q \*" means "tell which plugs are on among the whole cluster"
+~/src/powermand/powerman -q \*
+#
+# "set args -w \*" means "tell which plugs are off among the whole cluster"
+~/src/powermand/powerman -w \*
+#
+# "set args -qs \*" means "tell which nodes are on among the whole cluster"
+~/src/powermand/powerman -qs \*
+#
+# "set args -ws \*" means "tell which nodes are off among the whole cluster"
+~/src/powermand/powerman -ws \*
+#
+# "set args -H tux1" means "turn on the plug for the node named tux1"
+~/src/powermand/powerman -H tux1
+#
+# "set args -q \*" see if it worked
+~/src/powermand/powerman -q \*
+#
+# "set args -Hv tux1" means "turn on the plug and verify it's operation"
+~/src/powermand/powerman -Hv tux1
+#
+# "set args -lx tux[345]" means "turn off the plugs identified by the regex"
+~/src/powermand/powerman -lx tux[345]
+#
+# "set args -q \*" see if it worked
+~/src/powermand/powerman -q \*
+#
+# "set args -c tux6" means "power cycle the plug"
+~/src/powermand/powerman -c tux6
+#
+# "set args -q \*" see if it worked
+~/src/powermand/powerman -q \*
+#
+# "set args -rx tux[56]" means "reset the plugs (off nodes stay off)"
+~/src/powermand/powerman -rx tux[56]
+#
+# "set args -q \*" see if it worked
+~/src/powermand/powerman -q \*
+#
+# "set args -nx tux[3456]" means "list the matching nodes"
+~/src/powermand/powerman -nx tux[3456]
+#
+# "set args -qz \*" means "list the matching nodes"
+~/src/powermand/powerman -qz \*
+#
+------------------------------------------------------------------------

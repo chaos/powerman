@@ -1,31 +1,32 @@
 In order to retag something to a new version do the following
-1)  increment the version numbers in Makefile, powerman.spec, and pm 
-2)  Fix bugs and make changes
-3)  cvs commit
+1)  increment the version numbers in Makefile, powerman.spec, and 
+    the sources.
+2)  Fix bugs and make changes.
+3)  cvs commit -m"A message"
     If you're starting work on a branch you'll want to do something
     like this: 
-    cvs rtag -b -r powerman-0-2-0 powerman-0-2-0-branch powerman
-4)  you will probaly want to remove the previous version, especially
-      if you are installing an identically numbered (but different)
-      version during debugging.
+    cvs rtag -b -r powerman-1-0-0 powerman-1-0-0-branch powerman
+4)  You will probaly want to remove the previous version, especially
+    if you are installing an identically numbered (but different)
+    version during debugging.
 	rpm -q powerman
 	rpm -e powerman-x.y.z-r
 5)  make rpm tag=HEAD
     This would be "make rpm tag=powerman-x-y-z-branch" in the case of
     a branch in the sources, where "powerman-x-y-z-branch" is the
     branch tag.
-6)  distribute to test sites
+6)  Distribute to test sites
 7)  rpm -i powerman-x.y.z-r.i386.rpm  (if, like me, you ended up 
             with a bunch of rpm database entires you can't get rid
 	    of you may need the --force below, best if you can get
 	    on without it by religiously doing step 4)
-	rpm -i powerman-x.y.z-r.i386.rpm --force
+    rpm -i powerman-x.y.z-r.i386.rpm --force
 8)  Verify it's all working as you like.  If it is not then return to
       step 2.
 9) When a tag=HEAD version seems to work unmodified, you can just
-     update the release number and distribute the tag=HEAD version,
-     but this is not reproducable.  Once you've reached a stable point
-     you should.  
+   update the release number and distribute the tag=HEAD version,
+   but this is not reproducable.  Once you've reached a stable point
+   you should.  
        a) cvs rtag powerman-x-y-z powerman
           If you're being naughty and fixing problems in an already
           tagged release then add the -F option, but only do this when
@@ -49,10 +50,10 @@ than one.
 local targets for distribution include:
 testing:
 	turing
-	devi
 	tritium
-	deuterium
+	toad
+	devi
 production:
 	furnace
-	pcrai
-	pcrbi
+	emperor
+	adelie
