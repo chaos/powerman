@@ -1,0 +1,159 @@
+#!/bin/sh
+# Restart as wish \
+exec wish "$0" -- "$@"
+# The above noise is necesary because wish doesn't pull arguments
+# off the command line correctly.
+####################################################################
+# $Id$
+# by Andrew C. Uselton <uselton2@llnl.gov> 
+# Copyright (C) 2000 Regents of the University of California
+# See ../DISCLAIMER
+# v. 0-0-3:  2001-07-31
+#            First version of cv.tk in powerman
+#
+# To do:
+# 1) make fixed viewport option with scrollbars
+# 2) make name pop up with mouse hover
+# 3) right click to pop up menu
+# 4) left click to select
+# 5) left click-and-drag selects a group
+#       selected tiles get a thick border
+# 6) tiles for "on" nodes are red, "off" nodes are grey
+# 7) $Index($tile($node)) == $node 
+####################################################################
+#
+# cv.tk [-c file] [-l file] [-d] [-v] [-V]
+#
+####################################################################
+
+namespace eval app {
+    variable delay
+    variable checking
+    variable unlockable
+    variable tkdanger
+    variable config_file
+    variable lib_dir
+    variable powerlib
+    variable guilib
+    variable debug
+    variable verbose
+    variable Version
+    variable name
+
+    proc usage {msg} {
+	variable name
+
+	puts "usage: $name \[-c file\] \[-d\] \[-l libdir\] \[-v\] \[-V\]"
+	puts "-c file   = load file as config file"
+	puts "-d        = debugging output"
+	puts "-l libdir = look for tcl libs in libdir"
+	puts "-v        = be verbose"
+	puts "-V        = print the version and exit"
+	puts $msg
+	exit
+    }
+
+    proc init {command argc argv} {
+	global env
+	variable delay
+	variable checking
+	variable unlockable
+	variable tkdanger
+	variable config_file
+	variable lib_dir
+	variable powerlib
+	variable guilib
+	variable debug
+	variable verbose
+	variable Version
+	variable name
+
+	set proc "::app::init"
+	set delay 1000
+	set checking 1
+	set name $command
+	if { [exec id -u] } {
+	    set unlockable 0
+	} else {
+	    set unlockable 1
+	}
+	set tkdanger 1
+	
+	set config_file "/etc/powerman.conf"
+	if {[info exists env(POWERMANCONF)]} {
+	    set config_file $env(POWERMANCONF)
+	}
+	set lib_dir "/usr/lib/powerman"
+	if {[info exists env(POWERMANLIBDIR)]} {
+	    set lib_dir $env(POWERMANLIBDIR)
+	}
+	set debug 0
+	set verbose 0
+	set Version "cv 0.0.3"
+	for {set i 0} {$i < $argc} {incr i} {
+	    switch -- [lindex $argv $i] {
+		"-c" { 
+		    incr i
+		    set config_file [lindex $argv $i]
+		}
+		"-d" {
+		    set debug 1
+		}
+		"-l" { 
+		    incr i
+		    set lib_dir [lindex $argv $i]
+		}
+		"-v" {
+		    set verbose 1
+		}
+		"-V" {
+		    puts "$Version"
+		    exit
+		}
+		default {
+		    ::app::usage [format "Unrecognized argument: %s" [lindex $argv $i]]
+		}
+	    }
+	}
+	if {$debug} {puts "$proc"}
+	if {[string length $config_file] > 0} {
+	    if {![file exists $config_file]} {
+		::app::usage "Can't find config file $config_file"
+	    }
+	}
+	
+	set powerlib [format "%s/powerlib.tcl" $lib_dir]
+	if {![file exists $powerlib]} {
+	    ::app::usage "Can't find $powerlib library"
+	}
+	set guilib [format "%s/gui.tk" $lib_dir]
+	if {![file exists $guilib]} {
+	    ::app::usage "Can't find $guilib library"
+	}
+    }
+    # end of "proc init" 
+
+    proc update {} {
+	variable debug
+	
+	set proc "::app::update"
+	if {$debug} {puts "$proc"}
+    }
+    # end of "proc update"
+}
+# end of "namespace eval app"
+
+::app::init $argv0 $argc $argv
+
+source $::app::guilib
+::gui::init
+update idletasks
+
+source $::app::powerlib
+if {[string length $::app::config_file] > 0} {
+    ::powerlib::init $::app::config_file
+    ::gui::panel
+}
+
+after $app::delay ::app::update
+

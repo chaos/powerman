@@ -59,6 +59,11 @@ if {![file exists $app::config_file]} {
 set powerlib [format "%s/powerlib.tcl" $app::lib_dir]
 if {[file exists $powerlib]} {
     source $powerlib
+# The argument for not sourcing the subsidiary power management scripts
+# here is that I'll want to be able to load and unload configurations
+# in other apps, and that is probably better done subsidiary to the
+# powerlib namespace
+    ::powerlib::init $app::config_file
 } else {
     usage "Can't find $powerlib library"
 }

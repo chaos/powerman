@@ -8,6 +8,11 @@ exec wish "$0" -- "$@"
 # See ../DISCLAIMER
 # v. 0-0-1:  2001-07-11
 # v. 0-0-2:  2001-07-31
+# v. 0-0-3:  2001-08-08
+#            Minor change to how powerlib.tcl is called and 
+#            initialized to remain consistent with powerlib.tcl
+#            update that allows (other apps to) dynamically
+#            load and unload cluster descriptions. 
 ####################################################################
 #
 # clusterview [-c file] [-l file] [-d] [-v]
@@ -216,6 +221,11 @@ if {![file exists $app::config_file]} {
 set powerlib [format "%s/powerlib.tcl" $app::lib_dir]
 if {[file exists $powerlib]} {
     source $powerlib
+# The argument for not sourcing the subsidiary power management scripts
+# here is that I'll want to be able to load and unload configurations
+# in other apps, and that is probably better done subsidiary to the
+# powerlib namespace
+    ::powerlib::init $app::config_file
 } else {
     usage "Can't find $powerlib library"
 }

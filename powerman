@@ -6,8 +6,15 @@
 # See ../DISCLAIMER
 # v. 0-0-1:  2001-07-11
 # v. 0-0-2:  2001-07-31
+# v. 0-0-3:  2001-08-08
+#            Allows for non-root access to query mode.
+#            Checks for empty node list.
+#            New -V option for version string.
+#            Minor rearrangement of powerlib namespace to allow for
+#               (other apps) dynamically loading and unloading 
+#               cluster descriptions
 ####################################################################
-# powerman [-c file] [-l libdir] [-defhqrv] [-on | -off] {nodes ...}
+# powerman [-c file] [-l libdir] [-defhqv] [-on | -off | -r] {nodes ...}
 
 proc usage msg {
   global argv0
@@ -20,10 +27,12 @@ proc usage msg {
   puts "-q        = query the state instead of setting it"
   puts "-r        = reset the nodes, mutually exclusive with -q, -on, and -off"
   puts "-v        = be verbose"
+  puts "-V        = print version and exit"
   puts "-on       = turn on nodes (the default)"
   puts "-off      = turn off nodes"
   puts "nodes     = comma separated list (no spaces), each item is globbed,"
-  puts "              (list of) nodes may be repeated separated by spaces"
+  puts "              (list of) nodes may be repeated separated by spaces."
+  puts "              You may want to put it in quotes to prevent shell expansion."
   puts $msg
   exit
 }
@@ -31,6 +40,7 @@ proc usage msg {
 proc read_nodes node_list {
     global regex
     global cluster
+
     set return_nodes {}
     set j 0
     set k [string length $node_list]
@@ -44,7 +54,7 @@ proc read_nodes node_list {
 	} else {
 	    set index [lsearch $nlist $node_expr]
 	}
-	while { $index >= 0 } {
+  	while { $index >= 0 } {
 	    set node [lindex $nlist $index]
 	    lappend return_nodes $node
 	    set nlist [lrange $nlist [incr index] end]
@@ -58,6 +68,7 @@ proc read_nodes node_list {
   return $return_nodes
 }
 
+set Version "PowerMan 0.0.3"
 
 if { [exec id -u] } {
 	set unlockable 0
@@ -77,34 +88,40 @@ set app::lib_dir "/usr/lib/powerman"
 if {[info exists env(POWERMANLIBDIR)]} {
     set app::lib_dir $env(POWERMANLIBDIR)
 }
-set configed 0
-set debug 0
-set regex 0
-set force 0
-set reset 0
-set app::verbose 0
-set node_list   {}
-set on      0
-set off     0
+set configed      0
+set debug         0
+set regex         0
+set force         0
+set app::verbose  0
+set node_list     {}
+set query         0 
+set on            0
+set off           0
+set reset         0
 set app::tkdanger 0
+
 for {set i 0} {$i < $argc} {incr i} {
   switch -- [lindex $argv $i] {
-      "-c" { 
+      "-c"    { 
 	  incr i
 	  set app::config_file [lindex $argv $i]
       }
-      "-d" {set debug 1}
-      "-e" {set regex 1}
-      "-f" {set force 1}
-      "-l" { 
+      "-d"    {set debug 1}
+      "-e"    {set regex 1}
+      "-f"    {set force 1}
+      "-l"    { 
 	  incr i
 	  set app::lib_dir [lindex $argv $i]
       }
-      "-q" {set query 1}
-      "-r" {set reset 1}
-      "-v" {set app::verbose 1}
-      "-on"  {if { $unlockable } {set on  1} else {puts "Root Only"}}
-      "-off" {if { $unlockable } {set off 1} else {puts "Root Only"}}
+      "-q"    {set query 1}
+      "-r"    {set reset 1}
+      "-v"    {set app::verbose 1}
+      "-V"    {
+	  puts "$Version"
+	  exit
+      }
+      "-on"   {set on  1}
+      "-off"  {set off 1}
       default {
 	  if {!$configed} {
 	      if {![file exists $app::config_file]} {
@@ -113,6 +130,11 @@ for {set i 0} {$i < $argc} {incr i} {
               set powerlib [format "%s/powerlib.tcl" $app::lib_dir]
               if {[file exists $powerlib]} {
                   source $powerlib
+# The argument for not sourcing the subsidiary powermanagement scripts
+# here is that I'll want to be able to load and unload configurations
+# in other apps, and that is probably better done subsidiary to the
+# powerlib namespace
+		  ::powerlib::init $app::config_file
               } else {
                   usage "Can't find $powerlib library"
               }
@@ -123,10 +145,14 @@ for {set i 0} {$i < $argc} {incr i} {
   } 
 }
 
+if {[llength $node_list] == 0} {usage "No nodes specified (use \"\*\" for all)"}
 
 if {$reset && $query}         {usage "Can't have both reset and query"} 
 if {$on + $off + $reset != 1} {usage "Need exactly one of on, off, or reset" }
-
+if {!$query && !$unlockable}  {
+	puts "You must be root to do this"
+	exit
+} 
 	
 if {$app::verbose} {
     if {$on} {
