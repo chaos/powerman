@@ -191,41 +191,38 @@ class ClusterClass:
         #    of the given operation by calling self.check()
         # currently "reset" will not power on an off node
         exit_code = -1
-        check_list = []
-        if((com == 'off') or (com == 'reset')):
-            check_list = self.check("", n_list)
-        elif (com == 'on'):
-            check_list = self.check("-r", n_list)
-        if(check_list == []):
-            exit_code = 1
-            if(verbose):
-                sys.stderr.write("pm: no target nodes for operation (they are probably already on or off)\n")
-            return exit_code
+        check_list = n_list
         for type in self.c_types.keys():
-            if(len(self.c_types[type]) > 0):
-                c_str = self.c_com[type]
-                # Intersect check_list with self.q_types[type] to get
-                # c_sep_list, a comma separated list
-                c_sep_list = ''
-                for node in check_list:
-                    try:
-                        self.c_types[type].index(node)
-                        if(c_sep_list):
-                            c_sep_list = c_sep_list + ',' + node
-                        else:
-                            c_sep_list = node
-                    except ValueError:
-                        pass
-                if(c_sep_list):
-                    stat, message = commands.getstatusoutput(c_str + " -w " + c_sep_list + " " + com)
-                    if (stat == 0):
-                        # this is confirming that something
-                        # good ever happened
-                        if(exit_code == -1): exit_code = 0
+            if (type == 'etherwake'):
+                # Etherwake is a toggle, so you only want to apply
+                # it if the node is in the appropriate state.
+                if((com == 'off') or (com == 'reset')):
+                    check_list = self.check("", n_list)
+                elif (com == 'on'):
+                    check_list = self.check("-r", n_list)
+            c_str = self.c_com[type]
+            # Intersect check_list with self.q_types[type] to get
+            # c_sep_list, a comma separated list
+            c_sep_list = ''
+            for node in check_list:
+                try:
+                    self.c_types[type].index(node)
+                    if(c_sep_list):
+                        c_sep_list = c_sep_list + ',' + node
                     else:
-                        if (verbose):
-                            sys.stderr.write("pm: " + message + "\n")
-                        exit_code = 1
+                        c_sep_list = node
+                except ValueError:
+                    pass
+            if(c_sep_list):
+                stat, message = commands.getstatusoutput(c_str + " -w " + c_sep_list + " " + com)
+                if (stat == 0):
+                    # this is confirming that something
+                    # good ever happened
+                    if(exit_code == -1): exit_code = 0
+                else:
+                    if (verbose):
+                        sys.stderr.write("pm: " + message + "\n")
+                    exit_code = 1
         if (exit_code == -1):
             # None of the requested nodes was in a state appropriate
             # to the requested action

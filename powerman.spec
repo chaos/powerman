@@ -25,7 +25,7 @@
  
 %define name    powerman
 %define version 0.1.7
-%define release 2
+%define release 3
 
 Name: %name
 Version: %version

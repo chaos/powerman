@@ -1,0 +1,28 @@
+####################################################################
+# $Id$
+# by Andrew C. Uselton <uselton2@llnl.gov> 
+# Copyright (C) 2000 Regents of the University of California
+# See ./DISCLAIMER
+# v. 0-1-7:  2001-09-17
+#    Release 3:
+#                PowerMan now issues commands without regard to the 
+#       current state of the target nodes, with the exception of the 
+#	etherwake device.  For the etherwake device the node must
+#	be off before it is turned on, or must be on before it is 
+#	turned off or reset.  Reset of an off etherwake node still
+#	does not turn it on.
+#	         The icebox device now prints its replies in sorted
+#	order.  The sort is by tty, then box, then port and the order
+#	within those categories is established by the first appearance 
+#	in the config file.  
+#	         The icebox driver now has two pacing constants, one for
+#	per-box commands (4.0 seconds), and one for per-port commands
+#	(1.0 seconds).  Commands are issued no more quickly than this 
+#	pace.
+#	         The error handling is more uniform, with an "exit_error"
+#	function and standard error messages declared all in one place.
+#	         The icebox driver logs the most recent command and
+#	response to the file #powermandir/log/log_file.
+#	         The reply from the icebox can be empty and the driver will
+#	read again, up to 10 times before failing.  
+####################################################################
