@@ -487,7 +487,6 @@ main(int argc, char **argv)
 	  }
 	  node = node->next;
 	}
-      if (bitmap) printf("\n");
       return 0;
     }
   /* 
