@@ -36,8 +36,8 @@ begin protocol specification
 	begin PM_LOG_IN 
 		expect "\n"
 		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA"
-		expect "Enter password>"
-		send "baytech\r\n"
+#		expect "Enter password>"
+#		send "baytech\r\n"
 		expect "Enter Selection>"
 		send "1\r\n"
 		expect "RPC-3>"
