@@ -3,7 +3,6 @@
 # /chaos/cvs/powerman/etc/icebox3.dev,v
 #
 # Linux Networx ICE Box firmware version 3.x
-# Requires B68 or greater for mass beacon commands to work (see comment below)
 #
 begin protocol specification
 	specification name "icebox3"
