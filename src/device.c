@@ -289,7 +289,7 @@ static bool _timeout(struct timeval *time_stamp, struct timeval *timeout,
  */
 void _update_timeout(struct timeval *timeout, struct timeval *tv)
 {
-    if (timercmp(tv, timeout, <) || (!timeout->tv_sec && !timeout->tv_sec))
+    if (timercmp(tv, timeout, <) || !timerisset(timeout))
 	*timeout = *tv;
 }
 
@@ -1102,6 +1102,7 @@ static void _process_ping(Device *dev, struct timeval *timeout)
 	if (_timeout(&dev->last_ping, &dev->ping_period, &timeleft)) {
 	    _enqueue_actions(dev, PM_PING, NULL, NULL, 0, NULL);
 	    Gettimeofday(&dev->last_ping, NULL);
+	    dbg(DBG_ACTION, "%s: enqeuuing ping", dev->name);
 	} else
 	    _update_timeout(timeout, &timeleft);
     }
@@ -1195,6 +1196,11 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 	    }
 	}
 
+	/* if this device needs a ping, put it in the qeuue */
+	if ((dev->connect_status & DEV_CONNECTED)) {
+	    _process_ping(dev, timeout);
+	}
+
 	/* read/write from/to buffer */
 	if (dev->fd != NO_FD && (dev->connect_status & DEV_CONNECTED)) {
 	    if (FD_ISSET(dev->fd, rset))
@@ -1202,21 +1208,11 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 	    if (FD_ISSET(dev->fd, wset))
 		_handle_write(dev);
 	}
-#if 0
-	/* FIXME: superficially this seemed to work with the baytech, but it 
-	 * turns out that with this here, power ops hang forever on ice box 
-	 * nodes, but not on other RPC's!  
-	 */
-	/* if this device needs a ping, take care of it */
-	if ((dev->connect_status & DEV_CONNECTED)) {
-	    _process_ping(dev, timeout);
-	}
-#endif
+
 	/* process actions */
 	if (list_peek(dev->acts)) {
 	    _process_action(dev, timeout);
 	}
-
     }
     list_iterator_destroy(itr);
 }
