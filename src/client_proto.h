@@ -104,7 +104,7 @@
 #define CP_RSP_COMPLETE     "105 Command completed successfully"    CP_EOL
 #define CP_RSP_RAW          "305 %s: %s"                            CP_EOL
 #define CP_RSP_DEVICE  \
- "306 %s: reconnects=%-3.3d actions=%-3.3d devtype=%s targets=%s"   CP_EOL
+ "306 %s: reconnects=%-3.3d actions=%-3.3d type=%s hosts=%s"        CP_EOL
 #define CP_RSP_QUERY_COMPLETE "106 Query complete"                  CP_EOL
 
 /* failure */
