@@ -1,3 +1,7 @@
+2002-12-25 garlick
+    * Baytech cycle script based on 'reboot' is a no-op if plug is off.  
+      Do an explicit off then on instead.
+
 2002-12-24 garlick
     * Fix POWERMAN_VERSION string to include %{release} when building
       with make rpm tag=HEAD.
@@ -7,6 +11,7 @@
     * Added -D,--device [targets] command for getting status of RPC
       controlling [targets]. 
     * Suppress 'Query complete' message in client.
+    * Sort hostlists before returning to client.
 
 2002-12-22 garlick
     * Updated list.[ch] and cbuf.[ch] to latest lsd-tools versions.
