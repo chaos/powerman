@@ -28,7 +28,10 @@
 #define NUM_PLUGS	8
 
 static struct {
-	int plug[NUM_PLUGS];
+	int		plug[NUM_PLUGS];
+	pthread_attr_t	attr;
+	pthread_t	thd;
+	int		logged_in;
 } dev[NUM_THREADS];
 
 static int opt_drop_command = 0;
@@ -47,6 +50,7 @@ static void _noop_handler(int signum)
 /* 
  * Get a line from file descriptor (minus \r or \n).  Result will always
  * be null-terminated.  If buffer size is exhausted, may return partial line. 
+ * Return length of line, -1 on failure, -2 on EOF.
  */
 static int _dgets(char *buf, int size, int fd)
 {
@@ -57,7 +61,7 @@ static int _dgets(char *buf, int size, int fd)
 
     while (sizeleft > 1) { /* leave room for terminating null */
 	if ((res = read(fd, &c, 1)) <= 0)
-	    return res;
+	    return (res == 0 ? -2 : res);
 	if (c == '\n')
 	    break;
 	if (c == '\r')
@@ -92,7 +96,6 @@ static void _prompt_loop(int num, int fd)
     int seq;
     int i;
     int n1;
-    int logged_in = 0;
     int res;
 
     for (seq = 0; ; seq++) {
@@ -105,12 +108,12 @@ static void _prompt_loop(int num, int fd)
 
 	dprintf(fd, "%d vpc> ", seq);		/* prompt */
 	res = _dgets(buf, sizeof(buf), fd);
-	if (res < 0) {
-	    printf("%d: %s\n", num, strerror(errno));
+	if (res == -2) {
+	    printf("%d: read returned EOF\n", num);
 	    break;
 	}
-	if (res == 0) {
-	    printf("%d: read returned EOF\n", num);
+	if (res < 0) {
+	    printf("%d: %s\n", num, strerror(errno));
 	    break;
 	}
 	if (strlen(buf) == 0)			/* empty command */
@@ -118,15 +121,15 @@ static void _prompt_loop(int num, int fd)
 	if (strcmp(buf, "logoff") == 0) {	/* logoff */
 	    printf("%d: logoff\n", num);
 	    dprintf(fd, "%d OK\n", seq);
-	    logged_in = 0;
+	    dev[num].logged_in = 0;
 	    break;
 	}
 	if (strcmp(buf, "login") == 0) {	/* logon */
 	    printf("%d: logon\n", num);
-	    logged_in = 1;
+	    dev[num].logged_in = 1;
 	    goto ok;
 	}
-	if (!logged_in) {
+	if (!dev[num].logged_in) {
 	    dprintf(fd, "%d Please login\n", seq);
 	    goto noresp;
 	}
@@ -306,8 +309,6 @@ main(int argc, char *argv[])
 {
     int c;
     int longindex;
-    pthread_attr_t vpc_attr[NUM_THREADS];
-    pthread_t vpc_thd[NUM_THREADS];
     int i;
     int optcount = 0;
 
@@ -353,9 +354,9 @@ main(int argc, char *argv[])
 	    printf("vpcd: not starting vpcd%d\n", i);
 	    continue;
 	}
-	pthread_attr_init(&vpc_attr[i]);
-	pthread_attr_setdetachstate(&vpc_attr[i], PTHREAD_CREATE_DETACHED);
-	pthread_create(&vpc_thd[i], &vpc_attr[i], _vpc_thread, (void *)i);
+	pthread_attr_init(&dev[i].attr);
+	pthread_attr_setdetachstate(&dev[i].attr, PTHREAD_CREATE_DETACHED);
+	pthread_create(&dev[i].thd, &dev[i].attr, _vpc_thread, (void *)i);
     }
     if (pause() < 0) {
 	perror("pause");
