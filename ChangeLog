@@ -1,3 +1,6 @@
+2002-01-13 garlick
+    * Update icebox3 beacon script for B70 of the ice box firmware.
+
 2002-12-30 garlick
     * More refinement of device error handling.
     * Strip out unused DBG_* flags and redundant DBG_SCRIPT printfs.
