@@ -2,6 +2,8 @@
 
     * src/client.c: clean up disconnect logic.
 
+    * etc/ipmi.dev: got working with Intel SE7501WV1 motherboard.
+
 2003-08-03 Jim Garlick <garlick@llnl.gov>
 
     * src/device*.c: move all retry logic to device.c and enforce backoff on
