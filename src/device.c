@@ -412,6 +412,31 @@ do_Device_connect(Device *dev)
 	map_Action_to_Device(dev, act);
 }
 
+
+static char *
+_binstr(char *str, int len)
+{
+	int i, j, cpysize = 0;
+	char *cpy;
+
+	for (i = 0; i < len; i++)
+		cpysize += isprint(str[i]) ? 1 : 4;
+	cpy = Malloc(cpysize + 1);
+
+	for (i = j = 0; i < len; i++)
+	{
+		if (isprint(str[i]))
+			cpy[j++] = str[i];
+		else
+		{
+			sprintf(&cpy[j], "\\%.3o", str[i]);
+			j += 4;
+		}
+	}
+	cpy[j] = '\0';
+	return cpy;
+}
+
 /*
  *   The Read gets the string.  If it is EOF then we've lost 
  * our connection with the device and need to reconnect.  
@@ -434,8 +459,10 @@ handle_Device_read(Device *dev, int debug)
 	if (debug)
 	{
 		char str[MAX_BUF];
-		if (peek_line_Buffer(dev->from, str, MAX_BUF) > 0)
-			printf("D: %s", str);
+		int len = peek_line_Buffer(dev->from, str, MAX_BUF);
+
+		if (len > 0)
+			printf("D: %s", _binstr(str, len));
 	}
 }
 
@@ -789,9 +816,10 @@ handle_Device_write(Device *dev, int debug)
 	if (debug)
 	{
 		char str[MAX_BUF];
+		int len = peek_line_Buffer(dev->to, str, MAX_BUF);
 
-		if (peek_line_Buffer(dev->to, str, MAX_BUF) > 0)
-			printf("S: %s", str);
+		if (len > 0)
+			printf("S: %s", _binstr(str, len));
 	}
 	n = write_Buffer(dev->to);
 	if( n < 0 ) return;

@@ -52,4 +52,3 @@ get_String_from_Buffer(Buffer b, regex_t *re)
 	}
 	return (match ? make_String(str) : NULL);
 }
-
