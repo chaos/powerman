@@ -1,7 +1,8 @@
 2003-12-22 Albert Chu <chu11@llnl.gov>
 
     * etc/ipmipower.dev: Removed "not discovered" as acceptable message to 
-    indicate power is off.  Power status should be unknown.
+    indicate power is off.  Power status should be unknown.  Fixed regular 
+     expression bug in status_all script.
 	
 2003-12-22 Jim Garlick <garlick@llnl.gov>
 
