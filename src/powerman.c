@@ -121,6 +121,7 @@ static int cmp_Nodes(void *node1, void *node2);
 static int xmatch_Node(void *node, void *key);
 static void xfree_Node(void *node);
 static bool is_prompt(String targ);
+static void print_Cluster(List cluster);
 
 const char *powerman_license = \
     "Copyright (C) 2001-2002 The Regents of the University of California.\n"  \
@@ -157,7 +158,7 @@ main(int argc, char **argv)
 	cluster = connect_to_server(conf);
 	if( list_is_empty(cluster) ) 
 		exit_msg("No cluster members found");
-	print_Targets(cluster); /* XXX debug */
+	/*print_Cluster(cluster);*/ /* XXX debug */
 	process_targets(conf, cluster);
 	free_Config(conf);
 	list_destroy(cluster);
@@ -175,6 +176,7 @@ process_command_line(int argc, char **argv)
 	String targ;
 	Config *conf;
 	int longindex;
+	bool targs_required = FALSE;
 
 	conf = make_Config();
 	opterr = 0;
@@ -200,16 +202,19 @@ process_command_line(int argc, char **argv)
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_POWER_CYCLE;
+			targs_required = TRUE;
 			break;
 		case '1':	/* --on */
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_POWER_ON;
+			targs_required = TRUE;
 			break;
 		case '0':	/* --off */
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_POWER_OFF;
+			targs_required = TRUE;
 			break;
 		case 'q':	/* --queryon */
 			if (conf->com != CMD_ERROR)
@@ -225,11 +230,13 @@ process_command_line(int argc, char **argv)
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_RESET;
+			targs_required = TRUE;
 			break;
 		case 'l':	/* --list */
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_LISTTARG;
+			targs_required = TRUE;
 			break;
 		/* 
 		 * Modifiers.
@@ -300,10 +307,14 @@ process_command_line(int argc, char **argv)
 		hostlist_iterator_destroy(iter);
 	}
 
+	if (targs_required && list_is_empty(conf->targ))
+		exit_msg("command requires target(s)");
+
 	/* If --noexec, just say what we would have done but don't contact
 	 * the server.
 	 */
-	if (conf->noexec) {
+	if (conf->noexec) 
+	{
 		dump_Conf(conf);
 	}
 	return conf;
@@ -546,6 +557,7 @@ process_targets(Config *conf, List cluster)
 		reply = send_server(conf, str);
 		publish_reply(conf, cluster, reply);
 	}
+	list_iterator_destroy(itr);
 }
 
 /*
@@ -805,6 +817,7 @@ print_list(Config *conf, List cluster, List targ, State_Val state)
 			if( node->p_state == state ) printf("%s\n", get_String(node->name));
 		}
 	}
+	list_iterator_destroy(itr);
 }
 
 static void
@@ -819,6 +832,22 @@ print_Targets(List targ)
 	{
 		printf("%s\n", get_String(t));
 	}
+	list_iterator_destroy(itr);
+}
+
+static void
+print_Cluster(List cluster)
+{
+	Node *node;
+	ListIterator itr;
+
+	assert( cluster != NULL );
+	itr = list_iterator_create(cluster);
+	while( (node = (Node *)list_next(itr)) )
+	{
+		printf("%s\n", get_String(node->name));
+	}
+	list_iterator_destroy(itr);
 }
 
 /*
@@ -905,6 +934,7 @@ append_Nodes(List cluster, List reply)
 		node = xmake_Node(get_String(targ));
 		list_append(cluster, node);
 	}
+	list_iterator_destroy(itr);
 }
 
 /*
