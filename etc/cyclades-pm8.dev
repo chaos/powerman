@@ -9,52 +9,94 @@ specification "pm8" {
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
 
-# the login script will work whether device is already logged in or not.
+# Unfortunately it seems there is a non-configurable login timeout.
+# Typing exit and two carriage returns will get you to a Username: prompt 
+# if you are at pm> or Username: to begin with.  So the login script is 
+# really a logoff script, and every command is wrapped in login/logoff.
+# XXX powerman should make this easier!
+
 	script login {
 		send "exit\r\r"
 		expect "Username:"
+	}
+	script status_all {
 		send "admin\r"
 		expect "Password:"
 		send "pm8\r"
 		expect "pm>"
-	}
-	script logout {
-		send "exit\r"
-	}
-	script status_all {
+
 		send "status 1-8\r"
-#  3\t\t\t\tUnlocked ON\t\r\n
 		foreachplug {
 			expect " ([1-8]+)\t\t\t\tUnlocked (ON|OFF)"
 			setplugstate $1 $2 on="ON" off="OFF"
 		}
 		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
 	}
 	script on {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
 		send "on %s\r"
 		expect "Outlet turned on.\r\n"
 		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
 	}
 	script on_all {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
 		send "on 1-8\r"
 		foreachplug {
 			expect "Outlet turned on.\r\n"
 		}
 		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
 	}
 	script off {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
 		send "off %s\r"
 		expect "Outlet turned off.\r\n"
 		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
 	}
 	script off_all {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
 		send "off 1-8\r"
 		foreachplug {
 			expect "Outlet turned off.\r\n"
 		}
 		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
 	}
 	script cycle {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
 		send "off %s\r"
 		expect "Outlet turned off.\r\n"
 		expect "pm>"
@@ -62,8 +104,16 @@ specification "pm8" {
 		send "on %s\r"
 		expect "Outlet turned on.\r\n"
 		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
 	}
 	script cycle_all {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
 		send "off 1-8\r"
 		foreachplug {
 			expect "Outlet turned off.\r\n"
@@ -75,5 +125,8 @@ specification "pm8" {
 			expect "Outlet turned on.\r\n"
 		}
 		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
 	}
 }

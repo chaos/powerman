@@ -14,16 +14,17 @@ specification "baytech-rpc28-nc" {
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" 
 		    "12" "13" "14" "15" "16" "17" "18" "19" "20" }
 
+# Note: crlf before each command required because we may get "logged off".
+# With no users, logging in is just a crlf.
 	script login {
-		send "temp\r\n"
-                expect "Internal Temperature[^C]+C"
+		send "\r\n"
 		expect ">"
 	}
 	script logout {
-		send "exit\r\n"
+		send "\r\nexit\r\n"
 	}
 	script status_all {
-		send "status\r\n"
+		send "\r\nstatus\r\n"
 		expect "Internal Temperature[^C]+C"
 		foreachplug {
 			expect "([0-9]+)[^:]+: (On|Off)"
@@ -32,33 +33,33 @@ specification "baytech-rpc28-nc" {
 		expect ">"
 	}
 	script on {
-		send "on %s\r\n"
+		send "\r\non %s\r\n"
 		expect ">"
 	}
 	script on_all {
-		send "on 0\r\n"
+		send "\r\non 0\r\n"
 		expect ">"
 	}
 	script off {
-		send "off %s\r\n"
+		send "\r\noff %s\r\n"
 		expect ">"
 	}
 	script off_all {
-		send "off 0\r\n"
+		send "\r\noff 0\r\n"
 		expect ">"
 	}
 # If outlet is initially off, "reboot" will leave it off.
 # This doesn't match PowerMan's semantics for cycle, so explicitly power
 # off then on.
 	script cycle {
-		send "off %s\r\n"
+		send "\r\noff %s\r\n"
 		expect ">"
 		delay 2
 		send "on %s\r\n"
 		expect ">"
 	}
 	script cycle_all {
-		send "off 0\r\n"
+		send "\r\noff 0\r\n"
 		expect ">"
 		delay 2
 		send "on 0\r\n"
