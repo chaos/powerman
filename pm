@@ -307,7 +307,7 @@ except KeyError:
 # Parse the command line, check for sanity, and set globals
 
 try:
-    options, args = getopt.getopt(sys.argv[1:], 'abc:f:l:rw:tvV')
+    options, args = getopt.getopt(sys.argv[1:], 'ac:f:l:qrtVw:')
 except getopt.error:
     usage("Error processing options")
 
@@ -327,7 +327,7 @@ for opt in options:
         opts = "-l " + val + opts
     elif (op == '-q'):
         verbose = 0
-        opts = "-v " + opts
+        opts = "-q " + opts
     elif (op == '-r'):
         opts = "-r " + opts
         reverse = 1

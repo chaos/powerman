@@ -15,6 +15,7 @@
 # v. 0-1-4:  2001-09-05
 # v. 0-1-5:  2001-09-05
 # v. 0-1-6:  2001-09-07
+#            no longer use src/digi.c, since there's a Python version
 ####################################################################
 
 PACKAGE= powerman
@@ -44,7 +45,6 @@ packagedir=     ${libdir}/${PACKAGE}
 
 all: 
 	cd src; make; cd ..
-	mv src/digi bin
 	mv src/ether-wake lib
 
 %:%.c

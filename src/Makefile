@@ -12,6 +12,7 @@
 # v. 0-1-4:  2001-09-05
 # v. 0-1-5:  2001-09-05
 # v. 0-1-6:  2001-09-07
+#            digi.c is no longer supported use the Python version
 ####################################################################
 
 PACKAGE= powerman
@@ -37,7 +38,7 @@ libdir=         ${exec_prefix}/lib
 packagedir=     ${libdir}/${PACKAGE}
 
 
-all:  ether-wake digi
+all:  ether-wake
 
 %:%.c
 	$(CC) $(COPTS) $< -o $@ $(INC) $(LIB)
@@ -46,4 +47,5 @@ clean:
 	rm -f *~ *.o
 
 distclean: clean
-	rm -f  ether-wake digi
+	rm -f  ether-wake
+

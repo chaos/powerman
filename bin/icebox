@@ -23,6 +23,63 @@ import getopt
 import os
 import fcntl, FCNTL
 
+class NodeClass:
+    "Class definition for icebox attached nodes"
+    name = ""
+    tty  = ""
+    box  = ""
+    port = ""
+
+    def __init__(self, name, tty, box, port):
+        "Node class initialization"
+        self.name = name
+        self.tty  = tty
+        self.box  = box
+        self.port = port
+
+class PortClass:
+    "Class definition for an icebox port"
+    name      = ""
+    node      = None
+    requested = 0
+
+    def __init__(self, name, node):
+        "Port class initialization"
+        self.name      = name
+        self.node      = node
+        self.requested = 0
+
+class BoxClass:
+    "Class definition for an icebox"
+    name          = ""
+    tty           = ""
+    ports         = {}
+    num_connected = 0
+    num_requested = 0
+
+    def __init__(self, name, tty):
+        "Box class initialization"
+        self.name          = name
+        self.tty           = tty
+        self.ports         = {}
+        self.num_connected = 0
+        self.num_requested = 0
+
+    def add(self, port):
+        "Add a port to the list of occupied ports on the icebox"
+        self.ports[port.name] = port
+        self.num_connected = self.num_connected + 1
+
+class TtyClass:
+    "Class definition for a tty with icebox(es) attached"
+    name  = ""
+    boxes = {}
+
+    def __init__(self, name):
+        "Tty class initialization"
+        self.name  = name
+        self.boxes = {}
+
 def usage(msg):
     print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-q] [-r] [-t] [-V] [-w node,...] [on | off | reset | temp | tempf | ice n cm]"
     print "-a       = on/off/reset all nodes"
@@ -46,22 +103,35 @@ def usage(msg):
 
 def init(f):
     "Read in the node, tty, box, and port for each node from the configuration file"
-    nodes = []
+    node  = None
+    nodes = {}
+    tty   = None
     ttys  = {}
-    boxes = {}
-    ports = {}
+    box   = None
+    port = None
     line = f.readline()
     while (line):
         tokens = string.split(line)
+        # you need this here because of the "coninue"s below
         line = f.readline()
 	if(len(tokens) < 4):
             continue
         if (tokens[0][0] == '#'): continue
-        nodes.append(tokens[0])
-        ttys[tokens[0]] = tokens[1]
-        boxes[tokens[0]] = tokens[2]
-        ports[tokens[0]] = tokens[3]
-    return nodes, ttys, boxes, ports
+        node = NodeClass(tokens[0], tokens[1], tokens[2], tokens[3])
+        nodes[tokens[0]] = node
+        port = PortClass(tokens[3], node)
+        try:
+            tty = ttys[tokens[1]]
+        except KeyError:
+            tty = TtyClass(tokens[1])
+            ttys[tokens[1]] = tty
+        try:
+            box = tty.boxes[tokens[2]]
+        except KeyError:
+            box = BoxClass(tokens[2], tokens[1])
+            tty.boxes[tokens[2]] = box
+        box.add(port)
+    return nodes, ttys
 
 Version = "icebox:Powerman 0.1.6"
 
@@ -187,56 +257,64 @@ else:
     sys.exit(1)
     
 try:
+    # I could put in a shared lock here, but it doesn't seem highly necessary
     f = open(config_file, 'r')
-    nodes, ttys, boxes, ports = init(f)
+    nodes, ttys = init(f)
     f.close()
 except IOError :
     if(verbose):
         sys.stderr.write("icebox: Couldn\'t find configuration file: " + config_file + "\n")
     sys.exit(1)
     
-# Carry out the action.  As a first cut we'll sequence through the nodes and
-# then open the tty, issue the command, and close the tty, once for each
-# node.  Later we can try keeping the tty open until it changes.  Later
-# still we can gather all the same tty nodes together and do them at once.
-# We can further gather together all the same box targets together and
-# do them at once.  Finally for a case where we want to do all the nodes
-# on a box we can issue the simpler command.
-if (all):
-    names = nodes
 
 if (com == "ice"):
     # This only happens for directly invoking icebox on the command line
-    # pm will never call it
+    # pm will never call it, and is never called from pm
     response = ''
     # just pass along the command
     try:
         f = open(targettty, 'r+')
-        f.write(targetcom)
-        response = f.readline()
-        if (string.lower(response) != 'ok'):
-            if (verbose):
-                sys.stderr.write ("icebox: Error returned from tty " + targettty + " after command \"" + targetcom + "\"\n")
-            sys.exit(1)
-        f.close()
     except IOError:
         if(verbose):
             sys.stderr.write ("icebox: Unable to access icebox control device on port " + targettty + "\n")
         sys.exit(1)
+    try:
+        fcntl.lockf(f.fileno(), FCNTL.LOCK_EX | FCNTL.LOCK_NB)
+    except IOError:
+        if(verbose):
+            sys.stderr.write ("icebox: Unable to gain exclusive lock on icebox control device on port " + targettty + "\n")
+        sys.exit(1)
+    f.write(targetcom)
+    response = f.readline()
+    if (string.lower(response) != 'ok'):
+        if (verbose):
+            sys.stderr.write ("icebox: Error returned from tty " + targettty + " after command \"" + targetcom + "\"\n")
+        sys.exit(1)
+    f.close()
     exit(0)
     
+if (all):
+    for name in nodes.keys():
+        box = ttys[nodes[name].tty].boxes[nodes[name].box]
+        box.ports[nodes[name].port].requested = 1
+        box.num_requested = box.num_requested + 1
+else:
+    for name in names:
+        try:
+            box = ttys[nodes[name].tty].boxes[nodes[name].box]
+            box.ports[nodes[name].port].requested = 1
+            box.num_requested = box.num_requested + 1
+        except KeyError:
+            if (verbose):
+                sys.stderr.write ("icebox: " + name + " is not a recogognized node name\n")
+            sys.exit(1)
+            
+        
 # carry out the requested command on each node
-for name in names:
+for tty_name in ttys.keys():
+    tty = ttys[tty_name]
     try:
-        tty, box, port = ttys[name], boxes[name], ports[name]
-    except KeyError:
-        if(verbose):
-            sys.stderr.write("icebox: " + name + " not found\n")
-        sys.exit(1)
-    target = 'c' + box + com + port + '\n'
-    response = ''
-    try:
-        f = open(tty, 'r+')
+        f = open(tty_name, 'r+')
     except IOError:
         if(verbose):
             sys.stderr.write ("icebox: Unable to access icebox control device on port " + tty + "\n")
@@ -247,33 +325,86 @@ for name in names:
         if(verbose):
             sys.stderr.write ("icebox: Unable to gain exclusive lock on icebox control device on port " + tty + "\n")
         sys.exit(1)
-    f.write(target)
-    response = f.readline()
+    for box_name in tty.boxes.keys():
+        box = tty.boxes[box_name]
+        if (box.num_requested == box.num_connected):
+            target = 'c' + box.name + com + '\n'
+            response = ''
+            f.write(target)
+            response = f.readline()
+            if (response[-1:] == '\n'):
+                response = response[:-1]
+            if ((com == 'on') or (com == 'off') or (com == 'reset')):
+                if (string.lower(response) != 'ok'):
+                    if (verbose):
+                        sys.stderr.write ("icebox: Error returned from node " + name + " after command \"" + target + "\"\n")
+                    sys.exit(1)
+            elif(com == 'ns'):
+                try:
+                    list = string.split(response)
+                except ValueError:
+                    if (verbose):
+                        sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from box " + box.name + " after command \"" + target + "\"\n")
+                    sys.exit(1)
+                for resp in list:
+                    try:
+                        p,state = string.split(resp, ':')
+                    except ValueError:
+                        if (verbose):
+                            sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from box " + box.name + ", port" + p +" after command \"" + target + "\"\n")
+                        sys.exit(1)
+                    if (((state == '0') and reverse) or ((state == '1') and not reverse)):
+                        print box.ports[p[1:]].node.name
+            elif((com == 'ts') or (com == 'tsf')):
+                try:
+                    list = string.split(response)
+                except ValueError:
+                    if (verbose):
+                        sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from box " + box.name + " after command \"" + target + "\"\n")
+                    sys.exit(1)
+                for resp in list:
+                    try:
+                        p,temps = string.split(resp, ':')
+                    except ValueError:
+                        if (verbose):
+                            sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from node " + name + " after command \"" + target + "\"\n")
+                        sys.exit(1)
+                    print box.ports[p[1:1]].node.name + ":" + temps
+        else:
+            # (num_requested != num_connected):
+            for port_name in box.ports.keys():
+                port = box.ports[port_name]
+                if (port.requested == 0):
+                    continue
+                target = 'c' + box.name + com + port.name + '\n'
+                response = ''
+                f.write(target)
+                response = f.readline()
+                if (response[-1:] == '\n'):
+                    response = response[:-1]
+                if ((com == 'on') or (com == 'off') or (com == 'reset')):
+                    if (string.lower(response) != 'ok'):
+                        if (verbose):
+                            sys.stderr.write ("icebox: Error returned from node " + name + " after command \"" + target + "\"\n")
+                        sys.exit(1)
+                elif(com == 'ns'):
+                    try:
+                        p,state = string.split(response, ':')
+                    except ValueError:
+                        if (verbose):
+                            sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from node " + name + " after command \"" + target + "\"\n")
+                        sys.exit(1)
+                    if (((state == '0') and reverse) or ((state == '1') and not reverse)):
+                        print port.node.name
+                elif((com == 'ts') or (com == 'tsf')):
+                    try:
+                        p,temps = string.split(response, ':')
+                    except ValueError:
+                        if (verbose):
+                            sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from node " + name + " after command \"" + target + "\"\n")
+                        sys.exit(1)
+                    print port.node.name + ":" + temps
+                    
     fcntl.lockf(f.fileno(), FCNTL.LOCK_UN)
     f.close()
-    if (response[-1:] == '\n'):
-        response = response[:-1]
-    # I'll take this out after verifying opperation
-    if ((com == 'on') or (com == 'off') or (com == 'reset')):
-        if (string.lower(response) != 'ok'):
-            if (verbose):
-                sys.stderr.write ("icebox: Error returned from node " + name + " after command \"" + target + "\"\n")
-            sys.exit(1)
-    elif(com == 'ns'):
-        try:
-            p,state = string.split(response, ':')
-        except ValueError:
-            if (verbose):
-                sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from node " + name + " after command \"" + target + "\"\n")
-            sys.exit(1)
-        if (((state == '0') and reverse) or ((state == '1') and not reverse)):
-            print name
-    elif((com == 'ts') or (com == 'tsf')):
-        try:
-            p,temps = string.split(response, ':')
-        except ValueError:
-            if (verbose):
-                sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from node " + name + " after command \"" + target + "\"\n")
-            sys.exit(1)
-        print name + ":" + temps
 sys.exit(0)

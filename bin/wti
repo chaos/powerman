@@ -25,6 +25,7 @@ import commands
 import string
 import getopt
 import os
+import fcntl, FCNTL
 
 def usage(msg):
     print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-q] [-V] [-w node,...] [on | off | reset]"
@@ -80,7 +81,7 @@ except KeyError:
 # Parse the command line, check for sanity, and set globals
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'abc:f:l:rw:vV')
+    opts, args = getopt.getopt(sys.argv[1:], 'ac:f:l:qVw:')
 except getopt.error:
     usage("Error processing options\n")
 
@@ -174,31 +175,29 @@ except IOError :
 # are not legitimate targets, but it will only send to known
 # legitimate targets
 if(all):
-    try:
-        f = open(tty, 'r+')
-        for name in ports.keys():
-            port = ports[name]
-            f.write(password+port+com+'\r\n')
-        f.close()
-    except IOError :
-        if(verbose):
-            sys.stderr.write ("wti: Unable to access wti control device on port " + tty + "\n")
-        sys.exit(1)
-    sys.exit(0)
+    names = ports.keys()
 
 try:
     f = open(tty, 'r+')
-    for name in names:
-        try:
-            port = ports[name]
-            f.write(password+port+com+'\r\n')
-        except KeyError:
-            pass
-    f.close()
 except IOError:
     if(verbose):
         sys.stderr.write ("wti: Unable to access wti control device on port " + tty + "\n")
     sys.exit()
+try:
+    fcntl.lockf(f.fileno(), FCNTL.LOCK_EX | FCNTL.LOCK_NB)
+except IOError:
+    if(verbose):
+        sys.stderr.write ("wti: Unable to gain exclusive lock on icebox control device on port " + tty + "\n")
+    sys.exit(1)
+
+for name in names:
+    try:
+        port = ports[name]
+        f.write(password+port+com+'\r\n')
+    except KeyError:
+        pass
+fcntl.lockf(f.fileno(), FCNTL.LOCK_UN)
+f.close()
 
 sys.exit(0)
 

@@ -106,7 +106,7 @@ except KeyError:
 # Parse the command line, check for sanity, and set globals
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'abc:f:l:rw:vV')
+    opts, args = getopt.getopt(sys.argv[1:], 'abc:f:l:qVw:')
 except getopt.error:
     usage("Error processing options\n")
 
