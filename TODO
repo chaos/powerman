@@ -1,3 +1,6 @@
+####################################################################
+# $Id$
+####################################################################
 [x]  telnet based query and control for icebox
 [ ]  introduce configuration generator (2 days)
 [ ]  adapt packaging to use autoconf stuff (4 days)

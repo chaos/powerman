@@ -1,3 +1,13 @@
+####################################################################
+# $Id$
+# by Andrew C. Uselton <uselton2@llnl.gov> 
+# Copyright (C) 2001 Regents of the University of California
+# See ./DISCLAIMER
+####################################################################
+
+The following note to myself is a reminder about interracting with
+CVS correctly.  It is not part of the PowerMan project, per se.
+
 In order to retag something to a new version do the following
 1)  increment the version numbers in Makefile, powerman.spec, and 
     the sources.
