@@ -233,10 +233,11 @@ static void _rewind_action(Device *dev, Action *act)
 
     /* get back to the context for the outer block */
     while ((e = list_pop(act->exec))) {
-        if (list_is_empty(act->exec))
+        if (list_is_empty(act->exec)) {
             list_push(act->exec, e);
-        else
-            _destroy_exec_ctx(e);
+            break;
+        }
+        _destroy_exec_ctx(e);
     }
     /* reset outer block iterator and current pointer */
     if (e) {
@@ -920,7 +921,7 @@ static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
         e->plugitr = list_iterator_create(dev->plugs);
 
     /* Each time the inner block is executed, its argument will be
-     * a new plug/node name.  Pick that up here.
+     * a new plug name.  Pick that up here.
      */
     if (e->cur->type == STMT_FOREACHPLUG) {
         plug = list_next(e->plugitr);
