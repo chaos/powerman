@@ -30,7 +30,7 @@
 
 
 #define PROJECT "powerman"
-#define VERSION "0.2.0"
+#define VERSION "1.0.0"
 
 #define TIMEOUT_SECONDS     1       /* default value for select(,,,tv) */
 #define INTER_DEV_USECONDS 200000   /* default Delay() after device write */

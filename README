@@ -531,7 +531,7 @@ user> telnet localhost 10101
 Trying 127.0.0.1...
 Connected to localhost.localdomain (127.0.0.1).
 Escape character is '^]'.
-PowerMan V0.2.0
+PowerMan V1.0.0
 password> 
 
 at this point you type "powerman" (the password) and you get:
@@ -762,7 +762,7 @@ o You can again telnet in to see that all is working, this time going
   Trying 127.0.0.1...
   Connected to localhost (127.0.0.1).
   Escape character is '^]'.
-  PowerMan V0.2.0
+  PowerMan V1.0.0
   password> 
 ---
   The current, very clever, password is "powerman".  The "on" command

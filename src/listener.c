@@ -187,7 +187,7 @@ handle_Listener(Globals *g)
 	log_it(0, "New connection: <%s, %d> on descriptor %d", 
 	       fqdn, client->port, client->fd);
 	client->write_status = CLI_WRITING;
-	send_Buffer(client->to, "PowerMan V0.2.0\r\npassword> ");
+	send_Buffer(client->to, "PowerMan V1.0.0\r\npassword> ");
 }
 
 

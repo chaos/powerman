@@ -30,7 +30,7 @@
 
 
 #define PROJECT "powerman"
-#define VERSION "0.2.0"
+#define VERSION "1.0.0"
 
 typedef struct config_struct {
 	String *host;
