@@ -3,6 +3,7 @@
       -L (display license).  
     * Cleaned up server options.
     * Updated man pages.
+    * Tagged powerman-1-0-14
 
 2002-10-26 garlick
     * Fix bug where inappropriate match ($N) values caused a runtime assert.
