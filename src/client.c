@@ -714,9 +714,7 @@ static void _handle_read(Client * c)
     int dropped;
 
     CHECK_MAGIC(c);
-    do {
-        n = cbuf_write_from_fd(c->from, c->fd, -1, &dropped);
-    } while (n < 0 && errno == EINTR);
+    n = cbuf_write_from_fd(c->from, c->fd, -1, &dropped);
     if (n < 0) {
         err(TRUE, "client read error");
         c->read_status = CLI_DONE;
@@ -740,9 +738,7 @@ static void _handle_write(Client * c)
     int n;
 
     CHECK_MAGIC(c);
-    do {
-        n = cbuf_read_to_fd(c->to, c->fd, -1);
-    } while  (n < 0 && errno == EINTR);
+    n = cbuf_read_to_fd(c->to, c->fd, -1);
     if (n < 0) {
         err(TRUE, "write error on client");
         return;
@@ -751,7 +747,6 @@ static void _handle_write(Client * c)
         err(FALSE, "write sent no data to client");
         return; 
     }
-
     if (cbuf_is_empty(c->to))
         c->write_status = CLI_IDLE;
 }

@@ -173,8 +173,10 @@ static char *_getregex_buf(cbuf_t b, regex_t * re)
     }
     assert(bytes_peeked <= MAX_DEV_BUF);
     for (i = 0; i < bytes_peeked; i++) {/* convert embedded \0 to \377 */
-        if (str[i] == '\0')
+        if (str[i] == '\0') {
             str[i] = '\377';
+            dbg(DBG_SCRIPT, "_getregex_buf: converted \\0 to \\377");
+        }
     }
     str[bytes_peeked] = '\0';           /* null terminate result */
     match_end = _findregex(re, str, bytes_peeked);
@@ -664,9 +666,7 @@ static void _handle_read(Device * dev)
     int n;
 
     CHECK_MAGIC(dev);
-    do { 
-        n = cbuf_write_from_fd(dev->from, dev->fd, -1, NULL);
-    } while (n < 0 && errno == EINTR); 
+    n = cbuf_write_from_fd(dev->from, dev->fd, -1, NULL);
     if (n < 0) {
         err(TRUE, "read error on %s", dev->name);
         _disconnect(dev);
@@ -690,9 +690,7 @@ static void _handle_write(Device * dev)
 
     CHECK_MAGIC(dev);
 
-    do {
-        n = cbuf_read_to_fd(dev->to, dev->fd, -1);
-    } while (n < 0 && errno == EINTR);
+    n = cbuf_read_to_fd(dev->to, dev->fd, -1);
     if (n < 0) {
         err(TRUE, "write error on %s", dev->name);
         _disconnect(dev);
