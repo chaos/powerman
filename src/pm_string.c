@@ -34,17 +34,20 @@
 #include "wrappers.h"
 #include "exit_error.h"
 
-#define MAX_STR_BUF 64000
-
 #define STRING_MAGIC 0xabbaabba
 
+/* length == 0 iff string == NULL */
 struct string_implementation {
-	int magic;
-	int length;
-	char *string;
+	int magic;		/* COOKIE!!! */
+	int length;		/* string length (not including NULL) */
+	char *string;		/* string, NULL terminated */
 };
 
 
+/* 
+ * Create a String object from character string 'cs'.  If cs is NULL, 
+ * Result must be freed with free_String().
+ */
 String
 make_String(const char *cs)
 {
@@ -52,41 +55,60 @@ make_String(const char *cs)
 
 	s = (String)Malloc(sizeof(struct string_implementation));
 	s->magic = STRING_MAGIC;
-	if( cs == NULL )
+	s->string = NULL;
+	s->length = 0;
+	if (cs != NULL)
 	{
-		s->string = NULL;
-		s->length = 0;
-		return s;
+		s->length = strlen(cs);
+		s->string = Malloc(s->length + 1);
+		strncpy(s->string, cs, s->length + 1); /* copies NULL */
 	}
-	s->length = strlen(cs);
-	s->string = Malloc(s->length + 1);
-	strncpy(s->string, cs, s->length);
-	s->string[s->length] = '\0';
-
 	return s;
 }
 
+/*
+ * Free a String object.  The argument is (void *) for compat with list.c.
+ */
+void
+free_String(void *str)
+{
+	String s = str;
+
+	assert(s != NULL);
+	assert(s->magic == STRING_MAGIC);
+	s->magic = 0;
+	if(s->string)
+	{
+		assert(strlen(s->string) == s->length);
+		Free(s->string);
+	}
+	Free(s);
+}
+
+/* 
+ * Copy a String object.  Result must be freed with free_String().
+ */
 String
 copy_String(String s)
 {
 	String new;
 
-	if( s == NULL ) return NULL;
-
+	assert (s != NULL) ;
 	assert(s->magic == STRING_MAGIC);
-
 	new = (String)Malloc(sizeof(struct string_implementation));
 	*new = *s;
-	if (s->length > 0) {
-		assert(s->string != NULL);
+	if (s->string) 
+	{
 		assert(strlen(s->string) == s->length);
 		new->string = Malloc(s->length + 1);
-		strncpy(new->string, s->string, s->length + 1);
+		strncpy(new->string, s->string, s->length + 1); /* copies NULL*/
 	}
 	return new;
 }
 
-
+/*
+ * Return a pointer to the string portion of the String.  Result may be NULL.
+ */
 char *
 get_String(String s)
 {
@@ -95,61 +117,56 @@ get_String(String s)
 	return s->string;
 }
 
+/*
+ * Return the nth byte of String.
+ */
 unsigned char 
-byte_String(String s, int offset)
+byte_String(String s, int n)
 {
-	assert( s != NULL );
+	assert(s != NULL);
 	assert(s->magic == STRING_MAGIC);
-	assert( (offset >= 0) && (offset < s->length) );
-	return s->string[offset];
+	assert(n >= 0 && n < s->length);
+	return s->string[n];
 }
 
+/*
+ * Return the length of String (not including NULL).
+ */
 int 
 length_String(String s)
 {
-	assert( s != NULL );
+	assert(s != NULL);
 	assert(s->magic == STRING_MAGIC);
 	return s->length;
 }
 
+/*
+ * Return TRUE if string is empty.
+ */
 bool
 empty_String(String s)
 {
-	assert( s != NULL );
+	assert(s != NULL);
 	assert(s->magic == STRING_MAGIC);
-	return (s->string == NULL );
+	return (s->string == NULL);
 }
 
-void
-free_String(void *str)
-{
-	String s = str;
-
-	if( s != NULL )
-	{
-		assert(s->magic == STRING_MAGIC);
-		if( s->string != NULL )
-		{
-			Free(s->string);
-			s->string = NULL;
-		}
-		Free(s);
-	}
-}
-
+/*
+ * Return TRUE if String 's' is equal to character string 'cs'.
+ */
 bool
 match_String(String s, char *cs)
 {
 	int len;
-	int n;
 
 	assert(s != NULL);
 	assert(s->magic == STRING_MAGIC);
+	assert(cs != NULL);
 
 	len = strlen(cs);
-	if(len != s->length) 
+	if (len != s->length) 
 		return FALSE;
-	if( (n = strncmp(s->string, cs, len)) == 0 ) 
+	if (strncmp(s->string, cs, len) == 0) 
 		return TRUE;
 	return FALSE;
 }

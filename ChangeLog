@@ -86,3 +86,6 @@
 	* Remove --soft option and always warn if plug=on and node=off.
 	* Removed duplicate hostlist handling from pm_string.c.
 	* Added powerman init script
+
+2002-08-02 garlick
+	* A bit more cleanup in pm_string.c.
