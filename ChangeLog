@@ -1,4 +1,8 @@
 2002-10-02 garlick
+  * Fixed memory leak in config parsing.  Memory was being malloc'ed
+    for each line in the config file as it was parsed; pointers to this
+    memory were not preserved and the memory was never free'd.  These
+    pointers are now tracked and free'd after scanning completes. (behlendo)
 	* Changed protocol so query-status is now status and requires an
 	  argument, and query-nodes is now nodes.
 	* No more server action queue.

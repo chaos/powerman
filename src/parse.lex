@@ -50,6 +50,8 @@ static char *filename[MAX_INCLUDE_DEPTH];
 static int include_stack_ptr = 0;
 static char string_buf[MAX_BUF];
 static char *string_buf_ptr;
+static List line_ptrs;
+
 %}
 /* Lex Options */
 %option nounput
@@ -79,6 +81,7 @@ static char *string_buf_ptr;
 		*string_buf_ptr = '\0';
 		len = strlen(string_buf);
 		yylval = Malloc(len + 1);
+    list_append(line_ptrs, yylval);
 		strncpy(yylval, string_buf, len);
 		yylval[len] = '\0';
 		return TOK_STRING_VAL; 
@@ -243,6 +246,24 @@ include                        BEGIN(lex_incl);
 
 %%
 
+int
+scanner_line(void)
+{
+	return linenum[include_stack_ptr];
+}
+
+void
+scanner_line_destroy(char *ptr)
+{
+  Free(ptr);
+}
+
+char *
+scanner_file(void)
+{
+	return filename[include_stack_ptr];
+}
+
 void
 scanner_init(char *filename0)
 {
@@ -253,6 +274,7 @@ scanner_init(char *filename0)
 		filename[i] = NULL;
 	}
 	filename[0] = Strdup(filename0);
+  line_ptrs = list_create((ListDelF)scanner_line_destroy);
 }
 
 void
@@ -264,16 +286,7 @@ scanner_fini(void)
 		if (filename[i] != NULL)
 			Free(filename[i]);
 	}
+
+  list_destroy(line_ptrs);
 }
 
-int
-scanner_line(void)
-{
-	return linenum[include_stack_ptr];
-}
-
-char *
-scanner_file(void)
-{
-	return filename[include_stack_ptr];
-}

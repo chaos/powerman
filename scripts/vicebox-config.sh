@@ -20,9 +20,7 @@ echo "#!/bin/bash"                           >$PM_SCRIPT
 echo "include \"/etc/powerman/vicebox.dev\"" >$PM_CONFIG
 echo ""                                     >>$PM_CONFIG
 echo "begin global"                         >>$PM_CONFIG
-echo "  client listener port \"10101\""     >>$PM_CONFIG
-echo "  timeout interval \"0.1\""           >>$PM_CONFIG
-echo "  update interval \"100.0\""          >>$PM_CONFIG
+echo "  client listener port 10101"         >>$PM_CONFIG
 echo "end global"                           >>$PM_CONFIG
 echo ""                                     >>$PM_CONFIG
 
@@ -53,7 +51,7 @@ while [ $CUR_SIZE1 -lt $MAX_SIZE ]; do
 done
 
 echo "echo \"Started $MAX_SIZE viceboxs\""              >>$VICE_SCRIPT
-echo "$PM_PATH/powermand -f -c $PM_CONFIG --telemetry"  >>$PM_SCRIPT
+echo "$PM_PATH/powermand -f -c $PM_CONFIG"              >>$PM_SCRIPT
 echo "end nodes"                                        >>$PM_CONFIG
 
 chmod 755 $VICE_SCRIPT
