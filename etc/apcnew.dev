@@ -4,7 +4,11 @@
 #
 # APC MasterSwitch Plus 
 #
-# Firmware: APP v2.2.0 / AOS v3.0.3
+# Firmware rev may not be the best indicator of whether you need "apc"
+# or "apcnew" scripts.  We have two data points for "apcnew":
+#
+# - Firmware: APP v2.2.0 / AOS v3.0.3
+# - Firmware: APP v2.0.2 / AOS v2.5.3
 #
 specification "apcnew" {
 	timeout 	10  

@@ -1,3 +1,9 @@
+2003-03-19 Jim Garlick <garlick@llnl.gov>
+   
+    * etc/apc.dev, etc/apcnew.dev: changed comments about firmware revs
+    supported by each APC script variant per report by Zach Brown
+    <zab@clusterfs.com>.
+    
 2003-03-17 Albert Chu <chu11@llnl.gov>
     
     * etc/ipmipower.dev: Updated regex with new possible output and

@@ -1,3 +1,7 @@
+/*
+ * Test driver for pluglist module.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
