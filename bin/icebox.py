@@ -86,10 +86,7 @@ class PortClass:
         good_response = 0
         while (not good_response and (retry_count < 10)):
             retry_count = retry_count + 1
-            delay = 0.1
-            if (setting):
-                delay = self.PORT_DELAY
-            response = pm_utils.prompt(target, delay)
+            response = pm_utils.prompt(target)
             if(response == ''):
                 continue
             if (setting):
@@ -113,7 +110,9 @@ class PortClass:
                 self.node.mark("%s:%s" % (self.node.name, temps))
         if (not good_response):
             pm_utils.exit_error(21, self.name + ",box " + box.name)
-
+        if (setting):
+            time.sleep(self.PORT_DELAY)
+            
 class BoxClass:
     "Class definition for an icebox"
     name             = ""
@@ -122,9 +121,6 @@ class BoxClass:
     # Setting BOX_DELAY to 3.5 seconds results in always having exactly
     # one "ERROR" reply before success.
     BOX_DELAY        = 4.0
-    # negative delay means "return immediately" with status "OK", i.e.
-    # don't wait and don't read().  Thisis only for icebox reboots.
-    REBOOT_DELAY        = -1.0
 
     def __init__(self, name):
         "Box class initialization"
@@ -178,13 +174,7 @@ class BoxClass:
             good_response = 0
             while (not (good_response == 10) and (retry_count < 10)):
                 retry_count = retry_count + 1
-                delay = 0.1
-                if (setting):
-                    if (com == 'rb'):
-                        delay = self.REBOOT_DELAY
-                    else:
-                        delay = self.BOX_DELAY
-                response = pm_utils.prompt(target, delay)
+                response = pm_utils.prompt(target)
                 if(response == ''):
                     continue
                 if (setting):
@@ -232,6 +222,10 @@ class BoxClass:
                         # pm_utils.log("now unmark %s" % port.node.name)
             else:
                 pm_utils.exit_error(21, "box " + self.name)
+            delay = 0.1
+            if (setting):
+                if (com == 'rb'):
+                    time.sleep(self.BOX_DELAY)
         else:
             # (num_requested != self.ICEBOX_SIZE):
             for port_name in self.ports.keys():
