@@ -15,6 +15,7 @@ import fcntl, FCNTL
 import time
 import signal
 import pm_utils, pm_classes
+import termios, TERMIOS
 
 class NodeDataClass:
     "Class definition for icebox attached nodes"
@@ -49,7 +50,7 @@ class PortClass:
         self.name      = port_name
         self.node      = node
         
-    def do_command(self, box, f):
+    def do_command(self, box, tty):
         if (not self.node.is_marked()):
             return
         # This will suppress doing a command to a node twice
@@ -83,23 +84,8 @@ class PortClass:
         retry_count = 0
         good_response = 0
         while (not good_response and (retry_count < 10)):
-            pm_utils.log("say:  " + target)
-            f.write(target + '\n')
-            if(setting):
-                time.sleep(self.PORT_DELAY)
-            signal.alarm(1)
-            response = f.readline()
-            signal.alarm(0)
-            response = response[:-1]
-            if (response[-1:] == '\r'):
-                response = response[:-1]
-            else:
-                pm_utils.log("Box " + box.name + " needs its firmware updated")
-                signal.alarm(1)
-                f.readline()
-                signal.alarm(0)
             retry_count = retry_count + 1
-            pm_utils.log("hear:  " + response)
+            response = pm_utils.prompt(tty, target, self.PORT_DELAY)
             if(response == ''):
                 continue
             if (setting):
@@ -122,14 +108,14 @@ class PortClass:
                 temps = val
                 self.node.mark("%s:%s", (self.node.name, temps))
         if (not good_response):
-            pm_utils.exit_error(21, self.name)
+            pm_utils.exit_error(21, self.name + ",box " + box.name)
 
 class BoxClass:
     "Class definition for an icebox"
     name             = ""
     ports            = {}
     ICEBOX_SIZE      = 10
-    BOX_DELAY        = 0.1
+    BOX_DELAY        = 5.0
 
     def __init__(self, name):
         "Box class initialization"
@@ -141,7 +127,7 @@ class BoxClass:
         port = PortClass(node)
         self.ports[port.name] = port
 
-    def do_command(self, f):
+    def do_command(self, tty):
         num_requested = 0
         req = ""
         for port_name in self.ports.keys():
@@ -178,24 +164,9 @@ class BoxClass:
             target = 'c' + self.name + com
             retry_count = 0
             good_response = 0
-            while (not good_response and (retry_count < 10)):
-                pm_utils.log("say:  " + target)
-                f.write(target + '\n')
-                if((com == 'ph') or (com == 'pl') or (com == 'rp')):
-                    time.sleep(self.BOX_DELAY)
-                signal.alarm(1)
-                response = f.readline()
-                signal.alarm(0)
-                response = response[:-1]
-                if (response[-1:] == '\r'):
-                    response = response[:-1]
-                else:
-                    pm_utils.log("box " + str(self.name) + " needs its firmware updated")
-                    signal.alarm(1)
-                    f.readline()
-                    signal.alarm(0)
+            while (not (good_response == 10) and (retry_count < 10)):
                 retry_count = retry_count + 1
-                pm_utils.log("hear:  " + response)
+                response = pm_utils.prompt(tty, target, self.BOX_DELAY)
                 if(response == ''):
                     continue
                 if (setting):
@@ -221,48 +192,84 @@ class BoxClass:
                         port = self.ports[port_name]
                     except KeyError:
                         continue
-                    nm = port.node.name
-                    good_response = 1
-                    if (com == 'ns'):
-                        state = val
-                        port.node.state = state
-                        if (((state == '0') and reverse) or ((state == '1') and not reverse)):
-                            port.node.mark(nm)
-                    elif((com == 'ts') or (com == 'tsf')):
-                        temps = val
-                        port.node.mark("%s:%s" % (nm,temps))
+                    if(not port.node.is_marked()):
+                        good_response = good_response + 1
+                        nm = port.node.name
+                        if (com == 'ns'):
+                            state = val
+                            port.node.state = state
+                            if (((state == '0') and reverse) or ((state == '1') and not reverse)):
+                                port.node.mark(nm)
+                            else:
+                                port.node.mark("skip")
+                        elif((com == 'ts') or (com == 'tsf')):
+                            temps = val
+                            port.node.mark("%s:%s" % (nm,temps))
+            if (good_response == 10):
+                for port_name in self.ports.keys():
+                    port = self.ports[port_name]
+                    if (port.node.message == "skip"):
+                        port.node.unmark()
+            else:
+                pm_utils.exit_error(21, "box " + self.name)
         else:
             # (num_requested != self.ICEBOX_SIZE):
             for port_name in self.ports.keys():
                 port = self.ports[port_name]
-                port.do_command(self, f)
+                port.do_command(self, tty)
 
 class TtyClass:
     "Class definition for a tty with icebox(es) attached"
     name            = ""
     boxes           = {}
+    prev_attrs = None
 
     def __init__(self, name):
         "Tty class initialization"
         self.name            = name
         self.boxes           = {}
+        self.prev_attrs = None
 
     def do_command(self):
         # print "Doing tty command", com
         try:
-            f = open(self.name, 'r+')
+            # I was using this but I'd like to get the low level acces
+            # so I can set the flags
+            # tty = open(self.name, 'r+')
+            tty = os.open(self.name, os.O_RDWR | os.O_SYNC, 0)
         except IOError:
             pm_utils.exit_error(18, self.name)
         try:
-            fcntl.lockf(f.fileno(), FCNTL.LOCK_EX | FCNTL.LOCK_NB)
+            fcntl.lockf(tty, FCNTL.LOCK_EX | FCNTL.LOCK_NB)
         except IOError:
             pm_utils.exit_error(19, self.name)
+        try:
+            start_attrs = termios.tcgetattr(tty)
+        except IOError:
+            pm_utils.exit_error(22, self.name)
+        new_attrs = start_attrs[:]
+        new_attrs[0] = TERMIOS.IGNBRK | TERMIOS.IGNPAR | TERMIOS.INPCK
+        new_attrs[1] = 0
+        new_attrs[2] = TERMIOS.CSIZE | TERMIOS.CREAD | TERMIOS.CLOCAL
+        new_attrs[3] = 0
+
+        try:
+            termios.tcsetattr(tty, TERMIOS.TCSANOW, new_attrs)
+        except IOError:
+            pm_utils.exit_error(23, self.name)
+
         for box_name in self.boxes.keys():
             box = self.boxes[box_name]
-            box.do_command(f)
-        fcntl.lockf(f.fileno(), FCNTL.LOCK_UN)
-        f.close()
+            box.do_command(tty)
 
+        try:
+            termios.tcsetattr(tty, TERMIOS.TCSANOW, start_attrs)
+        except IOError:
+            pm_utils.exit_error(24, self.name)
+        fcntl.lockf(tty, FCNTL.LOCK_UN)
+        os.close(tty)
+        # end of do_command for ttys
+        
     def add(self, node):
         try:
             box_name = node.q_data.box
@@ -296,13 +303,8 @@ class SetDataClass:
 
     def do_com(self):
         "carry out the requested command on each tty line"
-        signal.signal(signal.SIGALRM, ReadTimeout)
+        pm_utils.init_alarm()
         for tty_name in self.ttys.keys():
             tty = self.ttys[tty_name]
             tty.do_command()
 
-def ReadTimeout(sig, stack):
-    pm_utils.log("Readline timed out")
-
-    
-    
