@@ -76,6 +76,7 @@ rm -rf "$RPM_BUILD_ROOT"
 %doc TOUR.SH
 /usr/lib/powerman/bin
 /usr/lib/powerman/lib
+/usr/lib/powerman/log
 /usr/man/man1/digi.1*
 /usr/man/man1/etherwake.1*
 /usr/man/man1/icebox.1*
