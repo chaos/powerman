@@ -57,7 +57,8 @@ static int _match_client(Client * client, void *key);
 static Client *_find_client(int client_id);
 static hostlist_t _hostlist_create_validated(Client *c, char *str);
 static void _client_query_nodes_reply(Client *c);
-static void _client_query_status_reply(Client *c);
+static void _client_query_reply(Client *c);
+static void _client_query_raw_reply(Client *c);
 static void _handle_client_read(Client * c);
 static void _handle_client_write(Client * c);
 static char *_strip_whitespace(char *str);
@@ -199,6 +200,7 @@ static int _argval_ranged_string(ArgList *arglist, char *str, int len,
 	    if (arg->state == state)
 		hostlist_push(hl, arg->node);
 	}
+	list_iterator_destroy(itr);
 	if (hostlist_ranged_string(hl, len, str) != -1) 
 	    res = 0;
 	hostlist_destroy(hl);
@@ -207,9 +209,9 @@ static int _argval_ranged_string(ArgList *arglist, char *str, int len,
 }
 
 /* 
- * Reply to client request for node status.
+ * Reply to client request for plug/soft status.
  */
-static void _client_query_status_reply(Client *c)
+static void _client_query_reply(Client *c)
 {
     char on[CP_LINEMAX], off[CP_LINEMAX], unknown[CP_LINEMAX];
     ArgList *arglist = c->cmd->arglist;
@@ -223,6 +225,23 @@ static void _client_query_status_reply(Client *c)
 	_client_msg(c, CP_ERR_INTERNAL);
     else
 	_client_msg(c, CP_RSP_STATUS, on, off, unknown);
+}
+
+/* 
+ * Reply to client request for temperature/beacon status.
+ */
+static void _client_query_raw_reply(Client *c)
+{
+    ListIterator itr;
+    Arg *arg;
+
+    assert(c->cmd != NULL);
+    itr = list_iterator_create(c->cmd->arglist->argv);
+    while ((arg = list_next(itr))) {
+	_client_msg(c, CP_RSP_RAW, arg->val);
+    }
+    list_iterator_destroy(itr);
+    _client_msg(c, CP_RSP_RAW_DONE);
 }
 
 /*
@@ -254,7 +273,7 @@ static Command *_create_command(Client *c, int com, char *arg1)
      * unlink from it in _destroy_command().  If client goes away prematurely,
      * query actions still have valid pointers.
      */
-    if (cmd && (cmd->com == PM_UPDATE_PLUGS || cmd->com == PM_UPDATE_NODES)) {
+    if (cmd && (cmd->com == PM_STATUS_PLUGS || cmd->com == PM_STATUS_NODES)) {
 	if (cmd->hl)
 	    cmd->arglist = dev_create_arglist(cmd->hl);
 	else
@@ -326,9 +345,21 @@ static void _parse_input(Client *c, char *input)
     } else if (sscanf(str, CP_RESET, arg1) == 1) {	/* reset hostlist */
 	cmd = _create_command(c, PM_RESET, arg1);
     } else if (sscanf(str, CP_STATUS, arg1) == 1) {	/* status [hostlist] */
-	cmd = _create_command(c, PM_UPDATE_PLUGS, arg1);
+	cmd = _create_command(c, PM_STATUS_PLUGS, arg1);
     } else if (!strncasecmp(str, CP_STATUS_ALL, strlen(CP_STATUS_ALL))) {
-	cmd = _create_command(c, PM_UPDATE_PLUGS, NULL);
+	cmd = _create_command(c, PM_STATUS_PLUGS, NULL);
+    } else if (sscanf(str, CP_SOFT, arg1) == 1) {	/* soft [hostlist] */
+	cmd = _create_command(c, PM_STATUS_NODES, arg1);
+    } else if (!strncasecmp(str, CP_SOFT_ALL, strlen(CP_SOFT_ALL))) {
+	cmd = _create_command(c, PM_STATUS_NODES, NULL);
+    } else if (sscanf(str, CP_TEMP, arg1) == 1) {	/* temp [hostlist] */
+	cmd = _create_command(c, PM_STATUS_TEMP, arg1);
+    } else if (!strncasecmp(str, CP_TEMP_ALL, strlen(CP_TEMP_ALL))) {
+	cmd = _create_command(c, PM_STATUS_TEMP, NULL);
+    } else if (sscanf(str, CP_BEACON, arg1) == 1) {	/* beacon [hostlist] */
+	cmd = _create_command(c, PM_STATUS_BEACON, arg1);
+    } else if (!strncasecmp(str, CP_BEACON_ALL, strlen(CP_BEACON_ALL))) {
+	cmd = _create_command(c, PM_STATUS_BEACON, NULL);
     } else {						/* error: unknown */
 	_client_msg(c, CP_ERR_UNKNOWN);
     }
@@ -378,9 +409,18 @@ static void _act_finish(int client_id, char *errfmt, char *errarg)
      * All actions completed - return final status to the client.
      */
     switch (c->cmd->com) {
-        case PM_UPDATE_PLUGS:  /* query-status */
-	    _client_query_status_reply(c);
+        case PM_STATUS_PLUGS:  /* query-status */
+	    _client_query_reply(c);
             break;
+	case PM_STATUS_NODES:
+	    _client_query_reply(c);
+	    break;
+        case PM_STATUS_TEMP:
+	    _client_query_raw_reply(c);
+	    break;
+	case PM_STATUS_BEACON:
+	    _client_query_raw_reply(c);
+	    break;
         case PM_POWER_ON:	/* on */
         case PM_POWER_OFF:	/* off */
         case PM_POWER_CYCLE:	/* cycle */
@@ -390,9 +430,6 @@ static void _act_finish(int client_id, char *errfmt, char *errarg)
 	    else
 		_client_msg(c, CP_RSP_COMPLETE);
             break;
-        case PM_UPDATE_NODES:
-        case PM_LOG_OUT:
-	case PM_LOG_IN:
         default:
             assert(FALSE);
 	    _client_msg(c, CP_ERR_INTERNAL);

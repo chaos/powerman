@@ -208,6 +208,8 @@ begin[ \t]+RESET_ALL_SCRIPT       {   return TOK_B_RESET_ALL; }
 end[ \t]+RESET_ALL_SCRIPT         {   return TOK_E_RESET_ALL; }
 begin[ \t]+PING_SCRIPT            {   return TOK_B_PING; }
 end[ \t]+PING_SCRIPT              {   return TOK_E_PING; }
+begin[ \t]+STATUS_TEMP_SCRIPT     {   return TOK_B_STATUS_TEMP; }
+end[ \t]+STATUS_TEMP_SCRIPT       {   return TOK_E_STATUS_TEMP; }
 end[ \t]+protocol[ \t]+specification   {   return TOK_E_SPEC; }
 device                            {   return TOK_DEVICE; }
 end[ \t]+global                   {   return TOK_E_GLOBAL; }

@@ -150,7 +150,7 @@ static void _prompt_loop(int num, int fd)
 		    dprintf(fd, "plug %d: %s\n", i, 
 				    dev[num].plug[i] ? "ON":"OFF");
 	    }
-	    printf("%d: stat\n", num);
+	    printf("%d: stat_soft\n", num);
 	    goto ok;
 	}
 	if (sscanf(buf, "spew %d", &n1) == 1) {	/* spew <linecount> */

@@ -1,3 +1,6 @@
+2002-10-20 garlick
+	* Added temperature support for icebox.dev.
+
 2002-10-19 garlick
 	* Fixded bug in _update_timeout where usecs were not checked for zero
 	  when testing if timer is set.

@@ -42,8 +42,8 @@
 /* Indices into script array */
 #define PM_LOG_IN           0
 #define PM_LOG_OUT          1
-#define PM_UPDATE_PLUGS     2
-#define PM_UPDATE_NODES     3
+#define PM_STATUS_PLUGS     2
+#define PM_STATUS_NODES     3
 #define PM_PING		    4
 #define PM_POWER_ON         5
 #define PM_POWER_ON_ALL	    6
@@ -53,8 +53,10 @@
 #define PM_POWER_CYCLE_ALL  10
 #define PM_RESET            11
 #define PM_RESET_ALL        12
+#define PM_STATUS_TEMP      13
+#define PM_STATUS_BEACON    14
 /* count of scripts above */
-#define NUM_SCRIPTS	    13
+#define NUM_SCRIPTS	    15
 
 /*
  * Script element (send, expect, or delay).

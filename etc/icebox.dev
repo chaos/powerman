@@ -49,6 +49,20 @@ begin protocol specification
 			map $9 "9"
 			map $10 "10"
 	end STATUS_SOFT_SCRIPT
+	begin STATUS_TEMP_SCRIPT
+		send "ts *\r\n"
+		expect "N1:([0-9,]+) N2:([0-9,]+) N3:([0-9,]+) N4:([0-9,]+) N5:([0-9,]+) N6:([0-9,]+) N7:([0-9,]+) N8:([0-9,]+) N9:([0-9,]+) N10:([0-9,]+)[[:space:]]*\r\n"
+			map $1 "1"
+			map $2 "2"
+			map $3 "3"
+			map $4 "4"
+			map $5 "5"
+			map $6 "6"
+			map $7 "7"
+			map $8 "8"
+			map $9 "9"
+			map $10 "10"
+	end STATUS_TEMP_SCRIPT
 	begin ON_SCRIPT
 		send "ph %s\r\n"
 		expect "OK\r\n"

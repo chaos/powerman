@@ -81,8 +81,8 @@ static void _disconnect(Device * dev);
 static bool _process_expect(Device * dev);
 static bool _process_send(Device * dev);
 static bool _process_delay(Device * dev, struct timeval *timeout);
-static void _set_argval_onoff(ArgList *arglist, char *node, char *val,
-		ArgState state);
+static void _set_argval_state(ArgList *arglist, char *node, ArgState state);
+static void _set_argval(ArgList *arglist, char *node, char *val);
 static void _match_subexpressions(Device *dev, Action *act, char *expect);
 static int _match_name(Device * dev, void *key);
 static void _handle_read(Device * dev);
@@ -485,8 +485,10 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
 		break;
 	    }
 	    /*FALLTHROUGH*/
-        case PM_UPDATE_PLUGS:
-        case PM_UPDATE_NODES:
+        case PM_STATUS_PLUGS:
+        case PM_STATUS_NODES:
+        case PM_STATUS_TEMP:
+        case PM_STATUS_BEACON:
         case PM_LOG_OUT:
 	case PM_PING:
             act = _create_action(dev, com, NULL, fun, client_id, arglist);
@@ -900,7 +902,10 @@ static void _match_subexpressions(Device *dev, Action *act, char *expect)
     int eflags = 0;
     int n;
 
-    if (act->com != PM_UPDATE_PLUGS)
+    if (	    act->com != PM_STATUS_PLUGS 
+		    && act->com != PM_STATUS_NODES
+		    && act->com != PM_STATUS_TEMP 
+		    && act->com != PM_STATUS_BEACON)
 	return;
     if (act->cur->s_or_e.expect.map == NULL)
 	return;
@@ -922,9 +927,10 @@ static void _match_subexpressions(Device *dev, Action *act, char *expect)
 	str = _copy_pmatch(expect, pmatch[interp->match_pos]);
 
 	if (_findregex(&dev->on_re, str, strlen(str)))
-	    _set_argval_onoff(act->arglist, interp->node, str, ST_ON);
+	    _set_argval_state(act->arglist, interp->node, ST_ON);
 	if (_findregex(&dev->off_re, str, strlen(str)))
-	    _set_argval_onoff(act->arglist, interp->node, str, ST_OFF);
+	    _set_argval_state(act->arglist, interp->node, ST_OFF);
+	_set_argval(act->arglist, interp->node, str);
 
 	Free(str);
     }
@@ -1089,15 +1095,23 @@ static int _arg_match(Arg *arg, void *key)
 /*
  * Set the value of the argument with key = node.
  */
-static void _set_argval_onoff(ArgList *arglist, char *node, char *val, 
-		ArgState state)
+static void _set_argval_state(ArgList *arglist, char *node, ArgState state)
 {
     Arg *arg;
 
-    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node))) {
+    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node)))
 	arg->state = state;
+}
+
+/*
+ * Set the value of the argument with key = node.
+ */
+static void _set_argval(ArgList *arglist, char *node, char *val)
+{
+    Arg *arg;
+
+    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node)))
 	arg->val = Strdup(val);
-    }
 }
 
 static void _process_ping(Device *dev, struct timeval *timeout)

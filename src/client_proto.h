@@ -55,6 +55,12 @@
 #define CP_NODES	"nodes"
 #define CP_STATUS	"status %s"
 #define CP_STATUS_ALL	"status"
+#define CP_SOFT		"soft %s"
+#define CP_SOFT_ALL	"soft"
+#define CP_TEMP		"temp %s"
+#define CP_TEMP_ALL	"temp"
+#define CP_BEACON	"beacon %s"
+#define CP_BEACON_ALL	"beacon"
 
 /* 
  * Responses - 
@@ -77,15 +83,20 @@
 	"102 unknown: %s" 				CP_EOL	/* hostlists */
 #define CP_RSP_QUIT	"103 Goodbye"			CP_EOL
 #define CP_RSP_HELP 	\
-	"304 nodes                - query node list" 	CP_EOL	\
-	"304 status [<nodes>]     - query power status"	CP_EOL	\
-	"304 on <nodes>           - power on" 		CP_EOL	\
-	"304 off <nodes>          - power off"		CP_EOL	\
-	"304 cycle <nodes>        - power cycle"	CP_EOL	\
-	"304 reset <nodes>        - hardware reset (if available)" CP_EOL \
-	"304 help                 - display help"	CP_EOL	\
-	"104 quit                 - logout"		CP_EOL
+	"304 nodes            - query node list" 	CP_EOL	\
+	"304 status [<nodes>] - query power status"	CP_EOL	\
+	"304 on <nodes>       - power on" 		CP_EOL	\
+	"304 off <nodes>      - power off"		CP_EOL	\
+	"304 cycle <nodes>    - power cycle"	CP_EOL	\
+	"304 reset <nodes>    - hardware reset (if available)" CP_EOL \
+	"304 soft [<nodes>]   - query soft power status (if available)" CP_EOL \
+	"304 temp [<nodes>]   - query temperature (if available)" CP_EOL \
+	"304 beacon [<nodes>] - query beacon status (if available)" CP_EOL \
+	"304 help             - display help"	CP_EOL	\
+	"104 quit             - logout"		CP_EOL
 #define CP_RSP_COMPLETE	"105 Command completed successfully" CP_EOL
+#define CP_RSP_RAW	"305 %s"			CP_EOL
+#define CP_RSP_RAW_DONE "106 Query complete"		CP_EOL
 
 /* failure */
 #define CP_ERR_FAILURE	"200 Failure"			CP_EOL /* generic */
