@@ -123,4 +123,13 @@
 #	2001-10-08
 #	          Added the '-R' option to reset power control hardware.
 #	Applicable to iceboxes only at this point.
+#	The "working collective" environment variable is "WCOLL".  
+#	I had previously been looking for "W_COL".
+#
+#	2001-10-09
+#	          Revert to line buffered I/O.  As per Linux Networks   
+#	suggestion that line noise may corrupt the icebox buffer always  
+#	start a query with an initial '\r\n' to clear the buffer first.
+#	Push tty openning and locking code into pm_utils.
+#	
 ####################################################################

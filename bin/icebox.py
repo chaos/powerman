@@ -51,7 +51,7 @@ class PortClass:
         self.name      = port_name
         self.node      = node
         
-    def do_command(self, box, tty):
+    def do_command(self, box):
         if (not self.node.is_marked()):
             return
         # This will suppress doing a command to a node twice
@@ -89,7 +89,7 @@ class PortClass:
             delay = 0.1
             if (setting):
                 delay = self.PORT_DELAY
-            response = pm_utils.prompt(tty, target, delay)
+            response = pm_utils.prompt(target, delay)
             if(response == ''):
                 continue
             if (setting):
@@ -136,7 +136,7 @@ class BoxClass:
         port = PortClass(node)
         self.ports[port.name] = port
 
-    def do_command(self, tty):
+    def do_command(self):
         num_requested = 0
         req = ""
         for port_name in self.ports.keys():
@@ -184,7 +184,7 @@ class BoxClass:
                         delay = self.REBOOT_DELAY
                     else:
                         delay = self.BOX_DELAY
-                response = pm_utils.prompt(tty, target, delay)
+                response = pm_utils.prompt(target, delay)
                 if(response == ''):
                     continue
                 if (setting):
@@ -236,12 +236,15 @@ class BoxClass:
             # (num_requested != self.ICEBOX_SIZE):
             for port_name in self.ports.keys():
                 port = self.ports[port_name]
-                port.do_command(self, tty)
+                port.do_command(self)
 
-class TtyClass:
+class TtyClass(pm_utils.TtyClass):
     "Class definition for a tty with icebox(es) attached"
     name       = ""
     boxes      = {}
+    prev_attrs = None
+    attrs      = None
+    device     = None
     locked     = 0
 
     def __init__(self, name):
@@ -249,58 +252,20 @@ class TtyClass:
         self.name       = name
         self.boxes      = {}
         self.prev_attrs = None
+        self.attrs[0]   = TERMIOS.IGNBRK | TERMIOS.IGNPAR | TERMIOS.INPCK
+        self.attrs[1]   = 0
+        self.attrs[2]   = TERMIOS.CSIZE | TERMIOS.CREAD | TERMIOS.CLOCAL
+        self.attrs[3]   = 0
+        self.device     = None
         self.locked     = 0
 
     def do_command(self):
         # print "Doing tty command", com
-        try:
-            # I was using this but I'd like to get the low level acces
-            # so I can set the flags
-            # tty = open(self.name, 'r+')
-            tty = os.open(self.name, os.O_RDWR | os.O_SYNC, 0)
-        except IOError:
-            pm_utils.exit_error(18, self.name)
-            # This code was added in suport of conman's reset function
-            # which will spawn n parallel calls to powerman with a
-            # single node each
-        retry_count = 60
-        while (not self.locked and retry_count):
-            retry_count = retry_count - 1
-            try:
-                fcntl.lockf(tty, FCNTL.LOCK_EX | FCNTL.LOCK_NB)
-                self.locked = 1
-            except IOError:
-                if (retry_count):
-                    sleep(random.random(0.25, 1.0))
-                else:
-                    pm_utils.exit_error(19, self.name)
-        try:
-            start_attrs = termios.tcgetattr(tty)
-        except IOError:
-            pm_utils.exit_error(22, self.name)
-        new_attrs = start_attrs[:]
-        new_attrs[0] = TERMIOS.IGNBRK | TERMIOS.IGNPAR | TERMIOS.INPCK
-        new_attrs[1] = 0
-        new_attrs[2] = TERMIOS.CSIZE | TERMIOS.CREAD | TERMIOS.CLOCAL
-        new_attrs[3] = 0
-
-        try:
-            termios.tcsetattr(tty, TERMIOS.TCSANOW, new_attrs)
-        except IOError:
-            pm_utils.exit_error(23, self.name)
-
+        pm_utils.init_tty(self)
         for box_name in self.boxes.keys():
             box = self.boxes[box_name]
-            box.do_command(tty)
-
-        try:
-            termios.tcsetattr(tty, TERMIOS.TCSANOW, start_attrs)
-        except IOError:
-            pm_utils.exit_error(24, self.name)
-        self.locked = 0
-        fcntl.lockf(tty, FCNTL.LOCK_UN)
-        os.close(tty)
-        # end of do_command for ttys
+            box.do_command()
+        pm_utils.fini_tty(self)
         
     def add(self, node):
         try:

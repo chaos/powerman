@@ -12,8 +12,11 @@ import commands
 import string
 import getopt
 import os
+import fcntl, FCNTL
 import time
 import signal
+import termios, TERMIOS
+import random
 
 error_msg = {}
 error_msg[1]  = "[1]You must be root to run this"
@@ -109,23 +112,69 @@ def node_cmp(n1, n2):
     "comparison function for sorting nodes"
     return(cmp(n1.index, n2.index))
 
-def prompt(fd, string, delay):
+tty = None
+def init_tty(tty_struct):
+    global tty
+
+    try:
+        tty = open(tty_struct.tty_name, 'r+')
+    except IOError:
+        exit_error(18, tty_struct.name)
+    tty_struct.device = tty
+    # This code was added in suport of conman's reset function
+    # which will spawn n parallel calls to powerman with a
+    # single node each
+    retry_count = 60
+    while (not tty_struct.locked and retry_count):
+        retry_count = retry_count - 1
+        try:
+            fcntl.lockf(tty.fileno(), FCNTL.LOCK_EX | FCNTL.LOCK_NB)
+            tty_struct.locked = 1
+        except IOError:
+            if (retry_count):
+                sleep(random.random(0.25, 1.0))
+            else:
+                exit_error(19, tty_struct.name)
+    try:
+        tty_struct.prev_attrs = termios.tcgetattr(tty.fileno())
+    except IOError:
+        exit_error(22, tty_struct.name)
+    tty_struct.attrs = tty_struct.prev_attrs[:]
+    tty_struct.attrs[0] = TERMIOS.IGNBRK | TERMIOS.IGNPAR | TERMIOS.INPCK
+    tty_struct.attrs[1] = 0
+    tty_struct.attrs[2] = TERMIOS.CSIZE | TERMIOS.CREAD | TERMIOS.CLOCAL
+    tty_struct.attrs[3] = 0
+    try:
+        termios.tcsetattr(tty.fileno(), TERMIOS.TCSANOW, tty_struct.attrs)
+    except IOError:
+        exit_error(23, tty_struct.name)
+
+def fini_tty(tty_struct):
+    try:
+        termios.tcsetattr(tty_struct.device.fileno(), TERMIOS.TCSANOW, tty_struct.prev_attrs)
+    except IOError:
+        exit_error(24, tty_struct.name)
+    fcntl.lockf(tty_struct.device.fileno(), FCNTL.LOCK_UN)
+    tty_struct.device.close()
+    
+
+def prompt(string):
+    global tty
+    
     log("say:  " + string)
-    os.write(fd, string + '\r\n')
-    if (delay > 0.0):
-        time.sleep(delay)
-    elif (delay < 0.0):
+    tty.write('\r\n' + string + '\r\n')
+    tty.flush()
+    if (string[-2:] == "rb"):
         return "OK"
     done = 0
     retry_count = 0
     response = ""
-    # this retry should only be relevant if the read happens to soon
-    # and the reply hadn't arrived yet.  Give up after two failures.
-    while (not done and (retry_count < 1)):
+    extra = ""
+    while (not done and (retry_count < 2)):
         retry_count = retry_count + 1
         signal.alarm(READ_TIMEOUT)
         try:
-            response = response + os.read(fd, BUF_SIZE)
+            response = tty.readline()
         except OSError:
             pass
         signal.alarm(ALARM_OFF)
@@ -137,16 +186,15 @@ def prompt(fd, string, delay):
         if (response[-1:] == '\r'):
             response = response[:-1]
         else:
-            log("icebox needs its firmware updated")
+            log("icebox reply did not end in \\r\\n")
             signal.alarm(READ_TIMEOUT)
-            extra = ''
             try:
-                extra = os.read(fd, BUF_SIZE)
+                extra = tty.readline()
             except OSError:
                 pass
             signal.alarm(ALARM_OFF)
             trace(extra)
-    log("hear:  " + response)
+    log("hear:  " + response + extra)
     return response
 
 def init_alarm():
@@ -154,8 +202,7 @@ def init_alarm():
 
 
 def ReadTimeout(sig, stack):
-    log("timed out in os.read")
+    log("timed out in readline")
 
-BUF_SIZE     = 1024
 ALARM_OFF    = 0
 READ_TIMEOUT = 1

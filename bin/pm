@@ -73,7 +73,7 @@ except KeyError:
     pass
 
 try:
-    test = os.environ['W_COL']
+    test = os.environ['WCOLL']
     if (os.path.isfile(test)):
         work_col = test
 except KeyError:
