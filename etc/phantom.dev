@@ -6,7 +6,7 @@ specification  "phantom" {
 	type 		SERIAL
 	timeout 	5 
 
-	plug name { "1" }	# place holder - value not used
+	plug name { "1" }
 
 	script login {
 		expect "Choose a command"
