@@ -25,18 +25,13 @@
 #   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 ####################################################################
  
-%define name    powerman
-%define version 1.0.0
-%define release 1
-
-Name: %name
-Version: %version
-Release: %release
+Name: 
+Version: 
+Release: 
 Summary: PowerMan - Power to the Cluster 
-#URL: FOO
 Group: Applications/System
-License:	GPL
-URL:		http://www.llnl.gov/linux/powerman/
+License: GPL
+URL: http://www.llnl.gov/linux/powerman/
 
 BuildRoot: %{_tmppath}/%{name}-%{version}
 
@@ -57,7 +52,7 @@ cluster properties as part of its negotiation with the server.
 %setup
 
 %build
-make
+make NAME=%{name} VERSION=%{version} RELEASE=%{release} 
 
 %install
 rm -rf "$RPM_BUILD_ROOT"
@@ -92,8 +87,6 @@ if [ "$1" = 0 ]; then
     fi
   fi
 fi
-
-
 
 %files
 %defattr(0644,root,root)

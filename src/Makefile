@@ -8,7 +8,12 @@ MAKE=		/usr/bin/make
 LEX=		/usr/bin/flex
 YACC=		/usr/bin/bison
 
-DEFS=		-DHAVE_CONFIG_H -DPOWERMAN_VERSION=\"$(POWERMAN_VERSION)\"
+VERSTR=		$(shell if test -n "$(NAME)"; then \
+		  if test -n "$(RELEASE)"; then \
+                    echo $(NAME)-$(VERSION)-$(RELEASE); \
+                  else echo $(NAME)-$(VERSION); fi; fi)
+
+DEFS=		-DHAVE_CONFIG_H -DPOWERMAN_VERSION=\"$(VERSTR)\"
 #DEFS+=		-DNDEBUG
 CFLAGS= 	-g -Wall $(DEFS)
 

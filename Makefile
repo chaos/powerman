@@ -25,10 +25,9 @@
 #   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 ####################################################################
 
-PROJECT= powerman
+NAME= $(shell perl -ne 'print,exit if s/^\s*NAME:\s*(\S*).*/\1/i' META)
 VERSION = $(shell perl -ne 'print,exit if s/^\s*VERSION:\s*(\S*).*/\1/i' META)
 RELEASE = $(shell perl -ne 'print,exit if s/^\s*RELEASE:\s*(\S*).*/\1/i' META)
-PACKAGE= powerman
 SHELL=   /bin/sh
 MAKE=    /usr/bin/make
 CC=      gcc
@@ -49,8 +48,8 @@ sbindir		= 	${exec_prefix}/sbin
 libdir		=	${exec_prefix}/lib
 mandir		=	$(prefix)/man
 etcdir		=	/etc
-packagedir	=	${etcdir}/${PACKAGE}
-piddir		=	/var/run/${PACKAGE}
+packagedir	=	${etcdir}/${NAME}
+piddir		=	/var/run/${NAME}
 docdir		=	${prefix}/share/doc
 # I've removed the doc and packagedoc variables and their install commands.
 # I'm pretty sure the the %doc directive in the rpm spec file does that for 
@@ -59,7 +58,7 @@ docdir		=	${prefix}/share/doc
 all: progs tests
 
 progs : 
-	$(MAKE) -C src POWERMAN_VERSION=$(PROJECT)-$(VERSION)
+	$(MAKE) -C src NAME=$(NAME) VERSION=$(VERSION) RELEASE=$(RELEASE)
 
 tests : 
 	$(MAKE) -C test
