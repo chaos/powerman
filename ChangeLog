@@ -1,4 +1,8 @@
 2002-10-06 garlick
+	* Updated hostlist.[ch] to latest from the pdsh sources.
+	* Tagged powerman-1-0-9.
+
+2002-10-06 garlick
 	* _process_send can now time out.
 	* Clean up device.c select handling a bit to make it clear why actions
 	  will not time out if device is not connected. 
