@@ -1,8 +1,15 @@
-2003-05-28 Jim Garlick <garlick@llnl.gov>
+2004-09-21 Albert Chu <chu11@llnl.gov>
+
+    * ChangeLog: Fixed dates in ChangeLog.  It's 2004 not 2003.
+
+    * examples/powerman.conf-thundered: Fix typo in example and added a
+      few notes.
+
+2004-05-28 Jim Garlick <garlick@llnl.gov>
 
     * examples: added a few example powerman.conf files per Robin's request.
 
-2003-03-19 Jim Garlick <garlick@llnl.gov>
+2004-03-19 Jim Garlick <garlick@llnl.gov>
    
     * etc/apc.dev, etc/apcnew.dev: changed comments about firmware revs
     supported by each APC script variant per report by Zach Brown
@@ -10,16 +17,16 @@
 
     * : tag powerman-1-0-20
     
-2003-03-17 Albert Chu <chu11@llnl.gov>
+2004-03-17 Albert Chu <chu11@llnl.gov>
     
     * etc/ipmipower.dev: Updated regex with new possible output and
     fixed regex bug.
 	
-2003-02-24 Jim Garlick <garlick@llnl.gov>
+2004-02-24 Jim Garlick <garlick@llnl.gov>
 
     * powerman.spec: fixed default attrs for %doc files.
 
-2003-02-19 Jim Garlick <garlick@llnl.gov>
+2004-02-19 Jim Garlick <garlick@llnl.gov>
 
     * src/pluglist.[ch]: new PlugList abstraction for lists of Plugs.
 
@@ -27,20 +34,20 @@
 
     * test/tpl.c: test driver for pluglist code.
 
-2003-02-09 Jim Garlick <garlick@llnl.gov>
+2004-02-09 Jim Garlick <garlick@llnl.gov>
 
     * src/parse.lex: fixed for gnat 323: powerman core dumps on incorrect 
     config file.
 
-2003-01-12 Jim Garlick <garlick@llnl.gov>
+2004-01-12 Jim Garlick <garlick@llnl.gov>
 
     * src/arglist.[ch], src/device.c: further cleanup of ArgList abstraction
 
-2003-01-12 Albert Chu <chu11@llnl.gov>
+2004-01-12 Albert Chu <chu11@llnl.gov>
 
     * etc/ipmipower.dev: Fixed regex typo, it should now compile.
 
-2003-01-10 Jim Garlick <garlick@llnl.gov>
+2004-01-10 Jim Garlick <garlick@llnl.gov>
 
     * src/parse.y: allow hostlists in the 'plug name' field of a node
     specification, e.g. this now works:
@@ -50,7 +57,7 @@
 
     * powerman.spec: fix test in %post scriptlet
 
-2003-01-09 Albert Chu <chu11@llnl.gov>
+2004-01-09 Albert Chu <chu11@llnl.gov>
 
     * etc/ipmipower.dev: Added additional expressions that result
     in powerman returning an unknown state.

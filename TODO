@@ -15,3 +15,6 @@
 * Redesign the device language to be more general.
 * Turn off debugging in production release
 * Clean up argument passing into and results out of scripts
+* Work in something to allow error messages when running 'pm -1' and
+  similar power control commands.  Currently, on error, powerman will
+  always output "Command Successful".

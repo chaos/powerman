@@ -14,26 +14,29 @@ tcpwrappers yes
 # part of FreeIPMI (http://www.nongnu.org/freeipmi/).
 include "/etc/powerman/ipmipower.dev"
 
-# Start 17 copies of ipmipower.  Each copy takes care of 64 nodes.  Powermand talks to 
-# each instance of ipmipower via a pty.  To powermand, ipmipower looks just like a 
-# remote power controller on a socket.  All the ugly IPMI details are hidden from Powerman.
-device "tj" "thunderipmipower" "/usr/sbin/ipmipower -h pthunderj           -w 30 -g |&"
-device "t0" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[0-63]      -w 30 -g |&"
-device "t1" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[64-127]    -w 30 -g |&"
-device "t2" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[128-191]   -w 30 -g |&"
-device "t3" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[192-255]   -w 30 -g |&"
-device "t4" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[256-319]   -w 30 -g |&"
-device "t5" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[320-383]   -w 30 -g |&"
-device "t6" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[384-447]   -w 30 -g |&"
-device "t7" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[448-511]   -w 30 -g |&"
-device "t8" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[512-575]   -w 30 -g |&"
-device "t9" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[576-639]   -w 30 -g |&"
-device "t10" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[640-703]  -w 30 -g |&"
-device "t11" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[704-767]  -w 30 -g |&"
-device "t12" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[768-831]  -w 30 -g |&"
-device "t13" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[832-895]  -w 30 -g |&"
-device "t14" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[896-959]  -w 30 -g |&"
-device "t15" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[960-1023] -w 30 -g |&"
+# Start 17 copies of ipmipower.  In this particular example, we assume NULL
+# username and password.  We also use the -g option to emulate the same behavior
+# of other powerman devices.  Each copy of ipmipower takes care of 64 nodes.
+# Powermand talks to each instance of ipmipower via a pty.  To powermand,
+# ipmipower looks just like a remote power controller on a socket.  All the
+# ugly IPMI details are hidden from Powerman.
+device "tj" "ipmipower" "/usr/sbin/ipmipower -h pthunderj           -w 30 -g |&"
+device "t0" "ipmipower" "/usr/sbin/ipmipower -h pthunder[0-63]      -w 30 -g |&"
+device "t1" "ipmipower" "/usr/sbin/ipmipower -h pthunder[64-127]    -w 30 -g |&"
+device "t2" "ipmipower" "/usr/sbin/ipmipower -h pthunder[128-191]   -w 30 -g |&"
+device "t3" "ipmipower" "/usr/sbin/ipmipower -h pthunder[192-255]   -w 30 -g |&"
+device "t4" "ipmipower" "/usr/sbin/ipmipower -h pthunder[256-319]   -w 30 -g |&"
+device "t5" "ipmipower" "/usr/sbin/ipmipower -h pthunder[320-383]   -w 30 -g |&"
+device "t6" "ipmipower" "/usr/sbin/ipmipower -h pthunder[384-447]   -w 30 -g |&"
+device "t7" "ipmipower" "/usr/sbin/ipmipower -h pthunder[448-511]   -w 30 -g |&"
+device "t8" "ipmipower" "/usr/sbin/ipmipower -h pthunder[512-575]   -w 30 -g |&"
+device "t9" "ipmipower" "/usr/sbin/ipmipower -h pthunder[576-639]   -w 30 -g |&"
+device "t10" "ipmipower" "/usr/sbin/ipmipower -h pthunder[640-703]  -w 30 -g |&"
+device "t11" "ipmipower" "/usr/sbin/ipmipower -h pthunder[704-767]  -w 30 -g |&"
+device "t12" "ipmipower" "/usr/sbin/ipmipower -h pthunder[768-831]  -w 30 -g |&"
+device "t13" "ipmipower" "/usr/sbin/ipmipower -h pthunder[832-895]  -w 30 -g |&"
+device "t14" "ipmipower" "/usr/sbin/ipmipower -h pthunder[896-959]  -w 30 -g |&"
+device "t15" "ipmipower" "/usr/sbin/ipmipower -h pthunder[960-1023] -w 30 -g |&"
 
 # The "pthunder" names passed into ipmipower as plug names are the hostnames 
 # corresponding to BMC IP addresses.  We like to refer to the nodes by their real
