@@ -59,16 +59,16 @@ static void _do_device_semantics(Device * dev, List map);
 static void _do_pmd_semantics(Device * dev, List map);
 static bool _match_regex(Device * dev, String expect);
 
-List powerman_devs = NULL;	/* FIXME: make private */
+List dev_devices = NULL;	/* FIXME: make private */
 
 void dev_init(void)
 {
-    powerman_devs = list_create((ListDelF) dev_destroy);
+    dev_devices = list_create((ListDelF) dev_destroy);
 }
 
 void dev_fini(void)
 {
-    list_destroy(powerman_devs);
+    list_destroy(dev_devices);
 }
 
 
@@ -104,7 +104,7 @@ static void _start_dev(Device * dev, bool logit)
 void dev_start_all(bool logit)
 {
     Device *dev;
-    ListIterator itr = list_iterator_create(powerman_devs);
+    ListIterator itr = list_iterator_create(dev_devices);
 
     while ((dev = list_next(itr)))
 	_start_dev(dev, logit);
@@ -1086,7 +1086,7 @@ void dev_prepfor_select(fd_set *rset, fd_set *wset, int *maxfd)
     Device *dev;
     ListIterator itr;
 
-    itr = list_iterator_create(powerman_devs);
+    itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
 	if (dev->fd < 0)
 	    continue;
@@ -1111,7 +1111,7 @@ bool dev_process_select(fd_set *rset, fd_set *wset, bool over_time)
     bool active_devs = FALSE;   /* active_devs == FALSE => Quiescent */
     bool activity;              /* activity == TRUE => scripts need service */
 
-    itr = list_iterator_create(powerman_devs);
+    itr = list_iterator_create(dev_devices);
 
     /* Device reading and writing? */
     while ((dev = list_next(itr))) {

@@ -223,8 +223,12 @@ void conf_strtotv(struct timeval *tv, char *s);
 
 void conf_init(char *filename);
 void conf_fini(void);
+
 void conf_add_spec(Spec *spec);
 Spec *conf_find_spec(char *name);
+
+void conf_addnode(Node *node);
+List conf_getnodes(void);
 
 void conf_set_select_timeout(struct timeval *tv);
 void conf_get_select_timeout(struct timeval *tv);
@@ -240,7 +244,5 @@ void conf_set_use_tcp_wrappers(bool val);
 
 int conf_get_listen_port(void);
 void conf_set_listen_port(int val);
-
-extern Cluster *conf_cluster; /* XXX make this private!!! */
 
 #endif				/* CONFIG_H */

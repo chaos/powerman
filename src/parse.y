@@ -816,7 +816,7 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 	}
     }
 
-    list_append(powerman_devs, dev);
+    list_append(dev_devices, dev);
     return s2;
 }
 
@@ -838,12 +838,10 @@ static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
     Script_El *script_el;
     Plug *plug;
 
-    assert(conf_cluster != NULL);
-    conf_cluster->num++;
     node = conf_node_create(s2);
-    list_append(conf_cluster->nodes, node);
+    conf_addnode(node);
     /* find the device controlling this nodes plug */
-    node->p_dev = list_find_first(powerman_devs, (ListFindF) dev_match, s3);
+    node->p_dev = list_find_first(dev_devices, (ListFindF) dev_match, s3);
     if( node->p_dev == NULL ) 
 	err_exit(FALSE, "failed to find device %s", s3);
     /*
@@ -876,7 +874,7 @@ static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 	node->n_dev = node->p_dev;
     } else {
 	assert(s6 != NULL);
-	node->n_dev = list_find_first(powerman_devs, (ListFindF) dev_match, s3);
+	node->n_dev = list_find_first(dev_devices, (ListFindF) dev_match, s3);
 	if( node->n_dev == NULL ) 
 	    err_exit(FALSE, "failed to find device %s", s3);
 	plug = list_find_first(node->n_dev->plugs, (ListFindF) dev_plug_match, s6);

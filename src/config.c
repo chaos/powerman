@@ -65,8 +65,7 @@ static struct timeval	conf_write_pause = { 0L, 0L };
 static struct timeval	conf_update_inter = { 0L, 0L };
 static bool		conf_use_tcp_wrap = FALSE;
 static int		conf_listen_port = NO_PORT;
-
-Cluster		       *conf_cluster = NULL; /* FIXME: make private */
+static Cluster	        *conf_cluster = NULL;
 
 /* 
  * initialize module
@@ -91,15 +90,13 @@ conf_init(char *filename)
 
     /* 
      * Call yacc parser against config file.  The parser calls support 
-     * functions below and builds:
-     * - tmp_specs	    temporary device specifications
-     * - powerman_dev	    powerman devices (instantiations of device specs)
-     * - conf_cluster	    cluster node list, mapping to plugs, etc.
-     * FIXME: need some uniform naming here
+     * functions below and builds 'dev_devices' (devices.c),
+     * 'conf_cluster', 'tmp_specs' (config.c), and various other 
+     * conf_* attributes (config.c).
      */
     parse_config_file(filename);
 
-    list_destroy(tmp_specs); /* FIXME: this triggers an assertion - why? */
+    list_destroy(tmp_specs);
     tmp_specs = NULL;
 }
 
@@ -341,6 +338,17 @@ void conf_node_destroy(Node * node)
 {
     str_destroy(node->name);
     Free(node);
+}
+
+void conf_addnode(Node *node)
+{
+    conf_cluster->num++;
+    list_append(conf_cluster->nodes, node);
+}
+
+List conf_getnodes(void)
+{
+    return conf_cluster->nodes;
 }
 
 /*******************************************************************

@@ -57,7 +57,7 @@ struct client_struct {
      MAGIC;
 };
 
-void cli_reply(Cluster * cluster, Action * act);
+void cli_reply(Action *act);
 
 void cli_init(void);
 void cli_fini(void);

@@ -131,6 +131,6 @@ void dev_plug_destroy(Plug * plug);
 void dev_prepfor_select(fd_set *rset, fd_set *wset, int *maxfd);
 bool dev_process_select(fd_set *rset, fd_set *wset, bool over_time);
 
-extern List powerman_devs;		/* make me private */
+extern List dev_devices;		/* FIXME: make private */
 
 #endif				/* DEVICE_H */

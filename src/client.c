@@ -61,7 +61,7 @@ int deny_severity = LOG_WARNING;	/* logging level for rejected reqs */
 
 /* module data */
 static int listen_fd = NO_FD;
-static List powerman_clients = NULL;
+static List cli_clients = NULL;
 static Protocol *client_prot = NULL;
 
 
@@ -88,8 +88,8 @@ void cli_init(void)
 
     assert(client_prot == NULL);
 
-    /* create powerman_clients list */
-    powerman_clients = list_create((ListDelF) _destroy_client);
+    /* create cli_clients list */
+    cli_clients = list_create((ListDelF) _destroy_client);
 
     /* 
      * Initialize the expect/send pairs for the client protocol. 
@@ -131,7 +131,7 @@ cli_fini(void)
     assert(client_prot != NULL);
 
     /* destroy clients */
-    list_destroy(powerman_clients);
+    list_destroy(cli_clients);
 
     /* destroy client protocol */
     for (i = 0; i < client_prot->num_scripts; i++)
@@ -333,18 +333,19 @@ static bool _match_cli_template(Action * act, regex_t * re, String expect)
  * first sequences through the nodes send out the'r status as a
  * '0', '1', or '?'.
  */
-void cli_reply(Cluster * cluster, Action * act)
+void cli_reply(Action * act)
 {
     Client *client = act->client;
     int seq = act->seq;
     Node *node;
-    ListIterator node_i;
+    ListIterator itr;
     int n;
     size_t nm = MAX_MATCH;
     regmatch_t pm[MAX_MATCH];
     int eflags = 0;
     regex_t nre;
     reg_syntax_t cflags = REG_EXTENDED;
+    List nodes = conf_getnodes();
 
     CHECK_MAGIC(act);
     CHECK_MAGIC(client);
@@ -354,7 +355,7 @@ void cli_reply(Cluster * cluster, Action * act)
     if ((act->client->loggedin == FALSE) && (act->com != PM_LOG_IN)) {
 	buf_printf(client->to, "LOGIN FAILED\r\n%d Password> ", seq);
     } else {
-	node_i = list_iterator_create(cluster->nodes);
+	itr = list_iterator_create(nodes);
 	switch (act->com) {
 	case PM_ERROR:
 	    buf_printf(client->to, "ERROR\r\n%d PowerMan> ", seq);
@@ -367,7 +368,7 @@ void cli_reply(Cluster * cluster, Action * act)
 	case PM_LOG_OUT:
 	    break;
 	case PM_UPDATE_PLUGS:
-	    while ((node = list_next(node_i))) {
+	    while ((node = list_next(itr))) {
 		if (node->p_state == ST_ON)
 		    buf_printf(client->to, "1");
 		else if (node->p_state == ST_OFF)
@@ -378,7 +379,7 @@ void cli_reply(Cluster * cluster, Action * act)
 	    buf_printf(client->to, "\r\n%d PowerMan> ", seq);
 	    break;
 	case PM_UPDATE_NODES:
-	    while ((node = list_next(node_i))) {
+	    while ((node = list_next(itr))) {
 		if (node->n_state == ST_ON)
 		    buf_printf(client->to, "1");
 		else if (node->n_state == ST_OFF)
@@ -396,7 +397,7 @@ void cli_reply(Cluster * cluster, Action * act)
 	    break;
 	case PM_NAMES:
 	    Regcomp(&nre, str_get(act->target), cflags);
-	    while ((node = list_next(node_i))) {
+	    while ((node = list_next(itr))) {
 		n = Regexec(&nre, str_get(node->name), nm, pm, eflags);
 		if ((n != REG_NOMATCH)
 		    && ((pm[0].rm_eo - pm[0].rm_so) ==
@@ -409,7 +410,7 @@ void cli_reply(Cluster * cluster, Action * act)
 	default:
 	    assert(FALSE);
 	}
-	list_iterator_destroy(node_i);
+	list_iterator_destroy(itr);
     }
 }
 
@@ -447,7 +448,7 @@ bool cli_exists(Client *cli)
 {
     Client *client;
 
-    client = list_find_first(powerman_clients, (ListFindF) _match_client, cli);
+    client = list_find_first(cli_clients, (ListFindF) _match_client, cli);
     return (client == NULL ? FALSE : TRUE);
 }
 
@@ -578,7 +579,7 @@ static void _create_client(void)
     Fcntl(client->fd, F_SETFL, fd_settings | O_NONBLOCK);
 
     /* append to the list of clients */
-    list_append(powerman_clients, client);
+    list_append(cli_clients, client);
 
     syslog(LOG_DEBUG, "New connection: <%s, %d> on descriptor %d",
 	   fqdn, client->port, client->fd);
@@ -597,7 +598,7 @@ void cli_process_select(fd_set *rset, fd_set *wset, bool over_time)
     if (FD_ISSET(listen_fd, rset))
 	_create_client();
 
-    itr = list_iterator_create(powerman_clients);
+    itr = list_iterator_create(cli_clients);
     /* Client reading and writing?  */
 	while ((client = list_next(itr))) {
 	    if (client->fd < 0)
@@ -628,7 +629,7 @@ void cli_prepfor_select(fd_set *rset, fd_set *wset, int *maxfd)
 	*maxfd = MAX(*maxfd, listen_fd);
     }
 
-    itr = list_iterator_create(powerman_clients);
+    itr = list_iterator_create(cli_clients);
     while ((client = list_next(itr))) {
 	if (client->fd < 0)
 	    continue;

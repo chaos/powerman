@@ -42,7 +42,7 @@
 #include "client.h"
 #include "action.h"
 
-static List powerman_actions = NULL;
+static List act_actions = NULL;
 
 /* Each of these represents a script that must be completed.
  * An error message and two of the debug "dump" routines rely on
@@ -74,10 +74,10 @@ void act_update(void)
     syslog(LOG_INFO, "updating plugs and nodes");
 
     act = act_create(PM_UPDATE_PLUGS);
-    list_append(powerman_actions, act);
+    list_append(act_actions, act);
 
     act = act_create(PM_UPDATE_NODES);
-    list_append(powerman_actions, act);
+    list_append(act_actions, act);
 }
 
 /*
@@ -91,15 +91,15 @@ Action *act_find(void)
 {
     Action *act = NULL;
 
-    while ((!list_is_empty(powerman_actions)) && (act == NULL)) {
-	act = list_peek(powerman_actions);
+    while ((!list_is_empty(act_actions)) && (act == NULL)) {
+	act = list_peek(act_actions);
 	/* act->client == NULL is a special internally generated action */
 	if (act->client == NULL)
 	    continue;
 	if (cli_exists(act->client))
 	    continue;
 	/* I could log an event: "client abort prior to action completion" */
-	act_del_queuehead(powerman_actions);
+	act_del_queuehead(act_actions);
 	act = NULL;
     }
     return act;
@@ -145,7 +145,7 @@ void act_initiate(Action * act)
     default:
 	assert(FALSE);
     }
-    itr = list_iterator_create(powerman_devs);
+    itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr)))
 	dev_acttodev(dev, act);
     list_iterator_destroy(itr);
@@ -163,8 +163,8 @@ void act_finish(Action * act)
 {
     /* act->client == NULL means that there is no client expecting a reply. */
     if (act->client != NULL)
-	cli_reply(conf_cluster, act);
-    act_del_queuehead(powerman_actions);
+	cli_reply(act);
+    act_del_queuehead(act_actions);
 }
 
 Action *act_create(int com)
@@ -213,18 +213,18 @@ void act_del_queuehead(List acts)
 
 void act_add(Action *act)
 {
-    list_append(powerman_actions, act);
+    list_append(act_actions, act);
 }
 
 
 void act_init(void)
 {
-    powerman_actions = list_create((ListDelF) act_destroy);
+    act_actions = list_create((ListDelF) act_destroy);
 }
 
 void act_fini(void)
 {
-    list_destroy(powerman_actions);
+    list_destroy(act_actions);
 }
 
 /*
