@@ -116,7 +116,6 @@ void conf_fini(void)
  */
 static bool _validate_config(void)
 {
-    hostlist_t hcopy;
     ListIterator itr;
     bool valid = TRUE;
     alias_t *a;
@@ -140,16 +139,6 @@ static bool _validate_config(void)
         hostlist_iterator_destroy(hitr);
     }
     list_iterator_destroy(itr);
-
-    /* make sure nodes are unique */
-    if (!(hcopy = hostlist_copy(conf_nodes)))
-        err_exit(FALSE, "hostlist_copy failed");
-    hostlist_uniq(hcopy);
-    if (hostlist_count(hcopy) < hostlist_count(conf_nodes)) {
-        valid = FALSE;
-        err(FALSE, "node entries must have unique names");
-    }
-    hostlist_destroy(hcopy);
 
     return valid;
 }
@@ -321,12 +310,8 @@ bool conf_node_exists(char *node)
 
 bool conf_addnode(char *node)
 {
-#if 1 
     if (conf_node_exists(node))
         return FALSE;
-#else
-    /* redundant PS support: permit duplicate entries for node name */
-#endif
     hostlist_push(conf_nodes, node);
     return TRUE;
 }

@@ -1445,9 +1445,6 @@ ArgList *dev_link_arglist(ArgList * arglist)
 /* helper for _set_argval_onoff */
 static int _arg_match(Arg * arg, void *key)
 {
-    /* redundant PS support: arg->node may not be unique so only match 
-     * "virgin" entries.   Order doesn't particularly matter.
-     */
     return (strcmp(arg->node, (char *) key) == 0 
             && (arg->state == ST_UNKNOWN || arg->val == NULL));
 }
