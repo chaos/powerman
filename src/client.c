@@ -221,10 +221,11 @@ static void _client_query_devices_reply(Client *c)
 	itr = list_iterator_create(devs);
 	while ((dev = list_next(itr))) {
 	    char nodelist[CP_LINEMAX];
+	    int con = dev->stat_successful_connects;
 
 	    if (_make_pluglist(dev, nodelist, sizeof(nodelist))) {
 		_client_msg(c, CP_RSP_DEVICES, dev->name, nodelist, 
-			    dev->stat_successful_connects - 1, /* reconnects */
+			    con > 0 ? con - 1 : 0,
 			    dev->stat_successful_actions);
 	    }
 	}
