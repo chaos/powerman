@@ -1169,7 +1169,7 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
     /* first time through? */
     if (!e->processing) {
         int dropped = 0;
-        char *str = hvsprintf(e->cur->u.send.fmt, e->target ? 
+        char *str = hsprintf(e->cur->u.send.fmt, e->target ? 
                 (e->target->name ? e->target->name : "[unresolved]") : 0);
         int written = cbuf_write(dev->to, str, strlen(str), &dropped);
 
