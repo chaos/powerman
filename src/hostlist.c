@@ -53,7 +53,8 @@
 /* printf-style error function -- redefine to your project's error 
  * reporting facility. Should take args like _err(char *, ...)
  */
-#define _err(fmt, args...) 	err_exit(FALSE, fmt, ## args)
+/* #define _err(fmt, args...) 	err_exit(FALSE, fmt, ## args) */
+#define _err(fmt, args...) 	fprintf(stderr, fmt, ## args)
 
 /* number of elements to allocate when extending the hostlist array */
 #define HOSTLIST_CHUNK	16
@@ -447,6 +448,7 @@ static inline int hostname_suffix_is_valid(hostname_t hn)
  */
 static inline int hostname_suffix_width(hostname_t hn)
 {
+	assert(hostname_suffix_is_valid(hn));
 	return (int) strlen(hn->suffix);
 }
 
@@ -792,9 +794,10 @@ static int hostrange_hn_within(hostrange_t hr, hostname_t hn)
 	int retval = 0;
 
 	if (strcmp(hr->prefix, hn->prefix) == 0) {
-		if (hr->singlehost || !hostname_suffix_is_valid(hn))
-			retval = 1;
-		else if (hn->num <= hr->hi && hn->num >= hr->lo) {
+		if (!hostname_suffix_is_valid(hn)) {
+			if (hr->singlehost)
+				retval = 1;
+		} else if (hn->num <= hr->hi && hn->num >= hr->lo) {
 			int width = hostname_suffix_width(hn);
 			int num = hn->num;
 			retval = _width_equiv(hr->lo, &hr->width, num, &width);
