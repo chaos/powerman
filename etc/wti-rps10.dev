@@ -21,7 +21,8 @@ specification  {
 	timeout 	13  # toggle can be configured for 10 sec
 
 	script login {
-		expect "RPS-10 Ready\n\n"
+#		expect "RPS-10 Ready\n\n"
+		send ""
 	}
 	script logout {
 		send "\r"
@@ -31,9 +32,9 @@ specification  {
 # expect to time out
 	script status {
 		send "\030\030\002\030\030\002\030\030%s?\r"
-		expect "Plug [0-9] (On|Off)\n\n"
+		expect "Plug [0-9] (On|Off)"
 			map $1 "%s"
-#		expect "Complete\n\n"
+#		expect "Complete"
 		delay 0.5
 	}
 	script on {
