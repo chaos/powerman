@@ -616,6 +616,7 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 
     /* make the Device */
     dev = dev_create(s2);
+    dev->specname = Strdup(s3);
     dev->type = spec->type;
     dev->timeout = spec->timeout;
     dev->ping_period = spec->ping_period;

@@ -1052,6 +1052,7 @@ void dev_destroy(Device * dev)
     CHECK_MAGIC(dev);
 
     Free(dev->name);
+    Free(dev->specname);
     if (dev->all)
         Free(dev->all);
     regfree(&(dev->on_re));

@@ -125,4 +125,6 @@
 
 #endif                          /* CLIENT_PROTO_H */
 
-/* vi:tabstop=4 shiftwidth=4 expandtab */
+/* 
+ * vi:tabstop=4 shiftwidth=4 expandtab 
+ */

@@ -1,6 +1,7 @@
 2002-12-23 garlick
     * Added -D,--device [targets] command for getting status of RPC
       controlling [targets].  (List all devices if no targets specified).
+    * Suppress 'Query complete' message in client.
 
 2002-12-22 garlick
     * Updated list.[ch] and cbuf.[ch] to latest lsd-tools versions.

@@ -70,6 +70,7 @@ typedef struct {
     regex_t on_re;              /* regex to match "on" in query */
     regex_t off_re;             /* regex to match "off" in query */
 
+    char *specname;             /* name of specification, e.g. "icebox3" */
     DevType type;               /* type of device e.g. TCP_DEV */
     union {                     /* type-specific device information */
         struct {

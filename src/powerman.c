@@ -361,6 +361,25 @@ static void _disconnect_from_server(void)
     _expect(CP_RSP_QUIT);
 }
 
+/*
+ * Return true if response should be suppressed.
+ */
+static bool _supress(int num)
+{
+    bool res;
+
+    switch(num) {
+        case 106:       /* Query complete */
+            res = TRUE;
+            break;
+        default:
+            res = FALSE;
+            break;
+    }
+
+    return res;
+}
+
 /* 
  * Get a line from the socket and display on stdout.
  * Return the numerical portion of the repsonse.
@@ -383,12 +402,15 @@ static int _getline(void)
         p++;
     }
     *p = '\0';
-    if (strlen(buf) > 4)
-        printf("%s\n", buf + 4);
-    else
-        err_exit(FALSE, "unexpected response from server\n");
     num = strtol(buf, (char **) NULL, 10);
-    return (num == LONG_MIN || num == LONG_MAX) ? -1 : num;
+    if (num == LONG_MIN || num == LONG_MAX)
+        num = -1;
+    if (strlen(buf) > 4) {
+        if (!_supress(num))
+            printf("%s\n", buf + 4);
+    } else
+        err_exit(FALSE, "unexpected response from server\n");
+    return num;
 }
 
 static int _process_response(void)

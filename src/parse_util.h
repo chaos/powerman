@@ -43,9 +43,9 @@
 #define PM_LOG_OUT          1
 #define PM_STATUS_PLUGS     2
 #define PM_STATUS_NODES     3
-#define PM_PING		    4
+#define PM_PING             4
 #define PM_POWER_ON         5
-#define PM_POWER_ON_ALL	    6
+#define PM_POWER_ON_ALL     6
 #define PM_POWER_OFF        7
 #define PM_POWER_OFF_ALL    8
 #define PM_POWER_CYCLE      9
@@ -57,7 +57,7 @@
 #define PM_BEACON_ON        15
 #define PM_BEACON_OFF       16
 /* count of scripts above */
-#define NUM_SCRIPTS	    17
+#define NUM_SCRIPTS         17
 
 /*
  * A Map is a list of Interps.
