@@ -282,7 +282,7 @@ else:
     
 if(logging):
     try:
-        log_file = open("/tmp/powerman." + str(os.getpid), 'a')
+        log_file = open("/tmp/icebox.log", 'a')
     except IOError :
         exit_error(8, log_file)
 
