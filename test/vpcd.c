@@ -34,6 +34,7 @@ static struct {
     int logged_in;
 } dev[NUM_THREADS];
 
+static int opt_foreground = 0;
 static int opt_drop_command = 0;
 static int opt_bad_response = 0;
 static int opt_off_rpc = 0;
@@ -44,7 +45,7 @@ static int errcount = 0;
 
 static void _noop_handler(int signum)
 {
-    printf("vpcd: received signal %d\n", signum);
+    fprintf(stderr, "vpcd: received signal %d\n", signum);
 }
 
 /* 
@@ -91,7 +92,7 @@ static void _spew(int fd, int linenum)
 /*
  * Prompt for a command, parse it, execute it, <repeat>
  */
-static void _prompt_loop(int num, int fd)
+static void _prompt_loop(int num, int rfd, int wfd)
 {
     int seq;
     int i;
@@ -102,81 +103,80 @@ static void _prompt_loop(int num, int fd)
         char buf[128];
 
         if (num == 0 && opt_hung_rpc) {
-            printf("vpcd: vpcd%d is hung\n", num);
+            fprintf(stderr, "vpcd: vpcd%d is hung\n", num);
             pause();
         }
 
-        dprintf(fd, "%d vpc> ", seq);   /* prompt */
-        res = _dgets(buf, sizeof(buf), fd);
+        dprintf(wfd, "%d vpc> ", seq);   /* prompt */
+        res = _dgets(buf, sizeof(buf), rfd);
         if (res == -2) {
-            printf("%d: read returned EOF\n", num);
+            fprintf(stderr, "%d: read returned EOF\n", num);
             break;
         }
         if (res < 0) {
-            printf("%d: %s\n", num, strerror(errno));
+            fprintf(stderr, "%d: %s\n", num, strerror(errno));
             break;
         }
         if (strlen(buf) == 0)   /* empty command */
             continue;
         if (strcmp(buf, "logoff") == 0) {       /* logoff */
-            printf("%d: logoff\n", num);
-            dprintf(fd, "%d OK\n", seq);
+            fprintf(stderr, "%d: logoff\n", num);
+            dprintf(wfd, "%d OK\n", seq);
             dev[num].logged_in = 0;
             break;
         }
         if (strcmp(buf, "login") == 0) {        /* logon */
-            printf("%d: logon\n", num);
+            fprintf(stderr, "%d: logon\n", num);
             dev[num].logged_in = 1;
             goto ok;
         }
         if (!dev[num].logged_in) {
-            dprintf(fd, "%d Please login\n", seq);
+            dprintf(wfd, "%d Please login\n", seq);
             continue;
         }
 
         if (strcmp(buf, "stat") == 0) { /* stat */
             for (i = 0; i < NUM_PLUGS; i++)
-                dprintf(fd, "plug %d: %s\n", i,
+                dprintf(wfd, "plug %d: %s\n", i,
                         dev[num].plug[i] ? "ON" : "OFF");
-            printf("%d: stat\n", num);
+            fprintf(stderr, "%d: stat\n", num);
             goto ok;
         }
         if (strcmp(buf, "stat_soft") == 0) {    /* stat_soft */
             for (i = 0; i < NUM_PLUGS; i++) {
                 if (opt_soft_off && num == 0 && i == 0) {
-                    printf
-                        ("vpcd: stat_soft forced OFF for vpcd0 plug 0\n");
-                    dprintf(fd, "plug %d: %s\n", i, "OFF");
+                    fprintf(stderr, 
+                            "vpcd: stat_soft forced OFF for vpcd0 plug 0\n");
+                    dprintf(wfd, "plug %d: %s\n", i, "OFF");
                 } else
-                    dprintf(fd, "plug %d: %s\n", i,
+                    dprintf(wfd, "plug %d: %s\n", i,
                             dev[num].plug[i] ? "ON" : "OFF");
             }
-            printf("%d: stat_soft\n", num);
+            fprintf(stderr, "%d: stat_soft\n", num);
             goto ok;
         }
         if (sscanf(buf, "spew %d", &n1) == 1) { /* spew <linecount> */
             if (n1 <= 0) {
-                dprintf(fd, "%d BADVAL: %d\n", seq, n1);
+                dprintf(wfd, "%d BADVAL: %d\n", seq, n1);
                 continue;
             }
             for (i = 0; i < n1; i++)
-                _spew(fd, i);
-            printf("%d: spew\n", num);
+                _spew(wfd, i);
+            fprintf(stderr, "%d: spew\n", num);
             goto ok;
         }
         if (sscanf(buf, "on %d", &n1) == 1) {   /* on <plugnum> */
             if (n1 < 0 || n1 >= NUM_PLUGS) {
-                dprintf(fd, "%d BADVAL: %d\n", seq, n1);
+                dprintf(wfd, "%d BADVAL: %d\n", seq, n1);
                 continue;
             }
             printf("%d: on %d\n", num, n1);
             if (opt_drop_command && errcount++ == 0) {
-                printf("vpcd: dropping OK response to 'on' command\n");
+                fprintf(stderr, "vpcd: dropping OK response to 'on' command\n");
                 continue;
             }
             if (opt_bad_response && errcount++ == 0) {
-                printf
-                    ("vpcd: responding to 'on' with UNKONWN instead of OK\n");
+                fprintf(stderr, "vpcd: responding to 'on' with UNKONWN instead of OK\n");
                 goto unknown;
             }
             dev[num].plug[n1] = 1;
@@ -184,45 +184,45 @@ static void _prompt_loop(int num, int fd)
         }
         if (sscanf(buf, "off %d", &n1) == 1) {  /* off <plugnum> */
             if (n1 < 0 || n1 >= NUM_PLUGS) {
-                dprintf(fd, "%d BADVAL: %d\n", seq, n1);
+                dprintf(wfd, "%d BADVAL: %d\n", seq, n1);
                 continue;
             }
             dev[num].plug[n1] = 0;
-            printf("%d: off %d\n", num, n1);
+            fprintf(stderr, "%d: off %d\n", num, n1);
             goto ok;
         }
         if (sscanf(buf, "toggle %d", &n1) == 1) {  /* toggle <plugnum> */
             if (n1 < 0 || n1 >= NUM_PLUGS) {
-                dprintf(fd, "%d BADVAL: %d\n", seq, n1);
+                dprintf(wfd, "%d BADVAL: %d\n", seq, n1);
                 continue;
             }
             dev[num].plug[n1] = dev[num].plug[n1] == 0 ? 1 : 0;
-            printf("%d: toggle %d\n", num, n1);
+            fprintf(stderr, "%d: toggle %d\n", num, n1);
             goto ok;
         }
         if (strcmp(buf, "on *") == 0) { /* on * */
             for (i = 0; i < NUM_PLUGS; i++)
                 dev[num].plug[i] = 1;
-            printf("%d: on *\n", num);
+            fprintf(stderr, "%d: on *\n", num);
             goto ok;
         }
         if (strcmp(buf, "off *") == 0) {        /* off * */
             for (i = 0; i < NUM_PLUGS; i++)
                 dev[num].plug[i] = 0;
-            printf("%d: off *\n", num);
+            fprintf(stderr, "%d: off *\n", num);
             goto ok;
         }
         if (strcmp(buf, "toggle *") == 0) {
             for (i = 0; i < NUM_PLUGS; i++)
                 dev[num].plug[i] = dev[num].plug[i] == 0 ? 1 : 0;
-            printf("%d: toggle *\n", num);
+            fprintf(stderr, "%d: toggle *\n", num);
             goto ok;
         }
       unknown:
-        dprintf(fd, "%d UNKNOWN: %s\n", seq, buf);
+        dprintf(wfd, "%d UNKNOWN: %s\n", seq, buf);
         continue;
       ok:
-        dprintf(fd, "%d OK\n", seq);
+        dprintf(wfd, "%d OK\n", seq);
     }
 }
 
@@ -248,7 +248,7 @@ static int _vpc_listen(int port)
     saddr.sin_port = htons(port);
     saddr.sin_addr.s_addr = INADDR_ANY;
     if (bind(fd, &saddr, sizeof(struct sockaddr_in)) < 0) {
-        printf("port %d:", port);
+        fprintf(stderr, "port %d:", port);
         perror("bind");
         exit(1);
     }
@@ -269,7 +269,7 @@ static void *_vpc_thread(void *arg)
     int my_port = BASE_PORT + my_threadnum;
     int listen_fd;
 
-    printf("%d: starting on port %d\n", my_threadnum, my_port);
+    fprintf(stderr, "%d: starting on port %d\n", my_threadnum, my_port);
     listen_fd = _vpc_listen(my_port);
 
     while (1) {
@@ -286,15 +286,40 @@ static void *_vpc_thread(void *arg)
             perror("inet_ntop");
             exit(1);
         }
-        printf("%d: accept from %s\n", my_threadnum, tmpstr);
-        _prompt_loop(my_threadnum, fd);
+        fprintf(stderr, "%d: accept from %s\n", my_threadnum, tmpstr);
+        _prompt_loop(my_threadnum, fd, fd);
         close(fd);
     }
     return NULL;
 }
 
-#define OPT_STR "dbhos"
+static void _start_threads(void)
+{
+    int i;
+
+    for (i = 0; i < NUM_THREADS; i++) {
+        if (opt_off_rpc && i == 0) {
+            fprintf(stderr, "vpcd: not starting vpcd%d\n", i);
+            continue;
+        }
+        pthread_attr_init(&dev[i].attr);
+        pthread_attr_setdetachstate(&dev[i].attr, PTHREAD_CREATE_DETACHED);
+        pthread_create(&dev[i].thd, &dev[i].attr, _vpc_thread, (void *) i);
+    }
+    if (pause() < 0) {
+        perror("pause");
+        exit(1);
+    }
+}
+
+static void _start_foreground(void)
+{
+    _prompt_loop(0, 0, 1);
+}
+
+#define OPT_STR "dbhosf"
 static const struct option long_options[] = {
+    {"foreground", no_argument, 0, 'f'},
     {"drop_command", no_argument, 0, 'd'},
     {"bad_response", no_argument, 0, 'b'},
     {"hung_rpc", no_argument, 0, 'h'},
@@ -324,7 +349,6 @@ int main(int argc, char *argv[])
 {
     int c;
     int longindex;
-    int i;
     int optcount = 0;
 
     opterr = 0;
@@ -332,6 +356,9 @@ int main(int argc, char *argv[])
             getopt_long(argc, argv, OPT_STR, longopts,
                         &longindex)) != -1) {
         switch (c) {
+        case 'f':              /* --foreground (run one instance on stdin/out */
+            opt_foreground++;
+            break;
         case 'd':              /* --drop_command (drop first "on" command) */
             opt_drop_command++;
             optcount++;
@@ -366,20 +393,12 @@ int main(int argc, char *argv[])
 
     memset(dev, 0, sizeof(dev));
 
-    for (i = 0; i < NUM_THREADS; i++) {
-        if (opt_off_rpc && i == 0) {
-            printf("vpcd: not starting vpcd%d\n", i);
-            continue;
-        }
-        pthread_attr_init(&dev[i].attr);
-        pthread_attr_setdetachstate(&dev[i].attr, PTHREAD_CREATE_DETACHED);
-        pthread_create(&dev[i].thd, &dev[i].attr, _vpc_thread, (void *) i);
-    }
-    if (pause() < 0) {
-        perror("pause");
-        exit(1);
-    }
-    printf("exiting \n");
+    if (opt_foreground)
+        _start_foreground();
+    else
+        _start_threads();
+        
+    fprintf(stderr, "exiting \n");
     exit(0);
 }
 

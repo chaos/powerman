@@ -1,3 +1,19 @@
+2003-11-24 Jim Garlick <garlick@llnl.gov>
+
+    * src/parse.y: add ability to put hostlists in 'node' line.
+    If hardwired plug names, plug names are assigned in order.
+    If not, plug names are set equal to node names.
+    This should substantially reduce the size of powerman.conf files on 
+    large clusters.
+
+    * test/vpcd.c: add --foreground option for running on a pty.
+
+    * test/TESTRIG: removed
+
+    * test/test.strategy: added
+
+    * test/mkconf.pl: added
+
 2003-10-29 Albert Chu <chu11@llnl.gov>
 
     * etc/ipmipower.dev: Added "failed to connect" to query checks.
@@ -35,7 +51,7 @@
     * src/device.c, src/parse.y, etc/ibmh8.dev: removed support for setplugname
     statement.  Now if the 'plug name' line is omittted from the device.dev 
     file, any plug name can be specified in the config file.  Also, if the
-    plug name is omitted int the config file, the node name is used.
+    plug name is omitted in the config file, the node name is used.
       
     * NEWS: updated for 1.0.19 release.  Include as news everything since
     1.0.16 since 17 and 18 were not widely distributed.

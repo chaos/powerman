@@ -113,8 +113,10 @@ int main(int argc, char **argv)
         }
     }
 
-    if (geteuid() != 0)
-        err_exit(FALSE, "must be root");
+    if (config_filename == NULL) {
+        if (geteuid() != 0)
+            err_exit(FALSE, "must be root");
+    }
 
     Signal(SIGHUP, _noop_handler);
     Signal(SIGTERM, _exit_handler);

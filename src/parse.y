@@ -196,7 +196,7 @@ device          : TOK_DEVICE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL
 node            : TOK_NODE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL {
     makeNode($2, $3, $4);
 }               | TOK_NODE TOK_STRING_VAL TOK_STRING_VAL {
-    makeNode($2, $3, $2);
+    makeNode($2, $3, NULL);
 }
 ;
 alias           : TOK_ALIAS TOK_STRING_VAL TOK_STRING_VAL {
@@ -745,14 +745,50 @@ static void makeAlias(char *namestr, char *hostsstr)
 
 static void makeNode(char *nodestr, char *devstr, char *plugstr)
 {
+    Device *dev = dev_findbyname(devstr);
+    hostlist_t nodelist;
     Plug *plug;
-    Device *dev;
+
+    if(dev == NULL) 
+        _errormsg("unknown device");
+
+    /*
+     * If 'nodestr' is a hostlist, recurse.
+     * If the device has hardwired plug names, assign the plugs in the order
+     * listed.  If not, plug name will be passed in as NULL, which will
+     * be fixed up later (== node name).
+     */
+    nodelist = hostlist_create(nodestr);
+    if (hostlist_count(nodelist) > 1) {
+        ListIterator itr = list_iterator_create(dev->plugs);
+        hostlist_iterator_t hitr = hostlist_iterator_create(nodelist);
+
+        if (plugstr != NULL)
+            _errormsg("multiple nodes assigned to one plug");
+
+        while ((nodestr = hostlist_next(hitr))) {
+            if (dev->plugnames_hardwired) {
+                if ((plug = list_next(itr)) == NULL)
+                    _errormsg("more nodes than plugs");
+                plugstr = plug->name;
+            }
+            makeNode(nodestr, devstr, plugstr);
+        }
+        hostlist_iterator_destroy(hitr);
+        list_iterator_destroy(itr);
+
+        hostlist_destroy(nodelist);
+        return;
+    }
+    hostlist_destroy(nodelist);
+    /* recusion handled - moving on to the non-recursive case... */ 
+
+    /* if 'plugstr' was omitted, plug name == node name */
+    if (plugstr == NULL)
+        plugstr = nodestr;
 
     if (!conf_addnode(nodestr))
         _errormsg("duplicate node");
-    dev = dev_findbyname(devstr);       /* find the device by its name */
-    if(dev == NULL) 
-        _errormsg("unknown device");
 
     /* 
      * Legal plugs are optionally specified in advance with 'plug name' line 
