@@ -13,6 +13,7 @@ import getopt
 import os
 import fcntl, FCNTL
 import time
+import signal
 
 class NodeClass:
     "Class definition for icebox attached nodes"
@@ -167,6 +168,9 @@ def init(f):
         box.add(port)
     return nodes, ttys, sorted_node_list, sorted_tty_list
 
+def ReadTimeout(sig, stack):
+    log("Readline timed out")
+
 # initialize globals
 Version = "icebox:Powerman 0.1.7"
 powermandir  = '/usr/lib/powerman/'
@@ -297,6 +301,8 @@ try:
 except IOError :
     exit_error(7, config_file)
 
+signal.signal(signal.SIGALRM, ReadTimeout)
+
 if (com == "ice"):
     # This only happens for directly invoking icebox on the command line
    # pm will never call it, and is never called from pm
@@ -312,6 +318,7 @@ if (com == "ice"):
         exit_error(10, targettty)
     log("say:  " + targetcom)
     f.write(targetcom)
+    signal.alarm(1)
     response = f.readline()
     log("hear:  " + response)
     if (string.lower(response) != 'ok'):
@@ -356,12 +363,14 @@ for tty_name in sorted_tty_list:
                 f.write(target + '\n')
                 if((com == 'ph') or (com == 'pl') or (com == 'rp')):
                     time.sleep(BOX_DELAY)
+                signal.alarm(1)
                 response = f.readline()
                 response = response[:-1]
                 if (response[-1:] == '\r'):
                     response = response[:-1]
                 else:
                     log("box " + str(box.name) + " needs its firmware updated")
+                    signal.alarm(1)
                     f.readline()
                 retry_count = retry_count + 1
                 log("hear:  " + response)
@@ -407,12 +416,14 @@ for tty_name in sorted_tty_list:
                     f.write(target + '\n')
                     if((com == 'ph') or (com == 'pl') or (com == 'rp')):
                         time.sleep(PORT_DELAY)
+                    signal.alarm(1)
                     response = f.readline()
                     response = response[:-1]
                     if (response[-1:] == '\r'):
                         response = response[:-1]
                     else:
                         log("box " + str(box.name) + " needs its firmware updated")
+                        signal.alarm(1)
                         f.readline()
                     retry_count = retry_count + 1
                     log("hear:  " + response)
