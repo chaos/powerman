@@ -7,8 +7,6 @@
 # Config file for the new PowerMan daemon
 include "/etc/powerman/pmd.dev"
 begin global
-	cluster name "tux"
-	log file "/tmp/powermand.log.16x16" "0"
 	client listener port "10101"
 	timeout interval "1.0"
 	inter-device delay "0.0"

@@ -25,9 +25,4 @@
 #   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 ####################################################################
 #!/bin/bash
-if [ ! -f /tmp/powermand.log.ice-test ]
-then
-  touch /tmp/powermand.log.ice-test
-fi
 powermand -c $PMDIR/etc/powerman.conf.ice-test &
-tail -f /tmp/powermand.log.ice-test

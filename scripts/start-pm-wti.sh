@@ -25,9 +25,4 @@
 #   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 ####################################################################
 #!/bin/bash
-if [ ! -f /tmp/powermand.log.wti ]
-then
-  touch /tmp/powermand.log.wti
-fi
 powermand -c $PMDIR/etc/powerman.conf.wti &
-tail -f /tmp/powermand.log.wti

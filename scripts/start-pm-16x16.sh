@@ -25,25 +25,16 @@
 #   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 ####################################################################
 #!/bin/bash
-if [ ! -f /tmp/powermand.log.16x16 ]
-then
-  touch /tmp/powermand.log.16x16
-fi
 for x in 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15
 do
   for y in 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15
   do
-    $PMDIR/bin/vicebox 2$x$y &
+    $PMDIR/vicebox/vicebox 2$x$y &
   done
 done
 sleep 1
 for x in 00 01 02 03 04 05 06 07 08 09 10 11 12 13 14 15
 do
-  if [ ! -f /tmp/powermand.log.16x16-$x ]
-  then
-    touch /tmp/powermand.log.16x16-$x
-  fi
   powermand -c $PMDIR/etc/powerman.conf.16x16-$x &
 done
-tail -f /tmp/powermand.log.16x16
 

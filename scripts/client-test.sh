@@ -27,81 +27,75 @@
 #-----tests for start-pm-1.sh---------------------------------------
 #!/bin/bash
 STAMP=`date`
-#In all of the following you have to exscape the glob special
+#In all of the following you have to escape the glob special
 # characters so the shell won't expand them.  The "set args ..."
 # bit is what you say in gdb to put it on the command line.
 #
-# "set args -q \*" means "tell which plugs are on amonst the whole cluster"
-$PMDIR/bin/powerman -q \*
+# "set args -q" means "tell which plugs are on"
+$PMDIR/bin/powerman -q 
 #
-# "set args -w \*" means "tell which plugs are off amonst the whole cluster"
-$PMDIR/bin/powerman -w \*
+# "set args -Q" means "tell which plugs are off"
+$PMDIR/bin/powerman -Q
 #
-# "set args -qs \*" means "tell which nodes are on amonst the whole cluster"
-$PMDIR/bin/powerman -qs \*
+# "set args -1 tux1" means "turn on the plug for the node named tux1"
+$PMDIR/bin/powerman -1 tux1
 #
-# "set args -ws \*" means "tell which nodes are off amonst the whole cluster"
-$PMDIR/bin/powerman -ws \*
+# "set args -q" see if it worked
+$PMDIR/bin/powerman -q
 #
-# "set args -H tux1" means "turn on the plug for the node named tux1"
-$PMDIR/bin/powerman -H tux1
-#
-# "set args -q \*" see if it worked
-$PMDIR/bin/powerman -q \*
-#
-# "set args -Hv tux1" means "turn on the plug and verify it's operation"
+# "set args -1v tux1" means "turn on the plug and verify it's operation"
 # N.B. this uses the report option (-z), which hasn't been implemented yet
-$PMDIR/bin/powerman -Hv tux1
+$PMDIR/bin/powerman -1v tux1
 #
-# "set args -lx tux[345]" means "turn off the plugs identified by the regex"
-$PMDIR/bin/powerman -lx tux[345]
+# "set args -0x tux[345]" means "turn off the plugs identified by the regex"
+$PMDIR/bin/powerman -0x tux[345]
 #
-# "set args -q \*" see if it worked
-$PMDIR/bin/powerman -q \*
+# "set args -q" see if it worked
+$PMDIR/bin/powerman -q
 #
 # "set args -c tux6" means "power cycle the plug"
 $PMDIR/bin/powerman -c tux6
 #
-# "set args -q \*" see if it worked
-$PMDIR/bin/powerman -q \*
+# "set args -q" see if it worked
+$PMDIR/bin/powerman -q
 #
 # "set args -rx tux[56]" means "reset the plugs (off nodes stay off)"
 $PMDIR/bin/powerman -rx tux[56]
 #
-# "set args -q \*" see if it worked
-$PMDIR/bin/powerman -q \*
+# "set args -q" see if it worked
+$PMDIR/bin/powerman -q
 #
-# "set args -nx tux[3456]" means "list the matching nodes"
-$PMDIR/bin/powerman -nx tux[3456]
+# "set args -lx tux[3456]" means "list the matching nodes"
+$PMDIR/bin/powerman -lx tux[3456]
 #
-# "set args -qz \*" means "list the matching nodes"
-$PMDIR/bin/powerman -qz \*
+# "set args -z" means "list the matching nodes"
+$PMDIR/bin/powerman -z
 #
 echo $STAMP
 date
 exit
 #-----tests for start-pm-16.sh---------------------------------------
-# "set args -qz \*" now showing 160 nodes
-$PMDIR/bin/powerman -qz \*
+# "set args -z" now showing 160 nodes
+$PMDIR/bin/powerman -z
 #
-# "set args -H \*5\*" everyone with a five is on
-$PMDIR/bin/powerman -H \*5\*
+# "set args -1 \*5\*" everyone with a five is on
+$PMDIR/bin/powerman -1 \*5\*
 #
-# "set args -qz \*" now showing 160 nodes
-$PMDIR/bin/powerman -qz \*
+# "set args -z" now showing 160 nodes
+$PMDIR/bin/powerman -z
 # and the result looks like this:
 # off             tux[0-4,6-14,16-24,26-34,36-44,46-49,60-64,66-74,76-84,86-94,96-104,106-114,116-124,126-134,136-144,146-149]
 # on              tux[5,15,25,35,45,50-59,65,75,85,95,105,115,125,135,145,150-159]
 # and its pretty snappy
 #-----tests for start-pm-256.sh and start-pm-16x16.sh-----------------------
-# "set args -qz \*" now showing 160 nodes
-$PMDIR/bin/powerman -qz \*
+# "set args -z" now showing 160 nodes
+$PMDIR/bin/powerman -z
 #
-# "set args -H \*5\*" everyone with a five is on
-$PMDIR/bin/powerman -H \*5\*
+# "set args -1 \*5\*" everyone with a five is on
+$PMDIR/bin/powerman -1 \*5\*
 #
-# "set args -qz \*" now showing 160 nodes
-$PMDIR/bin/powerman -qz \*
+# "set args -z" now showing 160 nodes
+$PMDIR/bin/powerman -z
 # and the result looks like this:
 off             tux[0-4,6-14,16-24,26-34,36-44,46-49,60-64,66-74,76-84,86-94,96-
 104,106-114,116-124,126-134,136-144,146-149,160-164,166-174,176-184,186-194,196-

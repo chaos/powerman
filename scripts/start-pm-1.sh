@@ -25,9 +25,4 @@
 #   with PowerMan; if not, write to the Free Software Foundation, Inc.,
 #   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 ####################################################################
-if [ ! -f /tmp/powermand.log.1 ]
-then
-  touch /tmp/powermand.log.1
-fi
-$PMDIR/bin/vicebox 11000 &
-tail -f /tmp/powermand.log.1
+$PMDIR/vicebox/vicebox 11000 &
