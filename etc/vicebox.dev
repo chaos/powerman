@@ -2,22 +2,22 @@
 # $Id$
 # $Source$
 #
-begin specification
-	name "vicebox"
-	type "TCP"
-	off string "0"
-	on string  "1"
-	plug count 10
-	device timeout 100.0
-	begin LOGIN_SCRIPT
+specification {
+	name 		"vicebox"
+	type 		"TCP"
+	offstring 	"0"
+	onstring  	"1"
+	plugcount 	10
+	timeout 	100.0
+	script login {
 		expect "V2\.2\r\n"
 		send "auth password\r\n"
 		expect "OK\r\n"
-	end LOGIN_SCRIPT
-	begin LOGOUT_SCRIPT
+	}
+	script logout {
 		send "q\r\n"
-	end LOGOUT_SCRIPT
-	begin STATUS_ALL_SCRIPT
+	}
+	script status_all {
 		send "ps *\r\n"
 		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
 			map $1 "1"
@@ -30,8 +30,8 @@ begin specification
 			map $8 "8"
 			map $9 "9"
 			map $10 "10"
-	end STATUS_ALL_SCRIPT
-	begin STATUS_SOFT_ALL_SCRIPT
+	}
+	script status_soft_all {
 		send "ns *\r\n"
 		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
 			map $1 "1"
@@ -44,43 +44,43 @@ begin specification
 			map $8 "8"
 			map $9 "9"
 			map $10 "10"
-	end STATUS_SOFT_ALL_SCRIPT
-	begin ON_SCRIPT
+	}
+	script on {
 		send "ph %s\r\n"
 		expect "OK\r\n"
-	end ON_SCRIPT
-	begin ON_ALL_SCRIPT
+	}
+	script on_all {
 		send "ph *\r\n"
 		expect "OK\r\n"
-	end ON_ALL_SCRIPT
-	begin OFF_SCRIPT
+	}
+	script off {
 		send "pl %s\r\n"
 		expect "OK\r\n"
-	end OFF_SCRIPT
-	begin OFF_ALL_SCRIPT
+	}
+	script off_all {
 		send "pl %s\r\n"
 		expect "OK\r\n"
-	end OFF_ALL_SCRIPT
-	begin CYCLE_SCRIPT
+	}
+	script cycle {
 		send "pl %s\r\n"
 		expect "OK\r\n"
 		send "ph %s\r\n"
 		expect "OK\r\n"
-	end CYCLE_SCRIPT
-	begin CYCLE_ALL_SCRIPT
+	}
+	script cycle_off {
 		send "pl *\r\n"
 		expect "OK\r\n"
 		send "ph *\r\n"
 		expect "OK\r\n"
-	end CYCLE_ALL_SCRIPT
-	begin RESET_SCRIPT
+	}
+	script reset {
 		send "rp %s\r\n"
 		expect "OK\r\n"
-	end RESET_SCRIPT
-	begin RESET_ALL_SCRIPT
+	}
+	script reset_all {
 		send "rp *\r\n"
 		expect "OK\r\n"
-	end RESET_ALL_SCRIPT
+	}
 	plug name "1"
 	plug name "2"
 	plug name "3"
@@ -91,4 +91,4 @@ begin specification
 	plug name "8"
 	plug name "9"
 	plug name "10"
-end specification
+}

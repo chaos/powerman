@@ -170,68 +170,50 @@ begin[ \t]+global                 {   return TOK_B_GLOBAL;      /* old */ }
 end[ \t]+global                   {   return TOK_E_GLOBAL;      /* old */ }
 begin[ \t]+nodes                  {   return TOK_B_NODES;       /* old */ }
 end[ \t]+nodes                    {   return TOK_E_NODES;       /* old */ }
+
 port                              {   return TOK_PORT ; }
 tcpwrappers                       {   return TOK_TCP_WRAPPERS; }
-device[ \t]+timeout               {   return TOK_DEV_TIMEOUT; }
-ping[ \t]+period                  {   return TOK_PING_PERIOD; }
-begin[ \t]+specification          {   return TOK_B_SPEC; }
+timeout                           {   return TOK_DEV_TIMEOUT; }
+pingperiod                        {   return TOK_PING_PERIOD; }
+specification                     {   return TOK_SPEC; }
 name                              {   return TOK_SPEC_NAME; }
 type                              {   return TOK_SPEC_TYPE; }
-off[ \t]+string                   {   return TOK_OFF_STRING; }
-on[ \t]+string                    {   return TOK_ON_STRING; }
-plug[ \t]+count                   {   return TOK_PLUG_COUNT; }
+offstring                         {   return TOK_OFF_STRING; }
+onstring                          {   return TOK_ON_STRING; }
+plugcount                         {   return TOK_PLUG_COUNT; }
 expect                            {   return TOK_EXPECT; }
 map                               {   return TOK_MAP; }
 send                              {   return TOK_SEND; }
 delay                             {   return TOK_DELAY; }
-begin[ \t]+LOGIN_SCRIPT           {   return TOK_B_LOGIN; }
-end[ \t]+LOGIN_SCRIPT             {   return TOK_E_LOGIN; }
-begin[ \t]+LOGOUT_SCRIPT          {   return TOK_B_LOGOUT; }
-end[ \t]+LOGOUT_SCRIPT            {   return TOK_E_LOGOUT; }
-begin[ \t]+STATUS_SCRIPT          {   return TOK_B_STATUS; }
-end[ \t]+STATUS_SCRIPT            {   return TOK_E_STATUS; }
-begin[ \t]+STATUS_ALL_SCRIPT      {   return TOK_B_STATUS_ALL; }
-end[ \t]+STATUS_ALL_SCRIPT        {   return TOK_E_STATUS_ALL; }
-begin[ \t]+STATUS_SOFT_SCRIPT     {   return TOK_B_STATUS_SOFT; }
-end[ \t]+STATUS_SOFT_SCRIPT       {   return TOK_E_STATUS_SOFT; }
-begin[ \t]+STATUS_SOFT_ALL_SCRIPT {   return TOK_B_STATUS_SOFT_ALL; }
-end[ \t]+STATUS_SOFT_ALL_SCRIPT   {   return TOK_E_STATUS_SOFT_ALL; }
-begin[ \t]+ON_SCRIPT              {   return TOK_B_ON; }
-end[ \t]+ON_SCRIPT                {   return TOK_E_ON; }
-begin[ \t]+ON_ALL_SCRIPT          {   return TOK_B_ON_ALL; }
-end[ \t]+ON_ALL_SCRIPT            {   return TOK_E_ON_ALL; }
-begin[ \t]+OFF_SCRIPT             {   return TOK_B_OFF; }
-end[ \t]+OFF_SCRIPT               {   return TOK_E_OFF; }
-begin[ \t]+OFF_ALL_SCRIPT         {   return TOK_B_OFF_ALL; }
-end[ \t]+OFF_ALL_SCRIPT           {   return TOK_E_OFF_ALL; }
-begin[ \t]+CYCLE_SCRIPT           {   return TOK_B_CYCLE; }
-end[ \t]+CYCLE_SCRIPT             {   return TOK_E_CYCLE; }
-begin[ \t]+CYCLE_ALL_SCRIPT       {   return TOK_B_CYCLE_ALL; }
-end[ \t]+CYCLE_ALL_SCRIPT         {   return TOK_E_CYCLE_ALL; }
-begin[ \t]+RESET_SCRIPT           {   return TOK_B_RESET; }
-end[ \t]+RESET_SCRIPT             {   return TOK_E_RESET; }
-begin[ \t]+RESET_ALL_SCRIPT       {   return TOK_B_RESET_ALL; }
-end[ \t]+RESET_ALL_SCRIPT         {   return TOK_E_RESET_ALL; }
-begin[ \t]+PING_SCRIPT            {   return TOK_B_PING; }
-end[ \t]+PING_SCRIPT              {   return TOK_E_PING; }
-begin[ \t]+STATUS_TEMP_SCRIPT     {   return TOK_B_STATUS_TEMP; }
-end[ \t]+STATUS_TEMP_SCRIPT       {   return TOK_E_STATUS_TEMP; }
-begin[ \t]+STATUS_TEMP_ALL_SCRIPT {   return TOK_B_STATUS_TEMP_ALL; }
-end[ \t]+STATUS_TEMP_ALL_SCRIPT   {   return TOK_E_STATUS_TEMP_ALL; }
-begin[ \t]+STATUS_BEACON_SCRIPT   {   return TOK_B_STATUS_BEACON; }
-end[ \t]+STATUS_BEACON_SCRIPT     {   return TOK_E_STATUS_BEACON; }
-begin[ \t]+STATUS_BEACON_ALL_SCRIPT {   return TOK_B_STATUS_BEACON_ALL; }
-end[ \t]+STATUS_BEACON_ALL_SCRIPT {   return TOK_E_STATUS_BEACON_ALL; }
-begin[ \t]+BEACON_ON_SCRIPT       {   return TOK_B_BEACON_ON; }
-end[ \t]+BEACON_ON_SCRIPT         {   return TOK_E_BEACON_ON; }
-begin[ \t]+BEACON_OFF_SCRIPT      {   return TOK_B_BEACON_OFF; }
-end[ \t]+BEACON_OFF_SCRIPT        {   return TOK_E_BEACON_OFF; }
-end[ \t]+specification            {   return TOK_E_SPEC; }
+login                             {   return TOK_LOGIN; }
+logout                            {   return TOK_LOGOUT; }
+status                            {   return TOK_STATUS; }
+status_all                        {   return TOK_STATUS_ALL; }
+status_soft                       {   return TOK_STATUS_SOFT; }
+status_soft_all                   {   return TOK_STATUS_SOFT_ALL; }
+on                                {   return TOK_ON; }
+on_all                            {   return TOK_ON_ALL; }
+off                               {   return TOK_OFF; }
+off_all                           {   return TOK_OFF_ALL; }
+cycle                             {   return TOK_CYCLE; }
+cycle_all                         {   return TOK_CYCLE_ALL; }
+reset                             {   return TOK_RESET; }
+reset_all                         {   return TOK_RESET_ALL; }
+ping                              {   return TOK_PING; }
+status_temp                       {   return TOK_STATUS_TEMP; }
+status_temp_all                   {   return TOK_STATUS_TEMP_ALL; }
+status_beacon                     {   return TOK_STATUS_BEACON; }
+status_beacon_all                 {   return TOK_STATUS_BEACON_ALL; }
+beacon_on                         {   return TOK_BEACON_ON; }
+beacon_off                        {   return TOK_BEACON_OFF; }
 device                            {   return TOK_DEVICE; }
 plug[ \t]+name                    {   return TOK_PLUG_NAME; }
 node                              {   return TOK_NODE; }
 yes                               {   return TOK_YES; }
 no                                {   return TOK_NO; }
+\{                                {   return TOK_BEGIN; }
+\}                                {   return TOK_END; }
+script                            {   return TOK_SCRIPT; }
 include                        BEGIN(lex_incl);
 <lex_incl>[ \t]*             {    /* eat white space */ }
 <lex_incl>[\n]               { linenum[include_stack_ptr]++; }

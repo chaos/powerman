@@ -4,22 +4,22 @@
 #
 # Linux Networx ICE box firmware version 2.x
 #
-begin specification
-	name "icebox"
-	type "TCP"
-	off string "0"
-	on string  "1"
-	plug count 10
-	device timeout 20 # accomodate 14 sec plus "cycle *" time */
-	begin LOGIN_SCRIPT
+specification {
+	name 		"icebox"
+	type 		"TCP"
+	offstring 	"0"
+	onstring  	"1"
+	plugcount 	10
+	timeout 	20 # accomodate 14 sec plus "cycle *" time */
+	script login {
 		expect "V2[^\n]*\r\n"
 		send "auth icebox\r\n"
 		expect "OK\r\n"
-	end LOGIN_SCRIPT
-	begin LOGOUT_SCRIPT
+	}
+	script logout {
 		send "q\r\n"
-	end LOGOUT_SCRIPT
-	begin STATUS_ALL_SCRIPT
+	}
+	script status_all {
 		send "ps *\r\n"
 		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
 			map $1 "1"
@@ -32,8 +32,8 @@ begin specification
 			map $8 "8"
 			map $9 "9"
 			map $10 "10"
-	end STATUS_ALL_SCRIPT
-	begin STATUS_SOFT_ALL_SCRIPT
+	}
+	script status_soft_all {
 		send "ns *\r\n"
 		expect "N1:([012]) N2:([012]) N3:([012]) N4:([012]) N5:([012]) N6:([012]) N7:([012]) N8:([012]) N9:([012]) N10:([012])[[:space:]]*\r\n"
 			map $1 "1"
@@ -46,8 +46,8 @@ begin specification
 			map $8 "8"
 			map $9 "9"
 			map $10 "10"
-	end STATUS_SOFT_ALL_SCRIPT
-	begin STATUS_TEMP_ALL_SCRIPT
+	}
+	script status_temp_all {
 		send "ts *\r\n"
 		expect "N1:([0-9,]+) N2:([0-9,]+) N3:([0-9,]+) N4:([0-9,]+) N5:([0-9,]+) N6:([0-9,]+) N7:([0-9,]+) N8:([0-9,]+) N9:([0-9,]+) N10:([0-9,]+) N11:[0-9,]+ N12:[0-9,]+[[:space:]]*\r\n"
 			map $1 "1"
@@ -60,53 +60,52 @@ begin specification
 			map $8 "8"
 			map $9 "9"
 			map $10 "10"
-	end STATUS_TEMP_ALL_SCRIPT
-	begin ON_SCRIPT
+	script on {
 		send "ph %s\r\n"
 		expect "OK\r\n"
 		delay 0.7
-	end ON_SCRIPT
-	begin ON_ALL_SCRIPT
+	}
+	script on_all {
 		send "ph *\r\n"
 		expect "OK\r\n"
 		delay 7
-	end ON_ALL_SCRIPT
-	begin OFF_SCRIPT
+	}
+	script off {
 		send "pl %s\r\n"
 		expect "OK\r\n"
 		delay 0.7
-	end OFF_SCRIPT
-	begin OFF_ALL_SCRIPT
+	}
+	script off_all {
 		send "pl *\r\n"
 		expect "OK\r\n"
 		delay 7
-	end OFF_ALL_SCRIPT
-	begin CYCLE_SCRIPT
+	}
+	script cycle {
 		send "pl %s\r\n"
 		expect "OK\r\n"
 		delay 0.7
 		send "ph %s\r\n"
 		expect "OK\r\n"
 		delay 0.7
-	end CYCLE_SCRIPT
-	begin CYCLE_ALL_SCRIPT
+	}
+	script cycle_all {
 		send "pl *\r\n"
 		expect "OK\r\n"
 		delay 7
 		send "ph *\r\n"
 		expect "OK\r\n"
 		delay 7
-	end CYCLE_ALL_SCRIPT
-	begin RESET_SCRIPT
+	}
+	script reset {
 		send "rp %s\r\n"
 		expect "OK\r\n"
 		delay 0.7
-	end RESET_SCRIPT
-	begin RESET_ALL_SCRIPT
+	}
+	script reset_all {
 		send "rp *\r\n"
 		expect "OK\r\n"
 		delay 7
-	end RESET_ALL_SCRIPT
+	}
 	plug name "1"
 	plug name "2"
 	plug name "3"
@@ -117,4 +116,4 @@ begin specification
 	plug name "8"
 	plug name "9"
 	plug name "10"
-end specification
+}

@@ -2,27 +2,27 @@
 # $Id$
 # $Source$
 #
-begin specification
-	name "vpc"
-	type "TCP"
-	off string "OFF"
-	on string  "ON"
-	plug count 8
-	device timeout 5.0
-#	ping period 10.0
-	begin PING_SCRIPT
+specification {
+	name 		"vpc"
+	type 		"TCP"
+	offstring 	"OFF"
+	onstring  	"ON"
+	plugcount 	8
+	timeout 	5.0
+#	pingperiod 	10.0
+	script ping {
 		send "\r\n"
 		expect "vpc> "
-	end PING_SCRIPT
-	begin LOGIN_SCRIPT
+	}
+	script login {
 		send "login\r\n"
 		expect "[0-9]* OK"
-	end LOGIN_SCRIPT
-	begin LOGOUT_SCRIPT
+	}
+	script logout {
 		send "logoff\r\n"
 		expect "[0-9]* OK"
-	end LOGOUT_SCRIPT
-	begin STATUS_ALL_SCRIPT
+	}
+	script status_all {
 		send "stat\r\n"
 		expect "plug 0: (ON|OFF)"
 			map $1 "0"
@@ -42,8 +42,8 @@ begin specification
 			map $1 "7"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end STATUS_ALL_SCRIPT
-	begin STATUS_SOFT_ALL_SCRIPT
+	}
+	script status_soft_all {
 		send "stat_soft\r\n"
 		expect "plug 0: (ON|OFF)"
 			map $1 "0"
@@ -63,28 +63,28 @@ begin specification
 			map $1 "7"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end STATUS_SOFT_ALL_SCRIPT
-	begin ON_SCRIPT
+	}
+	script on {
 		send "on %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end ON_SCRIPT
-	begin ON_ALL_SCRIPT
+	}
+	script on_all {
 		send "on *\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end ON_ALL_SCRIPT
-	begin OFF_SCRIPT
+	}
+	script off {
 		send "off %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end OFF_SCRIPT
-	begin OFF_ALL_SCRIPT
+	}
+	script off_all {
 		send "off *\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end OFF_ALL_SCRIPT
-	begin CYCLE_SCRIPT
+	}
+	script cycle {
 		send "off %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
@@ -92,8 +92,8 @@ begin specification
 		send "on %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end CYCLE_SCRIPT
-	begin CYCLE_ALL_SCRIPT
+	}
+	script cycle_all {
 		send "off *\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
@@ -101,7 +101,7 @@ begin specification
 		send "on *\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end CYCLE_ALL_SCRIPT
+	}
 	plug name "0"
 	plug name "1"
 	plug name "2"
@@ -110,4 +110,4 @@ begin specification
 	plug name "5"
 	plug name "6"
 	plug name "7"
-end specification
+}

@@ -82,81 +82,65 @@ static void _doubletotv(struct timeval *tv, double val);
 /* BISON Declatrations */
 
 %token TOK_TCP_WRAPPERS
-%token TOK_TIMEOUT
-%token TOK_INTERDEV
-%token TOK_UPDATE
-%token TOK_DEV_TIMEOUT
-%token TOK_PING_PERIOD
 %token TOK_PORT
-%token TOK_B_SPEC
+
 %token TOK_SPEC_NAME
 %token TOK_SPEC_TYPE
 %token TOK_OFF_STRING
 %token TOK_ON_STRING
 %token TOK_PLUG_COUNT
-%token TOK_B_LOGIN
+%token TOK_TIMEOUT
+%token TOK_DEV_TIMEOUT
+%token TOK_PING_PERIOD
+
 %token TOK_EXPECT
 %token TOK_MAP
+%token TOK_MATCHPOS
 %token TOK_SEND
 %token TOK_DELAY
-%token TOK_E_LOGIN
-%token TOK_B_LOGOUT
-%token TOK_E_LOGOUT
-%token TOK_B_STATUS
-%token TOK_E_STATUS
-%token TOK_B_STATUS_ALL
-%token TOK_E_STATUS_ALL
-%token TOK_B_STATUS_SOFT
-%token TOK_E_STATUS_SOFT
-%token TOK_B_STATUS_SOFT_ALL
-%token TOK_E_STATUS_SOFT_ALL
-%token TOK_B_STATUS_TEMP
-%token TOK_E_STATUS_TEMP
-%token TOK_B_STATUS_TEMP_ALL
-%token TOK_E_STATUS_TEMP_ALL
-%token TOK_B_STATUS_BEACON
-%token TOK_E_STATUS_BEACON
-%token TOK_B_STATUS_BEACON_ALL
-%token TOK_E_STATUS_BEACON_ALL
-%token TOK_B_BEACON_ON
-%token TOK_E_BEACON_ON
-%token TOK_B_BEACON_OFF
-%token TOK_E_BEACON_OFF
-%token TOK_B_ON
-%token TOK_E_ON
-%token TOK_B_ON_ALL
-%token TOK_E_ON_ALL
-%token TOK_B_OFF
-%token TOK_E_OFF
-%token TOK_B_OFF_ALL
-%token TOK_E_OFF_ALL
-%token TOK_B_CYCLE
-%token TOK_E_CYCLE
-%token TOK_B_CYCLE_ALL
-%token TOK_E_CYCLE_ALL
-%token TOK_B_RESET
-%token TOK_E_RESET
-%token TOK_B_RESET_ALL
-%token TOK_E_RESET_ALL
-%token TOK_B_PING
-%token TOK_E_PING
-%token TOK_E_SPEC
+
+%token TOK_SCRIPT
+%token TOK_LOGIN
+%token TOK_LOGOUT
+%token TOK_STATUS
+%token TOK_STATUS_ALL
+%token TOK_STATUS_SOFT
+%token TOK_STATUS_SOFT_ALL
+%token TOK_STATUS_TEMP
+%token TOK_STATUS_TEMP_ALL
+%token TOK_STATUS_BEACON
+%token TOK_STATUS_BEACON_ALL
+%token TOK_BEACON_ON
+%token TOK_BEACON_OFF
+%token TOK_ON
+%token TOK_ON_ALL
+%token TOK_OFF
+%token TOK_OFF_ALL
+%token TOK_CYCLE
+%token TOK_CYCLE_ALL
+%token TOK_RESET
+%token TOK_RESET_ALL
+%token TOK_PING
+%token TOK_SPEC
 %right TOK_DEVICE
+
 %token TOK_PLUG_NAME
 %token TOK_NODE
+
 %token TOK_STRING_VAL
-%token TOK_MATCHPOS
 %token TOK_NUMERIC_VAL
-%token TOK_TELNET
-%token TOK_UNRECOGNIZED
 %token TOK_YES
 %token TOK_NO
+%token TOK_BEGIN
+%token TOK_END
+
+%token TOK_UNRECOGNIZED
 
 /* deprecated */
+%token TOK_B_NODES
 %token TOK_E_NODES
 %token TOK_B_GLOBAL
 %token TOK_E_GLOBAL
-%token TOK_B_NODES
 %token TOK_OLD_PORT
 
 %%
@@ -177,7 +161,7 @@ config_item     : client_port
                 | node
                 | deprecated
 ;
-deprecated      : TOK_B_NODES   { 
+deprecated      : TOK_SCRIPT TOK_B_NODES   { 
     _warnmsg("'begin nodes' no longer needed"); 
 }               | TOK_E_NODES   { 
     _warnmsg("'end nodes' no longer needed"); 
@@ -218,8 +202,12 @@ node            : TOK_NODE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL {
 spec_list       : spec_list spec
                 | spec
 ;
-spec            : TOK_B_SPEC spec_name_line spec_item_list 
-                  spec_script_list plug_name_sec TOK_E_SPEC {
+spec            : TOK_SPEC TOK_BEGIN 
+                  spec_name_line 
+                  spec_item_list 
+                  spec_stmt_list 
+                  plug_name_sec 
+                  TOK_END {
     $$ = (char *)check_Spec();
 }
 ;
@@ -260,74 +248,74 @@ dev_timeout     : TOK_PING_PERIOD TOK_NUMERIC_VAL {
     $$ = (char *)makePingPeriod($2);
 }
 ;
-spec_script_list : spec_script_list spec_script 
+spec_stmt_list : spec_stmt_list spec_script 
                 | spec_script 
 ;
-spec_script     : TOK_B_LOGIN script_list TOK_E_LOGIN {
+spec_script     : TOK_SCRIPT TOK_LOGIN TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_LOG_IN);
 }
-                | TOK_B_LOGOUT script_list TOK_E_LOGOUT {
+                | TOK_SCRIPT TOK_LOGOUT TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_LOG_OUT);
 }
-                | TOK_B_STATUS script_list TOK_E_STATUS {
+                | TOK_SCRIPT TOK_STATUS TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_STATUS_PLUGS);
 } 
-                | TOK_B_STATUS_ALL script_list TOK_E_STATUS_ALL {
+                | TOK_SCRIPT TOK_STATUS_ALL TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_STATUS_PLUGS_ALL);
 } 
-                | TOK_B_STATUS_SOFT script_list TOK_E_STATUS_SOFT {
+                | TOK_SCRIPT TOK_STATUS_SOFT TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_STATUS_NODES);
 }
-                | TOK_B_STATUS_SOFT_ALL script_list TOK_E_STATUS_SOFT_ALL {
+                | TOK_SCRIPT TOK_STATUS_SOFT_ALL TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_STATUS_NODES_ALL);
 }
-                | TOK_B_STATUS_TEMP script_list TOK_E_STATUS_TEMP {
+                | TOK_SCRIPT TOK_STATUS_TEMP TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_STATUS_TEMP);
 }
-                | TOK_B_STATUS_TEMP_ALL script_list TOK_E_STATUS_TEMP_ALL {
+                | TOK_SCRIPT TOK_STATUS_TEMP_ALL TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_STATUS_TEMP_ALL);
 }
-                | TOK_B_STATUS_BEACON script_list TOK_E_STATUS_BEACON {
+                | TOK_SCRIPT TOK_STATUS_BEACON TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_STATUS_BEACON);
 }
-                | TOK_B_STATUS_BEACON_ALL script_list TOK_E_STATUS_BEACON_ALL {
+                | TOK_SCRIPT TOK_STATUS_BEACON_ALL TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_STATUS_BEACON);
 }
-                | TOK_B_BEACON_ON script_list TOK_E_BEACON_ON {
+                | TOK_SCRIPT TOK_BEACON_ON TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_BEACON_ON);
 }
-                | TOK_B_BEACON_OFF script_list TOK_E_BEACON_OFF {
+                | TOK_SCRIPT TOK_BEACON_OFF TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_BEACON_OFF);
 }
-                | TOK_B_ON script_list TOK_E_ON {
+                | TOK_SCRIPT TOK_ON TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_POWER_ON);
 }
-                | TOK_B_ON_ALL script_list TOK_E_ON_ALL {
+                | TOK_SCRIPT TOK_ON_ALL TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_POWER_ON_ALL);
 }
-                | TOK_B_OFF script_list TOK_E_OFF {
+                | TOK_SCRIPT TOK_OFF TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_POWER_OFF);
 }
-                | TOK_B_OFF_ALL script_list TOK_E_OFF_ALL {
+                | TOK_SCRIPT TOK_OFF_ALL TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_POWER_OFF_ALL);
 }
-                | TOK_B_CYCLE script_list TOK_E_CYCLE {
+                | TOK_SCRIPT TOK_CYCLE TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_POWER_CYCLE);
 }
-                | TOK_B_CYCLE_ALL script_list TOK_E_CYCLE_ALL {
+                | TOK_SCRIPT TOK_CYCLE_ALL TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_POWER_CYCLE_ALL);
 }
-                | TOK_B_RESET script_list TOK_E_RESET {
+                | TOK_SCRIPT TOK_RESET TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_RESET);
 }
-                | TOK_B_RESET_ALL script_list TOK_E_RESET_ALL {
+                | TOK_SCRIPT TOK_RESET_ALL TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_RESET_ALL);
 }
-                | TOK_B_PING script_list TOK_E_PING {
+                | TOK_SCRIPT TOK_PING TOK_BEGIN stmt_list TOK_END {
     $$ = (char *)makeScriptSec($2, PM_PING);
 }
 ;
-script_list     : script_list stmt
+stmt_list     : stmt_list stmt
                 | stmt
 ;
 stmt            : TOK_EXPECT TOK_STRING_VAL {

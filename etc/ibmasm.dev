@@ -7,25 +7,25 @@
 # (x335 / x345 nodes), so all you get here is access to the node
 # that has the RSA card in it. Sigh.
 #
-begin specification
-	name "ibmasm"
-	type "TCP"
-	off string "Off"
-	on string  "On"
-	all string "*"
-	plug count 1
-	device timeout  5
-	begin LOGIN_SCRIPT
+specification {
+	name 		"ibmasm"
+	type 		"TCP"
+	offstring 	"Off"
+	onstring  	"On"
+	plugcount 	1
+	timeout  	5
+
+	script login {
 		send "\IAC\DONT\TELOPT_NAWS\IAC\DONT\TELOPTTTYPE"
 		expect "Login ID:"
 		send "USERID\r\n"
 		send "PASSW0RD\r\n"
 		expect "Select" 
-	end LOGIN_SCRIPT
-	begin LOGOUT_SCRIPT
+	}
+	script logout {
 		send "\033"			# ESC to log off
-	end LOGOUT_SCRIPT
-	begin STATUS_SCRIPT
+	}
+	script status_all {
 		send "\t\t\t\t"			# tab to power/restart menu
 		expect "Server Power/Restart"
 		send "\r\n"			# select it
@@ -34,8 +34,8 @@ begin specification
 		expect "Select"
 		send "\033"			# ESC back to main menu
 		expect "Select"  	
-	end STATUS_SCRIPT
-	begin ON_SCRIPT
+	}
+	script on {
 		send "\t\t\t\t"			# tab to power/restart menu
 		expect "Server Power/Restart"
 		send "\r\n"			# select it
@@ -49,8 +49,8 @@ begin specification
 		expect "Select"
 		send "\033"			# return to main menu
 		expect "Select"
-	end ON_SCRIPT
-	begin OFF_SCRIPT
+	}
+	script off {
 		send "\t\t\t\t"			# tab to power/restart menu
 		expect "Server Power/Restart"
 		send "\r\n"			# select it
@@ -66,8 +66,8 @@ begin specification
 		expect "Select"
 		send "\033"			# return to main menu
 		expect "Select"
-	end OFF_SCRIPT
-	begin CYCLE_SCRIPT
+	}
+	script cycle {
 		send "\t\t\t\t"			# tab to power/restart menu
 		expect "Server Power/Restart"
 		send "\r\n"			# select it
@@ -83,7 +83,6 @@ begin specification
 		expect "Select"
 		send "\033"			# return to main menu
 		expect "Select"
-	end CYCLE_SCRIPT
+	}
 	plug name "1"
-
-end specification
+}

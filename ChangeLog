@@ -2,11 +2,11 @@
     * Map plug names to node names on the fly at each subexpression
       interpretation instead of caching mappings in the Interp struct.
     * Changes to device specifications (old style no longer supported)
+      including
       - "all string" deprecated (use _ALL script variant)
-      - "specification name" shortened to "name"
-      - "specification type" shortened to "type"
-      - "device specification" shortened to "specification"
-      - query scripts are now named with _ALL suffixes ("all" semantics were
+      - various strings shortened
+      - begin/end changed to C-style braces
+      - query scripts are now named with _all suffixes ("all" semantics were
         previously assumed).
       - new, single-plug (non "all") query scripts added
       - second argument of 'map' can be "%s" to support single-plug query

@@ -10,24 +10,24 @@
 # 4. disconnect timeout: set to max (30 min)
 # Note: prompt is not returned until device is ready to accept another command
 #
-begin specification
-	name "wti"
-	type "TCP"
-	off string "OFF"
-	on string  "ON"
-	plug count 8
-	device timeout 30  # "/boot *" command takes about 20 sec
-	begin LOGIN_SCRIPT
+specification {
+	name 		"wti"
+	type 		"TCP"
+	offstring 	"OFF"
+	onstring  	"ON"
+	plugcount 	8
+	timeout 	30  # "/boot *" command takes about 20 sec
+	script login {
 		expect "\n"
 		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA\IAC\DONT\TELOPT_TTYPE"
 		expect "word: "
 		send "wti\r\n"
 		expect "NPS> "
-	end LOGIN_SCRIPT
-	begin LOGOUT_SCRIPT
+	}
+	script logout {
 		send "/x\r\n"
-	end LOGOUT_SCRIPT
-	begin STATUS_ALL_SCRIPT
+	}
+	script status_all {
 		send "/s\r\n"
 		expect "Default"
 		expect "\\+\r\n"
@@ -49,31 +49,31 @@ begin specification
 			map $1 "8"
 		expect "\\+\r\n"
 		expect "NPS> "
-	end STATUS_ALL_SCRIPT
-	begin ON_SCRIPT
+	}
+	script on {
 		send "/on %s\r\n"
 		expect "NPS> "
-	end ON_SCRIPT
-	begin ON_ALL_SCRIPT
+	}
+	script on_all {
 		send "/on *\r\n"
 		expect "NPS> "
-	end ON_ALL_SCRIPT
-	begin OFF_SCRIPT
+	}
+	script off {
 		send "/off %s\r\n"
 		expect "NPS> "
-	end OFF_SCRIPT
-	begin OFF_ALL_SCRIPT
+	}
+	script off_all {
 		send "/off *\r\n"
 		expect "NPS> "
-	end OFF_ALL_SCRIPT
-	begin CYCLE_SCRIPT
+	}
+	script cycle {
 		send "/boot %s\r\n"
 		expect "NPS> "
-	end CYCLE_SCRIPT
-	begin CYCLE_ALL_SCRIPT
+	}
+	script cycle_all {
 		send "/boot *\r\n"
 		expect "NPS> "
-	end CYCLE_ALL_SCRIPT
+	}
 	plug name "1"
 	plug name "2"
 	plug name "3"
@@ -82,4 +82,4 @@ begin specification
 	plug name "6"
 	plug name "7"
 	plug name "8"
-end specification
+}
