@@ -1,0 +1,42 @@
+#
+# $Id$
+# $Source$
+#
+# PowerMan script for controlling another PowerMan daemon.
+#
+specification "powerman" {
+	timeout 	100.0
+
+	script login {
+		expect "powerman> "
+		send "exprange\r\n"
+		expect "105 Hostrange expansion ON\r\npowerman> "
+	}
+	script logout {
+		send "quit\r\n"
+	}
+	script status_all {
+		send "status\r\n"
+		foreachplug {
+			expect "303 ([^:]+): (off|on|unknown)\r\n"
+			setplugstate $1 $2 off="off" on="on"
+		}
+		expect "powerman> "
+	}
+	script on {
+		send "on %s\r\n"
+		expect "powerman> "
+	}
+	script off {
+		send "off %s\r\n"
+		expect "powerman> "
+	}
+	script cycle {
+		send "cycle %s\r\n"
+		expect "powerman> "
+	}
+	script reset {
+		send "reset %s\r\n"
+		expect "powerman> "
+	}
+}

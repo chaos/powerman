@@ -22,7 +22,7 @@ specification "ibmh8" {
 		send "stat\r"
 		expect "stat\r\n"
 		foreachnode {
-			expect "([^:]*): (timed\ out|H8\ is\ down|off|on)\r\n"
+			expect "([^\r\n:]*): (timed\ out|H8\ is\ down|off|on)\r\n"
 			setplugstate $1 $2 on="on" off="off"
 		}
 		expect "h8power> "
