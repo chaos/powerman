@@ -112,6 +112,12 @@ static void _doubletotv(struct timeval *tv, double val);
 %token TOK_E_STATUS_SOFT
 %token TOK_B_STATUS_TEMP
 %token TOK_E_STATUS_TEMP
+%token TOK_B_STATUS_BEACON
+%token TOK_E_STATUS_BEACON
+%token TOK_B_BEACON_ON
+%token TOK_E_BEACON_ON
+%token TOK_B_BEACON_OFF
+%token TOK_E_BEACON_OFF
 %token TOK_B_ON
 %token TOK_E_ON
 %token TOK_B_ON_ALL
@@ -232,6 +238,15 @@ spec_script	: TOK_B_LOGIN script_list TOK_E_LOGIN {
 }
 		| TOK_B_STATUS_TEMP script_list TOK_E_STATUS_TEMP {
     $$ = (char *)makeScriptSec($2, PM_STATUS_TEMP);
+}
+		| TOK_B_STATUS_BEACON script_list TOK_E_STATUS_BEACON {
+    $$ = (char *)makeScriptSec($2, PM_STATUS_BEACON);
+}
+		| TOK_B_BEACON_ON script_list TOK_E_BEACON_ON {
+    $$ = (char *)makeScriptSec($2, PM_BEACON_ON);
+}
+		| TOK_B_BEACON_OFF script_list TOK_E_BEACON_OFF {
+    $$ = (char *)makeScriptSec($2, PM_BEACON_OFF);
 }
 		| TOK_B_ON script_list TOK_E_ON {
     $$ = (char *)makeScriptSec($2, PM_POWER_ON);

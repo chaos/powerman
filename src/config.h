@@ -55,8 +55,10 @@
 #define PM_RESET_ALL        12
 #define PM_STATUS_TEMP      13
 #define PM_STATUS_BEACON    14
+#define PM_BEACON_ON        15
+#define PM_BEACON_OFF       16
 /* count of scripts above */
-#define NUM_SCRIPTS	    15
+#define NUM_SCRIPTS	    17
 
 /*
  * Script element (send, expect, or delay).
