@@ -60,7 +60,7 @@ install:
 	$(INSTALL) -m 644 etc/wti.conf       $(DESTDIR)$(packagedir)/etc/
 	$(INSTALL) -m 644 etc/icebox.conf    $(DESTDIR)$(packagedir)/etc/
 	$(mkinstalldirs)      $(DESTDIR)$(packagedir)/lib
-	$(INSTALL) ether-wake $(DESTDIR)$(packagedir)/lib/
+	$(INSTALL) src/ether-wake $(DESTDIR)$(packagedir)/lib/
 	$(mkinstalldirs)	      $(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/digi.1      $(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/etherwake.1 $(DESTDIR)$(mandir)/man1
