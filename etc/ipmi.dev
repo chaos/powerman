@@ -1,0 +1,59 @@
+#
+# $Id$
+# $Source$
+#
+# IPMI 1.5 in terminal mode
+#
+# References:
+# "IPMI over Cyclades TS2000", M.P. Anand Babu
+# "IPMI 1.5 Reference Guide", 13.7.8 Terminal Mode ASCII Text Commands (p.175)
+# http://www.intel.com/design/servers/ipmi/
+# http://www.intel.com/design/servers/ipmi/spec.htm
+#
+#
+specification  "ipmi" {
+	timeout 	5
+
+	plug name { "1" }
+
+	script login {
+		send "\033(\r\n"
+		expect "\[OK TMODE\]\r\n"
+		send "[SYS TMODE]\r\n"
+		expect "\[OK TMODE\]\r\n"
+		send "[SYS PWD -N]\r\n"  # null password/username
+		expect "\[OK\]\r\n"
+	}
+	script logout {
+		send "[SYS PWD -X]\r\n"
+	}
+	script status {
+		send "[SYS HEALTH QUERY]\r\n"
+		expect "\[PWR:(ON|OFF|SLP|S4|S3|S2|S1|\?\?).*\]\r\n"
+		setplugstate "1" $1 on="ON" off="OFF|SLP|S4|S3|S2|S1"
+	}
+	script on {
+		send "[SYS POWER ON]\r\n"
+		expect "\[OK TMODE\]\r\n"
+	}		
+	script off {
+		send "[SYS POWER OFF]\r\n"
+		expect "\[OK TMODE\]\r\n"
+	}		
+	script reset {
+		send "[SYS RESET]\r\n"
+		expect "\[OK TMODE\]\r\n"
+	}
+	script cycle {
+		send "[SYS POWER OFF]\r\n"
+		expect "\[OK TMODE\]\r\n"
+		delay 2.0
+		send "[SYS POWER ON]\r\n"
+		expect "\[TMODE OK\]\r\n"
+	}
+	script status_temp {
+		send "[SYS HEALTH QUERY]\r\n"
+		expect "\[PWR:[^ ]* H:.. T:(ok|nc|cr|nr|uf|\?\?).*\]\r\n"
+                setplugstate "1" $1
+        }
+}
