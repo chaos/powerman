@@ -1,3 +1,6 @@
+2002-01-19 garlick
+    * Add alias capability in powerman.conf.
+
 2002-01-17 garlick
     * Map plug names to node names on the fly at each subexpression
       interpretation instead of caching mappings in the Interp struct.

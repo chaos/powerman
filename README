@@ -8,8 +8,11 @@ o Changes to powerman.conf (deprecated syntax causes warnings but still works):
   - "tcpwrappers" now takes "on" or "off" argument
   - "client listener port"  shortened to "port"
   - "begin nodes", "end nodes", "begin global", "end global" no longer needed.
-  Syntax for device specifications has been cleaned up (deprecated syntax 
-  will no longer work).
+  Syntax for device specifications has changed (do not use deprecated syntax).
+
+o Node alias capability available powerman.conf.  Aliases can refer to one or
+  more nodes, thus rudimentary support for "ganged plugs", e.g. redundant
+  power supplies can be configured.
 
 o --device client option dumps server statistics for each RPC.
   This option can also be used by firmware update scripts to create a list

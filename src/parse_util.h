@@ -153,6 +153,9 @@ void conf_set_use_tcp_wrappers(bool val);
 int conf_get_listen_port(void);
 void conf_set_listen_port(int val);
 
+void conf_exp_aliases(hostlist_t hl);
+bool conf_add_alias(char *name, char *hosts);
+
 #endif                          /* PARSE_UTIL_H */
 
 /*

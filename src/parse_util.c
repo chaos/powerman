@@ -59,6 +59,15 @@ static bool conf_use_tcp_wrap = FALSE;
 static int conf_listen_port;
 static hostlist_t conf_nodes = NULL;
 
+typedef struct {
+    char *name;
+    hostlist_t hl;
+} alias_t;
+
+static List conf_aliases = NULL; /* list of alias_t's */
+
+static void _alias_destroy(alias_t *a);
+
 /* 
  * initialize module
  * parse the named config file - on error, exit with a message to stderr 
@@ -73,6 +82,8 @@ void conf_init(char *filename)
     conf_nodes = hostlist_create(NULL);
 
     tmp_specs = list_create((ListDelF) _spec_destroy);
+
+    conf_aliases = list_create((ListDelF) _alias_destroy);
 
     /* validate config file */
     if (stat(filename, &stbuf) < 0)
@@ -332,6 +343,74 @@ void conf_set_listen_port(int val)
 int conf_get_listen_port(void)
 {
     return conf_listen_port;
+}
+
+/*
+ * Manage a list of nodename aliases.
+ */
+
+static int _alias_match(alias_t *a, char *name)
+{
+    return (strcmp(a->name, name) == 0);
+}
+
+void conf_exp_aliases(hostlist_t hl)
+{
+    hostlist_iterator_t itr = NULL;
+    char *host;
+    
+    if ((itr = hostlist_iterator_create(hl)) == NULL) {
+        err(FALSE, "conf_exp_aliases: error craeting hostlist iterator");
+        return;
+    }
+
+    while ((host = hostlist_next(itr)) != NULL) {
+        alias_t *a;
+            
+        a = list_find_first(conf_aliases, (ListFindF) _alias_match, host);
+        if (a) {
+            hostlist_delete_host(hl, host); 
+            hostlist_push_list(hl, a->hl);
+            hostlist_iterator_reset(itr);
+        }
+    }
+    hostlist_iterator_destroy(itr);
+}
+
+static void _alias_destroy(alias_t *a)
+{
+    if (a->name)
+        Free(a->name);
+    if (a->hl)
+        hostlist_destroy(a->hl);
+    Free(a);
+}
+
+static alias_t *_alias_create(char *name, char *hosts)
+{
+    alias_t *a = NULL;
+
+    if (!list_find_first(conf_aliases, (ListFindF) _alias_match, name)) {
+        a = (alias_t *)Malloc(sizeof(alias_t));
+        a->name= Strdup(name);
+        a->hl = hostlist_create(hosts);
+        if (a->hl == NULL) {
+            _alias_destroy(a);
+            a = NULL;
+        }
+    }
+    return a;
+}
+
+bool conf_add_alias(char *name, char *hosts)
+{
+    alias_t *a;
+
+    if ((a = _alias_create(name, hosts))) {
+        list_push(conf_aliases, a);
+        return TRUE;
+    }
+    return FALSE;
 }
 
 /*

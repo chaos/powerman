@@ -163,6 +163,7 @@ static hostlist_t _hostlist_create_validated(Client * c, char *str)
             _internal_error_response(c);
         return NULL;
     }
+    conf_exp_aliases(hl);       
     if ((badhl = hostlist_create(NULL)) == NULL) {
         /* Note: other hostlist failures not user-induced so OK to be vague */
         _internal_error_response(c);

@@ -214,6 +214,7 @@ no                                {   return TOK_NO; }
 \{                                {   return TOK_BEGIN; }
 \}                                {   return TOK_END; }
 script                            {   return TOK_SCRIPT; }
+alias                             {   return TOK_ALIAS; }
 include                        BEGIN(lex_incl);
 <lex_incl>[ \t]*             {    /* eat white space */ }
 <lex_incl>[\n]               { linenum[include_stack_ptr]++; }

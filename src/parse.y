@@ -46,6 +46,7 @@
 
 /* prototypes for parse handler routines */
 static char *makeNode(char *s2, char *s3, char *s4);
+static char *makeAlias(char *s2, char *s3);
 static char *makeDevice(char *s2, char *s3, char *s4, char *s5);
 static char *makePlugNameLine(char *s2);
 
@@ -126,6 +127,7 @@ static void _doubletotv(struct timeval *tv, double val);
 
 %token TOK_PLUG_NAME
 %token TOK_NODE
+%token TOK_ALIAS
 
 %token TOK_STRING_VAL
 %token TOK_NUMERIC_VAL
@@ -159,6 +161,7 @@ config_item     : client_port
                 | TCP_wrappers 
                 | device
                 | node
+                | alias
                 | deprecated
 ;
 deprecated      : TOK_B_NODES   { 
@@ -194,6 +197,10 @@ device          : TOK_DEVICE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL
 ;
 node            : TOK_NODE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL {
     $$ = (char *)makeNode($2, $3, $4);
+}
+;
+alias           : TOK_ALIAS TOK_STRING_VAL TOK_STRING_VAL {
+    $$ = (char *)makeAlias($2, $3);
 }
 ;
 /**************************************************************/
@@ -667,6 +674,13 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     }
 
     dev_add(dev);
+    return s2;
+}
+
+static char *makeAlias(char *s2, char *s3)
+{
+    if (!conf_add_alias(s2, s3))
+        _errormsg("bad alias");
     return s2;
 }
 
