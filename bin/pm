@@ -16,15 +16,16 @@ import time
 
 def usage(msg):
     "Tha usage message"
-    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-L] [-q] [-r] [-t] [-V] [-w node,...] [on | off | reset]"
+    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-L] [-q] [-r] [-t] [-T] [-V] [-w node,...] [on | off | reset]"
     print "-a       = on/off/reset all nodes"
     print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
     print "-f fan   = fanout for parallelism (default: 256 where implemented)"
     print "-l ldir  = powerman lirary directory (default: /usr/lib/powerman)"
-    print "-L       = log commands and responses to $powermandir/log/log_file (icebox only)"
+    print "-L       = log commands and replies to /tmp/log_file (icebox only)"
     print "-q       = be quiet about any errors that may have occurred"
     print "-r       = reverse sense, i.e. check for  nodes that are off"
     print "-t       = query temperatur rather than power status"
+    print "-T       = print a trace of icebox replies to /tmp/powerman.trace"
     print "-V       = print version and exit"
     print "-w nodes = comma separated list of nodes"
     print "-w -     = read nodes from stdin, one per line"
@@ -47,6 +48,7 @@ config_file = '/etc/powerman.conf'
 work_col    = ''
 verbose     = 1
 logging     = 0
+tracing     = 0
 reverse     = 0
 names       = []
 com         = ''
@@ -79,7 +81,7 @@ except KeyError:
 # Parse the command line, check for sanity, and set globals
 
 try:
-    options, args = getopt.getopt(sys.argv[1:], 'ac:f:l:LqrtVw:')
+    options, args = getopt.getopt(sys.argv[1:], 'ac:f:l:LqrtTVw:')
 except getopt.error:
     usage("Error processing options")
 
@@ -103,6 +105,8 @@ for opt in options:
         reverse = 1
     elif (op == '-t'):
         com = "temp"
+    elif (op == '-T'):
+        tracing = 1
     elif (op == '-V'):
         print Version
         sys.exit(0)
@@ -145,7 +149,7 @@ try:
     import pm_utils, pm_classes
 except ImportError:
     usage("\n\nCouldn\'t find library files")
-pm_utils.init_utils(verbose, logging, powermandir)
+pm_utils.init_utils(verbose, logging, tracing, powermandir)
 
 # Initialize operations by creating the cluster based on the description
 # given in the config file.  That information includes for each node the
