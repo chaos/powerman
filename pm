@@ -426,7 +426,7 @@ else:
     nodes = theCluster.check(opts, names_list)
     exit_code = 1
     for node in nodes:
-        if(exit_code == 1) exit_code = 0
+        if(exit_code == 1): exit_code = 0
         print node
     sys.exit(exit_code)
     
