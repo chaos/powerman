@@ -138,7 +138,7 @@ static void _doubletotv(struct timeval *tv, double val);
 
 %token TOK_UNRECOGNIZED
 
-/* deprecated */
+/* deprecated in 1.0.0.16 */
 %token TOK_B_NODES
 %token TOK_E_NODES
 %token TOK_B_GLOBAL

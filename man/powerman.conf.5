@@ -43,34 +43,33 @@ Baytech RPC-3 remote power controllers.
 .nf \fI
 include "/etc/powerman/baytech.dev"  # include def for "baytech" RPC
 
-begin global
-        client listener port 10101   # use powerman default port
-        tcpwrappers                  # enable TCP wrappers
-end global
+tcpwrappers yes                      # enable TCP wrappers
+
+# Alias example - alias can be used in target specifications
+alias "pengra_service" "pengra[0-1]"
+alias "pengra_compute" "pengra[2-15]"
 
 # Power controller: device <name> <type> <hostname> <port>
 device "pow0" "baytech" "pow0" "23"  # instantiate pow0
 device "pow1" "baytech" "pow1" "23"  # instantiate pow1
 
 # Plugs: node <name> <device> <plug>
-begin nodes
-        node "pengra0" "pow0" "1"    # map pengra0 to pow0 plug 1
-        node "pengra1" "pow0" "2"    # map pengra0 to pow0 plug 2
-        node "pengra2" "pow0" "3"    # ...
-        node "pengra3" "pow0" "4"
-        node "pengra4" "pow0" "5"
-        node "pengra5" "pow0" "6"
-        node "pengra6" "pow0" "7"
-        node "pengra7" "pow0" "8"
-        node "pengra8" "pow1" "1"    # map pengra8 to pow1 plug 1
-        node "pengra9" "pow1" "2"    # map pengra9 to pow1 plug 2
-        node "pengra10" "pow1" "3"   # ...
-        node "pengra11" "pow1" "4"
-        node "pengra12" "pow1" "5"
-        node "pengra13" "pow1" "6"
-        node "pengra14" "pow1" "7"
-        node "pengra15" "pow1" "8"
-end nodes \fR
+node "pengra0" "pow0" "1"    # map pengra0 to pow0 plug 1
+node "pengra1" "pow0" "2"    # map pengra0 to pow0 plug 2
+node "pengra2" "pow0" "3"    # ...
+node "pengra3" "pow0" "4"
+node "pengra4" "pow0" "5"
+node "pengra5" "pow0" "6"
+node "pengra6" "pow0" "7"
+node "pengra7" "pow0" "8"
+node "pengra8" "pow1" "1"    # map pengra8 to pow1 plug 1
+node "pengra9" "pow1" "2"    # map pengra9 to pow1 plug 2
+node "pengra10" "pow1" "3"   # ...
+node "pengra11" "pow1" "4"
+node "pengra12" "pow1" "5"
+node "pengra13" "pow1" "6"
+node "pengra14" "pow1" "7"
+node "pengra15" "pow1" "8" \fR
 .fi
 .SH "FILES"
 /etc/powerman/powerman.conf
