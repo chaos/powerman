@@ -60,6 +60,7 @@ specification {
 			map $8 "8"
 			map $9 "9"
 			map $10 "10"
+	}
 	script on {
 		send "ph %s\r\n"
 		expect "OK\r\n"
