@@ -1,3 +1,7 @@
+2003-05-28 Jim Garlick <garlick@llnl.gov>
+
+    * examples: added a few example powerman.conf files per Robin's request.
+
 2003-03-19 Jim Garlick <garlick@llnl.gov>
    
     * etc/apc.dev, etc/apcnew.dev: changed comments about firmware revs
