@@ -90,8 +90,8 @@ rpm-internal: tar-internal
 	  $(mkinstalldirs) $$tmp/$$d >/dev/null; \
 	done; \
 	cp -p $(PACKAGE)-$$ver.tgz $$tmp/SOURCES; \
-	cvs co -r $$tag -p $(PACKAGE)/$(PACKAGE).spec 2>/dev/null ; \
-	cp -p $(PACKAGE).spec $$tmp/SPECS/$(PACKAGE).spec; \
+	cvs -Q co -r $$tag -p $(PACKAGE)/$(PACKAGE).spec \
+		 > $$tmp/SPECS/$(PACKAGE).spec; \
 	if ! test -s $$tmp/SPECS/$(PACKAGE).spec; then \
 	  echo "ERROR: No $(PACKAGE).spec file (tag=$$tag)" 1>&2; \
 	  rm -rf $$tmp; exit 0; fi; \
@@ -110,7 +110,7 @@ tar-internal:
 	dir=$$tmp/$$name; \
 	echo "creating $$name.tgz (tag=$$tag)"; \
 	$(mkinstalldirs) $$tmp >/dev/null; \
-	cvs export -r $$tag -d $$dir $(PACKAGE) >/dev/null && \
+	(cd $$tmp; cvs -Q export -r $$tag -d $$name $(PACKAGE) >/dev/null) && \
 	  (cd $$tmp; tar cf - $$name) | gzip -c9 > $(top_srcdir)/$$name.tgz; \
 	rm -rf $$tmp
 
