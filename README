@@ -61,6 +61,8 @@ o Support added for Baytech RPC-28-30NC remote power controller.
 o Support added for Baytech RPC-3 remote power controller with "NC" style
   firwmare interface.
 
+o Support added for IPMI 1.5 in terminal mode.
+
 +------------+
 | Bugs fixed |
 +------------+
@@ -73,6 +75,9 @@ o Serial connections were made non-blocking (blocking in an open would
 
 o Workaround for getaddrinfo bug in glibc-2.3.2-27.9 that caused client
   core dumps under RedHat 9.
+
+o Exponential backoff-retry is enforced for script failures (was just
+  connection attempts).
 
 +-----------------+
 | Supported RPC's |
@@ -98,9 +103,11 @@ o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4) (+)
 
 o APC MasterSwitch Plus (APP v2.2.0 / AOS v3.0.3) (*)
 
-o IBM RSA Remote Supervisor Adapter (T2ET16- for x335, GEET117A for x345) (*)
+o IBM RSA Remote Supervisor Adapter (GEET117A (x345) and T2ET116A (x335)) (*)
 
 o Rackable Systems Phantom Remote Management Module (v3.0.4b) (+)
+
+o IPMI 1.5 on Intel SE7501WV2 motherboard in terminal mode
 
 Notes:
 (+) Present in powerman test rig.
