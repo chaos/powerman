@@ -45,12 +45,19 @@
 #include "error.h"
 #include "wrappers.h"
 #include "debug.h"
+#include "pty.h"
 
 typedef struct {
     int argc;
     char **argv;
     pid_t cpid;
 } PipeDev;
+
+/* return true if 'c' is a shell metacharacter we wish to ignore */
+static int _isshell(char c)
+{
+    return (c == '|' || c == '&');
+}
 
 /* make a copy of the first word in str and advance str past it */
 static char *_nextargv(char **strp)
@@ -60,10 +67,10 @@ static char *_nextargv(char **strp)
     int len;
     char *cpy = NULL;
 
-    while (*str && (isspace(*str) || *str == '|')) /* skip '|' preceeding cmd */
+    while (*str && (isspace(*str) || _isshell(*str)))
         str++;
     word = str;
-    while (*str && !isspace(*str))
+    while (*str && !(isspace(*str) || _isshell(*str)))
         str++;
     len = str - word;
 
@@ -83,17 +90,21 @@ static int _sizeargv(char *str)
     int count = 0;
 
     do {
-        while (*str && (isspace(*str) || *str == '|'))
+        while (*str && (isspace(*str) || _isshell(*str)))
             str++;
         if (*str)
             count++;
-        while (*str && !isspace(*str))
+        while (*str && !(isspace(*str) || _isshell(*str)))
             str++;
     } while (*str);
 
     return count;
 }
 
+/* Create "pipe device" data struct.
+ * cmdline would normally look something like "/usr/bin/conman -j -Q bay0 |&"
+ * (Korn shell style "coprocess" syntax)
+ */
 void *pipe_create(char *cmdline, char *flags)
 {
     PipeDev *pd = (PipeDev *)Malloc(sizeof(PipeDev));
@@ -112,6 +123,8 @@ void *pipe_create(char *cmdline, char *flags)
     return (void *)pd;
 }
 
+/* Destroy pipe device data struct.
+ */
 void pipe_destroy(void *data)
 {
     PipeDev *pd = (PipeDev *)data;
@@ -123,65 +136,51 @@ void pipe_destroy(void *data)
     Free(pd);
 }
 
-/* Start the pipe command as a "coprocess", i.e. with both stdin and 
- * stdout/stderr under powerman control.
+/* Start the coprocess using Stevens' nifty pty_fork() function.
  */
 bool pipe_connect(Device * dev)
 {
+    int fd;
+    pid_t pid;
     PipeDev *pd = (PipeDev *)dev->data;
-    int rfd[2] = { -1, -1 }; /* parent(r) <- child(w) */
-    int wfd[2] = { -1, -1 }; /* child(r) <- parent(w) */
+    char ptyname[20]; /* FIXME */
 
     assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->ifd == NO_FD);
     assert(dev->ofd == NO_FD);
 
-    Pipe(rfd);
-    Pipe(wfd);
-    pd->cpid = Fork();
+    pid = pty_fork(&fd, ptyname);
+    if (pid < 0) {
+        err(TRUE, "pty_fork error");
+        /*NOTREACHED*/
 
-    if (pd->cpid == 0) {        /* child */
-        Close(rfd[0]);          /* these ends belong to parent - close */
-        Close(wfd[1]);   
-
-        Dup2(rfd[1], 0);        /* dup stdin */
-        Close(rfd[1]);
-
-        Dup2(wfd[0], 1);        /* dup stdout/stderr */
-        Dup2(wfd[0], 2);
-        Close(wfd[0]);
-
-        /* XXX: need to close other fd's */
-
+    } else if (pid == 0) {      /* child */
         Execv(pd->argv[0], pd->argv);
         /*NOTREACHED*/
 
     } else {                    /* parent */
         int flags;
 
-        Close(rfd[1]);          /* these ends belong to child - close */
-        Close(wfd[0]);   
+        flags = Fcntl(fd, F_GETFL, 0);
+        Fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
-        dev->ifd = rfd[0];
-        dev->ofd = wfd[1];
-
-        flags = Fcntl(dev->ifd, F_GETFL, 0);
-        Fcntl(dev->ifd, F_SETFL, flags | O_NONBLOCK);
-
-        flags = Fcntl(dev->ofd, F_GETFL, 0);
-        Fcntl(dev->ofd, F_SETFL, flags | O_NONBLOCK);
+        dev->ifd = dev->ofd = fd;
 
         dev->connect_state = DEV_CONNECTED;
         dev->stat_successful_connects++;
         /*dev->retry_count = 0;*/
 
-        err(FALSE, "_pipe_connect: %s opened", dev->name);
+        pd->cpid = pid;
+
+        err(FALSE, "_pipe_connect: %s opened on %s", dev->name, ptyname);
+
     }
+
     return (dev->connect_state == DEV_CONNECTED);
 }
 
 /*
- * Close down the pipes.
+ * Close down the pipes/pty.
  */
 void pipe_disconnect(Device * dev)
 {
@@ -192,14 +191,9 @@ void pipe_disconnect(Device * dev)
     dbg(DBG_DEVICE, "_pipe_disconnect: %s on fds %d/%d", dev->name, 
             dev->ifd, dev->ofd);
 
-    /* close devices if open */
     if (dev->ifd >= 0) {
-        Close(dev->ifd);
-        dev->ifd = NO_FD;
-    }
-    if (dev->ofd >= 0) {
         Close(dev->ofd);
-        dev->ofd = NO_FD;
+        dev->ofd = dev->ifd = NO_FD;
     }
 
     /* reap child */
@@ -208,11 +202,11 @@ void pipe_disconnect(Device * dev)
 
         Waitpid(pd->cpid, &wstat, 0);
         if (WIFEXITED(wstat)) {
-            err(FALSE, "pipe_disconnect: %s exited with status %d", 
-                    pd->argv[0], WEXITSTATUS(wstat));
+            err(FALSE, "pipe_disconnect: %s: %s exited with status %d", 
+                    dev->name, pd->argv[0], WEXITSTATUS(wstat));
         } else if (WIFSIGNALED(wstat)) {
-            err(FALSE, "pipe_disconnect: %s terminated with signal %d", 
-                    pd->argv[0], WTERMSIG(wstat));
+            err(FALSE, "pipe_disconnect: %s: %s terminated with signal %d", 
+                    dev->name, pd->argv[0], WTERMSIG(wstat));
         }
         pd->cpid = -1;
     }

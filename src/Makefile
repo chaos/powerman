@@ -28,7 +28,7 @@ SERVER_UTIL = $(COMMON_OBJS) daemon.o cbuf.o
 
 SERVER_OBJS = $(SERVER_UTIL) list.o parse_util.o device.o \
 	      powermand.o client.o parse_lex.o parse_tab.o \
-              device_serial.o device_tcp.o device_pipe.o
+              device_serial.o device_tcp.o device_pipe.o pty.o
 
 CLIENT_OBJS = $(COMMON_OBJS) powerman.o
 

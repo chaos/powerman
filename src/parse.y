@@ -640,8 +640,17 @@ static Stmt *makeStmt(PreStmt *p)
 
 static void _parse_hoststr(Device *dev, char *hoststr, char *flagstr)
 {
-    /* serial device */
-    if (hoststr[0] == '/') {
+    /* pipe device, e.g. "conman -j baytech0 |&" */
+    if (strstr(hoststr, "|&") != NULL) {
+        dev->data           = pipe_create(hoststr, flagstr);
+        dev->destroy        = pipe_destroy;
+        dev->connect        = pipe_connect;
+        dev->disconnect     = pipe_disconnect;
+        dev->finish_connect = NULL;
+        dev->preprocess     = NULL;
+
+    /* serial device, e.g. "/dev/ttyS0" */
+    } else if (hoststr[0] == '/') {
         struct stat sb;
 
         if (stat(hoststr, &sb) == -1 || (!(sb.st_mode & S_IFCHR))) 
@@ -654,16 +663,7 @@ static void _parse_hoststr(Device *dev, char *hoststr, char *flagstr)
         dev->finish_connect = NULL;
         dev->preprocess     = NULL;
 
-    /* pipe device */
-    } else if (hoststr[0] == '|') {
-        dev->data           = pipe_create(hoststr, flagstr);
-        dev->destroy        = pipe_destroy;
-        dev->connect        = pipe_connect;
-        dev->disconnect     = pipe_disconnect;
-        dev->finish_connect = NULL;
-        dev->preprocess     = NULL;
-
-    /* tcp device */
+    /* tcp device, e.g. "cyclades0:2001" */
     } else {
         char *port = strchr(hoststr, ':');
         int n;
