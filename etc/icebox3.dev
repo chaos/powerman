@@ -3,7 +3,8 @@
 # /chaos/cvs/powerman/etc/icebox3.dev,v
 #
 # Linux Networx ICE Box firmware version 3.x
-# Beacon scripts assume 3.0 B70 or greater.
+# Beacon scripts assume 3.0 B70 or greater (uncomment delays in beacon_on/
+# beacon_off commands if earlier version).
 #
 specification {
 	name 		"icebox3"
