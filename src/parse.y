@@ -125,7 +125,7 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 %token TOK_FOREACHPLUG TOK_FOREACHNODE TOK_IFOFF TOK_IFON
 
 /* other device configuration stuff */
-%token TOK_SPEC_NAME TOK_SPEC_TYPE TOK_OFF_STRING TOK_ON_STRING
+%token TOK_OFF_STRING TOK_ON_STRING
 %token TOK_MAX_PLUG_COUNT TOK_TIMEOUT TOK_DEV_TIMEOUT TOK_PING_PERIOD
 %token TOK_PLUG_NAME TOK_SCRIPT 
 

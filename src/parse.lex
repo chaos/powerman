@@ -114,11 +114,6 @@ tcpwrappers                       {   return TOK_TCP_WRAPPERS; }
 timeout                           {   return TOK_DEV_TIMEOUT; }
 pingperiod                        {   return TOK_PING_PERIOD; }
 specification                     {   return TOK_SPEC; }
-name                              {   return TOK_SPEC_NAME; }
-type                              {   return TOK_SPEC_TYPE; }
-offstring                         {   return TOK_OFF_STRING; }
-onstring                          {   return TOK_ON_STRING; }
-maxplugcount                      {   return TOK_MAX_PLUG_COUNT; }
 expect                            {   return TOK_EXPECT; }
 setplugstate                      {   return TOK_SETPLUGSTATE; }
 setplugname                       {   return TOK_SETPLUGNAME; }
