@@ -48,7 +48,7 @@ daemon_init(void)
 	int i;
 	char buf[TMPSTR_LEN];
 	time_t t = time(NULL);
-	
+
 	if ( Fork() != 0 )
 		exit(0);			/* parent terminates */
 
@@ -70,9 +70,9 @@ daemon_init(void)
 	/* clear our file mode creation mask */
 	umask(0);
 
-	/* Close open file descriptors */
-	for (i = 0; i < MAXFD; i++)
-		Close(i);
+	/* Close stdout/stderr/stdin */
+	for (i = 0; i < 3; i++)
+		close(i); /* ignore errors */
 
 	/* Init syslog */
 	sprintf(buf, "Started %s", ctime(&t));
