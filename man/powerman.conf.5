@@ -36,6 +36,24 @@ controller (RPC) device files provided in the /etc/powerman directory;
 sets a few global options; 
 instantiates RPC devices with unique names, hostnames, and ports;  
 and maps node names to RPC's and plug numbers.
+.LP
+Network-attached RPC's are instantiated with device lines of the form:
+.IP
+device "name" "type" "host:port"
+.LP
+Serial-attached RPC's are instantiated with device lines of the form:
+.IP
+device "name" "type" "special file" "flags"
+.LP
+where special file is the full path to a tty device, and flags is a serial
+parameter specification in a form similar to that used by lilo, e.g. 
+"9600,8n1".  RPC's that are accessed via coprocesses are instantiated 
+as follows:
+.IP
+device "name" "type" "process |&"
+.LP
+where process is the full path to a process whose standard output and input
+will be controlled by powerman, e.g. "/usr/bin/conman -Q -j rpc0 |&".
 .SH EXAMPLE
 The following example is a 16-node cluster that uses two 8-plug
 Baytech RPC-3 remote power controllers.

@@ -1,4 +1,4 @@
-PowerMan version 1.0.17                                       30 June 2003
+PowerMan version 1.0.17                                       6 Aug 2003
 
 +--------------+
 | New Features |
@@ -61,7 +61,9 @@ o Support added for Baytech RPC-28-30NC remote power controller.
 o Support added for Baytech RPC-3 remote power controller with "NC" style
   firwmare interface.
 
-o Support added for IPMI 1.5 in terminal mode.
+o Support added for IPMI on Intel SE7501WV2 motherboard (terminal mode only)
+
+o Support added for Cyclades PM8i remote power controller.
 
 +------------+
 | Bugs fixed |
@@ -85,30 +87,31 @@ o Exponential backoff-retry is enforced for script failures (was just
 
 PowerMan development and testing takes place on the following RPC devices:
 
-o Linux NetworX ICE Box version 2 (V2.2-LLNL B208) (*+)
+o Linux NetworX ICE Box version 2 (V2.2-LLNL B208) (*)
 
-o Linux NetworX ICE Box version 3 (V3.0 B70) (*+)
+o Linux NetworX ICE Box version 3 (V3.0 B70) (*)
 
-o Baytech RPC-3 (Revision F 5.00 and F 5.01) (*+)
+o Baytech RPC-3 (Revision F 5.00 and F 5.01) (*)
 
 o Baytech RPC-3-20NC (F4.00) (*)
 
-o Baytech RPC-28-30NC (+*)
+o Baytech RPC-28-30NC (*)
 
-o WTI NPS (v3.02) (+*)
+o WTI NPS (v3.02) (*)
 
-o WTI RPS-10 (+*)
+o WTI RPS-10 (*)
 
-o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4) (+)
+o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4)
 
 o APC MasterSwitch Plus (APP v2.2.0 / AOS v3.0.3) (*)
 
 o IBM RSA Remote Supervisor Adapter (GEET117A (x345) and T2ET116A (x335)) (*)
 
-o Rackable Systems Phantom Remote Management Module (v3.0.4b) (+)
+o Rackable Systems Phantom Remote Management Module (v3.0.4b) (*)
 
 o IPMI 1.5 on Intel SE7501WV2 motherboard in terminal mode
 
+o Cyclades PM8i s/w v. 1.0.9a
+
 Notes:
-(+) Present in powerman test rig.
-(*) Supported on other LLNL equipment
+(*) In use on LLNL equipment

@@ -1,6 +1,8 @@
 2003-08-06 Jim Garlick <garlick@llnl.gov>
 
-    * etc/cyclades-pm8.dev: got working with PM8i over serial
+    * etc/cyclades-pm8.dev: got working with PM8i over serial.
+
+    * man/powerman.conf.5: document the three forms of device specification.
 
 2003-08-04 Jim Garlick <garlick@llnl.gov>
 
