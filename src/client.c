@@ -224,33 +224,49 @@ static void _client_query_nodes_reply(Client * c)
  * Helper for _client_query_device_reply() .
  * Create a hostlist string for the plugs attached to the specified device.
  * Return TRUE if str contains a valid hostlist string.
- * If 'arg' is non-NULL, it contains a target hostlist string and only plugs
- * in this target list should be returned.  If a device's plug list does
- * not intersect the target list, return FALSE. 
  */
-static bool _make_pluglist(Device * dev, char *str, int len, char *arg)
+static bool _make_pluglist(Device * dev, char *str, int len)
 {
     hostlist_t hl = hostlist_create(NULL);
-    hostlist_t targ = hostlist_create(arg);
-    bool have_targ = (targ != NULL && hostlist_count(targ) > 0);
     ListIterator itr;
     bool res = FALSE;
     Plug *plug;
 
     if (hl != NULL) {
         itr = list_iterator_create(dev->plugs);
-        while ((plug = list_next(itr))) {
-            if (have_targ && hostlist_find(targ, plug->node) != -1)
-                hostlist_push(hl, plug->node);
-        }
+        while ((plug = list_next(itr)))
+            hostlist_push(hl, plug->node);
         list_iterator_destroy(itr);
 
-        if (hostlist_count(hl) && hostlist_ranged_string(hl, len, str) != -1)
-                res = TRUE;
+        if (hostlist_ranged_string(hl, len, str) != -1)
+            res = TRUE;
         hostlist_destroy(hl);
     }
-    if (targ != NULL)
+    return res;
+}
+
+/*
+ * Helper for _client_query_device_reply.
+ * Return TRUE if hostlist string in 'arg' matches any plugs on device.
+ */
+static bool _device_matches_targets(Device *dev, char *arg)
+{
+    hostlist_t targ = hostlist_create(arg);
+    ListIterator itr;
+    Plug *plug;
+    bool res = FALSE;
+
+    if (targ != NULL) {
+        itr = list_iterator_create(dev->plugs);
+        while ((plug = list_next(itr))) {
+            if (hostlist_find(targ, plug->node) != -1) {
+                res = TRUE;
+                break;
+            }
+        }
+        list_iterator_destroy(itr);
         hostlist_destroy(targ);
+    }
     return res;
 }
 
@@ -270,15 +286,17 @@ static void _client_query_device_reply(Client * c, char *arg)
             char nodelist[CP_LINEMAX];
             int con = dev->stat_successful_connects;
 
+            if (arg && !_device_matches_targets(dev, arg))
+                continue;
+
             /* FIXME: replace "devtype" with actual device type e.g. icebox3 */
-            if (_make_pluglist(dev, nodelist, sizeof(nodelist), arg)) {
+            if (_make_pluglist(dev, nodelist, sizeof(nodelist))) {
                 _client_printf(c, CP_RSP_DEVICE, dev->name, "devtype", 
                         nodelist, con > 0 ? con - 1 : 0, 
                         dev->stat_successful_actions);
             }
         }
         list_iterator_destroy(itr);
-
     }
     _client_printf(c, CP_RSP_QUERY_COMPLETE);
 
