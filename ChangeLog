@@ -2,6 +2,7 @@
 	* Removed inter-dev delay (behlendo)
 	* Removed timeout interval and update interval.
 	* Disabled automatic status queries.
+	* Tagged powerman-1-0-5.
 
 2002-09-23 garlick
 	* Create per-device reconnect state (count and time stamp)
