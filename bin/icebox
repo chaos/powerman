@@ -185,7 +185,6 @@ def init(f):
             tty.boxes[tokens[2]] = box
             tty.sorted_box_list.append(tokens[2])
         box.add(port)
-        box.sorted_port_list.append(tokens[3])
     return nodes, ttys, sorted_node_list, sorted_tty_list
 
 # initialize globals
