@@ -52,10 +52,12 @@ begin protocol specification
 	begin PM_POWER_ON
 		send "ph %s\r\n"
 		expect "OK\r\n"
+		delay "0.3"
 	end PM_POWER_ON
 	begin PM_POWER_OFF
 		send "pl %s\r\n"
 		expect "OK\r\n"
+		delay "0.3"
 	end PM_POWER_OFF
 	begin PM_POWER_CYCLE
 		send "pl %s\r\n"
@@ -63,10 +65,12 @@ begin protocol specification
 		delay "0.3"
 		send "ph %s\r\n"
 		expect "OK\r\n"
+		delay "0.3"
 	end PM_POWER_CYCLE
 	begin PM_RESET
 		send "rp %s\r\n"
 		expect "OK\r\n"
+		delay "0.3"
 	end PM_RESET
 	plug name "1"
 	plug name "2"
