@@ -446,7 +446,6 @@ static Globals *make_Globals()
     g->clients = list_create((ListDelF) cli_destroy);
     g->status = Quiescent;
     g->acts = list_create((ListDelF) act_destroy);
-    g->specs = list_create((ListDelF) conf_spec_destroy);
     g->devs = list_create((ListDelF) dev_destroy);
     g->cluster = conf_cluster_create();
     return g;
@@ -455,7 +454,6 @@ static Globals *make_Globals()
 #if 0
 static void free_Globals(Globals * g)
 {
-    list_destroy(g->specs);
     conf_cluster_destroy(g->cluster);
     list_destroy(g->acts);
     listen_destroy(g->listener);

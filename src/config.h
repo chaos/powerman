@@ -228,5 +228,7 @@ void conf_strtotv(struct timeval *tv, char *s);
 
 void conf_init(char *filename);
 void conf_fini(void);
+void conf_add_spec(Spec *spec);
+Spec *conf_find_spec(char *name);
 
 #endif				/* CONFIG_H */

@@ -85,7 +85,7 @@ extern int yylex();
 extern void yyerror();
 
  int yyline = 0;      /* For parse error reporting */
- char *conf = NULL;   /* Currently unused.  The return result of the parse */
+ /* char *conf = NULL; */   /* Currently unused.  The return result of the parse */
  Globals *cheat;      /* A way of getting at the Globals structure */
  Spec *current_spec = NULL;  /* Holds a Spec as it is built */
  List current_script = NULL; /* Holds a script as it is built */
@@ -149,7 +149,7 @@ extern void yyerror();
 /* Grammar Rules */
 
 configuration_file : configuration_sec node_sec {
-	conf = $1;
+	/* conf = $1; */
 }
 ;
 configuration_sec : properties_sec devices_sec 
@@ -448,7 +448,8 @@ static Spec *check_Spec()
     if( current_spec->mode == NO_MODE )
 	err_exit(FALSE, "missing interpretation mode field for specification %s", name);
 
-    list_append(cheat->specs, current_spec);
+    /* Store the spec in list internal to config.c */
+    conf_add_spec(current_spec);
     this_spec = current_spec;
     current_spec = NULL;
     /* I haven't set up a good way to sanity check struct timeval fields */
@@ -747,7 +748,7 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     Plug *plug;
 
     /* find that spec */
-    spec = list_find_first(cheat->specs, (ListFindF) conf_spec_match, s3);
+    spec = conf_find_spec(s3);
     if ( spec == NULL ) 
 	err_exit(FALSE, "Device specification %s not found", s3);
 

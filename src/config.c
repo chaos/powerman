@@ -43,13 +43,28 @@
 #include "string.h"
 #include "config.h"
 
+static int _spec_match(Spec *spec, void *key);
+static void _spec_destroy(Spec *spec);
 
-/* parse the named config file */
+/* 
+ * Device specifications only exist during parsing.
+ * After that their contents are copied for each instantiation of the device and
+ * the original specification is not used.
+ */
+static List specs = NULL;                
+
+/* 
+ * initialize module
+ * parse the named config file - on error, exit with a message to stderr 
+ */
 void
 conf_init(char *filename)
 {
     struct stat stbuf;
     int parse_config_file(char *filename);
+
+    /* initialize 'specs' list */
+    list_create((ListDelF) _spec_destroy);
 
     /* validate config file */
     if (stat(filename, &stbuf) < 0)
@@ -57,8 +72,15 @@ conf_init(char *filename)
     if ((stbuf.st_mode & S_IFMT) != S_IFREG)
 	err_exit(FALSE, "%s is not a regular file\n", filename);
 
-    /* call yacc parser against config file */
+    /* 
+     * Call yacc parser against config file.
+     * The parser calls support functions below and builds powerman data structures.
+     */
     parse_config_file(filename);
+
+    /* destroy 'specs' list */
+    list_destroy(specs);
+    specs = NULL;
 }
 
 /* finalize module */
@@ -146,44 +168,48 @@ Spec *conf_spec_create(char *name)
     return spec;
 }
 
-/*
- *   This match utility is compatible with the list API's ListFindF
- * prototype for searching a list of Spec * structs.  The match
- * criterion is a string match on their names.  This comes into use 
- * in the parser when the device specifications have been parsed
- * into a list and a device line referes to a device specification
- * by its name.  
- */
-int conf_spec_match(Spec * spec, void *key)
+/* list 'match' function for conf_find_spec() */
+static int _spec_match(Spec * spec, void *key)
 {
     if (str_match(spec->name, (char *) key))
 	return TRUE;
     return FALSE;
 }
 
-void conf_spec_destroy(Spec * spec)
+/* list destructor for specs */
+static void _spec_destroy(Spec * spec)
 {
     int i;
 
     str_destroy(spec->name);
-    spec->name = NULL;
     str_destroy(spec->off);
-    spec->off = NULL;
     str_destroy(spec->on);
-    spec->on = NULL;
     str_destroy(spec->all);
-    spec->all = NULL;
 
     if (spec->type != PMD_DEV) {
-	for (i = 0; i < spec->size; i++) {
+	for (i = 0; i < spec->size; i++)
 	    str_destroy(spec->plugname[i]);
-	}
 	Free(spec->plugname);
     }
     for (i = 0; i < spec->num_scripts; i++)
 	list_destroy(spec->scripts[i]);
     Free(spec->scripts);
     Free(spec);
+}
+
+/* add a Spec to the internal list */
+void
+conf_add_spec(Spec *spec)
+{
+    assert(specs != NULL);
+    list_append(specs, spec);
+}
+
+/* find and return a Spec from the internal list */
+Spec *
+conf_find_spec(char *name)
+{   
+    return list_find_first(specs, (ListFindF) _spec_match, name);
 }
 
 /*******************************************************************
@@ -229,8 +255,6 @@ void conf_spec_el_destroy(Spec_El * specl)
     specl->map = NULL;
     Free(specl);
 }
-
-
 /*******************************************************************
  *                                                                 *
  * Cluster                                                         *

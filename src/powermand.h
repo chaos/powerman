@@ -56,7 +56,6 @@ typedef struct {
     Server_Status status;	/* (Quiescent, Occupied) */
     Cluster *cluster;		/* Cluster state info */
     List acts;			/* Action queue */
-    List specs;			/* device specifications */
     List devs;			/* device module info */
      MAGIC;
 } Globals;
