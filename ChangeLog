@@ -65,5 +65,6 @@
 	* Pid file stuff moved to pidlock.c and disabled for the moment.
 
 2002-07-28 garlick
-	* Fixed bug where log fd was always beeing checked for writeability
-	  in main select loop, causing the loop to spin.
+	* Fixed bug where log fd was always being checked for writeability
+	  in main select loop, chewing 100% of a CPU.
+	* Commenting out the "log file" config line now disables logging.

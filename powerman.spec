@@ -78,10 +78,9 @@ rm -rf "$RPM_BUILD_ROOT"
 # a config file to be made, I can perhaps do it here.
 
 %files
-%defattr(-,root,root,0755)
-/usr/bin/powerman
-/usr/sbin/powermand
-%defattr(-,root,root,0644)
+%defattr(0644,root,root)
+%attr(0755,root,root)/usr/bin/powerman
+%attr(0755,root,root)/usr/sbin/powermand
 /etc/powerman/baytech.dev
 /etc/powerman/icebox.dev
 /etc/powerman/wti.dev
