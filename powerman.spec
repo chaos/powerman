@@ -104,7 +104,9 @@ fi
 %attr(0755,root,root)/usr/sbin/on
 /etc/powerman/baytech.dev
 /etc/powerman/icebox.dev
+/etc/powerman/icebox3.dev
 /etc/powerman/wti.dev
+/etc/powerman/vpc.dev
 %config(noreplace) /etc/powerman/powerman.conf
 %config(noreplace) %attr(0755,root,root)/etc/rc.d/init.d/powerman
 /usr/man/man1/powerman.1*
@@ -112,7 +114,3 @@ fi
 /usr/man/man5/powerman.conf.5*
 %doc ChangeLog
 %doc DISCLAIMER
-%doc README
-%doc TODO
-%doc doc/powerman.fig
-%doc doc/powermand.fig
