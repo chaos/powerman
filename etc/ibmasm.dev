@@ -25,8 +25,7 @@ specification {
 		expect "==> " 
 	}
 	script logout {
-		send "exit\r\n"			# exit "debug mode"
-		send "\033\033"			# ESC ESC to log off
+		send "\004"  			# ^D to log completely off
 	}
 	script status_all {
 	}
