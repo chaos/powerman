@@ -1,0 +1,160 @@
+#!/usr/bin/env python
+####################################################################
+# $Id$
+# by Andrew C. Uselton <uselton2@llnl.gov> 
+# Copyright (C) 2000 Regents of the University of California
+# See ./DISCLAIMER
+# v. 0-1-0:  2001-28-27
+#            The low-level query program for the artificial "bogus"
+#            node type.  This program is usefull for testing and
+#            studying PowerMan without disrupting actual hardware.
+#            See "usage" for protoytpe.
+#            The bogus device is just a string of 0's and 1' in the
+#            file $POWERMANDIR/etc/bogus.conf.  The number of entries
+#            determines the cluster's size.  Keep in mind that the
+#            number of nodes in powerman.conf should match, and odd
+#            things may happen if it doesn't.
+####################################################################
+
+import sys
+import commands
+import string
+import getopt
+import os
+
+def usage(msg):
+    print "usage:", sys.argv[0], "[-a] [-b] [-c conf] [-f fanout] [-l ldir] [-r] [-w node,...] [-v] [-V]"
+    print "-a       = check all nodes"
+    print "-b       = print a bitmap instead of node names (implies -a)"
+    print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
+    print "-f fan   = fanout for parallelism (default: 256 where implemented)"
+    print "-l ldir  = powerman lirary directory (default: /usr/lib/powerman)"
+    print "-r       = reverse sense, i.e. check for  nodes that are off"
+    print "-w nodes = comma separated list of nodes"
+    print "-w -     = read nodes from stdin, one per line"
+    print msg
+    sys.exit(0)
+
+Version = "bogus_check:Powerman 0.1.0"
+
+# initialize globals
+powermandir = '/usr/lib/powerman/'
+config_file = 'etc/bogus.conf'
+names       = []
+verbose     = 0
+com         = '1'
+all         = 0
+bitmap      = 0
+fanout      = 256
+
+# Look for environment variables and set globals
+
+try:
+    test = os.environ['POWERMANDIR']
+    if (os.path.isdir(test)):
+        powermandir = test
+except KeyError:
+    pass
+
+# Parse the command line, check for sanity, and set globals
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], 'abc:f:l:rw:vV')
+except getopt.error:
+    usage("Error processing options\n")
+
+if(not opts):
+    usage("provide a list of nodes")
+
+for opt in opts:
+    op, val = opt
+    if (op == '-a'):
+        all = 1
+    elif (op == '-b'):
+        bitmap = 1
+    elif (op == '-c'):
+        config_file = val
+    elif (op == '-f'):
+        fanout = val
+    elif (op == '-l'):
+        powermandir  = val
+    elif (op == '-r'):
+        com = '0'
+    elif (op == '-w'):
+        if (val == '-'):
+            name = sys.stdin.readline()
+            while (name):
+                if (name[-1:] == '\n'):
+                    name = name[:-1]
+                names.append(name)
+                name = sys.stdin.readline()
+        else:
+            names = string.split(val, ',')
+    elif (op == '-v'):
+        verbose = 1
+    elif (op == '-V'):
+        print Version
+        sys.exit(0)
+    else:
+        usage("Unrecognized option " + op + "\n")
+        
+if (powermandir):
+    if (powermandir[-1] != '/'):
+        powermandir = powermandir + '/'
+    if(os.path.isdir(powermandir)):
+        sys.path.append(powermandir)
+        config_file = powermandir + config_file
+    else:
+        if(verbose):
+            sys.stderr.write("bogus_check: Couldn\'t find library directory: " + powermandir + "\n")
+        sys.exit(1)
+else:
+    if(verbose):
+        sys.stderr.write("bogus_check: Couldn\'t find library directory: " + powermandir + "\n")
+    sys.exit(1)
+
+try:
+    f = open(config_file, 'r')
+    states = f.readline()
+    f.close()
+except IOError :
+    if(verbose):
+        sys.stderr.write("bogus_check: Couldn\'t find configuration file: " + config_file + "\n")
+    sys.exit(1)
+
+# Carry out the action.  This will
+# attempt to send to every valid node, even if some of those named
+# are not legitimate targets, but it will only send to known
+# legitimate targets
+valueerror = 0
+if (bitmap):
+    print states
+    sys.exit(0)
+if (all):
+    for i in range(len(states)):
+        if (states[i] == com):
+            print i
+    sys.exit(0)
+numfound  = 0
+for name in names:
+    try:
+        pos = int(name)
+    except ValueError:
+        valueerror = 1
+        if(verbose):
+            sys.stderr.write("bogus_check: " + name + "is not an integer\n")
+    try:
+        if (states[pos] == com):
+            numfound = numfound +1
+            print name
+    except IndexError:
+        pass
+if(numfound == 0):
+    if(verbose):
+        sys.stderr.write("bogus_check: Found none of the requested names\n")
+    sys.exit(1)
+if(valueerror == 1):
+    sys.exit(1)
+sys.exit(0)
+
+

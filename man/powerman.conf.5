@@ -1,0 +1,40 @@
+\." $Id$
+.\"
+.TH POWERMAN.CONF 1 "Release 0.1.0" "LLNL" "POWERMAN.CONF"
+
+.SH NAME
+powerman.conf \- configuration file format for pm
+
+.SH DESCRIPTION
+This file is read by
+.B pm
+and contains the name of the cluster under power management and a list
+of nodes in the cluster.  For a cluster named "tux" the name appears in 
+the configuration file as:
+.LP
+.RS
+cluster tux
+.RE
+.LP
+Nodes appear, one per line, with a name, a power monitoring function, 
+and a power control function.  A typical node in the cluster using digi
+power monitoring and etherwake power control might look like this:
+.LP
+.RS
+node tux17 digi etherwake
+.RE
+.LP
+Note that the cluster should follow the convention that nodes names 
+consist of the cluster name with a unique integer appended.  
+
+
+.SH "FILES"
+/etc/powerman.conf
+
+.SH "ORIGIN"
+Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Alpha and
+Intel Linux clusters.
+
+.SH "SEE ALSO"
+conman(1), cv(1), digi(1), etherwake(1), pm(1), rmc(1), wti(1)
+

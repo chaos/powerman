@@ -1,0 +1,30 @@
+\." $Id$
+.\"
+.TH WTI.CONF 1 "Release 0.1.0" "LLNL" "WTI.CONF"
+
+.SH NAME
+wti.conf \- configuration file format for wti
+
+.SH DESCRIPTION
+This file is read by
+.B wti
+and contains a list of nodes, one per line, along with the "port" number
+on the remote power controller that controls the power for the node
+A typical line might be:
+.LP
+.RS
+tux17 17
+.RE
+.LP
+
+
+.SH "FILES"
+$powermandir/etc/wti.conf
+
+.SH "ORIGIN"
+Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Alpha and
+Intel Linux clusters.
+
+.SH "SEE ALSO"
+wti(1), pm(1)
+

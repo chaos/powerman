@@ -1,0 +1,73 @@
+\." $Id$
+.\"
+.TH ETHERWAKE 1 "Release 0.1.0" "LLNL" "ETHERWAKE"
+
+.SH NAME
+etherwake \- low-level power control
+
+.SH SYNOPSIS
+.B etherwake
+.I "[-options] [command]"
+
+.SH DESCRIPTION
+.B etherwake
+is a low level utility in support of the PowerMan power management 
+program.  It communicates with a target node via the ether-wake
+"magic packet".  
+For a command in 
+.I [on, off, reset]
+.B etherwake
+will send a magic packet to the target nodes.
+.B etherwake
+conforms to the PowerMan power monitoring interface.  One will generally
+prefer to use 
+.B pm
+rather than this low-level utility, but its use is not forbidden to 
+root priveleged users.  Be aware
+that ethernet wake-on-LAN is implemented (in some cases) as a TOGGLE.  If 
+you send a wake-up to such a node it will shut down.  This could be bad.
+Options are described in TARGET NODE LIST OPTIONS and OTHER OPTIONS below.
+.LP
+The POWERMAN environment variable, if set, identifies an alternate 
+directory fo the PowerMan libraries and configuration files.
+
+.SH TARGET NODE LIST OPTIONS
+.I "-w host,host,..."
+Target the specified nodes.  No spaces are allowed in the comma-separated
+list.  Substituting the "-" character for the list causes the target nodes
+to be read from stdin, one per line.
+.LP
+.I "-a"
+Target "all" nodes in the cluster.  
+.B etherwake
+determines the list of nodes in the cluster from the configuration file
+(see FILES below).
+
+.SH OTHER OPTIONS
+.LP
+.I "-c configfile"
+Provide an alternate name or location for the configuration file.
+.LP
+.I "-f number"
+Set the maximum concurrency, currently unused.  
+.I "-l powermandir"
+Provide an alternate location for the PowerMan libraries.
+.LP
+.I "-v"
+be verbose, i.e. print error messages rather than dying quietly.
+
+.SH "FILES"
+$powermandir/bin/etherwake
+.br
+$powermandir/etc/etherwake.conf
+.br
+$powermandir/lib/ether-wake
+.br
+
+.SH "ORIGIN"
+Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Alpha and
+Intel Linux clusters.
+
+.SH "SEE ALSO"
+digi(1), etherwake.conf(5), pm(1), rmc(1), wti(1)
+

@@ -1,0 +1,30 @@
+\." $Id$
+.\"
+.TH ETHERWAKE.CONF 1 "Release 0.1.0" "LLNL" "ETHERWAKE.CONF"
+
+.SH NAME
+etherwake.conf \- configuration file format for etherwake
+
+.SH DESCRIPTION
+This file is read by
+.B etherwake
+and contains a list of nodes, one per line, along with the MAC address
+of the node to which a wake-on-LAN packet may be delivered.  A typical 
+line might be:
+.LP
+.RS
+tux17 00:11:22:33:44:55
+.RE
+.LP
+
+
+.SH "FILES"
+$powermandir/etc/etherwake.conf
+
+.SH "ORIGIN"
+Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Alpha and
+Intel Linux clusters.
+
+.SH "SEE ALSO"
+etherwake(1), pm(1)
+

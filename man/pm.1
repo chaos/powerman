@@ -1,0 +1,116 @@
+\." $Id$
+.\"
+.TH PM 1 "Release 0.1.0" "LLNL" "PM"
+
+.SH NAME
+pm \- issue power monitoring queries and power control commands
+
+.SH SYNOPSIS
+.B pm
+.I "[-options] [command]"
+
+.SH DESCRIPTION
+.B pm
+(for PowerMan) allows power monitoring and power management on a 
+cluster of nodes to be performed independent of the underlying hardware.
+Options are described in TARGET NODE LIST OPTIONS and OTHER OPTIONS below.
+.LP
+For a command in 
+.I [on, off, reset]
+.B pm
+will power on, power off, or reset, respectively, the target nodes.  If
+none of the above commands is provided 
+.B pm
+queries the target nodes for their power status and prints the names of 
+those that are on, one per line (but see -b and -r below).
+.LP
+.B pm 
+operates in conjuction with one or more underlying, hardware-specific
+utilites, each of wich conforms to a uniform interface.    
+.B pm 
+runs on a management workstation equipped with power monitoring and 
+control hardware.
+.LP
+The POWERMAN environment variable, if set, will be the 
+.LP
+.B pm 
+will attempt to run low level utilites with as much concurrency as 
+possible.  
+.B pm
+montors the return status of the underlying utilites and preserves
+any error messages they produce.  In verbose mode all such errors
+are reported to stderr.
+
+.SH TARGET NODE LIST OPTIONS
+.I "-w host,host,..."
+Target the specified nodes.  No spaces are allowed in the comma-separated
+list.  Substituting the "-" character for the list causes the target nodes
+to be read from stdin, one per line.
+.LP
+.I "-a"
+Target "all" nodes in the cluster.  
+.B pm
+determines the list of nodes in the cluster from in configuration file
+(see FILES below).
+
+.SH OTHER OPTIONS
+.LP
+.I "-b"
+bitmap mode.  Rather than poviding names of nodes that are on (resp. off 
+for -r) bitmap mode prints a string of 1's and 0's, with 1 for on and 0 
+for off.  All nodes are represented in the bitmap in the numerical order 
+of their node name (implies -a). 
+.LP
+.I "-c configfile"
+Provide an alternate name or location for the configuration file.
+.LP
+.I "-f number"
+Set the maximum concurrency for underlying utilities.  The default is 256.
+.I "-l powermandir"
+Provide an alternate location for the PowerMan libraries.
+.LP
+.I "-r"
+reverse, i.e. print nodes that are off rather than on
+.LP
+.I "-v"
+be verbose, i.e. print error messages rather than dying quietly.
+
+.SH "FILES"
+/usr/bin/pm
+.br
+/etc/powerman.conf
+.br
+$powermandir/bin/<utility>
+.br
+$powermandir/etc/<utility>.conf
+.br
+$powermandir/lib/<utility-support>
+.br
+
+.SH "ENVIRONMENT"
+The environment variable
+.B POWERMANDIR
+gives an alternative location for the powerman libraries and low level 
+utilities, overriding the default "/usr/lib/powerman".  The "-l" option, 
+in turn, overrides the environment variable.  Similarly,
+.B POWERMANCONF
+gives an alternative file for cluster configuration details.  It 
+overrides the default "/etc/powerman.conf" and is, in turn, overridden 
+by the "-c" option.   If the 
+.B W_COL
+(working collective) environment variable is set to a file name then 
+the list of nodes is taken from that file, one per line.  "-a", "-b", 
+and "-w" all override the working collective envirnment variable.  
+
+.SH "ORIGIN"
+Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Alpha and
+Intel Linux clusters.
+
+.SH "LIMITATIONS"
+The computers under control are expected to be part of a cluster, with
+each node named with a unique integer at the end of the cluster name, as
+in fc0, fc1, fc2,...  A non-numeric naming scheme will break the 
+sort function.  
+.SH "SEE ALSO"
+cv(1), conman(1), digi(1), etherwake(1), powerman.conf(5), rmc(1), wti(1)
+

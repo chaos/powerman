@@ -1,0 +1,189 @@
+#!/usr/bin/env python
+####################################################################
+# $Id$
+# by Andrew C. Uselton <uselton2@llnl.gov> 
+# Copyright (C) 2000 Regents of the University of California
+# See ./DISCLAIMER
+# v. 0-1-0:  2001-28-27
+#            The low-level control program for the artificial "bogus"
+#            node type.  This program is usefull for testing and
+#            studying PowerMan without disrupting actual hardware.
+#            See "usage" for protoytpe.
+#            The bogus device is just a string of 0's and 1' in the
+#            file $POWERMANDIR/etc/bogus.conf.  The number of entries
+#            determines the cluster's size.  Keep in mind that the
+#            number of nodes in powerman.conf should match, and odd
+#            things may happen if it doesn't.  If the state string
+#            is not long enough for some of the references it is
+#            extended with zeros.  
+####################################################################
+
+import sys
+import commands
+import string
+import getopt
+import os
+
+def usage(msg):
+    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-w node,...] [-v] [-V] [on | off | reset]"
+    print "-a       = on/off/reset all nodes"
+    print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
+    print "-f fan   = fanout for parallelism (default: 256 where implemented)"
+    print "-l ldir  = powerman lirary directory (default: /usr/lib/powerman)"
+    print "-w nodes = comma separated list of nodes"
+    print "-w -     = read nodes from stdin, one per line"
+    print "on       = turn on nodes (the default)"
+    print "off      = turn off nodes"
+    print "reset    = reset nodes"
+    print msg
+    sys.exit(0)
+
+Version = "bogus_set:Powerman 0.1.0"
+
+# initialize globals
+powermandir = '/usr/lib/powerman/'
+config_file = 'etc/bogus.conf'
+verbose     = 0
+names       = []
+com         = '1'
+all         = 0
+bitmap      = 0
+fanout      = 256
+
+# Look for environment variables and set globals
+
+try:
+    test = os.environ['POWERMANDIR']
+    if (os.path.isdir(test)):
+        powermandir = test
+except KeyError:
+    pass
+
+# Parse the command line, check for sanity, and set globals
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], 'abc:f:l:rw:vV')
+except getopt.error:
+    usage("Error processing options\n")
+
+if(not opts):
+    usage("provide a list of nodes")
+
+for opt in opts:
+    op, val = opt
+    if (op == '-a'):
+        all = 1
+    elif (op == '-c'):
+        config_file = val
+    elif (op == '-f'):
+        fanout = val
+    elif (op == '-l'):
+        powermandir  = val
+    elif (op == '-w'):
+        if (val == '-'):
+            name = sys.stdin.readline()
+            while (name):
+                if (name[-1:] == '\n'):
+                    name = name[:-1]
+                names.append(name)
+                name = sys.stdin.readline()
+        else:
+            names = string.split(val, ',')
+    elif (op == '-v'):
+        verbose = 1
+    elif (op == '-V'):
+        print Version
+        sys.exit(0)
+    else:
+        usage("Unrecognized option " + op + "\n")
+        
+try:
+    if (args and args[0]):
+        if (args[0] == 'off'):
+            com = '0'
+        elif (args[0] == 'on'):
+            com = '1'
+        elif (args[0] == 'reset'):
+            com = '1'
+        else:
+            if(verbose):
+                sys.stderr.write("bogus_set: Unrecognized command " + args[0] + "\n")
+            sys.exit(1)
+except TypeError:
+        if(verbose):
+            sys.stderr.write("bogus_set: Internal Error: " + args + " should be a list with one element" + "\n")
+        sys.exit(1)
+
+if (powermandir):
+    if (powermandir[-1] != '/'):
+        powermandir = powermandir + '/'
+        if(os.path.isdir(powermandir)):
+            sys.path.append(powermandir)
+            config_file = powermandir + config_file
+        else:
+            if(verbose):
+                sys.stderr.write("bogus_set: Couldn\'t find library directory: " + powermandir + "\n")
+            sys.exit(1)
+else:
+    if(verbose):
+        sys.stderr.write("bogus_set: Couldn\'t find library directory: " + powermandir + "\n")
+    sys.exit(1)
+
+try:
+    f = open(config_file, 'r')
+    states = f.readline()
+    f.close()
+except IOError :
+    states = ""
+    if(verbose):
+        sys.stderr.write("bogus_set: Couldn\'t find configuration file: " + config_file + "\n")
+        sys.stderr.write("bogus_set: Creating an empty one\n")
+
+# Carry out the action.  This will
+# attempt to send to every valid node, even if some of those named
+# are not legitimate targets, but it will only send to known
+# legitimate targets
+if(all):
+    try:
+        f = open(config_file, 'w')
+        f.write(com * len(states))
+        f.close()
+        sys.exit(0)
+    except IOError :
+        if(verbose):
+            sys.stderr.write("bogus_set: Error updating config_file:" + config_file + "\n")
+        sys.exit(1)
+    
+valueerror = 0
+numfound  = 0
+for name in names:
+    try:
+        pos = int(name)
+        numfound = numfound + 1
+        if(pos > len(states)):
+            states = states + "0" * (pos - len(states)) + com
+        elif (pos == 0):
+            states = com + states[1:]
+        else:
+            states = states[:pos] + com + states[pos+1:]
+    except ValueError:
+        valueerror = 1
+        if(verbose):
+            sys.stderr.write("bogus_set: " + name + "is not an integer\n")
+
+if(numfound == 0):
+    if(verbose):
+        sys.stderr.write("bogus_set: Found none of the requested names\n")
+    sys.exit(1)
+try:
+    f = open(config_file, 'w')
+    f.write(states)
+    f.close()
+except IOError :
+    if(verbose):
+        sys.stderr.write("bogus_set: Error updating config_file:" + config_file + "\n")
+    sys.exit(1)
+
+sys.exit(0)
+
+

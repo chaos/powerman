@@ -1,0 +1,82 @@
+\." $Id$
+.\"
+.TH DIGI 1 "Release 0.1.0" "LLNL" "DIGI"
+
+.SH NAME
+digi \- low-level power monitoring queries
+
+.SH SYNOPSIS
+.B digi
+.I "[-options]"
+
+.SH DESCRIPTION
+.B digi
+is a low level utility in support of the PowerMan power management 
+program.  It communicates via an ioctl with a tty to determine
+the power status of a node equiped with a specially designed serial
+cable (which provides the requisite signal).   
+.B digi
+conforms to the PowerMan power monitoring interface.  One will generally
+prefer to use 
+.B pm
+rather than this low-level utility, but its use is not forbidden so long
+as it has been suid root.
+Options are described in TARGET NODE LIST OPTIONS and OTHER OPTIONS below.
+.LP
+.B digi
+queries the target nodes for their power status and prints the names of 
+those that are on, one per line (but see -b and -r below).
+.LP
+The POWERMAN environment variable, if set, identifies an alternate 
+directory fo the PowerMan libraries and configuration files.
+
+.SH TARGET NODE LIST OPTIONS
+.I "-w host,host,..."
+Target the specified nodes.  No spaces are allowed in the comma-separated
+list.  Substituting the "-" character for the list causes the target nodes
+to be read from stdin, one per line.
+.LP
+.I "-a"
+Target "all" nodes in the cluster.  
+.B digi
+determines the list of nodes in the cluster from the configuration file
+(see FILES below).
+
+.SH OTHER OPTIONS
+.LP
+.I "-b"
+bitmap mode.  Rather than poviding name of node that are on (resp. off 
+for -r) bitmap mode prints a string of 1's and 0's, with 1 for on and 0 
+for off.  All nodes fromm the digi configuration file are represented 
+in the bitmap in the numerical order of their node name (implies -a). 
+.LP
+.I "-c configfile"
+Provide an alternate name or location for the configuration file.
+.LP
+.I "-f number"
+Set the maximum concurrency, currently unused.  
+.I "-l powermandir"
+Provide an alternate location for the PowerMan libraries.
+.LP
+.I "-r"
+reverse, i.e. print nodes that are off rather than on
+.LP
+.I "-v"
+be verbose, i.e. print error messages rather than dying quietly.
+
+.SH "FILES"
+$powermandir/bin/digi
+.br
+$powermandir/etc/digi.conf
+.br
+
+.SH "ORIGIN"
+Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Alpha and
+Intel Linux clusters.
+
+.SH "LIMITATIONS"
+As presently implemented the ioctl calls are generated serially, and
+There may be a problem with them blocking.  
+.SH "SEE ALSO"
+digi.conf(5), etherwake(1), pm(1), rmc(1), wti(1)
+
