@@ -13,6 +13,7 @@ import string
 import getopt
 import os
 import time
+import pm_utils
 
 class NodeClass:
     "Class definition for a node"
@@ -54,7 +55,7 @@ class NodeSetClass:
         try:
             self.module = __import__(name)
         except ImportError:
-            exit_error(17, name)
+            pm_utils.exit_error(17, name)
         self.set_data = self.module.SetDataClass(cluster)
 
     def add(self, node):
@@ -63,21 +64,6 @@ class NodeSetClass:
             
 class ClusterClass:
     "Class definition for a cluster of nodes"
-    # The names list has all the names given in the configuration file
-    # in the order they wer presented.
-    # See $POWERMANDIR/etc/powerman.conf for the list of nodes and types.
-    # The q_types dictionary is indexed by the name of the command used to
-    # query a node's state and has a list of all the nodes that are queried
-    # by that command.
-    # The q_com dictionary is indexed by the name of the command used to
-    # query a node's state and has the command line string with which to
-    # query the state of a node of that type
-    # The c_types dictionary is indexed by the name of the command used to
-    # set a node's state and has a list of all the nodes that are set
-    # by that command.
-    # The c_com dictionary is indexed by the name of the command used to
-    # set a node's state and has the command line string with which to
-    # set the state of a node of that type
     name     = "cluster"
     nodes    = {}
     q_types  = {}
@@ -86,19 +72,6 @@ class ClusterClass:
     
     def __init__(self, config_file):
         "ClusterClass initialization routine"
-        # The file pointed to by cfg is read line-by-line to get, first, the
-        # cluster's name, and then the list of nodes in the cluster.
-        # Each node is represented in the file by a line beginning with
-        # the keyword node, and followed by its name and the name of the
-        # command used to query its state (its query type or q_type) then
-        # by the name of the command with which to set the node's state
-        # (its command type or c_type).
-        # Lines whose first non-whitepace character is a # are ignored.
-        # Lines that parse to zero or one tokens are ignored.  If a line
-        # with exactly two tokens does not start with the word cluster
-        # it is ignored.  Finally, lines that do parse to at least three
-        # tokens but do not start with the word node are ignored.
-        # Case is ignored in the keywords cluster and node.
         self.name     = "cluster"
         self.nodes    = {}
         self.q_types  = {}
@@ -107,7 +80,7 @@ class ClusterClass:
         try:
             cfg = open(config_file, 'r')
         except IOError :
-            exit_error (7, config_file)
+            pm_utils.exit_error (7, config_file)
         line = cfg.readline()
         i = 0
         while (line):
@@ -152,7 +125,7 @@ class ClusterClass:
             self.nodes[node_name] = node
             self.q_types[q_type].set_data.add(node)
             if(len(blocks) == 3):
-                self.c_types[c_type].add(node)
+                self.c_types[c_type].set_data.add(node)
             i = i + 1
         cfg.close()
 

@@ -6,7 +6,7 @@
 ####################################################################
 
 PACKAGE= powerman
-VERSION= 0.1.8
+VERSION= 0.1.9
 SHELL=   /bin/sh
 MAKE=    /usr/bin/make
 CC=      gcc
@@ -23,12 +23,11 @@ top_srcdir=     .
 prefix=		/usr
 exec_prefix=    ${prefix}
 bindir=	 ${exec_prefix}/bin
-sbindir=	${exec_prefix}/sbin
+sbindir= ${exec_prefix}/sbin
 libdir=	 ${exec_prefix}/lib
 mandir=	 $(prefix)/man
 etcdir=	 /etc
 packagedir=     ${libdir}/${PACKAGE}
-docdir=	 ${prefix}/$(PACKAGE)-$(VERSION)
 # I've removed the doc and packagedoc variables and their install commands.
 # I'm pretty sure the the %doc directive in the rpm spec file does that for 
 # me.
@@ -40,53 +39,32 @@ all:
 	$(CC) $(COPTS) $< -o $@ $(INC) $(LIB)
 
 install: 
-	$(mkinstalldirs) $(DESTDIR)$(bindir)
-	$(INSTALL) pm    $(DESTDIR)$(bindir)/
-	$(mkinstalldirs)	   $(DESTDIR)$(packagedir)/bin
-	$(INSTALL) bin/bogus_check $(DESTDIR)$(packagedir)/bin/
-	$(INSTALL) bin/bogus_set   $(DESTDIR)$(packagedir)/bin/
-	$(INSTALL) bin/digi	$(DESTDIR)$(packagedir)/bin/
-	$(INSTALL) bin/etherwake   $(DESTDIR)$(packagedir)/bin/
-	$(INSTALL) bin/icebox      $(DESTDIR)$(packagedir)/bin/
-	$(INSTALL) bin/rmc	 $(DESTDIR)$(packagedir)/bin/
-	$(INSTALL) bin/wti	 $(DESTDIR)$(packagedir)/bin/
-	$(mkinstalldirs)		 $(DESTDIR)$(etcdir)
+	$(mkinstalldirs)	$(DESTDIR)$(bindir)
+	$(INSTALL) pm		$(DESTDIR)$(bindir)/
+	$(mkinstalldirs)	$(DESTDIR)$(packagedir)
+	$(INSTALL) bin/digi.py		$(DESTDIR)$(packagedir)
+	$(INSTALL) bin/etherwake.py	$(DESTDIR)$(packagedir)
+	$(INSTALL) src/ether-wake	$(DESTDIR)$(packagedir)
+	$(INSTALL) bin/icebox.py	$(DESTDIR)$(packagedir)
+	$(INSTALL) bin/rmc.py		$(DESTDIR)$(packagedir)
+	$(INSTALL) bin/rmc		$(DESTDIR)$(packagedir)
+	$(INSTALL) bin/wti.py		$(DESTDIR)$(packagedir)
+	$(mkinstalldirs)		$(DESTDIR)$(etcdir)
 	$(INSTALL) -m 644 etc/powerman.conf  $(DESTDIR)$(etcdir)
-	$(mkinstalldirs)		 $(DESTDIR)$(packagedir)/etc
-	$(INSTALL) -m 644 etc/bogus.conf     $(DESTDIR)$(packagedir)/etc/
-	$(INSTALL) -m 644 etc/digi.conf      $(DESTDIR)$(packagedir)/etc/
-	$(INSTALL) -m 644 etc/etherwake.conf $(DESTDIR)$(packagedir)/etc/
-	$(INSTALL) -m 644 etc/powerman.conf  $(DESTDIR)$(packagedir)/etc/
-	$(INSTALL) -m 644 etc/wti.conf       $(DESTDIR)$(packagedir)/etc/
-	$(INSTALL) -m 644 etc/icebox.conf    $(DESTDIR)$(packagedir)/etc/
-	$(mkinstalldirs)      $(DESTDIR)$(packagedir)/lib
-	$(INSTALL) src/ether-wake $(DESTDIR)$(packagedir)/lib/
 	$(mkinstalldirs)	      $(DESTDIR)$(mandir)/man1
-	$(INSTALL) -m 644 man/digi.1      $(DESTDIR)$(mandir)/man1
-	$(INSTALL) -m 644 man/etherwake.1 $(DESTDIR)$(mandir)/man1
-	$(INSTALL) -m 644 man/icebox.1 $(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/pm.1	$(DESTDIR)$(mandir)/man1
-	$(INSTALL) -m 644 man/rmc.1       $(DESTDIR)$(mandir)/man1
-	$(INSTALL) -m 644 man/wti.1       $(DESTDIR)$(mandir)/man1
-	$(mkinstalldirs)		   $(DESTDIR)$(mandir)/man5
-	$(INSTALL) -m 644 man/digi.conf.5      $(DESTDIR)$(mandir)/man5
-	$(INSTALL) -m 644 man/etherwake.conf.5 $(DESTDIR)$(mandir)/man5
-	$(INSTALL) -m 644 man/icebox.conf.5 $(DESTDIR)$(mandir)/man5
 	$(INSTALL) -m 644 man/powerman.conf.5  $(DESTDIR)$(mandir)/man5
-	$(INSTALL) -m 644 man/wti.conf.5       $(DESTDIR)$(mandir)/man5
 
 clean:
-	rm -f *~ *.o
+	rm -f *~ *.o *.pyc
 
 allclean: clean
-	cd bin; rm -f *~ *.o; cd ..
-	cd etc; rm -f *~ *.o; cd ..
-	cd lib; rm -f *~ *.o; cd ..
-	cd man; rm -f *~ *.o; cd ..
-	cd src; rm -f *~ *.o; cd ..
+	cd bin; rm -f *~ *.o *.pyc; cd ..
+	cd etc; rm -f *~ *.o *.pyc; cd ..
+	cd man; rm -f *~ *.o *.pyc; cd ..
+	cd src; rm -f *~ *.o *.pyc; cd ..
 
 distclean: allclean
-	cd lib; rm -f ether-wake; cd ..
 	cd src; rm -f ether-wake; cd ..
 
 # DEVELOPER TARGETS

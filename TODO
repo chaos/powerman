@@ -18,9 +18,10 @@
 [x]  retry upon receipt of garbage
 [x]  empty query output is exit(1)
 [x]  review locking, is Python not honouring locking: it's okay
-[ ]  Unify configuration info
-[ ]  Unify Python code, create a library
-[ ]  replace blocking read with an alarm or something
+[x]  Unify configuration info
+[x]  Unify Python code, create a library
+[x]  replace blocking read with an alarm or something
+[ ]  BayTek RPC module
 [ ]  telnet based query and control (icebox)
 [ ]  implement ether-wake in python (also with locking)
 [ ]  implement rmc in python

@@ -11,12 +11,9 @@ source /usr/lib/conman/conman.exp
 
 proc usage msg {
   global argv0
-  puts "usage: $argv0 \[-a\] \[-c conf\] \[-f fan\] \[-l ldir\] \[-q\] \[-w node,...\] \[on | off | reset\]"
+  puts "usage: $argv0 \[-f fan\] \[-w node,...\] \[on | off | reset\]"
   puts "-a       = on/off/reset all nodes"
-  puts "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
   puts "-f fan   = fanout for parallelism (default: 256 where implemented)"
-  puts "-l ldir  = powerman lirary directory (default: /usr/lib/powerman)"
-  puts "-q       = be quiet about any errors that may have occurred"
   puts "-w nodes = comma separated list of nodes"
   puts "-w -     = read nodes from stdin, one per line"
   puts "on       = turn on nodes (the default)"
@@ -208,7 +205,6 @@ proc alpha_get_mac_addrs {spawn_id output_id console {errmsg_r {}}} {
 
 #back to Andrew's wrapper
 
-set config_file "etc/rmc.conf"
 set lib_dir     "/usr/lib/powerman"
 set names []
 set command {power on}
@@ -222,17 +218,9 @@ if {$argc == 0} {
 for {set i 0} {$i < $argc} {incr i} {
   switch -- [lindex $argv $i] {
       "-a"    { set all 1 }
-      "-c"    { 
-	  incr i
-	  set config_file [lindex $argv $i]
-      }
       "-f"    { 
 	  incr i
 	  set fanout [lindex $argv $i]
-      }
-      "-l"    { 
-	  incr i
-	  set lib_dir [lindex $argv $i]
       }
       "-w"    { 
 	  incr i
@@ -245,11 +233,6 @@ for {set i 0} {$i < $argc} {incr i} {
 	  } else {
 	      set names [split $name_list ,]
 	  }
-      }
-      "-q"    { set verbose 0 }
-      "-V"    { 
-	  puts $Version
-	  exit
       }
       "on"     {set command {power on}}
       "off"    {set command {power off}}

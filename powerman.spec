@@ -6,8 +6,8 @@
 ####################################################################
  
 %define name    powerman
-%define version 0.1.8
-%define release 2
+%define version 0.1.9
+%define release 1
 
 Name: %name
 Version: %version
@@ -51,21 +51,12 @@ rm -rf "$RPM_BUILD_ROOT"
 %files
 %defattr(-,root,root,0755)
 %config(noreplace) /etc/powerman.conf
-%config(noreplace) /usr/lib/powerman/etc/*.conf
 /usr/bin/pm
 %doc DISCLAIMER
 %doc README
 %doc TOUR.SH
-/usr/lib/powerman/bin
-/usr/lib/powerman/lib
-/usr/man/man1/digi.1*
-/usr/man/man1/etherwake.1*
-/usr/man/man1/icebox.1*
+%doc TODO
+%doc ChangeLog
+/usr/lib/powerman
 /usr/man/man1/pm.1*
-/usr/man/man1/rmc.1*
-/usr/man/man1/wti.1*
-/usr/man/man5/digi.conf.5*
-/usr/man/man5/etherwake.conf.5*
-/usr/man/man5/icebox.conf.5*
 /usr/man/man5/powerman.conf.5*
-/usr/man/man5/wti.conf.5*

@@ -63,4 +63,43 @@
 #	         Removed all Changelog and version information from
 #	all files except pm, Makefile, and powerman.spec.
 #	         Removed all but the main Makefile and from cvs         
+# v. 0-1-8:  2001-09-20
+#	         Update to IceBox module to accomodate infelicities 
+#	in the serial line protocol.  In particular, some iceboxes 
+#	end a line with "\n\n" and later ones with "\r\n".  
+#    Release 2:
+#	         Implemented a fullfeatured logging system to help 
+#	with diagnosis of protocol oddities.
+# v. 0-1-9:  2001-10-01
+#	         Reimplement pm and all subsidiary modules to run 
+#	entirely within Python (excepting ether-wake and rmc calls).
+#	There is only one config file, and it is in /etc/powerman.conf.
+#	All the query and control types are governed each by its own
+#	module, which is imported when the config file mentions it.
+#	Specialized data is carried in objects defined in these 
+#	modules.  Each module must have a SetDataClass for clusterwide 
+#	type information, and a NodeDataClass for per node special
+#	data.  In addition pm expects the NodeDataClass __init__ 
+#	function to have the profile (self, type, vals) where 
+#	type is a string and vals is a list of strings.  Similarly,
+#	in SetDataClass.__init__(self, cluster) cluster as a reference
+#	to powerman's global ClusterClass structure, which has 
+#	information (like fanout) that may be needed in the low
+#	level handler.  The following are also required:
+#	SetDataClass.add(self, node)
+#	SetDataClass.do_com(self)
+#	node is reference to NodeClass object.  
+#	There are small wrapper functions embodying the calls to
+#	rmc and ether-wake, which are now located in the 
+#	/usr/lib/powerman directory.  That directory no longer has 
+#	subdirectories.  The pm program just holds command line 
+#	processing and initialization code.  All the actual work is 
+#	the new pm_classes module.  There is also a new pm_utils 
+#	module that holds a few things like error handling and logging
+#	that are usefull to all modules.  Finally, all the old man
+#	pages have been removed in favor of just the pm.1 and 
+#	powerman.conf.5 pages.
 ####################################################################
+
+
+	

@@ -34,10 +34,10 @@ single management workstation, which, in turn, has access to power
 monitoring and power control facilities.  During devopment PowerMan
 was integrated with a Linux Cluster management package.  On other
 platforms some localization may be called for.  The code is written
-primarily in Python, but the low level utility for the DigiPort serial
-port concentrator and the Ether-Wake function of the API CS20s are
-both written in C, and the low level utility for Alpha-based computers
-with the RMC service processor interface is written in Expect/TCL.  
+primarily in Python, but the low level utility for the Ether-Wake
+function of the API CS20s is written in C, and the low level utility
+for Alpha-based computers with the RMC service processor interface is
+written in Expect/TCL.   
   One goal of the project is to support easy customization to
 alternative hardware environments.  This is accomplished via
 hardware-specific utility functions that conform to a simple
@@ -45,96 +45,76 @@ inteface.  One such function is need for each variety of power control
 hardware, and one is need for each variety of power monitoring
 hardware.  Powerman is configured with a file that names each node and
 gives the name of the power control function and of the power
-monitoring function.  PowerMan then execs the appropriate function
-when the action is requested.  
+monitoring function.  In some cases the power monitoring and power
+control hardware may be the same (eg. IceBox).  Each monitoring and
+control type has its own Python module in the /usr/lib/powerman
+directory.  In the case of etherwake.py and rmc.py these are just
+small wrappers for the underlying ether-wake and rmc functions.  In
+other cases the Python module carries out the task, usually by
+communication over one or more serial port interfaces from the
+management workstation to the underlying device.  
 
 1.  Packing list
   In a typical installation $powermandir is "/usr/lib/powerman", and
 $powermanconf is "/etc/powerman.conf".  The current version of
-powerman is 0.1.1, so the files installed by the "binary" RPM would
+powerman is 0.1.9, so the files installed by the "binary" RPM would
 be:
 /usr/bin/pm				The command line interface
-/usr/man/man1/digi.1			man pages for executables
-/usr/man/man1/etherwake.1		""
-/usr/man/man1/pm.1			""
-/usr/man/man1/rmc.1			""
-/usr/man/man1/wti.1			""
-/usr/man/man5/digi.conf.5		man pages for configuration files
-/usr/man/man5/etherwake.conf.5		""
-/usr/man/man5/powerman.conf.5		""
-/usr/man/man5/wti.conf.5		""
+/usr/man/man1/pm.1			man page for the executable
+/usr/man/man5/powerman.conf.5		man page for configuration file
 /etc/powerman.conf			primary configuration file
 /usr/doc/powerman-0.1.1/DISCLAIMER	same disclaimer as below
 /usr/doc/powerman-0.1.1/README		this file
 /usr/doc/powerman-0.1.1/TOUR.SH		a short tour of the operations
-/usr/lib/powerman/bin/bogus_check	Fake cluster management for
-/usr/lib/powerman/bin/bogus_set		  testing purposes
-/usr/lib/powerman/bin/digi		power monitoring function
-/usr/lib/powerman/bin/etherwake		power management function
-/usr/lib/powerman/bin/rmc		power management function
-/usr/lib/powerman/bin/wti		power management function
-/usr/lib/powerman/etc/bogus.conf	Configuration files for low
-/usr/lib/powerman/etc/digi.conf		  level management functions
-/usr/lib/powerman/etc/etherwake.conf	  (not all need be present)
-/usr/lib/powerman/etc/wti.conf		""
-/usr/lib/powerman/lib/ether-wake	""
+/usr/doc/powerman-0.1.1/ChangeLog	a short tour of the changes in pm
+/usr/lib/powerman/digi.py		power monitoring function
+/usr/lib/powerman/etherwake.py		power management function
+/usr/lib/powerman/ether-wake		actual controlling function
+/usr/lib/powerman/icebox		monitoring and management both
+/usr/lib/powerman/rmc.py		power management function
+/usr/lib/powerman/rmc			actual contrlling function
+/usr/lib/powerman/wti.py		power management function
 
-The "source" RPM contails essentially all the same files (with a few
+The "source" RPM contains essentially all the same files (with a few
 extras) but gathered in a single development directory tree rooted at
 $powermanroot:
+$powermanroot/ChangeLog
 $powermanroot/DISCLAIMER
 $powermanroot/Makefile
 $powermanroot/README
+$powermanroot/TODO
 $powermanroot/TOUR.SH
-$powermanroot/bin/Makefile
-$powermanroot/bin/bogus_check
-$powermanroot/bin/bogus_set
-$powermanroot/bin/digi
-$powermanroot/bin/etherwake
+$powermanroot/Makefile
+$powermanroot/aux/mkinstalldirs
+$powermanroot/bin/digi.py
+$powermanroot/bin/etherwake.py
+$powermanroot/bin/icebox.py
+$powermanroot/bin/pm
+$powermanroot/bin/pm_classes.py
+$powermanroot/bin/pm_utils.py
+$powermanroot/bin/pmkill
 $powermanroot/bin/rmc
-$powermanroot/bin/wti
-$powermanroot/etc/Makefile
-$powermanroot/etc/bogus.conf
-$powermanroot/etc/digi.conf
-$powermanroot/etc/etherwake.conf
-$powermanroot/etc/fc.digi.conf
-$powermanroot/etc/fc.etherwake.conf
+$powermanroot/bin/rmc.py
+$powermanroot/bin/wti.py
 $powermanroot/etc/fc.powerman.conf
 $powermanroot/etc/powerman.conf
-$powermanroot/etc/slc.digi.conf
-$powermanroot/etc/slc.etherwake.conf
 $powermanroot/etc/slc.powerman.conf
-$powermanroot/etc/slc.wti.conf
-$powermanroot/etc/tux.bogus.conf
-$powermanroot/etc/tux.powerman.conf
-$powermanroot/etc/wti.conf
-$powermanroot/lib/Makefile
+$powermanroot/etc/pcra.powerman.conf
+$powermanroot/etc/pcrb.powerman.conf
+$powermanroot/etc/dev.powerman.conf
 $powermanroot/local_env
-$powermanroot/man/Makefile
-$powermanroot/man/digi.1
-$powermanroot/man/digi.conf.5
-$powermanroot/man/etherwake.1
-$powermanroot/man/etherwake.conf.5
 $powermanroot/man/pm.1
 $powermanroot/man/powerman.conf.5
-$powermanroot/man/rmc.1
-$powermanroot/man/wti.1
-$powermanroot/man/wti.conf.5
-$powermanroot/pm
+$powermanroot/powerman.spec
 $powermanroot/src/Makefile
-$powermanroot/src/digi.c
 $powermanroot/src/ether-wake.c
 
 Note that the $powermanroot/etc directory has alternative
-configuration files for clusters named "fc", "slc", and "tux".  There
-are Makefiles everywhere to manage creation and installation.  There
-is no lib/ether-wake, but there is a src/ether-wake.c, as well as a
-digi.c.  These two programs need to be compiled, which will happen
-automatically with a "make install".  The digi function also needs to
-be owned by root and setuid root if regualr users are to be able to
-monitor power status.  The file local_env is just a convenience to set
-the two PowerMan environment variables when testing the code in the
-development directory rather than fully installed.  
+configuration files for clusters named "fc", "slc", and others.  The
+Makefiles manages creation and installation.  The file local_env is
+just a convenience to set the two PowerMan environment variables when
+testing the code in the development directory rather than fully
+installed.
 
 2.  Licensing: GPL
 
@@ -185,7 +165,7 @@ only.
 even if power monitoring and control is performed differently on
 varius nodes.  The powerman configuration file specifies a monitoring
 and a control function for each node in the cluster.  The named
-functions are then used to dispatch a monitoring or control request to
+modules are then used to dispatch a monitoring or control request to
 the underlying hardware.  Each low level function responds to the same
 interface, thus hiding the hardware differences from the user.  If a
 new variety of hardware is introduced to the cluster it is relatively
@@ -204,85 +184,72 @@ causes the target nodes to be read from stdin, one per line.
                           "-a"
 will target "all" nodes in the cluster.  
   The other options are:
-                          "-b"
-bitmap mode.  Rather than poviding names of nodes that are on (resp. off 
-for -r) bitmap mode prints a string of 1's and 0's, with 1 for on and 0 
-for off.  All nodes are represented in the bitmap in the numerical order 
-of their node name (implies -a). 
                        "-c configfile"
 Provide an alternate name or location for the configuration file.
-                         "-f number"
+                       "-f number"
 Set the maximum concurrency for underlying utilities.  The default is
 256.  Concurrency is poorly supported in the current version.  Many
 low level utilities ignore the -f option.
-                      "-l powermandir"
+                       "-l powermandir"
 Provide an alternate location for the PowerMan libraries.
-                            "-r"
+                       "-r"
 reverse, i.e. print nodes that are off rather than on
-                            "-v"
-be verbose, i.e. print error messages rather than dying quietly.  
+                            "-q"
+be quiet, i.e. suppress error messages and dye quietly.  
   It may be usefull to browse the man page for pm to learn about the 
 environment variables as well.  
 
 6.  Interface to low-level utilites
-  A low level program for power monitoring should provide the same
-command line processing that pm does for checking power status.  See
-the -b, -f, -l, -r, -v, and -w parameters in the last section.  Support
-for -a, and -c is optional, pm won't ever rely on them.  It is
-acceptable to do nothing with the -f option.  The -w option should
-accept a comma separated list.  It's optional to provide "-w -" support
-for reading from stdin, and similarly optional to support the W_COL
-working collective environment variable - pm won't use them in a call
-to the low level utility.  
-  A low level program for power control should provide the same
-command line processing that pm does for setting power status.  See
-the -f, -l, -v, and -w parameters and implement the "on", "off", and
-"reset" commands.  It is acceptable for the low level program to act
-without regard to the prior state of a target node.  pm will not turn
-on a node that is already on or turn off or reset a node that is
-already off.  Support for -a and -c is optional - pm won't use them.
-It is acceptable to do nothing with the -f option.   The -w option should
-accept a comma separated list.  It's optional to provide "-w -" support
-for reading from stdin, and similarly optional to support the W_COL
-working collective environment variable - pm won't use them in a call
-to the low level utility.
+
+  All the query and control types are governed each by its own module,
+which is imported when the config file mentions it.  Specialized data
+is carried in objects defined in these modules.  Each module must have
+a SetDataClass for clusterwide type information, and a NodeDataClass
+for per node special data.  In addition pm expects the NodeDataClass
+__init__ function to have the profile (self, type, vals) where type is
+a string and vals is a list of strings.  Similarly, in
+        SetDataClass.__init__(self, cluster) 
+cluster is a reference to powerman's global ClusterClass structure,
+which has information (like fanout) that may be needed in the low
+level handler.  The following are also required:
+        SetDataClass.add(self, node) 
+        SetDataClass.do_com(self) 
+node is reference to a NodeClass object.
 
 7.  Low-level utilites in the present package
   The following utilities for checking power status exist in the
 current release:
-	bogus_check - is a simple compliant implemetation that does
-not work on any hardware.  Rather it takes its state information from a
-character string in its configuration file.  It is included so that
-one may create a virtual cluster (a bogus cluster) and experiment with
-the interfaces to PowerMan and the low level utilites without
-disrupting a running cluster, or similaraly if you are trying to
-develop a low level utility for a cluster that lacks one.
-	digi - is the only working example of a cluster monitoring low
+	digi.py - is an example of a cluster monitoring low
 level function.  Its operation will be discussed at length in the
 "theory of power monitoring" section.  The digi program sends an ioctl
-to a tty that its configuration file tels it corresponds to the target
+to a tty that its configuration file tells it corresponds to the target
 node.  That ioctl provides information (the state of the tty's DSR
 handshake line) that can be used to infer its power status.  
+	icebox.py - is an example of a monitoring and control module.
+The IceBox product from Linux Networks Inc implements a protocol over
+a serial connection by which one may query power status and
+temperatures as well as issue power control commands.
   The following utilities for setting power status exist in the
 current release: 
-	bogus_set - is the companion to bogus_check.  bogus_set uses
-nodes names that are just integers, and the integer is used as an
-offset into the "bogus.conf" file.  The character at that offset is
-set to 1 for on and 0 for off.   The PowerMan configuration file
-"tux.powerman.conf" gives an example of a bogus cluster configured to
-use the bogus_check and bogus_set low level functions.  
 	etherwake - is a python program that wraps a compliant
 interface around the "ether-wake" C-based function that just sends a
-"magic" packet to a given MAC address.  The etherwake configuration
+"magic" packet to a given MAC address.  The configuration
 file associates the MAC addresses with the corresponding nodes.  As
 implemented in the hardware here at Livermore Lab the ethernet
 wake-on-LAN magic packet is a TOGGLE.  It will power a node off as
 well as on.  This could be a very bad thing in a production
-environment.  As implemented, etherwake makes no provision for
-protecting you from this possible catastrophy, so proceed with
-caution.  pm will not try to turn on a node that is already on, or
-turn off or reset a node that is already off.  For that reason pm is a
-much safer interface to use.  
+environment.  As implemented, etherwake.py makes no provision for
+protecting you from this possible catastrophy, however pm checks for
+calls to toggle the power via etherwake and will not try to turn on a
+node that is already on, or turn off or reset a node that is already
+off.  Note that this is not true for other power control functions,
+i.e. a command to power off a node that is already off will proceed
+for node not controlled by ehterwake.  
+	icebox.py - (again) The power control part of the serial
+communications based protocol allows for power on, power off, and
+reset.  The reset function asserts the motherboard's reset line, thus
+achieving a reset without the harfull power off/power on cycle some
+power control devices require.  
 	rmc - is a TCL/Expect script wrapping a call to the conman
 utility for console management.  In that call (wich can be carried out
 with a high degree of concurrency via the -f option) a console session
@@ -299,7 +266,7 @@ ports is provided by the wti configuration file.
 8.  The theory of power monitoring
   In a cluster of computers it is desirable to montior and control
 them all remotely.  It is also desirable to dispense with the
-keyboard, mouse , and monitor at each node.  Thus a good cluster
+keyboard, mouse, and monitor at each node.  Thus a good cluster
 design relies on serial based consoles communicating back to a
 management workstation via some sort of serial concentrator.  With
 proper cabling and a reasonable serial concentrator it is possible to
@@ -338,10 +305,16 @@ workstation over a private management network.  In the case of our
 cluster of API CS20s the "ether-wake" packet toggled the power status,
 so some care (and accurate power monitoring) was required in building
 a power control user interface.  
-  Remote power controllers (RPCs) are controlled from a management
-workstation via a direct connection.  One sends the appropriate command
+  Remote power controllers (RPCs) may be controlled from a management
+workstation via a direct serial connection or via a telnet session.
+For serial connected RPCs one sends the appropriate command
 to the correct tty and it's as though you'd unplugged the target node
-(which is plugged into the RPC, of course).    
+(which is plugged into the RPC, of course).   A telnet connection for
+power control to an RPC is also possible, but we have yet to try
+implementing one.  Our thought is that a telnet session per node for a
+large cluster is too heavy a load and too slow ofor our purposes.
+Thus we confine the design of our clusters to those with more direct
+power control.  
   Some of the nodes we've dealt with had built in "service processors."
 RMC on the Compaq DS10, DS20, and ES40 is an example of this.  One may
 communicate with the RMC interface via a special escape sequence on

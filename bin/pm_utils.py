@@ -26,22 +26,29 @@ error_msg[8]  = "[8]Couldn\'t find log file"
 error_msg[9]  = "[9]Not a recognized node name"
 error_msg[10] = "[10]Couldn't find low level routine"
 error_msg[11] = "[11]Unrecognized response"
-error_msg[12] = "[12]Set command found no matching nodes"
+error_msg[12] = "[12]No matching nodes"
 error_msg[13] = "[13]temperature check only works in query mode"
 error_msg[14] = "[14]No nodes found for target of operation"
 error_msg[15] = "[15]Unrecognized query type"
 error_msg[16] = "[16]Unrecognized control type"
 error_msg[17] = "[17]Unrecognized module name"
+error_msg[18] = "[18]Failed to open tty"
+error_msg[19] = "[19]Failed to lock tty"
+error_msg[20] = "[20]Failed to find helper function"
+error_msg[21] = "[21]Timed out after ten attempts to access port"
 
 verbose = 1
 logging = 0
 log_file = None
-def init_utils(v_flag, l_flag):
+powermandir = ""
+def init_utils(v_flag, l_flag, dir):
     global verbose
     global logging
     global log_file
+    global powermandir
     log_file_name = "/tmp/powerman.log"
     
+    powermandir = dir
     verbose = v_flag
     logging = l_flag
     if(logging):
@@ -65,7 +72,7 @@ def exit_error(msg_num, msg_data):
     log(error_msg[msg_num] + ": " + msg_data)
     if(verbose):
         sys.stderr.write ("Powerman: " + error_msg[msg_num] + ": " + msg_data + ".\n")
-    sys.exit(1)
+    sys.exit(msg_num)
 
 def node_cmp(n1, n2):
     "comparison function for sorting nodes"

@@ -42,7 +42,11 @@ class PortClass:
 
     def __init__(self, node):
         "Port class initialization"
-        self.name      = node.q_data.port
+        try:
+            port_name = node.q_data.port
+        except AttributeError:
+            port_name = node.c_data.port
+        self.name      = port_name
         self.node      = node
         
     def do_command(self, box, f):
@@ -58,7 +62,7 @@ class PortClass:
         if (req == 'query'):
             com = 'ns'
         elif (req == 'rquery'):
-            revers = 1
+            reverse = 1
             com = 'ns'
         elif (req == 'off'):
             setting = 1
@@ -118,7 +122,7 @@ class PortClass:
                 temps = val
                 self.node.mark("%s:%s", (self.node.name, temps))
         if (not good_response):
-            pm_utils.exit_error(20, "")
+            pm_utils.exit_error(21, self.name)
 
 class BoxClass:
     "Class definition for an icebox"
@@ -197,7 +201,8 @@ class BoxClass:
                 if (setting):
                     if (string.lower(response) == 'ok'):
                         good_response = 1
-                        for port in self.ports.keys():
+                        for port_name in self.ports.keys():
+                            port = self.ports[port_name]
                             port.node.mark("port %s ok" % port.name)
                     continue
                 try:
@@ -211,9 +216,9 @@ class BoxClass:
                         continue
                     if(p[0:1] != 'N'):
                         continue
-                    this_port = p[1:2]
+                    port_name = p[1:2]
                     try:
-                        port = self.ports[this_port]
+                        port = self.ports[port_name]
                     except KeyError:
                         continue
                     nm = port.node.name
@@ -247,11 +252,11 @@ class TtyClass:
         try:
             f = open(self.name, 'r+')
         except IOError:
-            pm_utils.exit_error(13, self.name)
+            pm_utils.exit_error(18, self.name)
         try:
             fcntl.lockf(f.fileno(), FCNTL.LOCK_EX | FCNTL.LOCK_NB)
         except IOError:
-            pm_utils.exit_error(14, self.name)
+            pm_utils.exit_error(19, self.name)
         for box_name in self.boxes.keys():
             box = self.boxes[box_name]
             box.do_command(f)
@@ -260,10 +265,14 @@ class TtyClass:
 
     def add(self, node):
         try:
-            box = self.boxes[node.q_data.box]
+            box_name = node.q_data.box
+        except AttributeError:
+            box_name = node.c_data.box
+        try:
+            box = self.boxes[box_name]
         except KeyError:
-            box = BoxClass(node.q_data.box)
-            self.boxes[box.name] = box
+            box = BoxClass(box_name)
+            self.boxes[box_name] = box
         box.add(node)
 
 

@@ -1,6 +1,6 @@
 \." $Id$
 .\"
-.TH POWERMAN.CONF 1 "Release 0.1.7" "LLNL" "POWERMAN.CONF"
+.TH POWERMAN.CONF 1 "Release 0.1.9" "LLNL" "POWERMAN.CONF"
 
 .SH NAME
 powerman.conf \- configuration file format for pm
@@ -21,11 +21,21 @@ and a power control function.  A typical node in the cluster using digi
 power monitoring and etherwake power control might look like this:
 .LP
 .RS
-node tux17 digi etherwake
+node tux17 {digi /dev/ttyD0} {etherwake 00:11:22:33:44:55}
 .RE
 .LP
-Note that the cluster should follow the convention that nodes names 
-consist of the cluster name with a unique integer appended.  
+The hardware detail block contained in the curly braces is hardware
+dependent.  In the case that power monitoring and power management are
+carried out by the same hardware (as in the 
+.I icebox
+hardware) one may include a single hardware detail block.  If both are
+present then the monitoring block comes before the control block.
+Each block begins with the name of the hardware (which must correspond
+to the 
+.I Python 
+module's name in /usr/lib/powerman) and includes a list of details
+needed by that module.  The source RPM for powerman contains examples
+of configurations for each of the supported types. 
 
 
 .SH "FILES"
@@ -36,5 +46,5 @@ Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Alpha and
 Intel Linux clusters.
 
 .SH "SEE ALSO"
-conman(1), cv(1), digi(1), icebox(1), etherwake(1), pm(1), rmc(1), wti(1)
+pm(1)
 

@@ -19,44 +19,43 @@ import pm_utils, pm_classes
 class NodeDataClass:
     "Class definition for wti controlled nodes"
     type = ""
-    mac  = ""
     
     def __init__(self, type, vals):
         "Node class initialization"
         self.type = type
-        try:
-            self.mac  = vals[0]
-        except IndexError:
-            pm_utils.exit_error(6, str(vals))
-        # print self.type, self.mac
 
 class SetDataClass:
     "Structure in which to gather all the wti info in a single place"
     cluster   = None
     nodes     = []
-    etherwake = ""
+    rmc       = ""
     
     def __init__(self, cluster):
         "Start with an empty node set"
         self.cluster = cluster
-        self.nodes        = []
-        self.etherwake = pm_utils.powermandir + 'ether-wake'
-        if (not os.path.isfile(etherwake)):
-            pm_utils.exit_error(20, etherwake)
+        self.nodes   = []
+        self.rmc     = pm_utils.powermandir + 'rmc'
+        if (not os.path.isfile(rmc)):
+            pm_utils.exit_error(20, rmc)
         
     def add(self, node):
         self.nodes.append(node)
         
     def do_com(self):
-        "carry out the requested command on each mac address"
-        mac_addr = ""
+        "carry out the requested command on each rmc controlled host"
+        command = self.rmc + ' ' + "-f " + self.cluster.fanout + " "
+        com     = ""
         for node in self.nodes:
             if (node.is_marked()):
                 # print "node.message = ", node.message
-                os.system(self.etherwake + ' ' + node.c_data.mac)
-                if (node.message == "reset"): 
-                    time.sleep(5)
-                    os.system(self.etherwake + ' ' + node.c_data.mac)
+                if (not com):
+                    command = command + node.name
+                    com = node.message
+                else:
+                    command = command + "," + node.name
+                node.unmark()
+        command = command + com
+        os.system(command)
                 
 
 

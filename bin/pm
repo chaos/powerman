@@ -34,7 +34,7 @@ def usage(msg):
     print msg
     sys.exit(0)
 
-Version = "pm: Powerman 0.1.8"
+Version = "pm: Powerman 0.1.9"
 
 # Check for level of permision and exit for non-root users
 
@@ -47,6 +47,7 @@ config_file = '/etc/powerman.conf'
 work_col    = ''
 verbose     = 1
 logging     = 0
+reverse     = 0
 names       = []
 com         = ''
 all         = 0
@@ -99,7 +100,7 @@ for opt in options:
     elif (op == '-q'):
         verbose = 0
     elif (op == '-r'):
-        com = "rquery"
+        reverse = 1
     elif (op == '-t'):
         com = "temp"
     elif (op == '-V'):
@@ -123,7 +124,10 @@ if (args and args[0] and not com):
     if (not ((com == 'off') or (com == 'on') or (com == 'reset'))):
         usage ("\n\nUnrecognized command.")
 else:
-    com = "query"
+    if (reverse):
+        com = "rquery"
+    else:
+        com = "query"
     
         
 
@@ -137,9 +141,11 @@ if (powermandir):
 else:
     usage("\n\nFailed to find library directory: " + powermandir)
 
-import pm_utils, pm_classes
-
-pm_utils.init_utils(verbose, logging)
+try:
+    import pm_utils, pm_classes
+except ImportError:
+    usage("\n\nCouldn\'t find library files")
+pm_utils.init_utils(verbose, logging, powermandir)
 
 # Initialize operations by creating the cluster based on the description
 # given in the config file.  That information includes for each node the
@@ -149,11 +155,9 @@ theCluster = pm_classes.ClusterClass(config_file)
 theCluster.fanout = fanout
 
 if(all):
-    # I need to make marking nodes for action into another method for
-    # the ClusterClass
     theCluster.mark_all(com)
-# if names list is empty look for working collective
 else:
+    # if names list is empty look for working collective
     if (not names and work_col):
         f = open(work_col, 'r')
         name = f.readline()
@@ -168,7 +172,7 @@ else:
             node = theCluster.nodes[name]
             node.mark(com)
         except KeyError:
-            exit_error (9, name)
+            pm_utils.exit_error (9, name)
 
 # sequence through list performing action on marked nodes.  Any reply
 # is put in the node's message.
