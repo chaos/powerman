@@ -130,6 +130,7 @@
 #	          Revert to line buffered I/O.  As per Linux Networks   
 #	suggestion that line noise may corrupt the icebox buffer always  
 #	start a query with an initial '\r\n' to clear the buffer first.
-#	Push tty openning and locking code into pm_utils.
-#	
+#	Push tty openning and locking code into pm_utils.  Remove all
+#	pacing delays except for when "setting"
+#	Removed annoying "pm:  " from version string.
 ####################################################################

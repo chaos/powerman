@@ -117,7 +117,7 @@ def init_tty(tty_struct):
     global tty
 
     try:
-        tty = open(tty_struct.tty_name, 'r+')
+        tty = open(tty_struct.name, 'r+')
     except IOError:
         exit_error(18, tty_struct.name)
     tty_struct.device = tty

@@ -232,7 +232,7 @@ class BoxClass:
                 port = self.ports[port_name]
                 port.do_command(self)
 
-class TtyClass(pm_utils.TtyClass):
+class TtyClass:
     "Class definition for a tty with icebox(es) attached"
     name       = ""
     boxes      = {}
@@ -245,11 +245,8 @@ class TtyClass(pm_utils.TtyClass):
         "Tty class initialization"
         self.name       = name
         self.boxes      = {}
+        self.attrs = None
         self.prev_attrs = None
-        self.attrs[0]   = TERMIOS.IGNBRK | TERMIOS.IGNPAR | TERMIOS.INPCK
-        self.attrs[1]   = 0
-        self.attrs[2]   = TERMIOS.CSIZE | TERMIOS.CREAD | TERMIOS.CLOCAL
-        self.attrs[3]   = 0
         self.device     = None
         self.locked     = 0
 

@@ -36,7 +36,7 @@ def usage(msg):
     print msg
     sys.exit(0)
 
-Version = "pm: Powerman 0.2.0"
+Version = "Powerman 0.2.0"
 
 # Check for level of permision and exit for non-root users
 
