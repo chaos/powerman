@@ -324,10 +324,10 @@ static void _telnet_preprocess(Device * dev)
 
         n = cbuf_drop(dev->from, len);
         if (n < len)
-            err((n < 0), "_divert_telnet: cbuf_drop returned %d", n);
+            err((n < 0), "_telnet_preprocess: cbuf_drop returned %d", n);
         n = cbuf_write(dev->from, device, k, NULL);
         if (n < k)
-            err((n < 0), "_divert_telnet: cbuf_write (device) returned %d", n);
+            err((n < 0), "_telnet_preprocess: cbuf_write returned %d", n);
     }
 }
 
