@@ -1,0 +1,44 @@
+#
+# wti-rps10.dev,v 1.6 2003/01/17 23:50:34 garlick Exp
+# /chaos/cvs/powerman/etc/wti-rps10.dev,v
+#
+specification  "phantom" {
+	type 		SERIAL
+	timeout 	5 
+
+	plug name { "1" }	# place holder - value not used
+
+	script login {
+		expect "Choose a command"
+		send "\035"	# enter "shell mode"
+	}
+	script status {
+		send "P?\r\n"
+		expect "(0|1)\r"
+		setstatus "1" $1 on="1" off="0"
+	}
+	script toggle {
+		send "PT\r\n"
+		expect "ok\r"
+	}		
+	script beacon_on {
+		send "L1\r\n"	# LED on
+		expect "ok\r"
+		send "B1\r\n"	# blink LED
+		expect "ok\r"
+	}
+	script beacon_off {
+		send "L0\r\n"	# LED off
+		expect "ok\r"
+	}
+	script status_beacon {
+		send "L?\r\n"	# get LED status 0=on, 1=off, B=blink
+		expect "(0|1|B)" 
+		setstatus "1" $1 on="(B|0)" off="1"
+	}
+	script status_temp {
+		send "T0\r\n"	# get temp probe 0 (there is also a 1- unused)
+		expect "([0-9]+)\r" # value is 8-bit Celcius  
+		setstatus "1" $1
+	}
+}
