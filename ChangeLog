@@ -134,4 +134,6 @@
 #	pacing delays except for when "setting"
 #	Removed annoying "pm:  " from version string.
 #	Adjusted some of the "bad replies" handling for iceboxes.
+#	Added a 50 ms delay between queries, which improves reliability.
+#	Added feature to allow for temperature bounds checking.
 ####################################################################
