@@ -213,7 +213,7 @@ Poll(Pollfd_t pfd, struct timeval *tv)
     /* repeat poll if interrupted */
     do {
 #if HAVE_POLL
-        int tv_msec = tv ? tv_cpy->tv_sec * 1000 + tv_cpy->tv_usec / 1000 : -1;
+        int tv_msec = tv ? tv_cpy.tv_sec * 1000 + tv_cpy.tv_usec / 1000 : -1;
 
         n = poll(pfd->ufds, pfd->nfds, tv_msec);
 #else
