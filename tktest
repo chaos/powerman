@@ -1,0 +1,14 @@
+#!/usr/bin/expectk -f
+button .toggle_button -text "Togggle" -command toggle
+pack .toggle_button
+
+proc toggle {} {
+    set verbose 0
+   
+    source /usr/lib/conman/conman.exp
+    source /usr/lib/powerman/alpha.exp
+    log_user 0
+
+    conman_run 256 slc15 alpha_do_rmc_cmd $verbose "power on"
+}
+

@@ -1,0 +1,2 @@
+#!/bin/sh
+/usr/bin/ditty /dev/ttyD$1 |grep DSR

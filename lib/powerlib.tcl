@@ -377,7 +377,9 @@ proc orig_rmc_power {node_list cmd} {
     source $alpha_expect
     log_user 0
 
-    conman_run 256 $node_list alpha_do_rmc_cmd $verbose $cmd
+    set nodes_and_options [linsert $node_list 0 "-j"]
+#    conman_run 256 $node_list alpha_do_rmc_cmd $verbose $cmd
+    conman_run 256 $nodes_and_options alpha_do_rmc_cmd $verbose $cmd
 }
 
 ####################################################################
