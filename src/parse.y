@@ -62,7 +62,7 @@ static char *makeCheckLoginSec(char *s2);
 static Interpretation *makeMapLine(char *s2, char *s3);
 static List makeMapSecHead(Interpretation *s1);
 static List makeMapSec(List s1, Interpretation *s2);
-static char *makeScriptEl(Script_El_T mode, char *s2, char *s3, List s4);
+static char *makeScriptEl(Script_El_T mode, char *s2, List s4);
 static char *makeLogInSec(char *s2);
 static char *makeInterp(char *s2);
 static char *makeSpecSize(char *s2);
@@ -257,16 +257,16 @@ script_list	: script_list script_el
 		| script_el 
 ;
 script_el	: TOK_EXPECT TOK_STRING_VAL {
-    $$ = (char *)makeScriptEl(EXPECT, $2, $2, NULL);
+    $$ = (char *)makeScriptEl(EXPECT, $2, NULL);
 }
 		| TOK_EXPECT TOK_STRING_VAL map_sec {
-    $$ = (char *)makeScriptEl(EXPECT, $2, $2, (List)$3);
+    $$ = (char *)makeScriptEl(EXPECT, $2, (List)$3);
 }
 		| TOK_SEND TOK_STRING_VAL {
-    $$ = (char *)makeScriptEl(SEND, $2, NULL, NULL);
+    $$ = (char *)makeScriptEl(SEND, $2, NULL);
 }
 		| TOK_DELAY TOK_STRING_VAL {
-    $$ = (char *)makeScriptEl(DELAY, $2, NULL, NULL);
+    $$ = (char *)makeScriptEl(DELAY, $2, NULL);
 }
 ;
 map_sec		: map_sec map_line {
@@ -575,23 +575,21 @@ static char *makeLogInSec(char *s2)
     return s2;
 }
 
-static char *makeScriptEl(Script_El_T mode, char *s2, char *s3, List s4)
+static char *makeScriptEl(Script_El_T mode, char *s2, List s4)
 {
     Spec_El *specl;
     int i;
     int len;
     bool found = FALSE;
     char buf1[MAX_BUF];
-    char buf2[MAX_BUF];
 
     /*
      * Four kinds of thing could be arriving.  An EXPECT with an 
      * interpretation will have non-NULL values in all positions.
-     * An EXPECT without an interpretation will have s3 non-Null
-     * and s4 equal to NULL.  A SEND will have s3 and s4 NULL,
-     * but it may have a "%s" in it.  If it does the "found" branch
-     * below insures that it is still in place.   A DELAY will 
-     * have s3 and s4 both NULL.  The values are passed on to
+     * An EXPECT without an interpretation will have s4 equal to NULL.  
+     * A SEND will have s4 NULL, but it may have a "%s" in it.  If it 
+     * does the "found" branch below insures that it is still in place.   
+     * A DELAY will have s4 both NULL.  The values are passed on to
      * conf_spec_el_create to be constructed.
      */
     len = strlen(s2);
@@ -602,8 +600,7 @@ static char *makeScriptEl(Script_El_T mode, char *s2, char *s3, List s4)
 	sprintf(buf1, s2, "%s");
     else
 	sprintf(buf1, s2);
-    sprintf(buf2, s3);
-    specl = conf_spec_el_create(mode, buf1, buf2, s4);
+    specl = conf_spec_el_create(mode, buf1, s4);
     if (current_script == NULL)
 	current_script = list_create((ListDelF) conf_spec_el_destroy);
     list_append(current_script, specl);
@@ -756,7 +753,7 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 
     /* make the Device */
     dev = dev_create(s2);
-    dev->spec = spec;
+    /*dev->spec = spec;*/ /* XXX */
     dev->type = spec->type;
     dev->timeout = spec->timeout;
     /* set up the host name and port */
@@ -817,7 +814,8 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 		}
 		list_iterator_destroy(map_i);
 	    }
-	    script_el = conf_script_el_create(specl->type, specl->string1, specl->string2, map, specl->tv);
+	    script_el = conf_script_el_create(specl->type, str_get(specl->string1), 
+						map, specl->tv);
 	    list_append(scripts[i], script_el);
 	}
     }

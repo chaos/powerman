@@ -1,3 +1,6 @@
+2002-09-16 garlick
+	* Got rid of remnants of second "completion" expect script 
+
 2002-09-14 garlick
 	* Renamed functions to use lower case module prefix.
 	* Renamed client.[ch] -> server.[ch].

@@ -72,7 +72,6 @@ typedef struct action_struct Action;
 typedef struct listener_struct Listener;
 
 typedef struct device_struct Device;
-typedef struct spec_struct Spec;
 
 typedef enum { NO_DEV, TTY_DEV, TCP_DEV, TELNET_DEV, SNMP_DEV,
 	PMD_DEV } Dev_Type;

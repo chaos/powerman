@@ -124,15 +124,13 @@ typedef struct {
 
 /*
  *  A Spec_El is the embodiment of what will become a Send, an 
- * Expect, or a Delay in a Protocol.  The Expect's two regexes
- * are kept uncompiled here, or the Send's string is in the 
- * string1 field (and string2 is unsed).
+ * Expect, or a Delay in a Protocol.  The Expect's regex
+ * is kept uncompiled here, or the Send's string is in the string1 field.
  */
 /* Review: should be private */
 typedef struct spec_element_struct {
     Script_El_T type;
     String string1;
-    String string2;
     struct timeval tv;
     List map;
 } Spec_El;
@@ -142,7 +140,7 @@ typedef struct spec_element_struct {
  * what will end up in each of (potentially) many Protocol structs.
  */
 /* Review: should be private */
-struct spec_struct {
+typedef struct {
     String name;
     Dev_Type type;
     String off;
@@ -154,8 +152,7 @@ struct spec_struct {
     String *plugname;
     String_Mode mode;
     List *scripts;		/* An array of pointers to lists */
-};
-/* FIXME: data structures are circular here - typedef in powerman.h jg */
+} Spec;
 
 /* 
  *   Each node and each plug in a cluster is represented by a state
@@ -206,16 +203,15 @@ typedef struct {
 
 Protocol *conf_init_client_protocol(void);
 
-Script_El *conf_script_el_create(Script_El_T type, String s1, String s2, 
-		List map, struct timeval tv);
+Script_El *conf_script_el_create(Script_El_T type, char *s1, List map, 
+		struct timeval tv);
 void conf_script_el_destroy(Script_El * script_el);
 
 Spec *conf_spec_create(char *name);
 int conf_spec_match(Spec * spec, void *key);
 void conf_spec_destroy(Spec * spec);
 
-Spec_El *conf_spec_el_create(Script_El_T type, char *str1, 
-		char *str2, List map);
+Spec_El *conf_spec_el_create(Script_El_T type, char *str1, List map);
 void conf_spec_el_destroy(Spec_El * specl);
 
 Cluster *conf_cluster_create(void);

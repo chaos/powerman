@@ -40,6 +40,20 @@
 #include "string.h"
 #include "config.h"
 
+/* helper for conf_init_client_protocol */
+static void
+_mkexpect(List *script, char *str)
+{
+    Script_El *script_el;
+    struct timeval tv;
+
+    tv.tv_sec = tv.tv_usec = 0;
+    tv.tv_usec = 0;
+    *script = list_create((ListDelF) conf_script_el_destroy);
+    script_el = conf_script_el_create(EXPECT, str, NULL, tv);
+    list_append(*script, script_el);
+}
+
 /*
  *   Constructor - This is a sort of degenerate Protocol specifically
  * for the client protocol.  It doesn't require the flexibility of
@@ -56,18 +70,12 @@ Protocol *conf_init_client_protocol(void)
 {
     Protocol *client_prot;
     List *scripts;
-    Script_El *script_el;
-    struct timeval tv;
-    String string1;
-    String string2;
 
     /* 
      * Initialize the expect/send pairs for the client protocol. 
      * Each one has exactly one EXPECT.  
      */
 
-    tv.tv_sec = 0;		/* These aren't used here, but the      */
-    tv.tv_usec = 0;		/* conf_script_el_create function needs a value. */
     client_prot = (Protocol *) Malloc(sizeof(Protocol));
 
     scripts = (List *) Malloc(NUM_SCRIPTS * sizeof(List));
@@ -81,98 +89,17 @@ Protocol *conf_init_client_protocol(void)
      * means for detecting which function the client in instigating.  
      */
 
-    /* PM_ERROR 0 */
     scripts[PM_ERROR] = NULL;
-
-    /* PM_LOG_IN 1 */
-    scripts[PM_LOG_IN] = list_create((ListDelF) conf_script_el_destroy);
-    script_el = conf_script_el_create(EXPECT, string1 =
-			       str_create("powerman"), string2 =
-			       str_create("\n"), NULL, tv);
-    list_append(scripts[PM_LOG_IN], script_el);
-    str_destroy(string1);
-    str_destroy(string2);
-
-    /* PM_CHECK_LOGIN 2 */
-    scripts[PM_CHECK_LOGIN] = list_create((ListDelF) conf_script_el_destroy);
-    script_el = conf_script_el_create(EXPECT, string1 =
-			       str_create("check login"), string2 =
-			       str_create("\n"), NULL, tv);
-    list_append(scripts[PM_CHECK_LOGIN], script_el);
-    str_destroy(string1);
-    str_destroy(string2);
-
-    /* PM_LOG_OUT 3 */
-    scripts[PM_LOG_OUT] = list_create((ListDelF) conf_script_el_destroy);
-    script_el = conf_script_el_create(EXPECT, string1 =
-			       str_create("quit"), string2 =
-			       str_create("\n"), NULL, tv);
-    list_append(scripts[PM_LOG_OUT], script_el);
-    str_destroy(string1);
-    str_destroy(string2);
-
-    /* PM_UPDATE_PLUGS 4 */
-    scripts[PM_UPDATE_PLUGS] = list_create((ListDelF) conf_script_el_destroy);
-    script_el = conf_script_el_create(EXPECT, string1 =
-			       str_create("update plugs"), string2 =
-			       str_create("\n"), NULL, tv);
-    list_append(scripts[PM_UPDATE_PLUGS], script_el);
-    str_destroy(string1);
-    str_destroy(string2);
-
-    /* PM_UPDATE_NODES 5 */
-    scripts[PM_UPDATE_NODES] = list_create((ListDelF) conf_script_el_destroy);
-    script_el = conf_script_el_create(EXPECT, string1 =
-			       str_create("update nodes"), string2 =
-			       str_create("\n"), NULL, tv);
-    list_append(scripts[PM_UPDATE_NODES], script_el);
-    str_destroy(string1);
-    str_destroy(string2);
-
-    /* PM_POWER_ON 6 */
-    scripts[PM_POWER_ON] = list_create((ListDelF) conf_script_el_destroy);
-    script_el = conf_script_el_create(EXPECT, string1 =
-			       str_create("on ([^[:space:]]+)"), string2 =
-			       str_create("\n"), NULL, tv);
-    list_append(scripts[PM_POWER_ON], script_el);
-    str_destroy(string1);
-    str_destroy(string2);
-
-    /* PM_POWER_OFF 7 */
-    scripts[PM_POWER_OFF] = list_create((ListDelF) conf_script_el_destroy);
-    script_el = conf_script_el_create(EXPECT, string1 =
-			       str_create("off ([^[:space:]]+)"),
-			       string2 = str_create("\n"), NULL, tv);
-    list_append(scripts[PM_POWER_OFF], script_el);
-    str_destroy(string1);
-    str_destroy(string2);
-
-    /* PM_POWER_CYCLE 8 */
-    scripts[PM_POWER_CYCLE] = list_create((ListDelF) conf_script_el_destroy);
-    script_el = conf_script_el_create(EXPECT, string1 =
-			       str_create("cycle ([^[:space:]]+)"),
-			       string2 = str_create("\n"), NULL, tv);
-    list_append(scripts[PM_POWER_CYCLE], script_el);
-    str_destroy(string1);
-    str_destroy(string2);
-
-    /* PM_RESET 9 */
-    scripts[PM_RESET] = list_create((ListDelF) conf_script_el_destroy);
-    script_el = conf_script_el_create(EXPECT, string1 =
-			       str_create("reset ([^[:space:]]+)"),
-			       string2 = str_create("\n"), NULL, tv);
-    list_append(scripts[PM_RESET], script_el);
-    str_destroy(string1);
-    str_destroy(string2);
-
-    /* PM_NAMES 9 */
-    scripts[PM_NAMES] = list_create((ListDelF) conf_script_el_destroy);
-    script_el = conf_script_el_create(EXPECT, string1 =
-			       str_create("names ([^[:space:]]+)"),
-			       string2 = str_create("\n"), NULL, tv);
-    list_append(scripts[PM_NAMES], script_el);
-    str_destroy(string1);
-    str_destroy(string2);
+    _mkexpect(&scripts[PM_LOG_IN],	    "powerman");
+    _mkexpect(&scripts[PM_CHECK_LOGIN],	    "check login");
+    _mkexpect(&scripts[PM_LOG_OUT],	    "quit");
+    _mkexpect(&scripts[PM_UPDATE_PLUGS],    "update plugs");
+    _mkexpect(&scripts[PM_UPDATE_NODES],    "update nodes");
+    _mkexpect(&scripts[PM_POWER_ON],	    "on ([^[:space:]]+)");
+    _mkexpect(&scripts[PM_POWER_OFF],	    "off ([^[:space:]]+)");
+    _mkexpect(&scripts[PM_POWER_CYCLE],	    "cycle ([^[:space:]]+)");
+    _mkexpect(&scripts[PM_RESET],	    "reset ([^[:space:]]+)");
+    _mkexpect(&scripts[PM_NAMES],	    "names ([^[:space:]]+)");
 
     return client_prot;
 }
@@ -187,7 +114,7 @@ Protocol *conf_init_client_protocol(void)
  *                                                                 *
  *******************************************************************/
 
-Script_El *conf_script_el_create(Script_El_T type, String s1, String s2, 
+Script_El *conf_script_el_create(Script_El_T type, char *s1,
 		List map, struct timeval tv)
 {
     Script_El *script_el;
@@ -197,15 +124,10 @@ Script_El *conf_script_el_create(Script_El_T type, String s1, String s2,
     script_el->type = type;
     switch (type) {
     case SEND:
-	script_el->s_or_e.send.fmt = str_copy(s1);
+	script_el->s_or_e.send.fmt = str_create(s1);
 	break;
     case EXPECT:
-	/* XXX jg - use str_get accessor instead of s->string, 
-	 * but is this correct in the first place? */
-	Regcomp(&(script_el->s_or_e.expect.completion), str_get(s2),
-		cflags);
-	/* XXX jg see line above */
-	Regcomp(&(script_el->s_or_e.expect.exp), str_get(s1), cflags);
+	Regcomp(&(script_el->s_or_e.expect.exp), s1, cflags);
 	script_el->s_or_e.expect.map = map;
 	break;
     case DELAY:
@@ -313,7 +235,7 @@ void conf_spec_destroy(Spec * spec)
  *                                                                 *
  *******************************************************************/
 
-Spec_El *conf_spec_el_create(Script_El_T type, char *str1, char *str2, List map)
+Spec_El *conf_spec_el_create(Script_El_T type, char *str1, List map)
 {
     Spec_El *specl;
 
@@ -332,7 +254,6 @@ Spec_El *conf_spec_el_create(Script_El_T type, char *str1, char *str2, List map)
 	assert(FALSE);
     }
     specl->string1 = str_create(str1);
-    specl->string2 = str_create(str2);
     specl->map = map;
     return specl;
 }
@@ -340,11 +261,8 @@ Spec_El *conf_spec_el_create(Script_El_T type, char *str1, char *str2, List map)
 void conf_spec_el_destroy(Spec_El * specl)
 {
     assert(specl->string1 != NULL);
-    assert(specl->string2 != NULL);
     str_destroy(specl->string1);
     specl->string1 = NULL;
-    str_destroy(specl->string2);
-    specl->string2 = NULL;
     list_destroy(specl->map);
     specl->map = NULL;
     Free(specl);

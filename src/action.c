@@ -39,8 +39,8 @@
 #include "config.h"
 #include "device.h"
 #include "powermand.h"
-#include "action.h"
 #include "client.h"
+#include "action.h"
 
 /* Each of these represents a script that must be completed.
  * An error message and two of the debug "dump" routines rely on

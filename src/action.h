@@ -50,6 +50,7 @@
  * deleted.  
  *   There is no occasion for iterating on a list of Action structs.
  */
+
 struct action_struct {
     Client *client;
     int seq;			/* sequence number from client */

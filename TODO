@@ -19,8 +19,6 @@ New stuff:
 	* should be possible to query status of individual nodes
 	  (i.e. if I want to know if mcr42 is on, shouldn't have to touch
 	  every ice box)  "update plugs" and "update nodes" take no args.
-	* Remove cruft associated with "completion" regex, e.g. makeScriptEl()
-	  third argument should go away and everything beneath it.
 	* If regex subexpression index does not correspond to a parenthesized
 	  subexpression, an assertion is triggered.  Should catch this at
 	  config file parse time or otherwise make it a normal fatal error.
