@@ -1,0 +1,21 @@
+#!/bin/bash
+VERSION="powerman-0.1"
+DOC="/usr/doc/$VERSION"
+LIB="/usr/lib/powerman"
+ETC="/etc"
+BIN="/usr/bin"
+if [ $UID -ne 0 ]
+then
+  echo "You must be root to run this!"
+  exit
+fi
+rm -Rf $DOC
+rm -Rf $LIB
+rm -f $BIN/check
+rm -f $BIN/clustermon
+rm -f $BIN/clusterview
+rm -f $BIN/ether-wake
+rm -f $BIN/powerman
+rm -f $ETC/powerman.conf
+
+

@@ -1,0 +1,86 @@
+#!/bin/bash
+VERSION="powerman-0.1"
+DOC="/usr/doc/$VERSION"
+LIB="/usr/lib/powerman"
+ETC="/etc"
+BIN="/usr/bin"
+if [ $UID -ne 0 ]
+then
+  echo "You must be root to run this!"
+  exit
+fi
+if [ -f README -a \
+     -f check -a \
+     -f clustermon -a \
+     -f clusterview -a \
+     -f ether-wake -a \
+     -f powerman -a \
+     -d etc -a \
+     -f etc/powerman.conf -a \
+     -d lib -a \
+     -f lib/powerlib.tcl -a \
+     -f lib/alpha.exp -a \
+     -f lib/cs20_off.gif -a \
+     -f lib/cs20_on.gif -a \
+     -f lib/es40_off.gif -a \
+     -f lib/es40_on.gif -a \
+     -f lib/tux_off.gif -a \
+     -f lib/tux_on.gif -a \
+     -f lib/up2000_off.gif -a \
+     -f lib/up2000_on.gif -a \
+     -d $ETC \
+     -d $BIN \
+]
+then
+  echo "Files and directories look okay.  Proceeding ..."
+else
+  echo "Missing files.  Is this the correct directory?  Do you need to make etherwake?"
+  exit
+fi
+if [ ! -d $DOC ]
+then
+  mkdir $DOC
+  if [ ! -d $DOC ]
+  then
+    echo "Couldn't create doc directory $DOC"
+    exit
+  else
+    MAKDEDOC="TRUE"
+  fi
+fi
+if [ ! -d $LIB ]
+then
+  mkdir $LIB
+  if [ ! -d $LIB ]
+  then
+    echo "Couldn't create lib directory $LIB"
+    if [ ! "X$MADEDOC" = "X" ]
+    then
+      echo "Removing doc directory $DOC"
+      rmdir $DOC
+    fi
+    exit
+  fi
+fi
+cp README $DOC
+
+cp check       $BIN
+cp clustermon  $BIN
+cp clusterview $BIN
+cp ether-wake  $BIN
+cp powerman    $BIN
+
+cp etc/powerman.conf $ETC
+
+cp lib/powerlib.tcl   $LIB
+cp lib/alpha.exp      $LIB
+cp lib/cs20_off.gif   $LIB
+cp lib/cs20_on.gif    $LIB
+cp lib/es40_off.gif   $LIB
+cp lib/es40_on.gif    $LIB
+cp lib/tux_off.gif    $LIB
+cp lib/tux_on.gif     $LIB
+cp lib/up2000_off.gif $LIB
+cp lib/up2000_on.gif  $LIB
+
+
