@@ -206,7 +206,7 @@ static void _usage(void)
     printf("\
   -c --cycle     Power cycle targets   -r --reset    Reset targets\n\
   -1 --on        Power on targets      -0 --off      Power off targets\n\
-  -z --report    List on/off/unknown   -l --list     List available targets\n\
+  -q --query     List on/off/unknown   -l --list     List available targets\n\
   -h --help      Display this help\n");
     exit(1);
 }
