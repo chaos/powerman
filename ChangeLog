@@ -1,3 +1,8 @@
+2003-01-09 Albert Chu <chu11@llnl.gov>
+
+    * etc/ipmipower.dev: Added additional expressions that result
+    in powerman returning an unknown state.
+	
 2003-12-22 Jim Garlick <garlick@llnl.gov>
 
     * etc/ibmh8.dev: Fixed regular expression bug in status_all script.
