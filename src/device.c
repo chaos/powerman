@@ -763,12 +763,16 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 unsigned char mem[MAX_DEV_BUF];
                 int len = cbuf_peek(dev->from, mem, MAX_DEV_BUF);
                 char *memstr = dbg_memstr(mem, len);
-
-                act->vpf_fun(act->client_id, "recv(%s): '%s'",
-                        dev->name, memstr);
+    
+                if (!(dev->connect_status == DEV_CONNECTED)) 
+                    act->vpf_fun(act->client_id, "connect(%s): timeout",
+                            dev->name);
+                else
+                    act->vpf_fun(act->client_id, "recv(%s): '%s'",
+                            dev->name, memstr);
                 Free(memstr);
             }
-        } else if (!(dev->connect_status & DEV_CONNECTED)) {
+        } else if (!(dev->connect_status == DEV_CONNECTED)) {
             stalled = TRUE;                             /* not connnected */
         } else if (act->cur->type == STMT_EXPECT) {
             stalled = !_process_expect(dev);            /* do expect */
@@ -798,11 +802,11 @@ static void _process_action(Device * dev, struct timeval *timeout)
                         break;
                     case ACT_ETIMEOUT:
                         act->complete_fun(act->client_id, act->errnum, 
-                            "action for device %s timed out", dev->name);
+                            "Action for device %s timed out", dev->name);
                         break;
                     default:
                         act->complete_fun(act->client_id, act->errnum, 
-                            "action for device %s failed with error %d", 
+                            "Action for device %s failed with error %d", 
                             dev->name, act->errnum);
                         break;
                     }
@@ -818,7 +822,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 while ((act = list_dequeue(dev->acts)) != NULL) { 
                     if (act->complete_fun) {
                         act->complete_fun(act->client_id, ACT_EABORT, 
-                                "action for device %s aborted", dev->name);
+                                "Action for device %s aborted due to pending reconnect", dev->name);
                     }
                     _destroy_action(act);
                 }
