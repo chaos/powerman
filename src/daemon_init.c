@@ -46,56 +46,37 @@ void
 daemon_init(void)
 {
 	int i;
-	int n;
-	int len;
-	int fd;
-	pid_t pid;
-	char pidstr[TMPSTR_LEN];
 	char buf[TMPSTR_LEN];
-	time_t t;
+	time_t t = time(NULL);
 	
-
-
-	if ( (pid = Fork()) != 0 )
+	if ( Fork() != 0 )
 		exit(0);			/* parent terminates */
 
 	/* 1st child continues */
-	setsid();				/* become session leader */
+	if (setsid() < 0)			/* become session leader */
+		exit_error("setsid");
 
 	Signal(SIGHUP, SIG_IGN);
 
-	if ( (pid = Fork()) != 0 )
+	if ( Fork() != 0 )
 		exit(0);			/* 1st child terminates */
 
 	/* 2nd child continues */
 
 	/* change working directory */
-	n = chdir(ROOT_DIR);
-	if( n == -1 ) exit_error("chdir %s", ROOT_DIR);
-	n = mkdir(PID_DIR, S_IRWXU);
-	if( (n == -1) && (errno != EEXIST) )
-		exit_error("mkdir %s", PID_DIR);
-	fd = open(PID_FILE_NAME, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRWXU);
-	if( fd == -1 ) exit_error("open %s", PID_FILE_NAME);
-	sprintf(pidstr, "%d\n", pid = getpid());
-	len = strlen(pidstr);
-	n = write(fd, pidstr, len);
-	if( n != len ) exit_msg("Failed to write out pid value");
-	Close(fd);
+	if (chdir(ROOT_DIR) < 0)
+		exit_error("chdir %s", ROOT_DIR);
 
 	/* clear our file mode creation mask */
 	umask(0);
 
+	/* Close open file descriptors */
 	for (i = 0; i < MAXFD; i++)
 		Close(i);
 
+	/* Init syslog */
 	sprintf(buf, "Started %s", ctime(&t));
 	openlog(DAEMON_NAME, LOG_NDELAY |  LOG_PID, LOG_DAEMON);
-	syslog_on_error(TRUE);
+	syslog_on_error(TRUE); /* tell exit_error that stderr is no good */
 	syslog(LOG_NOTICE, buf);
-/*
-#ifndef NDEBUG
-	sleep(30);
-#endif
-*/
 }

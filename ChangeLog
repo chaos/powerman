@@ -62,3 +62,4 @@
 	  with a SIGABORT and get debugger stack traces.
 	* Added some list_iterator_destroy's to match list_iterator_create's
 	  in powerman.c
+	* Pid file stuff moved to pidlock.c and disabled for the moment.

@@ -52,7 +52,7 @@ packagedir=     ${etcdir}/${PACKAGE}
 
 COMMON_OBJS = list.o pm_string.o wrappers.o exit_error.o hostlist.o
 
-SERVER_UTIL = $(COMMON_OBJS) daemon_init.o log.o util.o buffer.o
+SERVER_UTIL = $(COMMON_OBJS) daemon_init.o log.o util.o buffer.o pidlock.o
 
 SERVER_OBJS = $(SERVER_UTIL) action.o config.o device.o listener.o  \
 	      powermand.o server.o parse_lex.o parse_tab.o
@@ -373,6 +373,12 @@ parse_tab.o: /usr/include/bits/sockaddr.h /usr/include/asm/socket.h
 parse_tab.o: /usr/include/asm/sockios.h /usr/include/bits/in.h
 parse_tab.o: /usr/include/endian.h /usr/include/bits/endian.h
 parse_tab.o: /usr/include/bits/byteswap.h /usr/include/bits/netdb.h
+pidlock.o: /usr/include/fcntl.h /usr/include/features.h
+pidlock.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+pidlock.o: /usr/include/bits/fcntl.h /usr/include/sys/types.h
+pidlock.o: /usr/include/bits/types.h
+pidlock.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
+pidlock.o: /usr/include/time.h /usr/include/string.h exit_error.h powerman.h
 pm_string.o: /usr/include/string.h /usr/include/features.h
 pm_string.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
 pm_string.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h

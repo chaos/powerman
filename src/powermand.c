@@ -60,7 +60,6 @@
 
 /* prototypes */
 static void process_command_line(Globals *g, int argc, char **argv);
-static void signal_daemon(int signum);
 static void usage(char *prog);
 static void do_select_loop(Globals *g);
 static int find_max_fd(Globals *g, fd_set *rset, fd_set *wset);
@@ -88,18 +87,14 @@ static const char *powerman_license = \
     "under the terms of the GNU General Public License as published by\n"     \
     "the Free Software Foundation.\n";
 
-#define OPT_STRING "c:fhkLrV"
+#define OPT_STRING "c:fhLV"
 #define HAVE_RECONFIGURE_OPTION 0 /* XXX not yet */
 static const struct option long_options[] =
 {
 		{"config_file",    required_argument, 0, 'c'},
 		{"foreground",     no_argument,       0, 'f'},
 		{"help",           no_argument,       0, 'h'},
-		{"kill",           no_argument,       0, 'k'},
 		{"license",        no_argument,       0, 'L'},
-#if HAVE_RECONFIGURE_OPTION
-		{"reconfigure",    no_argument,       0, 'r'},
-#endif
 		{"version",        no_argument,       0, 'V'},
 		{0, 0, 0, 0}
 };
@@ -171,7 +166,6 @@ static void
 process_command_line(Globals *g, int argc, char **argv)
 {
 	int c;
-	int signum = 0;
 	int longindex;
 
 	opterr = 0;
@@ -188,17 +182,9 @@ process_command_line(Globals *g, int argc, char **argv)
 		case 'h':	/* --help */
 			usage(argv[0]);
 			exit(0);
-		case 'k':	/* --kill */
-			signum = SIGTERM;
-			break;
 		case 'L':	/* --license */
 			printf("%s", powerman_license);
 			exit(0);
-#if HAVE_RECONFIGURE_OPTION
-		case 'r':	/* --reconfig */
-			signum = SIGHUP;
-			break;
-#endif
 		case 'V':
 			printf("%s-%s\n", PROJECT, VERSION);
 			exit(0);
@@ -211,52 +197,8 @@ process_command_line(Globals *g, int argc, char **argv)
 
 	if (! g->config_file)
 		g->config_file = Strdup(DFLT_CONFIG_FILE);	
-	
-	if (signum) 
-	{
-/* 
- *   For now only "-k" "TERM" works.  A "-r" "HUP" option is planned 
- * that will reread the config file and reinitialize the internal state.
- */
-		signal_daemon(signum);
-		exit(0);
-	}
-
-	return;
 }
 
-/*
- *   Both SIGTERM and SIGHUP may be sent to the process id listed in
- * the location PID_FILE_NAME (/var/run/powerman/powerman.pid), but only
- * SIGTERM actually works.  If the pid file is missing the program
- * exits with an error, and no process is signalled.  If the pid file
- * is found it is deleted whether the process is found or not.
- *
- * FIXME: I'd prefer to have /var/run/powerman/powerman.<pid> and 
- * allow for multiple daemons to coexist and be manageable.  "-k"
- * would presumably sequence through sending "TERM" to all of them.
- * There can be multiple powemand instances but currently "-k" will
- * only TERM the last one started.
- */
-static void
-signal_daemon(int signum)
-{
-	FILE *fp;
-	pid_t pid;
-	int n;
-
-	fp = fopen(PID_FILE_NAME, "r");
-	if( fp == NULL ) 
-		exit_error("%s", PID_FILE_NAME);
-	n = fscanf(fp, "%d", &pid);
-	if( n != 1 ) 
-		exit_msg("failed to find a pid in %s", PID_FILE_NAME); 
-	n = kill(pid, signum);
-	if( n < 0 ) 
-		exit_error("kill -%d %d", signum, pid);
-	unlink(PID_FILE_NAME);
-	return;
-}
 
 static void 
 usage(char *prog)
@@ -264,13 +206,9 @@ usage(char *prog)
     printf("Usage: %s [OPTIONS]\n", prog);
     printf("  -c --config_file FILE\tSpecify configuration [%s]\n", 
 		    DFLT_CONFIG_FILE);
-    printf("  -f --foreground\tDon't daemonize (debug)\n");
+    printf("  -f --foreground\tDon't daemonize\n");
     printf("  -h --help\t\tDisplay this help\n");
-    printf("  -k --kill\t\tKill running daemon and exit\n");
     printf("  -L --license\t\tDisplay license information\n");
-#if HAVE_RECONFIGURE_OPTION
-    printf("  -r --reconfigure\tReread configuration\n");
-#endif
     printf("  -V --version\t\tDisplay version information\n");
 }
 
@@ -504,7 +442,6 @@ find_max_fd(Globals *g, fd_set *rs, fd_set *ws)
 static void
 sig_hup_handler(int signum)
 {
-	return;
 }
 
 /*
