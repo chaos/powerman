@@ -47,7 +47,7 @@ install: all
 	$(INSTALL) etc/vpc.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/ibmh8.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/phantom.dev		$(DESTDIR)$(packagedir)
-	$(INSTALL) etc/phantom4			$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/phantom4.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/ipmi.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/cyclades-pm8.dev		$(DESTDIR)$(packagedir)
 	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man1
