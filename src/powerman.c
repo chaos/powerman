@@ -26,13 +26,13 @@
 
 #include "powerman.h"
 #include "list.h"
+#include "pm_string.h"
+#include "buffer.h"
 #include "config.h"
 #include "device.h"
 #include "exit_error.h"
-#include "pm_string.h"
-#include "buffer.h"
+#include "powermand.h"
 #include "wrappers.h"
-#include "main.h"
 #include "client.h"
 
 #define OPT_STRING "cd:F:h10Lnp:qrsvVQxz"
@@ -66,8 +66,8 @@ typedef enum {
 } _command_t;
 
 typedef struct config_struct {
-	String *host;
-	String *service;
+	String host;
+	String service;
 	int port;
 	int fd;
 	_command_t com;
@@ -87,8 +87,8 @@ static List get_Names(int fd);
 static void get_State(int fd, List cluster);
 static List dialog(int fd, const char *str);
 static void process_targets(Config *conf, List cluster);
-static String *glob2regex(String *glob);
-static List send_server(Config *conf, String *str);
+static String glob2regex(String glob);
+static List send_server(Config *conf, String str);
 static void publish_reply(Config *conf, List cluster, List reply);
 static void print_readable(Config *conf, List cluster);
 static List get_next_subrange(List nodes);
@@ -106,7 +106,7 @@ static Node *xmake_Node(const char *name);
 static int cmp_Nodes(void *node1, void *node2);
 static int xmatch_Node(void *node, void *key);
 static void xfree_Node(void *node);
-static bool is_prompt(String *targ);
+static bool is_prompt(String targ);
 
 const char *powerman_license = \
     "Copyright (C) 2001-2002 The Regents of the University of California.\n"  \
@@ -158,7 +158,7 @@ process_command_line(int argc, char **argv)
 {
 	int c;
 	int i;
-	String *targ;
+	String targ;
 	Config *conf;
 	int longindex;
 
@@ -289,7 +289,7 @@ read_Targets(Config *conf, char *name)
 	unsigned char buf[MAX_BUF];
 	int i = 0;
 	unsigned int c;
-	String *targ;
+	String targ;
 
 	if( (fp = fopen(name, "r")) == NULL)
 	{
@@ -410,7 +410,7 @@ dialog(int fd, const char *str)
 	int limit = 100;
 	bool found = FALSE;
 	List reply = list_create(free_String);
-	String *targ;
+	String targ;
 
 	memset(buf, 0, MAX_BUF);
 	if( str != NULL )
@@ -459,13 +459,13 @@ dialog(int fd, const char *str)
 static void
 process_targets(Config *conf, List cluster)
 {
-	String *targ;
+	String targ;
 	List reply;
 	ListIterator itr;
-	String *str;
+	String str;
 
 	itr = list_iterator_create(conf->targ);
-	while( (targ = (String *)list_next(itr)) )
+	while( (targ = (String)list_next(itr)) )
 	{
 		if( conf->regex == TRUE )
 			str = targ;
@@ -479,12 +479,12 @@ process_targets(Config *conf, List cluster)
 /*
  * String source
  */
-static String *
-glob2regex(String *glob)
+static String
+glob2regex(String glob)
 {
 	unsigned char buf[MAX_BUF];
 	int i = 0;
-	String *regex;
+	String regex;
 	unsigned char *g = get_String(glob);
 
 	while(*g != '\0')
@@ -514,7 +514,7 @@ glob2regex(String *glob)
  * List source
  */
 static List
-send_server(Config *conf, String *str)
+send_server(Config *conf, String str)
 {
 	List reply;
 	char buf[MAX_BUF];
@@ -716,11 +716,11 @@ print_list(Config *conf, List cluster, List targ, State_Val state)
 {
 	Node *node;
 	ListIterator itr;
-	String *t;
+	String t;
 
 	ASSERT( targ != NULL );
 	itr = list_iterator_create(targ);
-	while( (t = (String *)list_next(itr)) && !is_prompt(t) )
+	while( (t = (String )list_next(itr)) && !is_prompt(t) )
 	{
 		node = list_find_first(cluster, xmatch_Node, get_String(t));
 		if( node == NULL ) exit_msg("No such node as \"%s\".", get_String(t));
@@ -738,12 +738,12 @@ print_list(Config *conf, List cluster, List targ, State_Val state)
 static void
 print_Targets(List targ)
 {
-	String *t;
+	String t;
 	ListIterator itr;
 
 	ASSERT( targ != NULL );
 	itr = list_iterator_create(targ);
-	while( (t = (String *)list_next(itr)) && !is_prompt(t) )
+	while( (t = (String )list_next(itr)) && !is_prompt(t) )
 	{
 		printf("%s\n", get_String(t));
 	}
@@ -822,11 +822,11 @@ append_Nodes(List cluster, List reply)
 {
 	Node *node;
 	ListIterator itr;
-	String *targ;
+	String targ;
 	
 	ASSERT( reply != NULL );
 	itr = list_iterator_create(reply);
-	while( (targ = (String *)list_next(itr)) && !is_prompt(targ) )
+	while( (targ = (String)list_next(itr)) && !is_prompt(targ) )
 	{
 		node = xmake_Node(get_String(targ));
 		list_append(cluster, node);
@@ -868,10 +868,10 @@ update_Nodes_soft_state(List cluster, List reply)
 	Node *node;
 	ListIterator node_i;
 	int i = 0;
-	String *targ;
+	String targ;
 
 	ASSERT( reply != NULL );
-	targ = (String *)list_pop(reply);
+	targ = (String)list_pop(reply);
 	ASSERT( targ != NULL );
 	ASSERT( !empty_String(targ) );
 
@@ -905,10 +905,10 @@ update_Nodes_hard_state(List cluster, List reply)
 	Node *node;
 	ListIterator node_i;
 	int i = 0;
-	String *targ;
+	String targ;
 
 	ASSERT( reply != NULL );
-	targ = (String *)list_pop(reply);
+	targ = (String)list_pop(reply);
 	ASSERT( targ != NULL );
 	ASSERT( !empty_String(targ) );
 
@@ -979,7 +979,7 @@ xfree_Node(void *node)
 }
 
 static bool
-is_prompt(String *targ)
+is_prompt(String targ)
 {
 	int i = 0;
 	bool result = FALSE;

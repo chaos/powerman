@@ -35,3 +35,18 @@
 	* Updated powerman.1 to match option changes.
 	* bzero->memset
 	* Took local includes out of powerman.h (still need to do sys includes)
+
+2002-07-27 garlick
+	* Renamed main.[ch] to powermand.[ch]; renamed client.c to powerman.c.
+	* Moved set_tv() from powermand.c to config.c.
+	* Moved overdue() from powermand.c to device.c.
+	* Moved read_Config_file() from config.c to powermand.c and exported
+	  init_Client_protocol() from config.c.
+	* Created get_String_from_Buffer() buffer in util.[ch] to eliminate
+	  dependence of buffer.h pm_string.h.
+	* Fixed Delay to account for select EINTR.
+	* Created gettimeofday wrapper.
+	* Fixed Read/Write to retry on EINTR and handle other errors gracefully
+	* Have Free() wrapper clear memory to zero magic cookies, etc..
+	* Made Buffer an opaque type with magic cookie.
+	* Made String an opaque type with magic cookie.

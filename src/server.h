@@ -27,6 +27,8 @@
 #ifndef SERVER_H
 #define SERVER_H
 
+#include "buffer.h"
+
 #define NO_PORT           (-1)
 
 
@@ -45,12 +47,12 @@ struct client_struct {
 	Client_Status write_status;
 	int seq;    /* Each command from the client get a sequence number */
 	int fd;     /* file desriptor for  the socket */
-	String *ip; /* IP address of the client's host */
+	String ip; /* IP address of the client's host */
 	unsigned short int port;  /* Port of actual client connection */
-	String *host;    /* host name of client host */
+	String host;    /* host name of client host */
 /* the two buffers for non-blocking I/O as per Stevens */
-	Buffer *to;
-	Buffer *from;
+	Buffer to;
+	Buffer from;
 	MAGIC;
 };
 

@@ -27,6 +27,8 @@
 #ifndef DEVICE_H
 #define DEVICE_H
 
+#include "buffer.h"
+
 #define DEV_NOT_CONNECTED 0
 #define DEV_CONNECTED     1
 #define DEV_LOGGED_IN     2
@@ -36,7 +38,7 @@
 
 
 typedef struct {
-	String *name;       /* this is how the plug is known to the device */
+	String name;       /* this is how the plug is known to the device */
 	regex_t name_re;
         Node *node;      /* Reference to port->node only */
                  /* happens for power control targetting so port->node */
@@ -50,21 +52,21 @@ typedef struct {
 } TTY_Dev;
 
 typedef struct {
-	String *host;
-	String *service;
+	String host;
+	String service;
 } TCP_Dev;
 
 typedef struct {
-	String *unimplemented;
+	String unimplemented;
 } SNMP_Dev;
 
 typedef struct {
-	String *unimplemented;
+	String unimplemented;
 } telnet_Dev;
 
 typedef struct {
-	String *host;
-	String *service;
+	String host;
+	String service;
 } PMD_Dev;
 
 
@@ -77,10 +79,10 @@ typedef union {
 } Dev_U;
 
 struct device_struct {
-	String *name;  
+	String name;  
 	Spec *spec;
 /* I could probably get the next for fields directly from spec */
-	String *all;
+	String all;
 	regex_t on_re;
 	regex_t off_re;
 	Dev_Type type;
@@ -92,8 +94,8 @@ struct device_struct {
 	List acts;  
 	struct timeval time_stamp;  /* update this after each operation */
 	struct timeval timeout;
-	Buffer *to;
-	Buffer *from;
+	Buffer to;
+	Buffer from;
 	int num_plugs;
         List plugs; /* The names by which the plugs are known to the dev */
 	Protocol *prot;
@@ -124,7 +126,8 @@ int  match_Plug(void *plug, void *key);
 void dump_Plug(Plug *plug);
 #endif
 void free_Plug(void *plug);
-
+/* calculate if time_stamp + timeout > now */
+bool overdue(struct timeval *time_stamp, struct timeval *timeout);
 
 
 #endif /* DEVICE_H */

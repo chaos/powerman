@@ -27,23 +27,23 @@
 #include "powerman.h"
 #include "list.h"
 #include "config.h"
-#include "main.h"
+#include "powermand.h"
 #include "action.h"
-#include "main.h"
 #include "exit_error.h"
 #include "wrappers.h"
 #include "pm_string.h"
 #include "buffer.h"
 #include "log.h"
 #include "server.h"
+#include "util.h"
 
 /* prototypes */
 static Action *process_input(Protocol *client_prot, Cluster *cluster, 
 			     Client *c);
 static Action *find_Client_script(Protocol *p, Cluster *cluster, 
-					    String *expect);
+					    String expect);
 static bool match_Client_template(Cluster *cluster, Action *act, 
-				  regex_t *re, String *expect);
+				  regex_t *re, String expect);
 #ifndef NDUMP
 static void dump_Client_Status(Client_Status status);
 #endif
@@ -112,7 +112,7 @@ process_input(Protocol *client_prot, Cluster *cluster,
 	      Client *c)
 {
 	Action *act;
-	String *expect;
+	String expect;
 
 /* Using NULL means I'll just get the next '\n' terminated string */
 /* but with any '\r' or '\n' stripped off */
@@ -156,7 +156,7 @@ handle_Client_write(Client *c)
  * could be more than one.
  */ 
 Action *
-find_Client_script(Protocol *p, Cluster *cluster, String *expect)
+find_Client_script(Protocol *p, Cluster *cluster, String expect)
 {
 	Action *act;
 	bool found_it = FALSE;
@@ -188,7 +188,7 @@ find_Client_script(Protocol *p, Cluster *cluster, String *expect)
  * field.
  */
 bool
-match_Client_template(Cluster *cluster, Action *act, regex_t *re, String *expect)
+match_Client_template(Cluster *cluster, Action *act, regex_t *re, String expect)
 {
 	int n;
 	int l;

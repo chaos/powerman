@@ -26,13 +26,6 @@
 #ifndef DAEMON_INIT_H
 #define DAEMON_INIT_H
 
-#define DAEMON_NAME   "powermand"
-#define PID_FILE_NAME "/var/run/powerman/powerman.pid"
-#define PID_DIR       "/var/run/powerman"
-#define ROOT_DIR      "/etc/powerman"
-
-
-
 void daemon_init(void);
 
 #endif

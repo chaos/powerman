@@ -27,8 +27,9 @@
 #include <assert.h>
 #include "powerman.h"
 #include "exit_error.h"
-#include "buffer.h"
 #include "wrappers.h"
+
+#define MAX_REG_BUF 64000
 
 static void clear_sets(fd_set *rset, fd_set *wset, fd_set *eset);
 
@@ -63,6 +64,7 @@ Setsockopt( int fd, int level, int optname, const void *opt_val,
 	return ret_code;
 }
 
+/* XXX socklen_t may not be defined - autoconf this later */
 int
 Bind( int fd, struct sockaddr_in *saddr, socklen_t len )
 {
@@ -126,17 +128,33 @@ Select(int maxfd, fd_set *rset, fd_set *wset, fd_set *eset, struct timeval *tv)
 }
 
 void
+Gettimeofday(struct timeval *tv, struct timezone *tz)
+{
+	if (gettimeofday(tv, tz) < 0)
+		exit_error("gettimeofday");
+}
+
+void
 Delay(struct timeval *tv)
 {
 	int n;
-	struct timeval t;
+	struct timeval t, start, end, delta;
 
+	if (tv == NULL)
+		exit_error("Delay called with NULL timeval");
 	t = *tv;
-	n = select(0, NULL, NULL, NULL, &t);
+	Gettimeofday(&start, NULL);
+	for (;;) {
+		n = select(0, NULL, NULL, NULL, &t);
+		if (n == 0 || errno != EINTR)
+			break;
+		/* interrupted - adjust t to account for time elapsed so far */
+		Gettimeofday(&end, NULL);
+		timersub(&end, &start, &delta);
+		timersub(tv, &delta, &t);
+	} 
 	if (n < 0)
-/* Some sort of error occured.  Can we ignore it? */
-		if (errno != EINTR) 
-			exit_error("select error in Delay");
+		exit_error("select (in Delay)");
 	return;
 }
 
@@ -150,6 +168,7 @@ clear_sets(fd_set *rset, fd_set *wset, fd_set *eset)
 
 static int allocated_memory = 0;
 
+/* XXX look into dmalloc */
 char *
 Malloc(int size)
 {
@@ -162,10 +181,12 @@ Malloc(int size)
 	return new;
 }
 
-void Free(void *ptr, int size)
+void 
+Free(void *ptr, int size)
 {
 	assert(size > 0);
 	assert(ptr != NULL);
+	memset(ptr, 0, size);
 	allocated_memory -= size;
 	free(ptr);
 }
@@ -211,12 +232,11 @@ Read(int fd, char *p, int max)
 {
 	int n;
 
-	n = read(fd, p, max);
-	if ( n < 0 ) 
-	{
-		if ( errno != EWOULDBLOCK && errno != ECONNRESET )  
-			exit_error("read");
-	}
+	do {
+		n = read(fd, p, max);
+	} while (n < 0 && errno == EINTR);
+	if (n < 0 && errno != EWOULDBLOCK && errno != ECONNRESET) 
+		exit_error("read");
 	return n;
 }
 
@@ -225,8 +245,10 @@ Write(int fd, char *p, int max)
 {
 	int n;
 
-	n = write(fd, p, max);
-	if (( n < 0 ) && ( errno != EWOULDBLOCK ))
+	do {
+		n = write(fd, p, max);
+	} while (n < 0 && errno == EINTR);
+	if (n < 0 && errno != EAGAIN && errno != ECONNRESET && errno != EPIPE)
 		exit_error("write");
 	return n;
 }
@@ -256,16 +278,20 @@ Getaddrinfo(char *host, char *service, struct addrinfo *hints,
 	return n;
 }
 
+/* XXX overflow of buf is possible */
 void
 Regcomp(regex_t *preg, const char *regex, int cflags)
 {
-	char buf[MAX_BUF];
+	char buf[MAX_REG_BUF];
 	int n;
 	int i = 0;
 	int j = 0;
 
+	ASSERT(regex != NULL);
+	ASSERT(strlen(regex) < sizeof(buf));
+
 /* My lame hack because regcomp won't interpret '\r' and '\n' */
-	while ( (i < MAX_BUF) && (regex[j] != '\0') )
+	while ( (i < MAX_REG_BUF) && (regex[j] != '\0') )
 	{
 		if ( (regex[j] == '\\') && (regex[j+1] == 'r') )
 		{
@@ -284,6 +310,7 @@ Regcomp(regex_t *preg, const char *regex, int cflags)
 		}
 	}
 	buf[i] = '\0';
+	/* XXX document limitation of library regcomp */
 	n = regcomp(preg, buf, cflags);
 	if (n != REG_NOERROR) exit_msg("regcomp failed");
 }
@@ -293,10 +320,12 @@ Regexec(const regex_t *preg, const char *string,
 	size_t nmatch, regmatch_t pmatch[], int eflags)
 {
 	int n;
-	char buf[MAX_BUF];
-	
+	char buf[MAX_REG_BUF];
+
+	/* XXX is this needed? */	
 	re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
-	strncpy(buf, string, MAX_BUF);
+	strncpy(buf, string, MAX_REG_BUF);
+	buf[MAX_REG_BUF - 1] = '\0'; /* be safe */
 	n = regexec(preg, buf, nmatch, pmatch, eflags);
 	return n;
 }

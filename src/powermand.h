@@ -24,8 +24,8 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#ifndef MAIN_H
-#define MAIN_H
+#ifndef POWERMAND_H
+#define POWERMAND_H
 
 
 
@@ -47,7 +47,7 @@ typedef enum {Quiescent, Occupied} Server_Status;
  *   FIXME:  The state information should be separate from the
  * configuration information.
  */
-struct globals_struct {
+typedef struct {
 	struct timeval  timeout_interval; /* select(,,,tv) value */
 	struct timeval  interDev;         /* Delay() after a device write */
 	bool            daemonize;        /* Can suppress for debugging */
@@ -63,22 +63,8 @@ struct globals_struct {
 	char           *config_file;      
 	FILE           *cf;
 	MAGIC;
-};
-typedef struct globals_struct Globals;
+} Globals;
 
 extern Globals *cheat;
 
-/* main.c prototypes */
-
-/* calculate if time_stamp + timeout > now */
-bool overdue(struct timeval *time_stamp, struct timeval *timeout);
-
-/* 
- *   Given a string representation of a decimal number determine the
- * seconds and micro-seconds it represents.
- */
-void set_tv(struct timeval *tv, char *s);
-
-
-
-#endif /* MAIN_H */
+#endif /* POWERMAND_H */

@@ -27,20 +27,46 @@
  */
 
 #include "powerman.h"
+
 #include "exit_error.h"
 #include "wrappers.h"
-#include "log.h"
-#include "pm_string.h"
 #include "buffer.h"
+#include "log.h"
 
-static void check_Buffer(Buffer *b, int len);
 
-Buffer *
+#define BUF_MAGIC  0x4244052
+
+/* 
+ * Each file descriptor is associated with two of these Buffer objects.  
+ * They are for the kind of processing presented in Stevens, "UNIX 
+ * Network Programming," (ch 15) where he discusses non-blocking reads 
+ * and writes.
+ */ 
+struct buffer_implementation {
+	int magic;		/* magic cookie */
+	int fd;
+	char buf[MAX_BUF + 1];
+	char *start;
+	char *end;
+	char *in;
+	char *out;
+	char *high;
+	char *low;
+#ifndef NDEBUG
+	char *hwm;   		/* High Water Mark */
+#endif
+};
+
+static void check_Buffer(Buffer b, int len);
+
+Buffer
 make_Buffer(int fd)
 {
-	Buffer *b;
-	
-	b = (Buffer *)Malloc(sizeof(Buffer));
+	Buffer b;
+
+	ASSERT(fd >= 0);
+	b = (Buffer)Malloc(sizeof(struct buffer_implementation));
+	b->magic = BUF_MAGIC;
 	b->fd = fd;
 	memset( &(b->buf), 0, MAX_BUF + 1 );
 	b->start = b->in = b->out = b->buf;
@@ -56,7 +82,7 @@ make_Buffer(int fd)
 
 
 void
-send_Buffer(Buffer *b, const char *fmt, ...)
+send_Buffer(Buffer b, const char *fmt, ...)
 {
 /*
  *   All incoming material is deposited at b->in.  The data 
@@ -75,7 +101,11 @@ send_Buffer(Buffer *b, const char *fmt, ...)
 	int len;
 	fd_set rset, wset;
 	struct timeval tv;
-	int maxfd = b->fd + 1;
+	int maxfd;
+      
+      	ASSERT(b != NULL);	
+      	ASSERT(b->magic == BUF_MAGIC);
+	maxfd = b->fd + 1;
 
 /* get at most MAX_BUF of what the caller wanted to send */
 	memset( str, 0, MAX_BUF + 1 );
@@ -129,11 +159,17 @@ send_Buffer(Buffer *b, const char *fmt, ...)
  * helpfull, but it is a possibility so I've accounted for it.
  */
 void
-check_Buffer(Buffer *b, int len)
+check_Buffer(Buffer b, int len)
 {
-	int del = b->out - b->start;
-	int num = b->in - b->out;
+	int del;
+	int num;
 	int i;
+
+      	ASSERT(b != NULL);	
+      	ASSERT(b->magic == BUF_MAGIC);
+
+	del = b->out - b->start;
+	num = b->in - b->out;
 
 	if( (b->in + len >  b->high) &&
 	    (b->out > b->low) )
@@ -150,7 +186,7 @@ check_Buffer(Buffer *b, int len)
 
 
 int
-write_Buffer(Buffer *b)
+write_Buffer(Buffer b)
 {
 /* 
  *   Dead simple.  The only interasting piece is that 
@@ -159,6 +195,9 @@ write_Buffer(Buffer *b)
  * the buffer is never over run.
  */
 	int n;
+
+      	ASSERT(b != NULL);	
+      	ASSERT(b->magic == BUF_MAGIC);
 
 	n = Write(b->fd, b->out, (int) (b->in - b->out));
 	if ( n < 0 ) return n; /* EWOULDBLOCK */
@@ -172,7 +211,7 @@ write_Buffer(Buffer *b)
 }
 
 int
-read_Buffer(Buffer *b)
+read_Buffer(Buffer b)
 {
 /*
  *   The caller will need to check the return code to see if the
@@ -185,6 +224,9 @@ read_Buffer(Buffer *b)
 	int i;
 	int len;
 	char str[MAX_BUF + 1];
+
+      	ASSERT(b != NULL);	
+      	ASSERT(b->magic == BUF_MAGIC);
 
         /* initial check of buffer, can we reset ->in and ->out? */
 	ASSERT(b->out <= b->in);
@@ -220,8 +262,11 @@ read_Buffer(Buffer *b)
 }
 
 bool
-empty_Buffer(Buffer *b)
+empty_Buffer(Buffer b)
 {
+      	ASSERT(b != NULL);	
+      	ASSERT(b->magic == BUF_MAGIC);
+
 	return (b->in == b->out);
 }
 
@@ -232,7 +277,7 @@ empty_Buffer(Buffer *b)
  * yet.  If "re" is passed in as a NULL then the function
  * is looking for a newline terminated string.  If there
  * is one it is returned as a NUL terminated string copied 
- * into a String structure.  If a RegEX "re" is passed in 
+ * into a character array.  If a RegEX "re" is passed in 
  * then it is used to determine where a "valid" input ends, 
  * usually it's some sort of prompt string like "prompt>".  
  * In either case if the function doesn't find valid input 
@@ -240,18 +285,19 @@ empty_Buffer(Buffer *b)
  * we haven't seen enough input yet.  As a special case
  * an empty line (just "\n" or "\r\n") is not returned to 
  * the caller as a line of input.
- * 
- * String source
  */
-String *
-get_String_from_Buffer(Buffer *b, regex_t *re)
+int
+get_str_from_Buffer(Buffer b, regex_t *re, char *str, int length)
 {
-	String *s;
 	char *pos;
-	int len = b->in - b->out;
-	char str[MAX_BUF];
+	int len;
 
-	memset(str, 0, MAX_BUF);
+      	ASSERT(b != NULL);	
+      	ASSERT(b->magic == BUF_MAGIC);
+
+	len = b->in - b->out;
+
+	memset(str, 0, length);
 	snprintf(str, len + 1, b->out);
 	if( re == NULL )
 		/* get a line */
@@ -260,7 +306,7 @@ get_String_from_Buffer(Buffer *b, regex_t *re)
 		/* get a region - multiple lines or fraction there of */
 		pos = find_RegEx(re, str, len);
 	/* nothing found? */
-	if( pos == NULL ) return NULL;
+	if( pos == NULL ) return 0;
 
 /*
  * something was found, mark it as consumed from the buffer and possibly
@@ -272,7 +318,7 @@ get_String_from_Buffer(Buffer *b, regex_t *re)
 		b->out += pos + 1 - str;
 		if ( (pos > str) && (*(pos - 1) == '\r') ) pos--;
 		/* was it an empty line? */
-		if( pos == str ) return NULL;
+		if( pos == str ) return 0;
 	}
 	else
 	{
@@ -280,16 +326,15 @@ get_String_from_Buffer(Buffer *b, regex_t *re)
 		b->out += pos - str;
 	}
 	*pos = '\0';
-	s = make_String(str);
 	log_it(0, "Received \"%s\" from descriptor %d", str, b->fd);
-	return s;
+	return strlen(str);
 }
 
 
 #ifndef NDEBUG
 
 void
-dump_Buffer(Buffer *b)
+dump_Buffer(Buffer b)
 {
 /*
  *   This overcomplicated business ensures that pieces of the
@@ -299,6 +344,9 @@ dump_Buffer(Buffer *b)
 	int i;
 	int top;
 	char *str;
+
+      	ASSERT(b != NULL);	
+      	ASSERT(b->magic == BUF_MAGIC);
 
 	fprintf(stderr, "\t\tBuffer: %0x\n\t\t\t", (unsigned int)b);
 	for(i = MAX_BUF; i > 0; i--)
@@ -322,7 +370,9 @@ dump_Buffer(Buffer *b)
 void
 free_Buffer(void *b)
 {
-	Free((Buffer *)b, sizeof(Buffer));
+      	ASSERT(b != NULL);	
+      	ASSERT(((Buffer)b)->magic == BUF_MAGIC);	
+	Free(b, sizeof(Buffer));
 }
 
 
@@ -341,7 +391,6 @@ find_RegEx(regex_t *re, char *str, int len)
 	int eflags = 0;
 
 	log_it(1, "find_RegEx of %s", str);
-	re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
 	n = Regexec(re, str, nmatch, pmatch, eflags);
 	if (n != REG_NOERROR) return NULL;
 	if ((pmatch[0].rm_so < 0) || (pmatch[0].rm_eo > len))
@@ -349,5 +398,3 @@ find_RegEx(regex_t *re, char *str, int len)
 	else
 		return str + pmatch[0].rm_eo;
 }
-
-

@@ -28,17 +28,18 @@
 #include "list.h"
 #include "config.h"
 #include "device.h"
-#include "main.h"
+#include "powermand.h"
 #include "action.h"
 #include "exit_error.h"
 #include "wrappers.h"
 #include "pm_string.h"
 #include "buffer.h"
 #include "log.h"
+#include "util.h"
 
 /* prototypes */
 static void set_targets(Device *dev, Action *sact);
-static Action *do_target_copy(Device *dev, Action *sact, String *target);
+static Action *do_target_copy(Device *dev, Action *sact, String target);
 static void do_target_some(Device *dev, Action *sact);
 static void do_Device_reconnect(Device *dev);
 static bool process_expect(Device *dev);
@@ -46,7 +47,7 @@ static bool process_send(Device *dev);
 static bool process_delay(Device *dev);
 static void do_Device_semantics(Device *dev, List map);
 static void do_PMD_semantics(Device *dev, List map);
-static int match_RegEx(Device *dev, String *expect);
+static int match_RegEx(Device *dev, String expect);
 
 
 /*
@@ -193,7 +194,7 @@ map_Action_to_Device(Device *dev, Action *sact)
 			process_send(dev);
 			break;
 		case EXPECT :
-			gettimeofday( &(dev->time_stamp), NULL ); 
+			Gettimeofday( &(dev->time_stamp), NULL ); 
 			dev->status |= DEV_EXPECTING;
 			return;
 		case DELAY :
@@ -281,7 +282,7 @@ set_targets(Device *dev, Action *sact)
  * Produces:  Action
  */
 Action *
-do_target_copy(Device *dev, Action *sact, String *target)
+do_target_copy(Device *dev, Action *sact, String target)
 {
 	Action *act;
 
@@ -531,7 +532,7 @@ process_expect(Device *dev)
 {
 	regex_t *re;
 	Action *act = (Action *)list_peek(dev->acts);
-	String *expect;
+	String expect;
 
 	ASSERT(act != NULL);
 	ASSERT(act->cur != NULL);
@@ -1033,7 +1034,7 @@ free_Plug(void *plug)
  * the semantics functions to later find.
  */
 bool
-match_RegEx(Device *dev, String *expect)
+match_RegEx(Device *dev, String expect)
 {
 	Action *act;
 	regex_t *re;
@@ -1103,3 +1104,27 @@ match_RegEx(Device *dev, String *expect)
 	return TRUE;
 }	
 
+
+/*
+ * This is just time_stamp + timeout > now?
+ */
+bool
+overdue(struct timeval *time_stamp, struct timeval *timeout)
+{
+	struct timeval now;
+	struct timeval limit;
+	bool result = FALSE;
+
+	limit.tv_usec = time_stamp->tv_usec + timeout->tv_usec;
+	limit.tv_sec  = time_stamp->tv_sec + timeout->tv_sec;
+	if(limit.tv_usec > 1000000)
+	{
+		limit.tv_sec ++;
+		limit.tv_usec -= 1000000;
+	}
+	gettimeofday(&now, NULL);
+	if( (now.tv_sec > limit.tv_sec) ||
+	    ((now.tv_sec == limit.tv_sec) && (now.tv_usec > limit.tv_usec)) )
+		result = TRUE;
+	return result;
+}

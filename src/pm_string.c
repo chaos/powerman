@@ -27,12 +27,35 @@
  */
 
 #include "powerman.h"
-#include "buffer.h"
+#include "pm_string.h"
 #include "wrappers.h"
 #include "exit_error.h"
-#include "pm_string.h"
 
-String *make_String(const char *cs)
+#define MAX_STR_BUF 64000
+
+#define STRING_MAGIC 0xabbaabba
+
+/* 
+ *   This structure is for holding strings mostly, but also can capture
+ * indexed items like tux0, tux1, ... .  If there is a single index then
+ * the code below for prefix is correct.  A range may have a '[', though.
+ * In that case prefix points to the '['.  This structure can only
+ * accomodate a contiguous range.  It would require a list of these to 
+ * hold tux[1-3, 5-7]. 
+ */
+struct string_implementation {
+	int magic;
+	int length; /* length = strlen(string) */
+	int width;  /* width of index field, i.e. width(tux02) = 2 */
+	int prefix; /* prefix=length-1;while(isdigit(string[prefix]))prefix--; */
+	int index;  /* n = sscanf(string + prefix, "%d", &index); */
+	int count;  /* if ( n == 0 ) try to get a range index..index+count */
+	char *string;
+};
+
+
+String
+make_String(const char *cs)
 {
 /*
  * This needs to be modified to read canonical ranges as well as indexed
@@ -43,15 +66,16 @@ String *make_String(const char *cs)
  * two integers must be the same, as in tux[000-256].
  */
 
-	String *s;
-	char buf[MAX_BUF];
+	String s;
+	char buf[MAX_STR_BUF];
 	int n;
 	int index2;
 	char *leftb  = NULL;
 	char *dash   = NULL;
 	char *rightb = NULL;
 
-	s = (String *)Malloc(sizeof(String));
+	s = (String)Malloc(sizeof(struct string_implementation));
+	s->magic = STRING_MAGIC;
 	if( cs == NULL )
 	{
 		s->string = NULL;
@@ -108,81 +132,80 @@ String *make_String(const char *cs)
 	return s;
 }
 
-String *
-copy_String(String *s)
+String
+copy_String(String s)
 {
-	String *new;
-	
+	String new;
+
 	if( s == NULL ) return NULL;
-	new = (String *)Malloc(sizeof(String));
-	if( s->length == 0 ) 
-	{
-		new->string = NULL;
-		new->length = 0;
-		new->prefix = NO_INDEX;
-		new->index = NO_INDEX;
-		new->width = 0;
-		new->count = 0;
-		return new;
+
+	ASSERT(s->magic == STRING_MAGIC);
+
+	new = (String)Malloc(sizeof(struct string_implementation));
+	*new = *s;
+	if (s->length > 0) {
+		ASSERT(s->string != NULL);
+		ASSERT(strlen(s->string) == s->length);
+		new->string = Malloc(s->length + 1);
+		strncpy(new->string, s->string, s->length + 1);
 	}
-	ASSERT( s->string != NULL );
-	new->string = Malloc(s->length + 1);
-	new->length = s->length;
-	strncpy(new->string, s->string, s->length);
-	new->string[new->length] = '\0';
-	new->prefix = s->prefix;
-	new->index = s->index;
-	new->width = s->width;
-	new->count = s->count;
 	return new;
 }
 
 
-char *get_String(String *s)
+char *
+get_String(String s)
 {
-	ASSERT( s != NULL );
+	ASSERT(s != NULL);
+	ASSERT(s->magic == STRING_MAGIC);
 	return s->string;
 }
 
 unsigned char 
-byte_String(String *s, int offset)
+byte_String(String s, int offset)
 {
 	ASSERT( s != NULL );
+	ASSERT(s->magic == STRING_MAGIC);
 	ASSERT( (offset >= 0) && (offset < s->length) );
 	return s->string[offset];
 }
 
 int 
-length_String(String *s)
+length_String(String s)
 {
 	ASSERT( s != NULL );
+	ASSERT(s->magic == STRING_MAGIC);
 	return s->length;
 }
 
 
 int 
-prefix_String(String *s)
+prefix_String(String s)
 {
 	ASSERT( s != NULL );
+	ASSERT(s->magic == STRING_MAGIC);
 	return s->prefix;
 }
 
 
 int 
-index_String(String *s)
+index_String(String s)
 {
 	ASSERT( s != NULL );
+	ASSERT(s->magic == STRING_MAGIC);
 	return s->index;
 }
 
 
 int 
-cmp_String(String *s1, String *s2)
+cmp_String(String s1, String s2)
 {
 	int result = 0;
 	int len;
 
 	ASSERT( (s1 != NULL) && (s2 != NULL) );
+	ASSERT(s1->magic == STRING_MAGIC);
+	ASSERT(s2->magic == STRING_MAGIC);
 	if( (s1->length == 0) && (s2->length == 0) )
 		return 0;
 	if( s1->length == 0 )
@@ -201,11 +224,13 @@ cmp_String(String *s1, String *s2)
 }
 
 bool
-prefix_match(String *s1, String *s2)
+prefix_match(String s1, String s2)
 {
 	int n;
 
 	ASSERT( (s1 != NULL) && (s2 != NULL) );
+	ASSERT(s1->magic == STRING_MAGIC);
+	ASSERT(s2->magic == STRING_MAGIC);
 
 	if( s1->prefix != s2->prefix ) return FALSE;
 	n = strncmp(s1->string, s2->string, s1->prefix);
@@ -215,31 +240,38 @@ prefix_match(String *s1, String *s2)
 
 
 bool
-empty_String(String *s)
+empty_String(String s)
 {
 	ASSERT( s != NULL );
+	ASSERT(s->magic == STRING_MAGIC);
 	return (s->string == NULL );
 }
 
 void
-free_String(void *s)
+free_String(void *str)
 {
-	if( (String *)s != NULL )
+	String s = str;
+
+	if( s != NULL )
 	{
-		if(((String *)s)->string != NULL )
+		ASSERT(s->magic == STRING_MAGIC);
+		if( s->string != NULL )
 		{
-			Free(((String *)s)->string, ((String *)s)->length + 1);
-			((String *)s)->string = NULL;
+			Free(s->string, s->length + 1);
+			s->string = NULL;
 		}
-		Free((String *)s, sizeof(String));	
+		Free(s, sizeof(struct string_implementation));	
 	}
 }
 
 bool
-match_String(String *s, char *cs)
+match_String(String s, char *cs)
 {
 	int len;
 	int n;
+
+	ASSERT(s != NULL);
+	ASSERT(s->magic == STRING_MAGIC);
 
 	len = strlen(cs);
 	if(len != s->length) return FALSE;

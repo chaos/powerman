@@ -28,12 +28,14 @@
 #ifndef LOG_H
 #define LOG_H
 
+#include "buffer.h"
+
 void make_log(void);
 void init_log(const char *name, int level);
 void log_it(int level, const char *fmt, ...);
 void handle_log(void);
 void free_Log(void);
-bool is_log_buffer(Buffer *b);
+bool is_log_buffer(Buffer b);
 int fd_log(void);
 bool writeable_log(void);
 

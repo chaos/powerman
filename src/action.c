@@ -25,18 +25,17 @@
 \*****************************************************************************/
 
 #include "powerman.h"
-#include "list.h"
+
+#include "pm_string.h"
+#include "wrappers.h"
+#include "exit_error.h"
+#include "buffer.h"
+#include "log.h"
 #include "config.h"
 #include "device.h"
-#include "main.h"
-#include "log.h"
+#include "powermand.h"
 #include "action.h"
-#include "main.h"
-#include "wrappers.h"
-#include "pm_string.h"
 #include "server.h"
-#include "exit_error.h"
-#include "action.h"
 
 /* Each of these represents a script that must be completed.     */
 /* An error message and two of the debug "dump" routines rely on */
@@ -65,7 +64,7 @@ update_Action(Cluster *cluster, List acts)
 {
 	Action *act;
 
-	gettimeofday( &(cluster->time_stamp), NULL);
+	Gettimeofday( &(cluster->time_stamp), NULL);
 	log_it(0, "Updating %s", ctime(&(cluster->time_stamp.tv_sec)));
 
 	act = make_Action(PM_UPDATE_PLUGS);
@@ -245,7 +244,7 @@ finish_Action(Globals *g, Action *act)
 */
 	if (act->client != NULL)
 		client_reply(g->cluster, act);
-	gettimeofday( &(g->cluster->time_stamp), NULL);
+	Gettimeofday( &(g->cluster->time_stamp), NULL);
 	del_Action(g->acts);
 	g->status = Quiescent;
 }

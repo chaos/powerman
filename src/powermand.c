@@ -36,7 +36,7 @@
 #include "list.h"
 #include "config.h"
 #include "device.h"
-#include "main.h"
+#include "powermand.h"
 #include "action.h"
 #include "daemon_init.h"
 #include "listener.h"
@@ -58,6 +58,7 @@ static void dump_Server_Status(Server_Status status);
 static Globals *make_Globals();
 static void sig_hup_handler(int signum);
 static void exit_handler(int signum);
+static void read_Config_file(Globals *g);
 
 Globals *cheat;  /* This is synonymous with the Globals *g declared in */
                  /* main().  I call attention to global access as      */
@@ -127,7 +128,7 @@ main(int argc, char **argv)
 	if( g->daemonize )
 		daemon_init();
 
-	read_Config_file();
+	read_Config_file(g);
 
 	dev_i = list_iterator_create(g->devs);
 	while( (dev = (Device *)list_next(dev_i)) )
@@ -317,7 +318,7 @@ do_select_loop(Globals *g)
 		/* time to time stamp the log?     */
 		/* it does so on the hour, but     */
 		/* make sure it does it only once. */
-		gettimeofday(&now, NULL);
+		Gettimeofday(&now, NULL);
 		if ( ((now.tv_sec % 3600) == 0) &&
 		     (now.tv_sec != hourly.tv_sec) )
 		{
@@ -422,29 +423,6 @@ do_select_loop(Globals *g)
 	}
 }
 
-/*
- * This is just time_stamp + timeout > now?
- */
-bool
-overdue(struct timeval *time_stamp, struct timeval *timeout)
-{
-	struct timeval now;
-	struct timeval limit;
-	bool result = FALSE;
-
-	limit.tv_usec = time_stamp->tv_usec + timeout->tv_usec;
-	limit.tv_sec  = time_stamp->tv_sec + timeout->tv_sec;
-	if(limit.tv_usec > 1000000)
-	{
-		limit.tv_sec ++;
-		limit.tv_usec -= 1000000;
-	}
-	gettimeofday(&now, NULL);
-	if( (now.tv_sec > limit.tv_sec) ||
-	    ((now.tv_sec == limit.tv_sec) && (now.tv_usec > limit.tv_usec)) )
-		result = TRUE;
-	return result;
-}
 
 /*
  *   This not only generates the needed maxfd for the select loop.
@@ -524,45 +502,33 @@ exit_handler(int signum)
 	exit(0);
 }
 
-/*
- *  During parsing struct timeval values in the config file will be
- * entered as decimals.  The lexer picks out the string and this 
- * function translates that arbitrary precision string into the 
- * seconds, micro-seconds form of a struct timeval.  Right now
- * it insists there be an integer,  decimal, integer.  I could 
- * improve the thing by allowing a variety of formats: 
- * 10 10.10 0.10 .10 
- */
-#define TMPSTRLEN 32
-void
-set_tv(struct timeval *tv, char *s)
-{
-	int len;
-	char decimal[TMPSTRLEN];
-	int sec;
-	int usec;
-	int n;
 
-	ASSERT( tv != NULL );
-	n = sscanf(s, "%d.%s", &sec, decimal);
-	if( (n != 2) || (sec < 0) ) 
-		exit_error("Couldn't get the seconds and useconds from %s", s);
-	len = strlen(decimal);
-	n = sscanf(decimal, "%d", &usec);
-	if( (n != 1) || (usec < 0) ) 
-		exit_error("Couldn't get the useconds from %s", decimal);
-	while( len > 6 )
-	{
-		usec /= 10;
-		len--;
-	}
-	while( len < 6 )
-	{
-		usec *= 10;
-		len++;
-	}
-	tv->tv_sec  = sec;
-	tv->tv_usec = usec;
+/*
+ *   This function has two jobs.  Get the config file based on the
+ * name on the command line, and wrap the call to the parser 
+ * (parse.lex and parse.y).  
+ */ 
+static void
+read_Config_file(Globals *g)
+{
+	struct stat stbuf;
+
+	CHECK_MAGIC(g);
+
+/* Did we really get a config file? */
+	stat(g->config_file, &stbuf);
+	if( (stbuf.st_mode & S_IFMT) != S_IFREG )
+		exit_error("Config file must be a regular file, \"%s\" is not\n", g->config_file);
+	g->cf = fopen(g->config_file, "r");
+	if( g->cf == NULL ) 
+		exit_error("Failed to find config file %s", g->config_file); 
+
+	g->client_prot = init_Client_Protocol();
+
+	parse_config_file();
+	
+	fclose(g->cf);
+	
 }
 
 /*
@@ -616,8 +582,8 @@ dump_Globals(void)
 	Globals *g = cheat;
 
 	fprintf(stderr, "Config file: %s\n", g->config_file);
-	/* FIXME: doesn't compile and doesn't look like loop advances jg */
 #if 0
+	/* FIXME: doesn't compile and doesn't look like loop advances jg */
 	fprintf(stderr, "Specifications:\n");
 	while(g->specs != g->specs->next)
 	{

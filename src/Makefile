@@ -50,44 +50,17 @@ sbindir=        ${exec_prefix}/sbin
 libdir=         ${exec_prefix}/lib
 packagedir=     ${etcdir}/${PACKAGE}
 
-SERVER_OBJS = action.o \
-              buffer.o \
-              config.o \
-              daemon_init.o \
-              device.o \
-              exit_error.o \
-              list.o \
-              listener.o \
-              log.o \
-              main.o \
-              parse_lex.o \
-              parse_tab.o \
-              pm_string.o \
-              server.o \
-              wrappers.o 
+COMMON_OBJS = list.o pm_string.o wrappers.o exit_error.o
 
-CLIENT_OBJS = client.o \
-              list.o \
-              pm_string.o \
-              wrappers.o \
-	      exit_error.o
+SERVER_UTIL = $(COMMON_OBJS) daemon_init.o log.o util.o buffer.o
 
-COMMON_HEADERS = list.h \
-                 exit_error.h \
-                 pm_string.h \
-                 buffer.h \
-                 log.h \
-                 wrappers.h
+SERVER_OBJS = $(SERVER_UTIL) action.o config.o device.o listener.o  \
+	      powermand.o server.o parse_lex.o parse_tab.o
 
-MODULE_HEADERS = action.h \
-                 config.h \
-                 daemon_init.h \
-                 device.h \
-                 listener.h \
-                 main.h \
-                 server.h \
+CLIENT_OBJS = $(COMMON_OBJS) powerman.o
 
-all :  depend ${srcbin}/powerman ${srcbin}/powermand tags
+
+all :  ${srcbin}/powerman ${srcbin}/powermand tags depend
 
 ${srcbin}/powermand : $(SERVER_OBJS)
 	$(mkinstalldirs)	${srcbin}
@@ -103,7 +76,7 @@ ${srcbin}/powerman : $(CLIENT_OBJS)
 parse_lex.c : parse.lex
 	$(LEX) -oparse_lex.c parse.lex
 
-parse_lex.o : parse_lex.c parse_tab.h $(MODULE_HEADERS)
+parse_lex.o : parse_lex.c parse_tab.h 
 	$(CC) $(COPTS) -c -o parse_lex.o parse_lex.c $(INC)
 
 
@@ -113,7 +86,7 @@ parse_tab.c parse_tab.h : parse.y
 	sed s/YYSTYPE\ yyval/YYSTYPE\ yyval\ =\ NULL/ parse_tab.c >foo.c
 	mv foo.c parse_tab.c
 
-parse_tab.o : parse_tab.c parse_tab.h powerman.h $(MODULE_HEADERS)
+parse_tab.o : parse_tab.c parse_tab.h powerman.h
 	$(CC) $(COPTS) -c -o parse_tab.o parse_tab.c $(INC)
 
 tags: *.[ch]
@@ -171,9 +144,9 @@ action.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
 action.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
 action.o: /usr/include/getopt.h /usr/include/sys/time.h /usr/include/errno.h
 action.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
-action.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h list.h config.h
-action.o: device.h main.h log.h action.h wrappers.h pm_string.h server.h
-action.o: exit_error.h
+action.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h pm_string.h
+action.o: wrappers.h exit_error.h buffer.h log.h config.h list.h device.h
+action.o: powermand.h action.h server.h
 buffer.o: powerman.h /usr/include/stdio.h /usr/include/features.h
 buffer.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
 buffer.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
@@ -218,53 +191,7 @@ buffer.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
 buffer.o: /usr/include/getopt.h /usr/include/sys/time.h /usr/include/errno.h
 buffer.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
 buffer.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h exit_error.h
-buffer.o: wrappers.h log.h pm_string.h buffer.h
-client.o: powerman.h /usr/include/stdio.h /usr/include/features.h
-client.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-client.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
-client.o: /usr/include/bits/types.h /usr/include/bits/pthreadtypes.h
-client.o: /usr/include/bits/sched.h /usr/include/libio.h
-client.o: /usr/include/_G_config.h /usr/include/wchar.h
-client.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-client.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
-client.o: /usr/include/bits/stdio_lim.h /usr/include/syslog.h
-client.o: /usr/include/sys/syslog.h /usr/include/sys/types.h
-client.o: /usr/include/time.h /usr/include/endian.h
-client.o: /usr/include/bits/endian.h /usr/include/sys/select.h
-client.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
-client.o: /usr/include/bits/time.h /usr/include/sys/sysmacros.h
-client.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
-client.o: /usr/include/netinet/in.h /usr/include/stdint.h
-client.o: /usr/include/bits/wordsize.h /usr/include/bits/socket.h
-client.o: /usr/include/limits.h
-client.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
-client.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
-client.o: /usr/include/linux/limits.h /usr/include/bits/posix2_lim.h
-client.o: /usr/include/bits/xopen_lim.h /usr/include/bits/sockaddr.h
-client.o: /usr/include/asm/socket.h /usr/include/asm/sockios.h
-client.o: /usr/include/bits/in.h /usr/include/bits/byteswap.h
-client.o: /usr/include/sys/socket.h /usr/include/sys/uio.h
-client.o: /usr/include/bits/uio.h /usr/include/netdb.h
-client.o: /usr/include/rpc/netdb.h /usr/include/bits/siginfo.h
-client.o: /usr/include/bits/netdb.h /usr/include/stdlib.h
-client.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
-client.o: /usr/include/xlocale.h /usr/include/alloca.h /usr/include/regex.h
-client.o: /usr/include/string.h /usr/include/ctype.h /usr/include/fcntl.h
-client.o: /usr/include/bits/fcntl.h /usr/include/signal.h
-client.o: /usr/include/bits/signum.h /usr/include/bits/sigaction.h
-client.o: /usr/include/bits/sigcontext.h /usr/include/asm/sigcontext.h
-client.o: /usr/include/bits/sigstack.h /usr/include/ucontext.h
-client.o: /usr/include/sys/ucontext.h /usr/include/bits/sigthread.h
-client.o: /usr/include/sys/ioctl.h /usr/include/bits/ioctls.h
-client.o: /usr/include/asm/ioctls.h /usr/include/asm/ioctl.h
-client.o: /usr/include/bits/ioctl-types.h /usr/include/sys/ttydefaults.h
-client.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
-client.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
-client.o: /usr/include/getopt.h /usr/include/sys/time.h /usr/include/errno.h
-client.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
-client.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h list.h config.h
-client.o: device.h exit_error.h pm_string.h buffer.h wrappers.h main.h
-client.o: client.h
+buffer.o: wrappers.h buffer.h log.h
 config.o: powerman.h /usr/include/stdio.h /usr/include/features.h
 config.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
 config.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
@@ -309,29 +236,32 @@ config.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
 config.o: /usr/include/getopt.h /usr/include/sys/time.h /usr/include/errno.h
 config.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
 config.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h exit_error.h
-config.o: list.h config.h device.h main.h action.h wrappers.h pm_string.h
-daemon_init.o: powerman.h /usr/include/stdio.h /usr/include/features.h
-daemon_init.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+config.o: list.h config.h pm_string.h device.h buffer.h powermand.h action.h
+config.o: wrappers.h
+config.o: list.h pm_string.h
+daemon_init.o: /usr/include/syslog.h /usr/include/sys/syslog.h
+daemon_init.o: /usr/include/features.h /usr/include/sys/cdefs.h
+daemon_init.o: /usr/include/gnu/stubs.h
+daemon_init.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
+daemon_init.o: /usr/include/limits.h
+daemon_init.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
+daemon_init.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
+daemon_init.o: /usr/include/linux/limits.h /usr/include/bits/posix2_lim.h
+daemon_init.o: /usr/include/bits/xopen_lim.h /usr/include/bits/stdio_lim.h
+daemon_init.o: powerman.h /usr/include/stdio.h
 daemon_init.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
 daemon_init.o: /usr/include/bits/types.h /usr/include/bits/pthreadtypes.h
 daemon_init.o: /usr/include/bits/sched.h /usr/include/libio.h
 daemon_init.o: /usr/include/_G_config.h /usr/include/wchar.h
 daemon_init.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-daemon_init.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
-daemon_init.o: /usr/include/bits/stdio_lim.h /usr/include/syslog.h
-daemon_init.o: /usr/include/sys/syslog.h /usr/include/sys/types.h
-daemon_init.o: /usr/include/time.h /usr/include/endian.h
-daemon_init.o: /usr/include/bits/endian.h /usr/include/sys/select.h
-daemon_init.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
-daemon_init.o: /usr/include/bits/time.h /usr/include/sys/sysmacros.h
-daemon_init.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
-daemon_init.o: /usr/include/netinet/in.h /usr/include/stdint.h
-daemon_init.o: /usr/include/bits/wordsize.h /usr/include/bits/socket.h
-daemon_init.o: /usr/include/limits.h
-daemon_init.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
-daemon_init.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
-daemon_init.o: /usr/include/linux/limits.h /usr/include/bits/posix2_lim.h
-daemon_init.o: /usr/include/bits/xopen_lim.h /usr/include/bits/sockaddr.h
+daemon_init.o: /usr/include/sys/types.h /usr/include/time.h
+daemon_init.o: /usr/include/endian.h /usr/include/bits/endian.h
+daemon_init.o: /usr/include/sys/select.h /usr/include/bits/select.h
+daemon_init.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+daemon_init.o: /usr/include/sys/sysmacros.h /usr/include/sys/stat.h
+daemon_init.o: /usr/include/bits/stat.h /usr/include/netinet/in.h
+daemon_init.o: /usr/include/stdint.h /usr/include/bits/wordsize.h
+daemon_init.o: /usr/include/bits/socket.h /usr/include/bits/sockaddr.h
 daemon_init.o: /usr/include/asm/socket.h /usr/include/asm/sockios.h
 daemon_init.o: /usr/include/bits/in.h /usr/include/bits/byteswap.h
 daemon_init.o: /usr/include/sys/socket.h /usr/include/sys/uio.h
@@ -401,8 +331,9 @@ device.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
 device.o: /usr/include/getopt.h /usr/include/sys/time.h /usr/include/errno.h
 device.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
 device.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h list.h config.h
-device.o: device.h main.h action.h exit_error.h wrappers.h pm_string.h
-device.o: buffer.h log.h
+device.o: pm_string.h device.h buffer.h powermand.h action.h exit_error.h
+device.o: wrappers.h log.h util.h
+device.o: buffer.h
 exit_error.o: /usr/include/string.h /usr/include/features.h
 exit_error.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
 exit_error.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
@@ -508,9 +439,8 @@ listener.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
 listener.o: /usr/include/getopt.h /usr/include/sys/time.h
 listener.o: /usr/include/errno.h /usr/include/bits/errno.h
 listener.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
-listener.o: /usr/include/arpa/telnet.h daemon_init.h wrappers.h list.h
-listener.o: config.h main.h server.h buffer.h exit_error.h log.h pm_string.h
-listener.o: listener.h
+listener.o: /usr/include/arpa/telnet.h wrappers.h list.h config.h pm_string.h
+listener.o: powermand.h server.h buffer.h exit_error.h log.h listener.h
 log.o: /usr/include/assert.h /usr/include/features.h /usr/include/sys/cdefs.h
 log.o: /usr/include/gnu/stubs.h powerman.h /usr/include/stdio.h
 log.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
@@ -555,51 +485,101 @@ log.o: /usr/include/sys/time.h /usr/include/errno.h /usr/include/bits/errno.h
 log.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
 log.o: /usr/include/arpa/telnet.h wrappers.h exit_error.h pm_string.h
 log.o: buffer.h log.h
-main.o: powerman.h /usr/include/stdio.h /usr/include/features.h
-main.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
-main.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
-main.o: /usr/include/bits/types.h /usr/include/bits/pthreadtypes.h
-main.o: /usr/include/bits/sched.h /usr/include/libio.h
-main.o: /usr/include/_G_config.h /usr/include/wchar.h
-main.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-main.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
-main.o: /usr/include/bits/stdio_lim.h /usr/include/syslog.h
-main.o: /usr/include/sys/syslog.h /usr/include/sys/types.h
-main.o: /usr/include/time.h /usr/include/endian.h /usr/include/bits/endian.h
-main.o: /usr/include/sys/select.h /usr/include/bits/select.h
-main.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
-main.o: /usr/include/sys/sysmacros.h /usr/include/sys/stat.h
-main.o: /usr/include/bits/stat.h /usr/include/netinet/in.h
-main.o: /usr/include/stdint.h /usr/include/bits/wordsize.h
-main.o: /usr/include/bits/socket.h /usr/include/limits.h
-main.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
-main.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
-main.o: /usr/include/linux/limits.h /usr/include/bits/posix2_lim.h
-main.o: /usr/include/bits/xopen_lim.h /usr/include/bits/sockaddr.h
-main.o: /usr/include/asm/socket.h /usr/include/asm/sockios.h
-main.o: /usr/include/bits/in.h /usr/include/bits/byteswap.h
-main.o: /usr/include/sys/socket.h /usr/include/sys/uio.h
-main.o: /usr/include/bits/uio.h /usr/include/netdb.h /usr/include/rpc/netdb.h
-main.o: /usr/include/bits/siginfo.h /usr/include/bits/netdb.h
-main.o: /usr/include/stdlib.h /usr/include/bits/waitflags.h
-main.o: /usr/include/bits/waitstatus.h /usr/include/xlocale.h
-main.o: /usr/include/alloca.h /usr/include/regex.h /usr/include/string.h
-main.o: /usr/include/ctype.h /usr/include/fcntl.h /usr/include/bits/fcntl.h
-main.o: /usr/include/signal.h /usr/include/bits/signum.h
-main.o: /usr/include/bits/sigaction.h /usr/include/bits/sigcontext.h
-main.o: /usr/include/asm/sigcontext.h /usr/include/bits/sigstack.h
-main.o: /usr/include/ucontext.h /usr/include/sys/ucontext.h
-main.o: /usr/include/bits/sigthread.h /usr/include/sys/ioctl.h
-main.o: /usr/include/bits/ioctls.h /usr/include/asm/ioctls.h
-main.o: /usr/include/asm/ioctl.h /usr/include/bits/ioctl-types.h
-main.o: /usr/include/sys/ttydefaults.h /usr/include/unistd.h
-main.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
-main.o: /usr/include/bits/confname.h /usr/include/getopt.h
-main.o: /usr/include/sys/time.h /usr/include/errno.h
-main.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
-main.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h list.h config.h
-main.o: device.h main.h action.h daemon_init.h listener.h server.h
-main.o: exit_error.h wrappers.h log.h
+log.o: buffer.h
+parse_lex.o: /usr/include/stdio.h /usr/include/features.h
+parse_lex.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+parse_lex.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
+parse_lex.o: /usr/include/bits/types.h /usr/include/bits/pthreadtypes.h
+parse_lex.o: /usr/include/bits/sched.h /usr/include/libio.h
+parse_lex.o: /usr/include/_G_config.h /usr/include/wchar.h
+parse_lex.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+parse_lex.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
+parse_lex.o: /usr/include/bits/stdio_lim.h /usr/include/unistd.h
+parse_lex.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
+parse_lex.o: /usr/include/bits/wordsize.h /usr/include/bits/confname.h
+parse_lex.o: /usr/include/getopt.h /usr/include/string.h
+parse_lex.o: /usr/include/xlocale.h parse_tab.h powerman.h
+parse_lex.o: /usr/include/syslog.h /usr/include/sys/syslog.h
+parse_lex.o: /usr/include/sys/types.h /usr/include/time.h
+parse_lex.o: /usr/include/endian.h /usr/include/bits/endian.h
+parse_lex.o: /usr/include/sys/select.h /usr/include/bits/select.h
+parse_lex.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+parse_lex.o: /usr/include/sys/sysmacros.h /usr/include/sys/stat.h
+parse_lex.o: /usr/include/bits/stat.h /usr/include/netinet/in.h
+parse_lex.o: /usr/include/stdint.h /usr/include/bits/socket.h
+parse_lex.o: /usr/include/limits.h
+parse_lex.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
+parse_lex.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
+parse_lex.o: /usr/include/linux/limits.h /usr/include/bits/posix2_lim.h
+parse_lex.o: /usr/include/bits/xopen_lim.h /usr/include/bits/sockaddr.h
+parse_lex.o: /usr/include/asm/socket.h /usr/include/asm/sockios.h
+parse_lex.o: /usr/include/bits/in.h /usr/include/bits/byteswap.h
+parse_lex.o: /usr/include/sys/socket.h /usr/include/sys/uio.h
+parse_lex.o: /usr/include/bits/uio.h /usr/include/netdb.h
+parse_lex.o: /usr/include/rpc/netdb.h /usr/include/bits/siginfo.h
+parse_lex.o: /usr/include/bits/netdb.h /usr/include/stdlib.h
+parse_lex.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+parse_lex.o: /usr/include/alloca.h /usr/include/regex.h /usr/include/ctype.h
+parse_lex.o: /usr/include/fcntl.h /usr/include/bits/fcntl.h
+parse_lex.o: /usr/include/signal.h /usr/include/bits/signum.h
+parse_lex.o: /usr/include/bits/sigaction.h /usr/include/bits/sigcontext.h
+parse_lex.o: /usr/include/asm/sigcontext.h /usr/include/bits/sigstack.h
+parse_lex.o: /usr/include/ucontext.h /usr/include/sys/ucontext.h
+parse_lex.o: /usr/include/bits/sigthread.h /usr/include/sys/ioctl.h
+parse_lex.o: /usr/include/bits/ioctls.h /usr/include/asm/ioctls.h
+parse_lex.o: /usr/include/asm/ioctl.h /usr/include/bits/ioctl-types.h
+parse_lex.o: /usr/include/sys/ttydefaults.h /usr/include/sys/time.h
+parse_lex.o: /usr/include/errno.h /usr/include/bits/errno.h
+parse_lex.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
+parse_lex.o: /usr/include/arpa/telnet.h buffer.h list.h wrappers.h
+parse_lex.o: exit_error.h config.h pm_string.h powermand.h
+parse_tab.o: powerman.h /usr/include/stdio.h /usr/include/features.h
+parse_tab.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+parse_tab.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
+parse_tab.o: /usr/include/bits/types.h /usr/include/bits/pthreadtypes.h
+parse_tab.o: /usr/include/bits/sched.h /usr/include/libio.h
+parse_tab.o: /usr/include/_G_config.h /usr/include/wchar.h
+parse_tab.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+parse_tab.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
+parse_tab.o: /usr/include/bits/stdio_lim.h /usr/include/syslog.h
+parse_tab.o: /usr/include/sys/syslog.h /usr/include/sys/types.h
+parse_tab.o: /usr/include/time.h /usr/include/endian.h
+parse_tab.o: /usr/include/bits/endian.h /usr/include/sys/select.h
+parse_tab.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+parse_tab.o: /usr/include/bits/time.h /usr/include/sys/sysmacros.h
+parse_tab.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
+parse_tab.o: /usr/include/netinet/in.h /usr/include/stdint.h
+parse_tab.o: /usr/include/bits/wordsize.h /usr/include/bits/socket.h
+parse_tab.o: /usr/include/limits.h
+parse_tab.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
+parse_tab.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
+parse_tab.o: /usr/include/linux/limits.h /usr/include/bits/posix2_lim.h
+parse_tab.o: /usr/include/bits/xopen_lim.h /usr/include/bits/sockaddr.h
+parse_tab.o: /usr/include/asm/socket.h /usr/include/asm/sockios.h
+parse_tab.o: /usr/include/bits/in.h /usr/include/bits/byteswap.h
+parse_tab.o: /usr/include/sys/socket.h /usr/include/sys/uio.h
+parse_tab.o: /usr/include/bits/uio.h /usr/include/netdb.h
+parse_tab.o: /usr/include/rpc/netdb.h /usr/include/bits/siginfo.h
+parse_tab.o: /usr/include/bits/netdb.h /usr/include/stdlib.h
+parse_tab.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+parse_tab.o: /usr/include/xlocale.h /usr/include/alloca.h
+parse_tab.o: /usr/include/regex.h /usr/include/string.h /usr/include/ctype.h
+parse_tab.o: /usr/include/fcntl.h /usr/include/bits/fcntl.h
+parse_tab.o: /usr/include/signal.h /usr/include/bits/signum.h
+parse_tab.o: /usr/include/bits/sigaction.h /usr/include/bits/sigcontext.h
+parse_tab.o: /usr/include/asm/sigcontext.h /usr/include/bits/sigstack.h
+parse_tab.o: /usr/include/ucontext.h /usr/include/sys/ucontext.h
+parse_tab.o: /usr/include/bits/sigthread.h /usr/include/sys/ioctl.h
+parse_tab.o: /usr/include/bits/ioctls.h /usr/include/asm/ioctls.h
+parse_tab.o: /usr/include/asm/ioctl.h /usr/include/bits/ioctl-types.h
+parse_tab.o: /usr/include/sys/ttydefaults.h /usr/include/unistd.h
+parse_tab.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
+parse_tab.o: /usr/include/bits/confname.h /usr/include/getopt.h
+parse_tab.o: /usr/include/sys/time.h /usr/include/errno.h
+parse_tab.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
+parse_tab.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h list.h
+parse_tab.o: config.h pm_string.h device.h buffer.h powermand.h action.h
+parse_tab.o: server.h listener.h exit_error.h log.h wrappers.h
 pm_string.o: powerman.h /usr/include/stdio.h /usr/include/features.h
 pm_string.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
 pm_string.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
@@ -644,8 +624,101 @@ pm_string.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
 pm_string.o: /usr/include/bits/confname.h /usr/include/getopt.h
 pm_string.o: /usr/include/sys/time.h /usr/include/errno.h
 pm_string.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
-pm_string.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h buffer.h
-pm_string.o: wrappers.h exit_error.h pm_string.h
+pm_string.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h pm_string.h
+pm_string.o: wrappers.h exit_error.h
+powerman.o: powerman.h /usr/include/stdio.h /usr/include/features.h
+powerman.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+powerman.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
+powerman.o: /usr/include/bits/types.h /usr/include/bits/pthreadtypes.h
+powerman.o: /usr/include/bits/sched.h /usr/include/libio.h
+powerman.o: /usr/include/_G_config.h /usr/include/wchar.h
+powerman.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+powerman.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
+powerman.o: /usr/include/bits/stdio_lim.h /usr/include/syslog.h
+powerman.o: /usr/include/sys/syslog.h /usr/include/sys/types.h
+powerman.o: /usr/include/time.h /usr/include/endian.h
+powerman.o: /usr/include/bits/endian.h /usr/include/sys/select.h
+powerman.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+powerman.o: /usr/include/bits/time.h /usr/include/sys/sysmacros.h
+powerman.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
+powerman.o: /usr/include/netinet/in.h /usr/include/stdint.h
+powerman.o: /usr/include/bits/wordsize.h /usr/include/bits/socket.h
+powerman.o: /usr/include/limits.h
+powerman.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
+powerman.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
+powerman.o: /usr/include/linux/limits.h /usr/include/bits/posix2_lim.h
+powerman.o: /usr/include/bits/xopen_lim.h /usr/include/bits/sockaddr.h
+powerman.o: /usr/include/asm/socket.h /usr/include/asm/sockios.h
+powerman.o: /usr/include/bits/in.h /usr/include/bits/byteswap.h
+powerman.o: /usr/include/sys/socket.h /usr/include/sys/uio.h
+powerman.o: /usr/include/bits/uio.h /usr/include/netdb.h
+powerman.o: /usr/include/rpc/netdb.h /usr/include/bits/siginfo.h
+powerman.o: /usr/include/bits/netdb.h /usr/include/stdlib.h
+powerman.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+powerman.o: /usr/include/xlocale.h /usr/include/alloca.h /usr/include/regex.h
+powerman.o: /usr/include/string.h /usr/include/ctype.h /usr/include/fcntl.h
+powerman.o: /usr/include/bits/fcntl.h /usr/include/signal.h
+powerman.o: /usr/include/bits/signum.h /usr/include/bits/sigaction.h
+powerman.o: /usr/include/bits/sigcontext.h /usr/include/asm/sigcontext.h
+powerman.o: /usr/include/bits/sigstack.h /usr/include/ucontext.h
+powerman.o: /usr/include/sys/ucontext.h /usr/include/bits/sigthread.h
+powerman.o: /usr/include/sys/ioctl.h /usr/include/bits/ioctls.h
+powerman.o: /usr/include/asm/ioctls.h /usr/include/asm/ioctl.h
+powerman.o: /usr/include/bits/ioctl-types.h /usr/include/sys/ttydefaults.h
+powerman.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
+powerman.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
+powerman.o: /usr/include/getopt.h /usr/include/sys/time.h
+powerman.o: /usr/include/errno.h /usr/include/bits/errno.h
+powerman.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
+powerman.o: /usr/include/arpa/telnet.h list.h pm_string.h buffer.h config.h
+powerman.o: device.h exit_error.h powermand.h wrappers.h client.h
+powermand.o: powerman.h /usr/include/stdio.h /usr/include/features.h
+powermand.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+powermand.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
+powermand.o: /usr/include/bits/types.h /usr/include/bits/pthreadtypes.h
+powermand.o: /usr/include/bits/sched.h /usr/include/libio.h
+powermand.o: /usr/include/_G_config.h /usr/include/wchar.h
+powermand.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+powermand.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
+powermand.o: /usr/include/bits/stdio_lim.h /usr/include/syslog.h
+powermand.o: /usr/include/sys/syslog.h /usr/include/sys/types.h
+powermand.o: /usr/include/time.h /usr/include/endian.h
+powermand.o: /usr/include/bits/endian.h /usr/include/sys/select.h
+powermand.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+powermand.o: /usr/include/bits/time.h /usr/include/sys/sysmacros.h
+powermand.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
+powermand.o: /usr/include/netinet/in.h /usr/include/stdint.h
+powermand.o: /usr/include/bits/wordsize.h /usr/include/bits/socket.h
+powermand.o: /usr/include/limits.h
+powermand.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
+powermand.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
+powermand.o: /usr/include/linux/limits.h /usr/include/bits/posix2_lim.h
+powermand.o: /usr/include/bits/xopen_lim.h /usr/include/bits/sockaddr.h
+powermand.o: /usr/include/asm/socket.h /usr/include/asm/sockios.h
+powermand.o: /usr/include/bits/in.h /usr/include/bits/byteswap.h
+powermand.o: /usr/include/sys/socket.h /usr/include/sys/uio.h
+powermand.o: /usr/include/bits/uio.h /usr/include/netdb.h
+powermand.o: /usr/include/rpc/netdb.h /usr/include/bits/siginfo.h
+powermand.o: /usr/include/bits/netdb.h /usr/include/stdlib.h
+powermand.o: /usr/include/bits/waitflags.h /usr/include/bits/waitstatus.h
+powermand.o: /usr/include/xlocale.h /usr/include/alloca.h
+powermand.o: /usr/include/regex.h /usr/include/string.h /usr/include/ctype.h
+powermand.o: /usr/include/fcntl.h /usr/include/bits/fcntl.h
+powermand.o: /usr/include/signal.h /usr/include/bits/signum.h
+powermand.o: /usr/include/bits/sigaction.h /usr/include/bits/sigcontext.h
+powermand.o: /usr/include/asm/sigcontext.h /usr/include/bits/sigstack.h
+powermand.o: /usr/include/ucontext.h /usr/include/sys/ucontext.h
+powermand.o: /usr/include/bits/sigthread.h /usr/include/sys/ioctl.h
+powermand.o: /usr/include/bits/ioctls.h /usr/include/asm/ioctls.h
+powermand.o: /usr/include/asm/ioctl.h /usr/include/bits/ioctl-types.h
+powermand.o: /usr/include/sys/ttydefaults.h /usr/include/unistd.h
+powermand.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
+powermand.o: /usr/include/bits/confname.h /usr/include/getopt.h
+powermand.o: /usr/include/sys/time.h /usr/include/errno.h
+powermand.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
+powermand.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h list.h
+powermand.o: config.h pm_string.h device.h buffer.h powermand.h action.h
+powermand.o: daemon_init.h listener.h server.h exit_error.h wrappers.h log.h
 powerman.o: /usr/include/stdio.h /usr/include/features.h
 powerman.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
 powerman.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
@@ -735,8 +808,54 @@ server.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
 server.o: /usr/include/getopt.h /usr/include/sys/time.h /usr/include/errno.h
 server.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
 server.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h list.h config.h
-server.o: main.h action.h exit_error.h wrappers.h pm_string.h buffer.h log.h
-server.o: server.h
+server.o: pm_string.h powermand.h action.h exit_error.h wrappers.h buffer.h
+server.o: log.h server.h util.h
+server.o: buffer.h
+util.o: powerman.h /usr/include/stdio.h /usr/include/features.h
+util.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+util.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
+util.o: /usr/include/bits/types.h /usr/include/bits/pthreadtypes.h
+util.o: /usr/include/bits/sched.h /usr/include/libio.h
+util.o: /usr/include/_G_config.h /usr/include/wchar.h
+util.o: /usr/include/bits/wchar.h /usr/include/gconv.h
+util.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
+util.o: /usr/include/bits/stdio_lim.h /usr/include/syslog.h
+util.o: /usr/include/sys/syslog.h /usr/include/sys/types.h
+util.o: /usr/include/time.h /usr/include/endian.h /usr/include/bits/endian.h
+util.o: /usr/include/sys/select.h /usr/include/bits/select.h
+util.o: /usr/include/bits/sigset.h /usr/include/bits/time.h
+util.o: /usr/include/sys/sysmacros.h /usr/include/sys/stat.h
+util.o: /usr/include/bits/stat.h /usr/include/netinet/in.h
+util.o: /usr/include/stdint.h /usr/include/bits/wordsize.h
+util.o: /usr/include/bits/socket.h /usr/include/limits.h
+util.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
+util.o: /usr/include/bits/posix1_lim.h /usr/include/bits/local_lim.h
+util.o: /usr/include/linux/limits.h /usr/include/bits/posix2_lim.h
+util.o: /usr/include/bits/xopen_lim.h /usr/include/bits/sockaddr.h
+util.o: /usr/include/asm/socket.h /usr/include/asm/sockios.h
+util.o: /usr/include/bits/in.h /usr/include/bits/byteswap.h
+util.o: /usr/include/sys/socket.h /usr/include/sys/uio.h
+util.o: /usr/include/bits/uio.h /usr/include/netdb.h /usr/include/rpc/netdb.h
+util.o: /usr/include/bits/siginfo.h /usr/include/bits/netdb.h
+util.o: /usr/include/stdlib.h /usr/include/bits/waitflags.h
+util.o: /usr/include/bits/waitstatus.h /usr/include/xlocale.h
+util.o: /usr/include/alloca.h /usr/include/regex.h /usr/include/string.h
+util.o: /usr/include/ctype.h /usr/include/fcntl.h /usr/include/bits/fcntl.h
+util.o: /usr/include/signal.h /usr/include/bits/signum.h
+util.o: /usr/include/bits/sigaction.h /usr/include/bits/sigcontext.h
+util.o: /usr/include/asm/sigcontext.h /usr/include/bits/sigstack.h
+util.o: /usr/include/ucontext.h /usr/include/sys/ucontext.h
+util.o: /usr/include/bits/sigthread.h /usr/include/sys/ioctl.h
+util.o: /usr/include/bits/ioctls.h /usr/include/asm/ioctls.h
+util.o: /usr/include/asm/ioctl.h /usr/include/bits/ioctl-types.h
+util.o: /usr/include/sys/ttydefaults.h /usr/include/unistd.h
+util.o: /usr/include/bits/posix_opt.h /usr/include/bits/environments.h
+util.o: /usr/include/bits/confname.h /usr/include/getopt.h
+util.o: /usr/include/sys/time.h /usr/include/errno.h
+util.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
+util.o: /usr/include/asm/errno.h /usr/include/arpa/telnet.h buffer.h
+util.o: pm_string.h
+util.o: buffer.h pm_string.h
 wrappers.o: /usr/include/assert.h /usr/include/features.h
 wrappers.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h powerman.h
 wrappers.o: /usr/include/stdio.h
@@ -782,4 +901,4 @@ wrappers.o: /usr/include/bits/environments.h /usr/include/bits/confname.h
 wrappers.o: /usr/include/getopt.h /usr/include/sys/time.h
 wrappers.o: /usr/include/errno.h /usr/include/bits/errno.h
 wrappers.o: /usr/include/linux/errno.h /usr/include/asm/errno.h
-wrappers.o: /usr/include/arpa/telnet.h exit_error.h buffer.h wrappers.h
+wrappers.o: /usr/include/arpa/telnet.h exit_error.h wrappers.h

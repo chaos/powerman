@@ -33,14 +33,16 @@
 #include "buffer.h"
 #include "log.h"
 
-struct log_struct {
-	String *name;
+#define LOG_MAGIC 0xabc123
+
+typedef struct {
+	int magic;
+	String name;
 	int fd;
 	bool writeable;
-	Buffer *to;
+	Buffer to;
 	int level;
-};
-typedef struct log_struct Log;
+} Log;
 
 static Log *log = NULL;
 
@@ -53,6 +55,7 @@ void
 make_log(void)
 {
 	log = (Log *)Malloc(sizeof(Log));
+	log->magic = LOG_MAGIC;
 	log->name = NULL;
 	log->fd = NO_FD;
 	log->writeable = FALSE;
@@ -73,6 +76,7 @@ init_log(const char *name, int level)
 	int flags;
 
 	assert(log != NULL);
+	assert(log->magic == LOG_MAGIC);
 	if (log->name != NULL)
 		exit_msg("log can only be initialized once");
 	log->name = make_String( name );
@@ -95,6 +99,7 @@ log_it(int level, const char *fmt, ...)
 	char str[MAX_BUF];
 
 	assert(log != NULL);
+	assert(log->magic == LOG_MAGIC);
 	if (level > log->level) return;
 
 	va_start(ap, fmt);
@@ -116,6 +121,7 @@ handle_log(void)
 	int n;
 
 	assert(log != NULL);
+	assert(log->magic == LOG_MAGIC);
 	n = write_Buffer(log->to);
 
 }
@@ -128,13 +134,14 @@ void
 free_Log(void)
 {
 	assert(log != NULL);
+	assert(log->magic == LOG_MAGIC);
 	Free(log, sizeof(Log));
 	log = NULL;
 }
 
 /* Needed to detect recursion in buffer package */
 bool
-is_log_buffer(Buffer *b)
+is_log_buffer(Buffer b)
 {
 	if (log != NULL && log->to == b)
 		return TRUE;
@@ -147,6 +154,7 @@ int
 fd_log(void)
 {
 	assert(log != NULL);
+	assert(log->magic == LOG_MAGIC);
 	return log->fd;
 }
 
@@ -154,5 +162,6 @@ bool
 writeable_log(void)
 {
 	assert(log != NULL);
+	assert(log->magic == LOG_MAGIC);
 	return log->writeable;
 }

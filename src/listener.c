@@ -30,11 +30,10 @@
 #include <tcpd.h>
 
 #include "powerman.h"
-#include "daemon_init.h"
 #include "wrappers.h"
 #include "list.h"
 #include "config.h"
-#include "main.h"
+#include "powermand.h"
 #include "server.h"
 #include "buffer.h"
 #include "exit_error.h"
@@ -158,7 +157,7 @@ handle_Listener(Globals *g)
 	while( (p - buf < MAX_BUF) && (*p != '/') ) p++;
 	if( *p == '/' ) *p = '\0';
 	client->ip  = make_String(buf);
-	ip = client->ip->string;
+	ip = get_String(client->ip);
 	fqdn = ip;
 	host = STRING_UNKNOWN;
 
@@ -170,7 +169,7 @@ handle_Listener(Globals *g)
 	else
 	{
 		client->host = make_String(hent->h_name);
-		host = client->host->string;
+		host = get_String(client->host);
 		fqdn = host;
 	}
 

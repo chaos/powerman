@@ -47,7 +47,7 @@ extern int yyline;
 #include "wrappers.h"
 #include "exit_error.h"
 #include "config.h"
-#include "main.h"
+#include "powermand.h"
 extern void yyerror();
 	
  int yyin_init = 0;     /* Flag for starting byte source */

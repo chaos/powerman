@@ -33,7 +33,7 @@
 #include "list.h"
 #include "config.h"
 #include "device.h"
-#include "main.h"
+#include "powermand.h"
 #include "action.h"
 #include "server.h"
 #include "listener.h"
@@ -78,7 +78,6 @@ static char *makeTimeOut(char *s2);
 static char *makeTCPWrappers();
 static char *makeGlobalSec(char *s2);
 extern void yyerror();
-extern void set_tv(struct timeval *tv, char *s);
 
 extern int yylex();
 extern void yyerror();
@@ -387,7 +386,8 @@ char *
 makeClusterName(char *s2)
 {
 	if( cheat->cluster != NULL )
-		exit_error("Cluster name %s already encountered", cheat->cluster->name->string);
+		exit_error("Cluster name %s already encountered", 
+			get_String(cheat->cluster->name));
 	cheat->cluster = make_Cluster(s2);
 	return s2;
 }
@@ -473,6 +473,7 @@ check_Spec()
 {
 	Spec *this_spec;
 	int i;
+	char *name;
 
 /* 
  * perahps some commands are unimplemented.  Put empty lists in their
@@ -485,18 +486,19 @@ check_Spec()
 			current_spec->scripts[i] = list_create(free_Spec_El);
 		}
 	}
+	name = get_String(current_spec->name);
 	if( current_spec->type == NO_DEV )
-		exit_error("Missing type for specification %s", current_spec->name->string);
+		exit_error("Missing type for specification %s", name);
 	if( current_spec->off == NULL )
-		exit_error("Missing Off string for specification %s", current_spec->name->string);
+		exit_error("Missing Off string for specification %s", name);
 	if( current_spec->on == NULL )
-		exit_error("Missing On string for specification %s", current_spec->name->string);
+		exit_error("Missing On string for specification %s", name);
 	if( current_spec->all == NULL )
-		exit_error("Missing All string for specification %s", current_spec->name->string);
+		exit_error("Missing All string for specification %s", name);
 	if( (current_spec->type != PMD_DEV) && (current_spec->size == 0) )
-		exit_error("Missing Size field for specification %s", current_spec->name->string);
+		exit_error("Missing Size field for specification %s", name);
 	if( current_spec->mode == NO_MODE )
-		exit_error("Missing interpretation mode field for specification %s", current_spec->name->string);
+		exit_error("Missing interpretation mode field for specification %s", name);
 
 	list_append(cheat->specs, current_spec);
 	this_spec = current_spec;
@@ -542,7 +544,8 @@ char *
 makeSpecOff(char *s2)
 {
 	if( current_spec->off != NULL )
-		exit_error("Off string %s for this specification already seen", current_spec->off->string);
+		exit_error("Off string %s for this specification already seen", 
+				get_String(current_spec->off));
 	current_spec->off = make_String(s2);
 	return s2;
 }
@@ -551,7 +554,8 @@ makeSpecOn(char *s2)
 {
 
 	if( current_spec->on != NULL )
-		exit_error("On string %s for this specification already seen", current_spec->on->string);
+		exit_error("On string %s for this specification already seen", 
+				get_String(current_spec->on));
 	current_spec->on = make_String(s2);
 	return s2;
 }
@@ -560,7 +564,8 @@ makeSpecAll(char *s2)
 {
 
 	if( current_spec->all != NULL )
-		exit_error("All string %s for this specification already seen", current_spec->all->string);
+		exit_error("All string %s for this specification already seen", 
+				get_String(current_spec->all));
 	current_spec->all = make_String(s2);
 	return s2;
 }
@@ -585,7 +590,7 @@ makeSpecSize(char *s2)
 		current_spec->plugname = NULL;
 	else
 	  {
-		current_spec->plugname = (String **)Malloc(size * sizeof(String));
+		current_spec->plugname = (String *)Malloc(size * sizeof(String));
 		forcount(i, size)
 		  current_spec->plugname[i] = NULL;
 	  }
@@ -920,7 +925,7 @@ makeDevice(char *s2, char *s3, char *s4, char *s5)
  * s5 : (optional) soft power state device
  * s6 : (optional) soft power state plug name
  */
-char *
+static char *
 makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 {
 	int i;
@@ -1007,4 +1012,3 @@ yyerror()
 	errno = 0;
 	exit_error("Parse error.  %s line %d", cheat->config_file, yyline);
 }
-

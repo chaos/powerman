@@ -27,6 +27,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include "list.h"
+#include "pm_string.h"
+
 #define NUM_SCRIPTS        11
 #define UPDATE_SECONDS    100
 #define NOT_SET         (-1)
@@ -57,7 +60,7 @@
 typedef enum {SND_EXP_UNKNOWN, SEND, EXPECT, DELAY} Script_El_T;
 
 typedef struct {
-	String *fmt;
+	String fmt;
 } Send_T;
 
 /* the map is a list of Interpretation structures */
@@ -117,8 +120,8 @@ typedef struct {
  */
 typedef struct spec_element_struct {
 	Script_El_T type;
-	String *string1;
-	String *string2;
+	String string1;
+	String string2;
 	struct timeval tv;
 	List map;
 } Spec_El;
@@ -128,15 +131,15 @@ typedef struct spec_element_struct {
  * what will end up in each of (potentially) many Protocol structs.
  */
 struct spec_struct {
-	String *name;
+	String name;
 	Dev_Type type;
-	String *off;
-	String *on;
-	String *all;
+	String off;
+	String on;
+	String all;
 	int size;
 	struct timeval timeout;
 	int num_scripts;
-	String **plugname;
+	String *plugname;
 	String_Mode mode;
 	List *scripts;   /* An array of pointers to lists */
 };
@@ -152,7 +155,7 @@ typedef enum {ST_UNKNOWN, OFF, ON} State_Val;
 
 
 typedef struct {
-	String *name;      /* This is how the node is known to the cluster  */
+	String name;      /* This is how the node is known to the cluster  */
 	State_Val p_state; /* p_state is plug state, i.e. hard-power status */
 	Device *p_dev;     /* It is possible for there to be two different  */
 	int p_index;       /*   devices, on for har- and one for soft-power */
@@ -174,7 +177,7 @@ typedef struct {
  * "val" may be updated.  Perfectly clear right?
  */
 typedef struct {
-        String *plug_name;
+        String plug_name;
 	int match_pos;
         char *val;
 	Node *node;
@@ -183,7 +186,7 @@ typedef struct {
 
 typedef struct {
 	int num;          /* node count */
-	String *name;     /* cluster name from the config file */
+	String name;     /* cluster name from the config file */
 	List    nodes;    /* list of Node structures */
 	struct timeval time_stamp;  /* last update */
 	struct timeval update_interval;  /* how long before next update */
@@ -191,8 +194,8 @@ typedef struct {
 
 
 /* config.c prototypes */
-void read_Config_file(void);
-Script_El *make_Script_El(Script_El_T type, String *s1, String *s2, List map, struct timeval tv);
+Protocol *init_Client_Protocol(void);
+Script_El *make_Script_El(Script_El_T type, String s1, String s2, List map, struct timeval tv);
 void free_Script_El(void *script_el);
 Spec *make_Spec(char * name);
 int  match_Spec(void *spec, void *key);
@@ -207,6 +210,8 @@ void free_Node(void *node);
 Interpretation *make_Interp(char * name);
 int match_Interp(void *interp, void *key);
 void free_Interp(void *interp);
+void set_tv(struct timeval *tv, char *s);
+
 
 /* Bison generated code's externs */
 int  parse_config_file (void);

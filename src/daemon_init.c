@@ -23,12 +23,11 @@
  *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
-/*
-  These are Stevens'.  I put this stuff in powerman.h.
-   #include	"unp.h" 
-   #include	<syslog.h>
-*/
+#include <syslog.h>
+#include <limits.h>
+
 #include "powerman.h"
+
 #include "wrappers.h"
 #include "exit_error.h"
 #include "daemon_init.h"
@@ -36,7 +35,7 @@
 #define TMPSTR_LEN 32
 
 void
-daemon_init()
+daemon_init(void)
 {
 	int i;
 	int n;
@@ -64,12 +63,12 @@ daemon_init()
 
 	/* change working directory */
 	n = chdir(ROOT_DIR);
-	if( n == -1 ) exit_error("Requires access to root directory");
+	if( n == -1 ) exit_error("chdir %s", ROOT_DIR);
 	n = mkdir(PID_DIR, S_IRWXU);
 	if( (n == -1) && (errno != EEXIST) )
-		exit_error("Couldn't create dirsctory /var/run/powerman");
+		exit_error("mkdir %s", PID_DIR);
 	fd = open(PID_FILE_NAME, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRWXU);
-	if( fd == -1 ) exit_error("Failed to open %s", PID_FILE_NAME);
+	if( fd == -1 ) exit_error("open %s", PID_FILE_NAME);
 	sprintf(pidstr, "%d\n", pid = getpid());
 	len = strlen(pidstr);
 	n = write(fd, pidstr, len);
@@ -82,9 +81,8 @@ daemon_init()
 	for (i = 0; i < MAXFD; i++)
 		close(i);
 
-
 	sprintf(buf, "Started %s", ctime(&t));
-	openlog("PowerManD", LOG_NDELAY |  LOG_PID, LOG_DAEMON);
+	openlog(DAEMON_NAME, LOG_NDELAY |  LOG_PID, LOG_DAEMON);
 	syslog_on_error(TRUE);
 	syslog(LOG_NOTICE, buf);
 /*

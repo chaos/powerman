@@ -30,46 +30,11 @@
 #include "list.h"
 #include "config.h"
 #include "device.h"
-#include "main.h"
+#include "powermand.h"
 #include "action.h"
-#include "main.h"
 #include "wrappers.h"
 #include "pm_string.h"
 #include "config.h"
-
-/* prototypes */
-static Protocol *init_Client_Protocol(void);
-
-
-/*
- *   This function has two jobs.  Get the config file based on the
- * name on the command line, and wrap the call to the parser 
- * (parse.lex and parse.y).  
- */ 
-void
-read_Config_file(void)
-{
-	struct stat stbuf;
-	Globals *g = cheat;
-
-	CHECK_MAGIC(g);
-
-/* Did we really get a config file? */
-	stat(g->config_file, &stbuf);
-	if( (stbuf.st_mode & S_IFMT) != S_IFREG )
-		exit_error("Config file must be a regular file, \"%s\" is not\n", g->config_file);
-	g->cf = fopen(g->config_file, "r");
-	if( g->cf == NULL ) 
-		exit_error("Failed to find config file %s", g->config_file); 
-
-	g->client_prot = init_Client_Protocol();
-
-	parse_config_file();
-	
-	fclose(g->cf);
-	
-}
-
 
 /*
  *   Constructor - This is a sort of degenerate Protocol specifically
@@ -84,7 +49,7 @@ read_Config_file(void)
  *            in particular the g->client_protocol
  */ 
 Protocol *
-init_Client_Protocol()
+init_Client_Protocol(void)
 {
 /* 
  * Initialize the expect/send pairs for the client protocol. 
@@ -94,8 +59,8 @@ init_Client_Protocol()
 	List *scripts;
 	Script_El *script_el;
 	struct timeval tv;
-	String *string1;
-	String *string2;
+	String string1;
+	String string2;
 
 	tv.tv_sec = 0;   /* These aren't used here, but the      */
 	tv.tv_usec = 0;  /* make_Script_El function needs a value. */
@@ -194,7 +159,7 @@ init_Client_Protocol()
  * Produces:  Script_El
  */
 Script_El *
-make_Script_El(Script_El_T type, String *s1, String *s2, List map, struct timeval tv)
+make_Script_El(Script_El_T type, String s1, String s2, List map, struct timeval tv)
 {
 	Script_El *script_el;
 	reg_syntax_t cflags = REG_EXTENDED;
@@ -207,8 +172,11 @@ make_Script_El(Script_El_T type, String *s1, String *s2, List map, struct timeva
 		script_el->s_or_e.send.fmt = copy_String(s1);
 		break;
 	case EXPECT :
-		Regcomp( &(script_el->s_or_e.expect.completion), s2->string, cflags);
-		Regcomp( &(script_el->s_or_e.expect.exp), s1->string, cflags);
+		/* XXX jg - use get_String accessor instead of s->string, 
+		 * but is this correct in the first place? */
+		Regcomp( &(script_el->s_or_e.expect.completion), get_String(s2), cflags);
+		/* XXX jg see line above */
+		Regcomp( &(script_el->s_or_e.expect.exp), get_String(s1), cflags);
 		script_el->s_or_e.expect.map = map;
 		break;
 	case DELAY :
@@ -423,26 +391,27 @@ dump_Spec(Spec *spec)
 #endif
 
 void
-free_Spec(void *spec)
+free_Spec(void *vspec)
 {
 	int i;
+	Spec *spec = (Spec *)vspec;
 
-	free_String((void *)((Spec *)spec)->name); ((Spec *)spec)->name = NULL;
-	free_String((void *)((Spec *)spec)->off);  ((Spec *)spec)->off  = NULL;
-	free_String((void *)((Spec *)spec)->on);   ((Spec *)spec)->on   = NULL;
-	free_String((void *)((Spec *)spec)->all);  ((Spec *)spec)->all  = NULL;
-	if( ((Spec *)spec)->type != PMD_DEV )
+	free_String((void *)spec->name);  spec->name = NULL;
+	free_String((void *)spec->off);   spec->off  = NULL;
+	free_String((void *)spec->on);    spec->on   = NULL;
+	free_String((void *)spec->all);   spec->all  = NULL;
+	if( spec->type != PMD_DEV )
 	{
-		forcount(i, ((Spec *)spec)->size)
+		for (i = 0; i < spec->size; i++)
 		{
-			free_String((void *)((Spec *)spec)->plugname[i]);
+			free_String((void *)spec->plugname[i]);
 		}
-		Free(((Spec *)spec)->plugname, ((Spec *)spec)->size*sizeof(String *));
+		Free(spec->plugname, spec->size * sizeof(String));
 	}
-	forcount(i, ((Spec *)spec)->num_scripts)
-		list_destroy(((Spec *)spec)->scripts[i]);
-	Free(((Spec *)spec)->scripts, ((Spec *)spec)->num_scripts*sizeof(List));
-	Free((Spec *)spec, sizeof(Spec));
+	for (i = 0; i < spec->num_scripts; i++)
+		list_destroy(spec->scripts[i]);
+	Free(spec->scripts, spec->num_scripts * sizeof(List));
+	Free(spec, sizeof(Spec));
 }
 
 /*******************************************************************/
@@ -556,7 +525,7 @@ make_Cluster(const char *name)
 	cluster->update_interval.tv_usec = 0;
 	cluster->num = 0;
 	cluster->nodes = list_create(free_Node);
-	gettimeofday( &(cluster->time_stamp), NULL);
+	Gettimeofday( &(cluster->time_stamp), NULL);
 	return cluster;
 }
 
@@ -733,3 +702,43 @@ free_Interp(void *interp)
 	Free(interp, sizeof(Interpretation));
 }
 
+/*
+ *  During parsing struct timeval values in the config file will be
+ * entered as decimals.  The lexer picks out the string and this 
+ * function translates that arbitrary precision string into the 
+ * seconds, micro-seconds form of a struct timeval.  Right now
+ * it insists there be an integer,  decimal, integer.  I could 
+ * improve the thing by allowing a variety of formats: 
+ * 10 10.10 0.10 .10 
+ */
+#define TMPSTRLEN 32
+void
+set_tv(struct timeval *tv, char *s)
+{
+	int len;
+	char decimal[TMPSTRLEN];
+	int sec;
+	int usec;
+	int n;
+
+	ASSERT( tv != NULL );
+	n = sscanf(s, "%d.%s", &sec, decimal);
+	if( (n != 2) || (sec < 0) ) 
+		exit_error("Couldn't get the seconds and useconds from %s", s);
+	len = strlen(decimal);
+	n = sscanf(decimal, "%d", &usec);
+	if( (n != 1) || (usec < 0) ) 
+		exit_error("Couldn't get the useconds from %s", decimal);
+	while( len > 6 )
+	{
+		usec /= 10;
+		len--;
+	}
+	while( len < 6 )
+	{
+		usec *= 10;
+		len++;
+	}
+	tv->tv_sec  = sec;
+	tv->tv_usec = usec;
+}

@@ -89,9 +89,11 @@ typedef int bool;
 #define foreach(x, y) for (x = (y)->next; x != y; x = (x)->next)
 #define forcount(x, y) for (x = 0; x < y; (x)++)
 
+#define DAEMON_NAME   "powermand"
+#define PID_FILE_NAME "/var/run/powerman/powerman.pid"
+#define PID_DIR       "/var/run/powerman"
+#define ROOT_DIR      "/etc/powerman"
 
-typedef struct string_struct String;
-typedef struct buffer_struct Buffer;
 typedef enum client_status_enum Client_Status;
 typedef struct client_struct Client;
 typedef struct action_struct Action;

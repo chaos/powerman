@@ -30,39 +30,20 @@
 
 #define NO_INDEX        (-1)
 
-/* 
- *   This structure is for holding strings mostly, but also can capture
- * indexed items like tux0, tux1, ... .  If there is a single index then
- * the code below for prefix is correct.  A range may have a '[', though.
- * In that case prefix points to the '['.  This structure can only
- * accomodate a contiguous range.  It would require a list of these to 
- * hold tux[1-3, 5-7]. 
- */
-struct string_struct {
-	int length; /* length = strlen(string) */
-	int width;  /* width of index field, i.e. width(tux02) = 2 */
-	int prefix; /* prefix=length-1;while(isdigit(string[prefix]))prefix--; */
-	int index;  /* n = sscanf(string + prefix, "%d", &index); */
-	int count;  /* if ( n == 0 ) try to get a range index..index+count */
-	char *string;
-} ;
-
+typedef struct string_implementation *String;
 
 /* pm_string.c extern prototypes */
-String *make_String(const char *cs);
-String *copy_String(String *s);
-char *get_String(String *s);
-unsigned char byte_String(String *s, int offset);
-int length_String(String *s);
-int prefix_String(String *s);
-int index_String(String *s);
-int cmp_String(String *s1, String *s2);
-bool prefix_match(String *s1, String *s2);
-bool empty_String(String *s);
+String make_String(const char *cs);
+String copy_String(String s);
+char *get_String(String s);
+unsigned char byte_String(String s, int offset);
+int length_String(String s);
+int prefix_String(String s);
+int index_String(String s);
+int cmp_String(String s1, String s2);
+bool prefix_match(String s1, String s2);
+bool empty_String(String s);
 void free_String(void *s);
-bool match_String(String *s, char *cs);
-
-
-
+bool match_String(String s, char *cs);
 
 #endif /* PM_STRING_H */
