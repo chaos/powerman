@@ -6,7 +6,7 @@
 # This version includes an LLNL-requested enhancement for P0 and P1 commands.
 #
 specification  "phantom-llnl" {
-	timeout 	20.0
+	timeout 	5.0
 
 	plug name { "1" }
 
