@@ -1,3 +1,8 @@
+2003-08-02 Jim Garlick <garlick@llnl.gov>
+
+    * src/device.c: print useful error message in process_setplugname if
+    node does not exist.
+
 2003-08-01 Jim Garlick <garlick@llnl.gov>
 
     * src/device.h: decrease max buffer size from 1M to 8K.
