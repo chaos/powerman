@@ -24,13 +24,20 @@ specification "ibmh8" {
 	script logout {
 		send "\004"  			# ^D to log off
 	}
-	script status_all {
-		send "stat\r"
-		expect "stat\r\n"
-		foreachnode {
-			expect "([^:]*): (timed\ out|H8\ is\ down|off|on)\r\n"
-			setplugstate $1 $2 on="on" off="off"
-		}
+#	script status_all {
+#		send "stat\r"
+#		expect "stat\r\n"
+#		foreachnode {
+#			expect "([^:]*): (timed\ out|H8\ is\ down|off|on)\r\n"
+#			setplugstate $1 $2 on="on" off="off"
+#		}
+#		expect "h8power> "
+#	}
+	script status {
+		send "stat %s\r"
+		expect "stat[^\r]*\r\n"
+		expect "([^:]*): (timed\ out|H8\ is\ down|off|on)\r\n"
+		setplugstate $1 $2 on="on" off="off"
 		expect "h8power> "
 	}
 	script on {
