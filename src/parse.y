@@ -39,7 +39,6 @@
 #include "list.h"
 #include "config.h"
 #include "device.h"
-#include "action.h"
 #include "client.h"
 #include "error.h"
 #include "string.h"
@@ -713,23 +712,23 @@ static char *makeNode(char *s2, char *s3, char *s4)
     Node *node;
     Interpretation *interp;
     List script;
-    ListIterator script_itr;
+    ListIterator itr;
     Script_El *script_el;
     Plug *plug;
+    Device *dev;
 
     node = conf_node_create(s2);
     conf_addnode(node);
     /* find the device controlling this nodes plug */
-    node->dev = dev_findbyname(s3);
-    if( node->dev == NULL ) 
+    dev = dev_findbyname(s3);
+    if(dev == NULL) 
 	_errormsg("unknown device");
     /*
      * Plugs are defined in Spec, and they must be searched to match the node
      */
-    switch( node->dev->type ) {
+    switch(dev->type) {
 	case TCP_DEV :
-	    plug = list_find_first(node->dev->plugs, 
-			    (ListFindF) dev_plug_match, s4);
+	    plug = list_find_first(dev->plugs, (ListFindF) dev_plug_match, s4);
 	    if( plug == NULL )  {
 		fprintf(stderr, "%s\n", s4);
 		_errormsg("unknown plug");
@@ -744,9 +743,9 @@ static char *makeNode(char *s2, char *s3, char *s4)
      * is required because this node will be the target of some
      */
     for (i = 0; i < NUM_SCRIPTS; i++) {
-	script = node->dev->prot->scripts[i];
-	script_itr = list_iterator_create(script);
-	while( (script_el = list_next(script_itr)) ) {
+	script = dev->prot->scripts[i];
+	itr = list_iterator_create(script);
+	while( (script_el = list_next(itr)) ) {
 	    switch( script_el->type ) {
 		case EL_SEND :
 		case EL_DELAY :
@@ -763,6 +762,7 @@ static char *makeNode(char *s2, char *s3, char *s4)
 		default :
 	    }
 	}
+	list_iterator_destroy(itr);
     }
     return s2;
 }

@@ -27,8 +27,8 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-#include <syslog.h>
 #include <ctype.h>
+#include <syslog.h>
 
 #include <arpa/inet.h>
 #include <tcpd.h>
@@ -42,7 +42,6 @@
 #include "client.h"
 #include "buffer.h"
 #include "error.h"
-#include "action.h"
 #include "hostlist.h"
 #include "client_proto.h"
 #include "debug.h"
@@ -52,6 +51,8 @@
 
 /* prototypes for internal functions */
 static void _hostlist_error(Client *c);
+static int _match_client(Client * client, void *key);
+static bool _client_exists(Client *cli);
 static int _match_nodename(Node* node, void *key);
 static bool _node_exists(char *name);
 static hostlist_t _hostlist_create_validated(Client *c, char *str);
@@ -60,10 +61,10 @@ static void _client_query_status_reply(Client *c);
 static void _handle_client_read(Client * c);
 static void _handle_client_write(Client * c);
 static char *_strip_whitespace(char *str);
-static Action *_parse_input(Client *c, char *input);
+static void _parse_input(Client *c, char *input);
 static void _destroy_client(Client * client);
-static int _match_client(Client * client, void *key);
 static void _create_client(void);
+static void _act_finish(void *arg, bool error);
 
 #define _client_msg(c,args...) do {  \
     (c)->write_status = CLI_WRITING; \
@@ -77,9 +78,8 @@ extern int hosts_ctl(char *daemon, char *client_name, char *client_addr,
 int allow_severity = LOG_INFO;		/* logging level for accepted reqs */
 int deny_severity = LOG_WARNING;	/* logging level for rejected reqs */
 
-/* module data */
-static int listen_fd = NO_FD;
-static List cli_clients = NULL;
+static int listen_fd = NO_FD;		/* powermand listen socket */
+static List cli_clients = NULL;		/* list of clients */
 
 
 /*
@@ -90,7 +90,6 @@ void cli_init(void)
     /* create cli_clients list */
     cli_clients = list_create((ListDelF) _destroy_client);
 }
-
 
 /* 
  * Finalize module.
@@ -236,6 +235,8 @@ static void _client_query_status_reply(Client *c)
     }
 
     while ((node = list_next(itr))) {
+	if (c->cmd && c->cmd->hl && hostlist_find(c->cmd->hl, node->name) == -1)
+	    continue;
 	switch (node->p_state) {
 	    case ST_ON:
 		hostlist_push_host(hl_on, node->name);
@@ -272,6 +273,35 @@ done:
 	hostlist_destroy(hl_unk);
 }
 
+/*
+ * Create Command.
+ */
+static Command *_create_command(Client *c, int com, char *arg1)
+{
+    Command *cmd = (Command *)Malloc(sizeof(Command));
+
+    cmd->com = com;
+    cmd->error = FALSE;
+    cmd->pending = 0;
+    cmd->hl = arg1 ? _hostlist_create_validated(c, arg1) : NULL;
+    if (arg1 && cmd->hl == NULL) {
+	Free(cmd);
+	cmd = NULL;
+    }
+    
+    return cmd;
+}
+
+/*
+ * Destroy a Command.
+ */
+static void _destroy_command(Command *cmd)
+{
+    if (cmd->hl)
+	hostlist_destroy(cmd->hl);
+    Free(cmd);
+}
+
 /* helper for _parse_input that deletes leading & trailing whitespace */
 static char *_strip_whitespace(char *str)
 {
@@ -286,24 +316,22 @@ static char *_strip_whitespace(char *str)
 }
 
 /*
- * Parse a line of input.  If the command requires more work, an Action
- * is returned that should be enqueued.  If the command is completed here, 
- * a NULL is returned.
+ * Parse a line of input and create a Command (and enqueue device actions)
+ * if needed.
  */
-static Action *_parse_input(Client *c, char *input)
+static void _parse_input(Client *c, char *input)
 {
     char *str = _strip_whitespace(input);
-    Action *act = NULL;
     char arg1[CP_LINEMAX];
-    int args = 0;
+    Command *cmd = NULL;
 
     memset(arg1, 0, CP_LINEMAX);
 
     if (strlen(str) >= CP_LINEMAX) {
 	_client_msg(c, CP_ERR_TOOLONG);			/* error: too long */
-    } else if (c->busy) {
+    } else if (c->cmd != NULL) {
 	_client_msg(c, CP_ERR_CLIBUSY);			/* error: busy */
-	goto noprompt;
+	return; /* no prompt */
     } else if (!strncasecmp(str, CP_HELP, strlen(CP_HELP))) {
 	_client_msg(c, CP_RSP_HELP);			/* help */
     } else if (!strncasecmp(str, CP_NODES, strlen(CP_NODES))) {
@@ -313,82 +341,64 @@ static Action *_parse_input(Client *c, char *input)
 	_handle_client_write(c);
 	c->read_status = CLI_DONE;
 	c->write_status = CLI_IDLE;
-	goto noprompt;
-    } else if (sscanf(str, CP_ON, arg1) == 1) {
-        act = act_create(PM_POWER_ON);			/* on hostlist */
-	args = 1;
-    } else if (sscanf(str, CP_OFF, arg1) == 1) {
-        act = act_create(PM_POWER_OFF);			/* off hostlist */
-	args = 1;
-    } else if (sscanf(str, CP_CYCLE, arg1) == 1) {
-        act = act_create(PM_POWER_CYCLE);		/* cycle hostlist */
-	args = 1;
-    } else if (sscanf(str, CP_RESET, arg1) == 1) {
-        act = act_create(PM_RESET);			/* reset hostlist */
-	args = 1;
-    } else if (sscanf(str, CP_STATUS, arg1) == 1) {
-	act = act_create(PM_UPDATE_PLUGS);		/* status hostlist */
-	args = 1;
-    } else {
-	_client_msg(c, CP_ERR_UNKNOWN);			/* error: unknown */
+	return; /* no prompt */
+    } else if (sscanf(str, CP_ON, arg1) == 1) {		/* on hostlist */
+	cmd = _create_command(c, PM_POWER_ON, arg1);
+    } else if (sscanf(str, CP_OFF, arg1) == 1) {	/* off hostlist */
+	cmd = _create_command(c, PM_POWER_OFF, arg1);
+    } else if (sscanf(str, CP_CYCLE, arg1) == 1) {	/* cycle hostlist */
+	cmd = _create_command(c, PM_POWER_CYCLE, arg1);
+    } else if (sscanf(str, CP_RESET, arg1) == 1) {	/* reset hostlist */
+	cmd = _create_command(c, PM_RESET, arg1);
+    } else if (sscanf(str, CP_STATUS, arg1) == 1) {	/* status [hostlist] */
+	cmd = _create_command(c, PM_UPDATE_PLUGS, arg1);
+    } else if (!strncasecmp(str, CP_STATUS_ALL, strlen(CP_STATUS_ALL))) {
+	cmd = _create_command(c, PM_UPDATE_PLUGS, NULL);
+    } else {						/* error: unknown */
+	_client_msg(c, CP_ERR_UNKNOWN);
     }
 
-    /* convert argument to hostlist and tack onto action */
-    assert(args == 1 || args == 0);
-    if (act != NULL && args == 1) {
-	act->target = Strdup(arg1);
-	if ((act->hl = _hostlist_create_validated(c, arg1)) == NULL) {
-	    act_destroy(act); 
-	    act = NULL;
+    /* enqueue device actions and tie up the client if necessary */
+    if (cmd) {
+	cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish, c);
+	if (cmd->pending == 0) {
+	    _client_msg(c, CP_ERR_NOACTION);		
+	    _destroy_command(cmd);
+	    cmd = NULL;
 	}
+	assert(c->cmd == NULL);
+	c->cmd = cmd;
     }
 
-    /* reissue prompt if we didn't queue up an action */
-    if (act == NULL)
+    /* reissue prompt if we didn't queue up any device actions */
+    if (cmd == NULL)
 	_client_prompt(c);
-
-noprompt:
-    return act; 
-}
-
-void cli_errmsg(Action * act, char *msg)
-{
-    Client *c;
-
-    assert(act != NULL);
-    CHECK_MAGIC(act);
-    c = act->client;
-
-    /* if client has gone away do nothing */
-    if (c == NULL || !cli_exists(c))
-	return;
-    _client_msg(c, msg);
 }
 
 /*
- * Return the results of an action to the client.
- * Called after completion of each device action.
+ * Callback for device action completion.
  */
-void cli_reply(Action * act)
+static void _act_finish(void *arg, bool error)
 {
-    Client *c;
-
-    assert(act != NULL);
-    CHECK_MAGIC(act);
-    c = act->client;
+    Client *c = (Client *)arg;
 
     /* if client has gone away do nothing */
-    if (c == NULL || !cli_exists(c))
+    if (!_client_exists(c))
+	return;
+    assert(c->cmd != NULL);
+
+    if (error) {		    /* flag any errors for the final report */
+	c->cmd->error = TRUE;
+	_client_msg(c, CP_ERR_TIMEOUT);/* XXX error is always a timeout */
+    }
+
+    if (--c->cmd->pending > 0)	    /* command is not complete */
 	return;
 
-    c->act_count--;
-    if (act->error)
-	c->act_error = TRUE;
-
-    if (c->act_count > 0)
-	return;
-
-    switch (act->com) {
+    /*
+     * All actions completed - return final status to the client.
+     */
+    switch (c->cmd->com) {
         case PM_UPDATE_PLUGS:  /* query-status */
 	    _client_query_status_reply(c);
             break;
@@ -396,7 +406,7 @@ void cli_reply(Action * act)
         case PM_POWER_OFF:	/* off */
         case PM_POWER_CYCLE:	/* cycle */
         case PM_RESET:		/* reset */
-	    if (c->act_error)
+	    if (c->cmd->error)
 		_client_msg(c, CP_ERR_COMPLETE);
 	    else
 		_client_msg(c, CP_RSP_COMPLETE);
@@ -410,10 +420,15 @@ void cli_reply(Action * act)
             break;
     }
 
-    c->busy = FALSE;
+    /* clean up and re-prompt */
+    _destroy_command(c->cmd);
+    c->cmd = NULL;
     _client_prompt(c);
 }
 
+/* 
+ * Destroy a client.
+ */
 static void _destroy_client(Client * client)
 {
     CHECK_MAGIC(client);
@@ -421,25 +436,31 @@ static void _destroy_client(Client * client)
     if (client->fd != NO_FD) {
         Close(client->fd);
         client->fd = NO_FD;
-        syslog(LOG_DEBUG, "client on descriptor %d signs off",
-            ((Client *) client)->fd);
+        dbg(DBG_CLIENT, "_destroy_client: closing fd %d", client->fd);
     }
 
-    if (client->to != NULL)
+    if (client->to)
         buf_destroy(client->to);
 
-    if (client->from != NULL)
+    if (client->from)
         buf_destroy(client->from);
+
+    if (client->cmd)
+	_destroy_command(client->cmd);
 
     Free(client);
 }
 
+/* helper for _client_exists */
 static int _match_client(Client * client, void *key)
 {
     return (client == key);
 }
 
-bool cli_exists(Client *cli)
+/*
+ * Test if a client still exists (by address).
+ */
+static bool _client_exists(Client *cli)
 {
     Client *client;
 
@@ -449,9 +470,7 @@ bool cli_exists(Client *cli)
 
 
 /*
- *  This is a conventional implementation of the code in Stevens.
- * The Listener already exists and on entry and on completion the
- * descriptor is waiting on new connections.
+ * Begin listening for clients on powermand's socket.
  */
 void cli_listen(void)
 {
@@ -490,10 +509,7 @@ void cli_listen(void)
 
 
 /*
- * Read activity has been detected on the listener socket.  A connection
- * request has been received.  The new client is commemorated with a
- * Client data structure, it gets buffers for sending and receiving, 
- * and is vetted through TCP wrappers.
+ * Create a new client.
  */
 static void _create_client(void)
 {
@@ -514,15 +530,15 @@ static void _create_client(void)
     INIT_MAGIC(client);
     client->read_status = CLI_READING;
     client->write_status = CLI_IDLE;
-    client->act_count = 0;
-    client->act_error = FALSE;
-    client->busy = FALSE;
+    client->to = NULL;
+    client->from = NULL;
+    client->cmd = NULL;
 
     client->fd = Accept(listen_fd, &saddr, &saddr_size);
     /* client died after it initiated connect and before we could accept */
     if (client->fd < 0) {
         _destroy_client(client);
-        syslog(LOG_ERR, "Client aborted connection attempt");
+        err(TRUE, "_create_client: accept");
         return;
     }
 
@@ -531,7 +547,7 @@ static void _create_client(void)
     if (inet_ntop(AF_INET, &saddr.sin_addr, buf, MAX_BUF) == NULL) {
         Close(client->fd);
         _destroy_client(client);
-        syslog(LOG_ERR, "Unable to convert network address into string");
+        err(TRUE, "_create_client: inet_ntop");
         return;
     }
 
@@ -554,7 +570,7 @@ static void _create_client(void)
     /* get client->host */
     if ((hent = gethostbyaddr((const char *) &saddr.sin_addr,
 		    sizeof(struct in_addr), AF_INET)) == NULL) {
-        syslog(LOG_ERR, "Unable to get host name from network address");
+        err(FALSE, "_create_client: gethostbyaddr failed");
     } else {
         client->host = Strdup(hent->h_name);
         host = client->host;
@@ -567,8 +583,8 @@ static void _create_client(void)
         if (accepted_client == FALSE) {
             Close(client->fd);
             _destroy_client(client);
-            syslog(LOG_ERR, "Client rejected: <%s, %d>", fqdn,
-            client->port);
+            err(FALSE, "_create_client: tcp wrappers denies <%s, %d>", 
+			    fqdn, client->port); /* XXX duplicate log? */
             return;
         }
     }
@@ -589,7 +605,7 @@ static void _create_client(void)
 }
 
 /* 
- * select(2) write handler for the client 
+ * select(2) read handler for the client 
  */
 static void _handle_client_read(Client * c)
 {
@@ -610,24 +626,8 @@ static void _handle_client_read(Client * c)
         return;
     }
 
-    while (buf_getline(c->from, buf, sizeof(buf)) > 0) {
-	Action *act = _parse_input(c, buf);
-
-	if (act != NULL) {
-	    act->client = c;
-	    c->act_count = dev_apply_action(act); 
-	    c->act_error = FALSE;   /* clear error flag */
-	    c->busy = TRUE;	    /* prevent another command from starting */	
-	    /* FIXME: change args to dev_apply_action to be 
-	     * - script index
-	     * - hostlist argument (may be null)
-	     * - client pointer
-	     * We just create the old "server action" as a means
-	     * to pass arguments into the device module at this point.
-	     */
-	    act_destroy(act); /* see?  killed it and nothing bad happened */
-	}
-    }
+    while (buf_getline(c->from, buf, sizeof(buf)) > 0)
+	_parse_input(c, buf);
 }
 
 /* 

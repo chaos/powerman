@@ -31,7 +31,6 @@
 #include <ctype.h>
 #include <string.h>
 #include <sys/socket.h>
-#include <syslog.h>
 #include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -40,48 +39,127 @@
 #include "list.h"
 #include "config.h"
 #include "device.h"
-#include "action.h"
 #include "error.h"
 #include "wrappers.h"
 #include "buffer.h"
-#include "util.h"
 #include "hostlist.h"
 #include "debug.h"
 #include "client_proto.h"
 
-static int _set_targets(Device * dev, Action * sact);
-static Action *_do_target_copy(Device * dev, Action * sact, char *target);
-static int _do_target_some(Device * dev, Action * sact);
 static bool _reconnect(Device * dev);
 static bool _finish_connect(Device * dev, struct timeval *timeout);
-bool _time_to_reconnect(Device *dev, struct timeval *timeout);
+static bool _time_to_reconnect(Device *dev, struct timeval *timeout);
 static void _disconnect(Device * dev);
 static bool _process_expect(Device * dev, struct timeval *timeout);
 static void _process_send(Device * dev);
 static bool _process_delay(Device * dev, struct timeval *timeout);
 static void _do_device_semantics(Device * dev, List map);
 static bool _match_regex(Device * dev, char *expect);
-static int _acttodev(Device * dev, Action * sact);
 static int _match_name(Device * dev, void *key);
 static void _handle_read(Device * dev);
 static void _handle_write(Device * dev);
 static void _process_script(Device * dev, struct timeval *timeout);
 static bool _timeout(struct timeval * timestamp, struct timeval * timeout,
 		struct timeval *timeleft);
+static int _enqueue_actions(Device * dev, int com, hostlist_t hl, 
+		ActionCB fun, void *arg);
+static Action *_create_action(Device *dev, int com, char *target,
+		ActionCB fun, void *arg);
+static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
+		ActionCB fun, void *arg);
+static unsigned char *_findregex(regex_t * re, unsigned char *str, int len);
+static char *_getregex_buf(Buffer b, regex_t * re);
 
 static List dev_devices = NULL;
 
-/* NOTE: array positions correspond to values of PM_* in action.h */
-static char *command_str[] = {
-/* 0 */    "PM_LOG_IN", 
-/* 1 */    "PM_LOG_OUT", 
-/* 2 */    "PM_UPDATE_PLUGS", 
-/* 3 */    "PM_UPDATE_NODES", 
-/* 4 */    "PM_POWER_ON", 
-/* 5 */    "PM_POWER_OFF", 
-/* 6 */    "PM_POWER_CYCLE", 
-/* 7 */    "PM_RESET"
-};
+
+#define MAX_MATCH 20 
+
+/* 
+ * Find regular expression in string.
+ *  re (IN)	regular expression
+ *  str (IN)	where to look for regular expression
+ *  len (IN)	number of chars in str to search
+ *  RETURN	pointer to char following the last char of the match,
+ *		or NULL if no match
+ */
+static unsigned char *_findregex(regex_t * re, unsigned char *str, int len)
+{
+    int n;
+    size_t nmatch = MAX_MATCH;
+    regmatch_t pmatch[MAX_MATCH];
+    int eflags = 0;
+
+    n = Regexec(re, str, nmatch, pmatch, eflags);
+    if (n != REG_NOERROR)
+	return NULL;
+    if (pmatch[0].rm_so == -1 || pmatch[0].rm_eo == -1)
+	return NULL;
+    assert(pmatch[0].rm_eo <= len);
+    return (str + pmatch[0].rm_eo);
+}
+
+/*
+ * Apply regular expression to the contents of a Buffer.
+ * If there is a match, return (and consume) from the beginning
+ * of the buffer to the last character of the match.
+ * NOTE: embedded \0 chars are converted to \377 by buf_getstr/buf_getline and
+ * buf_peekstr/buf_getstr because libc regex functions would treat these as 
+ * string terminators.  As a result, \0 chars cannot be matched explicitly.
+ *  b (IN)	buffer to apply regex to
+ *  re (IN)	regular expression
+ *  RETURN	String match (caller must free) or NULL if no match
+ */
+static char *_getregex_buf(Buffer b, regex_t * re)
+{
+    unsigned char str[MAX_BUF];
+    int bytes_peeked = buf_peekstr(b, str, MAX_BUF);
+    unsigned char *match_end;
+
+    if (bytes_peeked == 0)
+	return NULL;
+    match_end = _findregex(re, str, bytes_peeked);
+    if (match_end == NULL)
+	return NULL;
+    assert(match_end - str <= strlen(str));
+    *match_end = '\0';
+    buf_eat(b, match_end - str);	/* only consume up to what matched */
+
+    return Strdup(str);
+}
+
+static Action *_create_action(Device *dev, int com, char *target,
+		ActionCB fun, void *arg)
+{
+    Action *act;
+
+    act = (Action *) Malloc(sizeof(Action));
+    INIT_MAGIC(act);
+    act->com = com;
+    act->cb_fun = fun;
+    act->cb_arg = arg;
+    act->itr = list_iterator_create(dev->prot->scripts[act->com]);
+    act->cur = NULL;
+    act->target = target ? Strdup(target) : NULL;
+    act->error = FALSE;
+    timerclear(&act->time_stamp);
+    return act;
+}
+
+static void _destroy_action(Action * act)
+{
+    CHECK_MAGIC(act);
+
+    if (act->target != NULL)
+        Free(act->target);
+    act->target = NULL;
+    if (act->itr != NULL)
+        list_iterator_destroy(act->itr);
+    act->itr = NULL;
+    act->cur = NULL;
+    CLEAR_MAGIC(act);
+    Free(act);
+}
 
 /* initialize this module */
 void dev_init(void)
@@ -257,83 +335,58 @@ static bool _reconnect(Device * dev)
     return (dev->connect_status == DEV_CONNECTED);
 }
 
-
 /*
- *   dev arrives here with "targets" filled in to let us know to which 
- * device components to apply the action.  We need to create the action.
- *   Returns number of actions queued.
+ * Translate a command from a client into actions for devices.
+ * Return an action count so the client be notified when all the
+ * actions "check in".
  */
-static int _acttodev(Device * dev, Action * sact)
-{
-    int count = 0;
-
-    assert(dev != NULL);
-    CHECK_MAGIC(dev);
-    assert(sact != NULL);
-    CHECK_MAGIC(sact);
-
-    if (!(dev->script_status & DEV_LOGGED_IN) && (sact->com != PM_LOG_IN)) {
-        syslog(LOG_ERR, "Attempt to initiate Action %s while not logged in", 
-			         command_str[sact->com]);
-        return count;
-    }
-    /* Some devices do not implemnt some actions - ignore */
-    if (dev->prot->scripts[sact->com] == NULL)
-        return count;
-
-    /* This actually creates the one or more Actions for the Device */
-    count += _set_targets(dev, sact);
-
-    return count;
-}
-
-int dev_apply_action(Action *act)
+int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, void *arg)
 {
     Device *dev;
     ListIterator itr;
     int count = 0;
 
     itr = list_iterator_create(dev_devices);
-    while ((dev = list_next(itr)))
-        count += _acttodev(dev, act);
+    while ((dev = list_next(itr))) {
+	/* not logged in to device */
+	if (!(dev->script_status & DEV_LOGGED_IN) && com != PM_LOG_IN) {
+	    if (fun)
+		fun(arg, TRUE); /* FIXME: timeout message inappropriate */
+	    continue;
+	}
+	/* command not implemented on this device */
+	if (dev->prot->scripts[com] == NULL) {
+	    if (fun)
+		fun(arg, TRUE);	/* FIXME: timeout message inappropriate */
+	    continue;
+	}
+	/* do the real work */
+	count += _enqueue_actions(dev, com, hl, fun, arg);
+    }
     list_iterator_destroy(itr);
 
     return count;
 }
 
-/* 
- *   There are several cases of what the desired end result is. 
- * Only PM_LOG_IN pushes its action onto the front of the queue.
- * Nothing can happen until we get logged in, anyway.  If there 
- * were some other action onging when a connection was lost,
- * then it needs its script restarted.
- *   The next five cases always target all nodes, so just create
- * a new Action for the device and queue it up.
- *   The last five take specific targets for their Action.  In
- * LITERL mode you have to go through the Plugs one by one
- * looking for regex matches with the target.  IN REGEX mode
- * you can copy the regex right into the target device's 
- * Action and then queu it up.
- */
-static int _set_targets(Device * dev, Action * sact)
+static int _enqueue_actions(Device *dev, int com, hostlist_t hl, 
+		ActionCB fun, void *arg)
 {
     Action *act;
     int count = 0;
 
-    switch (sact->com) {
+    switch (com) {
         case PM_LOG_IN:
             /* reset script of preempted action so it starts over */
             if (!list_is_empty(dev->acts)) {
                 act = list_peek(dev->acts);
                 list_iterator_reset(act->itr);
             }
-
-            act = _do_target_copy(dev, sact, NULL);
+            act = _create_action(dev, com, NULL, fun, arg);
             list_push(dev->acts, act);
 	    count++;
             break;
         case PM_LOG_OUT:
-            act = _do_target_copy(dev, sact, NULL);
+            act = _create_action(dev, com, NULL, fun, arg);
             list_append(dev->acts, act);
 	    count++;
             break;
@@ -343,8 +396,13 @@ static int _set_targets(Device * dev, Action * sact)
         case PM_POWER_OFF:
         case PM_POWER_CYCLE:
         case PM_RESET:
-            assert(sact->target != NULL);
-	    count += _do_target_some(dev, sact);
+	    if (hl != NULL) {
+		count += _enqueue_targetted_actions(dev, com, hl, fun, arg);
+	    } else {
+		act = _create_action(dev, com, NULL, fun, arg); 
+		list_append(dev->acts, act);
+		count++;
+	    }
             break;
         default:
             assert(FALSE);
@@ -354,79 +412,45 @@ static int _set_targets(Device * dev, Action * sact)
 }
 
 
-/* 
- *   The new Device Action is going to get its info directly from 
- * the Server Action, except we've stated it's target explicitly in 
- * the parameters list.  A NULL target means leave the Action's
- * target NULL as well (it comes that way from act_create()).
- */
-Action *_do_target_copy(Device * dev, Action * sact, char *target)
+static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
+		ActionCB fun, void *arg)
 {
+    List new_acts = list_create((ListDelF) _destroy_action);
     Action *act;
-
-    act = act_create(sact->com);
-    act->client = sact->client;
-    act->seq = sact->seq;
-    act->itr = list_iterator_create(dev->prot->scripts[act->com]);
-    if (target != NULL)
-	act->target = Strdup(target);
-    return act;
-}
-
-/* 
- *   This is the tricky case for _set_targets().  We have a target in
- * the Server Action, and it is a hostlist.  We have to sequence through
- * each plug and see if the node connected to the plug has a name
- * that matches that RegEx.  If it does we add it to a tentative list
- * of new Actions for the Device, but we're not through.  If all of
- * the plugs' nodes match then we want to send the Device's special
- * "all" signal (every device has one).  Conversely, no plugs match
- * then no actions are added.  
- */
-static int _do_target_some(Device * dev, Action * sact)
-{
-    Action *act;
-    List new_acts;
-    bool all = TRUE, any = FALSE;
+    bool all = TRUE;
     Plug *plug;
-    ListIterator plug_i;
+    ListIterator itr;
     int count = 0;
 
-    new_acts = list_create((ListDelF) act_destroy);
-    plug_i = list_iterator_create(dev->plugs);
-    while ((plug = list_next(plug_i))) {
-        /* If plug->node == NULL it means that there is no node pluged
-         * into that plug, not not managed by powerman.  Never use the
-         * all in this case
-         */
-        if (plug->node == NULL) {
+    itr = list_iterator_create(dev->plugs);
+    while ((plug = list_next(itr))) {
+	/* antisocial to gratuitously turn on/off unused plug */
+        if (plug->node == NULL) { 
             all = FALSE;
             continue;
         }
-
-        /* check if plug->node->name matches the target */
-        if (hostlist_find(sact->hl, plug->node->name) != -1) {
-            any = TRUE;
-            act = _do_target_copy(dev, sact, plug->name);
-            list_append(new_acts, act);
-        } else {
-            all = FALSE;
-        }
+        /* check if node name for plug matches the target */
+        if (hostlist_find(hl, plug->node->name) == -1) {
+	    all = FALSE;
+	    continue;
+	}
+	/* match! */
+	act = _create_action(dev, com, plug->name, fun, arg);
+	list_append(new_acts, act);
     }
 
     if (all) {
-        act = _do_target_copy(dev, sact, dev->all);
+	act = _create_action(dev, com, dev->all, fun, arg);
         list_append(dev->acts, act);
 	count++;
     } else {
-        if (any)
-            while ((act = list_pop(new_acts))) {
-                list_append(dev->acts, act);
-		count++;
-	    }
+        while ((act = list_pop(new_acts))) {
+	    list_append(dev->acts, act);
+	    count++;
+	}
     }
 
-    list_iterator_destroy(plug_i);
+    list_iterator_destroy(itr);
     list_destroy(new_acts);
 
     return count;
@@ -442,30 +466,27 @@ static int _do_target_some(Device * dev, Action * sact)
 static bool _finish_connect(Device *dev, struct timeval *tv)
 {
     int rc;
-    int err = 0;
+    int error = 0;
     int len = sizeof(err);
-    Action *act;
 
     assert(dev->connect_status == DEV_CONNECTING);
-    rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &err, &len);
+    rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &error, &len);
     /*
      *  If an error occurred, Berkeley-derived implementations
      *    return 0 with the pending error in 'err'.  But Solaris
      *    returns -1 with the pending error in 'errno'.  -dun
      */
     if (rc < 0)
-	err = errno;
-    if (err) {
-	syslog(LOG_INFO, "connect to %s: %m\n", dev->name);
-	dbg(DBG_DEVICE, "_finish_connect: %s: %s", dev->name, strerror(err));
+	error = errno;
+    if (error) {
+	err(FALSE, "_finish_connect %s: %s", dev->name, strerror(error));
 	_disconnect(dev);
 	if (_time_to_reconnect(dev, tv))
 	    _reconnect(dev);
     } else {
-	syslog(LOG_INFO, "_finish_connect: %s connected\n", dev->name);
+	err(FALSE, "_finish_connect: %s connected\n", dev->name);
 	dev->connect_status = DEV_CONNECTED;
-	act = act_create(PM_LOG_IN);
-	_acttodev(dev, act);
+        _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL);
     }
 
     return (dev->connect_status == DEV_CONNECTED);
@@ -483,13 +504,12 @@ static void _handle_read(Device * dev)
 
     CHECK_MAGIC(dev);
     n = buf_read(dev->from);
-    if ((n < 0) && (errno == EWOULDBLOCK)) { /* XXX */
-	dbg(DBG_DEVICE, "read %s fd %d would block!", dev->name, dev->fd);
+    if (n < 0 && errno == EWOULDBLOCK) {
+	err(TRUE, "read error on %s", dev->name);
 	return;
     }
-    if ((n == 0) || ((n < 0) && (errno == ECONNRESET))) {
-	syslog(LOG_ERR, "read error on %s", dev->name);
-	dbg(DBG_DEVICE, "read error on %s", dev->name);
+    if (n == 0 || (n < 0 && errno == ECONNRESET)) {
+	err(n < 0, "read error on %s", dev->name);
 	_disconnect(dev);
 	dev->reconnect_count = 0;
 	_reconnect(dev);
@@ -523,8 +543,8 @@ static void _disconnect(Device *dev)
     dev->script_status = 0;
 
     /* delete PM_LOG_IN action queued for this device, if any */
-    if (((act = list_peek(dev->acts)) != NULL) && (act->com == PM_LOG_IN))
-	act_del_queuehead(dev->acts);
+    if (((act = list_peek(dev->acts)) != NULL) && act->com == PM_LOG_IN)
+	_destroy_action(list_pop(dev->acts));
 }
 
 /*
@@ -538,13 +558,12 @@ static void _process_script(Device * dev, struct timeval *timeout)
     while (!stalled) {
 	Action *act = list_peek(dev->acts);
 
-	if (act == NULL)
+	if (act == NULL)		/* no actions in queue */
 	    break;
-
-	if (act->cur == NULL)
+	assert(act->itr != NULL);
+	if (act->cur == NULL)		/* point at first script element */
 	    act->cur = list_next(act->itr);
-
-	assert(act->cur != NULL);
+	assert(act->cur != NULL);	/* there must be a first ... */
 
 	switch (act->cur->type) {
 	    case EL_EXPECT:
@@ -569,10 +588,11 @@ static void _process_script(Device * dev, struct timeval *timeout)
 		if (act->com == PM_LOG_IN) {	/* completed login action... */
 		    if (!act->error)
 			dev->script_status |= DEV_LOGGED_IN;
-		} else
-		    cli_reply(act);		/* reply to client if necc */
-
-		act_del_queuehead(dev->acts);	/* delete completed action */
+		} else {
+		    if (act->cb_fun)		/* notify client */
+			act->cb_fun(act->cb_arg, act->error);
+		}
+		_destroy_action(list_pop(dev->acts)); /* delete completed act */
 	    }
 	}
     }
@@ -606,7 +626,7 @@ bool _process_expect(Device * dev, struct timeval *timeout)
 
     re = &act->cur->s_or_e.expect.exp;
 
-    if ((expect = buf_getregex(dev->from, re))) {	/* match */
+    if ((expect = _getregex_buf(dev->from, re))) {	/* match */
 	dbg(DBG_SCRIPT, "_process_expect(%s): match", dev->name);
 
 	/* process values of parenthesized subexpressions */
@@ -625,7 +645,6 @@ bool _process_expect(Device * dev, struct timeval *timeout)
 	dev->reconnect_count = 0;
 	_reconnect(dev);
 	act->error = TRUE;
-	cli_errmsg(act, CP_ERR_TIMEOUT);
 	finished = TRUE;
     } else {						/* keep trying */
 	_update_timeout(timeout, &timeleft);
@@ -747,10 +766,10 @@ void _do_device_semantics(Device * dev, List map)
 	    tmp = *end;
 	    len = end - str;
 	    *end = '\0';
-	    if ((pos = util_findregex(re, str, len)) != NULL)
+	    if ((pos = _findregex(re, str, len)) != NULL)
 		interp->node->p_state = ST_ON;
 	    re = &(dev->off_re);
-	    if ((pos = util_findregex(re, str, len)) != NULL)
+	    if ((pos = _findregex(re, str, len)) != NULL)
 		interp->node->p_state = ST_OFF;
 	    *end = tmp;
 	}
@@ -769,10 +788,10 @@ void _do_device_semantics(Device * dev, List map)
 	    tmp = *end;
 	    len = end - str;
 	    *end = '\0';
-	    if ((pos = util_findregex(re, str, len)) != NULL)
+	    if ((pos = _findregex(re, str, len)) != NULL)
 		interp->node->n_state = ST_ON;
 	    re = &(dev->off_re);
-	    if ((pos = util_findregex(re, str, len)) != NULL)
+	    if ((pos = _findregex(re, str, len)) != NULL)
 		interp->node->n_state = ST_OFF;
 	    *end = tmp;
 	}
@@ -811,7 +830,7 @@ Device *dev_create(const char *name)
     dev->connect_status = DEV_NOT_CONNECTED;
     dev->script_status = 0;
     dev->fd = NO_FD;
-    dev->acts = list_create((ListDelF) act_destroy);
+    dev->acts = list_create((ListDelF) _destroy_action);
     Gettimeofday(&dev->time_stamp, NULL);
     timerclear(&dev->timeout);
     dev->to = NULL;
@@ -1027,19 +1046,14 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
     ListIterator itr;
 
     itr = list_iterator_create(dev_devices);
-
     while ((dev = list_next(itr))) {
 
-	/* 
-	 * (Re)connect if device not connected.
-	 * If we are still waiting for a connect timeout, modify 'timeout' 
-	 * so select can wake up when it expires and run us again.
-	 */
-	if (dev->connect_status == DEV_NOT_CONNECTED 
-			&& _time_to_reconnect(dev, timeout)) {
-	    if (!_reconnect(dev))
+	/* reconnect if necessary */
+	if (dev->connect_status == DEV_NOT_CONNECTED) {
+	    if (_time_to_reconnect(dev, timeout) && !_reconnect(dev))
 		continue;
 	}
+
 	if (dev->fd == NO_FD)
 	    continue;
 
@@ -1059,7 +1073,6 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 	/* in case of I/O or timeout, process scripts (expect/send/delay) */
 	_process_script(dev, timeout);
     }
-
     list_iterator_destroy(itr);
 }
 

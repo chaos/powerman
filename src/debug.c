@@ -77,7 +77,7 @@ void dbg(unsigned long channel, const char *fmt, ...)
 {
     va_list ap;
 
-    if (channel & dbg_channel_mask) {
+    if ((channel & dbg_channel_mask) == channel) {
 	char buf[DBG_BUFLEN];
 
 	va_start(ap, fmt);
@@ -86,7 +86,7 @@ void dbg(unsigned long channel, const char *fmt, ...)
 	va_end(ap);
 
 	if (dbg_ttyvalid)
-	    printf("%s: %s\n", _channel_name(channel), buf);
+	    fprintf(stderr, "%s: %s\n", _channel_name(channel), buf);
         else
 	    syslog(LOG_DEBUG, "%s: %s", _channel_name(channel), buf);
     }

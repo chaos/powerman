@@ -30,12 +30,12 @@ sbindir=        ${exec_prefix}/sbin
 libdir=         ${exec_prefix}/lib
 packagedir=     ${etcdir}/${PACKAGE}
 
-COMMON_OBJS = wrappers.o error.o hostlist.o
+COMMON_OBJS = wrappers.o error.o hostlist.o debug.o
 
-SERVER_UTIL = $(COMMON_OBJS) daemon.o util.o buffer.o
+SERVER_UTIL = $(COMMON_OBJS) daemon.o buffer.o
 
-SERVER_OBJS = $(SERVER_UTIL) list.o action.o config.o device.o \
-	      powermand.o client.o parse_lex.o parse_tab.o debug.o
+SERVER_OBJS = $(SERVER_UTIL) list.o config.o device.o \
+	      powermand.o client.o parse_lex.o parse_tab.o
 
 CLIENT_OBJS = $(COMMON_OBJS) powerman.o
 

@@ -40,8 +40,9 @@
 #include "list.h"
 #include "error.h"
 #include "wrappers.h"
+#include "debug.h"
 
-static char *err_prog = NULL;	/* basename of calling program */
+static char *err_prog = NULL;		/* basename of calling program */
 static bool err_ttyvalid = TRUE;	/* use stderr until told otherwise */
 
 #define ERROR_BUFLEN 1024
@@ -64,22 +65,15 @@ void err_notty(void)
     err_ttyvalid = FALSE;
 }
 
-/*
- * Report error message on either stderr or syslog, then exit.
- */
-void err_exit(bool errno_valid, const char *fmt, ...)
+/* helper for err, err_exit */
+static void _verr(bool errno_valid, const char *fmt, va_list ap) 
 {
-    va_list ap;
     char buf[ERROR_BUFLEN];
     int er = errno;
 
     assert(err_prog!= NULL);
 
-    va_start(ap, fmt);
-    vsnprintf(buf, ERROR_BUFLEN, fmt, ap);
-    /* overflow ignored on purpose */
-    va_end(ap);
-
+    vsnprintf(buf, ERROR_BUFLEN, fmt, ap); /* overflow ignored on purpose */
     if (errno_valid) {
 	if (err_ttyvalid)
 	    fprintf(stderr, "%s: %s: %s\n", err_prog, buf, strerror(er));
@@ -92,11 +86,34 @@ void err_exit(bool errno_valid, const char *fmt, ...)
 	    syslog(LOG_ERR, "%s", buf);
     }
 
-#ifndef NDEBUG
-	  fprintf(stderr, "memory not reclaimed: %d\n", Memory());
-#endif
+}
+
+/*
+ * Report error message on either stderr or syslog, then exit.
+ */
+void err_exit(bool errno_valid, const char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    _verr(errno_valid, fmt, ap);
+    va_end(ap);
+    dbg(DBG_MEMORY, "err_exit: memory not reclaimed: %d\n", Memory());
     exit(1);
 }
+
+/*
+ * Report error message on either stderr or syslog, then return.
+ */
+void err(bool errno_valid, const char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    _verr(errno_valid, fmt, ap);
+    va_end(ap);
+}
+
 
 /*
  * vi:softtabstop=4

@@ -38,7 +38,6 @@
 #include "list.h"
 #include "config.h"
 #include "device.h"
-#include "action.h"
 #include "wrappers.h"
 #include "config.h"
 #include "client.h"
@@ -312,7 +311,6 @@ Node *conf_node_create(const char *name)
     node->name = Strdup(name);
     node->p_state = ST_UNKNOWN;
     node->n_state = ST_UNKNOWN;
-    node->dev = NULL;
     return node;
 }
 

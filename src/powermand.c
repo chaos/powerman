@@ -40,7 +40,6 @@
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
-#include <syslog.h>
 #include <stdio.h>
 #include <assert.h>
 
@@ -48,12 +47,10 @@
 #include "list.h"
 #include "config.h"
 #include "device.h"
-#include "action.h"
 #include "daemon.h"
 #include "client.h"
 #include "error.h"
 #include "wrappers.h"
-#include "util.h"
 #include "debug.h"
 
 /* prototypes */

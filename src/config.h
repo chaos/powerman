@@ -104,7 +104,6 @@ typedef struct {
     char	    *name;	/* hostname */
     State_Val	    p_state;	/* plug state, i.e. hard-power status */
     State_Val	    n_state;	/* node state, i.e. soft-power status */
-    Device	    *dev;	/* device */
     MAGIC;
 } Node;
 

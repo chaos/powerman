@@ -32,5 +32,6 @@
 void err_init(char *prog);
 void err_notty(void);
 void err_exit(bool errno_valid, const char *fmt, ...);
+void err(bool errno_valid, const char *fmt, ...);
 
 #endif				/* EXIT_ERROR_H */

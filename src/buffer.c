@@ -37,7 +37,6 @@
 
 #include "error.h"
 #include "wrappers.h"
-#include "util.h"
 #include "buffer.h"
 #include "debug.h"
 
@@ -289,35 +288,6 @@ int buf_getstr(Buffer b, unsigned char *str, int len)
     cpy_len = buf_peekstr(b, str, len);
     buf_eat(b, cpy_len);
     return cpy_len;
-}
-
-/*
- * Apply regular expression to the contents of a Buffer.
- * If there is a match, return (and consume) from the beginning
- * of the buffer to the last character of the match.
- * NOTE: embedded \0 chars are converted to \377 by buf_getstr/buf_getline and
- * buf_peekstr/buf_getstr because libc regex functions would treat these as 
- * string terminators.  As a result, \0 chars cannot be matched explicitly.
- *  b (IN)	buffer to apply regex to
- *  re (IN)	regular expression
- *  RETURN	String match (caller must free) or NULL if no match
- */
-char *buf_getregex(Buffer b, regex_t * re)
-{
-    unsigned char str[MAX_BUF];
-    int bytes_peeked = buf_peekstr(b, str, MAX_BUF);
-    unsigned char *match_end;
-
-    if (bytes_peeked == 0)
-	return NULL;
-    match_end = util_findregex(re, str, bytes_peeked);
-    if (match_end == NULL)
-	return NULL;
-    assert(match_end - str <= strlen(str));
-    *match_end = '\0';
-    buf_eat(b, match_end - str);	/* only consume up to what matched */
-
-    return Strdup(str);
 }
 
 /* 

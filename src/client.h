@@ -28,8 +28,16 @@
 #define CLIENT_H
 
 #include "buffer.h"
+#include "hostlist.h"
 
 #define NO_PORT           (-1)
+
+typedef struct {
+    int			com;		/* script index */
+    hostlist_t		hl;		/* target nodes */
+    int			pending;	/* count of pending device actions */
+    bool		error;		/* cumulative error flag for actions */
+} Command;
 
 typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE } Client_Status;
 typedef struct {
@@ -41,24 +49,16 @@ typedef struct {
     char    		*host;		/* host name of client host */
     Buffer 		to;		/* out buffer */
     Buffer 		from;		/* in buffer */
-    int			act_count;	/* pending device actions */
-    bool		act_error;	/* cumulative error flag for actions */
-    bool		busy;		/* "lock" for one command at a time */
+    Command		*cmd;		/* command (there can be only one) */
     MAGIC;
 } Client;
-
-void cli_reply(Action *act);
-void cli_errmsg(Action *act, char *msg);
 
 void cli_init(void);
 void cli_fini(void);
 
 void cli_listen(void);
 
-bool cli_exists(Client *cli);
-
 void cli_post_select(fd_set *rset, fd_set *wset);
 void cli_pre_select(fd_set *rset, fd_set *wset, int *maxfd);
-
 
 #endif				/* CLIENT_H */

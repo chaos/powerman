@@ -58,6 +58,7 @@
 #define CP_OFF		"off %s"
 #define CP_NODES	"nodes"
 #define CP_STATUS	"status %s"
+#define CP_STATUS_ALL	"status"
 
 /* 
  * Responses - response codes from 100-199 are success, 200-299 are failure.
@@ -76,11 +77,11 @@
 	"102 unknown: %s" 				CP_EOL	/* hostlists */
 #define CP_RSP_HELP 	\
 	"104 nodes                - query node list" 	CP_EOL	\
-	"104 status <nodes>       - query power status"	CP_EOL	\
-	"104 on <nodes>           - hard power on" 	CP_EOL	\
-	"104 off <nodes>          - hard power off"	CP_EOL	\
-	"104 cycle <nodes>        - hard power cycle"	CP_EOL	\
-	"104 reset <nodes>        - soft power reset"	CP_EOL	\
+	"104 status [<nodes>]     - query power status"	CP_EOL	\
+	"104 on <nodes>           - power on" 		CP_EOL	\
+	"104 off <nodes>          - power off"		CP_EOL	\
+	"104 cycle <nodes>        - power cycle"	CP_EOL	\
+	"104 reset <nodes>        - hardware reset (if available)" CP_EOL	\
 	"104 help                 - display help"	CP_EOL	\
 	"104 quit                 - logout"		CP_EOL
 #define CP_RSP_COMPLETE	"105 Command completed successfully" CP_EOL
@@ -98,5 +99,6 @@
 #define CP_ERR_COMPLETE	"209 Command completed with errors" CP_EOL
 #define CP_ERR_TIMEOUT	"210 Command timed out" 	CP_EOL
 #define CP_ERR_CLIBUSY	"211 Command in progress, shuddup please" CP_EOL
+#define CP_ERR_NOACTION	"213 Command resulted in no device actions" CP_EOL
 
 #endif /* CLIENT_PROTO_H */

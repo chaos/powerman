@@ -1,8 +1,19 @@
 2002-10-02 garlick
-  * Fixed memory leak in config parsing.  Memory was being malloc'ed
-    for each line in the config file as it was parsed; pointers to this
-    memory were not preserved and the memory was never free'd.  These
-    pointers are now tracked and free'd after scanning completes. (behlendo)
+	* Created Command data structure to represent what was called
+	  a "server action" and moved device action functions to device.c 
+	  and got rid of action.[ch]
+	* Device actions now execute a callback to the client code rather
+	  than call exported functions.
+	* Made the status command's hostlist argument optional.
+	* Still seeing SIGSEGV when running "on v1,v2" with vpcd --bad_response
+
+2002-10-02 behlendo
+  	* Fixed memory leak in config parsing.  Memory was being malloc'ed
+    	  for each line in the config file as it was parsed; pointers to this
+    	  memory were not preserved and the memory was never free'd.  These
+    	  pointers are now tracked and free'd after scanning completes.
+
+2002-10-02 garlick
 	* Changed protocol so query-status is now status and requires an
 	  argument, and query-nodes is now nodes.
 	* No more server action queue.
@@ -28,7 +39,6 @@
 	* Incomplete work on _process_expect() so it uses the select loop
 	  to time out. TODO: 
 	  - no response does not cause a timeout
-	  - expect timeout should cause actions to be retried
 	  - results need to be included in the client reply
 	* Added separate ice box v3 config - i think the timeouts/delays
 	  are going to be subtly different but worth caring about at MCR scale.

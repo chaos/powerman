@@ -29,12 +29,47 @@
 
 #include <regex.h>
 #include "buffer.h"
+#include "hostlist.h"
 
 /* bitwise values for dev->script_status */
 #define DEV_LOGGED_IN	    1
 #define DEV_SENDING	    2
 #define DEV_EXPECTING	    4
 #define DEV_DELAYING	    8
+
+/*
+ * Action
+ */
+
+/* Indices into script arrays */
+/* Note: keep in sync with command_str[] array in device.c */
+/* Note: NUM_SCRIPTS in config.h should also agree */
+#define PM_LOG_IN           0
+#define PM_LOG_OUT          1
+#define PM_UPDATE_PLUGS     2
+#define PM_UPDATE_NODES     3
+#define PM_POWER_ON         4
+#define PM_POWER_OFF        5
+#define PM_POWER_CYCLE      6
+#define PM_RESET            7
+
+
+typedef void (*ActionCB)(void *arg, bool error);
+
+/*
+ * Actions are appended to a per device list in dev->acts
+ */
+typedef struct {
+    int          com;     /* one of the PM_* above */
+    ListIterator itr;     /* next place in the script sequence */
+    Script_El    *cur;    /* current place in the script sequence */
+    char         *target; /* native device represenation of target plug(s) */
+    ActionCB	 cb_fun;  /* callback for action completion */
+    void	 *cb_arg; /* opaque argument for above */
+    bool	 error;	  /* error flag for action */
+    struct timeval  time_stamp; /* time stamp for timeouts */
+    MAGIC;
+} Action;
 
 typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectStat;
 
@@ -49,7 +84,7 @@ typedef struct {
 /*
  * Device
  */
-struct device_struct {
+typedef struct {
     char	    *name;	    /* name of device */
     char	    *all;	    /* string for to select all plugs */
     regex_t	    on_re;	    /* regex to match "on" in query */
@@ -81,14 +116,12 @@ struct device_struct {
     struct timeval  last_reconnect; /* time of last reconnect attempt */
     int		    reconnect_count;/* number of reconnects attempted */
     MAGIC;
-};
-/* FIXME: data structures are circular here - typedef in powerman.h jg */
-
+} Device;
 
 void dev_init(void);
 void dev_fini(void);
 void dev_add(Device *dev);
-int dev_apply_action(Action *act);
+int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, void *arg);
 void dev_initial_connect(void);
 
 Device *dev_create();

@@ -27,10 +27,9 @@
 #ifndef POWERMAN_H
 #define POWERMAN_H
 
-#define PROJECT "powerman"
-#define VERSION "1.0.0"
-
 typedef enum { FALSE = 0, TRUE = 1 } bool;
+
+typedef enum { NO_DEV, TCP_DEV } Dev_Type;
 
 #define NO_FD           (-1)
 #define	MAXFD	         64
@@ -65,10 +64,5 @@ typedef enum { FALSE = 0, TRUE = 1 } bool;
 #define PID_DIR       		"/var/run/powerman"
 #define ROOT_DIR      		"/etc/powerman"
 #define DFLT_CONFIG_FILE 	"/etc/powerman/powerman.conf"
-
-typedef struct action_struct Action;	/* FIXME: circular definition */
-typedef struct device_struct Device;	/* FIXME: circular definition */
-
-typedef enum { NO_DEV, TCP_DEV } Dev_Type;
 
 #endif				/* POWERMAN_H */
