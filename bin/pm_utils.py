@@ -178,13 +178,11 @@ def prompt(string):
         signal.alarm(READ_TIMEOUT)
         try:
             response = response + os.read(tty, BUF_SIZE)
+            signal.alarm(ALARM_OFF)
         except OSError:
             timed_out = 1
-        signal.alarm(ALARM_OFF)
+            continue
         trace(response)
-        if (not((response[0:1] == 'N') or (response[0:1] == 'E'))):
-            # dump the first garbage character, shouldn't be more than one
-            response = response[1:]
         if (response[-1:] == '\n'):
             done = 1
     if (done and (retry_count > 1)):
