@@ -3,6 +3,12 @@
     * etc/cyclades-pm8.dev: fixed status script to not fail intermittently
     depending on breakdown of partial reads.
 
+    * etc/cyclades-pm8.dev: device has a non-configurable inactivity
+    timeout so log on and off for each command.
+
+    * etc/baytech-rpc28-nc.dev: add a crlf before each command in case we
+    get logged off due to inactivity timeout.
+
     * powerman.spec: add %dir entries for directories that may be inadvertantly
     created with too restrictive permissions like /usr/man/man7.
 
