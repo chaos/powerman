@@ -117,6 +117,9 @@ typedef enum { ACT_ESUCCESS, ACT_EEXPFAIL, ACT_EABORT, ACT_ECONNECTTIMEOUT,
 typedef void (*ActionCB) (int client_id, ActError acterr, const char *fmt, ...);
 typedef void (*VerbosePrintf) (int client_id, const char *fmt, ...);
 
+#define MIN_DEV_BUF     1024
+#define MAX_DEV_BUF     1024*1024
+
 void dev_init(void);
 void dev_fini(void);
 void dev_add(Device * dev);
@@ -141,6 +144,11 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *tv);
 ArgList *dev_create_arglist(hostlist_t hl);
 ArgList *dev_link_arglist(ArgList * arglist);
 void dev_unlink_arglist(ArgList * arglist);
+
+void dev_login(Device *dev);
+void dev_disconnect(Device *dev);
+bool dev_reconnect(Device *dev);
+bool dev_time_to_reconnect(Device * dev, struct timeval *timeout);
 
 #endif                          /* DEVICE_H */
 

@@ -31,15 +31,9 @@
 #include <ctype.h>
 #include <string.h>
 #include <stdarg.h>
-#include <sys/socket.h>
 #include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
-#include <termios.h>
-
-#define TELOPTS
-#define TELCMDS
-#include <arpa/telnet.h>
 
 #include "powerman.h"
 #include "list.h"
@@ -51,9 +45,9 @@
 #include "hostlist.h"
 #include "debug.h"
 #include "client_proto.h"
-
-#define MIN_DEV_BUF     1024
-#define MAX_DEV_BUF     1024*1024
+#include "device_telnet.h"
+#include "device_serial.h"
+#include "device_tcp.h"
 
 /*
  * Actions are appended to a per device list in dev->acts
@@ -77,14 +71,6 @@ typedef struct {
 #define _act_started(act)   ((act)->cur != NULL)
 
 
-static bool _time_to_reconnect(Device * dev, struct timeval *timeout);
-static bool _reconnect(Device * dev);
-static void _disconnect(Device * dev);
-static bool _tcp_reconnect(Device * dev);
-static bool _tcp_finish_connect(Device * dev, struct timeval *timeout);
-static void _tcp_disconnect(Device * dev);
-static bool _serial_reconnect(Device * dev);
-static void _serial_disconnect(Device * dev);
 static bool _process_expect(Device * dev);
 static bool _process_send(Device * dev);
 static bool _process_delay(Device * dev, struct timeval *timeout);
@@ -115,12 +101,6 @@ static unsigned char *_findregex(regex_t * re, unsigned char *str,
 static char *_getregex_buf(cbuf_t b, regex_t * re);
 static bool _command_needs_device(Device * dev, hostlist_t hl);
 static void _process_ping(Device * dev, struct timeval *timeout);
-static void _init_telnet(Device * dev);
-static void _process_telnet(Device * dev);
-static void _telnet_recvcmd(Device *dev, unsigned char cmd);
-static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt);
-static void _telnet_sendcmd(Device *dev, unsigned char cmd);
-static void _telnet_sendopt(Device *dev, unsigned char cmd, unsigned char opt);
 
 static List dev_devices = NULL;
 
@@ -319,7 +299,7 @@ void _update_timeout(struct timeval *timeout, struct timeval *tv)
  * Return TRUE if OK to attempt reconnect.  If FALSE, put the time left 
  * in timeout if it is less than timeout or if timeout is zero.
  */
-bool _time_to_reconnect(Device * dev, struct timeval *timeout)
+bool dev_time_to_reconnect(Device * dev, struct timeval *timeout)
 {
     static int rtab[] = { 1, 2, 4, 8, 15, 30, 60 };
     int max_rtab_index = sizeof(rtab) / sizeof(int) - 1;
@@ -340,213 +320,7 @@ bool _time_to_reconnect(Device * dev, struct timeval *timeout)
     return reconnect;
 }
 
-
-/*
- * Nonblocking TCP connect.
- * _tcp_finish_connect will finish the job.
- */
-static bool _tcp_reconnect(Device * dev)
-{
-    struct addrinfo hints, *addrinfo;
-    int sock_opt;
-    int fd_settings;
-
-    assert(dev->magic == DEV_MAGIC);
-    assert(dev->type == TCP_DEV || dev->type == TELNET_DEV);
-    assert(dev->connect_status == DEV_NOT_CONNECTED);
-    assert(dev->fd == NO_FD);
-
-    Gettimeofday(&dev->last_retry, NULL);
-    dev->retry_count++;
-
-    memset(&hints, 0, sizeof(struct addrinfo));
-    addrinfo = &hints;
-    hints.ai_flags = AI_CANONNAME;
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    Getaddrinfo(dev->u.tcp.host, dev->u.tcp.service, &hints, &addrinfo);
-
-    dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
-                     addrinfo->ai_protocol);
-
-    dbg(DBG_DEVICE, "_tcp_reconnect: %s on fd %d", dev->name, dev->fd);
-
-    /* set up and initiate a non-blocking connect */
-
-    sock_opt = 1;
-    Setsockopt(dev->fd, SOL_SOCKET, SO_REUSEADDR,
-               &(sock_opt), sizeof(sock_opt));
-    fd_settings = Fcntl(dev->fd, F_GETFL, 0);
-    Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
-
-    /* Connect - 0 = connected, -1 implies EINPROGRESS */
-    dev->connect_status = DEV_CONNECTING;
-    if (Connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen) >= 0)
-        _tcp_finish_connect(dev, NULL);
-    freeaddrinfo(addrinfo);
-
-    {
-        Action *act = list_peek(dev->acts);
-        if (act)
-            dbg(DBG_ACTION, "_tcp_reconnect: next action on queue: %d",
-                act->com);
-        else
-            dbg(DBG_ACTION, "_tcp_reconnect: no action on queue");
-    }
-
-    return (dev->connect_status == DEV_CONNECTED);
-}
-
-typedef struct {
-    int baud;
-    speed_t bconst;
-} baudmap_t;
-static baudmap_t baudmap[] = {
-    {300, B300},   {1200, B1200},   {2400, B2400},   {4800, B4800}, 
-    {9600, B9600}, {19200, B19200}, {38400, B38400},
-};
-
-/* Set up serial port: 0 on success, <0 on error */
-static int _serial_setup(char *devname, int fd, int baud, int databits, 
-        char parity, int stopbits)
-{
-    int res;
-    struct termios tio;
-    int i;
-    res = tcgetattr(fd, &tio);
-    if (res < 0) {
-        err(TRUE, "%s: error getting serial attributes\n", devname);
-        return -1;
-    }
-
-    res = -1;
-    for (i = 0; i < sizeof(baudmap)/sizeof(baudmap_t); i++) {
-        if (baudmap[i].baud == baud) {
-            if ((res = cfsetispeed(&tio, baudmap[i].bconst)) == 0)
-                 res = cfsetospeed(&tio, baudmap[i].bconst);
-            break;
-        }
-    }
-    if (res < 0) {
-        err(FALSE, "%s: error setting baud rate to %d\n", devname, baud);
-        return -1;
-    }
-
-    switch (databits) {
-        case 7:
-            tio.c_cflag &= ~CSIZE;
-            tio.c_cflag |= CS7;
-            break;
-        case 8:
-            tio.c_cflag &= ~CSIZE;
-            tio.c_cflag |= CS8;
-            break;
-        default:
-            err(FALSE, "%s: error setting data bits to %d\n", 
-                    devname, databits);
-            return -1;
-    }
-
-    switch (stopbits) {
-        case 1:
-            tio.c_cflag &= ~CSTOPB;
-            break;
-        case 2:
-            tio.c_cflag |= CSTOPB;
-            break;
-        default:
-            err(FALSE, "%s: error setting stop bits to %d\n", 
-                    devname, stopbits);
-            return -1;
-    }
-
-    switch (parity) {
-        case 'n':
-        case 'N':
-            tio.c_cflag &= ~PARENB;
-            break;
-        case 'e':
-        case 'E':
-            tio.c_cflag |= PARENB;
-            tio.c_cflag &= ~PARODD;
-            break;
-        case 'o':
-        case 'O':
-            tio.c_cflag |= PARENB;
-            tio.c_cflag |= PARODD;
-            break;
-        default:
-            err(FALSE, "%s: error setting parity to %c\n", 
-                    devname, parity);
-            return -1;
-    }
-
-    tio.c_oflag &= ~OPOST; /* turn off post-processing of output */
-    tio.c_iflag = tio.c_lflag = 0;
-
-
-    if (tcsetattr(fd, TCSANOW, &tio) < 0) {
-        err(TRUE, "%s: error setting serial attributes\n", devname);
-        return -1;
-    }
-    return 0;
-}
-
-/*
- * Open the special file associated with this device.
- */
-static bool _serial_reconnect(Device * dev)
-{
-    int baud = 9600, databits = 8, stopbits = 1; 
-    char parity = 'N';
-    int res;
-    int fd_settings;
-
-    assert(dev->magic == DEV_MAGIC);
-    assert(dev->type == SERIAL_DEV);
-    assert(dev->connect_status == DEV_NOT_CONNECTED);
-    assert(dev->fd == NO_FD);
-
-    dev->fd = open(dev->u.serial.special, O_RDWR | O_NONBLOCK | O_NOCTTY);
-    if (dev->fd < 0) {
-        dbg(DBG_DEVICE, "_serial_reconnect: %s open %s failed", 
-                dev->name, dev->u.serial.special);
-        goto out;
-    }
-    if (!isatty(dev->fd)) {
-        err(FALSE, "_serial_reconnect: %s is not a tty\n", dev->name);
-        goto out;
-    }
-    /*  [lifted from conman] According to the UNIX Programming FAQ v1.37
-     *    <http://www.faqs.org/faqs/unix-faq/programmer/faq/>
-     *    (Section 3.6: How to Handle a Serial Port or Modem),
-     *    systems seem to differ as to whether a nonblocking
-     *    open on a tty will affect subsequent read()s.
-     *    Play it safe and be explicit!
-     */
-    fd_settings = Fcntl(dev->fd, F_GETFL, 0);
-    Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
-
-    /* FIXME: take an flock F_WRLOCK to coexist with conman */
-
-    /* parse the serial flags and set up port accordingly */
-    sscanf(dev->u.serial.flags, "%d,%d%c%d", 
-            &baud, &databits, &parity, &stopbits);
-    res = _serial_setup(dev->name, dev->fd, baud, databits, parity, stopbits);
-    if (res < 0)
-        goto out;
-
-    dev->connect_status = DEV_CONNECTED;
-    dev->stat_successful_connects++;
-    dev->retry_count = 0;
-    _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
-
-    err(FALSE, "_serial_reconnect: %s opened", dev->name);
-out: 
-    return (dev->connect_status == DEV_CONNECTED);
-}
-
-static bool _reconnect(Device * dev)
+bool dev_reconnect(Device * dev)
 {
     bool res = FALSE;
 
@@ -554,10 +328,10 @@ static bool _reconnect(Device * dev)
     case TCP_DEV:
         /*FALLTHROUGH*/
     case TELNET_DEV:
-        res = _tcp_reconnect(dev);
+        res = tcp_reconnect(dev);
         break;
     case SERIAL_DEV:
-        res = _serial_reconnect(dev);
+        res = serial_reconnect(dev);
         break;
     case NO_DEV:
         assert(0);
@@ -815,46 +589,9 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
     return count;
 }
 
-
-/*
- *   We've supposedly reconnected, so check if we really are.
- * If not go into reconnect mode.  If this is a succeeding
- * reconnect, log that fact.  When all is well initiate the
- * logon script.
- */
-static bool _tcp_finish_connect(Device * dev, struct timeval *timeout)
+void dev_login(Device *dev)
 {
-    int rc;
-    int error = 0;
-    int len = sizeof(err);
-
-    assert(dev->type == TCP_DEV || dev->type == TELNET_DEV);
-    assert(dev->connect_status == DEV_CONNECTING);
-    rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &error, &len);
-    /*
-     *  If an error occurred, Berkeley-derived implementations
-     *    return 0 with the pending error in 'err'.  But Solaris
-     *    returns -1 with the pending error in 'errno'.  -dun
-     */
-    if (rc < 0)
-        error = errno;
-    if (error) {
-        err(FALSE, "_tcp_finish_connect: %s: %s", dev->name, strerror(error));
-        _disconnect(dev);
-        if (_time_to_reconnect(dev, timeout))
-            _reconnect(dev);
-    } else {
-        err(FALSE, "_tcp_finish_connect: %s: connected", dev->name);
-        dev->connect_status = DEV_CONNECTED;
-        dev->stat_successful_connects++;
-        dev->retry_count = 0;
-        _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
-    }
-
-    if (dev->type == TELNET_DEV && dev->connect_status == DEV_CONNECTED)
-        _init_telnet(dev);
-
-    return (dev->connect_status == DEV_CONNECTED);
+    _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
 }
 
 /*
@@ -869,20 +606,20 @@ static void _handle_read(Device * dev)
     n = cbuf_write_from_fd(dev->from, dev->fd, -1, &dropped);
     if (n < 0) {
         err(TRUE, "read error on %s", dev->name);
-        _disconnect(dev);
-        _reconnect(dev);
+        dev_disconnect(dev);
+        dev_reconnect(dev);
         return;
     }
     if (dropped > 0) {
         err(FALSE, "buffer space for %s exhausted", dev->name);
-        _disconnect(dev);
-        _reconnect(dev);
+        dev_disconnect(dev);
+        dev_reconnect(dev);
         return;
     }
     if (n == 0) {
         err(FALSE, "read returned EOF on %s", dev->name);
-        _disconnect(dev);
-        _reconnect(dev);
+        dev_disconnect(dev);
+        dev_reconnect(dev);
         return;
     }
 }
@@ -898,52 +635,18 @@ static void _handle_write(Device * dev)
     n = cbuf_read_to_fd(dev->to, dev->fd, -1);
     if (n < 0) {
         err(TRUE, "write error on %s", dev->name);
-        _disconnect(dev);
-        _reconnect(dev);
+        dev_disconnect(dev);
+        dev_reconnect(dev);
     }
     if (n == 0) {
         err(FALSE, "write sent no data on %s", dev->name);
-        _disconnect(dev);
-        _reconnect(dev);
+        dev_disconnect(dev);
+        dev_reconnect(dev);
         /* XXX: is this even possible? */
     }
 }
 
-/*
- * Close the socket associated with this device.
- */
-static void _tcp_disconnect(Device * dev)
-{
-    assert(dev->connect_status == DEV_CONNECTING
-           || dev->connect_status == DEV_CONNECTED);
-    assert(dev->type == TCP_DEV || dev->type == TELNET_DEV);
-
-    dbg(DBG_DEVICE, "_tcp_disconnect: %s on fd %d", dev->name, dev->fd);
-
-    /* close socket if open */
-    if (dev->fd >= 0) {
-        Close(dev->fd);
-        dev->fd = NO_FD;
-    }
-}
-
-/*
- * Close the special file associated with this device.
- */
-static void _serial_disconnect(Device * dev)
-{
-    assert(dev->connect_status == DEV_CONNECTED);
-    assert(dev->type == SERIAL_DEV);
-    dbg(DBG_DEVICE, "_serial_disconnect: %s on fd %d", dev->name, dev->fd);
-
-    /* close device if open */
-    if (dev->fd >= 0) {
-        Close(dev->fd);
-        dev->fd = NO_FD;
-    }
-}
-
-static void _disconnect(Device * dev)
+void dev_disconnect(Device * dev)
 {
     Action *act;
 
@@ -951,10 +654,10 @@ static void _disconnect(Device * dev)
     case TELNET_DEV:
         /*FALLTHROUGH*/
     case TCP_DEV:
-        _tcp_disconnect(dev);
+        tcp_disconnect(dev);
         break;
     case SERIAL_DEV:
-        _serial_disconnect(dev);
+        serial_disconnect(dev);
         break;
     case NO_DEV:
         assert(0);
@@ -1102,165 +805,11 @@ static void _process_action(Device * dev, struct timeval *timeout)
             if (res != ACT_ESUCCESS && (dev->connect_status & DEV_CONNECTED)) {
                 dbg(DBG_DEVICE,
                     "_process_action: disconnecting due to error");
-                _disconnect(dev);
-                _reconnect(dev);
+                dev_disconnect(dev);
+                dev_reconnect(dev);
                 break;
             }
         }
-    }
-}
-
-static void _telnet_sendopt(Device *dev, unsigned char cmd, unsigned char opt)
-{
-    unsigned char str[] = { IAC, cmd, opt };
-    int n;
-
-    dbg(DBG_TELNET, "%s: _telnet_sendopt: %s %s", dev->name, 
-            TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>",
-            TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
-
-    n = cbuf_write(dev->to, str, 3, NULL);
-    if (n < 3)
-        err((n < 0), "_telnet_sendopt: cbuf_write returned %d", n);
-}
-
-static void _telnet_sendcmd(Device *dev, unsigned char cmd)
-{
-    unsigned char str[] = { IAC, cmd };
-    int n;
-
-    dbg(DBG_TELNET, "%s: _telnet_sendcmd: %s", dev->name, 
-            TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>");
-
-    n = cbuf_write(dev->to, str, 2, NULL);
-    if (n < 2)
-        err((n < 0), "_telnet_sendcmd: cbuf_write returned %d", n);
-}
-
-#if 0
-static void _telnet_sendnaws(Device *dev)
-{
-    unsigned char str[] = { IAC, SB, TELOPT_NAWS, 0, 80, 0, 24, IAC, SE };
-    int n;
-
-    dbg(DBG_TELNET, "%s: _telnet_sendnaws: SB NAWS 0 80 0 24 SE", dev->name);
-
-    n = cbuf_write(dev->to, str, sizeof(str), NULL);
-    if (n < sizeof(str))
-        err((n < 0), "_telnet_sendnaws: cbuf_write returned %d", n);
-}
-
-static void _telnet_sendttype(Device *dev)
-{
-    unsigned char str[] = { IAC, SB, TELOPT_TTYPE, TELQUAL_IS, 
-        'U', 'N', 'K', 'N', 'O', 'W', 'N', IAC, SE };
-    int n;
-
-    dbg(DBG_TELNET, "%s: _telnet_sendnaws: SB TTYPE IS \"UNKNOWN\" SE", 
-            dev->name);
-
-    n = cbuf_write(dev->to, str, sizeof(str), NULL);
-    if (n < sizeof(str))
-        err((n < 0), "_telnet_sendttype: cbuf_write returned %d", n);
-}
-#endif
-
-static void _telnet_recvcmd(Device *dev, unsigned char cmd)
-{
-    dbg(DBG_TELNET, "%s: _telnet_recvcmd: %s", dev->name, 
-            TELCMD_OK(cmd) ?  TELCMD(cmd) : "<unknown>");
-}
-
-
-static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
-{
-    dbg(DBG_TELNET, "%s: _telnet_recvopt: %s %s", dev->name, 
-            TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>", 
-            TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
-    switch (cmd)
-    {
-    case DO:
-        switch (opt) {
-            case TELOPT_SGA:    /* rfc 858 */
-            case TELOPT_TM:     /* rfc 860 */
-                _telnet_sendopt(dev, WILL, opt);
-                break;
-            case TELOPT_TTYPE:  /* rfc 1091 */
-            case TELOPT_NAWS:   /* rfc 1073 */
-                _telnet_sendopt(dev, WONT, opt);
-                break;
-            default:
-                break;
-        }
-        break;
-    default:
-        break;
-    }
-}
-
-static void _init_telnet(Device * dev)
-{
-    _telnet_sendopt(dev, DONT, TELOPT_NAWS);
-    _telnet_sendopt(dev, DONT, TELOPT_TTYPE);
-    _telnet_sendopt(dev, DONT, TELOPT_ECHO);
-}
-
-/*
- * Telnet state machine.
- */
-static void _process_telnet(Device * dev)
-{
-    unsigned char peek[MAX_DEV_BUF];
-    unsigned char device[MAX_DEV_BUF];
-    int len, i, k;
-
-    assert(dev->type == TELNET_DEV);
-    assert(dev->u.tcp.from_telnet != NULL);
-
-    len = cbuf_peek(dev->from, peek, MAX_DEV_BUF);
-    for (i = 0, k = 0; i < len; i++) {
-        switch (dev->u.tcp.tstate) {
-        case TELNET_NONE:
-            if (peek[i] == IAC)
-                dev->u.tcp.tstate = TELNET_CMD;
-            else
-                device[k++] = peek[i];
-            break;
-        case TELNET_CMD:
-            switch (peek[i]) {
-            case IAC:           /* escaped IAC */
-                device[k++] = peek[i];
-                dev->u.tcp.tstate = TELNET_NONE;
-                break;
-            case DONT:          /* option commands - one more byte coming */
-            case DO:
-            case WILL:
-            case WONT:
-                dev->u.tcp.tcmd = peek[i];
-                dev->u.tcp.tstate = TELNET_OPT;
-                break;
-            default:            /* single char commands - process immediately */
-                _telnet_recvcmd(dev, peek[i]);
-                dev->u.tcp.tstate = TELNET_NONE;
-                break;
-            }
-            break;
-        case TELNET_OPT:        /* option char - process stored command */
-            _telnet_recvopt(dev, dev->u.tcp.tcmd, peek[i]);
-            dev->u.tcp.tstate = TELNET_NONE;
-            break;
-        }
-    }
-    /* rewrite buffers if anything changed */
-    if (k < len) {
-        int n;
-
-        n = cbuf_drop(dev->from, len);
-        if (n < len)
-            err((n < 0), "_divert_telnet: cbuf_drop returned %d", n);
-        n = cbuf_write(dev->from, device, k, NULL);
-        if (n < k)
-            err((n < 0), "_divert_telnet: cbuf_write (device) returned %d", n);
     }
 }
 
@@ -1492,22 +1041,28 @@ Device *dev_create(const char *name, DevType type)
     dev->script_status = 0;
     dev->fd = NO_FD;
     dev->acts = list_create((ListDelF) _destroy_action);
+
     timerclear(&dev->timeout);
     timerclear(&dev->last_retry);
     timerclear(&dev->last_ping);
     timerclear(&dev->ping_period);
+
     dev->to = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
     cbuf_opt_set(dev->to, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
+
     dev->from = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
     cbuf_opt_set(dev->from, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
+
     if (dev->type == TELNET_DEV) {
         dev->u.tcp.from_telnet = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
         cbuf_opt_set(dev->u.tcp.from_telnet, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
         dev->u.tcp.tstate = TELNET_NONE;
         dev->u.tcp.tcmd = 0;
     }
+
     for (i = 0; i < NUM_SCRIPTS; i++)
         dev->scripts[i] = NULL;
+
     dev->plugs = list_create((ListDelF) dev_plug_destroy);
     dev->retry_count = 0;
     dev->stat_successful_connects = 0;
@@ -1697,7 +1252,6 @@ static void _process_ping(Device * dev, struct timeval *timeout)
     }
 }
 
-
 /*
  * Called prior to the select loop to initiate connects to all devices.
  */
@@ -1709,7 +1263,7 @@ void dev_initial_connect(void)
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
         assert(dev->connect_status == DEV_NOT_CONNECTED);
-        _reconnect(dev);
+        dev_reconnect(dev);
     }
     list_iterator_destroy(itr);
 }
@@ -1774,13 +1328,13 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
 
         /* reconnect if necessary */
         if (dev->connect_status == DEV_NOT_CONNECTED) {
-            if (_time_to_reconnect(dev, timeout))
-                _reconnect(dev);
+            if (dev_time_to_reconnect(dev, timeout))
+                dev_reconnect(dev);
         /* complete non-blocking connect if ready */
         } else if ((dev->connect_status == DEV_CONNECTING)) {
             assert(dev->fd != NO_FD);
             if (FD_ISSET(dev->fd, wset)) {
-                _tcp_finish_connect(dev, timeout);
+                tcp_finish_connect(dev, timeout);
                 if (dev->fd != NO_FD)
                     FD_CLR(dev->fd, wset);      /* avoid _handle_write error */
             }
@@ -1801,7 +1355,7 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
 
         /* If telnet device, process telnet escapes */
         if (dev->type == TELNET_DEV)
-            _process_telnet(dev);
+            telnet_process(dev);
 
         /* process actions */
         if (list_peek(dev->acts)) {

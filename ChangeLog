@@ -3,6 +3,7 @@
       the node config lines.
     * Implement TELNET_DEV and remove all the telnet escapes from device
       configurations.
+    * Split tcp, serial, and telnet device types off to seperate files.
 
 2003-04-10 garlick
     * Moved ibmasm.dev to ibmrsa.dev and implemented first cut on RSA telnet
