@@ -375,8 +375,8 @@ do_target_some(Device *dev, Action *sact)
 	bool any;
 	Plug *plug;
 	ListIterator plug_i;
-        size_t nm = 1;
-        regmatch_t pm[1];
+        size_t nm = MAX_MATCH;
+        regmatch_t pm[MAX_MATCH];
         int eflags = 0;
         regex_t nre;
         reg_syntax_t cflags = REG_EXTENDED;
