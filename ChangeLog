@@ -1,3 +1,12 @@
+2003-07-15 Jim Garlick <garlick@llnl.gov>
+
+    * etc/baytech-rpc28-nc.dev, etc/baytech-rpc3-nc.dev: send a carriage return
+    and expect a prompt before doing actual commands.  These devices seem to
+    time out after a while and the first command issued after a timeout
+    doesn't go through.
+
+    * src/device_pipe.[ch]: New.
+
 2003-07-09 Jim Garlick <garlick@llnl.gov>
 
     * etc/baytech-rpc28-nc.dev, etc/baytech-rpc3-nc.dev, etc/baytech.dev:

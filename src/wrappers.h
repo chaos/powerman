@@ -68,6 +68,10 @@ int Memory(void);
 void Gettimeofday(struct timeval *tv, struct timezone *tz);
 time_t Time(time_t * t);
 char *Strncpy(char *s1, const char *s2, int len);
+void Pipe(int filedes[2]);
+void Dup2(int oldfd, int newfd);
+void Execv(const char *path, char *const argv[]);
+pid_t Waitpid(pid_t pid, int *status, int options);
 
 #endif                          /* WRAPPERS_H */
 

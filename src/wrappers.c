@@ -33,6 +33,8 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <stdio.h>
+#include <sys/types.h>
+#include <sys/wait.h>
 
 #include "powerman.h"
 #include "error.h"
@@ -470,6 +472,36 @@ Sigfunc *Signal(int signo, Sigfunc * func)
         err_exit(TRUE, "sigaction");
 
     return (oact.sa_handler);
+}
+
+void Pipe(int filedes[2])
+{
+    if (pipe(filedes) < 0)
+        err_exit(TRUE, "pipe");
+}
+
+void Dup2(int oldfd, int newfd)
+{
+    if (dup2(oldfd, newfd) < 0)
+        err_exit(TRUE, "dup2");
+}
+
+void Execv(const char *path, char *const argv[])
+{
+    if (execv(path, argv) < 0)
+        err_exit(TRUE, "execv %s", path);
+}
+
+pid_t Waitpid(pid_t pid, int *status, int options)
+{
+    pid_t n;
+
+    while ((n = waitpid(pid, status, options)) < 0) {
+        if (errno != EINTR)
+            err_exit(TRUE, "waitpid %d", pid);
+    }
+
+    return n;
 }
 
 #ifndef NDEBUG

@@ -144,7 +144,8 @@ typedef struct _device {
     char *matchstr;             /* cache regex matches for future $N ref */
     regmatch_t pmatch[MAX_MATCH_POS+1];
 
-    int fd;
+    int ifd;                    /* socket, serial device, or read pipe */
+    int ofd;                    /* same as above, or write pipe */
 
     List acts;                  /* queue of Actions */
 

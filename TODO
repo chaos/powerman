@@ -19,4 +19,4 @@
   ethernet addresses.
 * Connect on demand option.
 * Add a way to execute external scripts to do power control.
-
+* Make sure 'service powerman stop' properly tears down tcp connections

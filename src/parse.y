@@ -35,12 +35,15 @@
 #include <math.h>       /* for HUGE_VAL and trunc */
 #include <assert.h>
 #include <stdio.h>
+#include <ctype.h>
+#include <unistd.h>
 
 #include "powerman.h"
 #include "list.h"
 #include "parse_util.h"
 #include "device.h"
 #include "device_serial.h"
+#include "device_pipe.h"
 #include "device_tcp.h"
 #include "client.h"
 #include "error.h"
@@ -648,6 +651,15 @@ static void _parse_hoststr(Device *dev, char *hoststr, char *flagstr)
         dev->destroy        = serial_destroy;
         dev->connect        = serial_connect;
         dev->disconnect     = serial_disconnect;
+        dev->finish_connect = NULL;
+        dev->preprocess     = NULL;
+
+    /* pipe device */
+    } else if (hoststr[0] == '|') {
+        dev->data           = pipe_create(hoststr, flagstr);
+        dev->destroy        = pipe_destroy;
+        dev->connect        = pipe_connect;
+        dev->disconnect     = pipe_disconnect;
         dev->finish_connect = NULL;
         dev->preprocess     = NULL;
 
