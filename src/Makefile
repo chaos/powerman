@@ -2,16 +2,17 @@
 #   $Id$
 ####################################################################
 
+PROJECT=	powerman
 SHELL=		/bin/sh
 CC=		gcc
 MAKE=		/usr/bin/make
 LEX=		/usr/bin/flex
 YACC=		/usr/bin/bison
 
-VERSTR=		$(shell if test -n "$(NAME)"; then \
+VERSTR=		$(shell if test -n "$(VERSION)"; then \
 		  if test -n "$(RELEASE)"; then \
-                    echo $(NAME)-$(VERSION)-$(RELEASE); \
-                  else echo $(NAME)-$(VERSION); fi; fi)
+                    echo $(PROJECT)-$(VERSION)-$(RELEASE); \
+                  else echo $(PROJECT)-$(VERSION); fi; fi)
 
 DEFS=		-DHAVE_CONFIG_H -DPOWERMAN_VERSION=\"$(VERSTR)\"
 #DEFS+=		-DNDEBUG

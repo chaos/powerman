@@ -52,7 +52,7 @@ cluster properties as part of its negotiation with the server.
 %setup
 
 %build
-make NAME=%{name} VERSION=%{version} RELEASE=%{release} 
+make VERSION=%{version} RELEASE=%{release} 
 
 %install
 rm -rf "$RPM_BUILD_ROOT"
