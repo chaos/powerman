@@ -84,7 +84,7 @@ install: all
 	$(INSTALL) etc/wti.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/wti-rps10.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/apc.dev			$(DESTDIR)$(packagedir)
-	$(INSTALL) etc/vicebox.dev		$(DESTDIR)$(packagedir)
+#	$(INSTALL) etc/vicebox.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/vpc.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/ibmrsa.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/phantom.dev		$(DESTDIR)$(packagedir)
@@ -111,7 +111,7 @@ uninstall: distclean
 	rm -f $(DESTDIR)$(packagedir)/wti.dev
 	rm -f $(DESTDIR)$(packagedir)/wti-rps10.dev
 	rm -f $(DESTDIR)$(packagedir)/ibmrsa.dev
-	rm -f $(DESTDIR)$(packagedir)/vicebox.dev
+#	rm -f $(DESTDIR)$(packagedir)/vicebox.dev
 	rm -f $(DESTDIR)$(packagedir)/vpc.dev
 	rm -f $(DESTDIR)$(mandir)/man1/powerman.1
 	rm -f $(DESTDIR)$(mandir)/man1/powermand.1
