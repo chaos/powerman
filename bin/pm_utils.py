@@ -132,7 +132,7 @@ def init_tty(tty_struct):
             tty_struct.locked = 1
         except IOError:
             if (retry_count):
-                sleep(random.random(0.25, 1.0))
+                time.sleep(random.random(0.25, 1.0))
             else:
                 exit_error(19, tty_struct.name)
     try:

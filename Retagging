@@ -39,14 +39,14 @@ local targets for distribution include:
 testing:
 	Host		Cluster		Version
 	---------	--------------	------------------
-	turing		vicebox		powerman-0.1.9-1.i386.rpm
-	devi		dev		powerman-0.1.9-1.i386.rpm
-	tritium		slc		powerman-0.1.9-1.i386.rpm
-	deuterium	No cluster	powerman-0.1.9-1.i386.rpm 
+	turing		vicebox		powerman-0.2.0-1.i386.rpm
+	devi		dev		powerman-0.2.0-1.i386.rpm
+	tritium		slc		powerman-0.2.0-1.i386.rpm
+	deuterium	No cluster	powerman-0.2.0-1.i386.rpm 
 			for now
 production:
 	furnace		I'm not sure    none
 			about the status 
 			of this
-	pcrai		pcra		powerman-0.1.9-1.i386.rpm
-	pcrbi		pcrb		powerman-0.1.9-1.i386.rpm
+	pcrai		pcra		powerman-0.2.0-1.i386.rpm
+	pcrbi		pcrb		powerman-0.2.0-1.i386.rpm

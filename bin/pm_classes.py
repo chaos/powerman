@@ -18,14 +18,20 @@ import pm_utils
 class NodeClass:
     "Class definition for a node"
     name     = ""
+    rack     = ""
+    position = ""
+    height   = ""
     q_data   = None
     c_data   = None
     state    = 0
     index    = 0
     message    = ""
     
-    def __init__(self, name, q_data, c_data, index):
+    def __init__(self, name, rack, position, height, q_data, c_data, index):
         self.name     = name
+        self.rack     = rack
+        self.position = position
+        self.height   = height
         self.q_data   = q_data
         self.c_data   = c_data
         self.state    = 0
@@ -86,11 +92,17 @@ class ClusterClass:
         while (line):
             blocks = string.split(line, '{')
             line = cfg.readline()
-            if(len(blocks) < 2): continue
-            if (blocks[0][0] == '#'): continue
-            node_name = blocks[0]
-            while (node_name[-1:] in string.whitespace): node_name = node_name[:-1]
-            tokens = string.split(blocks[1])
+            if(len(blocks) < 3): continue
+            if ((len(blocks[0]) > 0) and (blocks[0][0] == '#')): continue
+            node_data = string.split(blocks[1])
+            if(len(node_data) < 4): continue
+            node_name = node_data[0]
+            rack      = node_data[1]
+            position  = node_data[2]
+            height    = node_data[3][:-1]
+            # I don't think this is needed any more
+            #while (node_name[-1:] in string.whitespace): node_name = node_name[:-1]
+            tokens = string.split(blocks[2])
             last = len(tokens) - 1
             if (last < 0): continue
             # Get rid of the trailing "}"
@@ -102,8 +114,8 @@ class ClusterClass:
                 self.q_types[q_type] = NodeSetClass(q_type, self)
                 module = self.q_types[q_type].module
             q_data = module.NodeDataClass(q_type, tokens[1:])
-            if (len(blocks) == 3):
-                tokens = string.split(blocks[2])
+            if (len(blocks) == 4):
+                tokens = string.split(blocks[3])
                 last = len(tokens) - 1
                 if (last < 0): continue
                 tokens[last] = tokens[last][:-1]
@@ -121,10 +133,10 @@ class ClusterClass:
                     c_set = self.c_types[c_type]
                 except KeyError:
                     self.c_types[c_type] = self.q_types[q_type]
-            node = NodeClass(node_name, q_data, c_data, i)
+            node = NodeClass(node_name, rack, position, height, q_data, c_data, i)
             self.nodes[node_name] = node
             self.q_types[q_type].set_data.add(node)
-            if(len(blocks) == 3):
+            if(len(blocks) == 4):
                 self.c_types[c_type].set_data.add(node)
             i = i + 1
         cfg.close()
