@@ -1,3 +1,8 @@
+2003-03-31 garlick
+    * Adjust power cycle for all devices to wait at least 2 sec between off/on.
+      Was 0.7sec on icebox and this seemed to cause initialization problems 
+      with SuperMicro P4DPR motherboards running LinuxBIOS.
+
 2002-01-20 garlick
     * Make serial connections non-blocking.
 

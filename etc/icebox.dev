@@ -84,7 +84,7 @@ specification {
 	script cycle {
 		send "pl %s\r\n"
 		expect "OK\r\n"
-		delay 0.7
+		delay 2.7
 		send "ph %s\r\n"
 		expect "OK\r\n"
 		delay 0.7
@@ -92,7 +92,7 @@ specification {
 	script cycle_all {
 		send "pl *\r\n"
 		expect "OK\r\n"
-		delay 7
+		delay 9
 		send "ph *\r\n"
 		expect "OK\r\n"
 		delay 7
