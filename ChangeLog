@@ -3,14 +3,19 @@
     * src/device.c: print useful error message in process_setplugname if
     node does not exist.
 
-    * src/client.c: device query output now lists nodes only if they
+    * src/client.c: pm --device output now lists nodes only if they
     have been mapped to plug names.
+
+    * src/client.c: sort the list of nodes returned by pm --list.
+
+    * src/device.c: emit warning if node does not have plug name assigned
+    after login script completes.
 
 2003-08-01 Jim Garlick <garlick@llnl.gov>
 
     * src/device.h: decrease max buffer size from 1M to 8K.
 
-    * src/client.c: sort hostlists returned by device query
+    * src/client.c: sort the list of nodes returned by pm --device
 
 2003-07-29 Jim Garlick <garlick@llnl.gov>
 

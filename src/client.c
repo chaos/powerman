@@ -230,6 +230,8 @@ static void _client_query_nodes_reply(Client * c)
 {
     hostlist_t nodes = conf_getnodes();
 
+    hostlist_sort(nodes);
+
     if (c->exprange) {
         hostlist_iterator_t itr;
         char *node;

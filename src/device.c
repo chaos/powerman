@@ -751,6 +751,21 @@ static void _act_completion(Action *act, Device *dev)
     }
 }
 
+static void _verify_plugsassigned(Device *dev)
+{
+    Plug *plug;
+    ListIterator itr;
+
+    itr = list_iterator_create(dev->plugs);
+    while ((plug = list_next(itr))) {
+        if (plug->name == NULL) {
+            err(FALSE, "_verify_plugsassigned(%s): node %s: not found\n", 
+                    dev->name, plug->node);
+        }
+    }
+    list_iterator_destroy(itr);
+}
+
 /*
  * Process the script for the current action for this device.
  * Update timeout and return if one of the script elements stalls.
@@ -833,8 +848,11 @@ static void _process_action(Device * dev, struct timeval *timeout)
 
             /* completed action successfully! */
             if (e == NULL) {
-                if (act->com == PM_LOG_IN)
+                if (act->com == PM_LOG_IN) {
                     dev->logged_in = TRUE;
+                    /* Need a warning here for any unassigned plug names */
+                    _verify_plugsassigned(dev);
+                }
                 if (act->complete_fun)
                     _act_completion(act, dev);
                 _destroy_action(list_dequeue(dev->acts));
@@ -1085,7 +1103,7 @@ static bool _process_setplugname(Device* dev, Action *act, ExecCtx *e)
                     Free(plug->name);
                 plug->name = Strdup(plug_name); /* store new plug name */
             } else {
-                err(FALSE, "_process_setplugname(%s): node %s: not found\n", 
+                err(FALSE, "_process_setplugname(%s): node %s: unknown\n", 
                         dev->name, node_name);
             }
             Free(plug_name);
