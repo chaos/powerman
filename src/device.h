@@ -109,10 +109,10 @@ struct device_struct {
 void init_Device(Device *dev);
 void initiate_nonblocking_connect(Device *dev);
 void map_Action_to_Device(Device *dev, Action *act);
-void handle_Device_read(Device *dev);
+void handle_Device_read(Device *dev, int debug);
 void do_Device_connect(Device *dev);
 void process_script(Device *dev);
-void handle_Device_write(Device *dev);
+void handle_Device_write(Device *dev, int debug);
 bool stalled_Device(Device *dev);
 void recover_Device(Device *dev);
 Device *make_Device();

@@ -41,6 +41,8 @@ int read_Buffer(Buffer b);
 bool is_empty_Buffer(Buffer b);
 
 int get_line_Buffer(Buffer b, char *str, int len);
+int peek_line_Buffer(Buffer b, char *str, int len);
+int get_string_Buffer(Buffer b, char *str, int len);
 int peek_string_Buffer(Buffer b, char *str, int len);
 void eat_Buffer(Buffer b, int len);
 

@@ -419,11 +419,18 @@ do_Device_connect(Device *dev)
  * that is handled in process_script().
  */ 
 void
-handle_Device_read(Device *dev)
+handle_Device_read(Device *dev, int debug)
 {
 	int n;
 
 	CHECK_MAGIC(dev);
+	if (debug)
+	{
+		char str[MAX_BUF];
+		printf("XXX\n");
+		if (peek_string_Buffer(dev->from, str, MAX_BUF) > 0)
+			printf("D: %s", str);
+	}
 	n = read_Buffer(dev->from);
 	if ( (n < 0) && (errno == EWOULDBLOCK) ) return;
 	if ( (n == 0) || ((n < 0) && (errno == ECONNRESET)) ) 
@@ -774,12 +781,19 @@ do_Device_semantics(Device *dev, List map)
  * device state.
  */ 
 void
-handle_Device_write(Device *dev)
+handle_Device_write(Device *dev, int debug)
 {
 	int n;
 
 	CHECK_MAGIC(dev);
 
+	if (debug)
+	{
+		char str[MAX_BUF];
+
+		if (peek_string_Buffer(dev->to, str, MAX_BUF) > 0)
+			printf("S: %s", str);
+	}
 	n = write_Buffer(dev->to);
 	if( n < 0 ) return;
 	if( is_empty_Buffer(dev->to) ) dev->status &= ~DEV_SENDING;

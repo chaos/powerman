@@ -173,29 +173,13 @@ is_empty_Buffer(Buffer b)
 	return (_buf_length(b) == 0);
 }
 
-#if 0
-static void
-_zap_trailing_whitespace_str(char *str)
-{
-	char *p = str + strlen(str) - 1;
-	while (strlen(str) > 0 && isspace(*p))
-		*p-- = '\0';
-}
-
-static void
-_zap_leading_whitespace_buf(Buffer b)
-{
-	while (_buf_length(b) > 0 && isspace(*b->out))
-		b->out++;
-}
-#endif
-
 /* 
- * Get a line from the buffer.
+ * Get a copy of a line from the buffer.
  * A line is terminated with a '\n' character.
+ * Optionally Call eat_Buffer with the returned length to "consume" this.
  */
 int
-get_line_Buffer(Buffer b, char *str, int len)
+peek_line_Buffer(Buffer b, char *str, int len)
 {
 	char *p;
 	int cpy_len;
@@ -211,16 +195,25 @@ get_line_Buffer(Buffer b, char *str, int len)
 	memcpy(str, b->out, cpy_len);
 	str[cpy_len] = '\0';
 
-	b->out += cpy_len;
-#if 0
-	_zap_trailing_whitespace_str(str);
-	_zap_leading_whitespace_buf(b);
-#endif
+	return cpy_len;
+}
+
+/* 
+ * Get a line from the buffer.
+ * A line is terminated with a '\n' character.
+ */
+int
+get_line_Buffer(Buffer b, char *str, int len)
+{
+	int cpy_len;
+
+	cpy_len = peek_line_Buffer(b, str, len);
+	eat_Buffer(b, cpy_len);
 	return cpy_len;
 }
 
 /*
- * Get the contents of the buffer.
+ * Get a copy of the contents of the buffer in string form.
  * Optionally Call eat_Buffer with the returned length to "consume" this.
  */
 int
@@ -235,13 +228,26 @@ peek_string_Buffer(Buffer b, char *str, int len)
 	assert(cpy_len < len);
 	memcpy(str, b->out, cpy_len);
 	str[cpy_len] = '\0';
-#if 0
-	_zap_trailing_whitespace_str(str);
-#endif
 	return cpy_len;
 }
 
-/* Call after peek_string_Buffer to remove the peeked data from Buffer */
+/*
+ * Get the contents of the buffer in string form.
+ */
+int
+get_string_Buffer(Buffer b, char *str, int len)
+{
+	int cpy_len;
+
+	cpy_len = peek_string_Buffer(b, str, len);
+	eat_Buffer(b, cpy_len);
+	return cpy_len;
+}
+
+/* 
+ * Call after peek_string_Buffer or peek_line_Buffer to remove the peeked 
+ * data from Buffer 
+ */
 void
 eat_Buffer(Buffer b, int len)
 {

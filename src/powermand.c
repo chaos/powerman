@@ -87,8 +87,7 @@ static const char *powerman_license = \
     "under the terms of the GNU General Public License as published by\n"     \
     "the Free Software Foundation.\n";
 
-#define OPT_STRING "c:fhLV"
-#define HAVE_RECONFIGURE_OPTION 0 /* XXX not yet */
+#define OPT_STRING "c:fhLVt"
 static const struct option long_options[] =
 {
 		{"config_file",    required_argument, 0, 'c'},
@@ -96,10 +95,13 @@ static const struct option long_options[] =
 		{"help",           no_argument,       0, 'h'},
 		{"license",        no_argument,       0, 'L'},
 		{"version",        no_argument,       0, 'V'},
+		{"telemetry",      no_argument,       0, 't'},
 		{0, 0, 0, 0}
 };
 
 static const struct option *longopts = long_options;
+
+static bool debug_telemetry = FALSE;
 
 
 /*
@@ -186,6 +188,9 @@ process_command_line(Globals *g, int argc, char **argv)
 		case 'L':	/* --license */
 			printf("%s", powerman_license);
 			exit(0);
+		case 't':	/* --telemetry */
+			debug_telemetry = TRUE;
+			break;	
 		case 'V':
 			printf("%s-%s\n", PROJECT, VERSION);
 			exit(0);
@@ -195,6 +200,9 @@ process_command_line(Globals *g, int argc, char **argv)
 			break;
 		}
 	}
+
+	if (debug_telemetry && g->daemonize == TRUE)
+		exit_msg("--telemetry cannot be used in daemon mode");
 
 	if (! g->config_file)
 		g->config_file = Strdup(DFLT_CONFIG_FILE);	
@@ -340,12 +348,12 @@ do_select_loop(Globals *g)
 			  }
 			if(FD_ISSET(dev->fd, &rset) )
 			  {
-				handle_Device_read(dev);
+				handle_Device_read(dev, debug_telemetry);
 				activity = TRUE;
 			  }
 			if(FD_ISSET(dev->fd, &wset))
 			  {
-				handle_Device_write(dev);
+				handle_Device_write(dev, debug_telemetry);
 				/* We may want to pace the commands */
 				/* sent to the cluster.  interDev   */
 				/* may be set in the config file.   */

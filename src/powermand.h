@@ -66,5 +66,6 @@ typedef struct {
 } Globals;
 
 extern Globals *cheat;
+extern bool debug_telemetry;
 
 #endif /* POWERMAND_H */
