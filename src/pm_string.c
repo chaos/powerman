@@ -36,16 +36,14 @@
 
 #define STRING_MAGIC 0xabbaabba
 
-/* length == 0 iff string == NULL */
 struct string_implementation {
 	int magic;		/* COOKIE!!! */
-	int length;		/* string length (not including NULL) */
 	char *string;		/* string, NULL terminated */
 };
 
 
 /* 
- * Create a String object from character string 'cs'.  If cs is NULL, 
+ * Create a String object from character string 'cs'. 
  * Result must be freed with free_String().
  */
 String
@@ -55,14 +53,7 @@ make_String(const char *cs)
 
 	s = (String)Malloc(sizeof(struct string_implementation));
 	s->magic = STRING_MAGIC;
-	s->string = NULL;
-	s->length = 0;
-	if (cs != NULL)
-	{
-		s->length = strlen(cs);
-		s->string = Malloc(s->length + 1);
-		strncpy(s->string, cs, s->length + 1); /* copies NULL */
-	}
+	s->string = cs ? Strdup(cs) : NULL;
 	return s;
 }
 
@@ -74,14 +65,10 @@ free_String(void *str)
 {
 	String s = str;
 
-	assert(s != NULL);
+	assert(s);
 	assert(s->magic == STRING_MAGIC);
-	s->magic = 0;
 	if(s->string)
-	{
-		assert(strlen(s->string) == s->length);
 		Free(s->string);
-	}
 	Free(s);
 }
 
@@ -91,19 +78,9 @@ free_String(void *str)
 String
 copy_String(String s)
 {
-	String new;
-
-	assert (s != NULL) ;
+	assert(s);
 	assert(s->magic == STRING_MAGIC);
-	new = (String)Malloc(sizeof(struct string_implementation));
-	*new = *s;
-	if (s->string) 
-	{
-		assert(strlen(s->string) == s->length);
-		new->string = Malloc(s->length + 1);
-		strncpy(new->string, s->string, s->length + 1); /* copies NULL*/
-	}
-	return new;
+	return make_String(s->string);
 }
 
 /*
@@ -112,7 +89,7 @@ copy_String(String s)
 char *
 get_String(String s)
 {
-	assert(s != NULL);
+	assert(s);
 	assert(s->magic == STRING_MAGIC);
 	return s->string;
 }
@@ -123,9 +100,10 @@ get_String(String s)
 unsigned char 
 byte_String(String s, int n)
 {
-	assert(s != NULL);
+	assert(s);
 	assert(s->magic == STRING_MAGIC);
-	assert(n >= 0 && n < s->length);
+	assert(s->string);
+	assert(n >= 0 && n < strlen(s->string));
 	return s->string[n];
 }
 
@@ -135,9 +113,9 @@ byte_String(String s, int n)
 int 
 length_String(String s)
 {
-	assert(s != NULL);
+	assert(s);
 	assert(s->magic == STRING_MAGIC);
-	return s->length;
+	return s->string ? strlen(s->string) : 0;
 }
 
 /*
@@ -146,9 +124,9 @@ length_String(String s)
 bool
 empty_String(String s)
 {
-	assert(s != NULL);
+	assert(s);
 	assert(s->magic == STRING_MAGIC);
-	return (s->string == NULL);
+	return (length_String(s) == 0) ? TRUE : FALSE;
 }
 
 /*
@@ -157,16 +135,9 @@ empty_String(String s)
 bool
 match_String(String s, char *cs)
 {
-	int len;
-
-	assert(s != NULL);
+	assert(s);
 	assert(s->magic == STRING_MAGIC);
-	assert(cs != NULL);
-
-	len = strlen(cs);
-	if (len != s->length) 
-		return FALSE;
-	if (strncmp(s->string, cs, len) == 0) 
-		return TRUE;
-	return FALSE;
+	assert(s->string);
+	assert(cs);
+	return (strcmp(s->string, cs) == 0) ? TRUE : FALSE; 
 }

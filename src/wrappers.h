@@ -46,7 +46,7 @@ int Select(int maxfd, fd_set *rset, fd_set *wset, fd_set *eset, struct timeval *
 void Delay(struct timeval *tv);
 char * Malloc(int size);
 void Free(void *ptr);
-char * Strdup(char *str);
+char * Strdup(const char *str);
 void Report_Memory();
 int Accept(int fd, struct sockaddr_in *addr, socklen_t *addrlen);
 int Connect(int fd, struct sockaddr *addr, socklen_t addrlen);

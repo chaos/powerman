@@ -225,7 +225,7 @@ Free(void *ptr)
 }
 
 char *
-Strdup(char *str)
+Strdup(const char *str)
 {
 	char *cpy;
        
