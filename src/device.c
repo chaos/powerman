@@ -416,12 +416,9 @@ do_Device_connect(Device *dev)
 static char *
 _binstr(char *str, int len)
 {
-	int i, j, cpysize = 0;
-	char *cpy;
-
-	for (i = 0; i < len; i++)
-		cpysize += isprint(str[i]) ? 1 : 4;
-	cpy = Malloc(cpysize + 1);
+	int i, j; 
+	int cpysize = len * 4; /* worst case */
+	char *cpy = Malloc(cpysize + 1);
 
 	for (i = j = 0; i < len; i++)
 	{
@@ -445,7 +442,7 @@ _binstr(char *str, int len)
 				}
 				break;
 		}
-		assert(j < cpysize || i == len);
+		assert(j <= cpysize || i == len);
 	}
 	cpy[j] = '\0';
 	return cpy;
