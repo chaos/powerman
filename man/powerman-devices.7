@@ -117,16 +117,30 @@ Configuration is the same as the V2 ICE BOX.
 .P
 PowerMan talks to the ice box on port 1010.
 .SH "APC MASTERSWITCH"
-[to be added]
+Attach console cable between laptop running minicom
+and console port at 2400,n81.  Press enter, then authenticate with default 
+account apc/apc.
+.P
+Choose Network from main menu.
+.P
+Choose TCP/IP from Network menu, then diable BOOTP, and accept changes.
+Set the IP address, subnet mask, and default gateway, and accept changes.  
+.P
+Pres ESC until the main menu appears, then select Logout.
 .SH "WTI RPS10"
-[to be added]
+Set address of box to unique value from 0-9.  This corresponds
+to the powerman plug name.
 .SH "WTI NPS"
-[to be added]
-.SH "CYCLADES PM8"
-[to be added]
-.SH "IBM XSERIES"
-[to be added]
-.SH "IPMI"
-[to be added]
+Attach console cable between laptop running minicom
+and console port at 9600,n81.  Try password "wti" if prompted.
+.P
+Select /N - View/set network parameters, then set the IP address,
+subnet mask, and gateway.
+.P
+Select /G - General paramters, then disable command confirmation,
+enable command echo, and set disconnect timeout to the maximum value
+(30 minutes).
+.P
+Set password to "wti".
 .SH "SEE ALSO"
 powerman(1) powermand(1) powerman.conf(5)
