@@ -47,8 +47,8 @@
 #include "debug.h"
 #include "client_proto.h"
 
-#define MIN_DEV_BUF     512
-#define MAX_DEV_BUF     8192
+#define MIN_DEV_BUF     1024
+#define MAX_DEV_BUF     1024*1024
 
 /*
  * Actions are appended to a per device list in dev->acts
@@ -643,7 +643,7 @@ static void _handle_read(Device * dev)
     int dropped;
 
     CHECK_MAGIC(dev);
-    n = cbuf_write_from_fd(dev->from, dev->fd, MAX_DEV_BUF, &dropped);
+    n = cbuf_write_from_fd(dev->from, dev->fd, -1, &dropped);
     if (n < 0) {
         err(TRUE, "read error on %s", dev->name);
         _disconnect(dev);
@@ -673,7 +673,7 @@ static void _handle_write(Device * dev)
 
     CHECK_MAGIC(dev);
 
-    n = cbuf_read_to_fd(dev->to, dev->fd, MAX_DEV_BUF);
+    n = cbuf_read_to_fd(dev->to, dev->fd, -1);
     if (n < 0) {
         err(TRUE, "write error on %s", dev->name);
         _disconnect(dev);
@@ -867,7 +867,7 @@ static char *_malloc_printf(const char *fmt, ...)
         len = vsnprintf(str, size, fmt, ap);
         va_end(ap);
 
-    } while (len == -1 || len > size);
+    } while (len == -1 || len >= size);
 
     return str;
 }

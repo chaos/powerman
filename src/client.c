@@ -70,8 +70,6 @@ static void _destroy_client(Client * client);
 static void _create_client(void);
 static void _act_finish(int client_id, char *errfmt, char *errarg);
 
-#define _client_prompt(c)   _client_printf((c), CP_PROMPT)
-
 #define MIN_CLIENT_BUF     1024
 #define MAX_CLIENT_BUF     1024*1024
 
@@ -96,25 +94,26 @@ static int cli_id_seq = 1;      /* range 1...INT_MAX */
 static void _client_printf(Client *c, const char *fmt, ...)
 {
     va_list ap;
-    char *str = NULL;
-    int len, size = 0;
+    int len, size = CHUNKSIZE;
+    char *str = Malloc(size);
+    bool done = FALSE;
     int written, dropped;
 
     /* build tmp string */
-    do {
-
-        str = (size == 0) ? Malloc(CHUNKSIZE) : Realloc(str, size + CHUNKSIZE);
-        size += CHUNKSIZE;
-
+    while (!done) {
         va_start(ap, fmt);
         len = vsnprintf(str, size, fmt, ap);
         va_end(ap);
-
-    } while (len == -1 || len > size);
+        if (len == -1 || len >= size)
+            str = Realloc(str, size += CHUNKSIZE);
+        else
+            done = TRUE;
+    }
+    assert(len == strlen(str));
 
     /* Write to the client buffer */
     c->write_status = CLI_WRITING;
-    written = cbuf_write(c->to, str, len, &dropped);
+    written = cbuf_write(c->to, str, strlen(str), &dropped);
     if (written < 0)
         err(TRUE, "_client_printf: cbuf_write returned %d", written);
     else if (dropped > 0)
@@ -487,7 +486,7 @@ static void _parse_input(Client * c, char *input)
 
     /* reissue prompt if we didn't queue up any device actions */
     if (cmd == NULL)
-        _client_prompt(c);
+        _client_printf(c, CP_PROMPT);
 }
 
 /*
@@ -543,7 +542,7 @@ static void _act_finish(int client_id, char *errfmt, char *errarg)
     /* clean up and re-prompt */
     _destroy_command(c->cmd);
     c->cmd = NULL;
-    _client_prompt(c);
+    _client_printf(c, CP_PROMPT);
 }
 
 /* 
@@ -702,7 +701,7 @@ static void _create_client(void)
 
     /* prompt the client */
     _client_printf(client, CP_VERSION);
-    _client_prompt(client);
+    _client_printf(client, CP_PROMPT);
 }
 
 /* 
@@ -714,20 +713,19 @@ static void _handle_read(Client * c)
     int dropped;
 
     CHECK_MAGIC(c);
-    n = cbuf_write_from_fd(c->from, c->fd, MAX_CLIENT_BUF, &dropped);
+    n = cbuf_write_from_fd(c->from, c->fd, -1, &dropped);
     if (n < 0) {
         err(TRUE, "client read error");
         c->read_status = CLI_DONE;
         return;
     }
     if (n == 0) {
-        err(TRUE, "client read returned EOF");
+        err(FALSE, "client read returned EOF");
         c->read_status = CLI_DONE;
         return;
     }
     if (dropped != 0)
         err(FALSE, "dropped %d bytes of client input", dropped);
-
 }
 
 /* 
@@ -738,7 +736,7 @@ static void _handle_write(Client * c)
     int n;
 
     CHECK_MAGIC(c);
-    n = cbuf_read_to_fd(c->to, c->fd, MAX_CLIENT_BUF);
+    n = cbuf_read_to_fd(c->to, c->fd, -1);
     if (n < 0) {
         err(TRUE, "write error on client");
         return;
@@ -756,9 +754,6 @@ static void _handle_input(Client *c)
     char buf[MAX_CLIENT_BUF];
     int len;
 
-    /*
-     * Now initiate parsing of input.
-     */
     while ((len = cbuf_get_line(c->from, buf, sizeof(buf))) > 0)
         _parse_input(c, buf);
     if (len < 0)

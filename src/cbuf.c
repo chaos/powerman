@@ -1,5 +1,5 @@
 /*****************************************************************************
- *  $Id$
+ *  cbuf.c,v 1.2 2002/11/04 19:06:23 garlick Exp
  *****************************************************************************
  *  Copyright (C) 2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -683,6 +683,9 @@ cbuf_write_from_fd(cbuf_t cb, int srcfd, int len, int *ndropped)
      */
     if (len == -1) {
         len = cb->size - cb->used;
+        if (len == 0) {
+            len = MIN(cb->size, CBUF_CHUNK);
+        }
     }
     if (len > 0) {
         n = cbuf_writer(cb, len, (cbuf_iof) cbuf_get_fd, &srcfd, ndropped);
