@@ -10,8 +10,8 @@
 	* Changed logic for "all" plug processing.  If _ALL version of
 	  script is defined, use that.  If all string "*" is defined, use
 	  that.  If neither is defined, use one command per plug.
-	  FIXME: disabled
-	* Tagged powerman-1-0-11-ping
+	* Fixded bug in _update_timeout where usecs were not checked for zero
+	  when testing if timer is set.
 
 2002-10-16 garlick
 	* Make Action struct private to device.c

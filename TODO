@@ -1,14 +1,13 @@
 Short Term:
 * Store scripts in a list and search the list for the script name, rather than
   hard code the list.  
-* Seperate scripts for "all" commands so we can get timing right on ice box.
 * Reformat code w/out tabs
 * vpcd --hung_rpc can cause client to hang forever.
 * Make sure that tcp_wrappers works.
 * Attempt to initiate a command to devices that are delaying between
   reconnects should cause an immediate connect attempt.
 * Verify that 0 <= match_pos < MAX_MATCH in parser (now we assert in device.c)
-* Replace bogus buffer.c with Chris's generic circular buffer module.
+* Replace bogus buffer.c which with Chris's generic circular buffer module.
 
 Long term:
 * Build failure simulator test suite

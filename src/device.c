@@ -557,7 +557,13 @@ static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
     }
 
     if (all) {
-	if (dev->all != NULL) {	/* normal script, "*" plug */
+	int ncom;
+				/* _ALL script available - use that */
+	if ((ncom = _get_all_script(dev, com)) != -1) { 
+	    act = _create_action(dev, ncom, NULL, fun, client_id, arglist);
+	    list_append(dev->acts, act);
+	    count++;
+	} else if (dev->all != NULL) {	/* normal script, "*" plug */
 	    act = _create_action(dev, com, dev->all, fun, client_id, arglist);
 	    list_append(dev->acts, act);
 	    count++;
