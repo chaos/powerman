@@ -372,21 +372,8 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, void *arg)
 
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
-	/* not logged in to device */
-	if (!(dev->script_status & DEV_LOGGED_IN) && com != PM_LOG_IN) {
-	    if (fun)
-		fun(arg, TRUE);
+	if (dev->prot->scripts[com] == NULL) /* skip unimplemented commands */
 	    continue;
-	    /* FIXME: just enqueue a login in front of this one
-	     * (if there isn't already one in the queue) instead of error.
-	     */
-	}
-	/* command not implemented on this device */
-	if (dev->prot->scripts[com] == NULL) {
-	    if (fun)
-		fun(arg, TRUE);	/* FIXME: timeout message inappropriate */
-	    continue;
-	}
 	/* do the real work */
 	count += _enqueue_actions(dev, com, hl, fun, arg);
     }

@@ -382,6 +382,8 @@ static void _act_finish(void *arg, bool error)
 {
     Client *c = (Client *)arg;
 
+    CHECK_MAGIC(c);
+
     /* if client has gone away do nothing */
     if (!_client_exists(c))
 	return;
