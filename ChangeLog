@@ -1,3 +1,6 @@
+2002-12-23 garlick
+    * Implemented device [targets] command.
+
 2002-12-22 garlick
     * Updated list.[ch] and cbuf.[ch] to latest lsd-tools versions.
 
