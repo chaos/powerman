@@ -1,0 +1,59 @@
+# 
+# $Id$
+# $Source$
+#
+# This device configuration supports power control on Intel Tiger 4
+# motherboards via the BMC and the 'ipmipower' utility.
+#
+specification "ipmipower" {
+	# timeout must be larger than ipmipower's timeout
+	timeout  	75
+
+	script login {
+		expect "ipmipower> "
+	}
+	script logout {
+		send "quit\r"
+	}
+	script status_all {
+		send "stat\r"
+                expect "stat\r\n"
+		foreachnode {
+			expect "([^:]*): (on|off)\r\n"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "ipmipower> "
+	}
+	script on {
+		send "on %s\r"
+		expect "ipmipower> "
+	}
+	script on_all {
+		send "on\r"
+		expect "ipmipower> "
+	}
+	script off {
+		send "off %s\r"
+		expect "ipmipower> "
+	}
+	script off_all {
+		send "off\r"
+		expect "ipmipower> "
+	}
+	script cycle {
+		send "cycle %s\r"
+		expect "ipmipower> "
+	}
+	script cycle_all {
+		send "cycle\r"
+		expect "ipmipower> "
+	}
+	script reset {
+		send "reset %s\r"
+		expect "ipmipower> "
+	}
+	script reset_all {
+		send "reset\r"
+		expect "ipmipower> "
+	}
+}
