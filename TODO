@@ -8,7 +8,6 @@
 * Client should have option for verifying soft power status (expand hostranges
   and issue warnings where plug is on but node is off).  Needs to be optional
   since would double cluster query latency.  
-* Support ganged plugs.  Individual plugs should also be queryable/controllable.
 * Make it possible to access a power control device via conman to support 
   in-band "service processor" arrangements e.g. Compaq RMC on AlphaServcer 
   line.  Perhaps spawn the conman client on a pipe for each power operation 
