@@ -3,6 +3,9 @@
     * Attempting to initiate a command to a device now short circuits
       exponential reconnect backoff.
     * Implemented --beacon, --flash, --unflash, --temp, and --node in client.
+    * Fix bug where actions never make it to the head of the device queue
+      to time out when the device is hung trying to login (e.g. 
+      vpcd --hung_rpc).
 
 2002-10-24 garlick
     * Changed magic vim comment at bottom of each file for tab expansion.

@@ -788,6 +788,19 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 _destroy_action(list_dequeue(dev->acts));
             }
 
+            /* if one action timed out, time out the rest in the device queue */
+            if (error) {
+                Action *act;
+
+                while ((act = list_dequeue(dev->acts)) != NULL) { 
+                    if (act->cb_fun) {
+                        act->error = TRUE;
+                        act->cb_fun(act->client_id, CP_ERR_TIMEOUT, dev->name);
+                    }
+                    _destroy_action(act);
+                }
+            }
+
             /* reconnect/login if expect timed out */
             if (error && (dev->connect_status & DEV_CONNECTED)) {
                 dbg(DBG_DEVICE,
