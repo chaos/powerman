@@ -1,3 +1,7 @@
+2003-08-06 Jim Garlick <garlick@llnl.gov>
+
+    * etc/cyclades-pm8.dev: got working with PM8i over serial
+
 2003-08-04 Jim Garlick <garlick@llnl.gov>
 
     * src/client.c: clean up disconnect logic.

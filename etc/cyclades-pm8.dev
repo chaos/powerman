@@ -9,6 +9,7 @@ specification "pm8" {
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
 
+# the login script will work whether device is already logged in or not.
 	script login {
 		send "exit\r\r"
 		expect "Username:"
@@ -30,32 +31,48 @@ specification "pm8" {
 	}
 	script on {
 		send "on %s\r"
+		expect "Outlet turned on.\r\n"
 		expect "pm>"
 	}
 	script on_all {
 		send "on 1-8\r"
+		foreachplug {
+			expect "Outlet turned on.\r\n"
+		}
 		expect "pm>"
 	}
 	script off {
 		send "off %s\r"
+		expect "Outlet turned off.\r\n"
 		expect "pm>"
 	}
 	script off_all {
 		send "off 1-8\r"
+		foreachplug {
+			expect "Outlet turned off.\r\n"
+		}
 		expect "pm>"
 	}
 	script cycle {
 		send "off %s\r"
+		expect "Outlet turned off.\r\n"
 		expect "pm>"
 		delay 2
 		send "on %s\r"
+		expect "Outlet turned on.\r\n"
 		expect "pm>"
 	}
 	script cycle_all {
 		send "off 1-8\r"
+		foreachplug {
+			expect "Outlet turned off.\r\n"
+		}
 		expect "pm>"
 		delay 2
 		send "on 1-8\r"
+		foreachplug {
+			expect "Outlet turned on.\r\n"
+		}
 		expect "pm>"
 	}
 }
