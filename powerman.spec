@@ -90,6 +90,10 @@ fi
 %attr(0755,root,root)/usr/bin/off
 %attr(0755,root,root)/usr/bin/on
 %attr(0755,root,root)/usr/sbin/powermand
+%dir %attr(0755,root,root) /etc/powerman
+%dir %attr(0755,root,root) /usr/man/man1
+%dir %attr(0755,root,root) /usr/man/man5
+%dir %attr(0755,root,root) /usr/man/man7
 /etc/powerman/*
 /usr/man/man1/*
 /usr/man/man5/*

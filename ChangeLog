@@ -3,6 +3,9 @@
     * etc/cyclades-pm8.dev: fixed status script to not fail intermittently
     depending on breakdown of partial reads.
 
+    * powerman.spec: add %dir entries for directories that may be inadvertantly
+    created with too restrictive permissions like /usr/man/man7.
+
 2003-12-03 Albert Chu <chu11@llnl.gov>
 
     * /etc/ipmipower.dev: Removed "timed out" as acceptable message to
