@@ -21,7 +21,24 @@
 [x]  Unify configuration info
 [x]  Unify Python code, create a library
 [x]  replace blocking read with an alarm or something
-[ ]  BayTek RPC module
-[ ]  telnet based query and control (icebox)
-[ ]  implement ether-wake in python (also with locking)
-[ ]  implement rmc in python
+[ ]  BayTek RPC module (2 days)
+[ ]  telnet based query and control for icebox (long :^()
+[ ]  implement ether-wake in python (4 days)
+[ ]  implement rmc in python  (3 days)
+[ ]  reproducer for icebox "buffer overflow" issue in build 115 (2+ days)
+[ ]  reproducer for icebox "hang" issue in build 132 (2+ days)
+[ ]  reproducer for "failed after ten tries" issue (\infinity days)
+[ ]  Update powerman semantics to include "restart"         | 2
+[ ]  Update powerman to enforce semantics in specification  | days
+[ ]  Fix etherwake toggle handling                          | together
+[ ]  Improve error handling  (1 day)
+[ ]  Improve generality of object oriented code (1 day)
+[ ]  put icebox tty handling into wti component (0.1 day)
+[ ]  introduce configuration generator (2 days)
+[ ]  adapt packaging to use "make.in" style autoconf stuff (4 days)
+[ ]  update rpm make targets to Chris' latest (1 day)
+[ ]  review gpg use (0.5 days)
+[ ]  package vicebox for distribution
+[ ]  create additional virtual hardware modules
+[ ]  create expect-type code validation script(s)
+[ ]  reimplement and verify/falsify that buffered I/O works
