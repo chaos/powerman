@@ -747,6 +747,7 @@ do_PMD_semantics(Device *dev, List map)
 	case PM_UPDATE_PLUGS :
 		while( (plug = (Plug *)list_next(plug_i)) )
 		{
+			if (plug->node == NULL) continue;
 			plug->node->p_state = ST_UNKNOWN;
 			if( *(ch) == '1' )
 				plug->node->p_state = ST_ON;
@@ -758,6 +759,7 @@ do_PMD_semantics(Device *dev, List map)
 	case PM_UPDATE_NODES :
 		while( (plug = (Plug *)list_next(plug_i)) )
 		{
+			if (plug->node == NULL) continue;
 			plug->node->n_state = ST_UNKNOWN;
 			if( *(ch) == '1' )
 				plug->node->n_state = ST_ON;
@@ -802,7 +804,7 @@ do_Device_semantics(Device *dev, List map)
 	case PM_UPDATE_PLUGS :
 		while( ((Interpretation *)interp = list_next(map_i)) )
 		{
-			assert(interp->node != NULL);
+			if (interp->node == NULL) continue;
 			interp->node->p_state = ST_UNKNOWN;
 			re = &(dev->on_re);
 			str = interp->val;
@@ -824,7 +826,7 @@ do_Device_semantics(Device *dev, List map)
 	case PM_UPDATE_NODES :
 		while( ((Interpretation *)interp = list_next(map_i)) )
 		{
-			assert(interp->node != NULL);
+			if (interp->node == NULL) continue;
 			interp->node->n_state = ST_UNKNOWN;
 			re = &(dev->on_re);
 			str = interp->val;
@@ -1116,6 +1118,7 @@ dump_Plug(Plug *plug)
 {
 	fprintf(stderr, "\t\t\tPlug: %0x\n", (unsigned int)plug);
 	fprintf(stderr, "\t\t\t\tName: %s\n", get_String(plug->name));
+	if (plug->node == NULL) return;
 	fprintf(stderr, "\t\t\t\tNode: %s\n", get_String(plug->node->name));
 }
 
@@ -1168,7 +1171,7 @@ match_RegEx(Device *dev, String expect)
 
 	if (n != REG_NOERROR) 
 		return FALSE;
-	if (pmatch[0].rm_so == -1 || pmatch[0].rm_so == -1)
+	if (pmatch[0].rm_so == -1 || pmatch[0].rm_eo == -1)
 		return FALSE;
 	assert(pmatch[0].rm_so <= len);
 	
