@@ -81,8 +81,7 @@ static bool _process_expect(Device * dev);
 static bool _process_send(Device * dev);
 static bool _process_delay(Device * dev, struct timeval *timeout);
 static void _set_argval_onoff(ArgList *arglist, char *node, ArgState state);
-static void _match_subexpressions(Device * dev, List map, ArgList *arglist);
-static bool _match_regex(Device * dev, char *expect);
+static void _match_subexpressions(Device *dev, Action *act, char *expect);
 static int _match_name(Device * dev, void *key);
 static void _handle_read(Device * dev);
 static void _handle_write(Device * dev);
@@ -753,13 +752,8 @@ static bool _process_expect(Device *dev)
     if ((expect = _getregex_buf(dev->from, re))) {	/* match */
 	dbg(DBG_SCRIPT, "_process_expect(%s): match", dev->name);
 
-	/* process values of parenthesized subexpressions */
-	if (act->cur->s_or_e.expect.map != NULL) {
-	    bool res = _match_regex(dev, expect);
-
-	    assert(res == TRUE); /* since the first regexec worked ... */
-	    _match_subexpressions(dev, act->cur->s_or_e.expect.map, act->arglist);
-	}
+	/* process values of parenthesized subexpressions, if any */
+	_match_subexpressions(dev, act, expect);
 	Free(expect);
 	finished = TRUE;
     } else {						/* no match */
@@ -838,77 +832,55 @@ static bool _process_delay(Device * dev, struct timeval *timeout)
     return finished;
 }
 
-/*
- *   The reply for a device may be in one or 
- * several EXPECT's Intterpretation maps.  This function goes
- * through all the Interpretations for this EXPECT and sets the
- * plug or node states for whatever plugs it finds.
- */
-static void _match_subexpressions(Device * dev, List map, ArgList *arglist)
+static void _match_subexpressions(Device *dev, Action *act, char *expect)
 {
-    Action *act;
     Interpretation *interp;
     ListIterator itr;
-    regex_t *re;
-    char *str;
-    char *end;
-    char tmp;
-    char *pos;
-    int len;
+    size_t nmatch = MAX_MATCH;
+    regmatch_t pmatch[MAX_MATCH];
+    int eflags = 0;
+    int n;
 
-    CHECK_MAGIC(dev);
+    if (act->com != PM_UPDATE_PLUGS)
+	return;
+    if (act->cur->s_or_e.expect.map == NULL)
+	return;
 
-    act = list_peek(dev->acts);
-    assert(act != NULL);
-    assert(map != NULL);
-    itr = list_iterator_create(map);
+    /* match regex against expect - must succede, we checked before */
+    n = Regexec(&act->cur->s_or_e.expect.exp, expect, nmatch, pmatch, eflags);
+    assert(n == REG_NOERROR); 
+    assert(pmatch[0].rm_so != -1 && pmatch[0].rm_eo != -1);
+    assert(pmatch[0].rm_so <= strlen(expect));
 
-    switch (act->com) {
-    case PM_UPDATE_PLUGS:
-	while (((Interpretation *) interp = list_next(itr))) {
-	    if (interp->node == NULL)
-		continue;
-	    re = &(dev->on_re);
-	    str = interp->val;
-	    len = strlen(str);
-	    end = str;
-	    while (*end && !isspace(*end) && ((end - str) < len))
-		end++;
-	    tmp = *end;
-	    len = end - str;
-	    *end = '\0';
-	    if ((pos = _findregex(re, str, len)) != NULL)
-		_set_argval_onoff(arglist, interp->node, ST_ON);
-	    re = &(dev->off_re);
-	    if ((pos = _findregex(re, str, len)) != NULL)
-		_set_argval_onoff(arglist, interp->node, ST_OFF);
-	    *end = tmp;
-	}
-	break;
-#if 0
-    case PM_UPDATE_NODES:
-	while (((Interpretation *) interp = list_next(itr))) {
-	    if (interp->node == NULL)
-		continue;
-	    re = &(dev->on_re);
-	    str = interp->val;
-	    len = strlen(str);
-	    end = str;
-	    while (*end && !isspace(*end) && ((end - str) < len))
-		end++;
-	    tmp = *end;
-	    len = end - str;
-	    *end = '\0';
-	    if ((pos = _findregex(re, str, len)) != NULL)
-		_set_argval_onoff(arglist, interp->node, ST_ON);
-	    re = &(dev->off_re);
-	    if ((pos = _findregex(re, str, len)) != NULL)
-		_set_argval_onoff(arglist, interp->node, ST_OFF);
-	    *end = tmp;
-	}
-	break;
-#endif
-    default:
+    itr = list_iterator_create(act->cur->s_or_e.expect.map);
+    while ((interp = list_next(itr))) {
+	char *val, *str, *end, tmp, *pos;
+	int len;
+
+	if (interp->node == NULL) /* unused plug? */
+	    continue;
+	assert(interp->match_pos >= 0 && interp->match_pos < MAX_MATCH);
+	assert(pmatch[interp->match_pos].rm_so < MAX_BUF);
+	assert(pmatch[interp->match_pos].rm_so >= 0);
+	assert(pmatch[interp->match_pos].rm_eo < MAX_BUF);
+	assert(pmatch[interp->match_pos].rm_eo >= 0);
+	val = expect + pmatch[interp->match_pos].rm_so;
+
+	/* FIXME: clean this up */
+	str = val;
+	len = strlen(str);
+	end = str;
+	while (*end && !isspace(*end) && ((end - str) < len))
+	    end++;
+	tmp = *end;
+	len = end - str;
+	*end = '\0';
+
+	if ((pos = _findregex(&dev->on_re, str, len)) != NULL)
+	    _set_argval_onoff(act->arglist, interp->node, ST_ON);
+	if ((pos = _findregex(&dev->off_re, str, len)) != NULL)
+	    _set_argval_onoff(act->arglist, interp->node, ST_OFF);
+	*end = tmp;
     }
     list_iterator_destroy(itr);
 }
@@ -998,62 +970,6 @@ void dev_plug_destroy(Plug * plug)
     Free(plug->name);
     Free(plug->node);
     Free(plug);
-}
-
-/*
- *   This is the function that actually matches an EXPECT against
- * a candidate expect string.  If the match succeeds then it either
- * returns TRUE, or if there's an interpretation to be done it
- * goes through and sets all the Interpretation "val" fields, for
- * the semantics functions to later find.
- */
-static bool _match_regex(Device * dev, char *expect)
-{
-    Action *act;
-    regex_t *re;
-    int n;
-    size_t nmatch = MAX_MATCH;
-    regmatch_t pmatch[MAX_MATCH];
-    int eflags = 0;
-    Interpretation *interp;
-    ListIterator itr;
-
-    CHECK_MAGIC(dev);
-    act = list_peek(dev->acts);
-    assert(act != NULL);
-    CHECK_MAGIC(act);
-    assert(act->cur != NULL);
-    assert(act->cur->type == EL_EXPECT);
-
-    re = &(act->cur->s_or_e.expect.exp);
-    n = Regexec(re, expect, nmatch, pmatch, eflags);
-
-    if (n != REG_NOERROR)
-	return FALSE;
-    if (pmatch[0].rm_so == -1 || pmatch[0].rm_eo == -1)
-	return FALSE;
-    assert(pmatch[0].rm_so <= strlen(expect));
-
-    /* 
-     *  The while block assumes that the initializer is never NULL
-     * but instead points to a header record to be skipped.  In this case
-     * the initializer can be NULL, though.  That is how we signal there
-     * is no subexpression to be interpreted.  If it is non-NULL then it
-     * is the header record to an interpretation for the device.
-     */
-    if (act->cur->s_or_e.expect.map == NULL)
-	return TRUE;
-
-    itr = list_iterator_create(act->cur->s_or_e.expect.map);
-    while ((interp = list_next(itr))) {
-	assert((pmatch[interp->match_pos].rm_so < MAX_BUF) &&
-	       (pmatch[interp->match_pos].rm_so >= 0));
-	assert((pmatch[interp->match_pos].rm_eo < MAX_BUF) &&
-	       (pmatch[interp->match_pos].rm_eo >= 0));
-	interp->val = expect + pmatch[interp->match_pos].rm_so;
-    }
-    list_iterator_destroy(itr);
-    return TRUE;
 }
 
 static void _destroy_arg(Arg *arg)

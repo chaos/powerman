@@ -1,6 +1,9 @@
 2002-10-16 garlick
 	* Make Action struct private to device.c
 	* Move script names to config.h.
+	* Merged _match_regex into _match_subexpression.  Removed intermediate
+	  regex match data from Interpretation struct (now temporary in 
+	  _match_subexpression).
 
 2002-10-14 garlick
 	* Remove RESET_SCRIPT definitions in wti and baytech device files.

@@ -302,8 +302,7 @@ Interpretation *conf_interp_create(char *name)
 
     interp = (Interpretation *) Malloc(sizeof(Interpretation));
     interp->plug_name = Strdup(name);
-    interp->match_pos = INTERP_MATCH_POS_NOT_SET;
-    interp->val = NULL;
+    interp->match_pos = -1;
     interp->node = NULL;
     return interp;
 }

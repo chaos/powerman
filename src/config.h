@@ -109,11 +109,9 @@ typedef struct {
 /*
  * Interpretation - a Script_El map entry.
  */
-#define INTERP_MATCH_POS_NOT_SET (-1) /* match_pos value if not set */
 typedef struct {
     char	    *plug_name;	/* plug name e.g. "10" */
-    int		    match_pos;	/* offset into string where match is */
-    char	    *val;	/* pointer based on match_pos */
+    int		    match_pos;	/* index into pmatch array after regex call */
     char	    *node;	/* where to update matched values */
 } Interpretation;
 

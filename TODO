@@ -10,7 +10,7 @@ Short Term:
 * Reformat code w/out tabs
 * vpcd --hung_rpc can cause client to hang forever.
 * Verify that tcp_wrappers works.
-* Do not store interpreted values in intepretation struct.  Use arglist instead!
+* Verify that 0 <= match_pos < MAX_MATCH in parser (now we assert in device.c)
 
 Long term:
 * Build failure simulator test suite
