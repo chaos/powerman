@@ -145,3 +145,8 @@ class ClusterClass:
         for name in self.nodes.keys():
             self.nodes[name].mark(message)
 
+    def set_temp_bounds(self, low, high):
+        "Set temperature bounds for temperature queries."
+        for type_name in self.q_types.keys():
+            if (type_name == "icebox"):
+                self.q_types[type_name].set_data.set_temp_bounds(low, high)

@@ -196,11 +196,11 @@ def prompt(string, return_immediately):
             signal.alarm(READ_TIMEOUT)
             try:
                 input = os.read(tty, BUF_SIZE)
+                signal.alarm(ALARM_OFF)
+                trace(input)
             except OSError:
                 pass
-            signal.alarm(ALARM_OFF)
-            trace(input)
-    log("hear:  " + response + input)
+    log("hear:  " + response)
     return response
 
 def init_alarm():

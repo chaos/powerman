@@ -24,10 +24,14 @@ class NodeDataClass:
     tty  = ""
     box  = ""
     port = ""
+    cpu1 = 0
+    cpu2 = 0
 
     def __init__(self, type, vals):
         "Node class initialization"
         self.type = type
+        self.cpu1 = 0
+        self.cpu2 = 0
         try:
             self.tty  = vals[0]
             self.box  = vals[1]
@@ -40,12 +44,14 @@ class PortClass:
     "Class definition for an icebox port"
     name       = ""
     node       = None
+    box        = None
     com        = ""
     reply      = ""
     PORT_DELAY = 0.3
     
-    def __init__(self, node):
+    def __init__(self, node, box):
         "Port class initialization"
+        self.box = box
         try:
             port_name = node.q_data.port
         except AttributeError:
@@ -73,21 +79,24 @@ class BoxClass:
     "Class definition for an icebox"
     name             = ""
     ports            = {}
+    tty              = None
     com              = ""
     ICEBOX_SIZE      = 10
     # Setting BOX_DELAY to 3.5 seconds results in always having exactly
     # one "ERROR" reply before success.
-    BOX_DELAY        = 4.0
-
-    def __init__(self, name):
+    LONG_BOX_DELAY   = 4.0
+    SHORT_BOX_DELAY  = 0.05
+    
+    def __init__(self, name, tty):
         "Box class initialization"
         self.name  = name
+        self.tty   = tty
         self.ports = {}
         self.com   = ""
 
     def add(self, node):
         "Add a port to the list of occupied ports on the icebox"
-        port = PortClass(node)
+        port = PortClass(node, self)
         self.ports[port.name] = port
 
     def do_command(self):
@@ -180,9 +189,25 @@ class BoxClass:
                             port.reply = node.name
                     elif((com == 'ts') or (com == 'tsf')):
                         node.unmark()
-                        good_response = good_response + 1
                         temps = val
-                        port.reply = "%s:%s" % (node.name,temps)
+                        try:
+                            temp1, temp2 = string.split(temps, ',')
+                        except ValueError:
+                            continue
+                        try:
+                            node.q_data.cpu1 = cpu1 = int(temp1)
+                            node.q_data.cpu2 = cpu2 = int(temp2)
+                            good_response = good_response + 1
+                        except ValueError:
+                            continue
+                        if((self.tty.set.low != None) and (self.tty.set.high != None)):
+                            # print "Checking bounds", node.name
+                            low = self.tty.set.low
+                            high = self.tty.set.high
+                            if((cpu1 < low) or (cpu2 < low) or (cpu1 > high) or (cpu2 > high)):
+                                port.reply = "%s:%s" % (node.name,temps)
+                        else:
+                            port.reply = "%s:%s" % (node.name,temps)
         if (good_response == num_requested):
             for port_name in self.ports.keys():
                 port = self.ports[port_name]
@@ -190,32 +215,42 @@ class BoxClass:
         else:
             pm_utils.exit_error(21, "box " + self.name)
         if (setting):
-            time.sleep(self.BOX_DELAY)
+            time.sleep(self.LONG_BOX_DELAY)
+        else:
+            time.sleep(self.SHORT_BOX_DELAY)
 
 class TtyClass:
     "Class definition for a tty with icebox(es) attached"
     name       = ""
     boxes      = {}
+    set        = None
     prev_attrs = None
     attrs      = None
     device     = None
     locked     = 0
 
-    def __init__(self, name):
+    def __init__(self, name, set):
         "Tty class initialization"
         self.name       = name
         self.boxes      = {}
-        self.attrs = None
+        self.set        = set
+        self.attrs      = None
         self.prev_attrs = None
         self.device     = None
         self.locked     = 0
 
     def do_command(self):
         # print "Doing tty command", com
+        #old_time = time.time()
+        #new_time = None
         pm_utils.init_tty(self)
         for box_name in self.boxes.keys():
             box = self.boxes[box_name]
             box.do_command()
+            #new_time = time.time()
+            #sys.stderr.write("    %1.3f" % (new_time - old_time))
+            #old_time = new_time
+        #sys.stderr.write("\n")
         pm_utils.fini_tty(self)
         
     def add(self, node):
@@ -226,7 +261,7 @@ class TtyClass:
         try:
             box = self.boxes[box_name]
         except KeyError:
-            box = BoxClass(box_name)
+            box = BoxClass(box_name, self)
             self.boxes[box_name] = box
         box.add(node)
 
@@ -235,7 +270,9 @@ class SetDataClass:
     "Structure in which to gather all the icebox info in a single place"
     ttys    = {}
     cluster = None
-
+    low     = None
+    high    = None
+    
     def __init__(self, cluster):
         "Read in the node, tty, box, and port for each node from the configuration file"
         self.ttys    = {}
@@ -245,7 +282,7 @@ class SetDataClass:
         try:
             tty = self.ttys[node.q_data.tty]
         except KeyError:
-            tty = TtyClass(node.q_data.tty)
+            tty = TtyClass(node.q_data.tty, self)
             self.ttys[tty.name] = tty
         tty.add(node)
 
@@ -256,3 +293,8 @@ class SetDataClass:
             tty = self.ttys[tty_name]
             tty.do_command()
 
+    def set_temp_bounds(self, low, high):
+        "Set the bounds for temperature queries"
+        self.low  = low
+        self.high = high
+        # print "Using bounds:", low, high

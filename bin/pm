@@ -55,6 +55,7 @@ names       = []
 com         = ''
 all         = 0
 fanout      = 256
+bounds      = ()
 
 # Look for environment variables and set globals
 
@@ -126,6 +127,17 @@ for opt in options:
     else:
         usage("Unrecognized option " + op + "\n")
 
+if (com == "temp"):
+    if (args):
+        try: 
+            low    = int(args[0])
+            high   = int(args[1])
+            bounds = (low, high)
+        except ValueError, KeyError:
+            pass
+        if (not bounds):
+            usage("\n\nYou may optionally enter a low and high temperature bound,\nbut you need exactly two integers.")
+
 if (not com):
     if (args and args[0]):
         com = string.lower(args[0])
@@ -133,6 +145,7 @@ if (not com):
         com = "rquery"
     else:
         com = "query"
+
 if (not ((com == 'off') or (com == 'on') or (com == 'reset') or (com == 'temp') or (com == 'query') or (com == 'rquery') or (com == 'hwreset'))):
     usage ("\n\nUnrecognized command.")
     
@@ -160,6 +173,8 @@ pm_utils.init_utils(verbose, logging, tracing, powermandir)
 
 theCluster = pm_classes.ClusterClass(config_file)
 theCluster.fanout = fanout
+if (bounds and (len(bounds) == 2)):
+    theCluster.set_temp_bounds(bounds[0], bounds[1])
 
 if(all):
     theCluster.mark_all(com)
