@@ -23,6 +23,7 @@ specification "baytech-rpc3-nc" {
 
 	script login {
 		send "temp\r\n"
+		expect "Internal Temperature[^C]+ C"
 		expect ">"
 	}
 	script logout {
@@ -30,11 +31,12 @@ specification "baytech-rpc3-nc" {
 	}
 	script status_all {
 		send "temp\r\n"
+		expect "Internal Temperature[^C]+ C"
 		expect ">"
 		send "status\r\n"
-		expect "Circuit Breaker:[^\n]*\r\n"	
+		expect "Internal Temperature[^C]+ C"
 		foreachplug {
-			expect "([0-9]+)[ ]+: (On|Off)"
+			expect "([0-9]+)[^:]+: (On|Off)"
 			setplugstate $1 $2 on="On" off="Off"
 		}
 		expect ">"
