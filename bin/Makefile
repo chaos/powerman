@@ -50,6 +50,7 @@ install:
 	$(INSTALL) bogus_set    $(DESTDIR)$(packagedir)/bin/
 	$(INSTALL) -m 4755 digi $(DESTDIR)$(packagedir)/bin/
 	$(INSTALL) etherwake    $(DESTDIR)$(packagedir)/bin/
+	$(INSTALL) icebox       $(DESTDIR)$(packagedir)/bin/
 	$(INSTALL) rmc          $(DESTDIR)$(packagedir)/bin/
 	$(INSTALL) wti          $(DESTDIR)$(packagedir)/bin/
 
