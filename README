@@ -68,7 +68,7 @@ Contents
 2.4  powermand - Invoking the daemon
 2.5  resources for monitoring the daemon's behavior
 2.6  "powerman" - Invoking the client
-
+3.  Trying out powerman
 
 
 
@@ -635,3 +635,162 @@ command line to get a rudimentary functionality test.  See "powerman
 ~/src/powermand/powerman -qz \*
 #
 ------------------------------------------------------------------------
+
+3.  Trying out powerman
+
+o Make sure there are no vicebox and powermand servers running
+  before you start.
+---
+  > ps -aux |grep vicebox or alternatively
+  > telnet localhost 11000 if you now that's where vicebox might be
+  > kill -9 `pidof vicebox`
+  > telnet again to verify
+  > ps -aux |grep powermand or alternatively
+  > telnet localhost 10101 if you now that's where powermand might be
+  > kill -9 `pidof powermand` or alternatively
+  > powermand -k if your pretty sure it hasn't been corrupted
+  > telnet again to verify
+---
+
+o If you have access to the CVS repository containing PowerMan you can
+  check it out:
+---
+  > cvs co powerman
+  > cd powerman
+---
+  otherwise you'll just download the source RPM to some working
+  directory:
+---
+  > http://www.llnl.gov/linux/powerman
+---
+  and skip the next step about making the RPM.
+
+o During development I'll make RPMs from the CVS HEAD, usually you
+  will want to make the default tagged version.
+---
+  > make rpm (tag=HEAD)
+---
+  This step will also require access to the CVS repository.  
+
+o You'll have to be root-equivalent to install the RPMs
+---
+  > su <root-equiv>
+  # ls *.src.rpm
+  # rpm -i powerman-version-date.src.rpm
+  # rpm -ba /usr/src/redhat/SPECS/powerman.spec
+  # ls /usr/src/redhat/RPMS/i386/powerman*
+  # rpm -i /usr/src/redhat/RPMS/i386/powerman-version-date.src.rpm
+  # PMDIR=/usr/src/redhat/BUILD/powerman-version
+  # export PMDIR
+  # cd $PMDIR
+---
+  
+o You'll want to have at least three windows open to carry out the 
+  following.  If you're already in window W1 then in window W2 log
+  in as root equivalent.  Window W3 can be a regular user.  I'll
+  preface each suggested command line with W1, W2, or W3, to give
+  an idea where to do what.
+
+o A script invokes one instance of the vicebox emulator suitable for
+  testing powermand, but does not actually start the daemon.  The
+  example powerman.conf and vicebox.dev included above are compatable
+  with the following examples.  You will find that, unless you already
+  had PowerMan installed on your system, the two files are already in
+  /etc/powerman. 
+---
+  W1# $PMDIR/scripts/start-pm.1
+---
+  
+o The prompt does not return.  The is because the last step of the
+  script is to execute "tail -f logfile".  Since there wasn't any
+  previous content in the logfile nothing appears.  Needless to say in
+  subsequent tests you'll see the tail of the file.
+
+o You can test the operation of the vicebox, or at least see that it
+  is there, by telnet-ing to it.
+---
+  W3> telnet localhost 11000
+  Trying 127.0.0.1...
+  Connected to localhost (127.0.0.1).
+  Escape character is '^]'.
+  V2.2
+---
+  At this point type "auth password" to interact with the icebox (more
+  on that elsewhere) or just ^]q (escape-q) to get out of telnet.  If
+  you didn't see the version prompt go back and figure out what went
+  wrong.  
+
+o An optional fourth window (also root-equivalent) tracking the
+  messages file will show you what the PowerMan daemon sends to
+  syslog(). 
+---
+  W4# tail -f /var/log/messages
+---
+
+o Now you get to actually start the PowerMan daemon.
+---
+  W2# powermand -c /etc/powerman/powerman.conf
+---
+  As start up message goes to syslog() and lots of debug info goes to
+  the log.  It's easy to turn the logfile off, if and when you want to
+  do without a log.  You always get some syslog() activity.
+
+o You can again telnet in to see that all is working, this time going
+  to powermand's port.
+---
+  W3> telnet localhost 10101
+  Trying 127.0.0.1...
+  Connected to localhost (127.0.0.1).
+  Escape character is '^]'.
+  PowerMan V0.2.0
+  password> 
+---
+  The current, very clever, password is "powerman".  The "on" command
+  will (pretend to) power on vicebox controlled devices.  The "update
+  plugs" command tells the state of the plugs on the various devices
+  (only one at this point).  The PowerMan client protocol (what you
+  are talksing to directly here) speaks RegEx natively, so note the 
+  ".*" for anything rather than glob-style "*".  The following turns
+  on any node with a '5' in its name.
+---
+  password> powerman
+  0 PowerMan> on .*5.*
+  1 PowerMan> update plugs
+  0000010000
+  2 PowerMan> 
+---
+  
+o One normally does not communicate with powermand via telnet.  The
+  PowerMan client program is called "powerman".  It has a --help
+  option and man page.  A script is supplied that runs half a dozen
+  commands against the setup detailed here.  Give it a try. 
+---
+  W2# scripts/client-test.sh
+---
+
+o  If you've lingered over these notes while running the examples, you
+  will have noticed that occasionally the daemon becomes active on its
+  own.  The config file has an "update-interval" that controlls this
+  behavior.  If you experiment with the other scripts and
+  configuration files (see $PMDIR/scripts and $PMDIR/etc) will notive
+  that above a few hundred nodes that commands slow down
+  significantly.  This is deliberate.  The configuration file has a
+  setting for "interDev" that controls how often powermand is willing
+  to dispatch commands to power control devices.  Some devices can be
+  overdriven.  the result is lost communications that powermand has to
+  detect by a timeout (which may be set in the device configuraiton
+  file).  
+
+o  To finish up this demonstration exercise the powermand "kill"
+  option.  
+---
+  W2# powermand -k
+---
+  You can telnet again to verify powermand was killed.  It is good to
+  check, since powermand can sometimes be fooled into trying to kill
+  the wrong pid.  This can happen if you start sveral instances of
+  powermand on the same host.  This is behaviour that will be
+  rectified before a production release is issued.  ^c will end the
+  "tail -f" sessions.  To uninstall the code:
+---
+  W1# rpm -e powerman

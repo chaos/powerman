@@ -67,7 +67,7 @@ vice_error.o : vice_error.c vicebox.h
 	$(CC) $(COPTS) -c -o $@ $< $(INC)
 
 svicebox : svicebox.c
-	$(CC) $(COPTS) -c -o ${srcbin}/$@ $< $(INC)
+	$(CC) $(COPTS) -c -o ${srcbin}/svicebox svicebox.c $(INC)
 
 clean :
 	rm -f *~ *.o
