@@ -21,6 +21,7 @@
 #            no more bitmap mode.  Must be root to run.
 #            Add temperature query.
 #            replace -v verbose with -q quiet
+# v. 0-1-7:  2001-09-17
 ####################################################################
 
 import sys
@@ -256,7 +257,7 @@ def usage(msg):
 
 # Begin main routine processing.
 
-Version = "pm: Powerman 0.1.6"
+Version = "pm: Powerman 0.1.7"
 
 # Check for level of permision and exit for non-root users
 

@@ -17,10 +17,14 @@
 # v. 0-1-5:  2001-09-05
 # v. 0-1-6:  2001-09-07
 #            add icebox and make a few changes to the code
+# v. 0-1-7:  2001-09-17
+#            fixed corner case for unfull icebox and one bug 
+#            related to \r\n
+#            This is the version released for the pca/b clusters
 ####################################################################
  
 %define name    powerman
-%define version 0.1.6
+%define version 0.1.7
 %define release 1
 
 Name: %name

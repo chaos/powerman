@@ -15,10 +15,11 @@
 # v. 0-1-5:  2001-09-05
 # v. 0-1-6:  2001-09-07
 #            replace -v verbose with -q quiet
+# v. 0-1-7:  2001-09-17
 ####################################################################
 # rmc -w node,... [on | off | reset]
 
-set Version "rmc:powerman 0.1.6"
+set Version "rmc:powerman 0.1.7"
 
 source /usr/lib/conman/conman.exp
 

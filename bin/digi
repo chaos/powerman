@@ -8,6 +8,7 @@
 #            reimplemented in Python from original C source
 #            no bitmap mode
 #            replace -v verbose with -q quiet
+# v. 0-1-7:  2001-09-17
 ####################################################################
 
 import sys
@@ -45,7 +46,7 @@ def init(f):
         ttys[tokens[0]] = tokens[1]
     return ttys
 
-Version = "digi:Powerman 0.1.5"
+Version = "digi:Powerman 0.1.7"
 
 # initialize globals
 powermandir  = '/usr/lib/powerman/'

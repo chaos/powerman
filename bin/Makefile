@@ -12,12 +12,13 @@
 # v. 0-1-4:  2001-09-05
 # v. 0-1-5:  2001-09-05
 # v. 0-1-6:  2001-09-07
+# v. 0-1-7:  2001-09-17
 ####################################################################
 # I'll eventually want to exclude "rmc", since it depends on the 
 # conman package.  It should be in another rpm by itself.
 
 PACKAGE= powerman
-VERSION= 0.1.6
+VERSION= 0.1.7
 SHELL=   /bin/sh
 CC=      gcc
 DEFS=

@@ -16,10 +16,11 @@
 # v. 0-1-5:  2001-09-05
 # v. 0-1-6:  2001-09-07
 #            no longer use src/digi.c, since there's a Python version
+# v. 0-1-7:  2001-09-17
 ####################################################################
 
 PACKAGE= powerman
-VERSION= 0.1.6
+VERSION= 0.1.7
 SHELL=   /bin/sh
 MAKE=    /usr/bin/make
 CC=      gcc

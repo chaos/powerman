@@ -27,6 +27,7 @@
 # v. 0-1-5:  2001-09-05
 # v. 0-1-6:  2001-09-07
 #            replace -v verbose with -q quiet
+# v. 0-1-7:  2001-09-17
 ####################################################################
 
 import sys
@@ -69,7 +70,7 @@ def init(f):
         macs[tokens[0]] = tokens[1]
     return macs
 
-Version = "etherwake:Powerman 0.1.6"
+Version = "etherwake:Powerman 0.1.7"
 
 # Check for level of permision and restrict activities for non-root users
 

@@ -14,6 +14,7 @@
 #            just [on | off | reset].
 #            Also note that we no longer support bitmap mode
 #            Use -q for quiet mode rather than -v for verbose
+# v. 0-1-7:  2001-09-17
 ####################################################################
 
 import sys
@@ -133,7 +134,7 @@ def init(f):
         box.add(port)
     return nodes, ttys
 
-Version = "icebox:Powerman 0.1.6"
+Version = "icebox:Powerman 0.1.7"
 
 # Check for level of permision and exit for non-root users
 
