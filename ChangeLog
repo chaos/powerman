@@ -1,9 +1,7 @@
 2003-07-15 Jim Garlick <garlick@llnl.gov>
 
-    * etc/baytech-rpc28-nc.dev, etc/baytech-rpc3-nc.dev: send a carriage return
-    and expect a prompt before doing actual commands.  These devices seem to
-    time out after a while and the first command issued after a timeout
-    doesn't go through.
+    * etc/baytech-rpc28-nc.dev, etc/baytech-rpc3-nc.dev: minor fine tuning
+    based on IGS cluster experience with rpc28's.
 
     * src/device_pipe.[ch], src/pty.[ch]: New.
 
