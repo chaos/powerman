@@ -53,6 +53,7 @@
  * Actions are appended to a per device list in dev->acts
  */
 #define ACT_MAGIC 0xb00bb000
+#define MAX_LEVELS 2
 typedef struct {
     int magic;
     int com;                    /* one of the PM_* above */
@@ -71,6 +72,7 @@ typedef struct {
 #define _act_started(act)   ((act)->cur != NULL)
 
 
+static bool _process_foreachplug(Device * dev);
 static bool _process_setstatus(Device * dev);
 static bool _process_setplugname(Device * dev);
 static bool _process_expect(Device * dev);
@@ -158,6 +160,8 @@ static unsigned char *_findregex(regex_t * re, unsigned char *str, int len,
  * \0 chars cannot be matched explicitly.
  *  b (IN)  buffer to apply regex to
  *  re (IN) regular expression
+ *  nm (IN)   number of elem in pm array (can be 0)
+ *  pm (OUT)  filled with subexpression matches (can be NULL)
  *  RETURN  String match (caller must free) or NULL if no match
  */
 static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[])
@@ -767,7 +771,9 @@ static void _process_action(Device * dev, struct timeval *timeout)
         } else if (act->cur->type == STMT_SETSTATUS) {
             stalled = !_process_setstatus(dev);         /* set status */
         } else if (act->cur->type == STMT_SETPLUGNAME) {
-            stalled = !_process_setplugname(dev);         /* set plugname */
+            stalled = !_process_setplugname(dev);       /* set plugname */
+        } else if (act->cur->type == STMT_FOREACHPLUG) {
+            stalled = !_process_foreachplug(dev);       /* foreachplug */
         } else {
             assert(act->cur->type == STMT_DELAY);
             stalled = !_process_delay(dev, timeout);    /* do delay */
@@ -818,6 +824,14 @@ static void _process_action(Device * dev, struct timeval *timeout)
     }
 }
 
+static bool _process_foreachplug(Device * dev)
+{
+    bool finished = TRUE;
+
+    return finished;
+}
+
+
 /* Make a copy of a device's cached subexpression match, referenced by
  * 'mp' match position, or NULL if no match.  Caller must free the result.
  */
@@ -839,7 +853,7 @@ static char *_copy_pmatch(Device *dev, int mp)
     if (m.rm_eo > strlen(dev->matchstr) || m.rm_eo < 0)
         return NULL;    /* end pointer is out of range */
     if (m.rm_eo - m.rm_so <= 0)
-        return NULL;    /* match is nonzero length */
+        return NULL;    /* match is zero length */
 
     new = Malloc(m.rm_eo - m.rm_so + 1);
     memcpy(new, dev->matchstr + m.rm_so, m.rm_eo - m.rm_so);

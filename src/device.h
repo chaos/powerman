@@ -85,7 +85,7 @@ typedef struct {
             struct timeval tv;  /* delay at this point in the script */
         } delay;
         struct {                /* FOREACHPLUG | FOREACHNODE */
-            List stmts;
+            List stmts;         /* list of statements to execute in a loop */
         } foreach;
     } u;
 } Stmt;

@@ -337,9 +337,9 @@ stmt            : TOK_EXPECT TOK_STRING_VAL {
 }               | TOK_SETSTATUS TOK_MATCHPOS TOK_NUMERIC_VAL {
     $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, NULL, $3, NULL);
 }               | TOK_FOREACHNODE stmt_block {
-    $$ = (char *)makePreStmt(STMT_FOREACHNODE, NULL, NULL, NULL, NULL, (List)$2);
+    $$ = (char *)makePreStmt(STMT_FOREACHNODE, NULL, NULL, NULL, NULL,(List)$2);
 }               | TOK_FOREACHPLUG stmt_block {
-    $$ = (char *)makePreStmt(STMT_FOREACHPLUG, NULL, NULL, NULL, NULL, (List)$2);
+    $$ = (char *)makePreStmt(STMT_FOREACHPLUG, NULL, NULL, NULL, NULL,(List)$2);
 }
 ;
 
@@ -398,6 +398,7 @@ static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
         new->str = Strdup(str);
     if (tvstr)
         _doubletotv(&new->tv, _strtodouble(tvstr));
+    new->stmts = prestmts;
 
     return new;
 }
@@ -407,6 +408,9 @@ static void destroyPreStmt(PreStmt *p)
     if (p->str)
         Free(p->str);
     p->str = NULL;
+    if (p->stmts)
+        list_destroy(p->stmts);
+    p->stmts = NULL;
     Free(p);
 }
 
