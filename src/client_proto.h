@@ -112,6 +112,7 @@
 #define CP_RSP_VERBOSE      "107 Server verbosity %s"               CP_EOL
 #define CP_RSP_VERBMSG      "306 %s"                                CP_EOL
 #define CP_RSP_EXPRANGE     "108 Server hostrange expansion %s"     CP_EOL
+#define CP_RSP_RAW_NODES    "307 %s"                                CP_EOL
 
 /* failure */
 #define CP_ERR_FAILURE      "200 Failure"                           CP_EOL

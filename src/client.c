@@ -213,12 +213,28 @@ static hostlist_t _hostlist_create_validated(Client * c, char *str)
 static void _client_query_nodes_reply(Client * c)
 {
     hostlist_t nodes = conf_getnodes();
-    char hosts[CP_LINEMAX];
 
-    if (hostlist_ranged_string(nodes, sizeof(hosts), hosts) == -1)
-        _client_printf(c, CP_ERR_INTERNAL);
-    else
-        _client_printf(c, CP_RSP_NODES, hosts);
+    if (c->exprange) {
+        hostlist_iterator_t itr;
+        char *node;
+    
+        if ((itr = hostlist_iterator_create(nodes))) {
+            while ((node = hostlist_next(itr))) {
+                _client_printf(c, CP_RSP_RAW_NODES, node);
+            }
+        } else {
+            _client_printf(c, CP_ERR_INTERNAL);
+        }
+        _client_printf(c, CP_RSP_QUERY_COMPLETE);
+        
+    } else {
+        char hosts[CP_LINEMAX];
+
+        if (hostlist_ranged_string(nodes, sizeof(hosts), hosts) == -1)
+            _client_printf(c, CP_ERR_INTERNAL);
+        else
+            _client_printf(c, CP_RSP_NODES, hosts);
+    }
 }
 
 /* 
