@@ -19,14 +19,13 @@ VERSTR=		$(shell if test -n "$(VERSION)"; then \
 DEFS=		-DHAVE_CONFIG_H -DPOWERMAN_VERSION=\"$(VERSTR)\"
 #DEFS+=		-DNDEBUG
 CFLAGS= 	-g -Wall $(DEFS) 
-# uncomment for gmon
-CFLAGS+=	-pg
+#CFLAGS+=	-pg
 
 LIBS=		-lfl -lwrap -lnsl -lutil
 
 COMMON_OBJS = wrappers.o error.o hostlist.o debug.o
 
-SERVER_UTIL = $(COMMON_OBJS) daemon.o cbuf.o hprintf.o argv.o #hash.o
+SERVER_UTIL = $(COMMON_OBJS) daemon.o cbuf.o hprintf.o argv.o hash.o
 
 SERVER_OBJS = $(SERVER_UTIL) list.o parse_util.o device.o \
 	      powermand.o client.o parse_lex.o parse_tab.o \

@@ -308,6 +308,7 @@ PollfdSet(Pollfd_t pfd, int fd, short events)
     }
 #else
     assert(pfd->magic == POLLFD_MAGIC);
+    assert(fd < FD_SETSIZE);
     if (events & POLLIN)
         FD_SET(fd, &pfd->rset);
     if (events & POLLOUT)

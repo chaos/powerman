@@ -1266,10 +1266,12 @@ int dev_plug_match_plugname(Plug * plug, void *key)
 {
     return (plug->name == NULL ? 0 : (strcmp(plug->name, (char *) key) == 0));
 }
+#if 0
 int dev_plug_match_noname(Plug * plug, void *key)
 {
     return ((plug->name == NULL && plug->node == NULL) ? 1 : 0);
 }
+#endif
 
 /* helper for dev_create */
 void dev_plug_destroy(Plug * plug)
@@ -1299,9 +1301,12 @@ ArgList *dev_create_arglist(hostlist_t hl)
     hostlist_iterator_t itr;
     Arg *arg;
     char *node;
+    int hash_size;
 
     new->refcount = 1;
-    new->argv = list_create((ListDelF) _destroy_arg);
+    hash_size = hostlist_count(hl); /* reasonable? */
+    new->args = hash_create(hash_size, (hash_key_f)hash_key_string, 
+            (hash_cmp_f)strcmp, (hash_del_f)_destroy_arg);
 
     if ((itr = hostlist_iterator_create(hl)) == NULL) {
         dev_unlink_arglist(new);
@@ -1312,7 +1317,7 @@ ArgList *dev_create_arglist(hostlist_t hl)
         arg->node = Strdup(node);
         arg->state = ST_UNKNOWN;
         arg->val = NULL;
-        list_append(new->argv, arg);
+        hash_insert(new->args, arg->node, arg);
     }
     hostlist_iterator_destroy(itr);
 
@@ -1325,7 +1330,7 @@ ArgList *dev_create_arglist(hostlist_t hl)
 void dev_unlink_arglist(ArgList * arglist)
 {
     if (--arglist->refcount == 0) {
-        list_destroy(arglist->argv);
+        hash_destroy(arglist->args);
         Free(arglist);
     }
 }
@@ -1339,22 +1344,14 @@ ArgList *dev_link_arglist(ArgList * arglist)
     return arglist;
 }
 
-/* helper for _set_argval */
-static int _arg_match(Arg * arg, void *key)
-{
-    return (key != NULL && strcmp(arg->node, (char *) key) == 0 
-            /* && (arg->state == ST_UNKNOWN || arg->val == NULL) */);
-}
-
 static InterpState _get_argval(ArgList *arglist, char *node)
 {
     Arg *arg;
-    InterpState state = ST_UNKNOWN;
 
-    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node))) {
-        state = arg->state;
-    }
-    return state;
+    if (node != NULL && (arg = hash_find(arglist->args, node)) != NULL)
+        return arg->state;
+
+    return ST_UNKNOWN;
 }
 
 /*
@@ -1364,7 +1361,7 @@ static void _set_argval(ArgList *arglist, char *node, char *val, List interps)
 {
     Arg *arg;
 
-    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node))) {
+    if (node != NULL && (arg = hash_find(arglist->args, node)) != NULL) {
         ListIterator itr;
         Interp *i;
 

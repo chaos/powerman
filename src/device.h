@@ -30,6 +30,7 @@
 #include <regex.h>
 #include "cbuf.h"
 #include "hostlist.h"
+#include "hash.h"
 
 /* Indices into script array */
 #define PM_LOG_IN           0
@@ -110,7 +111,7 @@ typedef struct {
     InterpState state;          /* interpreted value, if appropriate */
 } Arg;
 typedef struct {
-    List argv;                  /* list of Arg structures */
+    hash_t args;                /* hash of Arg structs */
     int refcount;               /* free when refcount == 0 */
 } ArgList;
 

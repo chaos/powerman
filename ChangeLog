@@ -4,8 +4,8 @@
     for efficiency.
 
     * src/device.c, src/powermand.c, src/wrappers.c: introduce poll debugging
-    code and fix bugs related to poll changes.  Now we don't spin when
-    reconnecting to devices if HAVE_POLL=1.
+    code and fix bug where poll loop would spin when poll returned errors
+    on devices.
 
     * src/device.c: rewrite dev_post_poll() for clarity.
 
@@ -13,6 +13,13 @@
     pty_open.  This gets pty allocation right once and for all.
 
     * src/pty.[ch]: removed.
+
+    * src/hash.[ch]: new from lsd-tools (courtesy Chris Dunlap)
+
+    * src/device.[ch], src/client.c: changed ArgList to use hash_t instead of
+    List since gprof showed list searching was the bottleneck in big configs.
+    Caveat: uninterpreted output such as temperature is no longer returned
+    in config file order. 
 
 2003-12-04 Jim Garlick <garlick@llnl.gov>
 

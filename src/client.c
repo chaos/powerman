@@ -48,6 +48,7 @@
 #include "debug.h"
 #include "device.h"
 #include "hprintf.h"
+#include "hash.h"
 
 #define LISTEN_BACKLOG    5
 
@@ -338,28 +339,30 @@ static void _client_query_device_reply(Client * c, char *arg)
 
 }
 
-/* helper for _client_query_status_reply */
-static int _argval_ranged_string(ArgList * arglist, char *str, int len,
-                                 InterpState state)
+/* helpers for _client_query_status_reply */
+static int _dump_arg_exprange(Arg *arg, Client *c)
 {
-    hostlist_t hl = hostlist_create(NULL);
-    ListIterator itr;
-    Arg *arg;
-    int res = -1;
-
-    if (hl != NULL) {
-        itr = list_iterator_create(arglist->argv);
-        while ((arg = list_next(itr))) {
-            if (arg->state == state)
-                hostlist_push(hl, arg->node);
-        }
-        list_iterator_destroy(itr);
-        hostlist_sort(hl);
-        if (hostlist_ranged_string(hl, len, str) != -1)
-            res = 0;
-        hostlist_destroy(hl);
-    }
-    return res;
+    _client_printf(c, CP_INFO_XSTATUS, arg->node, arg->state == ST_ON ? "on" 
+            : arg->state == ST_OFF ? "off" : "unknown");
+    return 0;
+}
+static int _build_unknown_list(Arg *arg, hostlist_t hl)
+{
+    if (arg->state == ST_UNKNOWN)
+        hostlist_push(hl, arg->node);
+    return 0;
+}
+static int _build_on_list(Arg *arg, hostlist_t hl)
+{
+    if (arg->state == ST_ON)
+        hostlist_push(hl, arg->node);
+    return 0;
+}
+static int _build_off_list(Arg *arg, hostlist_t hl)
+{
+    if (arg->state == ST_OFF)
+        hostlist_push(hl, arg->node);
+    return 0;
 }
 
 /* 
@@ -367,33 +370,42 @@ static int _argval_ranged_string(ArgList * arglist, char *str, int len,
  */
 static void _client_query_status_reply(Client * c, bool error)
 {
-    ArgList *arglist = c->cmd->arglist;
+    hash_t args;
 
     assert(c->cmd != NULL);
+    args = c->cmd->arglist->args;
 
     if (c->exprange) {
-        ListIterator itr;
-        Arg *arg;
-
-        itr = list_iterator_create(arglist->argv);
-        while ((arg = list_next(itr))) {
-            _client_printf(c, CP_INFO_XSTATUS, arg->node, 
-                    arg->state == ST_ON ? "on" : 
-                    arg->state == ST_OFF ? "off" : "unknown");
-        }
-        list_iterator_destroy(itr);
+        hash_for_each(args, (hash_arg_f)_dump_arg_exprange, c);
 
     } else {
         char on[CP_LINEMAX], off[CP_LINEMAX], unknown[CP_LINEMAX];
+        hostlist_t hl;
         int n;
 
-        n  = _argval_ranged_string(arglist, on,      CP_LINEMAX, ST_ON);
-        n |= _argval_ranged_string(arglist, off,     CP_LINEMAX, ST_OFF);
-        n |= _argval_ranged_string(arglist, unknown, CP_LINEMAX, ST_UNKNOWN);
-        if (n != 0) {
+        hl = hostlist_create(NULL);
+        hash_for_each(args, (hash_arg_f)_build_unknown_list, hl);
+        hostlist_sort(hl);
+        n = hostlist_ranged_string(hl, CP_LINEMAX, unknown);
+        hostlist_destroy(hl);
+
+        hl = hostlist_create(NULL);
+        hash_for_each(args, (hash_arg_f)_build_on_list, hl);
+        hostlist_sort(hl);
+        n |= hostlist_ranged_string(hl, CP_LINEMAX, on);
+        hostlist_destroy(hl);
+
+        hl = hostlist_create(NULL);
+        hash_for_each(args, (hash_arg_f)_build_off_list, hl);
+        hostlist_sort(hl);
+        n |= hostlist_ranged_string(hl, CP_LINEMAX, off);
+        hostlist_destroy(hl);
+
+        if (n == -1) {
             _internal_error_response(c);
             return;
         }
+
         _client_printf(c, CP_INFO_STATUS, on, off, unknown);
     }
 
@@ -403,28 +415,39 @@ static void _client_query_status_reply(Client * c, bool error)
         _client_printf(c, CP_RSP_QRY_COMPLETE);
 }
 
+/* helper for _client_query_status_reply_nointerp */
+static int _dump_arg_data_nointerp(Arg *arg, Client *c)
+{
+    if (arg->val)
+        _client_printf(c, CP_INFO_XSTATUS, arg->node, arg->val);
+    return 0;
+}
+
+/* helper for _client_query_status_reply_nointerp */
+static int _build_unknown_nointerp_list(Arg *arg, hostlist_t hl)
+{
+    if (!arg->val)
+        hostlist_push(hl, arg->node);
+    return 0;
+}
+
 /* 
  * Reply to client request for temperature/beacon status.
  */
 static void _client_query_status_reply_nointerp(Client * c, bool error)
 {
-    ListIterator itr;
-    Arg *arg;
     hostlist_t hl = hostlist_create(NULL);
     char tmpstr[CP_LINEMAX];
+    hash_t args;
 
     assert(c->cmd != NULL);
-    itr = list_iterator_create(c->cmd->arglist->argv);
-    while ((arg = list_next(itr))) {
-        if (arg->val)
-            _client_printf(c, CP_INFO_XSTATUS, arg->node, arg->val);
-        else
-            hostlist_push(hl, arg->node);
-    }
-    list_iterator_destroy(itr);
+    args = c->cmd->arglist->args;
+
+    hash_for_each(args, (hash_arg_f)_dump_arg_data_nointerp,c);
+    hash_for_each(args, (hash_arg_f)_build_unknown_nointerp_list, hl);
     if (!hostlist_is_empty(hl)) {
         if (hostlist_ranged_string(hl, sizeof(tmpstr), tmpstr) == -1) {
-            _internal_error_response(c);
+            _internal_error_response(c); /* truncation */
             return;
         }
         _client_printf(c, CP_INFO_XSTATUS, tmpstr, "unknown");

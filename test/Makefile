@@ -63,9 +63,14 @@ test4096.conf: mkconf.pl	# 256 ptys x 16 plugs each
 run4096: test4096.conf
 	../src/powermand -f -c $<
 
-test4160.conf: mkconf.pl	# 260 ptys x 16 plugs each
-	./mkconf.pl 4160 >$@	# XXX will run out of ptys
-run4160: test4160.conf
+test8192.conf: mkconf.pl	# 512 ptys x 16 plugs each
+	./mkconf.pl 8192 >$@
+run8192: test8192.conf
+	../src/powermand -f -c $<
+
+test16384.conf: mkconf.pl	# 1024 ptys x 16 plugs each
+	./mkconf.pl 16384 >$@
+run16384: test16384.conf
 	../src/powermand -f -c $<
 
 clean :
