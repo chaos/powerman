@@ -2,10 +2,9 @@
 # $Id$
 # $Source$
 #
-# Phantom 3.0.4b
-# This version includes an LLNL-requested enhancement for P0 and P1 commands.
+# Phantom 4.0
 #
-specification  "phantom-llnl" {
+specification  "phantom4" {
 	timeout 	5.0
 
 	plug name { "1" }
@@ -46,15 +45,14 @@ specification  "phantom-llnl" {
 		send "B0\r\n"	# unblink LED
 		expect "ok\r"
 	}
-# XXX phantom user's manual for v3.0.4 says 0=on, 1=off (opposite seems true)
 	script status_beacon {
 		send "L?\r\n"	# get LED status 1=on, 0=off, B=blink
 		expect "(0|1|B)" 
 		setplugstate "1" $1 on="(B|1)" off="0"
 	}
 	script status_temp {
-		send "T0\r\n"	# get temp probe 0 (there is also a 1- unused)
-		expect "([0-9]+)\r" # value is 8-bit Celcius  
+		send "T\r\n"
+		expect "([0-9]+)\r" # value is 3 digit celcius
 		setplugstate "1" $1
 	}
 }

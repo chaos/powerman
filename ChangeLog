@@ -1,3 +1,10 @@
+2003-09-26 Jim Garlick <garlick@llnl.gov>
+
+    * etc/phantom-llnl.dev: remove this config file for LLNL-specific 
+    phantom3 functionality which was never deployed in production.
+
+    * etc/phantom4.dev: New.
+
 2003-09-18 Jim Garlick <garlick@llnl.gov>
 
     * src/device.c, src/parse.y, etc/ibmh8.dev: removed support for setplugname
