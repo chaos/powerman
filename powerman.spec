@@ -57,11 +57,11 @@ DESTDIR="$RPM_BUILD_ROOT" make install
 rm -rf "$RPM_BUILD_ROOT"
 
 %pre
-if [ -x /etc/rc.d/init.d/powerman ]; then
-  if /etc/rc.d/init.d/powerman status | grep running >/dev/null 2>&1; then
-    /etc/rc.d/init.d/powerman stop
-  fi
-fi
+#if [ -x /etc/rc.d/init.d/powerman ]; then
+#  if /etc/rc.d/init.d/powerman status | grep running >/dev/null 2>&1; then
+#    /etc/rc.d/init.d/powerman stop
+#  fi
+#fi
 
 %post
 if [ -x /etc/rc.d/init.d/powerman ]; then

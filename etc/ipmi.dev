@@ -3,6 +3,9 @@
 # /chaos/cvs/powerman/etc/ipmi.dev,v
 #
 # IPMI 1.5 in terminal mode
+# Tested on Intel SE7501WV2 motherboard over serial.
+# On this motherboard, the System Setup Utility is used to switch
+# the BMC into terminal mode.
 #
 # References:
 # "IPMI over Cyclades TS2000", M.P. Anand Babu

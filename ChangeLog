@@ -4,6 +4,10 @@
 
     * etc/ipmi.dev: got working with Intel SE7501WV1 motherboard.
 
+    * etc/baytech-rpc3-nc.dev: minor tweak to get working again on ILX cluster.
+
+    * powerman.spec: don't start/stop daemon on install per Trent's request.
+
 2003-08-03 Jim Garlick <garlick@llnl.gov>
 
     * src/device*.c: move all retry logic to device.c and enforce backoff on
