@@ -42,10 +42,8 @@
 #include "pm_string.h"
 #include "listener.h"
 
-int allow_severity = LOG_INFO;          /* logging level for accepted reqs */
-int deny_severity  = LOG_WARNING;       /* logging level for rejected reqs */
-
-
+int allow_severity = LOG_INFO;     /* logging level for accepted reqs */
+int deny_severity  = LOG_WARNING;  /* logging level for rejected reqs */
 
 /*
  *   Constructor
