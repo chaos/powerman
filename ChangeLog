@@ -2,6 +2,7 @@
     * Back out beacon change that requires B70 of ice box v3 firmware.
       Now we will work with all versions.
     * Check aliases for bogus nodes
+    * Tagged powerman-1-0-16
 
 2002-01-19 garlick
     * Add alias capability in powerman.conf.
