@@ -25,6 +25,7 @@ specification  "wti-rps10" {
 # boxes in a chain, and any missing ones will not respond, causing
 # expect to time out
 	script status {
+		send "\r"	#  XXX - testing jg
 		send "\030\030\002\030\030\002\030\030%s?\r"
 		expect "Plug ([0-9]) (On|Off)"
 		setplugstate $1 $2 off="Off" on="On"
@@ -32,12 +33,14 @@ specification  "wti-rps10" {
 		#delay 0.5
 	}
 	script on {
+		send "\r"	#  XXX - testing jg
 		send "\030\030\002\030\030\002\030\030%s1\r"
 		expect "Plug [0-9] On"
 		expect "Complete"
 		#delay 0.5
 	}
 	script off {
+		send "\r"	#  XXX - testing jg
 		send "\030\030\002\030\030\002\030\030%s0\r"
 		expect "Plug [0-9] Off"
 		expect "Complete"
@@ -45,6 +48,7 @@ specification  "wti-rps10" {
 	}
 # The T command is dip switch configurable for 5 or 10 second delay
 	script cycle {
+		send "\r"	#  XXX - testing jg
 		send "\030\030\002\030\030\002\030\030%s0\r"
 		expect "Plug [0-9] Off"
 		expect "Complete"

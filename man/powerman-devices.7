@@ -124,8 +124,12 @@ Set the IP address, subnet mask, and default gateway, and accept changes.
 .P
 Pres ESC until the main menu appears, then select Logout.
 .SH "WTI RPS10 (serial 9600,8n1)"
-Set address of box to unique value from 0-9.  This corresponds
-to the powerman plug name.
+Set address of box using the rotary dial on the back.  The Master module must
+be set to address 0.  Slave modules may be set to unique values from 1-9.  
+The address corresponds to the plug name in the powerman.conf file.
+.P
+Setup switches on each module should be set to 9600 baud (sw1 down),
+5 sec toggle delay (sw2 down), power up to previous state (sw3 down).
 .SH "WTI NPS (network port 23)"
 Attach console cable between laptop running minicom
 and console port at 9600,8n1.  Try password "wti" if prompted.
