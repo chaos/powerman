@@ -9,9 +9,9 @@
 * Client should have option for verifying soft power status (expand hostranges
   and issue warnings where plug is on but node is off).  Needs to be optional
   since would double cluster query latency.  
-* Take an flock F_WRLCK on serial devices to peacefully coexist with conman.
 * Powermand should execute logoff scripts on devices upon receipt of a signal
   (with timeout).
 * Device timeout should be per expect line
 * Redesign the device language to be more general.
 * Turn off debugging in production release
+* Clean up argument passing into and results out of scripts

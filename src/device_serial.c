@@ -209,7 +209,9 @@ bool serial_connect(Device * dev)
     fd_settings = Fcntl(dev->fd, F_GETFL, 0);
     Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
 
-    /* FIXME: take an flock F_WRLOCK to coexist with conman */
+    /* Conman takes an fcntl F_WRLCK on serial devices.
+     * Powerman should respect conman's locks and vice-versa.
+     */
     if (lockf(dev->fd, F_TLOCK, 0) < 0) {
         err(TRUE, "_serial_connect(%s): could not lock device\n", dev->name);
         Close(dev->fd);
