@@ -889,7 +889,7 @@ static bool _process_send(Device * dev)
             char *memstr = dbg_memstr(str, strlen(str));
 
             dbg(DBG_SCRIPT, "_process_send(%s): sending: '%s'", 
-                    dev->name, str);
+                    dev->name, memstr);
             Free(memstr);
         }
         assert(written < 0 || (dropped == strlen(str) - written));
