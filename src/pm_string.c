@@ -181,7 +181,7 @@ length_String(String s)
 	return s->length;
 }
 
-
+#if 1
 int 
 prefix_String(String s)
 {
@@ -240,6 +240,7 @@ prefix_match(String s1, String s2)
 	if( n == 0 ) return TRUE;
 	else return FALSE;
 }
+#endif
 
 
 bool
@@ -281,5 +282,3 @@ match_String(String s, char *cs)
 	if( (n = strncmp(s->string, cs, len)) == 0 ) return TRUE;
 	return FALSE;
 }
-
-

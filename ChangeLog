@@ -79,3 +79,4 @@
 
 2002-08-01 garlick
 	* Do not use ${srcbin} for products.  Clean up other Makefile targets.
+	* Added --telemetry to client to allow us to watch protocol happen.

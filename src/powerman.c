@@ -44,7 +44,7 @@
 #include "wrappers.h"
 #include "hostlist.h"
 
-#define OPT_STRING "cd:F:h10Llnp:qrsvVQxz"
+#define OPT_STRING "cd:F:h10Llnp:qrsvVQxzt"
 static const struct option long_options[] =
 {
 		{"on",      no_argument,       0, '1'},
@@ -65,6 +65,7 @@ static const struct option long_options[] =
 		{"host",    required_argument, 0, 'd'},
 		{"port",    required_argument, 0, 'p'},
 		{"license", no_argument,       0, 'L'},
+		{"telemetry", no_argument,     0, 't'},
 		{0, 0, 0, 0}
 };
 
@@ -73,22 +74,26 @@ static const struct option *longopts = long_options;
 typedef enum {
 	CMD_ERROR, CMD_QUERY_ON, CMD_QUERY_OFF, CMD_QUERY_ALL, CMD_POWER_ON, 
 	CMD_POWER_OFF, CMD_POWER_CYCLE, CMD_RESET, CMD_LISTTARG,
-} _command_t;
+} command_t;
 
-/* config is the result of argument processing */
+static bool debug_telemetry = FALSE; /* show protocol interactions */
+
+/* 
+ * An instance of Config is built by process_command_line().
+ */
 typedef struct {
-	String host;
-	String service;
-	int port;
-	int fd;
-	_command_t com;
-	bool regex;
-	bool soft;
-	bool verify;
-	List targ;
-	List reply;
-	hostlist_t ntarg;
-	bool noexec;
+	String host;		/* server hostname */
+	String service;		/* server port name */
+	int port;		/* server port number */
+	int fd;			/* socket open to server */
+	command_t com;		/* comment to send to server */
+	bool regex;		/* target list should be processed as regex */
+	bool soft;		/* use soft power status instead of hard */
+	bool verify;		/* after requesting state change, verify it */
+	bool noexec;		/* do not request server to do commands */
+	List targ;		/* list-o-Strings: target hostnames */
+	hostlist_t ntarg;	/* target hostname list (XXX to replace targ) */
+	List reply;		/* list-o-Strings: reply from server */
 } Config;
 
 static void dump_Conf(Config *conf);
@@ -242,6 +247,9 @@ process_command_line(int argc, char **argv)
 		/* 
 		 * Modifiers.
 		 */
+		case 't':	/* --telemetry */
+			debug_telemetry = TRUE;
+			break;
 		case 'd':	/* --host */
 			if (conf->host != NULL)
 				free_String( (void *)conf->host );
@@ -279,9 +287,10 @@ process_command_line(int argc, char **argv)
 		exit_msg(EXACTLY_ONE_MSG);
 
 	/*
-	 * Prior code pushed args directly onto conf->targ.
+	 * Earlier code pushed args directly onto conf->targ.
 	 * This code builds conf->ntarg with Mark's hostlist_t package to
-	 * get support for Quadrics style host ranges.  
+	 * get support for Quadrics style host ranges.
+	 * XXX conf->targ constructed from conf->ntarg now.
 	 */
 	while (optind < argc)
 	{
@@ -291,6 +300,7 @@ process_command_line(int argc, char **argv)
 			hostlist_push(conf->ntarg, argv[optind]);
 		optind++;
 	}
+	/* XXX build targ from ntarg */
 	if (hostlist_count(conf->ntarg) > 0) 
 	{
 		char *host;
@@ -305,6 +315,7 @@ process_command_line(int argc, char **argv)
 		hostlist_iterator_destroy(iter);
 	}
 
+	/* If no targets either exit or create an all-inclusive target */
 	if (list_is_empty(conf->targ)) {
 		if (targs_required)
 			exit_msg("command requires target(s)");
@@ -361,9 +372,9 @@ dump_Conf(Config *conf)
 
 	hostlist_ranged_string(conf->ntarg, sizeof(tmpstr), tmpstr);
 	printf("Targets: %s\n", tmpstr);
-	/*print_Targets(conf->targ);*/
 	exit(0);
 }
+
 /* 
  *   This should be changed to allow for a '-' in place of the 
  * file name, which would then cause it to read from stdin.
@@ -404,7 +415,7 @@ read_Targets(Config *conf, char *name)
 }
 
 /*
- * List source
+ * Set up connection to server.
  */
 static List
 connect_to_server(Config *conf)
@@ -431,6 +442,10 @@ connect_to_server(Config *conf)
 	n = Connect(conf->fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
 	freeaddrinfo(addrinfo);
 
+	/*
+	 * Connected, now "log in" and get a notion of what nodes
+	 * the daemon knows about.  Return this list of nodes.
+	 */
 	reply = dialog(conf->fd, NULL);
 	list_destroy(reply);
 	reply = dialog(conf->fd, AUTHENTICATE_FMT);
@@ -498,6 +513,13 @@ dialog(int fd, const char *str)
 	List reply = list_create(free_String);
 	String targ;
 
+	if (debug_telemetry)
+	{
+		if (str)
+			printf("debug: request:     '%s'\n", str);
+		else
+			printf("debug: dialog sends nothing\n");
+	}
 	memset(buf, 0, MAX_BUF);
 	if( str != NULL )
 	{
@@ -539,6 +561,21 @@ dialog(int fd, const char *str)
 	}
 	if( list_is_empty(reply) )
 		exit_msg("Command \"%s\" failed.", str);
+
+	if (debug_telemetry)
+	{
+		String tmpstr;
+		int count = 0;
+
+		ListIterator itr = list_iterator_create(reply);
+		while( (tmpstr = (String)list_next(itr)) )
+		{
+			printf("debug: response[%d]: '%s'\n", 
+					count++, get_String(tmpstr));
+		}
+		list_iterator_destroy(itr);
+	}
+
 	return reply;
 }
 
@@ -954,6 +991,12 @@ join_Nodes(List list1, List list2)
 	list_destroy(list2);	
 }
 
+/* 
+ * Process 'reply', obtained in response to a GET_SOFT_UDPATE_FMT request.
+ * Reply will consist of one string of ones and zeroes indicating soft power 
+ * state for 'cluster' node list.  Update the 'n_state' field for each node
+ * in the 'cluster' list.
+ */
 static void 
 update_Nodes_soft_state(List cluster, List reply)
 {
@@ -963,7 +1006,7 @@ update_Nodes_soft_state(List cluster, List reply)
 	String targ;
 
 	assert( reply != NULL );
-	targ = (String)list_pop(reply);
+	targ = (String)list_pop(reply); /* reply list is always one String */
 	assert( targ != NULL );
 	assert( !empty_String(targ) );
 
@@ -991,6 +1034,12 @@ update_Nodes_soft_state(List cluster, List reply)
 	list_iterator_destroy(node_i);
 }
 
+/* 
+ * Process 'reply', obtained in response to a GET_SOFT_UDPATE_FMT request.
+ * Reply will consist of a string of ones and zeroes indicating soft power 
+ * state for 'cluster' node list.  Update the 'n_state' field for each node
+ * in the 'cluster' list.
+ */
 static void 
 update_Nodes_hard_state(List cluster, List reply)
 {
@@ -1000,7 +1049,7 @@ update_Nodes_hard_state(List cluster, List reply)
 	String targ;
 
 	assert( reply != NULL );
-	targ = (String)list_pop(reply);
+	targ = (String)list_pop(reply);	/* reply list is always one String */
 	assert( targ != NULL );
 	assert( !empty_String(targ) );
 
