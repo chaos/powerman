@@ -157,3 +157,4 @@
 	* Split baytech.dev into baytechF500.dev and baytechF501.dev.
  	  Our test baytech has the f/w rev F 5.00, and pengra baytechs have
 	  rev F 5.01.  The latter prompts (Y/N)> after every power action.
+	* Put back baytech.dev, documenting that prompting is configurable.
