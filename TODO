@@ -1,0 +1,26 @@
+[x]  find problem with -r
+[x]  reverse the sense of -v to -q in all the modules
+      and change all the man pages
+[x]  verify code changes
+[x]  check this version into CVS and tag it
+[x]  non-blocking locking in icebox
+[x]  chunk calls to icebox
+[x]  extend locking to wti 
+[x]  rewrite digi in python 
+[x]  command pacing (icebox)
+[x]  sort reply list (icebox)
+[x]  unilateral commands (except etherwake)
+[x]  modified error handler (icebox)
+[x]  log file (icebox)
+[x]  "\n\n" replies handled (icebox)
+[x]  unified Changelog
+[x]  unified Makefile
+[x]  retry upon receipt of garbage
+[x]  empty query output is exit(1)
+[x]  review locking, is Python not honouring locking: it's okay
+[ ]  Unify configuration info
+[ ]  Unify Python code, create a library
+[ ]  replace blocking read with an alarm or something
+[ ]  telnet based query and control (icebox)
+[ ]  implement ether-wake in python (also with locking)
+[ ]  implement rmc in python

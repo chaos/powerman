@@ -1,0 +1,187 @@
+#!/usr/bin/env python
+####################################################################
+# $Id$
+# by Andrew C. Uselton <uselton2@llnl.gov> 
+# Copyright (C) 2000 Regents of the University of California
+# See ./DISCLAIMER
+####################################################################
+
+import sys
+import regex
+import commands
+import string
+import getopt
+import os
+import time
+
+def usage(msg):
+    "Tha usage message"
+    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-L] [-q] [-r] [-t] [-V] [-w node,...] [on | off | reset]"
+    print "-a       = on/off/reset all nodes"
+    print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
+    print "-f fan   = fanout for parallelism (default: 256 where implemented)"
+    print "-l ldir  = powerman lirary directory (default: /usr/lib/powerman)"
+    print "-L       = log commands and responses to $powermandir/log/log_file (icebox only)"
+    print "-q       = be quiet about any errors that may have occurred"
+    print "-r       = reverse sense, i.e. check for  nodes that are off"
+    print "-t       = query temperatur rather than power status"
+    print "-V       = print version and exit"
+    print "-w nodes = comma separated list of nodes"
+    print "-w -     = read nodes from stdin, one per line"
+    print "on       = turn on nodes (the default)"
+    print "off      = turn off nodes"
+    print "reset    = reset nodes"
+    print msg
+    sys.exit(0)
+
+Version = "pm: Powerman 0.1.8"
+
+# Check for level of permision and exit for non-root users
+
+if (os.geteuid() != 0):
+    usage("You must be root to run this")
+
+# initialize globals
+powermandir = '/usr/lib/powerman/'
+config_file = '/etc/powerman.conf'
+work_col    = ''
+verbose     = 1
+logging     = 0
+names       = []
+com         = ''
+all         = 0
+fanout      = 256
+
+# Look for environment variables and set globals
+
+try:
+    test = os.environ['POWERMANDIR']
+    if (os.path.isdir(test)):
+        powermandir = test
+except KeyError:
+    pass
+
+try:
+    test = os.environ['POWERMANCONF']
+    if (os.path.isfile(test)):
+        config_file = test
+except KeyError:
+    pass
+
+try:
+    test = os.environ['W_COL']
+    if (os.path.isfile(test)):
+        work_col = test
+except KeyError:
+    pass
+
+# Parse the command line, check for sanity, and set globals
+
+try:
+    options, args = getopt.getopt(sys.argv[1:], 'ac:f:l:LqrtVw:')
+except getopt.error:
+    usage("Error processing options")
+
+if(not options and not work_col):
+    usage("need at least -a, -w, or a W_COL file")
+for opt in options:
+    op, val = opt
+    if (op == '-a'):
+        all = 1
+    elif (op == '-c'):
+        config_file = val
+    elif (op == '-f'):
+        fanout = val
+    elif (op == '-l'):
+        powermandir  = val
+    elif (op == '-L'):
+        logging = 1
+    elif (op == '-q'):
+        verbose = 0
+    elif (op == '-r'):
+        com = "rquery"
+    elif (op == '-t'):
+        com = "temp"
+    elif (op == '-V'):
+        print Version
+        sys.exit(0)
+    elif (op == '-w'):
+        if (val == '-'):
+            name = sys.stdin.readline()
+            while (name):
+                if (name[-1:] == '\n'):
+                    name = name[:-1]
+                names.append(name)
+                name = sys.stdin.readline()
+        else:
+            names = string.split(val, ',')
+    else:
+        usage("Unrecognized option " + op + "\n")
+
+if (args and args[0] and not com):
+    com = string.lower(args[0])
+    if (not ((com == 'off') or (com == 'on') or (com == 'reset'))):
+        usage ("\n\nUnrecognized command.")
+else:
+    com = "query"
+    
+        
+
+if (powermandir):
+    if (powermandir[-1] != '/'):
+        powermandir = powermandir + '/'
+    if(os.path.isdir(powermandir)):
+        sys.path.append(powermandir)
+    else:
+        usage("\n\nFailed to find library directory: " + powermandir)
+else:
+    usage("\n\nFailed to find library directory: " + powermandir)
+
+import pm_utils, pm_classes
+
+pm_utils.init_utils(verbose, logging)
+
+# Initialize operations by creating the cluster based on the description
+# given in the config file.  That information includes for each node the
+# name, query function, and control function.
+
+theCluster = pm_classes.ClusterClass(config_file)
+theCluster.fanout = fanout
+
+if(all):
+    # I need to make marking nodes for action into another method for
+    # the ClusterClass
+    theCluster.mark_all(com)
+# if names list is empty look for working collective
+else:
+    if (not names and work_col):
+        f = open(work_col, 'r')
+        name = f.readline()
+        while (name):
+            if (name[-1:] == '\n'):
+                name = name[:-1]
+            names.append(name)
+            name = f.readline()
+        f.close()
+    for name in names:
+        try:
+            node = theCluster.nodes[name]
+            node.mark(com)
+        except KeyError:
+            exit_error (9, name)
+
+# sequence through list performing action on marked nodes.  Any reply
+# is put in the node's message.
+theCluster.do_com(com)
+node_list = []
+for name in theCluster.nodes.keys():
+    node = theCluster.nodes[name]
+    if (node.is_marked()):
+        node_list.append(node)
+node_list.sort(pm_utils.node_cmp)
+for node in node_list:
+    if (not ((com == 'off') or (com == 'on') or (com == 'reset'))):
+        print node.message
+    node.unmark()
+sys.exit(0)
+    
