@@ -35,14 +35,23 @@ Release: %release
 Summary: PowerMan - Power to the Cluster 
 #URL: FOO
 Group: Applications/System
-Copyright: LLNL/Internal-Use-Only
+License:	GPL
+URL:		http://www.llnl.gov/linux/powerman/
+
 BuildRoot: %{_tmppath}/%{name}-%{version}
 
 Source0: %{name}-%{version}.tgz
 
 %description
-PowerMan is an open source project for power management of the
-nodes in a cluster.
+  PowerMan is an open source project for power management of the
+nodes in a cluster.  The daemon resides on a management workstation 
+and communicates with power control hardware via TCP (raw or telnet).
+It supports a wide vaiety of hardware and is customized through a
+configuration file on the manaement workstation.  The client can
+be anywhere (TCP wrappers permitting) and does not know anything
+about the configuration of the target cluster, i.e. it determines 
+cluster properties as part of its negotiation with the server.  
+
 
 %prep
 %setup
@@ -70,12 +79,19 @@ rm -rf "$RPM_BUILD_ROOT"
 
 %files
 %defattr(-,root,root,0755)
-%config(noreplace) /etc/powerman.conf
 /usr/bin/powerman
 /usr/bin/powermand
+/etc/powerman/baytech.dev
+/etc/powerman/icebox.dev
+/etc/powerman/wti.dev
+/etc/powerman/vicebox.dev
+%config(noreplace) /etc/powerman/powerman.conf
+/usr/man/man1/powerman.1*
+/usr/man/man1/powermand.1*
+/usr/man/man5/powerman.conf.5*
 %doc ChangeLog
 %doc DISCLAIMER
 %doc README
 %doc TODO
-/usr/man/man1/pm.1*
-/usr/man/man5/powerman.conf.5*
+%doc doc/powerman.fig
+%doc doc/powermand.fig

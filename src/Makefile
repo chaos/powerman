@@ -86,7 +86,7 @@ MODULE_HEADERS = action.h \
                  main.h \
                  server.h \
 
-all :  powermand powerman
+all :  powermand powerman tags
 
 powermand : $(SERVER_OBJS)
 	$(CC) $(COPTS) -o ${srcbin}/powermand $(SERVER_OBJS) $(INC) $(LIB)
@@ -154,8 +154,11 @@ powerman : $(CLIENT_OBJS)
 client.o : client.c powerman.h client.h
 	$(CC) $(COPTS) -c -o $@ $< $(INC)
 
+tags: *.[ch]
+	-ctags -e *.[chy] *.lex 2>/dev/null
+
 clean :
-	rm -f *~ *.o .#* parse_*
+	rm -f *~ *.o .#* parse_* TAGS
 
 
 

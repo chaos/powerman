@@ -25,6 +25,7 @@
 #   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 ####################################################################
 
+PROJECT= powerman
 PACKAGE= powerman
 VERSION= 1.0.0
 SHELL=   /bin/sh
@@ -54,15 +55,19 @@ docdir		=	${prefix}/share/doc
 # I'm pretty sure the the %doc directive in the rpm spec file does that for 
 # me.
 
-all: 
-	cd doc; make; cd ..
-	cd src; $(MAKE); cd ..
-	cd vicebox; make; cd ..
+all: progs docs
 
-%:%.c
+progs : 
+	cd src; $(MAKE); cd ..
+	cd vicebox; $(MAKE); cd ..
+
+docs : 
+	cd doc; $(MAKE); cd ..
+
+.c.o:
 	$(CC) $(COPTS) $< -o $@ $(INC) $(LIB)
 
-install: 
+install: all
 	$(mkinstalldirs)			$(DESTDIR)$(bindir)
 	$(INSTALL) bin/powerman			$(DESTDIR)$(bindir)/
 	$(INSTALL) bin/powermand		$(DESTDIR)$(bindir)/
@@ -78,9 +83,9 @@ install:
 	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man5
 	$(INSTALL) -m 644 man/powerman.conf.5  	$(DESTDIR)$(mandir)/man5
 	$(mkinstalldirs)			$(DESTDIR)$(piddir)
-	# Add $(docdir) files as they become available (but see above)
+	$(mkinstalldirs)			$(DESTDIR)$(docdir)
 
-uninstall: 
+uninstall: distclean
 	rm -f $(DESTDIR)$(bindir)/powerman
 	rm -f $(DESTDIR)$(bindir)/powermand
 	rm -f $(DESTDIR)$(packagedir)/baytech.dev
@@ -92,7 +97,7 @@ uninstall:
 	rm -f $(DESTDIR)$(mandir)/man1/powermand.1
 	rm -f $(DESTDIR)$(mandir)/man5/powerman.conf.5
 	rm -Rf $(DESTDIR)$(piddir)
-	# Add $(docdir) files as they become available
+	rm -Rf $(DESTDIR)$(docdir)
 
 clean:
 	rm -f *~ *.o .#*
@@ -112,45 +117,6 @@ allclean: clean
 distclean: allclean
 	cd bin; rm -f powerman powermand vicebox svicebox; cd ..
 	cd doc; rm -f *.ps; cd ..
+	rm -f *.tgz* *.rpm
 
-# DEVELOPER TARGETS
-# These need to be replaced with Chris's latest.
-rpm tar:
-	@if test -z "$(PACKAGE)"; then \
-	  echo "ERROR: Undefined PACKAGE macro definition" 1>&2; exit 0; fi; \
-	if test -z "$(VERSION)"; then \
-	  echo "ERROR: Undefined VERSION macro definition" 1>&2; exit 0; fi; \
-	test -z "$$tag" && tag=`echo $(PACKAGE)-$(VERSION) | tr '.' '-'`; \
-	$(MAKE) -s $@-internal tag=$$tag ver=$(VERSION)
-
-rpm-internal: tar-internal
-	@test -z "$$tag" -o -z "$$ver" && exit 1; \
-	tmp=$${TMPDIR-/tmp}/tmp-$(PACKAGE)-$$$$; \
-	for d in BUILD RPMS SOURCES SPECS SRPMS TMP; do \
-	  $(mkinstalldirs) $$tmp/$$d >/dev/null; \
-	done; \
-	cp -p $(PACKAGE)-$$ver.tgz $$tmp/SOURCES; \
-	cvs -Q co -r $$tag -p $(PACKAGE)/$(PACKAGE).spec \
-		 > $$tmp/SPECS/$(PACKAGE).spec; \
-	if ! test -s $$tmp/SPECS/$(PACKAGE).spec; then \
-	  echo "ERROR: No $(PACKAGE).spec file (tag=$$tag)" 1>&2; \
-	  rm -rf $$tmp; exit 0; fi; \
-	echo "creating $(PACKAGE)-$$ver*rpm (tag=$$tag)"; \
-	rpm --showrc | egrep "_(gpg|pgp)_name" >/dev/null && sign="--sign"; \
-	rpm -ba --define "_tmppath $$tmp/TMP" --define "_topdir $$tmp" \
-	  $$sign --quiet $$tmp/SPECS/$(PACKAGE).spec && \
-	    cp -p $$tmp/RPMS/*/$(PACKAGE)-$$ver*.*.rpm \
-	      $$tmp/SRPMS/$(PACKAGE)-$$ver*.src.rpm $(top_srcdir)/; \
-	rm -rf $$tmp
-
-tar-internal:
-	@test -z "$$tag" -o -z "$$ver" && exit 1; \
-	tmp=$${TMPDIR-/tmp}/tmp-$(PACKAGE)-$$$$; \
-	name=$(PACKAGE)-$$ver; \
-	dir=$$tmp/$$name; \
-	echo "creating $$name.tgz (tag=$$tag)"; \
-	$(mkinstalldirs) $$tmp >/dev/null; \
-	(cd $$tmp; cvs -Q export -r $$tag -d $$name $(PACKAGE) >/dev/null) && \
-	  (cd $$tmp; tar cf - $$name) | gzip -c9 > $(top_srcdir)/$$name.tgz; \
-	rm -rf $$tmp
-
+include Make-rpm.mk
