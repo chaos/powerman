@@ -145,9 +145,10 @@ int main(int argc, char **argv)
 	    _expect(CP_PROMPT);
 	    break;
 	case CMD_REPORT:
-	    if (!have_targets)
-		_usage();
-	    dprintf(server_fd, CP_STATUS CP_EOL, targstr);
+	    if (have_targets)
+		dprintf(server_fd, CP_STATUS CP_EOL, targstr);
+	    else
+		dprintf(server_fd, CP_STATUS_ALL CP_EOL);
 	    res = _process_response();
 	    _expect(CP_PROMPT);
 	    break;
