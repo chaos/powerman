@@ -44,7 +44,7 @@
 #include "wrappers.h"
 #include "hostlist.h"
 
-#define OPT_STRING "cd:F:h10Llnp:qrsvVQxzt"
+#define OPT_STRING "cd:F:h10Llnp:qrvVQxzt"
 static const struct option long_options[] =
 {
 		{"on",      no_argument,       0, '1'},
@@ -56,7 +56,6 @@ static const struct option long_options[] =
 		{"list",    no_argument,       0, 'l'},
 		{"queryon", no_argument,       0, 'q'},
 		{"queryoff",no_argument,       0, 'Q'},
-		{"soft",    no_argument,       0, 's'},
 		{"verify",  no_argument,       0, 'v'},
 		{"version", no_argument,       0, 'V'},
 		{"regex",   no_argument,       0, 'x'},
@@ -71,12 +70,12 @@ static const struct option long_options[] =
 
 static const struct option *longopts = long_options;
 
+static bool debug_telemetry = FALSE; /* show protocol interactions */
+
 typedef enum {
 	CMD_ERROR, CMD_QUERY_ON, CMD_QUERY_OFF, CMD_QUERY_ALL, CMD_POWER_ON, 
 	CMD_POWER_OFF, CMD_POWER_CYCLE, CMD_RESET, CMD_LISTTARG,
 } command_t;
-
-static bool debug_telemetry = FALSE; /* show protocol interactions */
 
 /* 
  * An instance of Config is built by process_command_line().
@@ -88,11 +87,9 @@ typedef struct {
 	int fd;			/* socket open to server */
 	command_t com;		/* comment to send to server */
 	bool regex;		/* target list should be processed as regex */
-	bool soft;		/* use soft power status instead of hard */
 	bool verify;		/* after requesting state change, verify it */
 	bool noexec;		/* do not request server to do commands */
-	List targ;		/* list-o-Strings: target hostnames */
-	hostlist_t ntarg;	/* target hostname list (XXX to replace targ) */
+	hostlist_t targ;	/* target hostname list */
 	List reply;		/* list-o-Strings: reply from server */
 } Config;
 
@@ -100,29 +97,25 @@ static void dump_Conf(Config *conf);
 static Config *process_command_line(int argc, char ** argv);
 static void usage(char *prog);
 static void read_Targets(Config *conf, char *name);
-static List connect_to_server(Config *conf);
+static void connect_to_server(Config *conf);
+static List request_State(Config *conf);
 static List get_Names(int fd);
 static void get_State(int fd, List cluster);
 static List dialog(int fd, const char *str);
-static void process_targets(Config *conf, List cluster);
+static void process_targets(Config *conf);
 static String glob2regex(String glob);
 static List send_server(Config *conf, String str);
-static void publish_reply(Config *conf, List cluster, List reply);
+static void publish_reply(Config *conf, List reply);
 static void print_readable(Config *conf, List cluster);
-static List get_next_subrange(List nodes);
-static void subrange_report(List nodes, bool soft, State_Val state, char *state_string);
-static void print_list(Config *conf, List cluster, List targ, State_Val state);
+static void print_list(Config *conf, List cluster, State_Val state);
 static void print_Targets(List targ);
 static Config *make_Config();
 static void free_Config(Config *conf);
 static void append_Nodes(List cluster, List targ);
-static List transfer_Nodes(List cluster);
-static void join_Nodes(List list1, List list2);
 static void update_Nodes_soft_state(List cluster, List reply);
 static void update_Nodes_hard_state(List cluster, List reply);
 static Node *xmake_Node(const char *name);
 static int cmp_Nodes(void *node1, void *node2);
-static int xmatch_Node(void *node, void *key);
 static void xfree_Node(void *node);
 static bool is_prompt(String targ);
 
@@ -151,19 +144,42 @@ int
 main(int argc, char **argv)
 {
 	Config *conf;
-	List cluster;
 
 	init_error(argv[0], NULL);
 	conf = process_command_line(argc, argv);
 
 	/*if( geteuid() != 0 ) exit_msg("Must be root");*/
 
-	cluster = connect_to_server(conf);
-	if( list_is_empty(cluster) ) 
-		exit_msg("No cluster members found");
-	process_targets(conf, cluster);
+	connect_to_server(conf);
+
+	if (conf->com == CMD_QUERY_ON || conf->com == CMD_QUERY_OFF
+			|| conf->com == CMD_QUERY_ALL)
+	{
+		List cluster = request_State(conf);
+
+		/* what do we do with nodes in the ST_UNKNOWN state ? */
+		if (conf->com == CMD_QUERY_ON)
+			print_list(conf, cluster, ON);
+		else if (conf->com == CMD_QUERY_OFF)
+			print_list(conf, cluster, OFF);
+		else if (conf->com == CMD_QUERY_ALL)
+			print_readable(conf, cluster);
+
+		list_destroy(cluster);
+	}
+	else
+	{
+		process_targets(conf);
+		if (conf->verify)
+		{
+			List cluster = request_State(conf);
+			/* XXX verify conf->targ are all in the state 
+			 * conf->com requested */
+			print_readable(conf, cluster);
+			list_destroy(cluster);
+		}
+	}
 	free_Config(conf);
-	list_destroy(cluster);
 	return 0;
 }
 
@@ -175,10 +191,9 @@ static Config *
 process_command_line(int argc, char **argv)
 {
 	int c;
-	String targ;
 	Config *conf;
 	int longindex;
-	bool targs_required = FALSE;
+	enum { NO_TARGS, REQ_TARGS, OPT_TARGS } targs_req = NO_TARGS;
 
 	conf = make_Config();
 	opterr = 0;
@@ -204,45 +219,49 @@ process_command_line(int argc, char **argv)
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_POWER_CYCLE;
-			targs_required = TRUE;
+			targs_req = REQ_TARGS;
 			break;
 		case '1':	/* --on */
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_POWER_ON;
-			targs_required = TRUE;
+			targs_req = REQ_TARGS;
 			break;
 		case '0':	/* --off */
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_POWER_OFF;
-			targs_required = TRUE;
-			break;
-		case 'q':	/* --queryon */
-			if (conf->com != CMD_ERROR)
-				exit_msg(EXACTLY_ONE_MSG);
-			conf->com = CMD_QUERY_ON;
-			break;
-		case 'Q':	/* --queryoff */
-			if (conf->com != CMD_ERROR)
-				exit_msg(EXACTLY_ONE_MSG);
-			conf->com = CMD_QUERY_OFF;
+			targs_req = REQ_TARGS;
 			break;
 		case 'r':	/* --reset */
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_RESET;
-			targs_required = TRUE;
+			targs_req = REQ_TARGS;
+			break;
+		case 'q':	/* --queryon */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_QUERY_ON;
+			targs_req = NO_TARGS;
+			break;
+		case 'Q':	/* --queryoff */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_QUERY_OFF;
+			targs_req = NO_TARGS;
 			break;
 		case 'l':	/* --list */
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_LISTTARG;
+			targs_req = OPT_TARGS;
 			break;
 		case 'z':	/* --report */
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_QUERY_ALL;
+			targs_req = NO_TARGS;
 			break;
 		/* 
 		 * Modifiers.
@@ -269,9 +288,6 @@ process_command_line(int argc, char **argv)
 		case 'n':	/* --noexec */
 			conf->noexec = TRUE;
 			break;
-		case 's':	/* --soft */
-			conf->soft = TRUE;
-			break;
 		case 'v':	/* --verify */
 			conf->verify = TRUE;
 			break;
@@ -286,51 +302,29 @@ process_command_line(int argc, char **argv)
 	if (conf->com == CMD_ERROR)
 		exit_msg(EXACTLY_ONE_MSG);
 
-	/*
-	 * Earlier code pushed args directly onto conf->targ.
-	 * This code builds conf->ntarg with Mark's hostlist_t package to
-	 * get support for Quadrics style host ranges.
-	 * XXX conf->targ constructed from conf->ntarg now.
-	 */
+	/* build hostlist of targets */
 	while (optind < argc)
 	{
 		if (conf->regex)
-			hostlist_push_host(conf->ntarg, argv[optind]);
+			hostlist_push_host(conf->targ, argv[optind]);
 		else
-			hostlist_push(conf->ntarg, argv[optind]);
+			hostlist_push(conf->targ, argv[optind]);
 		optind++;
 	}
-	/* XXX build targ from ntarg */
-	if (hostlist_count(conf->ntarg) > 0) 
-	{
-		char *host;
-		hostlist_iterator_t iter;
 
-		iter = hostlist_iterator_create(conf->ntarg);
-		while ((host = hostlist_next(iter)) != NULL) {
-			targ = make_String(host);
-			list_append(conf->targ, (void *)targ);
-			free(host);
-		}
-		hostlist_iterator_destroy(iter);
-	}
+	if (hostlist_is_empty(conf->targ) && targs_req == REQ_TARGS)
+		exit_msg("command requires target(s)");
+	if (!hostlist_is_empty(conf->targ) && targs_req == NO_TARGS)
+		exit_msg("command may not be specified with targets");
 
-	/* If no targets either exit or create an all-inclusive target */
-	if (list_is_empty(conf->targ)) {
-		if (targs_required)
-			exit_msg("command requires target(s)");
-		else {
-			targ = make_String("*");
-			list_append(conf->targ, (void *)targ);
-		}
-	}
-	/* If --noexec, just say what we would have done but don't contact
-	 * the server.
-	 */
+	/* missing target list means "all" */
+	if (hostlist_is_empty(conf->targ) && targs_req == OPT_TARGS)
+		hostlist_push_host(conf->targ, "*");
+
+	/* --noexec: say what we would have done but don't contact server */
 	if (conf->noexec) 
-	{
 		dump_Conf(conf);
-	}
+
 	return conf;
 }
 
@@ -348,7 +342,7 @@ usage(char * prog)
   -z --report    List on/off/unknown   -l --list     List targets\n\
   -h --help      Display this help\n");
     printf("MODIFIER OPTIONS:\n\
-  -s --soft      Use soft power status   -v --verify    Verify state change\n\
+  -v --verify    Verify state change\n\
   -x --regex     Use regex not glob      -F --file FILE Get targets from file\n\
   -d --host HOST Server name [localhost] -p --port PORT Server port\n\
   -V --version   Display version info    -L --license   Display license\n");
@@ -368,9 +362,10 @@ dump_Conf(Config *conf)
 			conf->com == CMD_POWER_CYCLE ? "Power cycle targets" :
 			conf->com == CMD_QUERY_ON ? "List on targets" :
 			conf->com == CMD_QUERY_OFF ? "List off targets" :
+			conf->com == CMD_QUERY_ALL ? "List all targets" :
 			conf->com == CMD_LISTTARG ? "List targets" : "Error");
 
-	hostlist_ranged_string(conf->ntarg, sizeof(tmpstr), tmpstr);
+	hostlist_ranged_string(conf->targ, sizeof(tmpstr), tmpstr);
 	printf("Targets: %s\n", tmpstr);
 	exit(0);
 }
@@ -386,7 +381,6 @@ read_Targets(Config *conf, char *name)
 	unsigned char buf[MAX_BUF];
 	int i = 0;
 	unsigned int c;
-	String targ;
 
 	if( (fp = fopen(name, "r")) == NULL)
 	{
@@ -405,8 +399,7 @@ read_Targets(Config *conf, char *name)
 			if( i > 0 )
 			{
 				buf[i] = '\0';
-				targ = make_String(buf);
-				list_append(conf->targ, (void *)targ);
+				hostlist_push(conf->targ, buf);
 			}
 			i = 0;
 		}
@@ -417,13 +410,12 @@ read_Targets(Config *conf, char *name)
 /*
  * Set up connection to server.
  */
-static List
+static void
 connect_to_server(Config *conf)
 {
 	struct addrinfo hints, *addrinfo;
 	int sock_opt;
 	int n;
-	List cluster;
 	List reply;
 
 	memset(&hints, 0, sizeof(struct addrinfo));
@@ -442,14 +434,22 @@ connect_to_server(Config *conf)
 	n = Connect(conf->fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
 	freeaddrinfo(addrinfo);
 
-	/*
-	 * Connected, now "log in" and get a notion of what nodes
-	 * the daemon knows about.  Return this list of nodes.
-	 */
+	/* Connected, now "log in" */
 	reply = dialog(conf->fd, NULL);
 	list_destroy(reply);
 	reply = dialog(conf->fd, AUTHENTICATE_FMT);
 	list_destroy(reply);
+
+}
+
+/*
+ * Request the list of nodes known to the server and their power state.
+ * Results are returned as a list-o-nodes that must be freed by the caller.
+ */
+static List
+request_State(Config *conf)
+{
+	List cluster;
 
 	cluster = get_Names(conf->fd);
 	get_State(conf->fd, cluster);
@@ -458,7 +458,8 @@ connect_to_server(Config *conf)
 }
 
 /*
- * List source
+ * Request list of nodes known to the server.
+ * Results are returned as a list-o-Nodes thatmust be freed by the caller.
  */
 static List
 get_Names(int fd)
@@ -477,6 +478,11 @@ get_Names(int fd)
 	return cluster;
 }
 
+/* 
+ * Request power state for all nodes known to powerman.
+ * Fills in the p_state and n_state fields of each Node in the 
+ * 'cluster' list-o-Nodes.
+ */
 static void
 get_State(int fd, List cluster)
 {
@@ -516,9 +522,7 @@ dialog(int fd, const char *str)
 	if (debug_telemetry)
 	{
 		if (str)
-			printf("debug: request:     '%s'\n", str);
-		else
-			printf("debug: dialog sends nothing\n");
+			printf("C: '%s'\n", str);
 	}
 	memset(buf, 0, MAX_BUF);
 	if( str != NULL )
@@ -565,39 +569,47 @@ dialog(int fd, const char *str)
 	if (debug_telemetry)
 	{
 		String tmpstr;
-		int count = 0;
 
 		ListIterator itr = list_iterator_create(reply);
 		while( (tmpstr = (String)list_next(itr)) )
-		{
-			printf("debug: response[%d]: '%s'\n", 
-					count++, get_String(tmpstr));
-		}
+			printf("S: '%s'\n", get_String(tmpstr));
 		list_iterator_destroy(itr);
 	}
 
 	return reply;
 }
 
+/*
+ * Iterate through conf->targ nodes executing command for each node.
+ * XXX this requires a separate handshake for every node specified;
+ * consider making this more efficient.
+ */
 static void
-process_targets(Config *conf, List cluster)
+process_targets(Config *conf)
 {
-	String targ;
-	List reply;
-	ListIterator itr;
-	String str;
+	char *host;
+	hostlist_iterator_t itr;
 
-	itr = list_iterator_create(conf->targ);
-	while( (targ = (String)list_next(itr)) )
+	if ((itr = hostlist_iterator_create(conf->targ)) == NULL)
+		exit_error("hostlist_iterator_create");
+	while( (host = hostlist_next(itr)) )
 	{
+		String targ = make_String(host);
+		String str;
+		List reply;
+
 		if( conf->regex == TRUE )
 			str = targ;
-		else
+		else {
 			str = glob2regex(targ);
+			free_String(targ);
+		}
 		reply = send_server(conf, str);
-		publish_reply(conf, cluster, reply);
+		publish_reply(conf, reply);
+		free_String(str);
+		list_destroy(reply);
 	}
-	list_iterator_destroy(itr);
+	hostlist_iterator_destroy(itr);
 }
 
 /*
@@ -645,9 +657,6 @@ send_server(Config *conf, String str)
 
 	switch(conf->com)
 	{
-	case CMD_QUERY_ON:
-	case CMD_QUERY_OFF:
-	case CMD_QUERY_ALL:
 	case CMD_LISTTARG:
 		sprintf(buf, GET_NAMES_FMT, get_String(str));
 		break;
@@ -671,191 +680,99 @@ send_server(Config *conf, String str)
 }
 
 static void 
-publish_reply(Config *conf, List cluster, List reply)
+publish_reply(Config *conf, List reply)
 {
-	State_Val state = OFF;
-
 	switch(conf->com)
 	{
-	case CMD_QUERY_ON:
-		state = ON;
-	case CMD_QUERY_OFF:
-		print_list(conf, cluster, reply, state);
-		break;
-	case CMD_QUERY_ALL:
-		print_readable(conf, cluster);
-	case CMD_POWER_ON:
-	case CMD_POWER_OFF:
-	case CMD_POWER_CYCLE:
-	case CMD_RESET:
-		if( conf->verify == TRUE )
-		{
-			get_State(conf->fd, cluster);
-			print_readable(conf, cluster);
-		}
-		break;
-	case CMD_LISTTARG       :
-		print_Targets(reply);
-		break;
-	default :
-		assert(FALSE);
-		break;
+		case CMD_POWER_ON:
+		case CMD_POWER_OFF:
+		case CMD_POWER_CYCLE:
+		case CMD_RESET:
+			break;
+		case CMD_LISTTARG:
+			print_Targets(reply);
+			break;
+		default:
+			assert(FALSE);
+			break;
 	}
 }
 
+static void
+warn_softstate(char *host)
+{
+	fprintf(stderr, "warning: %s: plug is on but node may not be\n", host);
+}
+
+/*
+ * Produce a readable report showing who's on and who's off (--report)
+ */
 static void
 print_readable(Config *conf, List cluster)
 {
-/*
- * This is probably more complicated than it needs to be 
- */
-
-	List subrange;
-	List list;
-
-	list = transfer_Nodes(cluster);
-	while( !list_is_empty(list) )
-	{
-		subrange = get_next_subrange(list);
-		subrange_report(subrange, conf->soft, ST_UNKNOWN, "unknown");
-		subrange_report(subrange, conf->soft, OFF, "off");
-		subrange_report(subrange, conf->soft, ON, "on");
-		join_Nodes(cluster, subrange);
-	}
-}
-
-/*
- * List source
- */
-static List
-get_next_subrange(List nodes)
-{
-	List list;
+	hostlist_t on = hostlist_create(NULL);
+	hostlist_t off = hostlist_create(NULL);
+	hostlist_t unk = hostlist_create(NULL);
 	Node *node;
-	Node *first_node;
+	ListIterator itr;
+	char tmpstr[1024];
 
-	assert(nodes != NULL);
+	if (!on || !off || !unk)
+		exit_error("hostlist_create");
 
-	first_node = (Node *)list_pop(nodes);
-	assert(first_node != NULL);
-
-	list = list_create(xfree_Node);
-	list_append(list, (void *)first_node);
-	node = (Node *)list_peek(nodes);
-	while( node != NULL && prefix_match(first_node->name, node->name) )
+	/* Sort nodes into three hostlist bins */
+	itr = list_iterator_create(cluster);
+	while( (node = (Node *)list_next(itr)))
 	{
-		node = (Node *)list_pop(nodes);
-		list_append(list, (void *)node);
-		node = (Node *)list_peek(nodes);
+		switch (node->p_state) 
+		{
+			case ON:
+				hostlist_push_host(on, get_String(node->name));
+				if (node->n_state != ON)
+					warn_softstate(get_String(node->name));
+				break;
+			case OFF:
+				hostlist_push_host(off, get_String(node->name));
+				break;
+			case ST_UNKNOWN:
+				hostlist_push_host(unk, get_String(node->name));
+				break;
+		}
 	}
-	return list;
+	list_iterator_destroy(itr);
+
+	/* Report the status */
+	if (! hostlist_is_empty(off)) {
+		hostlist_ranged_string(on, sizeof(tmpstr), tmpstr);
+		printf("on\t%s\n", tmpstr);
+	}
+	if (! hostlist_is_empty(off)) {
+		hostlist_ranged_string(off, sizeof(tmpstr), tmpstr);
+		printf("off\t%s\n", tmpstr);
+	}
+	if (! hostlist_is_empty(unk)) {
+		hostlist_ranged_string(unk, sizeof(tmpstr), tmpstr);
+		printf("unknown\t%s\n", tmpstr);
+	}	
+
+	hostlist_destroy(on);
+	hostlist_destroy(off);
+	hostlist_destroy(unk);
 }
 
 static void
-subrange_report(List nodes, bool soft, State_Val state, char *state_string)
-{
-	Node *node;
-	Node *next;
-	Node *start;
-	ListIterator node_i;
-	int num = 0;
-	char buf[MAX_BUF];
-	bool first;
-
-	assert(nodes != NULL);
-	node_i = list_iterator_create(nodes);
-	while( (node = (Node *)list_next(node_i)) )
-	{
-		assert(node != NULL);
-		assert(node->name != NULL);
-		assert( !empty_String(node->name) );
-
-		if( soft )
-		{
-			if( node->n_state == state ) num++;
-		}
-		else
-		{
-			if( node->p_state == state ) num++;
-		}
-	}
-	list_iterator_reset(node_i);
-	if( num == 0 ) return;
-	
-	/* There's at least one so queue up on it */
-	if( soft )
-		while( (node = (Node *)list_next(node_i)) && 
-		       (node->n_state != state) )
-			;
-	else
-		while( (node = (Node *)list_next(node_i)) && 
-		       node->p_state != state )
-			;
-	if( num == 1 )
-	{
-		printf("%s\t\t%s\n", state_string, get_String(node->name));
-		list_iterator_destroy(node_i);
-		return;
-	}
-
-	/* there are at least two, so use tux[...] notation */
-
-	memset(buf, 0, MAX_BUF);
-	strncpy(buf, get_String(node->name), prefix_String(node->name));
-	printf("%s\t\t%s[%d", state_string, buf, index_String(node->name));
-	first = TRUE;
-	next = node;
-	start = node;
-	while( next != NULL )
-	{
-		if( soft )
-			while( (next = (Node *)list_next(node_i)) && 
-			       (next->n_state == state) ) node = next;
-		else
-			while( (next = (Node *)list_next(node_i)) && 
-			       next->p_state == state ) node = next;
-		if( node != start )
-			printf("-%d", index_String(node->name));
-
-		if( next == NULL ) continue;
-		if( soft )
-			while( (next = (Node *)list_next(node_i)) && 
-			       (next->n_state != state) ) 
-				;
-		else
-			while( (next = (Node *)list_next(node_i)) && 
-			       next->p_state != state ) 
-				;
-		if( next == NULL ) continue;
-		node = next;
-		start = next;
-		printf(",%d", index_String(node->name));
-
-	}
-	printf("]\n");
-}
-
-static void
-print_list(Config *conf, List cluster, List targ, State_Val state)
+print_list(Config *conf, List cluster, State_Val state)
 {
 	Node *node;
 	ListIterator itr;
-	String t;
 
-	assert( targ != NULL );
-	itr = list_iterator_create(targ);
-	while( (t = (String )list_next(itr)) && !is_prompt(t) )
+	itr = list_iterator_create(cluster);
+	while( (node = (Node *)list_next(itr)))
 	{
-		node = list_find_first(cluster, xmatch_Node, get_String(t));
-		if( node == NULL ) exit_msg("No such node as \"%s\".", get_String(t));
-		if( conf->soft == TRUE )
-		{
-			if( node->n_state == state ) printf("%s\n", get_String(node->name));
-		}
-		else
-		{
-			if( node->p_state == state ) printf("%s\n", get_String(node->name));
-		}
+		if( node->p_state == state ) 
+			printf("%s\n", get_String(node->name));
+		if (node->p_state == ON && node->n_state == OFF)
+			warn_softstate(get_String(node->name));
 	}
 	list_iterator_destroy(itr);
 }
@@ -925,8 +842,7 @@ make_Config(void)
 	conf->com = CMD_ERROR;
 	conf->regex = FALSE;
 	conf->verify = FALSE;
-	conf->targ = list_create(free_String);
-	conf->ntarg = hostlist_create(NULL);
+	conf->targ = hostlist_create(NULL);
 	conf->reply = NULL;
 	return conf;
 }
@@ -939,7 +855,7 @@ free_Config(Config *conf)
 {
 	free_String((void *)conf->host);
 	free_String((void *)conf->service);
-	list_destroy(conf->targ);
+	hostlist_destroy(conf->targ);
 	if( conf->reply != NULL)
 		list_destroy(conf->reply);
 	Free(conf);
@@ -960,35 +876,6 @@ append_Nodes(List cluster, List reply)
 		list_append(cluster, node);
 	}
 	list_iterator_destroy(itr);
-}
-
-/*
- * List source
- */
-static List
-transfer_Nodes(List cluster)
-{
-	Node *node;
-	List nodes = list_create(xfree_Node);
-
-	while( (node = (Node *)list_pop(cluster)) )
-		list_append(nodes, (void *)node);
-	return nodes;
-}
-
-
-static void
-join_Nodes(List list1, List list2)
-{
-	Node *node;
-
-	assert( list1 != NULL );
-	assert( list2 != NULL );
-	while( (node = (Node *)list_pop(list2)) )
-	{
-		list_append(list1, (void *)node);
-	}
-	list_destroy(list2);	
 }
 
 /* 
@@ -1100,16 +987,8 @@ cmp_Nodes(void *node1, void *node2)
 	assert(((Node *)node2) != NULL);
 	assert(((Node *)node2)->name != NULL);
 
-	return cmp_String(((Node *)node1)->name, 
-			  ((Node *)node2)->name);
-}
-
-static int
-xmatch_Node(void *node, void *key)
-{
-	if( match_String(((Node *)node)->name, (char *)key) )
-		return TRUE;
-	return FALSE;	
+	return strcmp(get_String(((Node *)node1)->name), 
+			get_String(((Node *)node2)->name));
 }
 
 static void

@@ -80,3 +80,8 @@
 2002-08-01 garlick
 	* Do not use ${srcbin} for products.  Clean up other Makefile targets.
 	* Added --telemetry to client to allow us to watch protocol happen.
+	* Change client to not request list of nodes from daemon unless
+	  requesting status.
+	* Convert completely over to hostlist.c routines in client.
+	* Remove --soft option and always warn if plug=on and node=off.
+	* Removed duplicate hostlist handling from pm_string.c.

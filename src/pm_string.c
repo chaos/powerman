@@ -38,21 +38,9 @@
 
 #define STRING_MAGIC 0xabbaabba
 
-/* 
- *   This structure is for holding strings mostly, but also can capture
- * indexed items like tux0, tux1, ... .  If there is a single index then
- * the code below for prefix is correct.  A range may have a '[', though.
- * In that case prefix points to the '['.  This structure can only
- * accomodate a contiguous range.  It would require a list of these to 
- * hold tux[1-3, 5-7]. 
- */
 struct string_implementation {
 	int magic;
-	int length; /* length = strlen(string) */
-	int width;  /* width of index field, i.e. width(tux02) = 2 */
-	int prefix; /* prefix=length-1;while(isdigit(string[prefix]))prefix--; */
-	int index;  /* n = sscanf(string + prefix, "%d", &index); */
-	int count;  /* if ( n == 0 ) try to get a range index..index+count */
+	int length;
 	char *string;
 };
 
@@ -60,22 +48,7 @@ struct string_implementation {
 String
 make_String(const char *cs)
 {
-/*
- * This needs to be modified to read canonical ranges as well as indexed
- * strings.  The only recognized form of canonical range is 
- * "base[index1-index2]" where base is a nonempty string that does not
- * end in a digit, and index1 and index2 are integers with index1 < index2.
- * There is no whitespace inside the "[...]".   Finaly, the width of the
- * two integers must be the same, as in tux[000-256].
- */
-
 	String s;
-	char buf[MAX_STR_BUF];
-	int n;
-	int index2;
-	char *leftb  = NULL;
-	char *dash   = NULL;
-	char *rightb = NULL;
 
 	s = (String)Malloc(sizeof(struct string_implementation));
 	s->magic = STRING_MAGIC;
@@ -83,55 +56,13 @@ make_String(const char *cs)
 	{
 		s->string = NULL;
 		s->length = 0;
-		s->prefix = NO_INDEX;
-		s->index = NO_INDEX;
-		s->width = 0;
-		s->count = 0;
 		return s;
 	}
 	s->length = strlen(cs);
-	leftb  = (char *)memchr(cs, '[', s->length);
-	if( leftb != NULL )
-	    dash   = (char *)memchr(leftb, '-', s->length - (leftb - cs));
-	if( dash !=  NULL )
-		rightb = (char *)memchr(dash, ']', s->length - (dash - cs));
 	s->string = Malloc(s->length + 1);
 	strncpy(s->string, cs, s->length);
 	s->string[s->length] = '\0';
-	if( rightb != NULL )
-	{
-		s->prefix = leftb - cs;
-		s->width = dash - leftb - 1;
-		strncpy(buf, leftb + 1, s->width);
-		buf[s->width] = '\0';
-		n = sscanf(buf, "%d", &(s->index));
-		if( n != 1 )
-			exit_msg("Failure interpreting first index of \"%s\"", cs);
-		assert( s->width == rightb - dash - 1 );
-		strncpy(buf, dash + 1, s->width);
-		buf[s->width] = '\0';
-		n = sscanf(buf, "%d", &(index2));
-		if( n != 1 )
-			exit_msg("Failure interpreting second index of \"%s\"", cs);
-		assert(index2 > s->index);
-		s->count = index2 - s->index;
-	}
-	else
-	{
-		s->prefix = s->length;
-		while( (s->prefix > 0) && isdigit(s->string[s->prefix - 1]) )
-			s->prefix--;
-		s->width = s->length - s->prefix;
-		if( s->width > 0 )
-		{
-			n = sscanf(s->string + s->prefix, "%d", &(s->index));
-			if( n != 1)
-				exit_msg("Failure interpreting %s", cs);
-		}
-		else
-			s->index = NO_INDEX;
-		s->count = 1;
-	}
+
 	return s;
 }
 
@@ -181,68 +112,6 @@ length_String(String s)
 	return s->length;
 }
 
-#if 1
-int 
-prefix_String(String s)
-{
-	assert( s != NULL );
-	assert(s->magic == STRING_MAGIC);
-	return s->prefix;
-}
-
-
-int 
-index_String(String s)
-{
-	assert( s != NULL );
-	assert(s->magic == STRING_MAGIC);
-	return s->index;
-}
-
-
-int 
-cmp_String(String s1, String s2)
-{
-	int result = 0;
-	int len;
-
-	assert( (s1 != NULL) && (s2 != NULL) );
-	assert(s1->magic == STRING_MAGIC);
-	assert(s2->magic == STRING_MAGIC);
-	if( (s1->length == 0) && (s2->length == 0) )
-		return 0;
-	if( s1->length == 0 )
-		return -1;
-	if( s2->length == 0 )
-		return 1;
-	assert( (s1->string != NULL) && (s2->string != NULL) );
-	len = MIN(s1->prefix, s2->prefix);
-	result = strncmp(s1->string, s2->string, len);
-	if( result != 0 ) return result;
-	if( s1->prefix < s2->prefix ) return -1;
-	if( s1->prefix > s2->prefix ) return  1;
-	if( s1->index == NO_INDEX )   return -1;
-	if( (s1->index != NO_INDEX) && (s2->index == NO_INDEX) ) return 1;
-	return s1->index - s2->index;
-}
-
-bool
-prefix_match(String s1, String s2)
-{
-	int n;
-
-	assert( (s1 != NULL) && (s2 != NULL) );
-	assert(s1->magic == STRING_MAGIC);
-	assert(s2->magic == STRING_MAGIC);
-
-	if( s1->prefix != s2->prefix ) return FALSE;
-	n = strncmp(s1->string, s2->string, s1->prefix);
-	if( n == 0 ) return TRUE;
-	else return FALSE;
-}
-#endif
-
-
 bool
 empty_String(String s)
 {
@@ -278,7 +147,9 @@ match_String(String s, char *cs)
 	assert(s->magic == STRING_MAGIC);
 
 	len = strlen(cs);
-	if(len != s->length) return FALSE;
-	if( (n = strncmp(s->string, cs, len)) == 0 ) return TRUE;
+	if(len != s->length) 
+		return FALSE;
+	if( (n = strncmp(s->string, cs, len)) == 0 ) 
+		return TRUE;
 	return FALSE;
 }

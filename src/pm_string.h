@@ -27,21 +27,13 @@
 #ifndef PM_STRING_H
 #define PM_STRING_H
 
-
-#define NO_INDEX        (-1)
-
 typedef struct string_implementation *String;
 
-/* pm_string.c extern prototypes */
 String make_String(const char *cs);
 String copy_String(String s);
 char *get_String(String s);
 unsigned char byte_String(String s, int offset);
 int length_String(String s);
-int prefix_String(String s);
-int index_String(String s);
-int cmp_String(String s1, String s2);
-bool prefix_match(String s1, String s2);
 bool empty_String(String s);
 void free_String(void *s);
 bool match_String(String s, char *cs);
