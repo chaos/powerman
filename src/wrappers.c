@@ -360,8 +360,14 @@ int Connect(int fd, struct sockaddr *addr, socklen_t addrlen)
 
     n = connect(fd, addr, addrlen);
     if (n < 0) {
-        if (errno != EINPROGRESS)
-            lsd_fatal_error(__FILE__, __LINE__, "connect");
+        switch (errno)  {
+            case EINPROGRESS:
+            case ECONNREFUSED:
+                break;
+            default:
+                lsd_fatal_error(__FILE__, __LINE__, "connect");
+                /*NOTREACHED*/
+        }
     }
     return n;
 }

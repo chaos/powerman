@@ -25,7 +25,7 @@
 
 #define NUM_THREADS 8
 #define BASE_PORT   8080
-#define NUM_PLUGS   8
+#define NUM_PLUGS   16
 
 static struct {
     int plug[NUM_PLUGS];

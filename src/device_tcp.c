@@ -157,14 +157,19 @@ bool tcp_connect(Device * dev)
     fd_settings = Fcntl(dev->fd, F_GETFL, 0);
     Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
 
-    /* Connect - 0 = connected, -1 implies EINPROGRESS */
+    /* Connect - 0 = connected, -1 implies EINPROGRESS | ECONNREFUSED */
     dev->connect_state = DEV_CONNECTING;
     if (Connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen) >= 0)
         tcp_finish_connect(dev);
+    else if (errno == ECONNREFUSED)
+        dev->connect_state = DEV_NOT_CONNECTED;
+
     freeaddrinfo(addrinfo);
 
     err(FALSE, "tcp_connect(%s): %s", dev->name,
-            dev->connect_state == DEV_CONNECTED ? "connected" : "connecting");
+            dev->connect_state == DEV_CONNECTED ? "connected" 
+            : dev->connect_state == DEV_CONNECTING ? "connecting"
+            : "connection refused");
 
     return (dev->connect_state == DEV_CONNECTED);
 }

@@ -1,3 +1,33 @@
+2003-11-30 Jim Garlick <garlick@llnl.gov>
+
+    * src/powerman.c: handle partial reads on powermand socket.
+    Fixes the very occasional 'unexpected response from server' errors.
+
+    * src/powerman.c: don't initiate connect to server until options
+    have been validated (avoids 'client read returned EOF' messages
+    from server when someone mistypes a command).
+
+    * src/client_proto.h, src/client.c: add connect_state to device query
+    output.
+
+    * test/vpcd.c, test/mkconf.pl, etc/vpc.dev: change vpcd plugs from 8 to 16.
+
+    * src/pty.c: fixed _ptym_open to work beyond 176 ptys on Linux (up to 256).
+
+    * test/Makefile: targets for testing 4000 plugs (250 vpcd devices)
+
+    * test/testing.txt: added
+
+2003-11-28 Jim Garlick <garlick@llnl.gov>
+
+    * src/wrappers.c, src/powerman.c, src/device_tcp.c: make Connect()
+    non-fatal on ECONNREFUSED.
+
+    * src/powermand.c: make daemonization happen after cli_listen() so
+    errors about binding to the powermand port are reported on stderr.
+
+    * src/pty.c: rework error handling.
+
 2003-11-24 Jim Garlick <garlick@llnl.gov>
 
     * src/parse.y: add ability to put hostlists in 'node' line.
@@ -9,8 +39,6 @@
     * test/vpcd.c: add --foreground option for running on a pty.
 
     * test/TESTRIG: removed
-
-    * test/test.strategy: added
 
     * test/mkconf.pl: added
 

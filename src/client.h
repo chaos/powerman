@@ -31,6 +31,7 @@ void cli_init(void);
 void cli_fini(void);
 
 void cli_listen(void);
+int cli_listen_fd(void);
 
 void cli_post_select(fd_set * rset, fd_set * wset);
 void cli_pre_select(fd_set * rset, fd_set * wset, int *maxfd);

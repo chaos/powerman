@@ -122,7 +122,7 @@
  "302 unknown: %s"                                                  CP_EOL
 #define CP_INFO_XSTATUS     "303 %s: %s"                            CP_EOL
 #define CP_INFO_DEVICE  \
- "304 %s: reconnects=%-3.3d actions=%-3.3d type=%s hosts=%s"        CP_EOL
+ "304 %s: state=%s reconnects=%-3.3d actions=%-3.3d type=%s hosts=%s" CP_EOL
 #define CP_INFO_TELEMETRY   "305 %s"                                CP_EOL
 #define CP_INFO_NODES       "306 %s"                                CP_EOL
 #define CP_INFO_XNODES      "307 %s"                                CP_EOL

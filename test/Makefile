@@ -1,7 +1,7 @@
 CFLAGS= -g -Wall -I../src
 VICEOBJS = vicebox.o wrappers.o error.o debug.o
 
-all: vpcd vicebox svicebox test64.conf test1024.conf
+all: vpcd vicebox svicebox
 
 vpcd: vpcd.o
 	$(CC) -o $@ $< -lpthread
@@ -18,19 +18,23 @@ debug.o : ../src/debug.c
 svicebox : svicebox.c
 	$(CC) $(CFLAGS) -o $@ $<
 
-test64.conf: mkconf.pl
+test64.conf: mkconf.pl		# 4 ptys x 16 plugs each
 	./mkconf.pl 64 >$@
-
-test1024.conf: mkconf.pl
-	./mkconf.pl 1024 >$@
-
 run64: test64.conf
 	../src/powermand -f -c $<
 
-run1024: test1024.conf
+test2048.conf: mkconf.pl	# 128 ptys x 16 plugs each
+	./mkconf.pl 2048 >$@
+run2048: test2048.conf
 	../src/powermand -f -c $<
+
+test4000.conf: mkconf.pl	# 250 ptys x 16 plugs each
+	./mkconf.pl 4000 >$@
+run4000: test4000.conf
+	../src/powermand -f -c $<
+
 
 clean :
 	rm -f *~ *.o
 	rm -f vicebox svicebox vpcd
-	rm -f test64.conf test1024.conf
+	rm -f *.conf

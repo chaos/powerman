@@ -113,10 +113,9 @@ int main(int argc, char **argv)
         }
     }
 
-    if (config_filename == NULL) {
-        if (geteuid() != 0)
-            err_exit(FALSE, "must be root");
-    }
+    /* need root for ability to chown ptys, etc */
+    if (geteuid() != 0)
+        err_exit(FALSE, "must be root");
 
     Signal(SIGHUP, _noop_handler);
     Signal(SIGTERM, _exit_handler);
@@ -129,11 +128,11 @@ int main(int argc, char **argv)
     if (config_filename != NULL)
         Free(config_filename);
 
-    if (daemonize)
-        daemon_init();
-
     /* initialize listener */
     cli_listen();
+
+    if (daemonize)
+        daemon_init(); /* closes all fd's except client listen port */
 
     /* We now have a socket at listener fd running in listen mode */
     /* and a file descriptor for communicating with each device */

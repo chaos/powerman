@@ -194,6 +194,25 @@ int main(int argc, char **argv)
             err_exit(FALSE, "hostlist error");
     }
 
+    /* verify a few option requirements */
+    switch (cmd) {
+    case CMD_LIST:
+        if (have_targets)
+            err_exit(FALSE, "option does not accept targets");
+        break;
+    case CMD_ON:
+    case CMD_OFF:
+    case CMD_RESET:
+    case CMD_CYCLE:
+    case CMD_FLASH:
+    case CMD_UNFLASH:
+        if (!have_targets)
+            err_exit(FALSE, "option requires targets");
+        break;
+    default:
+        break;
+    }
+
     _connect_to_server(host ? host : DFLT_HOSTNAME, port ? port : DFLT_PORT);
 
     if (telemetry) {
@@ -217,8 +236,6 @@ int main(int argc, char **argv)
      */
     switch (cmd) {
     case CMD_LIST:
-        if (have_targets)
-            err_exit(FALSE, "option does not accept targets");
         dprintf(server_fd, CP_NODES CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
@@ -232,43 +249,31 @@ int main(int argc, char **argv)
         _expect(CP_PROMPT);
         break;
     case CMD_ON:
-        if (!have_targets)
-            err_exit(FALSE, "option requires targets");
         dprintf(server_fd, CP_ON CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_OFF:
-        if (!have_targets)
-            err_exit(FALSE, "option requires targets");
         dprintf(server_fd, CP_OFF CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_RESET:
-        if (!have_targets)
-            err_exit(FALSE, "option requires targets");
         dprintf(server_fd, CP_RESET CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_CYCLE:
-        if (!have_targets)
-            err_exit(FALSE, "option requires targets");
         dprintf(server_fd, CP_CYCLE CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_FLASH:
-        if (!have_targets)
-            err_exit(FALSE, "option requires targets");
         dprintf(server_fd, CP_BEACON_ON CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_UNFLASH:
-        if (!have_targets)
-            err_exit(FALSE, "option requires targets");
         dprintf(server_fd, CP_BEACON_OFF CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
@@ -380,7 +385,10 @@ static void _connect_to_server(char *host, char *port)
     server_fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
                        addrinfo->ai_protocol);
 
-    Connect(server_fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
+    if (Connect(server_fd, addrinfo->ai_addr, addrinfo->ai_addrlen) < 0) {
+        /* EINPROGRESS (not possible) | ECONNREFUSED */
+        err_exit(TRUE, "powermand");
+    }
     freeaddrinfo(addrinfo);
 
     _process_version();
@@ -413,6 +421,9 @@ static bool _supress(int num)
     return res;
 }
 
+/* 
+ * Read a line of data terminated with \r\n or just \n.
+ */
 static void _getline(char *buf, int size)
 {
     while (size > 1) {          /* leave room for terminating null */
@@ -482,23 +493,25 @@ static int _process_response(void)
 static void _expect(char *str)
 {
     char buf[CP_LINEMAX];
+    int len = strlen(str);
+    char *p = buf;
     int res;
 
-    assert(strlen(str) < sizeof(buf));
-    res = Read(server_fd, buf, strlen(str));
-    if (res < 0)
-        err_exit(TRUE, "lost connection with server");
-    buf[res] = '\0';
-    if (strcmp(str, buf) != 0) {
-        char *dbuf = dbg_memstr(buf, strlen(buf));
-        char *dstr = dbg_memstr(str, strlen(str));
+    assert(len < sizeof(buf));
+    do {
+        res = Read(server_fd, p, len);
+        if (res < 0)
+            err_exit(TRUE, "lost connection with server");
+        p += res;
+        *p = '\0';
+        len -= res;
+    } while (strcmp(str, buf) != 0 && len > 0);
 
-        err(FALSE, "expected: '%s'", dstr);
-        err(FALSE, "received: '%s'", dbuf);
-        Free(dbuf);
-        Free(dstr);
+    /* Shouldn't happen.  We are not handling the general case of the server
+     * returning the wrong response.  Read() loop above may hang in that case.
+     */
+    if (strcmp(str, buf) != 0)
         err_exit(FALSE, "unexpected response from server");
-    }
 }
 
 /*

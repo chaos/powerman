@@ -323,6 +323,9 @@ static void _client_query_device_reply(Client * c, char *arg)
             if (_make_pluglist(dev, nodelist, sizeof(nodelist), FALSE)) {
                 _client_printf(c, CP_INFO_DEVICE, 
                         dev->name,
+                        dev->connect_state == DEV_CONNECTED ? "connected"
+                          : dev->connect_state == DEV_CONNECTING ? "connecting"
+                          : "disconnected",
                         con > 0 ? con - 1 : 0, 
                         dev->stat_successful_actions,
                         dev->specname,
@@ -959,6 +962,12 @@ void cli_post_select(fd_set * rset, fd_set * wset)
             list_delete(itr);
     }
     list_iterator_destroy(itr);
+}
+
+/* hook so daemonization function can avoid closing our fd */
+int cli_listen_fd(void)
+{
+    return listen_fd;
 }
 
 /*

@@ -40,6 +40,7 @@
 #include "wrappers.h"
 #include "error.h"
 #include "daemon.h"
+#include "client.h"
 #include "debug.h"
 
 #define TMPSTR_LEN 80
@@ -75,8 +76,10 @@ void daemon_init(void)
     umask(0);
 
     /* Close fd's */
-    for (i = 0; i < 256; i++)
-        close(i);               /* ignore errors */
+    for (i = 0; i < 256; i++) {
+        if (i != cli_listen_fd())
+            close(i);               /* ignore errors */
+    }
 
     /* Init syslog */
     /* Review: check for truncation */

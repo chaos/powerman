@@ -93,8 +93,6 @@ bool pipe_connect(Device * dev)
     pid = pty_fork(&fd, ptyname);
     if (pid < 0) {
         err(TRUE, "_pipe_connect(%s): pty_fork error", dev->name);
-        /*NOTREACHED*/
-
     } else if (pid == 0) {      /* child */
         Execv(pd->argv[0], pd->argv);
         /*NOTREACHED*/
