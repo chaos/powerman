@@ -1,3 +1,6 @@
+2003-04-15 garlick
+    * Cleanup of parse.y to prepare for nested blocks of script code.
+
 2003-04-14 garlick
     * Renamed "plugcount" to "maxplugcount" in device configurations.
     * Renamed "map" to "setstatus" in device configurations.

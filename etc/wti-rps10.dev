@@ -44,7 +44,7 @@ specification  {
 		expect "Complete"
 		#delay 0.5
 	}
-# The T command is dip switch c "%s"onfigurable for 5 or 10 second delay
+# The T command is dip switch configurable for 5 or 10 second delay
 	script cycle {
 		send "\030\030\002\030\030\002\030\030%s0\r"
 		expect "Plug [0-9] Off"
