@@ -1112,30 +1112,58 @@ static void _process_action(Device * dev, struct timeval *timeout)
 
 static void _telnet_sendopt(Device *dev, unsigned char cmd, unsigned char opt)
 {
-    char str[] = { IAC, cmd, opt };
+    unsigned char str[] = { IAC, cmd, opt };
     int n;
 
     dbg(DBG_TELNET, "%s: _telnet_sendopt: %s %s", dev->name, 
             TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>",
             TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
 
-    n = cbuf_write(dev->to, str, sizeof(str), NULL);
-    if (n < sizeof(str))
+    n = cbuf_write(dev->to, str, 3, NULL);
+    if (n < 3)
         err((n < 0), "_telnet_sendopt: cbuf_write returned %d", n);
 }
 
 static void _telnet_sendcmd(Device *dev, unsigned char cmd)
 {
-    char str[] = { IAC, cmd };
+    unsigned char str[] = { IAC, cmd };
     int n;
 
     dbg(DBG_TELNET, "%s: _telnet_sendcmd: %s", dev->name, 
             TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>");
 
-    n = cbuf_write(dev->to, str, sizeof(str), NULL);
-    if (n < sizeof(str))
+    n = cbuf_write(dev->to, str, 2, NULL);
+    if (n < 2)
         err((n < 0), "_telnet_sendcmd: cbuf_write returned %d", n);
 }
+
+#if 0
+static void _telnet_sendnaws(Device *dev)
+{
+    unsigned char str[] = { IAC, SB, TELOPT_NAWS, 0, 80, 0, 24, IAC, SE };
+    int n;
+
+    dbg(DBG_TELNET, "%s: _telnet_sendnaws: SB NAWS 0 80 0 24 SE", dev->name);
+
+    n = cbuf_write(dev->to, str, sizeof(str), NULL);
+    if (n < sizeof(str))
+        err((n < 0), "_telnet_sendnaws: cbuf_write returned %d", n);
+}
+
+static void _telnet_sendttype(Device *dev)
+{
+    unsigned char str[] = { IAC, SB, TELOPT_TTYPE, TELQUAL_IS, 
+        'U', 'N', 'K', 'N', 'O', 'W', 'N', IAC, SE };
+    int n;
+
+    dbg(DBG_TELNET, "%s: _telnet_sendnaws: SB TTYPE IS \"UNKNOWN\" SE", 
+            dev->name);
+
+    n = cbuf_write(dev->to, str, sizeof(str), NULL);
+    if (n < sizeof(str))
+        err((n < 0), "_telnet_sendttype: cbuf_write returned %d", n);
+}
+#endif
 
 static void _telnet_recvcmd(Device *dev, unsigned char cmd)
 {
@@ -1143,24 +1171,24 @@ static void _telnet_recvcmd(Device *dev, unsigned char cmd)
             TELCMD_OK(cmd) ?  TELCMD(cmd) : "<unknown>");
 }
 
+
 static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
 {
     dbg(DBG_TELNET, "%s: _telnet_recvopt: %s %s", dev->name, 
             TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>", 
             TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
-
     switch (cmd)
     {
     case DO:
         switch (opt) {
-#if 0
-            case TELOPT_NAWS:
-            case TELOPT_TTYPE:
-            case TELOPT_TM:
-            case TELOPT_ECHO:
+            case TELOPT_SGA:    /* rfc 858 */
+            case TELOPT_TM:     /* rfc 860 */
+                _telnet_sendopt(dev, WILL, opt);
+                break;
+            case TELOPT_TTYPE:  /* rfc 1091 */
+            case TELOPT_NAWS:   /* rfc 1073 */
                 _telnet_sendopt(dev, WONT, opt);
                 break;
-#endif
             default:
                 break;
         }
@@ -1172,12 +1200,14 @@ static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
 
 static void _init_telnet(Device * dev)
 {
-#if 0
     _telnet_sendopt(dev, DONT, TELOPT_NAWS);
     _telnet_sendopt(dev, DONT, TELOPT_TTYPE);
-#endif
+    _telnet_sendopt(dev, DONT, TELOPT_ECHO);
 }
 
+/*
+ * Telnet state machine.
+ */
 static void _process_telnet(Device * dev)
 {
     unsigned char peek[MAX_DEV_BUF];
@@ -1709,9 +1739,9 @@ void dev_pre_select(fd_set * rset, fd_set * wset, int *maxfd)
         FD_SET(dev->fd, rset);
         *maxfd = MAX(*maxfd, dev->fd);
 
-        /* need to be in the write set if we are sending scripted text */
+        /* need to be in the write set if we are sending anything */
         if (dev->connect_status == DEV_CONNECTED) {
-            if ((dev->script_status & DEV_SENDING)) {
+            if (!cbuf_is_empty(dev->to)) {
                 FD_SET(dev->fd, wset);
                 *maxfd = MAX(*maxfd, dev->fd);
             }
