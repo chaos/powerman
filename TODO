@@ -2,7 +2,9 @@ Short Term:
 * Store scripts in a list and search the list for the script name, rather than
   hard code the list.  
 * Reformat code w/out tabs
-* vpcd --hung_rpc can cause client to hang forever.
+* vpcd --hung_rpc can cause client to hang forever while login action
+  repeatedly times out and is reinitiated ("real" action never makes it to 
+  head of device queue).
 * Make sure that tcp_wrappers works.
 * Attempt to initiate a command to devices that are delaying between
   reconnects should cause an immediate connect attempt.
