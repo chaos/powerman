@@ -1,7 +1,6 @@
 * When querying power status, don't query all power controlers
 * Failed action at the device level are never reported to the client
-* Timeouts need to be added to the send/expect interactions with
-  the devices.
+* Timeouts need to be added to the send/expect interactions with the devices.
 * Increased warning/error verbosity from the client (and server)
 * Build failure simulator test suite
 * Package with autoconf
@@ -9,10 +8,13 @@
 * Reformat code w/out tabs
 * define out_of_memory() handler as fatal error.
 * Remove any server side caching
-* Investigate controling the timing of commands delivered to power
-  controlers.
+* Investigate controling the timing of commands delivered to power controlers.
 * powerman client needs to interpret response codes from server and clean
   them up (e.g. strip off numerical response prefixes) when shown to the user.
 * powerman client needs to implement option for expanding hostranges
 * powerman client needs option for querying status of individual node for
   Kimberlite failover interface.
+* De-serialize commands issued to the devices.  They should be issued
+  in parrelel and the results colated.
+
+
