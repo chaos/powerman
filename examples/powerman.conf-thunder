@@ -1,0 +1,58 @@
+#
+# $Id$
+# $Source$
+#
+# Example of a 1024 node cluster with IPMI power control.
+# The BMC's have IP addresses that map to the "pthunderNNN" names below, however
+# we want to refer to them by their primary hostnames "thunderNNN".
+# 
+
+# enable tcp wrappers for powermand (off by default)
+tcpwrappers yes
+
+# This device depends on an external program called ipmipower, distributed as
+# part of FreeIPMI (http://www.nongnu.org/freeipmi/).
+include "/etc/powerman/ipmipower.dev"
+
+# Start 17 copies of ipmipower.  Each copy takes care of 64 nodes.  Powermand talks to 
+# each instance of ipmipower via a pty.  To powermand, ipmipower looks just like a 
+# remote power controller on a socket.  All the ugly IPMI details are hidden from Powerman.
+device "tj" "thunderipmipower" "/usr/sbin/ipmipower -h pthunderj           -w 30 -g |&"
+device "t0" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[0-63]      -w 30 -g |&"
+device "t1" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[64-127]    -w 30 -g |&"
+device "t2" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[128-191]   -w 30 -g |&"
+device "t3" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[192-255]   -w 30 -g |&"
+device "t4" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[256-319]   -w 30 -g |&"
+device "t5" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[320-383]   -w 30 -g |&"
+device "t6" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[384-447]   -w 30 -g |&"
+device "t7" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[448-511]   -w 30 -g |&"
+device "t8" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[512-575]   -w 30 -g |&"
+device "t9" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[576-639]   -w 30 -g |&"
+device "t10" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[640-703]  -w 30 -g |&"
+device "t11" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[704-767]  -w 30 -g |&"
+device "t12" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[768-831]  -w 30 -g |&"
+device "t13" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[832-895]  -w 30 -g |&"
+device "t14" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[896-959]  -w 30 -g |&"
+device "t15" "thunderipmipower" "/usr/sbin/ipmipower -h pthunder[960-1023] -w 30 -g |&"
+
+# The "pthunder" names passed into ipmipower as plug names are the hostnames 
+# corresponding to BMC IP addresses.  We like to refer to the nodes by their real
+# name without the leading "p".  If we didn't care, the plug names could have 
+# been omitted below.
+node "thunderj"          "tj"	"pthunderj"
+node "thunder[0-63]"     "t0"	"pthunder[0-63]"
+node "thunder[64-127]"   "t1"	"pthunder[64-127]"
+node "thunder[128-191]"  "t2"	"pthunder[128-191]"
+node "thunder[192-255]"  "t3"	"pthunder[192-255]"
+node "thunder[256-319]"  "t4"	"pthunder[256-319]"
+node "thunder[320-383]"  "t5"	"pthunder[320-383]"
+node "thunder[384-447]"  "t6"	"pthunder[384-447]"
+node "thunder[448-511]"  "t7"	"pthunder[448-511]"
+node "thunder[512-575]"  "t8"	"pthunder[512-575]"
+node "thunder[576-639]"  "t9"	"pthunder[576-639]"
+node "thunder[640-703]"  "t10"	"pthunder[640-703]"
+node "thunder[704-767]"  "t11"	"pthunder[704-767]"
+node "thunder[768-831]"  "t12"	"pthunder[768-831]"
+node "thunder[832-895]"  "t13"	"pthunder[832-895]"
+node "thunder[896-959]"  "t14"	"pthunder[896-959]"
+node "thunder[960-1023]" "t15"	"pthunder[960-1023]"

@@ -1,0 +1,55 @@
+#
+# $Id$
+# $Source$
+# 
+# Example of a small powerman.conf with several different power controllers.
+#
+
+# enable tcp wrappers for powermand (off by default)
+tcpwrappers yes
+
+# include the device specifications that implement dev_types we want below
+include "/etc/powerman/apc.dev"
+include "/etc/powerman/baytech-rpc28-nc.dev"
+include "/etc/powerman/baytech.dev"
+include "/etc/powerman/cyclades-pm8.dev"
+include "/etc/powerman/icebox.dev"
+include "/etc/powerman/icebox3.dev"
+include "/etc/powerman/wti-rps10.dev"
+include "/etc/powerman/wti.dev"
+
+
+# device "<dev_name>"	"<dev_type>"		"<hostname:port>"
+device "apc"		"apc"			"apc-test:23"
+device "baytech3"	"baytech"		"baytech-test:23"
+device "baytech28"	"baytech-rpc28-nc"	"cyclades-ts-test:7001"
+device "ice2"		"icebox"		"icebox-test:1010"
+device "ice3"		"icebox3"		"icebox3-test:1010"
+device "rps10"		"wti-rps10"		"cyclades-ts-test:7002"
+device "nps"		"wti"			"wti-test:23"
+device "pm8"		"pm8"			"cyclades-ts-test:7003"
+device "pm8i"		"pm8"			"cyclades-ts-test:7004"
+
+# node "<node_name>"	"<dev_name>"		"<plug_name>"
+# Notes:
+# 1. node_name can be a "hostrange", e.g. "t1,t2,t3", "t[0-3]", or "t[0-3],t4".
+# 2. plug_name can also be a hostrange, e.g. "1,2,3", "[1-3]", or "[1-2],3"
+# 3. if plug_name is omitted, the list of plugs defined in the
+#    device specification is used (in order).
+# 4. if plug_name is omitted, and there are no plug defined in the device
+#    specification, the node name is used as the plug name.
+node "t0"		"rps10"			"0"
+node "t1"		"rps10"			"7"
+node "t2"		"rps10"			"6"
+node "t[3-10]"		"baytech3"
+node "t[11-30]"		"baytech28"
+node "t[31-40]"		"ice2"
+node "t[41-50]"		"ice3"
+node "t[51-58]"		"nps"
+node "t[59-66]"		"apc"
+node "t[67-74]"		"pm8"
+node "t[75-82]"		"pm8i"
+
+# example of an alias that could be used for a box named "fred" with redundant
+# power supplies plugged into t0 and t1 above:
+alias "fred" 		"t0,t1"
