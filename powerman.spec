@@ -9,10 +9,12 @@
 #
 # v. 0-1-2:  2001-09-05
 #            Add the Post Install step setting digi to suid root
+# v. 0-1-3:  2001-09-05
+#            Update version to current value
 ####################################################################
  
 %define name    powerman
-%define version 0.1.1
+%define version 0.1.3
 %define release 1
 
 Name: %name

@@ -11,10 +11,11 @@
 #            make targets no longer (necessarily) need root 
 #            priveleges, and no longer check.  suid of digi 
 #            now happens in RPM post install sript
+# v. 0-1-3:  2001-09-05
 ####################################################################
 
 PACKAGE= powerman
-VERSION= 0.1.2
+VERSION= 0.1.3
 SHELL=   /bin/sh
 MAKE=    /usr/bin/make
 CC=      gcc

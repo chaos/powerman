@@ -9,6 +9,7 @@
 # v. 0-1-1:  2001-08-31
 #            renovation in support of rpm builds
 # v. 0-1-2:  2001-09-05
+# v. 0-1-3:  2001-09-05
 ####################################################################
 
 echo "Read through this file and run its commands one at a time."

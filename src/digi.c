@@ -8,6 +8,7 @@
  * v. 0-1-1:  2001-08-31
  *           renovation in support of rpm builds
  * v. 0-1-2:  2001-09-05
+ * v. 0-1-3:  2001-09-05
  ********************************************************************/
 
 /*
@@ -39,7 +40,7 @@
 #define MAXLINE 1000
 #define MAXSTRING 1000
 
-char *Version = "digi:Powerman 0.1.2";
+char *Version = "digi:Powerman 0.1.3";
 char *powermandir  = "/usr/lib/powerman/";
 char *config_file = "etc/digi.conf";
 char *POWERMANDIR = "POWERMANDIR";
