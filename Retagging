@@ -1,0 +1,19 @@
+In order to retag something to a new version do the following
+0)  you will probaly want to remove the previous version
+	rpm -q powerman
+	rpm -e powerman-0.1.7-3
+1)  make rpm tag=HEAD
+2)  verify it's all working as you like (if, like me, you ended up
+            with a bunch of rpm database entires you can't get rid
+	    of you may need the --force below, best if you can get
+	    on without it)
+	rpm -i powerman-0.1.7-4.i386.rpm --force
+3)  update the version and release numbers in:
+	Makefile
+	powerman.spec
+	pm
+4)  cvs commit
+    return to 1 if anything misfired
+5)  cvs rtag powerman-<version-with-dashes> powerman
+6)  make rpm
+7)  verify that it's all working correctly
