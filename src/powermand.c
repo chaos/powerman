@@ -152,8 +152,7 @@ static void _usage(char *prog)
 
 static void _version(void)
 {
-    printf("%s\n", 
-            strlen(POWERMAN_VERSION) > 0 ? POWERMAN_VERSION : "development");
+    printf("%s\n", POWERMAN_VERSION);
     exit(0);
 }
 

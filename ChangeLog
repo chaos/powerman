@@ -1,6 +1,13 @@
+2002-12-26 garlick
+    * Beginnings of redundant power supply support.
+    * Increase CP_LINEMAX to accomodate longer lines returned by --verbose
+    * Return powerman version in banner string and warn if version mismatch
+      between server and client.
+    * Add --exprange option for long query responses.
+
 2002-12-25 garlick
     * Baytech cycle script based on 'reboot' is a no-op if plug is off.  
-      Do an explicit off then on instead.
+      Do an explicit off then on instead.  Reduce timeout from 20 to 10s.
 
 2002-12-24 garlick
     * Fix POWERMAN_VERSION string to include %{release} when building

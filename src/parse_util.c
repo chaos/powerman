@@ -270,10 +270,12 @@ bool conf_node_exists(char *node)
 
 bool conf_addnode(char *node)
 {
-    /* nodes must be unique */
+#if 1 
     if (conf_node_exists(node))
         return FALSE;
-
+#else
+    /* redundant PS support: permit duplicate entries for node name */
+#endif
     hostlist_push(conf_nodes, node);
     return TRUE;
 }

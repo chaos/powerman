@@ -39,6 +39,7 @@
 #include "error.h"
 #include "hostlist.h"
 #include "client_proto.h"
+#include "debug.h"
 
 #define SERVER_HOSTNAME "localhost"
 #define SERVER_PORT     "10101"
@@ -48,13 +49,15 @@ static void _disconnect_from_server(void);
 static void _usage(void);
 static void _license(void);
 static void _version(void);
-static int _getline(void);
+static void _getline(char *str, int len);
+static int _process_line(void);
 static void _expect(char *str);
 static int _process_response(void);
+static void _process_version(void);
 
 static int server_fd = -1;
 
-#define OPT_STRING "01crlqfubntLd:VDv"
+#define OPT_STRING "01crlqfubntLd:VDvx"
 static const struct option long_options[] = {
     {"on", no_argument, 0, '1'},
     {"off", no_argument, 0, '0'},
@@ -72,6 +75,7 @@ static const struct option long_options[] = {
     {"version", no_argument, 0, 'V'},
     {"device", no_argument, 0, 'D'},
     {"verbose", no_argument, 0, 'v'},
+    {"exprange", no_argument, 0, 'x'},
     {0, 0, 0, 0}
 };
 
@@ -93,6 +97,7 @@ int main(int argc, char **argv)
     char *port = NULL;
     char *host = NULL;
     bool verbose = FALSE;
+    bool exprange = FALSE;
 
     prog = basename(argv[0]);
     err_init(prog);
@@ -161,6 +166,9 @@ int main(int argc, char **argv)
         case 'v':              /* --verbose */
             verbose = TRUE;
             break;
+        case 'x':              /* --exprange */
+            exprange = TRUE;
+            break;
         default:
             _usage();
             /*NOTREACHED*/
@@ -190,6 +198,14 @@ int main(int argc, char **argv)
 
     if (verbose) {
         dprintf(server_fd, CP_VERBOSE CP_EOL);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        if (res != 0)
+            goto done;
+    }
+
+    if (exprange) {
+        dprintf(server_fd, CP_EXPRANGE CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         if (res != 0)
@@ -314,6 +330,7 @@ static void _usage(void)
  "-b --beacon    Query beacon status   -n --node      Query node status\n"
  "-t --temp      Query temperature     -V --version   Report powerman version\n"
  "-D --device    Report device status  -v --verbose   Include debugging info\n"
+ "-x --exprange  Long query response\n"
   );
     exit(1);
 }
@@ -341,8 +358,7 @@ static void _license(void)
  */
 static void _version(void)
 {
-    printf("%s\n", 
-            strlen(POWERMAN_VERSION) > 0 ? POWERMAN_VERSION : "development");
+    printf("%s\n", POWERMAN_VERSION);
     exit(1);
 }
 
@@ -366,7 +382,7 @@ static void _connect_to_server(char *host, char *port)
     Connect(server_fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
     freeaddrinfo(addrinfo);
 
-    _expect(CP_VERSION);
+    _process_version();
     _expect(CP_PROMPT);
 }
 
@@ -381,7 +397,8 @@ static void _disconnect_from_server(void)
  */
 static bool _supress(int num)
 {
-    char *ignoreme[] = { CP_RSP_QUERY_COMPLETE, CP_RSP_VERBOSE };
+    char *ignoreme[] = { CP_RSP_QUERY_COMPLETE, CP_RSP_VERBOSE, 
+        CP_RSP_EXPRANGE };
     bool res = FALSE;
     int i;
 
@@ -395,28 +412,32 @@ static bool _supress(int num)
     return res;
 }
 
+static void _getline(char *buf, int size)
+{
+    while (size > 1) {          /* leave room for terminating null */
+        if (Read(server_fd, buf, 1) <= 0)
+            err_exit(TRUE, "lost connection with server");
+        if (*buf == '\r')
+            continue;
+        if (*buf == '\n')
+            break;
+        size--;
+        buf++;
+    }
+    *buf = '\0';
+}
+
 /* 
  * Get a line from the socket and display on stdout.
  * Return the numerical portion of the repsonse.
  */
-static int _getline(void)
+static int _process_line(void)
 {
     char buf[CP_LINEMAX];
-    int size = CP_LINEMAX;
-    char *p = buf;
     int num;
 
-    while (size > 1) {          /* leave room for terminating null */
-        if (Read(server_fd, p, 1) <= 0)
-            err_exit(TRUE, "lost connection with server\n");
-        if (*p == '\r')
-            continue;
-        if (*p == '\n')
-            break;
-        size--;
-        p++;
-    }
-    *p = '\0';
+    _getline(buf, CP_LINEMAX);
+
     num = strtol(buf, (char **) NULL, 10);
     if (num == LONG_MIN || num == LONG_MAX)
         num = -1;
@@ -424,8 +445,23 @@ static int _getline(void)
         if (!_supress(num))
             printf("%s\n", buf + 4);
     } else
-        err_exit(FALSE, "unexpected response from server\n");
+        err_exit(FALSE, "unexpected response from server");
     return num;
+}
+
+/*
+ * Read version and warn if it doesn't match the client's.
+ */
+static void _process_version(void)
+{
+    char buf[CP_LINEMAX], vers[CP_LINEMAX];
+
+    _getline(buf, CP_LINEMAX);
+    if (sscanf(buf, CP_VERSION, vers) != 1)
+        err_exit(FALSE, "unexpected response from server");
+    if (strcmp(vers, POWERMAN_VERSION) != 0)
+        err(FALSE, "warning: server version (%s) != client (%s)",
+                vers, POWERMAN_VERSION);
 }
 
 static int _process_response(void)
@@ -433,14 +469,14 @@ static int _process_response(void)
     int num;
 
     do {
-        num = _getline();
+        num = _process_line();
     } while (!CP_IS_ALLDONE(num));
     return (CP_IS_FAILURE(num) ? num : 0);
 }
 
 /* 
- * Read strlen(str) bytes from file descriptor.
- * If it doesn't match what we're expecting, it's probably an error.
+ * Read strlen(str) bytes from file descriptor and exit if
+ * it doesn't match 'str'.
  */
 static void _expect(char *str)
 {
@@ -450,12 +486,18 @@ static void _expect(char *str)
     assert(strlen(str) < sizeof(buf));
     res = Read(server_fd, buf, strlen(str));
     if (res < 0)
-        err_exit(TRUE, "lost connection with server\n");
-    if (res != strlen(str))
-        err_exit(FALSE, "short read\n");
+        err_exit(TRUE, "lost connection with server");
     buf[res] = '\0';
-    if (strcmp(str, buf) != 0)
-        err_exit(FALSE, "%s\n", buf);
+    if (strcmp(str, buf) != 0) {
+        char *dbuf = dbg_memstr(buf, strlen(buf));
+        char *dstr = dbg_memstr(str, strlen(str));
+
+        err(FALSE, "expected: '%s'", dstr);
+        err(FALSE, "received: '%s'", dbuf);
+        Free(dbuf);
+        Free(dstr);
+        err_exit(FALSE, "unexpected response from server");
+    }
 }
 
 /*

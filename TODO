@@ -10,8 +10,6 @@ OTHER:
   or power control devices which can be powered on in parallel.
 * Support power control devices that are accessed via serial port.
 * Move telnet protocol from device configuration into powermand.
-* Client should have option for expanding hostranges and printing results
-  one per line (support Kimberlite scripts).
 * Client should have option for verifying soft power status (expand hostranges
   and issue warnings where plug is on but node is off).  Needs to be optional
   since would double cluster query latency.  

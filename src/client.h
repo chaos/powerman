@@ -54,6 +54,7 @@ typedef struct {
     Command *cmd;               /* command (there can be only one) */
     int client_id;              /* client identifier */
     bool verbose;               /* client wants verbose debugging info */
+    bool exprange;              /* client wants host ranges expanded */
      MAGIC;
 } Client;
 

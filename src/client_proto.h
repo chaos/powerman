@@ -30,7 +30,7 @@
 /*
  * Line oriented request/response protocol for powerman daemon.
  * 1. client connects
- * 2. server sends protocol version string
+ * 2. server sends version string
  * 3. server sends prompt
  * 4. client sends command
  * 5. server sends response (see note under Responses below)
@@ -38,10 +38,9 @@
  */
 
 #define CP_LINEMAX  1024    /* max request/response line length */
-
 #define CP_EOL      "\r\n"  /* line terminator */
 #define CP_PROMPT   "powerman> "    /* prompt */
-#define CP_VERSION  "001 powerman protocol version 2.0" CP_EOL
+#define CP_VERSION  "001 %s"     CP_EOL
 
 /* 
  * Requests
@@ -66,6 +65,7 @@
 #define CP_BEACON_ON  "flash %s"
 #define CP_BEACON_OFF "unflash %s"
 #define CP_VERBOSE    "verbose"
+#define CP_EXPRANGE   "exprange"
 
 /* 
  * Responses - 
@@ -101,6 +101,7 @@
  "304 flash <nodes>      - set beacon to ON (if available)"         CP_EOL \
  "304 unflash <nodes>    - set beacon to OFF (if available)"        CP_EOL \
  "304 verbose            - toggle server verbosity"                 CP_EOL \
+ "304 exprange           - toggle server host range expansion"      CP_EOL \
  "304 help               - display help"                            CP_EOL \
  "104 quit               - logout"                                  CP_EOL
 #define CP_RSP_COMPLETE     "105 Command completed successfully"    CP_EOL
@@ -110,6 +111,7 @@
 #define CP_RSP_QUERY_COMPLETE "106 Query complete"                  CP_EOL
 #define CP_RSP_VERBOSE      "107 Server verbosity %s"               CP_EOL
 #define CP_RSP_VERBMSG      "306 %s"                                CP_EOL
+#define CP_RSP_EXPRANGE     "108 Server hostrange expansion %s"     CP_EOL
 
 /* failure */
 #define CP_ERR_FAILURE      "200 Failure"                           CP_EOL

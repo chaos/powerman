@@ -36,7 +36,7 @@
  */
 typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } ArgState;
 typedef struct {
-    char *node;                 /* key */
+    char *node;                 /* node name */
     char *val;                  /* value as returned by the device */
     ArgState state;             /* interpreted value, if appropriate */
 } Arg;
@@ -90,7 +90,7 @@ typedef struct {
     cbuf_t to;                  /* buffer -> device */
     cbuf_t from;                /* buffer <- device */
 
-    List plugs;                 /* list of Plugs */
+    List plugs;                 /* list of Plugs (node name <-> plug name) */
     Script scripts[NUM_SCRIPTS]; /* array of scripts */
 
     struct timeval last_retry;  /* time of last reconnect retry */

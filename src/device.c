@@ -570,8 +570,7 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
             continue;
         }
         /* match! */
-        act =
-            _create_action(dev, com, plug->name, complete_fun, vpf_fun,
+        act = _create_action(dev, com, plug->name, complete_fun, vpf_fun,
                     client_id, arglist);
         list_append(new_acts, act);
     }
@@ -1189,19 +1188,21 @@ ArgList *dev_link_arglist(ArgList * arglist)
 /* helper for _set_argval_onoff */
 static int _arg_match(Arg * arg, void *key)
 {
-    return (strcmp(arg->node, (char *) key) == 0);
+    /* redundant PS support: arg->node may not be unique so only match 
+     * "virgin" entries.   Order doesn't particularly matter.
+     */
+    return (strcmp(arg->node, (char *) key) == 0 
+            && (arg->state == ST_UNKNOWN || arg->val == NULL));
 }
 
 /*
  * Set the value of the argument with key = node.
  */
-static void _set_argval_state(ArgList * arglist, char *node,
-                              ArgState state)
+static void _set_argval_state(ArgList * arglist, char *node, ArgState state)
 {
     Arg *arg;
 
-    if ((arg =
-         list_find_first(arglist->argv, (ListFindF) _arg_match, node)))
+    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node)))
         arg->state = state;
 }
 
@@ -1212,8 +1213,7 @@ static void _set_argval(ArgList * arglist, char *node, char *val)
 {
     Arg *arg;
 
-    if ((arg =
-         list_find_first(arglist->argv, (ListFindF) _arg_match, node)))
+    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node)))
         arg->val = Strdup(val);
 }
 

@@ -305,7 +305,7 @@ static void _client_query_device_reply(Client * c, char *arg)
 
 }
 
-/* helper for _client_query_status_reply */
+/* helper for _client_query_reply */
 static int _argval_ranged_string(ArgList * arglist, char *str, int len,
                                  ArgState state)
 {
@@ -334,18 +334,35 @@ static int _argval_ranged_string(ArgList * arglist, char *str, int len,
  */
 static void _client_query_reply(Client * c)
 {
-    char on[CP_LINEMAX], off[CP_LINEMAX], unknown[CP_LINEMAX];
     ArgList *arglist = c->cmd->arglist;
-    int n;
 
     assert(c->cmd != NULL);
-    n  = _argval_ranged_string(arglist, on,      CP_LINEMAX, ST_ON);
-    n |= _argval_ranged_string(arglist, off,     CP_LINEMAX, ST_OFF);
-    n |= _argval_ranged_string(arglist, unknown, CP_LINEMAX, ST_UNKNOWN);
-    if (n != 0)
-        _client_printf(c, CP_ERR_INTERNAL);
-    else
-        _client_printf(c, CP_RSP_STATUS, on, off, unknown);
+
+    if (c->exprange) {
+        ListIterator itr;
+        Arg *arg;
+
+        itr = list_iterator_create(arglist->argv);
+        while ((arg = list_next(itr))) {
+            _client_printf(c, CP_RSP_RAW, arg->node, 
+                    arg->state == ST_ON ? "on" : 
+                    arg->state == ST_OFF ? "off" : "unknown");
+        }
+        list_iterator_destroy(itr);
+        _client_printf(c, CP_RSP_QUERY_COMPLETE);
+
+    } else {
+        char on[CP_LINEMAX], off[CP_LINEMAX], unknown[CP_LINEMAX];
+        int n;
+
+        n  = _argval_ranged_string(arglist, on,      CP_LINEMAX, ST_ON);
+        n |= _argval_ranged_string(arglist, off,     CP_LINEMAX, ST_OFF);
+        n |= _argval_ranged_string(arglist, unknown, CP_LINEMAX, ST_UNKNOWN);
+        if (n != 0)
+            _client_printf(c, CP_ERR_INTERNAL);
+        else
+            _client_printf(c, CP_RSP_STATUS, on, off, unknown);
+    }
 }
 
 /* 
@@ -468,6 +485,9 @@ static void _parse_input(Client * c, char *input)
     } else if (!strncasecmp(str, CP_VERBOSE, strlen(CP_VERBOSE))) {
         c->verbose = !c->verbose;                       /* verbose */
         _client_printf(c, CP_RSP_VERBOSE, c->verbose ? "ON" : "OFF");
+    } else if (!strncasecmp(str, CP_EXPRANGE, strlen(CP_EXPRANGE))) {
+        c->exprange = !c->exprange;                     /* exprange */
+        _client_printf(c, CP_RSP_EXPRANGE, c->exprange ? "ON" : "OFF");
     } else if (!strncasecmp(str, CP_QUIT, strlen(CP_QUIT))) {
         _client_printf(c, CP_RSP_QUIT);                 /* quit */
         _handle_write(c);
@@ -762,7 +782,7 @@ static void _create_client(void)
         client->port, client->fd);
 
     /* prompt the client */
-    _client_printf(client, CP_VERSION);
+    _client_printf(client, CP_VERSION, POWERMAN_VERSION);
     _client_printf(client, CP_PROMPT);
 }
 
