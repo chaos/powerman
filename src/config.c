@@ -81,8 +81,7 @@ conf_init(char *filename)
     /* initialize cluster */
     conf_cluster = _cluster_create();
 
-    /* initialize 'tmp_specs' list */
-    list_create((ListDelF) _spec_destroy);
+    tmp_specs = list_create((ListDelF) _spec_destroy);
 
     /* validate config file */
     if (stat(filename, &stbuf) < 0)
@@ -91,13 +90,16 @@ conf_init(char *filename)
 	err_exit(FALSE, "%s is not a regular file\n", filename);
 
     /* 
-     * Call yacc parser against config file.
-     * The parser calls support functions below and builds powerman data structures.
+     * Call yacc parser against config file.  The parser calls support 
+     * functions below and builds:
+     * - tmp_specs	    temporary device specifications
+     * - powerman_dev	    powerman devices (instantiations of device specs)
+     * - conf_cluster	    cluster node list, mapping to plugs, etc.
+     * FIXME: need some uniform naming here
      */
     parse_config_file(filename);
 
-    /* destroy 'tmp_specs' list */
-    list_destroy(tmp_specs);
+    list_destroy(tmp_specs); /* FIXME: this triggers an assertion - why? */
     tmp_specs = NULL;
 }
 
@@ -210,8 +212,10 @@ static void _spec_destroy(Spec * spec)
 	    str_destroy(spec->plugname[i]);
 	Free(spec->plugname);
     }
-    for (i = 0; i < spec->num_scripts; i++)
-	list_destroy(spec->scripts[i]);
+    for (i = 0; i < spec->num_scripts; i++) {
+	if (spec->scripts[i] != NULL)
+	    list_destroy(spec->scripts[i]);
+    }
     Free(spec->scripts);
     Free(spec);
 }
