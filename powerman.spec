@@ -67,9 +67,9 @@ fi
 if [ -x /etc/rc.d/init.d/powerman ]; then
   [ -x /sbin/chkconfig ] && /sbin/chkconfig --del powerman
   [ -x /sbin/chkconfig ] && /sbin/chkconfig --add powerman
-  if ! /etc/rc.d/init.d/powerman status | grep running >/dev/null 2>&1; then
-    /etc/rc.d/init.d/powerman start
-  fi
+  #if ! /etc/rc.d/init.d/powerman status | grep running >/dev/null 2>&1; then
+  #  /etc/rc.d/init.d/powerman start
+  #fi
 fi
 
 %preun
