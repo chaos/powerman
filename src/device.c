@@ -49,16 +49,20 @@
 #include "device_serial.h"
 #include "device_tcp.h"
 
-/*
- * Actions are appended to a per device list in dev->acts
- */
+typedef struct {
+    Plug *target;               /* target->name used for %s substitution */
+    List block;                 /* List of stmts */
+    ListIterator itr;           /* next stmt in block */
+    Stmt *cur;                  /* current stmt */
+    ListIterator plugitr;
+} ExecCtx;
+
 #define ACT_MAGIC 0xb00bb000
 #define MAX_LEVELS 2
 typedef struct {
     int magic;
     int com;                    /* one of the PM_* above */
-    ListIterator itr;           /* next place in the script sequence */
-    Stmt *cur;                  /* current place in the script sequence */
+    List exec;                  /* stack of ExecCtxs (outer block is first) */
     Plug *target;               /* target of action or NULL for all */
     ActionCB complete_fun;      /* callback for action completion */
     VerbosePrintf vpf_fun;      /* callback for device telemetry */
@@ -69,15 +73,16 @@ typedef struct {
     ArgList *arglist;           /* argument for query actions (list of Arg's) */
 } Action;
 
-#define _act_started(act)   ((act)->cur != NULL)
 
-
-static bool _process_foreachplug(Device * dev);
-static bool _process_setstatus(Device * dev);
-static bool _process_setplugname(Device * dev);
-static bool _process_expect(Device * dev);
-static bool _process_send(Device * dev);
-static bool _process_delay(Device * dev, struct timeval *timeout);
+static bool _process_stmt(Device *dev, Action *act, ExecCtx *e, 
+        struct timeval *timeout);
+static bool _process_foreach(Device *dev, Action *act, ExecCtx *e);
+static bool _process_setstatus(Device * dev, Action *act, ExecCtx *e);
+static bool _process_setplugname(Device * dev, Action *act, ExecCtx *e);
+static bool _process_expect(Device * dev, Action *act, ExecCtx *e);
+static bool _process_send(Device * dev, Action *act, ExecCtx *e);
+static bool _process_delay(Device * dev, Action *act, ExecCtx *e, 
+        struct timeval *timeout);
 static void _set_argval_state(ArgList * arglist, char *node,
                               ArgState state);
 static void _set_argval(ArgList * arglist, char *node, char *val);
@@ -199,11 +204,53 @@ static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[])
     return str;
 }
 
+static ExecCtx *_create_exec_ctx(Device *dev, List block, Plug *target)
+{
+    ExecCtx *new = (ExecCtx *)Malloc(sizeof(ExecCtx));
+
+    new->itr = list_iterator_create(block);
+    new->cur = list_next(new->itr); 
+    new->block = block;
+    new->target = target;
+    new->plugitr = NULL;
+
+    return new;
+}
+
+static void _destroy_exec_ctx(ExecCtx *e)
+{
+    if (e->itr != NULL)
+        list_iterator_destroy(e->itr);
+    e->itr = NULL;
+    e->cur = NULL;
+    e->target = NULL;
+    Free(e);
+}
+
+static void _rewind_action(Device *dev, Action *act)
+{
+    ExecCtx *e;
+
+    /* get back to the context for the outer block */
+    while ((e = list_pop(act->exec))) {
+        if (list_is_empty(act->exec))
+            list_push(act->exec, e);
+        else
+            _destroy_exec_ctx(e);
+    }
+    /* reset outer block iterator and current pointer */
+    if (e) {
+        list_iterator_reset(e->itr);
+        e->cur = NULL;
+    }
+}
+
 static Action *_create_action(Device * dev, int com, Plug *target,
                               ActionCB complete_fun, VerbosePrintf vpf_fun,
                               int client_id, ArgList * arglist)
 {
     Action *act;
+    ExecCtx *e;
 
     dbg(DBG_ACTION, "_create_action: %d", com);
     act = (Action *) Malloc(sizeof(Action));
@@ -212,9 +259,12 @@ static Action *_create_action(Device * dev, int com, Plug *target,
     act->complete_fun = complete_fun;
     act->vpf_fun = vpf_fun;
     act->client_id = client_id;
-    act->itr = list_iterator_create(dev->scripts[act->com]);
-    act->cur = NULL;
+
     act->target = target;
+    act->exec = list_create((ListDelF)_destroy_exec_ctx);
+    e = _create_exec_ctx(dev, dev->scripts[act->com], act->target);
+    list_push(act->exec, e);
+
     act->errnum = ACT_ESUCCESS;
     act->arglist = arglist ? dev_link_arglist(arglist) : NULL;
     timerclear(&act->time_stamp);
@@ -227,12 +277,12 @@ static void _destroy_action(Action * act)
     act->magic = 0;
     dbg(DBG_ACTION, "_destroy_action: %d", act->com);
     act->target = NULL;
-    if (act->itr != NULL)
-        list_iterator_destroy(act->itr);
-    act->itr = NULL;
-    act->cur = NULL;
+    if (act->exec)
+        list_destroy(act->exec);
+    act->exec = NULL;
     if (act->arglist)
         dev_unlink_arglist(act->arglist);
+    act->arglist = NULL;
     Free(act);
 }
 
@@ -432,7 +482,7 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
         /* reset script of preempted action so it starts over */
         if (!list_is_empty(dev->acts)) {
             act = list_peek(dev->acts);
-            list_iterator_reset(act->itr);
+            _rewind_action(dev, act);
             dbg(DBG_ACTION, "resetting iterator for non-login action");
         }
         act = _create_action(dev, com, NULL, complete_fun, vpf_fun,
@@ -717,30 +767,22 @@ static void _act_completion(Action *act, Device *dev)
 static void _process_action(Device * dev, struct timeval *timeout)
 {
     bool stalled = FALSE;
+    Action *act;
 
-    while (!stalled) {
-        Action *act = list_peek(dev->acts);
+    while ((act = list_peek(dev->acts)) && !stalled) {
         struct timeval timeleft;
+        ExecCtx *e = list_peek(act->exec);
 
-        if (act == NULL)        /* no actions in queue */
-            break;
+        assert(e != NULL);
+
         dbg(DBG_ACTION, "_process_action: processing action %d", act->com);
         _dbg_actions(dev);
 
-        /* Start the action if it is a new one.
-         * act->cur points to the current script statement.
-         * act->time_stamp will cause action timeout if elapsed time for
-         * entire action exceeds dev->timeout.
-         */
-        assert(act->itr != NULL);
-        if (!_act_started(act)) {
-            act->cur = list_next(act->itr);     /* point to first script elem */
+        /* initialize timeout (action is brand new) */
+        if (!timerisset(&act->time_stamp))
             Gettimeofday(&act->time_stamp, NULL);
-        }
-        assert(act->cur != NULL);
 
-        /* process actions 
-         */
+        /* timeout exceeded? */
         if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
             if (!(dev->connect_status == DEV_CONNECTED)) 
                 act->errnum = ACT_ECONNECTTIMEOUT;
@@ -762,71 +804,140 @@ static void _process_action(Device * dev, struct timeval *timeout)
                             dev->name, memstr);
                 Free(memstr);
             }
+
+        /* not connected but timeout not yet exceeded */
         } else if (!(dev->connect_status == DEV_CONNECTED)) {
             stalled = TRUE;                             /* not connnected */
-        } else if (act->cur->type == STMT_EXPECT) {
-            stalled = !_process_expect(dev);            /* do expect */
-        } else if (act->cur->type == STMT_SEND) {
-            stalled = !_process_send(dev);              /* do send */
-        } else if (act->cur->type == STMT_SETSTATUS) {
-            stalled = !_process_setstatus(dev);         /* set status */
-        } else if (act->cur->type == STMT_SETPLUGNAME) {
-            stalled = !_process_setplugname(dev);       /* set plugname */
-        } else if (act->cur->type == STMT_FOREACHPLUG) {
-            stalled = !_process_foreachplug(dev);       /* foreachplug */
+
+        /* connected - process statements */
         } else {
-            assert(act->cur->type == STMT_DELAY);
-            stalled = !_process_delay(dev, timeout);    /* do delay */
+            /* If a statement has an inner block to execute, it pushes a new 
+             * ExecCtx onto the action's exec stack and returns.  We notice 
+             * the top of the exec stack has changed and try to exec the next 
+             * stmt (now of the new context) and so on.  When the inner block 
+             * is done, the stack is popped and the "current" stmt is back to
+             * the one that initiated the inner block.
+             */
+            do {
+                e = list_peek(act->exec); 
+                stalled = !_process_stmt(dev, act, e, timeout);
+            } while (e != list_peek(act->exec));
         }
 
-        if (stalled) {          /* if stalled, set timeout for select */
+        /* stalled - update timeout for select */
+        if (stalled) {
             _update_timeout(timeout, &timeleft);
-        } else {
-            ActError res = act->errnum;
 
-            assert(act->itr != NULL);
-            /* completed action - notify client and dequeue action */
-            if (res != ACT_ESUCCESS || !(act->cur = list_next(act->itr))) {
-                if (act->com == PM_LOG_IN) {
-                    if (res == ACT_ESUCCESS)
-                        dev->script_status |= DEV_LOGGED_IN;
-                }
-                if (act->complete_fun)                  /* notify client */
-                    _act_completion(act, dev);
-                if (res == ACT_ESUCCESS)
-                    dev->stat_successful_actions++;
-                _destroy_action(list_dequeue(dev->acts));
+        /* most recently attempted stmt completed successfully */
+        } else if (act->errnum == ACT_ESUCCESS) {
+            e->cur = list_next(e->itr);     /* next stmt this block */
+            if (!e->cur) {                  /* ...or new block */
+                ExecCtx *e2 = list_pop(act->exec);
+
+                assert(e2 == e);
+                _destroy_exec_ctx(e2);
+                e = list_peek(act->exec);
             }
+
+            /* completed action successfully! */
+            if (e == NULL) {
+                if (act->com == PM_LOG_IN)
+                    dev->script_status |= DEV_LOGGED_IN;
+                if (act->complete_fun)
+                    _act_completion(act, dev);
+                _destroy_action(list_dequeue(dev->acts));
+                dev->stat_successful_actions++;
+            }
+
+        /* most recently attempted stmt completed with error */
+        } else {
+            ActError res = act->errnum; /* save for ref after _destroy_action */
+            Action *act; 
+
+            if (act->complete_fun)
+                _act_completion(act, dev);
+            _destroy_action(list_dequeue(dev->acts));
 
             /* if one action failed, abort the rest in the device queue 
              * in preparation for reconnect.
              */
-            if (res != ACT_ESUCCESS) {
-                Action *act;
-
-                while ((act = list_dequeue(dev->acts)) != NULL) { 
-                    act->errnum = (res == ACT_EEXPFAIL ? ACT_EABORT : res);
-                    if (act->complete_fun)
-                        _act_completion(act, dev);
-                    _destroy_action(act);
-                }
+            while ((act = list_dequeue(dev->acts)) != NULL) { 
+                act->errnum = (res == ACT_EEXPFAIL ? ACT_EABORT : res);
+                if (act->complete_fun)
+                    _act_completion(act, dev);
+                _destroy_action(act);
             }
 
             /* reconnect/login if expect timed out */
-            if (res != ACT_ESUCCESS && (dev->connect_status & DEV_CONNECTED)) {
-                dbg(DBG_DEVICE,
-                    "_process_action: disconnecting due to error");
+            if ((dev->connect_status & DEV_CONNECTED)) {
+                dbg(DBG_DEVICE, "_process_action: disconnecting due to error");
                 dev_disconnect(dev);
                 dev_reconnect(dev);
                 break;
             }
         }
-    }
+    } /* while loop */
 }
 
-static bool _process_foreachplug(Device * dev)
+bool _process_stmt(Device *dev, Action *act, ExecCtx *e, 
+        struct timeval *timeout)
+{
+    bool finished = 0;
+
+    switch (e->cur->type)
+    {
+    case STMT_EXPECT:
+        finished = _process_expect(dev, act, e);
+        break;
+    case STMT_SEND:
+        finished = _process_send(dev, act, e);
+        break;
+    case STMT_SETSTATUS:
+        finished = _process_setstatus(dev, act, e);
+        break;
+    case STMT_SETPLUGNAME:
+        finished = _process_setplugname(dev, act, e);
+        break;
+    case STMT_DELAY:
+        finished = _process_delay(dev, act, e, timeout);
+        break;
+    case STMT_FOREACHPLUG:
+    case STMT_FOREACHNODE:
+        finished = _process_foreach(dev, act, e);
+        break;
+    }
+    return finished;
+}
+
+static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
 {
     bool finished = TRUE;
+    ExecCtx *new;
+    Plug *plug;
+
+    /* we store a plug iterator in the ExecCtx */
+    if (e->plugitr == NULL)  
+        e->plugitr = list_iterator_create(dev->plugs);
+
+    /* Each time the inner block is executed, its argument will be
+     * a new plug/node name.  Pick that up here.
+     */
+    if (e->cur->type == STMT_FOREACHPLUG) {
+        plug = list_next(e->plugitr);
+    } else if (e->cur->type == STMT_FOREACHNODE) {
+        do {
+            plug = list_next(e->plugitr);
+        } while (plug && plug->node == NULL);
+    } else {
+        assert(0);
+    }
+
+    /* plug list not exhausted? start a new execution context for this block */
+    if (plug != NULL) {
+        new = _create_exec_ctx(dev, e->cur->u.foreach.stmts, plug);
+        list_push(act->exec, new);
+    }
+    /* we won't be called again if we don't push a new context */
 
     return finished;
 }
@@ -877,31 +988,26 @@ static char *_plug_to_node(Device *dev, char *plug_name)
     return node;
 }
 
-static bool _process_setstatus(Device * dev)
+static bool _process_setstatus(Device *dev, Action *act, ExecCtx *e)
 {
     bool finished = TRUE;
     char *plug_name = NULL;
-    Action *act = list_peek(dev->acts);
-
-    assert(act != NULL);
-    assert(act->cur != NULL);
-    assert(act->cur->type == STMT_SETSTATUS);
 
     /* 
      * Usage: setstatus [plug] status
      * plug can be literal plug name, or regex match, or omitted, 
      * (implying target plug name).
      */
-    if (act->cur->u.setstatus.plug_name)    /* literal */
-        plug_name = Strdup(act->cur->u.setstatus.plug_name);
+    if (e->cur->u.setstatus.plug_name)    /* literal */
+        plug_name = Strdup(e->cur->u.setstatus.plug_name);
     if (!plug_name)                         /* regex match */
-        plug_name = _copy_pmatch(dev, act->cur->u.setstatus.plug_mp);
-    if (!plug_name && (act->target && act->target->name != NULL))
-        plug_name = Strdup(act->target->name);/* use action target */
+        plug_name = _copy_pmatch(dev, e->cur->u.setstatus.plug_mp);
+    if (!plug_name && (e->target && e->target->name != NULL))
+        plug_name = Strdup(e->target->name);/* use action target */
     /* if no plug name, do nothing */
 
     if (plug_name) {
-        char *str = _copy_pmatch(dev, act->cur->u.setstatus.stat_mp);
+        char *str = _copy_pmatch(dev, e->cur->u.setstatus.stat_mp);
         char *node = _plug_to_node(dev, plug_name);
 
         if (str && node) {
@@ -919,25 +1025,20 @@ static bool _process_setstatus(Device * dev)
     return finished;
 }
 
-static bool _process_setplugname(Device * dev)
+static bool _process_setplugname(Device* dev, Action *act, ExecCtx *e)
 {
     bool finished = TRUE;
     char *node_name = NULL;
-    Action *act = list_peek(dev->acts);
-
-    assert(act != NULL);
-    assert(act->cur != NULL);
-    assert(act->cur->type == STMT_SETPLUGNAME);
 
     /* 
      * Usage: setplugname node plug
      * Both node and plug are regex matches.
      */
-    node_name = _copy_pmatch(dev, act->cur->u.setplugname.node_mp);
+    node_name = _copy_pmatch(dev, e->cur->u.setplugname.node_mp);
     /* if no node name, do nothing */
 
     if (node_name) {
-        char *plug_name = _copy_pmatch(dev, act->cur->u.setplugname.plug_mp);
+        char *plug_name = _copy_pmatch(dev, e->cur->u.setplugname.plug_mp);
 
         if (plug_name) {
             Plug *plug;
@@ -967,19 +1068,14 @@ static bool _process_setplugname(Device * dev)
 }
 
 /* return TRUE if expect is finished */
-static bool _process_expect(Device * dev)
+static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
 {
     regex_t *re;
-    Action *act = list_peek(dev->acts);
     bool finished = FALSE;
     size_t nm;
     regmatch_t *pm;
 
-    assert(act != NULL);
-    assert(act->cur != NULL);
-    assert(act->cur->type == STMT_EXPECT);
-
-    re = &act->cur->u.expect.exp;
+    re = &e->cur->u.expect.exp;
     pm = dev->pmatch;
     nm = sizeof(dev->pmatch) / sizeof(regmatch_t);
 
@@ -1025,21 +1121,15 @@ static char *_malloc_sprintf(const char *fmt, ...)
     return str;
 }
 
-static bool _process_send(Device * dev)
+static bool _process_send(Device *dev, Action *act, ExecCtx *e)
 {
-    Action *act = list_peek(dev->acts);
     bool finished = FALSE;
-
-    assert(act != NULL);
-    assert(act->magic == ACT_MAGIC);
-    assert(act->cur != NULL);
-    assert(act->cur->type == STMT_SEND);
 
     /* first time through? */
     if (!(dev->script_status & DEV_SENDING)) {
         int dropped = 0;
-        char *str = _malloc_sprintf(act->cur->u.send.fmt, act->target ? 
-                (act->target->name ? act->target->name : "[unresolved]") : 0);
+        char *str = _malloc_sprintf(e->cur->u.send.fmt, e->target ? 
+                (e->target->name ? e->target->name : "[unresolved]") : 0);
         int written = cbuf_write(dev->to, str, strlen(str), &dropped);
 
         if (written < 0)
@@ -1071,17 +1161,13 @@ static bool _process_send(Device * dev)
 }
 
 /* return TRUE if delay is finished */
-static bool _process_delay(Device * dev, struct timeval *timeout)
+static bool _process_delay(Device *dev, Action *act, ExecCtx *e,
+        struct timeval *timeout)
 {
     bool finished = FALSE;
     struct timeval delay, timeleft;
-    Action *act = list_peek(dev->acts);
 
-    assert(act != NULL);
-    assert(act->cur != NULL);
-    assert(act->cur->type == STMT_DELAY);
-
-    delay = act->cur->u.delay.tv;
+    delay = e->cur->u.delay.tv;
 
     /* first time */
     if (!(dev->script_status & DEV_DELAYING)) {

@@ -32,44 +32,10 @@ specification "ibmrsa" {
 		expect "==> "
 
 		send "remotesp\r\n"
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
-		expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
-		setplugname $1 $2
+		foreachnode {
+			expect "[^ ]+[ ]+([^ ]+)[ ]+Hawk[ ]+([0-9A-F]+)"
+			setplugname $1 $2
+		}
 	}
 	script logout {
 		send "\004"  			# ^D to log completely off
@@ -81,44 +47,10 @@ specification "ibmrsa" {
 #	}
 	script status_all {
 		send "power 2 0\r\n"
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
-		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-		setstatus $1 $2 
+		foreachnode {
+			expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+			setstatus $1 $2 
+		}
 	}
 	script on {
 		send "power 1 %s\r\n"

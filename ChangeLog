@@ -1,3 +1,10 @@
+2003-04-17 garlick
+    * Implement "foreachnode" and "foreachplug" constructs which will execute
+      an inner block of statements N times, where N is the number of configured
+      nodes on this device, or the number of plugs respectively.  In the
+      inner block, "%s" will iterate through the list of plugs (or plugs
+      corresponding to configured nodes).
+
 2003-04-16 garlick
     * Further cleanup of parse.y.  Remove ordering dependency of device
       config directives.  Specify device name in front of spec open brace

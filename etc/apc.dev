@@ -30,22 +30,10 @@ specification "apc" {
 	}
 	script status_all {
 		send "\r\n"  # refresh
-		expect "(1)-[^\n]*(ON|OFF)[^\n]*\r\n"
-		setstatus $1 $2
-		expect "(2)-[^\n]*(ON|OFF)[^\n]*\r\n"
-		setstatus $1 $2
-		expect "(3)-[^\n]*(ON|OFF)[^\n]*\r\n"
-		setstatus $1 $2
-		expect "(4)-[^\n]*(ON|OFF)[^\n]*\r\n"
-		setstatus $1 $2
-		expect "(5)-[^\n]*(ON|OFF)[^\n]*\r\n"
-		setstatus $1 $2
-		expect "(6)-[^\n]*(ON|OFF)[^\n]*\r\n"
-		setstatus $1 $2
-		expect "(7)-[^\n]*(ON|OFF)[^\n]*\r\n"
-		setstatus $1 $2
-		expect "(8)-[^\n]*(ON|OFF)[^\n]*\r\n"
-		setstatus $1 $2
+		foreachplug {
+			expect "([0-9]+)-[^\n]*(ON|OFF)[^\n]*\r\n"
+			setstatus $1 $2
+		}
 		expect "> "
 	}
 	script on {

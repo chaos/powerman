@@ -39,23 +39,11 @@ specification "baytech" {
 	}
 	script status_all {
 		send "status\r\n"
-		expect "Circuit Breaker:[^\n]*\r\n"
-		expect "[^\n]*(On|Off)[^\n]*\r\n"
-		setstatus "1" $1
-		expect "[^\n]*(On|Off)[^\n]*\r\n"
-		setstatus "2" $1
-		expect "[^\n]*(On|Off)[^\n]*\r\n"
-		setstatus "3" $1
-		expect "[^\n]*(On|Off)[^\n]*\r\n"
-		setstatus "4" $1
-		expect "[^\n]*(On|Off)[^\n]*\r\n"
-		setstatus "5" $1
-		expect "[^\n]*(On|Off)[^\n]*\r\n"
-		setstatus "6" $1
-		expect "[^\n]*(On|Off)[^\n]*\r\n"
-		setstatus "7" $1
-		expect "[^\n]*(On|Off)[^\n]*\r\n"
-		setstatus "8" $1
+		expect "Circuit Breaker:[^\n]*\r\n"	
+		foreachplug {
+			expect "([0-9]+)[ ]+(On|Off)"
+			setstatus $1 $2
+		}
 		expect "RPC-3>"
 	}
 	script on {
