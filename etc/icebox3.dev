@@ -1,14 +1,14 @@
 #
-# $Id$
-# $Source$
+# icebox3.dev,v 1.9 2002/10/21 16:42:48 garlick Exp
+# /chaos/cvs/powerman/etc/icebox3.dev,v
 #
 # Linux Networx ICE Box firmware version 3.x
 #
 begin protocol specification
 	specification name "icebox3"
 	specification type "TCP"
-	off string "0|OFF"
-	on string  "1|ON"
+	off string "0|OFF"		# 0/1 for "status" and "status_soft"
+	on string  "1|ON"		#     and OFF/ON for "status_beacon"
 	all string "*"
 	plug count 10
 	device timeout 20
@@ -48,9 +48,10 @@ begin protocol specification
 			map $9 "9"
 			map $10 "10"
 	end STATUS_SOFT_SCRIPT
+	# Assumption: v3 implies that "ts" is deprecated in favor of "is"
         begin STATUS_TEMP_SCRIPT
                 send "is *\r\n"
-                expect "N1:[0-9]:([0-9,]+) N2:[0-9]:([0-9,]+) N3:[0-9]:([0-9,]+) N4:[0-9]:([0-9,]+) N5:[0-9]:([0-9,]+) N6:[0-9]:([0-9,]+) N7:[0-9]:([0-9,]+) N8:([0-9,]+) N9:[0-9]:([0-9,]+) N10:[0-9]:([0-9,]+) N11:[0-9]:[0-9,]+ N12:[0-9]:[0-9,]+ \r\n"
+                expect "N1:([^ ]+) N2:([^ ]+) N3:([^ ]+) N4:([^ ]+) N5:([^ ]+) N6:([^ ]+) N7:([^ ]+) N8:([^ ]+) N9:([^ ]+) N10:([^ ]+) N11:[^ ]+ N12:[^ ]+[[:space:]]*\r\n"
                         map $1 "1"
                         map $2 "2"
                         map $3 "3"
@@ -64,7 +65,7 @@ begin protocol specification
         end STATUS_TEMP_SCRIPT
         begin STATUS_BEACON_SCRIPT
                 send "be *\r\n"
-                expect "N1:([A-Z]+) N2:([A-Z]+) N3:([A-Z]+) N4:([A-Z]+) N5:([A-Z]+) N6:([A-Z]+) N7:([A-Z]+) N8:([A-Z]+) N9:([A-Z]+) N10:([A-Z]+) N11:[A-Z]+ N12:[A-Z]+ \r\n"
+                expect "N1:([A-Z]+) N2:([A-Z]+) N3:([A-Z]+) N4:([A-Z]+) N5:([A-Z]+) N6:([A-Z]+) N7:([A-Z]+) N8:([A-Z]+) N9:([A-Z]+) N10:([A-Z]+) N11:[A-Z]+ N12:[A-Z]+[[:space:]]*\r\n"
                         map $1 "1"
                         map $2 "2"
                         map $3 "3"
