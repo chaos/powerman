@@ -75,10 +75,14 @@ typedef struct {
     char *specname;             /* name of specification, e.g. "icebox3" */
     DevType type;               /* type of device e.g. TCP_DEV */
     union {                     /* type-specific device information */
-        struct {
+        struct {                /* TCP_DEV */
             char *host;
             char *service;
-        } tcpd;
+        } tcp;
+        struct {                /* SERIAL_DEV */
+            char *special;
+            char *flags;
+        } serial;
     } devu;
 
     ConnectStat connect_status;

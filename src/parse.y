@@ -463,6 +463,8 @@ static char *makeSpecType(char *s2)
         _errormsg("duplicate specification type");
     if( (n = strncmp(s2, "TCP", 3)) == 0)
         current_spec->type = TCP_DEV;
+    else if ( (n = strncmp(s2, "serial", 6)) == 0)
+        current_spec->type = SERIAL_DEV;
     return s2;
 }
 
@@ -601,8 +603,8 @@ static char *makePlugNameLine(char *s2)
  * We've hit a Device line.  
  * s2: proper name for the Device
  * s3: name of the Spec to use
- * s4: the internet host name of the Device
- * s5: the TCP port on which it is listening.
+ * s4: the internet host name of the Device or special file name
+ * s5: the TCP port on which it is listening or serial flags (e.g. 9600,8n1)
  * From this information we can build a complete Device structure.
  */   
 static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
@@ -627,15 +629,19 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     /* set up the host name and port */
     switch(dev->type) {
     case TCP_DEV :
-        dev->devu.tcpd.host = Strdup(s4);
-        dev->devu.tcpd.service = Strdup(s5);
-        for (i = 0; i < spec->size; i++) {
-            plug = dev_plug_create(spec->plugname[i]);
-            list_append(dev->plugs, plug);
-        }
+        dev->devu.tcp.host = Strdup(s4);
+        dev->devu.tcp.service = Strdup(s5);
+        break;
+    case SERIAL_DEV :
+        dev->devu.serial.special = Strdup(s4);
+        dev->devu.serial.flags = Strdup(s5);
         break;
     default :
         _errormsg("unimplemented device type");
+    }
+    for (i = 0; i < spec->size; i++) {
+        plug = dev_plug_create(spec->plugname[i]);
+        list_append(dev->plugs, plug);
     }
     /* begin transfering info from the Spec to the Device */
     dev->all = spec->all ? Strdup(spec->all) : NULL;
@@ -712,18 +718,12 @@ static char *makeNode(char *s2, char *s3, char *s4)
     /*
      * Plugs are defined in Spec, and they must be searched to match the node
      */
-    switch(dev->type) {
-    case TCP_DEV :
-        plug = list_find_first(dev->plugs, (ListFindF) dev_plug_match, s4);
-        if( plug == NULL )  {
-            fprintf(stderr, "%s\n", s4);
-            _errormsg("unknown plug");
-        }
-        plug->node = Strdup(s2);
-        break;
-    default :
-        _errormsg("unimplemented device type");
+    plug = list_find_first(dev->plugs, (ListFindF) dev_plug_match, s4);
+    if( plug == NULL )  {
+        fprintf(stderr, "%s\n", s4);
+        _errormsg("unknown plug");
     }
+    plug->node = Strdup(s2);
     /*
      * Finally an exhaustive search of the Interps in a device
      * is required because this node will be the target of some

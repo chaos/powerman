@@ -72,10 +72,14 @@ typedef struct {
 #define _act_started(act)   ((act)->cur != NULL)
 
 
-static bool _reconnect(Device * dev);
-static bool _finish_connect(Device * dev, struct timeval *timeout);
 static bool _time_to_reconnect(Device * dev, struct timeval *timeout);
+static bool _reconnect(Device * dev);
 static void _disconnect(Device * dev);
+static bool _tcp_reconnect(Device * dev);
+static bool _tcp_finish_connect(Device * dev, struct timeval *timeout);
+static void _tcp_disconnect(Device * dev);
+static bool _serial_reconnect(Device * dev);
+static void _serial_disconnect(Device * dev);
 static bool _process_expect(Device * dev);
 static bool _process_send(Device * dev);
 static bool _process_delay(Device * dev, struct timeval *timeout);
@@ -326,13 +330,10 @@ bool _time_to_reconnect(Device * dev, struct timeval *timeout)
 
 
 /*
- *   The dev struct is initialized with all the needed host info.
- * This is my copying of Stevens' nonblocking connect.  After we 
- * have a file descriptor we create buffers for sending and 
- * receiving.  At the bottom, in the unlikely event the the 
- * connect completes immediately we launch the log in script.
+ * Nonblocking TCP connect.
+ * _tcp_finish_connect will finish the job.
  */
-static bool _reconnect(Device * dev)
+static bool _tcp_reconnect(Device * dev)
 {
     struct addrinfo hints, *addrinfo;
     int sock_opt;
@@ -341,7 +342,7 @@ static bool _reconnect(Device * dev)
     assert(dev->magic == DEV_MAGIC);
     assert(dev->type == TCP_DEV);
     assert(dev->connect_status == DEV_NOT_CONNECTED);
-    assert(dev->fd == -1);
+    assert(dev->fd == NO_FD);
 
     Gettimeofday(&dev->last_retry, NULL);
     dev->retry_count++;
@@ -351,19 +352,13 @@ static bool _reconnect(Device * dev)
     hints.ai_flags = AI_CANONNAME;
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    switch (dev->type) {
-    case TCP_DEV:
-        Getaddrinfo(dev->devu.tcpd.host, dev->devu.tcpd.service,
-                    &hints, &addrinfo);
-        break;
-    default:
-        err_exit(FALSE, "unknown device type %d", dev->type);
-    }
+    Getaddrinfo(dev->devu.tcp.host, dev->devu.tcp.service, 
+            &hints, &addrinfo);
 
     dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
                      addrinfo->ai_protocol);
 
-    dbg(DBG_DEVICE, "_reconnect: %s on fd %d", dev->name, dev->fd);
+    dbg(DBG_DEVICE, "_tcp_reconnect: %s on fd %d", dev->name, dev->fd);
 
     /* set up and initiate a non-blocking connect */
 
@@ -376,19 +371,60 @@ static bool _reconnect(Device * dev)
     /* Connect - 0 = connected, -1 implies EINPROGRESS */
     dev->connect_status = DEV_CONNECTING;
     if (Connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen) >= 0)
-        _finish_connect(dev, NULL);
+        _tcp_finish_connect(dev, NULL);
     freeaddrinfo(addrinfo);
 
     {
         Action *act = list_peek(dev->acts);
         if (act)
-            dbg(DBG_ACTION, "_reconnect: next action on queue: %d",
+            dbg(DBG_ACTION, "_tcp_reconnect: next action on queue: %d",
                 act->com);
         else
-            dbg(DBG_ACTION, "_reconnect: no action on queue");
+            dbg(DBG_ACTION, "_tcp_reconnect: no action on queue");
     }
 
     return (dev->connect_status == DEV_CONNECTED);
+}
+
+/*
+ * Open the special file associated with this device.
+ */
+static bool _serial_reconnect(Device * dev)
+{
+    assert(dev->magic == DEV_MAGIC);
+    assert(dev->type == SERIAL_DEV);
+    assert(dev->connect_status == DEV_NOT_CONNECTED);
+    assert(dev->fd == NO_FD);
+
+    dev->fd = open(dev->devu.serial.special, O_RDWR);
+    if (dev->fd >= 0) {
+        dev->connect_status = DEV_CONNECTED;
+        dev->stat_successful_connects++;
+        dev->retry_count = 0;
+        _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
+    }
+
+    dbg(DBG_DEVICE, "_serial_reconnect: %s on fd %d", dev->name, dev->fd);
+
+    return (dev->connect_status == DEV_CONNECTED);
+}
+
+static bool _reconnect(Device * dev)
+{
+    bool res = FALSE;
+
+    switch (dev->type) {
+    case TCP_DEV:
+        res = _tcp_reconnect(dev);
+        break;
+    case SERIAL_DEV:
+        res = _serial_reconnect(dev);
+        break;
+    case NO_DEV:
+        assert(0);
+        break; /* can't happen */
+    }
+    return res;
 }
 
 /* helper for dev_check_actions/dev_enqueue_actions */
@@ -611,12 +647,13 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
  * reconnect, log that fact.  When all is well initiate the
  * logon script.
  */
-static bool _finish_connect(Device * dev, struct timeval *timeout)
+static bool _tcp_finish_connect(Device * dev, struct timeval *timeout)
 {
     int rc;
     int error = 0;
     int len = sizeof(err);
 
+    assert(dev->type == TCP_DEV);
     assert(dev->connect_status == DEV_CONNECTING);
     rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &error, &len);
     /*
@@ -627,12 +664,12 @@ static bool _finish_connect(Device * dev, struct timeval *timeout)
     if (rc < 0)
         error = errno;
     if (error) {
-        err(FALSE, "_finish_connect %s: %s", dev->name, strerror(error));
+        err(FALSE, "_tcp_finish_connect %s: %s", dev->name, strerror(error));
         _disconnect(dev);
         if (_time_to_reconnect(dev, timeout))
             _reconnect(dev);
     } else {
-        err(FALSE, "_finish_connect: %s connected", dev->name);
+        err(FALSE, "_tcp_finish_connect: %s connected", dev->name);
         dev->connect_status = DEV_CONNECTED;
         dev->stat_successful_connects++;
         dev->retry_count = 0;
@@ -694,19 +731,54 @@ static void _handle_write(Device * dev)
     }
 }
 
-static void _disconnect(Device * dev)
+/*
+ * Close the socket associated with this device.
+ */
+static void _tcp_disconnect(Device * dev)
 {
-    Action *act;
-
     assert(dev->connect_status == DEV_CONNECTING
            || dev->connect_status == DEV_CONNECTED);
+    assert(dev->type == TCP_DEV);
 
-    dbg(DBG_DEVICE, "_disconnect: %s on fd %d", dev->name, dev->fd);
+    dbg(DBG_DEVICE, "_tcp_disconnect: %s on fd %d", dev->name, dev->fd);
 
     /* close socket if open */
     if (dev->fd >= 0) {
         Close(dev->fd);
         dev->fd = NO_FD;
+    }
+}
+
+/*
+ * Close the special file associated with this device.
+ */
+static void _serial_disconnect(Device * dev)
+{
+    assert(dev->connect_status == DEV_CONNECTED);
+    assert(dev->type == SERIAL_DEV);
+    dbg(DBG_DEVICE, "_serial_disconnect: %s on fd %d", dev->name, dev->fd);
+
+    /* close device if open */
+    if (dev->fd >= 0) {
+        Close(dev->fd);
+        dev->fd = NO_FD;
+    }
+}
+
+static void _disconnect(Device * dev)
+{
+    Action *act;
+
+    switch (dev->type) {
+    case TCP_DEV:
+        _tcp_disconnect(dev);
+        break;
+    case SERIAL_DEV:
+        _serial_disconnect(dev);
+        break;
+    case NO_DEV:
+        assert(0);
+        break; /* can't happen */
     }
 
     /* flush buffers */
@@ -1099,9 +1171,18 @@ void dev_destroy(Device * dev)
         Free(dev->all);
     regfree(&(dev->on_re));
     regfree(&(dev->off_re));
-    if (dev->type == TCP_DEV) {
-        Free(dev->devu.tcpd.host);
-        Free(dev->devu.tcpd.service);
+    switch (dev->type) {
+    case TCP_DEV:
+        Free(dev->devu.tcp.host);
+        Free(dev->devu.tcp.service);
+        break;
+    case SERIAL_DEV:
+        Free(dev->devu.serial.special);
+        Free(dev->devu.serial.flags);
+        break;
+    case NO_DEV:
+        assert(0); /* can't happen */
+        break;
     }
     list_destroy(dev->acts);
     list_destroy(dev->plugs);
@@ -1329,7 +1410,7 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
         } else if ((dev->connect_status == DEV_CONNECTING)) {
             assert(dev->fd != NO_FD);
             if (FD_ISSET(dev->fd, wset)) {
-                _finish_connect(dev, timeout);
+                _tcp_finish_connect(dev, timeout);
                 if (dev->fd != NO_FD)
                     FD_CLR(dev->fd, wset);      /* avoid _handle_write error */
             }

@@ -29,7 +29,7 @@
 
 typedef enum { FALSE = 0, TRUE = 1 } bool;
 
-typedef enum { NO_DEV, TCP_DEV } DevType;
+typedef enum { NO_DEV, TCP_DEV, SERIAL_DEV } DevType;
 
 #define NO_FD           (-1)
 #define	MAXFD	         64

@@ -1,3 +1,7 @@
+2002-01-16 garlick
+    * Add SERIAL_DEV device type
+    * Add beginnings of support wti-rps10 device (serial)
+
 2002-01-13 garlick
     * Update icebox3 beacon script for B70 of the ice box firmware.
 
