@@ -20,7 +20,7 @@ packagedir	=	${etcdir}/${PROJECT}
 all: progs tests
 
 progs : 
-	$(MAKE) -C src VERSION=$(VERSION) RELEASE=$(RELEASE) 2>&1 >/tmp/make.out
+	$(MAKE) -C src VERSION=$(VERSION) RELEASE=$(RELEASE)
 
 tests : 
 	$(MAKE) -C test
