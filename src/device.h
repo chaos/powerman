@@ -131,7 +131,7 @@ typedef struct {
  */
 typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectState;
 typedef enum { TELNET_NONE, TELNET_CMD, TELNET_OPT } TelnetState;
-typedef enum { TYPE_TCP, TYPE_SERIAL, TYPE_PIPE } DeviceType;
+typedef enum { TYPE_TCP, TYPE_SERIAL } DeviceType;
 
 #define DEV_MAGIC       0xbeefb111
 typedef struct _device {

@@ -24,6 +24,16 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+/*
+ * Implement connect/disconnect/preprocess methods for tcp/telnet devices.
+ *
+ * NOTE: we always do telnet when we are doing tcp.  If there ever is a telnet
+ * device that requires some proactive option negotiation, or a non-telnet 
+ * device that manages to confuse the telnet state machine, we could easily
+ * implement a 'notelnet' flag.  Right now it seems innocuous to leave the
+ * telnet machine running.
+ */
+
 #include <errno.h>
 #include <sys/time.h>
 #include <time.h>

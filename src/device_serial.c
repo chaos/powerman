@@ -44,6 +44,9 @@
 #include "client_proto.h"
 #include "device_serial.h"
 
+/*
+ * Implement connect/disconnect device methods for serial devices.
+ */
 
 typedef struct {
     int baud;
