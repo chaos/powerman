@@ -241,7 +241,7 @@ static void _rewind_action(Device *dev, Action *act)
     /* reset outer block iterator and current pointer */
     if (e) {
         list_iterator_reset(e->itr);
-        e->cur = NULL;
+        e->cur = list_next(e->itr); 
     }
 }
 

@@ -40,11 +40,6 @@ specification "ibmrsa" {
 	script logout {
 		send "\004"  			# ^D to log completely off
 	}
-#	script status {
-#		send "power 2 %s\r\n"
-#		expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-#		setstatus $1 $2 
-#	}
 	script status_all {
 		send "power 2 0\r\n"
 		foreachnode {
@@ -56,9 +51,21 @@ specification "ibmrsa" {
 		send "power 1 %s\r\n"
 		expect "Status = on\r\n"
 	}
+	script on_all {
+		send "power 1 0\r\n"
+		foreachnode {
+			expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		}
+	}
 	script off {
 		send "power 0 %s\r\n"
 		expect "Status = off\r\n"
+	}
+	script off_all {
+		send "power 0 0\r\n"
+		foreachnode {
+			expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		}
 	}
 	script cycle {
 		send "power 0 %s\r\n"
@@ -66,5 +73,16 @@ specification "ibmrsa" {
 		delay 2
 		send "power 1 %s\r\n"
 		expect "Status = on\r\n"
+	}
+	script cycle_all {
+		send "power 0 0\r\n"
+		foreachnode {
+			expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		}
+		delay 2
+		send "power 1 0\r\n"
+		foreachnode {
+			expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
+		}
 	}
 }
