@@ -1,0 +1,174 @@
+#!/usr/bin/expect --
+# powerman [-c file] [-l libdir] [-defhqrv] [-on | -off] {nodes ...}
+
+proc usage msg {
+  global argv0
+  puts "usage: $argv0 \[-c file\] \[-l libdir\] \[-defhqrv\] \[-on | -off\] {nodes ...}"
+  puts "-c file   = load file as config file"
+  puts "-d        = debugging output"
+  puts "-e        = use regular expressions instead of globbing"
+  puts "-f        = force the action without confirmation"
+  puts "-l libdir = look for tcl libs in libdir"
+  puts "-q        = query the state instead of setting it"
+  puts "-r        = reset the nodes, mutually exclusive with -q, -on, and -off"
+  puts "-v        = be verbose"
+  puts "-on       = turn on nodes (the default)"
+  puts "-off      = turn off nodes"
+  puts "nodes     = comma separated list (no spaces), each item is globbed,"
+  puts "              (list of) nodes may be repeated separated by spaces"
+  puts $msg
+  exit
+}
+
+proc read_nodes node_list {
+    global regex
+    global cluster
+    set return_nodes {}
+    set j 0
+    set k [string length $node_list]
+    for {set i 0} {$i < $k} {set i [expr $j+2]} {
+	set j [string first "," [string range $node_list $i $k]]
+	if {$j < 0} {set j $k} else {incr j [expr $i-1]}
+	set node_expr [string range $node_list $i $j]
+	set the_cluster {}
+	foreach node_struct $cluster {
+	    set the_cluster [lappend the_cluster [lindex $node_struct 0]]
+	}
+	if {$regex} {
+	    set node [lsearch -regexp $the_cluster $node_expr]
+	} else {
+	    set node [lsearch $the_cluster $node_expr]
+	}
+	while { $node >= 0 } {
+	    set return_node [lindex $the_cluster $node]
+	    set return_nodes [concat $return_nodes $return_node]
+	    set the_cluster [lrange $the_cluster [expr $node+1] end]
+	    if {$regex} {
+		set node [lsearch -regexp $the_cluster $node_expr]
+	    } else {
+		set node [lsearch $the_cluster $node_expr]
+	    }
+	}
+    }
+  return $return_nodes
+}
+
+# Global initializations can only take place at the root context.  
+# Procs can access globals but can not create or pass them up.
+
+if {$argc < 1} { usage "need arguments" }
+
+set config_file "/etc/powerman.conf"
+if {[info exists env(POWERMANCONF)]} {
+    set config_file $env(POWERMANCONF)
+}
+set lib_dir "/usr/lib/powerman"
+if {[info exists env(POWERMANLIBDIR)]} {
+    set lib_dir $env(POWERMANLIBDIR)
+}
+set configed 0
+set debug 0
+set regex 0
+set force 0
+set query 0
+set reset 0
+set verbose 0
+set nodes   {}
+set on      0
+set off     0
+for {set i 0} {$i < $argc} {incr i} {
+  switch -- [lindex $argv $i] {
+      "-c" { 
+	  incr i
+	  set config_file [lindex $argv $i]
+      }
+      "-d" {set debug 1}
+      "-e" {set regex 1}
+      "-f" {set force 1}
+      "-l" { 
+	  incr i
+	  set lib_dir [lindex $argv $i]
+      }
+      "-q" {set query 1}
+      "-r" {set reset 1}
+      "-v" {set verbose 1}
+      "-on" {set on 1}
+      "-off" {set off 1}
+      default {
+	  if {!$configed} {
+	      if {[file exists $config_file]} {
+		  source $config_file
+	      } else {
+		  usage "Can't find config file"
+	      }
+	  }
+	  set nodes [ concat $nodes [read_nodes [lindex $argv $i]]]
+      }
+  } 
+}
+
+if {$reset && $query}         {usage "Can't have both reset and query"} 
+if {$on + $off + $reset != 1} {usage "Need exactly one of on, off, or reset"}
+
+if {$verbose} {
+    if {$on} {
+	if {$query} {puts "Here's who were're checking who's on"} else {
+	    puts "Turning on these guys"
+	}
+    }
+    if {$off} {
+	if {$query} {puts "Here's who were're checking for who's off"} else {
+	    puts "Turning off these guys"
+	}
+    }
+    if {$reset} {
+	puts "Resetting these guys"
+    }
+    puts $nodes
+}
+
+set powerlib [format "%s/powerlib.tcl" $lib_dir]
+if {[file exists $powerlib]} {
+    source $powerlib
+} else {
+    usage "Can't find $powerlib library"
+}
+
+# At this point all the globals should be in place and initialized for
+# the local configuration.  The hardware dependent layer is intialized
+# next.  Then the command is dispatched to its handler.
+
+init
+if {$on} {
+    if {$query} {
+	set response [check_dir $nodes on]
+	set num_resp [llength $response]
+	if {$num_resp == 0} {puts "None are on"} else {
+	    if {$num_resp == 1} {puts "$response is on"} else {
+		puts "$response are on"
+	    }
+	}
+    } else {
+	do_act $nodes on
+    }
+}
+if {$off} {
+    if {$query} {
+	set response [check_dir $nodes off]
+	set num_resp [llength $response]
+	if {$num_resp == 0} {puts "None are off"} else {
+	    if {$num_resp == 1} {puts "$response is off"} else {
+		puts "$response are off"
+	    }
+	}
+    } else {
+	do_act $nodes off
+    }
+}
+if {$reset} {
+    do_act $nodes reset
+}
+fini
+
+
+

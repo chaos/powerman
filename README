@@ -3,34 +3,107 @@
 		      June 27, 2001
 
 PowerMan is a project to incorporate power management and monitoring
-functionality for ES40, UP2000, and CS20 node types in the slc cluster
-into a single library.  The four basic functions of PowerMan are:
+functionality for various node types in a cluster into a single
+library.  We currently wish to support these node types: CS20, DS10,
+DS20, ES40, and UP2000.  Powerman is the name of the project and also
+the name of an application exercising the library.  We also plan an
+snmp agent extension calling into the same library.  The library is
+called powerlib and is written in tcl.  
 
-1.  check - Return a boolean value of ON or OFF for a node
-2.  on    - If a node is off turn it on else return error
-3.  off   - If a node is on turn it off else return error
-4.  reset - If a node is on reset it else return an error
+Powerman is written in tcl and has the following calling convention:   
+powerman [-c configfile] [-l libdir] [-defhqrv] [-on | -off] nodes ...
+
+Powerman with no command line parameters or with -h (and anything)
+prints a usage summary.
+-1) -c configfile will read in configfile instead of the default 
+0) -d means print debugging information
+1) -e makes node list items be iterpreted as regular expressions
+2) -f forces the specified action without confirmation
+2 1/2) -l libdir will read the tcl libraries from libdir
+3) -q make the command a query, i.e. power status is returned and no
+other actin is taken
+4) -r reset the nodes, -r is mutually exclusive with both -q and +/-
+5) -on turns on the specified nodes
+6) -off turns off the specified nodes
+7) "nodes" is a comma separated list of nodes, where each element in
+the list is interpreted via standard globbing (unless -e is present)
+8) -v means be verbose about what you're doing
+Lists of nodes prepended with may be repeated after a separating
+space.  Powerman will look for the config file "/etc/powerman.conf" by
+default, and the environment variable POWERMANCONF will override that
+choice, while the -c option takes precedence.  Similarly, powerman
+will look for its libraries in "/usr/lib/powerman" by default, and the
+environment variable POWERMANLIBDIR will override that choice. 
+
+
+Powerman processes its command line parameters, reads in the cluster
+configuration file and the powerlib.tcl library, and assembles the
+requested nodes into a list. It calls init, and passes that list to
+the appropriate libarary routine in powerlib.tcl.  Upon return it
+prints a meaningfull message.  Other printing takes place according to
+-v and -d switches.
+
+Powerlib.tcl has theseroutines: 
+
+1.  init -  Read the configuration file for the cluster and call init
+            routines for the included types 
+2.  do_on - (try to) turn on a set of nodes
+3.  do_off - (try to) turn off a set of nodes
+4.  do_reset - (try to) reset a set of nodes
+5.  check_on - return the set of nodes that are on from among a given
+               set of nodes
+6.  check_off - return the set of nodes that are off from among a
+                given set of nodes
+7.  fini - perform any needed finalizations
 
 Each type of node accomplishes these activities differetly, so there
 is a low level library for each one.  These libraries are:
-cs20_powerlib.pl
-es40_powerlib.pl
-up2000_powerlib.pl
-Each library has a "power_init" and "power_fin" function that should
+cs20_powerlib.tcl
+ds10_powerlib.tcl
+ds20_powerlib.tcl
+es40_powerlib.tcl
+up2000_powerlib.tcl
+Each library has its own init and fin function that should
 be called before using one of its other functions and after,
-respectively.  The names of the above four functions are the same in
+respectively.  The names of the above functions are the same in
 each library:
+init
 do_on
 do_off
 do_reset
-node_on
-Each function takes a single node name as a parameter.  All of the
-functions return the power status with return value 1 meaning "on" and
-0 meaning "off".  Each library has a helper function "plug_on" that
-does the actual work of invoking the lower level power status
-program "ditty".  These functions require root priveleges to query the
-special devices.  Eventually special priveleges will also be neede to
-run conman and the expect scripts.  
+check_on
+check_off
+fini
+
+In powerlib.tcl init reads in the configuration file, powerman.conf,
+which tells the library the names of all the nodes and their types,
+along with other usefull information.  It assembles a list of all the
+node types included, for each node type it includes the
+<type>_powerlib.tcl library and calls the init function for that
+<type>_powerlib.tcl.
+
+Each of do_on, do_off, and do_reset in powerlib.tcl acts as follows:
+It presumes that init has been called.  It partitions the list of
+nodes into a list for each type and calls the corresponding function
+in <type>_powerlib.tcl with that list.  
+
+Each of check_on and check_off in powerlib.tcl acts as follows:
+It presumes that init has been called.  It partitions the list of
+nodes into a list for each type and calls the corresponding function
+in <type>_powerlib.tcl with that list.  It returns the concatenation
+of the lists returned to it from the <type>_powerlib.tcl calls.  
+
+In powerlib.tcl fini calls the corresponding function in each
+<type>_powerlib.tcl.  
+
+The configuration file powerman.conf has, in addition to comment lines
+beginning with a '#', a sequence of lines saying "node=<name>
+type=<type> other_var=<value ..." and additional lines in the form
+"additional_var=<value>".  For the purposes of powerman the
+cluster consists of the set of nodes with distinct <name>s.  If a name
+is mentioned twice then the last variable=<value> assignment holds.
+Lines of all types can be in any order.  
+
 
 On the UP2000 the on, off, and reset functions are commands sent to
 the /dev/ttyD23 port controlling the external power controllers.  On

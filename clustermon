@@ -1,0 +1,92 @@
+#!/usr/bin/tcl
+# clustermon [-c file] [-l libdir] [-dv]
+
+proc usage msg {
+  global argv0
+  puts "usage: $argv0 \[-c file\] \[-l libdir\] \[-defhqrv\] \[-on | -off\] {nodes ...}"
+  puts "-c file   = load file as config file"
+  puts "-d        = debugging output"
+  puts "-l libdir = look for tcl libs in libdir"
+  puts "-v        = be verbose"
+  puts $msg
+  exit
+}
+
+# Global initializations can only take place at the root context.  
+# Procs can access globals but can not create or pass them up.
+
+set config_file "/etc/powerman.conf"
+if {[info exists env(POWERMANCONF)]} {
+    set config_file $env(POWERMANCONF)
+}
+set lib_dir "/usr/lib/powerman"
+if {[info exists env(POWERMANLIBDIR)]} {
+    set lib_dir $env(POWERMANLIBDIR)
+}
+set configed 0
+set debug 0
+set verbose 0
+for {set i 0} {$i < $argc} {incr i} {
+  switch -- [lindex $argv $i] {
+      "-c" { 
+	  incr i
+	  set config_file [lindex $argv $i]
+      }
+      "-d" {set debug 1}
+      "-l" { 
+	  incr i
+	  set lib_dir [lindex $argv $i]
+      }
+      "-q" {set query 1}
+      "-v" {set verbose 1}
+      default {
+	  usage "Unrecognized argument"
+      }
+  } 
+}
+
+if {!$configed} {
+    if {[file exists $config_file]} {
+	source $config_file
+    } else {
+	usage "Can't find config file $config_file"
+    }
+}
+
+set powerlib [format "%s/powerlib.tcl" $lib_dir]
+if {[file exists $powerlib]} {
+    source $powerlib
+} else {
+    usage "Can't find $powerlib library"
+}
+
+# At this point all the globals should be in place and initialized for
+# the local configuration.  The hardware dependent layer is intialized
+# next. .
+
+init
+
+# Assemble the list of nodes in the cluster
+
+set nodes {}
+foreach node_struct $cluster {
+    set nodes [lappend nodes [lindex $node_struct 0]]
+}
+if {[llength $nodes] < 1} {usage "I don't see any nodes"}
+
+# Sequence through nodes printing a 1 for on and a 0 for off
+
+set response [check_dir $nodes on]
+set status_line ""
+foreach node_struct $cluster {
+    if {[lsearch -exact $response [lindex $node_struct 0]] < 0} {
+	set status_line [format "%s%s" $status_line "0"]
+    } else {
+	set status_line [format "%s%s" $status_line "1"]
+    }
+}
+puts "$status_line"
+fini
+
+
+
