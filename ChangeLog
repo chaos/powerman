@@ -1,7 +1,7 @@
 2003-04-10 garlick
     * Moved ibmasm.dev to ibmrsa.dev and implemented first cut on RSA telnet
       protocol.
-    * If no plugs defined in device config, allow arbitrary plug names in
+    * If no plugs defined in device config, allow the plug names to come from
       the node config lines.
 
 2003-03-31 garlick

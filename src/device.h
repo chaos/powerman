@@ -127,7 +127,8 @@ Device *dev_findbyname(char *name);
 List dev_getdevices(void);
 
 Plug *dev_plug_create(const char *name);
-int dev_plug_match(Plug * plug, void *key);
+int dev_plug_match_plugname(Plug * plug, void *key);
+int dev_plug_match_noname(Plug * plug, void *key);
 void dev_plug_destroy(Plug * plug);
 
 void dev_pre_select(fd_set * rset, fd_set * wset, int *maxfd);

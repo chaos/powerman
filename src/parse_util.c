@@ -231,7 +231,8 @@ static void _spec_destroy(Spec * spec)
     Free(spec->on);
 
     for (i = 0; i < spec->size; i++)
-        Free(spec->plugname[i]);
+        if (spec->plugname[i])
+            Free(spec->plugname[i]);
     Free(spec->plugname);
     for (i = 0; i < NUM_SCRIPTS; i++)
         if (spec->prescripts[i])

@@ -614,9 +614,9 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
     while ((dev = list_next(itr))) {
         int count;
 
-        if (!dev->scripts[com] && _get_all_script(dev, com) == -1) 
+        if (!dev->scripts[com] && _get_all_script(dev, com) == -1)
             continue;                               /* unimplemented script */
-        if (hl && !_command_needs_device(dev, hl)) 
+        if (hl && !_command_needs_device(dev, hl))
             continue;                               /* uninvolved device */
         count = _enqueue_actions(dev, com, hl, complete_fun, vpf_fun, 
                 client_id, arglist);
@@ -756,6 +756,7 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
 
     itr = list_iterator_create(dev->plugs);
     while ((plug = list_next(itr))) {
+
         /* antisocial to gratuitously turn on/off unused plug */
         if (plug->node == NULL) {
             all = FALSE;
@@ -826,12 +827,12 @@ static bool _tcp_finish_connect(Device * dev, struct timeval *timeout)
     if (rc < 0)
         error = errno;
     if (error) {
-        err(FALSE, "_tcp_finish_connect %s: %s", dev->name, strerror(error));
+        err(FALSE, "_tcp_finish_connect: %s: %s", dev->name, strerror(error));
         _disconnect(dev);
         if (_time_to_reconnect(dev, timeout))
             _reconnect(dev);
     } else {
-        err(FALSE, "_tcp_finish_connect: %s connected", dev->name);
+        err(FALSE, "_tcp_finish_connect: %s: connected", dev->name);
         dev->connect_status = DEV_CONNECTED;
         dev->stat_successful_connects++;
         dev->retry_count = 0;
@@ -1243,7 +1244,7 @@ static char *_plug_to_node(Device *dev, char *plug_name)
 
     itr = list_iterator_create(dev->plugs);
     while ((plug = list_next(itr))) {
-        if (strcmp(plug->name, plug_name) == 0)
+        if (plug->name && strcmp(plug->name, plug_name) == 0)
             node = plug->node;
     }
     list_iterator_destroy(itr);
@@ -1282,15 +1283,12 @@ static void _match_subexpressions(Device * dev, Action * act, char *expect)
          *   Copy the results of the regex match to the arglist for the
          *   target node.  This is used in the single-plug status command
          *   where the node's plug name is passed in.
-         * Command: map $1 $variable
-         *   Copy the results of the regex match to a variable whose scope
-         *   is local to the script.
          */
         if (!strcmp(interp->plug_name, "%s"))
             plug_name = act->target;
         else 
             plug_name = interp->plug_name;
-        node = _plug_to_node(dev, plug_name);
+        node = plug_name ? _plug_to_node(dev, plug_name) : NULL;
 
         if (node == NULL)   /* unused plug? */
             continue;
@@ -1391,23 +1389,27 @@ Plug *dev_plug_create(const char *name)
 {
     Plug *plug;
 
-    assert(name != NULL);
     plug = (Plug *) Malloc(sizeof(Plug));
-    plug->name = Strdup(name);
+    plug->name = name ? Strdup(name) : NULL;
     plug->node = NULL;
     return plug;
 }
 
 /* used with list_find_first() in parser */
-int dev_plug_match(Plug * plug, void *key)
+int dev_plug_match_plugname(Plug * plug, void *key)
 {
-    return (strcmp(((Plug *) plug)->name, (char *) key) == 0);
+    return (plug->name == NULL ? 0 : (strcmp(plug->name, (char *) key) == 0));
+}
+int dev_plug_match_noname(Plug * plug, void *key)
+{
+    return (plug->name == NULL ? 1 : 0);
 }
 
 /* helper for dev_create */
 void dev_plug_destroy(Plug * plug)
 {
-    Free(plug->name);
+    if (plug->name)
+        Free(plug->name);
     Free(plug->node);
     Free(plug);
 }

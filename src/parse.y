@@ -412,7 +412,6 @@ static Spec *check_Spec()
 {
     Spec *this_spec;
     char *name;
-    int i;
 
     name = current_spec->name;
     if( current_spec->type == NO_DEV )
@@ -423,25 +422,15 @@ static Spec *check_Spec()
         _spec_missing("on string");
     if( (current_spec->size == 0) )
         _spec_missing("size");
-    for (i = 0; i < current_spec->size; i++) 
-        if (current_spec->plugname[i] == NULL)
-            _spec_missing("plug name(s)");
-
     /* Store the spec in list internal to config.c */
     conf_add_spec(current_spec);
     this_spec = current_spec;
     current_spec = NULL;
-    /* I haven't set up a good way to sanity check struct timeval fields */
-    /* I don't yet use the return value. */
     return this_spec;
 }
 
 static char *makeSpecName(char *s2)
 {
-    /* 
-     *   N.B. The Specification's name line must be before all other
-     * specification info.
-     */
     if( current_spec != NULL )
         _errormsg("name must be first");
     current_spec = conf_spec_create(s2);
@@ -568,17 +557,18 @@ static char *makeScriptSec(char *s2, int com)
 
 static char *makePlugNameLine(char *s2)
 {
-    int i = 0;
+    int i;
 
     if( current_spec == NULL ) 
         _errormsg("plug name outside of specification");
     if( current_spec->plugname == NULL ) 
-        _errormsg("plug name line does not preceded by size line");
+        _errormsg("plug name line not preceded by plugcount line");
     if( current_spec->size <= 0 ) 
         _errormsg("invalid size");
-    while( (current_spec->plugname[i] != NULL) && (i < current_spec->size) )
-        i++;
-    if( i == current_spec->size )
+    for (i = 0; i < current_spec->size; i++)
+        if (current_spec->plugname[i] == NULL)
+            break;
+    if(i == current_spec->size)
         _errormsg("too many plug names lines");
     current_spec->plugname[i] = Strdup(s2);
     return s2;
@@ -697,22 +687,29 @@ static char *makeNode(char *s2, char *s3, char *s4)
 
     if (!conf_addnode(s2))
         _errormsg("duplicate node");
-    /* find the device controlling this nodes plug */
-    dev = dev_findbyname(s3);
+    dev = dev_findbyname(s3);       /* find the device by its name */
     if(dev == NULL) 
         _errormsg("unknown device");
+
     /*
-     * Plugs are defined in Spec, and they must be searched to match the node,
-     * unless no plugs are defined and then anything goes.
+     * NOTE: Some devices do not define the plug names in advance - the plug 
+     * names must come from the node definitions instead.  Example: ibmrsa.dev 
      */
-    if (!list_is_empty(dev->plugs)) { 
-        plug = list_find_first(dev->plugs, (ListFindF) dev_plug_match, s4);
-        if( plug == NULL )  {
-            fprintf(stderr, "%s\n", s4);
-            _errormsg("unknown plug");
-        }
+
+    /* find the plug in the device's list of plug names */
+    plug = list_find_first(dev->plugs, (ListFindF) dev_plug_match_plugname, s4);
+    if (plug) {
+        plug->node = Strdup(s2);
+        return s2;
     }
+
+    /* if not found, look for a plug on this device without a plug name */
+    plug = list_find_first(dev->plugs, (ListFindF)dev_plug_match_noname, s4);
+    if (plug == NULL)
+        _errormsg("unknown plug name or device plugcount exceeded");
+
     plug->node = Strdup(s2);
+    plug->name = Strdup(s4);
     return s2;
 }
 

@@ -27,13 +27,14 @@
 specification {
 	name 		"ibmrsa"
 	type 		"TCP"
-	offstring 	"on"
-	onstring  	"off"
-	plugcount 	24   # Max nodes seems to be 24?
-	timeout  	5
+	offstring 	"off"
+	onstring  	"on"
+	plugcount 	24
+	timeout  	20
 
 	script login {
 		send "\IAC\DONT\TELOPT_NAWS\IAC\DONT\TELOPTTTYPE"
+		send "\IAC\WONT\TELOPT_TM"	# quiet \IAC\DO\TELOPT_TM's
 		expect "Login ID:"
 		send "USERID\r\n"
 		send "PASSW0RD\r\n"
@@ -48,7 +49,7 @@ specification {
 	script status {
 		send "power 2 %s\r\n"
 		expect "Status = (on|off)\r\n"
-		map $1 "%s"
+			map $1 "%s"
 	}
 	script on {
 		send "power 1 %s\r\n"
@@ -65,8 +66,4 @@ specification {
 		send "power 1 %s\r\n"
 		expect "Status = on\r\n"
 	}
-# NOTE: no plug names defined in this device configuration.  The plug 
-# identifiers not repeat from RS485 chain to RS485 chain, so in this 
-# particular case we do not want PowerMan to check "node" config lines for 
-# bogus plug names. 
 }
