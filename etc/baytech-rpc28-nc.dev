@@ -15,14 +15,14 @@ specification "baytech-rpc28-nc" {
 		    "12" "13" "14" "15" "16" "17" "18" "19" "20" }
 
 	script login {
-		send "\r\n"
+		send "temp\r\n"
 		expect ">"
 	}
 	script logout {
 		send "exit\r\n"
 	}
 	script status_all {
-		send "\r\n"
+		send "temp\r\n"
 		expect ">"
 		send "status\r\n"
 		expect "Internal Temperature[^C]+ C"
@@ -33,26 +33,18 @@ specification "baytech-rpc28-nc" {
 		expect ">"
 	}
 	script on {
-		send "\r\n"
-		expect ">"
 		send "on %s\r\n"
 		expect ">"
 	}
 	script on_all {
-		send "\r\n"
-		expect ">"
 		send "on 0\r\n"
 		expect ">"
 	}
 	script off {
-		send "\r\n"
-		expect ">"
 		send "off %s\r\n"
 		expect ">"
 	}
 	script off_all {
-		send "\r\n"
-		expect ">"
 		send "off 0\r\n"
 		expect ">"
 	}
@@ -60,8 +52,6 @@ specification "baytech-rpc28-nc" {
 # This doesn't match PowerMan's semantics for cycle, so explicitly power
 # off then on.
 	script cycle {
-		send "\r\n"
-		expect ">"
 		send "off %s\r\n"
 		expect ">"
 		delay 2
@@ -69,8 +59,6 @@ specification "baytech-rpc28-nc" {
 		expect ">"
 	}
 	script cycle_all {
-		send "\r\n"
-		expect ">"
 		send "off 0\r\n"
 		expect ">"
 		delay 2
