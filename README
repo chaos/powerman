@@ -50,9 +50,7 @@ o Baytech RPC-3 cycle left target plugs in the "off" state if the initial state
   was off.
 
 o ICE box V3 beacon command would produce undefined results when acting on 
-  multiple beacons in a single ICE box.  NOTE: firmware V3.0 B70 or better
-  is required for the provided scripts to work (see icebox3.dev for a change
-  you can make if you are running an earlier version).
+  multiple beacons in a single ICE box.  
 
 +-----------------+
 | Supported RPC's |

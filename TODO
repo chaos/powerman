@@ -15,5 +15,3 @@
   powerman using existing capabilities.
 * Support HTTP_DEV for devices such as the IBM RSA adapter that are most 
   efficiently managed that way.
-* Check aliases/nodes for duplicates, and check aliases for recursion
-  during config file parse time.

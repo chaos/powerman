@@ -42,30 +42,25 @@
 #include "wrappers.h"
 #include "client.h"
 
-static int _spec_match(Spec * spec, void *key);
-static void _spec_destroy(Spec * spec);
-
-/* 
- * Device specifications only exist during parsing.
- * After that their contents are copied for each instantiation of the device and
- * the original specification is not used.
- */
-static List tmp_specs = NULL;
-
-/*
- * Some configurable values - accessor functions defined below.
- */
-static bool conf_use_tcp_wrap = FALSE;
-static int conf_listen_port;
-static hostlist_t conf_nodes = NULL;
-
 typedef struct {
     char *name;
     hostlist_t hl;
 } alias_t;
 
-static List conf_aliases = NULL; /* list of alias_t's */
+static bool         conf_use_tcp_wrap = FALSE;
+static int          conf_listen_port;
+static hostlist_t   conf_nodes = NULL;
+static List         conf_aliases = NULL;    /* list of alias_t's */
+/* 
+ * N.B. Device specifications only exist during parsing.
+ * After that their contents are copied for each instantiation of the 
+ * device and the original specification is not used.
+ */
+static List         conf_specs = NULL;      /* list of Spec's */
 
+static int _spec_match(Spec * spec, void *key);
+static void _spec_destroy(Spec * spec);
+static bool _validate_config(void);
 static void _alias_destroy(alias_t *a);
 
 /* 
@@ -76,12 +71,13 @@ void conf_init(char *filename)
 {
     struct stat stbuf;
     int parse_config_file(char *filename);
+    bool valid;
 
     conf_listen_port = strtol(DFLT_PORT, NULL, 10);
 
     conf_nodes = hostlist_create(NULL);
 
-    tmp_specs = list_create((ListDelF) _spec_destroy);
+    conf_specs = list_create((ListDelF) _spec_destroy);
 
     conf_aliases = list_create((ListDelF) _alias_destroy);
 
@@ -94,13 +90,18 @@ void conf_init(char *filename)
     /* 
      * Call yacc parser against config file.  The parser calls support 
      * functions below and builds 'dev_devices' (devices.c),
-     * 'conf_cluster', 'tmp_specs' (config.c), and various other 
+     * 'conf_cluster', 'conf_specs' (config.c), and various other 
      * conf_* attributes (config.c).
      */
     parse_config_file(filename);
 
-    list_destroy(tmp_specs);
-    tmp_specs = NULL;
+    valid = _validate_config();
+
+    list_destroy(conf_specs);
+    conf_specs = NULL;
+
+    if (!valid)
+        exit(1);
 }
 
 /* finalize module */
@@ -109,6 +110,50 @@ void conf_fini(void)
     if (conf_nodes != NULL)
         hostlist_destroy(conf_nodes);
 }
+
+/*
+ * Check the config file and exit with error if any problems are found.
+ */
+static bool _validate_config(void)
+{
+    hostlist_t hcopy;
+    ListIterator itr;
+    bool valid = TRUE;
+    alias_t *a;
+
+    /* make sure aliases do not point to bogus node names */
+    itr = list_iterator_create(conf_aliases);
+    while ((a = list_next(itr)) != NULL) {
+        hostlist_iterator_t hitr = hostlist_iterator_create(a->hl);
+        char *host;
+
+        if (hitr == NULL)
+            err_exit(FALSE, "hostlist_iterator_create failed");
+        while ((host = hostlist_next(hitr)) != NULL) {
+            if (!conf_node_exists(host)) {
+                err(FALSE, "alias '%s' references nonexistant node '%s'",
+                        a->name, host);
+                valid = FALSE;
+                break;
+            }
+        }
+        hostlist_iterator_destroy(hitr);
+    }
+    list_iterator_destroy(itr);
+
+    /* make sure nodes are unique */
+    if (!(hcopy = hostlist_copy(conf_nodes)))
+        err_exit(FALSE, "hostlist_copy failed");
+    hostlist_uniq(hcopy);
+    if (hostlist_count(hcopy) < hostlist_count(conf_nodes)) {
+        valid = FALSE;
+        err(FALSE, "node entries must have unique names");
+    }
+    hostlist_destroy(hcopy);
+
+    return valid;
+}
+
 
 /*
  * Create/destroy Stmt structs, which are element in a script.
@@ -187,7 +232,7 @@ static int _spec_match(Spec * spec, void *key)
     return (strcmp(spec->name, (char *) key) == 0);
 }
 
-/* list destructor for tmp_specs */
+/* list destructor for conf_specs */
 static void _spec_destroy(Spec * spec)
 {
     int i;
@@ -208,14 +253,14 @@ static void _spec_destroy(Spec * spec)
 /* add a Spec to the internal list */
 void conf_add_spec(Spec * spec)
 {
-    assert(tmp_specs != NULL);
-    list_append(tmp_specs, spec);
+    assert(conf_specs != NULL);
+    list_append(conf_specs, spec);
 }
 
 /* find and return a Spec from the internal list */
 Spec *conf_find_spec(char *name)
 {
-    return list_find_first(tmp_specs, (ListFindF) _spec_match, name);
+    return list_find_first(conf_specs, (ListFindF) _spec_match, name);
 }
 
 /*
@@ -354,18 +399,13 @@ void conf_exp_aliases(hostlist_t hl)
     hostlist_t newhosts = hostlist_create(NULL);
     char *host;
   
-    if (newhosts == NULL) {
-        err(FALSE, "conf_exp_aliases: error craeting hostlist");
-        return;
-    }
-
     /* Put the expansion of any aliases in the hostlist into 'newhosts', 
      * deleting the original reference from the hostlist.
      */
-    if ((itr = hostlist_iterator_create(hl)) == NULL) {
-        err(FALSE, "conf_exp_aliases: error craeting hostlist iterator");
-        return;
-    }
+    if (newhosts == NULL)
+        err_exit(FALSE, "hostlist_create failed");
+    if ((itr = hostlist_iterator_create(hl)) == NULL)
+        err_exit(FALSE, "hostlist_iterator_create failed");
     while ((host = hostlist_next(itr)) != NULL) {
         alias_t *a;
             
@@ -411,8 +451,6 @@ static alias_t *_alias_create(char *name, char *hosts)
 
 /*
  * Called from the parser.
- * FIXME: should check here that aliases contain no recursion, and
- * that alias names do not collide with node names.
  */
 bool conf_add_alias(char *name, char *hosts)
 {
