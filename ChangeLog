@@ -1,70 +1,97 @@
-2003-04-21 garlick  
-    * Add "ifon" and "ifoff" conditionals.
+2003-04-21 Jim Garlick <garlick@llnl.gov>
 
-2003-04-18 garlick
-    * Get rid of "onstring" and "offstring" and add optional on="regex"
-      off="regex" parameters to setstatus stmt.
-    * Beginnings of phantom device support.
+    * parse.y,device.c: Add "ifon" and "ifoff" conditionals.
 
-2003-04-17 garlick
-    * Implement "foreachnode" and "foreachplug" constructs which will execute
-      an inner block of statements N times, where N is the number of configured
-      nodes on this device, or the number of plugs respectively.  In the
-      inner block, "%s" will iterate through the list of plugs (or plugs
-      corresponding to configured nodes).
+    * src/wrappers.c: workaround for RH9 getaddrinfo core dumps
 
-2003-04-16 garlick
-    * Further cleanup of parse.y.  Remove ordering dependency of device
-      config directives.  Specify device name in front of spec open brace
-      instead of "name" line.  Plug names are now handled as single directive
-      with a list of strings rather than individual plug name directives.
-      Make device types known to the scanner and remove quotes around them.
-      Move all "spec" handling to parse.y.  Do away with maxplugcount directive.
+    * Makeifle,powerman.spec: install phantom.dev.
 
-2003-04-15 garlick
-    * Cleanup of parse.y to prepare for nested blocks of script code.
-    * Add 'foreachplug' and 'foreachnode' script constructs to allow repeated
-      execution of a subblock of statements.  The number of iterations is
-      the number of plugs configured or the number of nodes. (not yet tested)
+2003-04-18 Jim Garlick <garlick@llnl.gov>
 
-2003-04-14 garlick
-    * Renamed "plugcount" to "maxplugcount" in device configurations.
-    * Renamed "map" to "setstatus" in device configurations.
-    * Moved regex subexpression match buffer to the device structure.  There
-      will be a persistant copy per device so $N can reference the most recent
-      expect results from a seperate statement.
-    * Make "setstatus" its own statement and change to work as follows -
-      "setstatus [plugname] status", where status is a regex match, and name
-      can be a regex match or a literal plug name in quotes.  If omitted,
-      the plug name defaults to the current target.
-    * Add "setplugname" statement, "setplugname nodename plugname", where
-      both args are regex matches.  Rework plug/node logic so plug names must
-      either be defined in powerman.conf so that they match the plug names
-      in the device config, or they are omitted along with the device config
-      plug names.  In the latter case, the plug names must come from a 
-      setplugname statement in a device script.
+    * src/{parse.y,parse.lex,device.c}: Get rid of "onstring" and "offstring" 
+    and add optional on="regex" off="regex" parameters to setstatus stmt.
 
-2003-04-13 garlick
+    * etc/phantom.dev: Beginnings of phantom device support.
+
+2003-04-17 Jim Garlick <garlick@llnl.gov>
+
+    * src/{parse.y,parse.lex,device.c}: Implement "foreachnode" and 
+    "foreachplug" constructs which will execute an inner block of statements 
+    N times, where N is the number of configured nodes on this device, or 
+    the number of plugs respectively.  In the inner block, "%s" will iterate 
+    through the list of plugs (or plugs corresponding to configured nodes).
+
+2003-04-16 Jim Garlick <garlick@llnl.gov>
+
+    * src/parse.y:  Remove ordering dependency of device config directives.  
+    Specify device name in front of spec open brace instead of "name" line.  
+    Plug names are now handled as single directive with a list of strings 
+    rather than individual plug name directives.  Make device types known to 
+    the scanner and remove quotes around them.  Move all "spec" handling to 
+    parse.y.  Do away with maxplugcount directive.
+
+2003-04-15 Jim Garlick <garlick@llnl.gov>
+
+    * src/parse.y: Cleanup to prepare for nested blocks of script code.
+
+    * src/{parse.y,parse.lex,device.c}: Add 'foreachplug' and 'foreachnode' 
+    script constructs to allow repeated execution of a subblock of statements.
+    The number of iterations is the number of plugs configured or the number 
+    of nodes. (not yet tested)
+
+2003-04-14 Jim Garlick <garlick@llnl.gov>
+
+    * src/parse.lex: Renamed "plugcount" to "maxplugcount" in device conf.
+    Renamed "map" to "setstatus".
+
+    * src/{device.h,device.c}: Moved regex subexpression match buffer to the 
+    device structure.  There will be a persistant copy per device so $N can 
+    reference the most recent expect results from a seperate statement.
+
+    * src/{device.c,parse.lex,parse.y}: Make "setstatus" its own statement and 
+    change to work as follows - "setstatus [plugname] status", where status is 
+    a regex match, and name can be a regex match or a literal plug name in 
+    quotes.  If omitted, the plug name defaults to the current target.
+
+    * src/{device.c,parse.lex,parse.y}: Add "setplugname" statement, 
+    "setplugname nodename plugname", where both args are regex matches.  
+    Rework plug/node logic so plug names must either be defined in 
+    powerman.conf so that they match the plug names in the device config, 
+    or they are omitted along with the device config plug names.  In the 
+    latter case, the plug names must come from a setplugname statement in a 
+    device script.
+
+2003-04-13 Jim Garlick <garlick@llnl.gov>
+
     * README: began update for 1.0.17 release.
 
-2003-04-12 garlick
-    * If no plugs defined in device config, allow the plug names to come from
-      the node config lines.
-    * Implement TELNET_DEV and remove all the telnet escapes from device
-      configurations.
-    * Split tcp, serial, and telnet device types off to seperate files.
+2003-04-12 Jim Garlick <garlick@llnl.gov>
 
-2003-04-10 garlick
-    * Moved ibmasm.dev to ibmrsa.dev and implemented first cut on RSA telnet
-      protocol.
+    * src/{device.c,parse.y}: If no plugs defined in device config, allow 
+    the plug names to come from the node config lines.
 
-2003-03-31 garlick
-    * Adjust power cycle for all devices to wait at least 2 sec between off/on.
-      Was 0.7sec on icebox and this seemed to cause initialization problems 
-      with SuperMicro P4DPR motherboards running LinuxBIOS.
+    * src/{device_telnet.c,device.c}, etc/*: Implement TELNET_DEV and remove 
+    all the telnet escapes from device configurations.
 
-2002-01-20 garlick
-    * Make serial connections non-blocking.
+    * src/{device.c,device_tcp.c,device_serial.c}: Split tcp, serial, and 
+    telnet device types off to seperate files.
+
+2003-04-10 Jim Garlick <garlick@llnl.gov>
+
+    * etc/ibmasm.dev: renamed to ibmrsa.dev and implemented first cut on RSA 
+    telnet protocol.
+
+2003-03-31 Jim Garlick <garlick@llnl.gov>
+
+    * etc/*: Adjust power cycle for all devices to wait at least 2 sec between 
+    off/on.  Was 0.7sec on icebox and this seemed to cause initialization 
+    problems with SuperMicro P4DPR motherboards running LinuxBIOS.
+
+2002-01-20 Jim Garlick <garlick@llnl.gov>
+
+    * src/device.c: Make serial connections non-blocking.
+
+    * ChangeLog: begin using more accepted format.
 
 2002-01-20 garlick  
     * Back out beacon change that requires B70 of ice box v3 firmware.

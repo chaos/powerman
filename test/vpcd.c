@@ -131,7 +131,7 @@ static void _prompt_loop(int num, int fd)
         }
         if (!dev[num].logged_in) {
             dprintf(fd, "%d Please login\n", seq);
-            goto noresp;
+            continue;
         }
 
         if (strcmp(buf, "stat") == 0) { /* stat */
@@ -172,7 +172,7 @@ static void _prompt_loop(int num, int fd)
             printf("%d: on %d\n", num, n1);
             if (opt_drop_command && errcount++ == 0) {
                 printf("vpcd: dropping OK response to 'on' command\n");
-                goto noresp;
+                continue;
             }
             if (opt_bad_response && errcount++ == 0) {
                 printf
@@ -208,7 +208,6 @@ static void _prompt_loop(int num, int fd)
         continue;
       ok:
         dprintf(fd, "%d OK\n", seq);
-      noresp:
     }
 }
 

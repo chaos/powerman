@@ -365,6 +365,7 @@ static void _version(void)
 /*
  * Set up connection to server and get to the command prompt.
  */
+
 static void _connect_to_server(char *host, char *port)
 {
     struct addrinfo hints, *addrinfo;

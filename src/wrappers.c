@@ -358,11 +358,23 @@ int Close(int fd)
     return n;
 }
 
+/* Work around a problem in glibc-2.3.2-27.9 (redhat 9) */
+static void _clean_stack(void)
+{
+    char _dummy[330]; /* 320 nope, 330 yes */
+    int i;
+
+    for (i = 0; i < (sizeof(_dummy)/sizeof(_dummy[0])); i++)
+        _dummy[i] = 0;
+}
+
 int
 Getaddrinfo(char *host, char *service, struct addrinfo *hints,
             struct addrinfo **addrinfo)
 {
     int n;
+
+    _clean_stack();
 
     n = getaddrinfo(host, service, hints, addrinfo);
     if (n != 0)
