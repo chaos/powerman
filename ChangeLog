@@ -1,3 +1,12 @@
+2003-07-09 Jim Garlick <garlick@llnl.gov>
+
+    * etc/baytech-rpc28-nc.dev, etc/baytech-rpc3-nc.dev, etc/baytech.dev:
+    Make prompt recognition less restrictive.
+
+2003-07-01 Jim Garlick <garlick@llnl.gov>
+
+    * etc/phantom.dev: Reflect changes in 3.0.4b firmware.
+
 2003-06-23 Jim Garlick <garlick@llnl.gov>
 
     * etc/baytech-rpc3-nc.dev: New for ilx RPC3 "NC" model with new/different 
