@@ -4,6 +4,9 @@
 
     * etc/README: added statement description.
 
+    * powerman.spec: post scriptlet stops and restarts powerman, if it was
+    running.
+
 2003-12-17 Jim Garlick <garlick@llnl.gov>
 
     * src/device.c: remove _verify_plugassign (hold over from when we had
