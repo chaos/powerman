@@ -162,7 +162,7 @@ handle_Listener(Globals *g)
 	host = STRING_UNKNOWN;
 
 	/* get client->host */
-	if ( (hent = gethostbyaddr(&saddr, sizeof(buf), AF_INET)) == NULL ) 
+	if ( (hent = gethostbyaddr((const char *) &saddr.sin_addr, sizeof(struct in_addr), AF_INET)) == NULL ) 
 	{
 		log_it(0, "Unable to get host name from network address");
 	}
