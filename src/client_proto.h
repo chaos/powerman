@@ -37,33 +37,34 @@
  * If not quit, goto 3
  */
 
-#define CP_LINEMAX	256     /* max request/response line length */
+#define CP_LINEMAX  256     /* max request/response line length */
 
-#define CP_EOL		"\r\n"  /* line terminator */
-#define CP_PROMPT 	"powerman> "    /* prompt */
-#define CP_VERSION 	"001 powerman protocol version 2.0" CP_EOL
+#define CP_EOL      "\r\n"  /* line terminator */
+#define CP_PROMPT   "powerman> "    /* prompt */
+#define CP_VERSION  "001 powerman protocol version 2.0" CP_EOL
 
 /* 
  * Requests
  */
-#define CP_HELP		"help"
-#define CP_QUIT		"quit"
-#define CP_RESET	"reset %s"
-#define CP_CYCLE	"cycle %s"
-#define CP_ON		"on %s"
-#define CP_OFF		"off %s"
-#define CP_NODES	"nodes"
-#define CP_DEVICES	"devices"
-#define CP_STATUS	"status %s"
-#define CP_STATUS_ALL	"status"
-#define CP_SOFT		"soft %s"
-#define CP_SOFT_ALL	"soft"
-#define CP_TEMP		"temp %s"
-#define CP_TEMP_ALL	"temp"
-#define CP_BEACON	"beacon %s"
-#define CP_BEACON_ALL	"beacon"
-#define CP_BEACON_ON	"flash %s"
-#define CP_BEACON_OFF	"unflash %s"
+#define CP_HELP       "help"
+#define CP_QUIT       "quit"
+#define CP_RESET      "reset %s"
+#define CP_CYCLE      "cycle %s"
+#define CP_ON         "on %s"
+#define CP_OFF        "off %s"
+#define CP_NODES      "nodes"
+#define CP_DEVICE     "device %s"
+#define CP_DEVICE_ALL "device"
+#define CP_STATUS     "status %s"
+#define CP_STATUS_ALL "status"
+#define CP_SOFT       "soft %s"
+#define CP_SOFT_ALL   "soft"
+#define CP_TEMP       "temp %s"
+#define CP_TEMP_ALL   "temp"
+#define CP_BEACON     "beacon %s"
+#define CP_BEACON_ALL "beacon"
+#define CP_BEACON_ON  "flash %s"
+#define CP_BEACON_OFF "unflash %s"
 
 /* 
  * Responses - 
@@ -73,64 +74,54 @@
  * Responses can be multi-line.  Client knows response is complete when
  * it reads a 1XX or 2XX line.
  */
-#define CP_IS_SUCCESS(i)	((i) >= 100 && (i) < 200)
-#define CP_IS_FAILURE(i)	((i) >= 200 && (i) < 300)
-#define CP_IS_ALLDONE(i)	((i) >= 100 && (i) < 300)
+#define CP_IS_SUCCESS(i) ((i) >= 100 && (i) < 200)
+#define CP_IS_FAILURE(i) ((i) >= 200 && (i) < 300)
+#define CP_IS_ALLDONE(i) ((i) >= 100 && (i) < 300)
 
 /* success */
-#define CP_RSP_SUCCESS	"100 Success"			CP_EOL  /* generic */
-#define CP_RSP_NODES	"101 %s" 			CP_EOL  /* hostlist */
-#define CP_RSP_STATUS	\
-	"302 on:      %s"				CP_EOL	\
-       	"302 off:     %s" 				CP_EOL	\
-	"102 unknown: %s" 				CP_EOL  /* hostlists */
-#define CP_RSP_QUIT	"103 Goodbye"			CP_EOL
-#define CP_RSP_HELP 	\
-	"304 nodes              - query node list" 	CP_EOL	\
-	"304 devices            - query power control devices"  \
-							CP_EOL	\
-	"304 status [<nodes>]   - query power status"	CP_EOL	\
-	"304 on <nodes>         - power on" 		CP_EOL	\
-	"304 off <nodes>        - power off"		CP_EOL	\
-	"304 cycle <nodes>      - power cycle"		CP_EOL	\
-	"304 reset <nodes>      - hardware reset (if available)" \
-							CP_EOL  \
-	"304 soft [<nodes>]     - query soft power status (if available)" \
-							CP_EOL  \
-	"304 temp [<nodes>]     - query temperature (if available)" \
-							CP_EOL  \
-	"304 beacon [<nodes>]   - query beacon status (if available)" \
-							CP_EOL  \
-	"304 flash <nodes>      - set beacon to ON (if available)" \
-							CP_EOL  \
-	"304 unflash <nodes>    - set beacon to OFF (if available)" \
-							CP_EOL  \
-	"304 help               - display help"		CP_EOL	\
-	"104 quit               - logout"		CP_EOL
-#define CP_RSP_COMPLETE	"105 Command completed successfully" CP_EOL
-#define CP_RSP_RAW	"305 %s: %s"			CP_EOL
-#define CP_RSP_DEVICES	"306 %s: %s reconnects=%d actions=%d" \
-							CP_EOL
-#define CP_RSP_QUERY_COMPLETE "106 Query complete"	CP_EOL
+#define CP_RSP_SUCCESS     "100 Success"                            CP_EOL
+#define CP_RSP_NODES       "101 %s"                                 CP_EOL
+#define CP_RSP_STATUS \
+ "302 on:      %s"                                                  CP_EOL \
+ "302 off:     %s"                                                  CP_EOL \
+ "102 unknown: %s"                                                  CP_EOL
+#define CP_RSP_QUIT         "103 Goodbye"                           CP_EOL
+#define CP_RSP_HELP  \
+ "304 nodes              - query node list"                         CP_EOL \
+ "304 device [<nodes>]   - query power control device status"       CP_EOL \
+ "304 status [<nodes>]   - query power status"                      CP_EOL \
+ "304 on <nodes>         - power on"                                CP_EOL \
+ "304 off <nodes>        - power off"                               CP_EOL \
+ "304 cycle <nodes>      - power cycle"                             CP_EOL \
+ "304 reset <nodes>      - hardware reset (if available)"           CP_EOL \
+ "304 soft [<nodes>]     - query soft power status (if available)"  CP_EOL \
+ "304 temp [<nodes>]     - query temperature (if available)"        CP_EOL \
+ "304 beacon [<nodes>]   - query beacon status (if available)"      CP_EOL \
+ "304 flash <nodes>      - set beacon to ON (if available)"         CP_EOL \
+ "304 unflash <nodes>    - set beacon to OFF (if available)"        CP_EOL \
+ "304 help               - display help"                            CP_EOL \
+ "104 quit               - logout"                                  CP_EOL
+#define CP_RSP_COMPLETE     "105 Command completed successfully"    CP_EOL
+#define CP_RSP_RAW          "305 %s: %s"                            CP_EOL
+#define CP_RSP_DEVICE       "306 %s: %s %s reconnects=%d actions=%d" CP_EOL
+#define CP_RSP_QUERY_COMPLETE "106 Query complete"                  CP_EOL
 
 /* failure */
-#define CP_ERR_FAILURE	"200 Failure"			CP_EOL  /* generic */
-#define CP_ERR_UNKNOWN	"201 Unknown command"		CP_EOL
-#define CP_ERR_PARSE	"202 Parse error"		CP_EOL
-#define CP_ERR_TOOLONG	"203 Command too long"		CP_EOL
-#define CP_ERR_INTERNAL	"204 Internal error"		CP_EOL
-#define CP_ERR_HLRANGE	"205 Too many hosts in range"	CP_EOL
-#define CP_ERR_HLINVAL	"206 Invalid hostlist range"	CP_EOL
-#define CP_ERR_HLUNK	"207 Hostlist error"		CP_EOL
-#define CP_ERR_NOSUCHNODES "208 No such nodes: %s"	CP_EOL
-#define CP_ERR_COMPLETE	"209 Command completed with errors" CP_EOL
-#define CP_ERR_TIMEOUT	"310 Device %s timed out" 	CP_EOL
-#define CP_ERR_CLIBUSY	"211 Command in progress" 	CP_EOL
-#define CP_ERR_NOACTION	"213 Command causes no action" 	CP_EOL
-#define CP_ERR_UNIMPL	"214 Command cannot be handled by power control device(s)" CP_EOL
+#define CP_ERR_FAILURE      "200 Failure"                           CP_EOL
+#define CP_ERR_UNKNOWN      "201 Unknown command"                   CP_EOL
+#define CP_ERR_PARSE        "202 Parse error"                       CP_EOL
+#define CP_ERR_TOOLONG      "203 Command too long"                  CP_EOL
+#define CP_ERR_INTERNAL     "204 Internal error"                    CP_EOL
+#define CP_ERR_HLRANGE      "205 Too many hosts in range"           CP_EOL
+#define CP_ERR_HLINVAL      "206 Invalid hostlist range"            CP_EOL
+#define CP_ERR_HLUNK        "207 Hostlist error"                    CP_EOL
+#define CP_ERR_NOSUCHNODES  "208 No such nodes: %s"                 CP_EOL
+#define CP_ERR_COMPLETE     "209 Command completed with errors"     CP_EOL
+#define CP_ERR_TIMEOUT      "310 Device %s timed out"               CP_EOL
+#define CP_ERR_CLIBUSY      "211 Command in progress"               CP_EOL
+#define CP_ERR_NOACTION     "213 Command causes no action"          CP_EOL
+#define CP_ERR_UNIMPL       "214 Command cannot be handled by power control device(s)" CP_EOL
 
 #endif                          /* CLIENT_PROTO_H */
 
-/*
- * vi:tabstop=4 shiftwidth=4 expandtab
- */
+/* * vi:tabstop=4 shiftwidth=4 expandtab */

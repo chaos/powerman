@@ -54,7 +54,7 @@ static int _process_response(void);
 
 static int server_fd = -1;
 
-#define OPT_STRING "01crlqfubntLd:V"
+#define OPT_STRING "01crlqfubntLd:VD"
 static const struct option long_options[] = {
     {"on", no_argument, 0, '1'},
     {"off", no_argument, 0, '0'},
@@ -70,6 +70,7 @@ static const struct option long_options[] = {
     {"license", no_argument, 0, 'L'},
     {"destination", required_argument, 0, 'd'},
     {"version", no_argument, 0, 'V'},
+    {"device", no_argument, 0, 'D'},
     {0, 0, 0, 0}
 };
 
@@ -85,7 +86,8 @@ int main(int argc, char **argv)
     int res = 0;
     char *prog;
     enum { CMD_NONE, CMD_ON, CMD_OFF, CMD_LIST, CMD_CYCLE, CMD_RESET,
-        CMD_QUERY, CMD_FLASH, CMD_UNFLASH, CMD_BEACON, CMD_TEMP, CMD_NODE
+        CMD_QUERY, CMD_FLASH, CMD_UNFLASH, CMD_BEACON, CMD_TEMP, CMD_NODE,
+        CMD_DEVICE
     } cmd = CMD_NONE;
     char *port = NULL;
     char *host = NULL;
@@ -137,6 +139,9 @@ int main(int argc, char **argv)
             break;
         case 't':              /* --temp */
             cmd = CMD_TEMP;
+            break;
+        case 'D':              /* --device */
+            cmd = CMD_DEVICE;
             break;
         case 'd':              /* --destination host[:port] */
             if ((port = strchr(optarg, ':')))
@@ -260,6 +265,14 @@ int main(int argc, char **argv)
             dprintf(server_fd, CP_SOFT CP_EOL, targstr);
         else
             dprintf(server_fd, CP_SOFT_ALL CP_EOL);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        break;
+    case CMD_DEVICE:
+        if (have_targets)
+            dprintf(server_fd, CP_DEVICE CP_EOL, targstr);
+        else
+            dprintf(server_fd, CP_DEVICE_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;

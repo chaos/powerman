@@ -58,7 +58,7 @@ static int _match_client(Client * client, void *key);
 static Client *_find_client(int client_id);
 static hostlist_t _hostlist_create_validated(Client * c, char *str);
 static void _client_query_nodes_reply(Client * c);
-static void _client_query_devices_reply(Client * c);
+static void _client_query_device_reply(Client * c, char *arg);
 static void _client_query_reply(Client * c);
 static void _client_query_raw_reply(Client * c);
 static void _handle_read(Client * c);
@@ -220,10 +220,19 @@ static void _client_query_nodes_reply(Client * c)
         _client_printf(c, CP_RSP_NODES, hosts);
 }
 
-/* helper for _client_query_devices_reply() */
-static bool _make_pluglist(Device * dev, char *str, int len)
+/* 
+ * Helper for _client_query_device_reply() .
+ * Create a hostlist string for the plugs attached to the specified device.
+ * Return TRUE if str contains a valid hostlist string.
+ * If 'arg' is non-NULL, it contains a target hostlist string and only plugs
+ * in this target list should be returned.  If a device's plug list does
+ * not intersect the target list, return FALSE. 
+ */
+static bool _make_pluglist(Device * dev, char *str, int len, char *arg)
 {
     hostlist_t hl = hostlist_create(NULL);
+    hostlist_t targ = hostlist_create(arg);
+    bool have_targ = (targ != NULL && hostlist_count(targ) > 0);
     ListIterator itr;
     bool res = FALSE;
     Plug *plug;
@@ -231,20 +240,24 @@ static bool _make_pluglist(Device * dev, char *str, int len)
     if (hl != NULL) {
         itr = list_iterator_create(dev->plugs);
         while ((plug = list_next(itr))) {
-            hostlist_push(hl, plug->node);
+            if (have_targ && hostlist_find(targ, plug->node) != -1)
+                hostlist_push(hl, plug->node);
         }
         list_iterator_destroy(itr);
-        if (hostlist_ranged_string(hl, len, str) != -1)
-            res = TRUE;
+
+        if (hostlist_count(hl) && hostlist_ranged_string(hl, len, str) != -1)
+                res = TRUE;
         hostlist_destroy(hl);
     }
+    if (targ != NULL)
+        hostlist_destroy(targ);
     return res;
 }
 
 /* 
  * Reply to client request for list of devices in powerman configuration.
  */
-static void _client_query_devices_reply(Client * c)
+static void _client_query_device_reply(Client * c, char *arg)
 {
     List devs = dev_getdevices();
     Device *dev;
@@ -257,15 +270,18 @@ static void _client_query_devices_reply(Client * c)
             char nodelist[CP_LINEMAX];
             int con = dev->stat_successful_connects;
 
-            if (_make_pluglist(dev, nodelist, sizeof(nodelist))) {
-                _client_printf(c, CP_RSP_DEVICES, dev->name, nodelist,
-                            con > 0 ? con - 1 : 0,
-                            dev->stat_successful_actions);
+            /* FIXME: replace "devtype" with actual device type e.g. icebox3 */
+            if (_make_pluglist(dev, nodelist, sizeof(nodelist), arg)) {
+                _client_printf(c, CP_RSP_DEVICE, dev->name, "devtype", 
+                        nodelist, con > 0 ? con - 1 : 0, 
+                        dev->stat_successful_actions);
             }
         }
         list_iterator_destroy(itr);
+
     }
     _client_printf(c, CP_RSP_QUERY_COMPLETE);
+
 }
 
 /* helper for _client_query_status_reply */
@@ -419,23 +435,21 @@ static void _parse_input(Client * c, char *input)
     /* NOTE: sscanf is safe because 'str' is guaranteed to be < CP_LINEMAX */
 
     if (strlen(str) >= CP_LINEMAX) {
-        _client_printf(c, CP_ERR_TOOLONG); /* error: too long */
+        _client_printf(c, CP_ERR_TOOLONG);              /* error: too long */
     } else if (c->cmd != NULL) {
-        _client_printf(c, CP_ERR_CLIBUSY); /* error: busy */
-        return;                 /* no prompt */
+        _client_printf(c, CP_ERR_CLIBUSY);              /* error: busy */
+        return;                                         /* no prompt */
     } else if (!strncasecmp(str, CP_HELP, strlen(CP_HELP))) {
-        _client_printf(c, CP_RSP_HELP);    /* help */
+        _client_printf(c, CP_RSP_HELP);                 /* help */
     } else if (!strncasecmp(str, CP_NODES, strlen(CP_NODES))) {
-        _client_query_nodes_reply(c);   /* nodes */
-    } else if (!strncasecmp(str, CP_DEVICES, strlen(CP_DEVICES))) {
-        _client_query_devices_reply(c); /* devices */
+        _client_query_nodes_reply(c);                   /* nodes */
     } else if (!strncasecmp(str, CP_QUIT, strlen(CP_QUIT))) {
-        _client_printf(c, CP_RSP_QUIT);    /* quit */
+        _client_printf(c, CP_RSP_QUIT);                 /* quit */
         _handle_write(c);
         c->read_status = CLI_DONE;
         c->write_status = CLI_IDLE;
-        return;                 /* no prompt */
-    } else if (sscanf(str, CP_ON, arg1) == 1) { /* on hostlist */
+        return;                                         /* no prompt */
+    } else if (sscanf(str, CP_ON, arg1) == 1) {         /* on hostlist */
         cmd = _create_command(c, PM_POWER_ON, arg1);
     } else if (sscanf(str, CP_OFF, arg1) == 1) {        /* off hostlist */
         cmd = _create_command(c, PM_POWER_OFF, arg1);
@@ -445,7 +459,7 @@ static void _parse_input(Client * c, char *input)
         cmd = _create_command(c, PM_RESET, arg1);
     } else if (sscanf(str, CP_BEACON_ON, arg1) == 1) {  /* beacon_on hostlist */
         cmd = _create_command(c, PM_BEACON_ON, arg1);
-    } else if (sscanf(str, CP_BEACON_OFF, arg1) == 1) { /* beacon_off hostlist */
+    } else if (sscanf(str, CP_BEACON_OFF, arg1) == 1) { /* beacon_off hostlist*/
         cmd = _create_command(c, PM_BEACON_OFF, arg1);
     } else if (sscanf(str, CP_STATUS, arg1) == 1) {     /* status [hostlist] */
         cmd = _create_command(c, PM_STATUS_PLUGS, arg1);
@@ -463,7 +477,11 @@ static void _parse_input(Client * c, char *input)
         cmd = _create_command(c, PM_STATUS_BEACON, arg1);
     } else if (!strncasecmp(str, CP_BEACON_ALL, strlen(CP_BEACON_ALL))) {
         cmd = _create_command(c, PM_STATUS_BEACON, NULL);
-    } else {                    /* error: unknown */
+    } else if (sscanf(str, CP_DEVICE, arg1) == 1) {     /* device [hostlist] */
+        _client_query_device_reply(c, arg1);              
+    } else if (!strncasecmp(str, CP_DEVICE_ALL, strlen(CP_DEVICE_ALL))) {
+        _client_query_device_reply(c, NULL);              
+    } else {                                            /* error: unknown */
         _client_printf(c, CP_ERR_UNKNOWN);
     }
 
