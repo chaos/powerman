@@ -1,7 +1,10 @@
 2003-06-23 Jim Garlick <garlick@llnl.gov>
 
-    * etc/baytech-rpc3.dev: New for ilx RPC3's with new/different firmware
-    than expected in baytech.dev.
+    * etc/baytech-rpc3-nc.dev: New for ilx RPC3 "NC" model with new/different 
+    firmware than expected in baytech.dev.
+
+    * etc/baytech-rpc28-nc.dev: Renamed from baytech-rpc28.dev to reflect
+    that this is the same "NC" firmware as above (but with 28 ports).
 
     * README, Makefile, powerman.spec: Cleanup.
 

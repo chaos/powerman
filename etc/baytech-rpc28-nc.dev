@@ -8,7 +8,7 @@
 #
 # Firmware version: F3.01 (C) 2000
 #
-specification "baytech-rpc28" {
+specification "baytech-rpc28-nc" {
 	timeout 	10   # about 5 sec for cycle command
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" 
