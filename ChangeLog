@@ -1,8 +1,13 @@
-2003-1-12 Jim Garlick <garlick@llnl.gov>
+2003-02-09 Jim Garlick <garlick@llnl.gov>
+
+    * src/parse.lex: fixed for gnat 323: powerman core dumps on incorrect 
+    config file.
+
+2003-01-12 Jim Garlick <garlick@llnl.gov>
 
     * src/arglist.[ch], src/device.c: further cleanup of arglist abstraction
 
-2003-1-12 Albert Chu <chu11@llnl.gov>
+2003-01-12 Albert Chu <chu11@llnl.gov>
 
     * etc/ipmipower.dev: Fixed regex typo, it should now compile.
 

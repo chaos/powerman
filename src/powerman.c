@@ -446,7 +446,7 @@ static void _getline(char *buf, int size)
 static int _process_line(void)
 {
     char buf[CP_LINEMAX];
-    int num;
+    long int num;
 
     _getline(buf, CP_LINEMAX);
 

@@ -162,7 +162,7 @@ include                        BEGIN(lex_incl);
     len = strlen(yytext);
     yytext[len - 1] = '\0';
     
-    if ( include_stack_ptr >= MAX_INCLUDE_DEPTH )
+    if ( include_stack_ptr >= MAX_INCLUDE_DEPTH - 1 )
         err_exit(FALSE, "Includes nested too deeply" );
     
     include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
@@ -176,12 +176,12 @@ include                        BEGIN(lex_incl);
     BEGIN(INITIAL);
 }
 <<EOF>>                        {
-    if ( --include_stack_ptr < 0 ) {
+    if (include_stack_ptr == 0) {
         yyterminate();
     } else {
         /* do I need an fclose(yyin); here? */
         yy_delete_buffer( YY_CURRENT_BUFFER );
-        yy_switch_to_buffer( include_stack[include_stack_ptr] );
+        yy_switch_to_buffer( include_stack[--include_stack_ptr] );
     }
 }
 .                              {   
