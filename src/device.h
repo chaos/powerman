@@ -180,7 +180,7 @@ typedef void (*ActionCB) (int client_id, ActError acterr, const char *fmt, ...);
 typedef void (*VerbosePrintf) (int client_id, const char *fmt, ...);
 
 #define MIN_DEV_BUF     1024
-#define MAX_DEV_BUF     1024*8
+#define MAX_DEV_BUF     1024*64
 
 void dev_init(void);
 void dev_fini(void);
