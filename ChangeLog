@@ -18,8 +18,10 @@
 
     * src/device.[ch], src/client.c: changed ArgList to use hash_t instead of
     List since gprof showed list searching was the bottleneck in big configs.
-    Caveat: uninterpreted output such as temperature is no longer returned
-    in config file order. 
+    Caveat: unsorted output (-x, temperature) is no longer returned in config 
+    file order. 
+
+    * : tag powerman-1-0-19
 
 2003-12-04 Jim Garlick <garlick@llnl.gov>
 
