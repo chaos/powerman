@@ -429,6 +429,6 @@ free_Client(void *vclient)
 	}
 	if( client->to != NULL ) free_Buffer(client->to);
 	if( client->from != NULL ) free_Buffer(client->from);
-	Free(client, sizeof(*client));
+	Free(client);
 }
 

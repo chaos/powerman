@@ -45,7 +45,7 @@ int Fcntl( int fd, int cmd, int arg);
 int Select(int maxfd, fd_set *rset, fd_set *wset, fd_set *eset, struct timeval *tv);
 void Delay(struct timeval *tv);
 char * Malloc(int size);
-void Free(void *ptr, int size);
+void Free(void *ptr);
 char * Strdup(char *str);
 void Report_Memory();
 int Accept(int fd, struct sockaddr_in *addr, socklen_t *addrlen);

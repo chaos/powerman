@@ -917,7 +917,7 @@ free_Config(Config *conf)
 	list_destroy(conf->targ);
 	if( conf->reply != NULL)
 		list_destroy(conf->reply);
-	Free(conf, sizeof(Config));
+	Free(conf);
 }
 
 static void 
@@ -1079,7 +1079,7 @@ static void
 xfree_Node(void *node)
 {
 	free_String( (void *)((Node *)node)->name);
-	Free(node, sizeof(Node));
+	Free(node);
 }
 
 static bool

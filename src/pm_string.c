@@ -260,10 +260,10 @@ free_String(void *str)
 		assert(s->magic == STRING_MAGIC);
 		if( s->string != NULL )
 		{
-			Free(s->string, s->length + 1);
+			Free(s->string);
 			s->string = NULL;
 		}
-		Free(s, sizeof(struct string_implementation));	
+		Free(s);
 	}
 }
 

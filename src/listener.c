@@ -234,7 +234,7 @@ free_Listener(Listener *listener)
 	CHECK_MAGIC(listener);
 	
 	CLEAR_MAGIC(listener);
-	Free(listener, sizeof(*(listener)));
+	Free(listener);
 }
 
 

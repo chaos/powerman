@@ -287,7 +287,7 @@ free_Script_El(void *script_el)
 	case DELAY :
 	default :
 	}
-	Free( (Script_El *)script_el, sizeof(Script_El) );
+	Free( (Script_El *)script_el );
 }
 
 /*******************************************************************/
@@ -410,12 +410,12 @@ free_Spec(void *vspec)
 		{
 			free_String((void *)spec->plugname[i]);
 		}
-		Free(spec->plugname, spec->size * sizeof(String));
+		Free(spec->plugname);
 	}
 	for (i = 0; i < spec->num_scripts; i++)
 		list_destroy(spec->scripts[i]);
-	Free(spec->scripts, spec->num_scripts * sizeof(List));
-	Free(spec, sizeof(Spec));
+	Free(spec->scripts);
+	Free(spec);
 }
 
 /*******************************************************************/
@@ -501,7 +501,7 @@ free_Spec_El(void *specl)
 	((Spec_El *)specl)->string2 = NULL;
 	list_destroy(((Spec_El *)specl)->map);
 	((Spec_El *)specl)->map = NULL;
-	Free(specl, sizeof(*(specl)));
+	Free(specl);
 }
 
 
@@ -560,7 +560,7 @@ void
 free_Cluster(void *cluster)
 {
 	list_destroy(((Cluster *)cluster)->nodes);
-	Free(cluster, sizeof(Cluster));
+	Free(cluster);
 }
 
 /*******************************************************************/
@@ -644,7 +644,7 @@ void
 free_Node(void *node)
 {
 	free_String( (void *)((Node *)node)->name);
-	Free(node, sizeof(Node));
+	Free(node);
 }
 
 /*******************************************************************/
@@ -703,7 +703,7 @@ void
 free_Interp(void *interp)
 {
 	free_String( (void *)((Interpretation *)interp)->plug_name);
-	Free(interp, sizeof(Interpretation));
+	Free(interp);
 }
 
 /*

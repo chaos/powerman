@@ -37,7 +37,7 @@ LDFLAGS=
 LIB   = -lfl -lwrap -lnsl
 INSTALL= /usr/bin/install -c
 mkinstalldirs=	 $(SHELL) $(top_srcdir)/aux/mkinstalldirs
-COPTS = -g -O2 -Wall
+COPTS = -g -Wall
 INC   = 
 
 top_srcdir=     ..

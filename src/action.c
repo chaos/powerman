@@ -322,7 +322,7 @@ free_Action(void *act)
 	((Action *)act)->itr = NULL;
 	((Action *)act)->cur = NULL;
 	CLEAR_MAGIC((Action *)act);
-	Free(act, sizeof(Action));
+	Free(act);
 }
 
 

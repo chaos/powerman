@@ -614,7 +614,7 @@ free_Globals(Globals *g)
 {
 	int i;
 
-	Free(g->config_file, strlen(g->config_file));
+	Free(g->config_file);
 	list_destroy(g->specs);
 	free_Cluster(g->cluster);
 	list_destroy(g->acts);
@@ -623,9 +623,9 @@ free_Globals(Globals *g)
 	list_destroy(g->clients);
 	for (i = 0; i < g->client_prot->num_scripts; i++)
 		list_destroy(g->client_prot->scripts[i]);
-	Free(g->client_prot, g->client_prot->num_scripts*sizeof(List *));
+	Free(g->client_prot);
 	list_destroy(g->devs);
-	Free(g, sizeof(Globals));
+	Free(g);
 	free_Log();
 }
 #endif

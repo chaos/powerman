@@ -379,7 +379,7 @@ free_Buffer(void *b)
 {
       	assert(b != NULL);	
       	assert(((Buffer)b)->magic == BUF_MAGIC);	
-	Free(b, sizeof(Buffer));
+	Free(b);
 }
 
 

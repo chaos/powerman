@@ -156,7 +156,7 @@ free_Log(void)
 {
 	assert(log != NULL);
 	assert(log->magic == LOG_MAGIC);
-	Free(log, sizeof(Log));
+	Free(log);
 	log = NULL;
 }
 

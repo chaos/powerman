@@ -68,3 +68,5 @@
 	* Fixed bug where log fd was always being checked for writeability
 	  in main select loop, chewing 100% of a CPU.
 	* Commenting out the "log file" config line now disables logging.
+	* Made wrapper Malloc/Free more robust (embed size/magic cookie in
+	  each buffer allocated).  Size is no longer a parameter to Free.

@@ -952,28 +952,30 @@ dump_Device(Device *dev)
  *  Should I free protocol elements and targets here?
  */
 void
-free_Device(void *dev)
+free_Device(void *vdev)
 {
-	CHECK_MAGIC((Device *)dev);
+	Device *dev = (Device *)vdev;
 
-	free_String( (void *)((Device *)dev)->name );
-	free_String( (void *)((Device *)dev)->all );
-	if(((Device *)dev)->type == TCP_DEV)
+	CHECK_MAGIC(dev);
+
+	free_String( (void *)dev->name );
+	free_String( (void *)dev->all );
+	if(dev->type == TCP_DEV)
 	{
-		free_String( (void *)((Device *)dev)->devu.tcpd.host );
-		free_String( (void *)((Device *)dev)->devu.tcpd.service );
+		free_String( (void *)dev->devu.tcpd.host );
+		free_String( (void *)dev->devu.tcpd.service );
 	}
-	else if(((Device *)dev)->type == PMD_DEV)
+	else if(dev->type == PMD_DEV)
 	{
-		free_String( (void *)((Device *)dev)->devu.pmd.host );
-		free_String( (void *)((Device *)dev)->devu.pmd.service );
+		free_String( (void *)dev->devu.pmd.host );
+		free_String( (void *)dev->devu.pmd.service );
 	}
-	list_destroy(((Device *)dev)->acts);
-	list_destroy(((Device *)dev)->plugs);
-	CLEAR_MAGIC((Device *)dev);
-	if( ((Device *)dev)->to != NULL ) free_Buffer(((Device *)dev)->to);
-	if( ((Device *)dev)->from != NULL ) free_Buffer(((Device *)dev)->from);
-	Free( (Device *)dev, sizeof(Device) );
+	list_destroy(dev->acts);
+	list_destroy(dev->plugs);
+	CLEAR_MAGIC(dev);
+	if( dev->to != NULL ) free_Buffer(dev->to);
+	if( dev->from != NULL ) free_Buffer(dev->from);
+	Free(dev);
 }
 
 
@@ -1029,7 +1031,7 @@ void
 free_Plug(void *plug)
 {
 	free_String( (void *)((Plug *)plug)->name );
-	Free((Plug *)plug, sizeof(Plug));
+	Free(plug);
 }
 
 

@@ -189,16 +189,39 @@ clear_sets(fd_set *rset, fd_set *wset, fd_set *eset)
 static int allocated_memory = 0;
 
 /* XXX look into dmalloc */
+#define MALLOC_MAGIC 0xf00fbaab
 char *
 Malloc(int size)
 {
 	char *new;
+	int *p;
 
-	new = malloc(size);
-	if (new == NULL)
+	assert(size > 0 && size <= INT_MAX);
+	p = (int *)malloc(size + 2*sizeof(int));
+	if (p == NULL)
 		exit_msg("Out of memory");
+	p[0] = MALLOC_MAGIC;                   	/* add "secret" magic cookie */
+	p[1] = size;                            /* store size in buffer */
+
+	new = (char *)&p[2];
+	memset(new, 0, size);
 	allocated_memory += size;
 	return new;
+}
+
+void 
+Free(void *ptr)
+{
+	if (ptr != NULL) {
+		int *p = (int *)ptr - 2;
+		int size;
+
+		assert(p[0] == MALLOC_MAGIC);  /* magic cookie still there? */
+		size = p[1];
+		memset(p, 0, size + 2*sizeof(int));
+		free(p);
+		allocated_memory -= size;
+	}
 }
 
 char *
@@ -212,15 +235,6 @@ Strdup(char *str)
 	return cpy;
 }
 
-void 
-Free(void *ptr, int size)
-{
-	assert(size > 0);
-	assert(ptr != NULL);
-	memset(ptr, 0, size);
-	allocated_memory -= size;
-	free(ptr);
-}
 
 int
 Accept(int fd, struct sockaddr_in *addr, socklen_t *addrlen)
