@@ -1,8 +1,4 @@
 Short Term:
-* Work around RPC's that don't send a FIN when connections are torn down 
-  (Baytech).  Powerman gets ECONNRESET on read next time there is activity.
-  Could we periodically "ping" with a no-op telnet command so the ECONNRESET
-  (and disconnect/reconnect) happens before we start executing a script?
 * Store scripts in a list and search the list for the script name, rather than
   hard code the list.  
 * Seperate scripts for "all" commands so we can get timing right on ice box.

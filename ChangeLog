@@ -7,6 +7,9 @@
 	  send a FIN when they tear down a connection (which would unblock
 	  powerman's select call and cause a reconnect).  Configured
 	  90 second ping period for Baytech.
+	* Changed logic for "all" plug processing.  If _ALL version of
+	  script is defined, use that.  If all string "*" is defined, use
+	  that.  If neither is defined, use one command per plug.
 
 2002-10-16 garlick
 	* Make Action struct private to device.c

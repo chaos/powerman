@@ -191,7 +191,8 @@ static void _spec_destroy(Spec * spec)
     Free(spec->name);
     Free(spec->off);
     Free(spec->on);
-    Free(spec->all);
+    if (spec->all)
+	Free(spec->all);
 
     for (i = 0; i < spec->size; i++)
 	Free(spec->plugname[i]);

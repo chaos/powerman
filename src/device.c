@@ -500,12 +500,39 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
     return count;
 }
 
+/* return "all" version of script if defined else -1 */
+static int _get_all_script(Device *dev, int com)
+{
+    int new = -1;
+
+    switch (com) {
+        case PM_POWER_ON:
+	    if (dev->prot->scripts[PM_POWER_ON_ALL])
+		new = PM_POWER_ON_ALL;
+	    break;
+        case PM_POWER_OFF:
+	    if (dev->prot->scripts[PM_POWER_OFF_ALL])
+		new = PM_POWER_OFF_ALL;
+	    break;
+        case PM_POWER_CYCLE:
+	    if (dev->prot->scripts[PM_POWER_CYCLE_ALL])
+		new = PM_POWER_CYCLE_ALL;
+	    break;
+        case PM_RESET:
+	    if (dev->prot->scripts[PM_RESET_ALL])
+		new = PM_RESET_ALL;
+	    break;
+	default:
+	    break;
+    }
+    return new;
+}
+
 
 static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
 		ActionCB fun, int client_id, ArgList *arglist)
 {
     List new_acts = list_create((ListDelF) _destroy_action);
-    Action *act;
     bool all = TRUE;
     Plug *plug;
     ListIterator itr;
@@ -513,6 +540,8 @@ static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
 
     itr = list_iterator_create(dev->plugs);
     while ((plug = list_next(itr))) {
+	Action *act;
+
 	/* antisocial to gratuitously turn on/off unused plug */
         if (plug->node == NULL) { 
             all = FALSE;
@@ -529,10 +558,25 @@ static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
     }
 
     if (all) {
-	act = _create_action(dev, com, dev->all, fun, client_id, arglist);
-        list_append(dev->acts, act);
-	count++;
-    } else {
+	int new = _get_all_script(dev, com);
+	Action *act = NULL;
+
+	if (new != -1) {
+	    act = _create_action(dev, new, NULL, fun, client_id, arglist);
+	} else if (dev->all != NULL)
+	    act = _create_action(dev, com, dev->all, fun, client_id, arglist);
+	if (act) {
+	    list_append(dev->acts, act);
+	    count++;
+	}
+    } 
+
+    /* "all" wasn't appropriate or wasn't defined so do one action
+     * per plug.
+     */
+    if (count == 0) {
+	Action *act;
+
         while ((act = list_pop(new_acts))) {
 	    list_append(dev->acts, act);
 	    count++;

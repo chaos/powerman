@@ -9,7 +9,6 @@ begin protocol specification
 	specification type "TCP"
 	off string "0"
 	on string  "1"
-	all string "*"
 	plug count 10
 	device timeout 10
 	begin LOGIN_SCRIPT
@@ -53,26 +52,49 @@ begin protocol specification
 	begin ON_SCRIPT
 		send "ph %s\r\n"
 		expect "OK\r\n"
-		delay 0.5
+		delay 0.7
 	end ON_SCRIPT
+	begin ON_SCRIPT_ALL
+		send "ph *\r\n"
+		expect "OK\r\n"
+		delay 7
+	end ON_SCRIPT_ALL
 	begin OFF_SCRIPT
 		send "pl %s\r\n"
 		expect "OK\r\n"
-		delay 0.5
+		delay 0.7
 	end OFF_SCRIPT
+	begin OFF_SCRIPT_ALL
+		send "pl *\r\n"
+		expect "OK\r\n"
+		delay 7
+	end OFF_SCRIPT_ALL
 	begin CYCLE_SCRIPT
 		send "pl %s\r\n"
 		expect "OK\r\n"
-		delay 0.5
+		delay 0.7
 		send "ph %s\r\n"
 		expect "OK\r\n"
-		delay 0.5
+		delay 0.7
 	end CYCLE_SCRIPT
+	begin CYCLE_SCRIPT_ALL
+		send "pl *\r\n"
+		expect "OK\r\n"
+		delay 7
+		send "ph *\r\n"
+		expect "OK\r\n"
+		delay 7
+	end CYCLE_SCRIPT_ALL
 	begin RESET_SCRIPT
 		send "rp %s\r\n"
 		expect "OK\r\n"
-		delay 0.5
+		delay 0.7
 	end RESET_SCRIPT
+	begin RESET_SCRIPT_ALL
+		send "rp *\r\n"
+		expect "OK\r\n"
+		delay 7
+	end RESET_SCRIPT_ALL
 	plug name "1"
 	plug name "2"
 	plug name "3"

@@ -406,8 +406,8 @@ static Spec *check_Spec()
 	_spec_missing("off string");
     if( current_spec->on == NULL )
 	_spec_missing("on string");
-    if( current_spec->all == NULL )
-	_spec_missing("all string");
+    /*if( current_spec->all == NULL )
+	_spec_missing("all string");*/ /* this is optional */
     if( (current_spec->size == 0) )
 	_spec_missing("size");
 
@@ -615,7 +615,7 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 	    _errormsg("unimplemented device type");
     }
     /* begin transfering info from the Spec to the Device */
-    dev->all = Strdup(spec->all);
+    dev->all = spec->all ? Strdup(spec->all) : NULL;
     re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
     Regcomp( &(dev->on_re), spec->on, cflags);
     Regcomp( &(dev->off_re), spec->off, cflags);
