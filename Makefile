@@ -50,6 +50,7 @@ install: all
 	$(INSTALL) etc/phantom.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/phantom-llnl.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/ipmi.dev			$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/cyclades-pm8.dev		$(DESTDIR)$(packagedir)
 	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/powerman.1	$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/powermand.1	$(DESTDIR)$(mandir)/man1

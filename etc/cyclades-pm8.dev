@@ -1,0 +1,62 @@
+#
+# $Id$
+# $Source$
+#
+# Cyclades PM8i
+#
+specification "pm8" {
+	timeout 	10   # about 5 sec for cycle command
+	pingperiod 	90
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
+
+	script login {
+		send "\r"
+		expect "Username:"
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+	}
+	script logout {
+		send "exit\r"
+	}
+	script status_all {
+		send "status 1-8\r"
+		foreachplug {
+			expect " ([1-8]+).*(ON|OFF)"
+			setplugstate $1 $2 on="ON" off="OFF"
+		}
+		expect "pm>"
+	}
+	script on {
+		send "on %s\r"
+		expect "pm>"
+	}
+	script on_all {
+		send "on 1-8\r"
+		expect "pm>"
+	}
+	script off {
+		send "off %s\r"
+		expect "pm>"
+	}
+	script off_all {
+		send "off 1-8\r"
+		expect "pm>"
+	}
+	script cycle {
+		send "off %s\r"
+		expect "pm>"
+		delay 2
+		send "on %s\r"
+		expect "pm>"
+	}
+	script cycle_all {
+		send "off 1-8\r"
+		expect "pm>"
+		delay 2
+		send "on 1-8\r"
+		expect "pm>"
+	}
+}
