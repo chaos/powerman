@@ -476,7 +476,7 @@ static Command *_create_command(Client * c, int com, char *arg1)
      * unlink from it in _destroy_command().  If client goes away prematurely,
      * actions that write to arglist will still have valid pointers.
      * NOTE 2: we create arglist for all actions, rather than just query
-     * actions, because we want to allow 'setstatus' in any context.
+     * actions, because we want to allow 'setplugstate' in any context.
      */
     if (cmd) {
         cmd->arglist = arglist_create(cmd->hl);

@@ -43,27 +43,26 @@ typedef struct {
 typedef struct arglist_iterator *ArgListIterator;
 typedef struct arglist *ArgList;
 
-/* Create an arglist with an Arg entry for each node in hl (refcount == 1).
+/* Create an ArgList with an Arg entry for each node in hl (refcount == 1).
  */
 ArgList          arglist_create(hostlist_t hl);
 
-/* Do refcount++
+/* Do refcount++ in ArgList.
  */
 ArgList          arglist_link(ArgList arglist);
 
-/* Do refcount--
- * If the refcount reaches zero, destroy the arglist.
+/* Do refcount-- in ArgList.
+ * If the refcount reaches zero, destroy the Arglist.
  */
 void             arglist_unlink(ArgList arglist);
 
-/* Search arglist for an Arg entry that matches node.
+/* Search ArgList for an Arg entry that matches node.
  * Return pointer to Arg on success (points to actual list entry),
  * or NULL on search failure.
  */
 Arg *            arglist_find(ArgList arglist, char *node);
 
-/* An iterator interface for Args in Arglists, similar to the
- * iterators in list.h.
+/* An iterator interface for ArgLists, similar to the iterators in list.h.
  */
 ArgListIterator  arglist_iterator_create(ArgList arglist);
 void             arglist_iterator_destroy(ArgListIterator itr);
