@@ -2,8 +2,8 @@
 # $Id$
 # $Source$
 #
-# This device configuration supports power control on Intel Tiger 4
-# motherboards via the BMC and the 'ipmipower' utility.
+# This device configuration supports power control via the 
+# 'ipmipower' utility.
 #
 specification "ipmipower" {
 	timeout  	60
@@ -18,8 +18,8 @@ specification "ipmipower" {
 		send "stat\r"
                 expect "stat\r\n"
 		foreachnode {
-			expect "([^:]*): (on|off)\r\n"
-			setplugstate $1 $2 on="on" off="off"
+			expect "([^:]*): (on|off|failed\ to\ connect)\r\n"
+			setplugstate $1 $2 off="off|failed\ to\ connect" on="on"
 		}
 		expect "ipmipower> "
 	}
