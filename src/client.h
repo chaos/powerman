@@ -31,8 +31,6 @@
 #include "hostlist.h"
 #include "device.h"
 
-#define NO_PORT           (-1)
-
 typedef struct {
     int com;                    /* script index */
     hostlist_t hl;              /* target nodes */
@@ -41,8 +39,10 @@ typedef struct {
     ArgList *arglist;           /* argument for query commands */
 } Command;
 
+#define CLI_MAGIC    0xdadadada
 typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE } Client_Status;
 typedef struct {
+    int magic;
     Client_Status read_status;
     Client_Status write_status;
     int fd;                     /* file desriptor for  the socket */
@@ -55,7 +55,6 @@ typedef struct {
     int client_id;              /* client identifier */
     bool telemetry;             /* client wants telemetry debugging info */
     bool exprange;              /* client wants host ranges expanded */
-     MAGIC;
 } Client;
 
 void cli_init(void);

@@ -35,14 +35,12 @@
 #include <assert.h>
 #include <libgen.h>
 
+#include "powerman.h"
 #include "wrappers.h"
 #include "error.h"
 #include "hostlist.h"
 #include "client_proto.h"
 #include "debug.h"
-
-#define SERVER_HOSTNAME "localhost"
-#define SERVER_PORT     "10101"
 
 static void _connect_to_server(char *host, char *port);
 static void _disconnect_from_server(void);
@@ -196,8 +194,7 @@ int main(int argc, char **argv)
             err_exit(FALSE, "hostlist error");
     }
 
-    _connect_to_server(host ? host : SERVER_HOSTNAME, 
-                       port ? port : SERVER_PORT);
+    _connect_to_server(host ? host : DFLT_HOSTNAME, port ? port : DFLT_PORT);
 
     if (telemetry) {
         dprintf(server_fd, CP_TELEMETRY CP_EOL);

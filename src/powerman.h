@@ -32,25 +32,6 @@ typedef enum { FALSE = 0, TRUE = 1 } bool;
 typedef enum { NO_DEV, TCP_DEV, SERIAL_DEV } DevType;
 
 #define NO_FD           (-1)
-#define	MAXFD	         64
-
-/* #define NDEBUG 1 Don't produce debug code */
-#ifndef NDEBUG
-/* Use debugging macros */
-
-#  define MAGIC            int magic
-#  define INIT_MAGIC(x)    (x)->magic = (MAGIC_VAL)
-#  define CHECK_MAGIC(x)   assert((x)->magic == MAGIC_VAL)
-#  define CLEAR_MAGIC(x)   (x)->magic = (0)
-
-#  define MAGIC_VAL          0xdeadbee0
-#else
-/* Don't use debugging macros */
-#  define MAGIC
-#  define INIT_MAGIC(x)
-#  define CHECK_MAGIC(x)
-#  define CLEAR_MAGIC(x)
-#endif
 
 #ifndef MAX
 #  define MAX(x, y) (((x) > (y))? (x) : (y))
@@ -64,6 +45,9 @@ typedef enum { NO_DEV, TCP_DEV, SERIAL_DEV } DevType;
 #define PID_DIR       		"/var/run/powerman"
 #define ROOT_DIR      		"/etc/powerman"
 #define DFLT_CONFIG_FILE 	"/etc/powerman/powerman.conf"
+
+#define DFLT_PORT           "10101"
+#define DFLT_HOSTNAME       "localhost"
 
 #endif                          /* POWERMAN_H */
 

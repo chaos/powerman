@@ -28,6 +28,7 @@
 #include <sys/time.h>
 #include <sys/stat.h>
 #include <unistd.h>
+#include <stdlib.h>
 #include <time.h>
 #include <string.h>
 #include <assert.h>
@@ -55,7 +56,7 @@ static List tmp_specs = NULL;
  * Some configurable values - accessor functions defined below.
  */
 static bool conf_use_tcp_wrap = FALSE;
-static int conf_listen_port = NO_PORT;
+static int conf_listen_port;
 static hostlist_t conf_nodes = NULL;
 
 /* 
@@ -66,6 +67,8 @@ void conf_init(char *filename)
 {
     struct stat stbuf;
     int parse_config_file(char *filename);
+
+    conf_listen_port = strtol(DFLT_PORT, NULL, 10);
 
     conf_nodes = hostlist_create(NULL);
 

@@ -386,9 +386,7 @@ static char *makeClientPort(char *s2)
 {
     int port = _strtolong(s2);
 
-    if (conf_get_listen_port() != NO_PORT)
-        _errormsg("duplicate client listener port");
-    if (port < 1)
+    if (port < 1024)
         _errormsg("bogus client listener port");
     conf_set_listen_port(port); 
     return s2;

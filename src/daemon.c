@@ -75,7 +75,7 @@ void daemon_init(void)
     umask(0);
 
     /* Close fd's */
-    for (i = 0; i < MAXFD; i++)
+    for (i = 0; i < 256; i++)
         close(i);               /* ignore errors */
 
     /* Init syslog */

@@ -53,7 +53,7 @@
 /* prototypes for internal functions */
 static Command *_create_command(Client * c, int com, char *arg1);
 static void _destroy_command(Command * cmd);
-static int _match_client(Client * client, void *key);
+static int _match_client(Client * c, void *key);
 static Client *_find_client(int client_id);
 static hostlist_t _hostlist_create_validated(Client * c, char *str);
 static void _client_query_nodes_reply(Client * c);
@@ -65,7 +65,7 @@ static void _handle_write(Client * c);
 static void _handle_input(Client *c);
 static char *_strip_whitespace(char *str);
 static void _parse_input(Client * c, char *input);
-static void _destroy_client(Client * client);
+static void _destroy_client(Client * c);
 static void _create_client(void);
 static void _act_finish(int client_id, ActError acterr, const char *fmt, ...);
 static void _telemetry_printf(int client_id, const char *fmt, ...);
@@ -612,7 +612,7 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
     /* if client has gone away do nothing */
     if (!(c = _find_client(client_id)))
         return;
-    CHECK_MAGIC(c);
+    assert(c->magic == CLI_MAGIC);
     assert(c->cmd != NULL);
 
     /* handle errors immediately */
@@ -665,32 +665,32 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
 /* 
  * Destroy a client.
  */
-static void _destroy_client(Client * client)
+static void _destroy_client(Client *c)
 {
-    CHECK_MAGIC(client);
+    assert(c->magic == CLI_MAGIC);
 
-    if (client->fd != NO_FD) {
-        Close(client->fd);
-        client->fd = NO_FD;
-        dbg(DBG_CLIENT, "_destroy_client: closing fd %d", client->fd);
+    if (c->fd != NO_FD) {
+        Close(c->fd);
+        c->fd = NO_FD;
+        dbg(DBG_CLIENT, "_destroy_client: closing fd %d", c->fd);
     }
-    if (client->to)
-        cbuf_destroy(client->to);
-    if (client->from)
-        cbuf_destroy(client->from);
-    if (client->cmd)
-        _destroy_command(client->cmd);
-    if (client->ip)
-        Free(client->ip);
-    if (client->host)
-        Free(client->host);
-    Free(client);
+    if (c->to)
+        cbuf_destroy(c->to);
+    if (c->from)
+        cbuf_destroy(c->from);
+    if (c->cmd)
+        _destroy_command(c->cmd);
+    if (c->ip)
+        Free(c->ip);
+    if (c->host)
+        Free(c->host);
+    Free(c);
 }
 
 /* helper for _find_client */
-static int _match_client(Client * client, void *key)
+static int _match_client(Client *c, void *key)
 {
-    return (client->client_id == *(int *) key);
+    return (c->client_id == *(int *) key);
 }
 
 /*
@@ -747,7 +747,7 @@ void cli_listen(void)
  */
 static void _create_client(void)
 {
-    Client *client;
+    Client *c;
     struct sockaddr_in saddr;
     int saddr_size = sizeof(struct sockaddr_in);
     int fd_settings;
@@ -755,72 +755,72 @@ static void _create_client(void)
     char buf[64];
 
     /* create client data structure */
-    client = (Client *) Malloc(sizeof(Client));
-    INIT_MAGIC(client);
-    client->read_status = CLI_READING;
-    client->write_status = CLI_IDLE;
-    client->to = NULL;
-    client->from = NULL;
-    client->cmd = NULL;
-    client->client_id = _next_cli_id();
-    client->telemetry = FALSE;
-    client->exprange = FALSE;
+    c = (Client *) Malloc(sizeof(Client));
+    c->magic = CLI_MAGIC;
+    c->read_status = CLI_READING;
+    c->write_status = CLI_IDLE;
+    c->to = NULL;
+    c->from = NULL;
+    c->cmd = NULL;
+    c->client_id = _next_cli_id();
+    c->telemetry = FALSE;
+    c->exprange = FALSE;
 
-    client->fd = Accept(listen_fd, &saddr, &saddr_size);
+    c->fd = Accept(listen_fd, &saddr, &saddr_size);
     /* client died after it initiated connect and before we could accept */
-    if (client->fd < 0) {
-        _destroy_client(client);
+    if (c->fd < 0) {
+        _destroy_client(c);
         err(TRUE, "_create_client: accept");
         return;
     }
 
-    /* get client->ip */
+    /* get c->ip */
     if (inet_ntop(AF_INET, &saddr.sin_addr, buf, sizeof(buf)) == NULL) {
-        _destroy_client(client);
+        _destroy_client(c);
         err(TRUE, "_create_client: inet_ntop");
         return;
     }
-    client->ip = Strdup(buf);
-    client->port = ntohs(saddr.sin_port);
+    c->ip = Strdup(buf);
+    c->port = ntohs(saddr.sin_port);
 
-    /* get client->host */
+    /* get c->host */
     if ((hent = gethostbyaddr((const char *) &saddr.sin_addr,
                               sizeof(struct in_addr), AF_INET)) == NULL) {
         err(FALSE, "_create_client: gethostbyaddr failed");
     } else {
-        client->host = Strdup(hent->h_name);
+        c->host = Strdup(hent->h_name);
     }
 
     /* get authorization from tcp wrappers */
     if (conf_get_use_tcp_wrappers()) {
         if (!hosts_ctl(DAEMON_NAME,
-                       client->host ? client->host : STRING_UNKNOWN,
-                       client->ip, STRING_UNKNOWN)) {
+                       c->host ? c->host : STRING_UNKNOWN,
+                       c->ip, STRING_UNKNOWN)) {
             err(FALSE, "_create_client: tcp wrappers denies %s:%d",
-                client->host ? client->host : client->ip, client->port);
-            _destroy_client(client);
+                c->host ? c->host : c->ip, c->port);
+            _destroy_client(c);
             return;
         }
     }
 
     /* create I/O buffers */
-    client->to = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
-    client->from = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
+    c->to = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
+    c->from = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
 
     /* mark fd as non-blocking */
-    fd_settings = Fcntl(client->fd, F_GETFL, 0);
-    Fcntl(client->fd, F_SETFL, fd_settings | O_NONBLOCK);
+    fd_settings = Fcntl(c->fd, F_GETFL, 0);
+    Fcntl(c->fd, F_SETFL, fd_settings | O_NONBLOCK);
 
     /* append to the list of clients */
-    list_append(cli_clients, client);
+    list_append(cli_clients, c);
 
     dbg(DBG_CLIENT, "connect %s:%d fd %d",
-        client->host ? client->host : client->ip,
-        client->port, client->fd);
+        c->host ? c->host : c->ip,
+        c->port, c->fd);
 
     /* prompt the client */
-    _client_printf(client, CP_VERSION, POWERMAN_VERSION);
-    _client_printf(client, CP_PROMPT);
+    _client_printf(c, CP_VERSION, POWERMAN_VERSION);
+    _client_printf(c, CP_PROMPT);
 }
 
 /* 
@@ -831,7 +831,7 @@ static void _handle_read(Client * c)
     int n;
     int dropped;
 
-    CHECK_MAGIC(c);
+    assert(c->magic == CLI_MAGIC);
     n = cbuf_write_from_fd(c->from, c->fd, -1, &dropped);
     if (n < 0) {
         err(TRUE, "client read error");
@@ -854,7 +854,7 @@ static void _handle_write(Client * c)
 {
     int n;
 
-    CHECK_MAGIC(c);
+    assert(c->magic == CLI_MAGIC);
     n = cbuf_read_to_fd(c->to, c->fd, -1);
     if (n < 0) {
         err(TRUE, "write error on client");
@@ -927,26 +927,26 @@ void cli_pre_select(fd_set * rset, fd_set * wset, int *maxfd)
 void cli_post_select(fd_set * rset, fd_set * wset)
 {
     ListIterator itr;
-    Client *client;
+    Client *c;
 
     if (FD_ISSET(listen_fd, rset))
         _create_client();
 
     itr = list_iterator_create(cli_clients);
-    while ((client = list_next(itr))) {
-        if (client->fd < 0)
+    while ((c = list_next(itr))) {
+        if (c->fd < 0)
             continue;
 
-        if (FD_ISSET(client->fd, rset))
-            _handle_read(client);
+        if (FD_ISSET(c->fd, rset))
+            _handle_read(c);
 
-        if (FD_ISSET(client->fd, wset))
-            _handle_write(client);
+        if (FD_ISSET(c->fd, wset))
+            _handle_write(c);
 
-        _handle_input(client);
+        _handle_input(c);
 
-        if ((client->read_status == CLI_DONE) &&
-            (client->write_status == CLI_IDLE))
+        if ((c->read_status == CLI_DONE) &&
+            (c->write_status == CLI_IDLE))
             list_delete(itr);
     }
     list_iterator_destroy(itr);
