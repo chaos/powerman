@@ -47,6 +47,7 @@
 #include "client_proto.h"
 #include "debug.h"
 #include "device.h"
+#include "hprintf.h"
 
 #define LISTEN_BACKLOG    5
 
@@ -113,30 +114,20 @@ static int cli_id_seq = 1;      /* range 1...INT_MAX */
     _client_printf(c, CP_ERR_INTERNAL, __FILE__, __LINE__)
 
 /*
- * Allocate a string and sprintf to it, resizing until sprintf succedes.
- * Then copy the string to c->out buffer and free it.
+ * printf-like function which writes to the output cbuf.
  */
-#define CHUNKSIZE 80
 static void _client_printf(Client *c, const char *fmt, ...)
 {
-    va_list ap;
-    int len, size = 0;
     char *str = NULL;
     int written, dropped;
+    va_list ap;
 
-    /* build tmp string */
-    do {
-        str = (size == 0) ? Malloc(CHUNKSIZE) : Realloc(str, size+CHUNKSIZE);
-        size += CHUNKSIZE;
-
-        va_start(ap, fmt);
-        len = vsnprintf(str, size, fmt, ap);
-        va_end(ap);
-    } while (len == -1 || len >= size);
-    assert(len == strlen(str));
+    va_start(ap, fmt);
+    str = hvsprintf(fmt, ap);
+    va_end(ap);
 
     /* Write to the client buffer */
-    written = cbuf_write(c->to, str, len, &dropped);
+    written = cbuf_write(c->to, str, strlen(str), &dropped);
     if (written < 0)
         err(TRUE, "_client_printf: cbuf_write returned %d", written);
     else if (dropped > 0)
@@ -610,25 +601,18 @@ done:
 /*
  * Callback for device debugging printfs (sent to client if --telemetry)
  */
-#define TRUNC_MSG "[truncated]"
 static void _telemetry_printf(int client_id, const char *fmt, ...)
 {
     va_list ap;
     Client *c;
+    char *str;
 
     if ((c = _find_client(client_id))) {
-        char buf[CP_LINEMAX];
-        int len = CP_LINEMAX - sizeof(CP_INFO_TELEMETRY) - sizeof(TRUNC_MSG);
-        int n;
-
         va_start(ap, fmt);
-        n = vsnprintf(buf, len, fmt, ap);
+        str = hvsprintf(fmt, ap);
         va_end(ap);
-
-        if (n < 0 || n >= len)
-            strcat(buf, TRUNC_MSG);
-
-        _client_printf(c, CP_INFO_TELEMETRY, buf);
+        _client_printf(c, CP_INFO_TELEMETRY, str);
+        Free(str);
     }
 }
 
@@ -639,6 +623,7 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
 {
     va_list ap;
     Client *c;
+    char *str;
 
     /* if client has gone away do nothing */
     if (!(c = _find_client(client_id)))
@@ -648,12 +633,11 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
 
     /* handle errors immediately */
     if (acterr != ACT_ESUCCESS) {
-        char tmpstr[CP_LINEMAX];
-
         va_start(ap, fmt);
-        vsnprintf(tmpstr, CP_LINEMAX, fmt, ap);     /* ignore truncation */
+        str = hvsprintf(fmt, ap);
         va_end(ap);
-        _client_printf(c, CP_INFO_ACTERROR, tmpstr);
+        _client_printf(c, CP_INFO_ACTERROR, str);
+        Free(str);
 
         c->cmd->error = TRUE;       /* when done say "completed with errors" */
     }

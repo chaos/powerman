@@ -36,15 +36,51 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 
-#include "powerman.h"
-#include "error.h"
+#include "config.h"
 #include "wrappers.h"
+#include "cbuf.h"
+#include "error.h"
 
 #define MAX_REG_BUF 64000
 
 #ifndef NDEBUG
 static int memory_alloc = 0;
 #endif
+
+/*********************
+ *  lsd_fatal_error  *
+ *********************/
+/* Credit: borrowed from cbuf.c (Chris Dunlap) */
+
+#ifdef WITH_LSD_FATAL_ERROR_FUNC
+#  undef lsd_fatal_error
+   extern void lsd_fatal_error(char *file, int line, char *mesg);
+#else /* !WITH_LSD_FATAL_ERROR_FUNC */
+#  ifndef lsd_fatal_error
+#    include <errno.h>
+#    include <stdio.h>
+#    include <string.h>
+#    define lsd_fatal_error(file, line, mesg)                                 \
+          do {                                                                \
+             fprintf(stderr, "ERROR: [%s:%d] %s: %s\n",                       \
+                   file, line, mesg, strerror(errno));                        \
+          } while (0)
+#  endif /* !lsd_fatal_error */
+#endif /* !WITH_LSD_FATAL_ERROR_FUNC */
+
+/*********************
+ *  lsd_nomem_error  *
+ *********************/
+/* Credit: borrowed from cbuf.c (Chris Dunlap) */
+
+#ifdef WITH_LSD_NOMEM_ERROR_FUNC
+#  undef lsd_nomem_error
+   extern void * lsd_nomem_error(char *file, int line, char *mesg);
+#else /* !WITH_LSD_NOMEM_ERROR_FUNC */
+#  ifndef lsd_nomem_error
+#    define lsd_nomem_error(file, line, mesg) (NULL)
+#  endif /* !lsd_nomem_error */
+#endif /* !WITH_LSD_NOMEM_ERROR_FUNC */
 
 /*
  *   Taken nearly verbatim from Stevens, "UNIX Network Programming".
@@ -58,7 +94,7 @@ int Socket(int family, int type, int protocol)
 
     fd = socket(family, type, protocol);
     if (fd < 0)
-        err_exit(TRUE, "socket");
+        lsd_fatal_error(__FILE__, __LINE__, "socket");
     return fd;
 }
 
@@ -70,7 +106,7 @@ Setsockopt(int fd, int level, int optname, const void *opt_val,
 
     ret_code = setsockopt(fd, level, optname, opt_val, optlen);
     if (ret_code < 0)
-        err_exit(TRUE, "setsockopt");
+        lsd_fatal_error(__FILE__, __LINE__, "setsockopt");
     return ret_code;
 }
 
@@ -81,7 +117,7 @@ int Bind(int fd, struct sockaddr_in *saddr, socklen_t len)
 
     ret_code = bind(fd, (struct sockaddr *) saddr, len);
     if (ret_code < 0)
-        err_exit(TRUE, "bind");
+        lsd_fatal_error(__FILE__, __LINE__, "bind");
     return ret_code;
 }
 
@@ -93,7 +129,7 @@ Getsockopt(int fd, int level, int optname, void *opt_val,
 
     ret_code = getsockopt(fd, level, optname, opt_val, optlen);
     if (ret_code < 0)
-        err_exit(TRUE, "getsockopt");
+        lsd_fatal_error(__FILE__, __LINE__, "getsockopt");
     return ret_code;
 }
 
@@ -103,7 +139,7 @@ int Listen(int fd, int backlog)
 
     ret_code = listen(fd, backlog);
     if (ret_code < 0)
-        err_exit(TRUE, "listen");
+        lsd_fatal_error(__FILE__, __LINE__, "listen");
     return ret_code;
 }
 
@@ -113,7 +149,7 @@ int Fcntl(int fd, int cmd, int arg)
 
     ret_code = fcntl(fd, cmd, arg);
     if (ret_code < 0)
-        err_exit(TRUE, "fcntl");
+        lsd_fatal_error(__FILE__, __LINE__, "fcntl");
     return ret_code;
 }
 
@@ -131,14 +167,14 @@ time_t Time(time_t * t)
 
     n = time(t);
     if (n < 0)
-        err_exit(TRUE, "time");
+        lsd_fatal_error(__FILE__, __LINE__, "time");
     return n;
 }
 
 void Gettimeofday(struct timeval *tv, struct timezone *tz)
 {
     if (gettimeofday(tv, tz) < 0)
-        err_exit(TRUE, "gettimeofday");
+        lsd_fatal_error(__FILE__, __LINE__, "gettimeofday");
 }
 
 static void _clear_sets(fd_set * rset, fd_set * wset, fd_set * eset)
@@ -153,7 +189,7 @@ static void _clear_sets(fd_set * rset, fd_set * wset, fd_set * eset)
 
 /*
  * Select wrapper that retries select on EINTR with appropriate timeout
- * adjustments, and err_exit on any other failures.
+ * adjustments, and Err on any other failures.
  * Can return 0 indicating timeout or a value > 0.
  * NOTE: fd_sets are cleared on timeout.
  */
@@ -174,14 +210,14 @@ Select(int maxfd, fd_set * rset, fd_set * wset, fd_set * eset,
     do {
         n = select(maxfd, rset, wset, eset, tv);
         if (n < 0 && errno != EINTR)    /* unrecov error */
-            err_exit(TRUE, "select");
+            lsd_fatal_error(__FILE__, __LINE__, "select");
         if (n < 0 && tv != NULL) {      /* EINTR - adjust tv */
             Gettimeofday(&end, NULL);
             timersub(&end, &start, &delta);     /* delta = end-start */
             timersub(&tv_orig, &delta, tv);     /* tv = tvsave-delta */
         }
-        if (n < 0)
-            fprintf(stderr, "retrying interrupted select\n");
+        /*if (n < 0)
+            fprintf(stderr, "retrying interrupted select\n");*/
     } while (n < 0);
     /* XXX main select loop needs this fd_sets cleared on timeout */
     if (n == 0)
@@ -189,6 +225,21 @@ Select(int maxfd, fd_set * rset, fd_set * wset, fd_set * eset,
     return n;
 }
 
+/* select-based usleep(3) */
+void 
+Usleep(unsigned long usec)
+{
+    fd_set rset, wset, eset;
+    struct timeval tv;
+
+    tv.tv_usec = usec % 1000000;
+    tv.tv_sec  = usec / 1000000;
+
+    FD_ZERO(&rset);
+    FD_ZERO(&wset);
+    FD_ZERO(&eset);
+    Select(0, &rset, &wset, &eset, &tv);
+}
 
 void Delay(struct timeval *tv)
 {
@@ -210,7 +261,7 @@ static int _checkfill(unsigned char *buf, unsigned char fill, int size)
     return 1;
 }
 
-char *Malloc(int size)
+char *wrap_malloc(char *file, int line, int size)
 {
     char *new;
     int *p;
@@ -218,7 +269,7 @@ char *Malloc(int size)
     assert(size > 0 && size <= INT_MAX);
     p = (int *) malloc(2*sizeof(int) + size + MALLOC_PAD_SIZE);
     if (p == NULL)
-        err_exit(FALSE, "out of memory");
+        return lsd_nomem_error(file, line, "malloc");
     p[0] = MALLOC_MAGIC;                           /* magic cookie */
     p[1] = size;                                   /* store size in buffer */
 #ifndef NDEBUG
@@ -230,7 +281,7 @@ char *Malloc(int size)
     return new;
 }
 
-char *Realloc(char *item , int newsize)
+char *wrap_realloc(char *file, int line, char *item , int newsize)
 {
     char *new;
     int *p = (int *)item - 2;
@@ -243,7 +294,7 @@ char *Realloc(char *item , int newsize)
     assert(_checkfill(item + oldsize, MALLOC_PAD_FILL, MALLOC_PAD_SIZE));
     p = (int *)realloc(p, 2*sizeof(int) + newsize + MALLOC_PAD_SIZE);
     if (p == NULL)
-        err_exit(FALSE, "out of memory");
+        return lsd_nomem_error(file, line, "realloc");
     assert(p[0] == MALLOC_MAGIC);
     p[1] = newsize;
 #ifndef NDEBUG
@@ -298,7 +349,7 @@ int Accept(int fd, struct sockaddr_in *addr, socklen_t * addrlen)
         if (!((errno == EWOULDBLOCK) ||
               (errno == ECONNABORTED) ||
               (errno == EPROTO) || (errno == EINTR)))
-            err_exit(TRUE, "accept");
+            lsd_fatal_error(__FILE__, __LINE__, "accept");
     }
     return new;
 }
@@ -310,7 +361,7 @@ int Connect(int fd, struct sockaddr *addr, socklen_t addrlen)
     n = connect(fd, addr, addrlen);
     if (n < 0) {
         if (errno != EINPROGRESS)
-            err_exit(TRUE, "connect");
+            lsd_fatal_error(__FILE__, __LINE__, "connect");
     }
     return n;
 }
@@ -323,7 +374,7 @@ int Read(int fd, unsigned char *p, int max)
         n = read(fd, p, max);
     } while (n < 0 && errno == EINTR);
     if (n < 0 && errno != EWOULDBLOCK && errno != ECONNRESET)
-        err_exit(TRUE, "read");
+        lsd_fatal_error(__FILE__, __LINE__, "read");
     return n;
 }
 
@@ -335,9 +386,10 @@ int Write(int fd, unsigned char *p, int max)
         n = write(fd, p, max);
     } while (n < 0 && errno == EINTR);
     if (n < 0 && errno != EAGAIN && errno != ECONNRESET && errno != EPIPE)
-        err_exit(TRUE, "write");
+        lsd_fatal_error(__FILE__, __LINE__, "write");
     return n;
 }
+
 
 int Open(char *str, int flags, int mode)
 {
@@ -346,7 +398,7 @@ int Open(char *str, int flags, int mode)
     assert(str != NULL);
     fd = open(str, flags, mode);
     if (fd < 0)
-        err_exit(TRUE, "open %s", str);
+        lsd_fatal_error(__FILE__, __LINE__, str);
     return fd;
 }
 
@@ -356,7 +408,7 @@ int Close(int fd)
 
     n = close(fd);
     if (n < 0)
-        err_exit(TRUE, "close");
+        lsd_fatal_error(__FILE__, __LINE__, "close");
     return n;
 }
 
@@ -370,6 +422,16 @@ static void _clean_stack(void)
         _dummy[i] = 0;
 }
 
+#define MAX_GETADDRINFO_ERR_STR 1024
+static void _gai_fatal_error(char *host, char *service, int err)
+{
+    char buf[MAX_GETADDRINFO_ERR_STR];
+
+    snprintf(buf, sizeof(buf),
+            "getaddrinfo: %s:%s: %s", host, service, gai_strerror(err));
+    lsd_fatal_error(__FILE__, __LINE__, buf);
+}
+
 int
 Getaddrinfo(char *host, char *service, struct addrinfo *hints,
             struct addrinfo **addrinfo)
@@ -380,13 +442,12 @@ Getaddrinfo(char *host, char *service, struct addrinfo *hints,
 
     n = getaddrinfo(host, service, hints, addrinfo);
     if (n != 0)
-        err_exit(FALSE, "getaddrinfo host %s service %s: %s",
-                 host, service, gai_strerror(n));
+        _gai_fatal_error(host, service, n);
     return n;
 }
 
 /* 
- * Substitute all occurences of s2 with s3 in s1, 
+ * Substitute all occurrences of s2 with s3 in s1, 
  * e.g. _str_subst(str, "\\r", "\r") 
  */
 static void _str_subst(char *s1, int len, const char *s2, const char *s3)
@@ -424,7 +485,7 @@ void Regcomp(regex_t * preg, const char *regex, int cflags)
      */
     n = regcomp(preg, buf, cflags);
     if (n != REG_NOERROR)
-        err_exit(FALSE, "regcomp failed");
+        lsd_fatal_error(__FILE__, __LINE__, "regcomp failed");
 }
 
 int
@@ -446,7 +507,7 @@ pid_t Fork(void)
     pid_t pid;
 
     if ((pid = fork()) == -1)
-        err_exit(TRUE, "fork");
+        lsd_fatal_error(__FILE__, __LINE__, "fork");
     return (pid);
 }
 
@@ -469,7 +530,7 @@ Sigfunc *Signal(int signo, Sigfunc * func)
     }
     n = sigaction(signo, &act, &oact);
     if (n < 0)
-        err_exit(TRUE, "sigaction");
+        lsd_fatal_error(__FILE__, __LINE__, "sigaction");
 
     return (oact.sa_handler);
 }
@@ -477,19 +538,19 @@ Sigfunc *Signal(int signo, Sigfunc * func)
 void Pipe(int filedes[2])
 {
     if (pipe(filedes) < 0)
-        err_exit(TRUE, "pipe");
+        lsd_fatal_error(__FILE__, __LINE__, "pipe");
 }
 
 void Dup2(int oldfd, int newfd)
 {
     if (dup2(oldfd, newfd) < 0)
-        err_exit(TRUE, "dup2");
+        lsd_fatal_error(__FILE__, __LINE__, "dup2");
 }
 
 void Execv(const char *path, char *const argv[])
 {
     if (execv(path, argv) < 0)
-        err_exit(TRUE, "execv %s", path);
+        lsd_fatal_error(__FILE__, __LINE__, "execv");
 }
 
 pid_t Waitpid(pid_t pid, int *status, int options)
@@ -498,11 +559,12 @@ pid_t Waitpid(pid_t pid, int *status, int options)
 
     while ((n = waitpid(pid, status, options)) < 0) {
         if (errno != EINTR)
-            err_exit(TRUE, "waitpid %d", pid);
+            lsd_fatal_error(__FILE__, __LINE__, "waitpid");
     }
 
     return n;
 }
+
 
 #ifndef NDEBUG
 int Memory(void)

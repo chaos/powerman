@@ -6,7 +6,7 @@
 
 #include "error.h"
 
-/* for list.c and cbuf.c */
+/* for list.c, cbuf.c, and wrappers */
 #define WITH_LSD_FATAL_ERROR_FUNC 1
 #define WITH_LSD_NOMEM_ERROR_FUNC 1
 

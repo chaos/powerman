@@ -73,7 +73,7 @@ static void _verr(bool errno_valid, const char *fmt, va_list ap)
 
     assert(err_prog != NULL);
 
-    vsnprintf(buf, ERROR_BUFLEN, fmt, ap);      /* overflow ignored on purpose */
+    vsnprintf(buf, ERROR_BUFLEN, fmt, ap);  /* overflow ignored on purpose */
     if (errno_valid) {
         if (err_ttyvalid)
             fprintf(stderr, "%s: %s: %s\n", err_prog, buf, strerror(er));
@@ -117,7 +117,8 @@ void err(bool errno_valid, const char *fmt, ...)
 
 void lsd_fatal_error(char *file, int line, char *mesg)
 {
-    err_exit(FALSE, "fatal error: %s: %s::%d", mesg, file, line);
+    err_exit(FALSE, "fatal error: %s: %s::%d: %s", mesg, file, line, 
+strerror(errno));
 }
 
 void *lsd_nomem_error(char *file, int line, char *mesg)

@@ -45,6 +45,7 @@
 #include "hostlist.h"
 #include "debug.h"
 #include "client_proto.h"
+#include "hprintf.h"
 
 /* ExecCtx's are the state for the execution of a block of statements.
  * They are stacked on the Action (new ExecCtx pushed when executing an
@@ -1161,29 +1162,6 @@ static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
     return finished;
 }
 
-/*
- * Allocate a string and sprintf to it, resizing until sprintf succedes.
- * Result must be destroyed with Free().
- */
-#define CHUNKSIZE 80
-static char *_malloc_sprintf(const char *fmt, ...)
-{
-    va_list ap;
-    char *str = NULL;
-    int len, size = 0;
-
-    do {
-        str = (size == 0) ? Malloc(CHUNKSIZE) : Realloc(str, size + CHUNKSIZE);
-        size += CHUNKSIZE;
-
-        va_start(ap, fmt);
-        len = vsnprintf(str, size, fmt, ap);
-        va_end(ap);
-    } while (len == -1 || len >= size);
-
-    return str;
-}
-
 static bool _process_send(Device *dev, Action *act, ExecCtx *e)
 {
     bool finished = FALSE;
@@ -1191,7 +1169,7 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
     /* first time through? */
     if (!e->processing) {
         int dropped = 0;
-        char *str = _malloc_sprintf(e->cur->u.send.fmt, e->target ? 
+        char *str = hvsprintf(e->cur->u.send.fmt, e->target ? 
                 (e->target->name ? e->target->name : "[unresolved]") : 0);
         int written = cbuf_write(dev->to, str, strlen(str), &dropped);
 

@@ -26,6 +26,7 @@
 
 /*
  * Implement connect/disconnect device methods for pipes.
+ * Well it started out as a pipe, now actually it's a "coprocess" on a pty.
  */
 
 #include <errno.h>
@@ -46,60 +47,12 @@
 #include "wrappers.h"
 #include "debug.h"
 #include "pty.h"
+#include "argv.h"
 
 typedef struct {
-    int argc;
     char **argv;
     pid_t cpid;
 } PipeDev;
-
-/* return true if 'c' is a shell metacharacter we wish to ignore */
-static int _isshell(char c)
-{
-    return (c == '|' || c == '&');
-}
-
-/* make a copy of the first word in str and advance str past it */
-static char *_nextargv(char **strp)
-{
-    char *str = *strp;
-    char *word; 
-    int len;
-    char *cpy = NULL;
-
-    while (*str && (isspace(*str) || _isshell(*str)))
-        str++;
-    word = str;
-    while (*str && !(isspace(*str) || _isshell(*str)))
-        str++;
-    len = str - word;
-
-    if (len > 0) {
-        cpy = (char *)Malloc(len + 1);
-        memcpy(cpy, word, len);
-        cpy[len] = '\0';
-    }
-
-    *strp = str;
-    return cpy;
-}
-
-/* return number of space seperated words in str */
-static int _sizeargv(char *str)
-{
-    int count = 0;
-
-    do {
-        while (*str && (isspace(*str) || _isshell(*str)))
-            str++;
-        if (*str)
-            count++;
-        while (*str && !(isspace(*str) || _isshell(*str)))
-            str++;
-    } while (*str);
-
-    return count;
-}
 
 /* Create "pipe device" data struct.
  * cmdline would normally look something like "/usr/bin/conman -j -Q bay0 |&"
@@ -108,16 +61,8 @@ static int _sizeargv(char *str)
 void *pipe_create(char *cmdline, char *flags)
 {
     PipeDev *pd = (PipeDev *)Malloc(sizeof(PipeDev));
-    int i = 0; 
 
-    pd->argc = _sizeargv(cmdline);
-    pd->argv = (char **)Malloc(sizeof(char *) * (pd->argc + 1));
-    for (i = 0; i < pd->argc; i++) {
-        pd->argv[i] = _nextargv(&cmdline);
-        assert(pd->argv[i] != NULL);
-    }
-    pd->argv[i] = NULL;
-    
+    pd->argv = argv_create(cmdline, "|&");
     pd->cpid = -1;
 
     return (void *)pd;
@@ -128,11 +73,8 @@ void *pipe_create(char *cmdline, char *flags)
 void pipe_destroy(void *data)
 {
     PipeDev *pd = (PipeDev *)data;
-    int i;
 
-    for (i = 0; i < pd->argc; i++)
-        Free(pd->argv[i]);
-    Free(pd->argv);
+    argv_destroy(pd->argv);
     Free(pd);
 }
 

@@ -33,6 +33,21 @@
 #include <regex.h>
 #include <netdb.h>
 
+/*
+ * If WITH_LSD_FATAL_ERROR_FUNC is defined, the linker will expect to
+ * find an external lsd_fatal_error(file,line,mesg) function.  By default,
+ * lsd_fatal_error(file,line,mesg) is a macro definition that outputs an
+ * error message to stderr.  This macro may be redefined to invoke another
+ * routine instead.
+ * 
+ * If WITH_LSD_NOMEM_ERROR_FUNC is defined, the linker will expect to
+ * find an external lsd_nomem_error(file,line,mesg) function.  By default,
+ * lsd_nomem_error(file,line,mesg) is a macro definition that returns NULL.
+ * This macro may be redefined to invoke another routine instead.
+ *
+ * Credit: borrowed from cbuf.c (Chris Dunlap)
+ */
+
 /* Wrapper functions (in wrappers.c) */
 int Socket(int family, int type, int protocol);
 int Setsockopt(int fd, int level, int optname, const void *opt_val,
@@ -45,11 +60,14 @@ int Fcntl(int fd, int cmd, int arg);
 int Select(int maxfd, fd_set * rset, fd_set * wset, fd_set * eset,
            struct timeval *tv);
 void Delay(struct timeval *tv);
-char *Malloc(int size);
-char *Realloc(char *item, int newsize);
+
+#define Malloc(size)          wrap_malloc(__FILE__, __LINE__, size)
+#define Realloc(item,newsize) wrap_realloc(__FILE__, __LINE__, item, newsize)
+char *wrap_malloc(char *file, int line, int size);
+char *wrap_realloc(char *file, int line, char *item, int newsize);
+
 void Free(void *ptr);
 char *Strdup(const char *str);
-void Report_Memory();
 int Accept(int fd, struct sockaddr_in *addr, socklen_t * addrlen);
 int Connect(int fd, struct sockaddr *addr, socklen_t addrlen);
 int Read(int fd, unsigned char *p, int max);
@@ -68,6 +86,7 @@ int Memory(void);
 void Gettimeofday(struct timeval *tv, struct timezone *tz);
 time_t Time(time_t * t);
 char *Strncpy(char *s1, const char *s2, int len);
+void Usleep(unsigned long usec);
 void Pipe(int filedes[2]);
 void Dup2(int oldfd, int newfd);
 void Execv(const char *path, char *const argv[]);

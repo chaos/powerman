@@ -80,8 +80,7 @@ void dbg(unsigned long channel, const char *fmt, ...)
         char buf[DBG_BUFLEN];
 
         va_start(ap, fmt);
-        vsnprintf(buf, DBG_BUFLEN, fmt, ap);
-        /* overflow ignored on purpose */
+        vsnprintf(buf, DBG_BUFLEN, fmt, ap); /* overflow ignored on purpose */
         va_end(ap);
 
         if (dbg_ttyvalid)
