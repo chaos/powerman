@@ -1,6 +1,6 @@
 #
-# $Id$
-# $Source$
+# baytech-rpc3-nc.dev,v 1.5 2003/07/23 22:41:31 garlick Exp
+# /chaos/cvs/powerman/etc/baytech-rpc3-nc.dev,v
 #
 # Baytech RPC3-20NC
 #
@@ -23,18 +23,15 @@ specification "baytech-rpc3-nc" {
 
 	script login {
 		send "temp\r\n"
-		expect "Internal Temperature[^C]+ C"
+		expect "Internal Temperature[^C]+C"
 		expect ">"
 	}
 	script logout {
 		send "exit\r\n"
 	}
 	script status_all {
-		send "temp\r\n"
-		expect "Internal Temperature[^C]+ C"
-		expect ">"
 		send "status\r\n"
-		expect "Internal Temperature[^C]+ C"
+		expect "Internal Temperature[^C]+C"
 		foreachplug {
 			expect "([0-9]+)[^:]+: (On|Off)"
 			setplugstate $1 $2 on="On" off="Off"
