@@ -56,6 +56,7 @@ install:
 	$(INSTALL) -m 644 etc/powerman.conf  $(DESTDIR)$(etcdir)
 	$(mkinstalldirs)		$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/pm.1	$(DESTDIR)$(mandir)/man1
+	$(mkinstalldirs)		$(DESTDIR)$(mandir)/man5
 	$(INSTALL) -m 644 man/powerman.conf.5  $(DESTDIR)$(mandir)/man5
 
 clean:
