@@ -859,14 +859,12 @@ static char *_malloc_printf(const char *fmt, ...)
     int len, size = 0;
 
     do {
-
         str = (size == 0) ? Malloc(CHUNKSIZE) : Realloc(str, size + CHUNKSIZE);
         size += CHUNKSIZE;
 
         va_start(ap, fmt);
         len = vsnprintf(str, size, fmt, ap);
         va_end(ap);
-
     } while (len == -1 || len >= size);
 
     return str;

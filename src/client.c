@@ -94,26 +94,24 @@ static int cli_id_seq = 1;      /* range 1...INT_MAX */
 static void _client_printf(Client *c, const char *fmt, ...)
 {
     va_list ap;
-    int len, size = CHUNKSIZE;
-    char *str = Malloc(size);
-    bool done = FALSE;
+    int len, size = 0;
+    char *str;
     int written, dropped;
 
     /* build tmp string */
-    while (!done) {
+    do {
+        str = (size == 0) ? Malloc(CHUNKSIZE) : Realloc(str, size+CHUNKSIZE);
+        size += CHUNKSIZE;
+
         va_start(ap, fmt);
         len = vsnprintf(str, size, fmt, ap);
         va_end(ap);
-        if (len == -1 || len >= size)
-            str = Realloc(str, size += CHUNKSIZE);
-        else
-            done = TRUE;
-    }
+    } while (len == -1 || len >= size);
     assert(len == strlen(str));
 
     /* Write to the client buffer */
     c->write_status = CLI_WRITING;
-    written = cbuf_write(c->to, str, strlen(str), &dropped);
+    written = cbuf_write(c->to, str, len, &dropped);
     if (written < 0)
         err(TRUE, "_client_printf: cbuf_write returned %d", written);
     else if (dropped > 0)
