@@ -19,7 +19,6 @@ specification "ipmipower" {
                 expect "stat\r\n"
 		foreachnode {
 			expect "([^\r\n:]*): (on|off|permission\ denied|invalid\ operation|invalid\ authtype|permsgauth\ required|timed\ out|not\ discovered|bmc\ busy|bmc\ error)\r\n"
-			expect "([^\r\n:]*): ([^\r\n]*)\r\n"
 			setplugstate $1 $2 off="off" on="on"
 		}
 		expect "ipmipower> "
