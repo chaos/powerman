@@ -601,13 +601,8 @@ static void _create_client(void)
     struct sockaddr_in saddr;
     int saddr_size = sizeof(struct sockaddr_in);
     int fd_settings;
-    bool accepted_client = TRUE;
-    char buf[MAX_BUF];
     struct hostent *hent;
-    char *ip;
-    char *host;
-    char *fqdn;
-    char *p;
+    char buf[64];
 
     /* create client data structure */
     client = (Client *) Malloc(sizeof(Client));
@@ -627,29 +622,14 @@ static void _create_client(void)
         return;
     }
 
-    /* Got the new client, now look at TCP wrappers */
     /* get client->ip */
-    if (inet_ntop(AF_INET, &saddr.sin_addr, buf, MAX_BUF) == NULL) {
+    if (inet_ntop(AF_INET, &saddr.sin_addr, buf, sizeof(buf)) == NULL) {
         _destroy_client(client);
         err(TRUE, "_create_client: inet_ntop");
         return;
     }
-
-    client->to = buf_create(client->fd, MAX_BUF, NULL, NULL);
-    client->from = buf_create(client->fd, MAX_BUF, NULL, NULL);
-    client->port = ntohs(saddr.sin_port);
-
-    p = buf;
-    while ((p - buf < MAX_BUF) && (*p != '/'))
-        p++;
-
-    if (*p == '/')
-        *p = '\0';
-
     client->ip = Strdup(buf);
-    ip = client->ip;
-    fqdn = ip;
-    host = STRING_UNKNOWN;
+    client->port = ntohs(saddr.sin_port);
 
     /* get client->host */
     if ((hent = gethostbyaddr((const char *) &saddr.sin_addr,
@@ -657,32 +637,37 @@ static void _create_client(void)
         err(FALSE, "_create_client: gethostbyaddr failed");
     } else {
         client->host = Strdup(hent->h_name);
-        host = client->host;
-        fqdn = host;
     }
 
-    if (conf_get_use_tcp_wrappers() == TRUE) {
-        accepted_client = hosts_ctl(DAEMON_NAME, host, ip, STRING_UNKNOWN);
-
-        if (!accepted_client) {
+    /* get authorization from tcp wrappers */
+    if (conf_get_use_tcp_wrappers()) {
+        if (!hosts_ctl(DAEMON_NAME, 
+			client->host ? client->host : STRING_UNKNOWN, 
+			client->ip, STRING_UNKNOWN)) {
+            err(FALSE, "_create_client: tcp wrappers denies %s:%d", 
+			    client->host ? client->host : client->ip,
+			    client->port);
             _destroy_client(client);
-            err(FALSE, "_create_client: tcp wrappers denies <%s, %d>", 
-			    fqdn, client->port); /* XXX duplicate log? */
             return;
         }
     }
 
-    /*
-     * We'll need to add the new fd to the list, mark it non-blocking,
-     * and initiate the PM_LOG_IN sequence.
-     */
+    /* create I/O buffers */
+    client->to = buf_create(client->fd, MAX_BUF, NULL, NULL);
+    client->from = buf_create(client->fd, MAX_BUF, NULL, NULL);
+
+    /* mark fd as non-blocking */
     fd_settings = Fcntl(client->fd, F_GETFL, 0);
     Fcntl(client->fd, F_SETFL, fd_settings | O_NONBLOCK);
 
     /* append to the list of clients */
     list_append(cli_clients, client);
 
-    dbg(DBG_CLIENT, "connect <%s, %d> fd %d", fqdn, client->port, client->fd);
+    dbg(DBG_CLIENT, "connect %s:%d fd %d", 
+		    client->host ? client->host : client->ip,
+		    client->port, client->fd);
+
+    /* prompt the client */
     _client_msg(client, CP_VERSION);
     _client_prompt(client);
 }
