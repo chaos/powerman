@@ -16,7 +16,7 @@ specification "baytech-rpc28-nc" {
 
 	script login {
 		send "\r\n"
-		expect "RPC-28>"
+		expect ">"
 	}
 	script logout {
 		send "exit\r\n"
@@ -28,39 +28,39 @@ specification "baytech-rpc28-nc" {
 			expect "([0-9]+)[^:]+: (On|Off)"
 			setplugstate $1 $2 on="On" off="Off"
 		}
-		expect "RPC-28>"
+		expect ">"
 	}
 	script on {
 		send "on %s\r\n"
-		expect "RPC-28>"
+		expect ">"
 	}
 	script on_all {
 		send "on 0\r\n"
-		expect "RPC-28>"
+		expect ">"
 	}
 	script off {
 		send "off %s\r\n"
-		expect "RPC-28>"
+		expect ">"
 	}
 	script off_all {
 		send "off 0\r\n"
-		expect "RPC-28>"
+		expect ">"
 	}
 # If outlet is initially off, "reboot" will leave it off.
 # This doesn't match PowerMan's semantics for cycle, so explicitly power
 # off then on.
 	script cycle {
 		send "off %s\r\n"
-		expect "RPC-28>"
+		expect ">"
 		delay 2
 		send "on %s\r\n"
-		expect "RPC-28>"
+		expect ">"
 	}
 	script cycle_all {
 		send "off 0\r\n"
-		expect "RPC-28>"
+		expect ">"
 		delay 2
 		send "on 0\r\n"
-		expect "RPC-28>"
+		expect ">"
 	}
 }

@@ -21,7 +21,7 @@ specification "baytech" {
 
 	script ping {
 		send "\r\n"
-		expect "RPC-3>"
+		expect ">"
 	}
 	script login {
 		expect "\n"
@@ -29,7 +29,7 @@ specification "baytech" {
 		send "baytech\r\n"
 		expect "Enter Selection>"
 		send "1\r\n"
-		expect "RPC-3>"
+		expect ">"
 	}
 	script logout {
 		send "menu\r\n"
@@ -43,39 +43,39 @@ specification "baytech" {
 			expect "([0-9]+)[ ]+(On|Off)"
 			setplugstate $1 $2 on="On" off="Off"
 		}
-		expect "RPC-3>"
+		expect ">"
 	}
 	script on {
 		send "on %s\r\n"
-		expect "RPC-3>"
+		expect ">"
 	}
 	script on_all {
 		send "on 0\r\n"
-		expect "RPC-3>"
+		expect ">"
 	}
 	script off {
 		send "off %s\r\n"
-		expect "RPC-3>"
+		expect ">"
 	}
 	script off_all {
 		send "off 0\r\n"
-		expect "RPC-3>"
+		expect ">"
 	}
 # If outlet is initially off, "reboot" will leave it off.
 # This doesn't match PowerMan's semantics for cycle, so explicitly power
 # off then on.
 	script cycle {
 		send "off %s\r\n"
-		expect "RPC-3>"
+		expect ">"
 		delay 2
 		send "on %s\r\n"
-		expect "RPC-3>"
+		expect ">"
 	}
 	script cycle_all {
 		send "off 0\r\n"
-		expect "RPC-3>"
+		expect ">"
 		delay 2
 		send "on 0\r\n"
-		expect "RPC-3>"
+		expect ">"
 	}
 }
