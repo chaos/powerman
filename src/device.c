@@ -125,8 +125,8 @@ initiate_nonblocking_connect(Device *dev)
 
 	dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
 			      addrinfo->ai_protocol);
-	dev->to = make_Buffer(dev->fd);
-	dev->from = make_Buffer(dev->fd);
+	dev->to = make_Buffer(dev->fd, MAX_BUF);
+	dev->from = make_Buffer(dev->fd, MAX_BUF);
 
 /* set up and initiate a non-blocking connect */
 
@@ -479,6 +479,7 @@ process_script(Device *dev)
 	assert(act->cur != NULL);
 	if ( ( act->cur->type == EXPECT ) &&
 		 is_empty_Buffer(dev->from) ) return;
+
 	/* 
 	 * The condition for "done" is:
 	 * 1) There is nothing I can interpret in dev->from
@@ -495,6 +496,8 @@ process_script(Device *dev)
 		{
 		case EXPECT :
 			done = process_expect(dev);
+			if (done) /* jg */
+				return;
 			break;
 		case SEND :
 			done = process_send(dev);
@@ -508,7 +511,8 @@ process_script(Device *dev)
 		}
 		if( (act->cur = (Script_El *)list_next(act->itr)) == NULL )
 		{
-			if (act->com == PM_LOG_IN) dev->loggedin = TRUE;
+			if (act->com == PM_LOG_IN) 
+				dev->loggedin = TRUE;
 			del_Action(dev->acts);
 		}
 		else
@@ -520,7 +524,8 @@ process_script(Device *dev)
 			}
 		}
 		act = (Action *)list_peek(dev->acts);
-		if(act == NULL) done = TRUE;
+		if(act == NULL) 
+			done = TRUE;
 		else if( act->cur == NULL ) 
 			act->cur = (Script_El *)list_next(act->itr);
 	}
@@ -552,7 +557,9 @@ process_expect(Device *dev)
 	re = &(act->cur->s_or_e.expect.completion);
 	
 	if ( (expect = get_String_from_Buffer(dev->from, re)) == NULL ) 
+	{
 		return TRUE;
+	}
 
 	dev->status &= ~DEV_EXPECTING;
 	if( ! match_RegEx(dev, expect) )

@@ -40,9 +40,6 @@
 
 #define MAX_REG_BUF 64000
 
-static void clear_sets(fd_set *rset, fd_set *wset, fd_set *eset);
-
-
 /*
  *   Taken nearly verbatim from Stevens, "UNIX Network Programming".
  * Some are my own extrapolations of his ideas, but should be
@@ -120,22 +117,6 @@ Fcntl( int fd, int cmd, int arg)
 	return ret_code;
 }
 
-int
-Select(int maxfd, fd_set *rset, fd_set *wset, fd_set *eset, struct timeval *tv)
-{
-	int n;
-
-	n = select(maxfd, rset, wset, eset, tv);
-	if (n < 0)
-/* Some sort of error occured.  Can we ignore it? */
-		if (errno != EINTR) 
-			exit_error("select");
-	if (n <= 0)
-/* If it timed out then don't do anything else on this round of the loop */
-		clear_sets(rset, wset, eset);
-	return n;
-}
-
 time_t
 Time(time_t *t)
 {
@@ -154,36 +135,61 @@ Gettimeofday(struct timeval *tv, struct timezone *tz)
 		exit_error("gettimeofday");
 }
 
-void
-Delay(struct timeval *tv)
-{
-	int n;
-	struct timeval t, start, end, delta;
-
-	if (tv == NULL)
-		exit_msg("Delay called with NULL timeval");
-	t = *tv;
-	Gettimeofday(&start, NULL);
-	for (;;) {
-		n = select(0, NULL, NULL, NULL, &t);
-		if (n == 0 || errno != EINTR)
-			break;
-		/* interrupted - adjust t to account for time elapsed so far */
-		Gettimeofday(&end, NULL);
-		timersub(&end, &start, &delta);
-		timersub(tv, &delta, &t);
-	} 
-	if (n < 0)
-		exit_error("select (in Delay)");
-	return;
-}
-
-void
-clear_sets(fd_set *rset, fd_set *wset, fd_set *eset)
+static void
+_clear_sets(fd_set *rset, fd_set *wset, fd_set *eset)
 {
 	if(rset != NULL) FD_ZERO(rset);
 	if(wset != NULL) FD_ZERO(wset);
 	if(eset != NULL) FD_ZERO(eset);
+}
+
+/*
+ * Select wrapper that retries select on EINTR with appropriate timeout
+ * adjustments, and exit_errors on any other failures.
+ * Can return 0 indicating timeout or a value > 0.
+ * NOTE: fd_sets are cleared on timeout.
+ */
+int
+Select(int maxfd, fd_set *rset, fd_set *wset, fd_set *eset, struct timeval *tv)
+{
+	int n;
+	struct timeval tv_orig;
+	struct timeval start, end, delta;
+
+	/* prep for EINTR handling */
+	if (tv)
+	{
+		tv_orig = *tv;
+		Gettimeofday(&start, NULL);
+	}
+	/* repeat select if interrupted */
+	do
+	{
+		n = select(maxfd, rset, wset, eset, tv);
+		if (n < 0 && errno != EINTR)		/* unrecov error */
+			exit_error("select");
+		if (n < 0 && tv != NULL)		/* EINTR - adjust tv */
+		{	
+			Gettimeofday(&end, NULL);
+			timersub(&end, &start, &delta);	/* delta = end-start */
+			timersub(&tv_orig, &delta, tv);	/* tv = tvsave-delta */
+		}
+		if (n < 0)
+			fprintf(stderr, "retrying interrupted select\n");
+	} while (n < 0);
+	/* XXX main select loop needs this fd_sets cleared on timeout */
+	if (n == 0)
+		_clear_sets(rset, wset, eset);
+	return n;
+}
+
+
+void
+Delay(struct timeval *tv)
+{
+	int res;
+	res = Select(0, NULL, NULL, NULL, tv);
+	assert(res == 0);
 }
 
 static int allocated_memory = 0;

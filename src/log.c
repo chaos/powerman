@@ -70,7 +70,7 @@ make_Log(const char *filename, int level)
 	log->fd = NO_FD;
 	log->buffer = NULL;
 
-	/* verify that log fille can be opened */
+	/* verify that log file can be opened */
 	if (log->filename)
 		Close(Open(log->filename, O_WRONLY | O_CREAT | O_APPEND, 
 					S_IRUSR | S_IWUSR));
@@ -89,7 +89,7 @@ start_Log(void)
 		int flags = O_WRONLY | O_CREAT | O_APPEND | O_NONBLOCK;
 
 		log->fd = Open(log->filename, flags, S_IRUSR | S_IWUSR);
-		log->buffer = make_Buffer(log->fd);
+		log->buffer = make_Buffer(log->fd, MAX_BUF);
 		send_Log(0, "Log started fd %d", log->fd);
 	}
 }
@@ -192,18 +192,6 @@ free_Log(void)
 	}
 	Free(log);
 	log = NULL;
-}
-
-/* 
- * Kludge to detect recursion when buffer routines, which log functions
- * happen to use, themselves call send_Log().
- */
-bool
-is_buffer_Log(Buffer b)
-{
-	if (log != NULL && log->buffer == b)
-		return TRUE;
-	return FALSE;
 }
 
 /* 

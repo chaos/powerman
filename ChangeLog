@@ -94,3 +94,6 @@
 	* Reworked log.c.
 	* Fixed all [v]snprintf's to check for both result == -1 
   	  (glibc <= 2.0.6) and result > len (glibc >= 2.1, C99 standard).
+	* Moved string stuff out of buffer.c into util.c and refactored.
+	* Found problem with short reads, process_script() would delete
+	  actions if they didn't match the partial buffer.

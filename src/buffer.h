@@ -30,23 +30,22 @@
 #include <regex.h>
 
 #define MAX_BUF    64000          /* 2560 nodes with 16 chars per name   */
-#define HIGH_WATER 200            /* wti and baytech have some sreen     */
-#define LOW_WATER  200            /*            oriented display modes   */
-#define MAX_MATCH        20
 
 typedef struct buffer_implementation *Buffer;
 
-/* buffer.c extern prototypes */
-Buffer make_Buffer(int fd);
-void send_Buffer(Buffer b, const char *fmt, ...);
+Buffer make_Buffer(int fd, int length);
+void free_Buffer(void *vb);
+bool send_Buffer(Buffer b, const char *fmt, ...);
 int write_Buffer(Buffer b);
 int read_Buffer(Buffer b);
 bool is_empty_Buffer(Buffer b);
-int get_str_from_Buffer(Buffer b, regex_t *re, char *str, int length);
+
+int get_line_Buffer(Buffer b, char *str, int len);
+int peek_string_Buffer(Buffer b, char *str, int len);
+void eat_Buffer(Buffer b, int len);
+
 #ifndef NDEBUG
 void dump_Buffer(Buffer b);
 #endif
-void free_Buffer(void *b);
-char *find_RegEx(regex_t *re, char *str, int len);
 
 #endif /* BUFFER_H */

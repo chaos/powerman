@@ -35,7 +35,6 @@ void start_Log(void);
 void send_Log(int level, const char *fmt, ...);
 void handle_Log(void);
 void free_Log(void);
-bool is_buffer_Log(Buffer b);
 int fd_Log(void);
 bool write_pending_Log(void);
 

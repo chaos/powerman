@@ -133,16 +133,16 @@ buffer.o: /usr/include/bits/sigset.h /usr/include/string.h
 buffer.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
 buffer.o: /usr/include/stdio.h /usr/include/libio.h /usr/include/_G_config.h
 buffer.o: /usr/include/wchar.h /usr/include/bits/wchar.h /usr/include/gconv.h
-buffer.o: /usr/include/bits/stdio_lim.h /usr/include/assert.h powerman.h
-buffer.o: exit_error.h wrappers.h /usr/include/regex.h /usr/include/netdb.h
-buffer.o: /usr/include/netinet/in.h /usr/include/stdint.h
-buffer.o: /usr/include/bits/wordsize.h /usr/include/bits/socket.h
-buffer.o: /usr/include/limits.h
+buffer.o: /usr/include/bits/stdio_lim.h /usr/include/assert.h
+buffer.o: /usr/include/ctype.h /usr/include/endian.h
+buffer.o: /usr/include/bits/endian.h powerman.h exit_error.h wrappers.h
+buffer.o: /usr/include/regex.h /usr/include/netdb.h /usr/include/netinet/in.h
+buffer.o: /usr/include/stdint.h /usr/include/bits/wordsize.h
+buffer.o: /usr/include/bits/socket.h /usr/include/limits.h
 buffer.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
 buffer.o: /usr/include/sys/types.h /usr/include/bits/sockaddr.h
 buffer.o: /usr/include/asm/socket.h /usr/include/asm/sockios.h
-buffer.o: /usr/include/bits/in.h /usr/include/endian.h
-buffer.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
+buffer.o: /usr/include/bits/in.h /usr/include/bits/byteswap.h
 buffer.o: /usr/include/bits/netdb.h buffer.h log.h
 buffer.o: /usr/include/regex.h
 config.o: /usr/include/sys/time.h /usr/include/features.h
@@ -499,8 +499,19 @@ util.o: /usr/include/bits/types.h /usr/include/libio.h
 util.o: /usr/include/_G_config.h /usr/include/wchar.h
 util.o: /usr/include/bits/wchar.h /usr/include/gconv.h
 util.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
-util.o: /usr/include/bits/stdio_lim.h powerman.h buffer.h
-util.o: /usr/include/regex.h pm_string.h
+util.o: /usr/include/bits/stdio_lim.h /usr/include/sys/types.h
+util.o: /usr/include/time.h /usr/include/regex.h powerman.h buffer.h
+util.o: pm_string.h util.h wrappers.h /usr/include/sys/time.h
+util.o: /usr/include/bits/time.h /usr/include/sys/select.h
+util.o: /usr/include/bits/select.h /usr/include/bits/sigset.h
+util.o: /usr/include/netdb.h /usr/include/netinet/in.h /usr/include/stdint.h
+util.o: /usr/include/bits/wordsize.h /usr/include/bits/socket.h
+util.o: /usr/include/limits.h
+util.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
+util.o: /usr/include/bits/sockaddr.h /usr/include/asm/socket.h
+util.o: /usr/include/asm/sockios.h /usr/include/bits/in.h
+util.o: /usr/include/endian.h /usr/include/bits/endian.h
+util.o: /usr/include/bits/byteswap.h /usr/include/bits/netdb.h
 util.o: buffer.h /usr/include/regex.h pm_string.h
 wrappers.o: /usr/include/string.h /usr/include/features.h
 wrappers.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h

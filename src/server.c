@@ -120,7 +120,7 @@ process_input(Protocol *client_prot, Cluster *cluster,
 
 /* Using NULL means I'll just get the next '\n' terminated string */
 /* but with any '\r' or '\n' stripped off */
-	expect = get_String_from_Buffer(c->from, NULL);
+	expect = get_line_from_Buffer(c->from);
 	if( expect == NULL ) return NULL;
 
 	act = find_Client_script(client_prot, cluster, expect);

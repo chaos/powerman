@@ -9,6 +9,8 @@ New stuff:
 	* should be possible to query status of individual nodes
 	  (i.e. if I want to know if mcr42 is on, shouldn't have to touch
 	  every ice box)  "update plugs" and "update nodes" take no args.
+	* with two ice boxes, second one listed in config file is always
+	  in ? state
 
 Andrew's old list:
 	* telnet based query and control for icebox
