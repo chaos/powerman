@@ -1,5 +1,6 @@
 2002-11-04 garlick
     * Switched over to Chris Dunlap's circular buffer module.
+    * Update list.[ch] and cbuf.[ch] from lsd-tools.
 
 2002-10-28 garlick
     * Minor cosmetic cleanup of data structures
