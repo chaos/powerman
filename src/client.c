@@ -37,7 +37,6 @@
 #include "wrappers.h"
 #include "list.h"
 #include "config.h"
-#include "powermand.h"
 #include "client.h"
 #include "buffer.h"
 #include "error.h"
@@ -75,7 +74,7 @@ _mkexpect(List *script, char *str)
     tv.tv_sec = tv.tv_usec = 0;
     tv.tv_usec = 0;
     *script = list_create((ListDelF) conf_script_el_destroy);
-    script_el = conf_script_el_create(EXPECT, str, NULL, tv);
+    script_el = conf_script_el_create(EL_EXPECT, str, NULL, tv);
     list_append(*script, script_el);
 }
 
@@ -100,7 +99,7 @@ void cli_init(void)
     scripts = (List *) Malloc(NUM_SCRIPTS * sizeof(List));
     client_prot->scripts = scripts;
     client_prot->num_scripts = NUM_SCRIPTS;
-    client_prot->mode = REGEX;
+    client_prot->mode = SM_REGEX;
 
     /*
      *  N.B. The server.c:client_reply() function hard codes the actual
@@ -258,7 +257,7 @@ static Action *_find_cli_script(String expect)
 	assert(client_prot->scripts[act->com] != NULL);
 	act->itr = list_iterator_create(client_prot->scripts[act->com]);
 	act->cur = list_next(act->itr);
-	assert(act->cur->type == EXPECT);
+	assert(act->cur->type == EL_EXPECT);
 	re = &(act->cur->s_or_e.expect.exp);
 	found_it = _match_cli_template(act, re, expect);
 	list_iterator_destroy(act->itr);

@@ -34,12 +34,12 @@
 #include <syslog.h>
 #include <assert.h>
 #include <unistd.h>
+#include <stdio.h>
 
 #include "powerman.h"
 #include "list.h"
 #include "config.h"
 #include "device.h"
-#include "powermand.h"
 #include "action.h"
 #include "error.h"
 #include "wrappers.h"
@@ -47,7 +47,6 @@
 #include "buffer.h"
 #include "util.h"
 
-/* prototypes */
 static void _set_targets(Device * dev, Action * sact);
 static Action *_do_target_copy(Device * dev, Action * sact, String target);
 static void _do_target_some(Device * dev, Action * sact);
@@ -58,19 +57,35 @@ static bool _process_delay(Device * dev);
 static void _do_device_semantics(Device * dev, List map);
 static void _do_pmd_semantics(Device * dev, List map);
 static bool _match_regex(Device * dev, String expect);
+static void _acttodev(Device * dev, Action * sact);
+static int _match_name(Device * dev, void *key);
 
-List dev_devices = NULL;	/* FIXME: make private */
+static List dev_devices = NULL;
 
+/* NOTE: array positions correspond to values of PM_* in action.h */
+static char *command_str[] = {
+    "PM_ERROR", "PM_LOG_IN", "PM_CHECK_LOGIN", "PM_LOG_OUT", "PM_UPDATE_PLUGS",
+    "PM_UPDATE_NODES", "PM_POWER_ON", "PM_POWER_OFF", "PM_POWER_CYCLE",
+    "PM_RESET", "PM_NAMES"
+};
+
+/* initialize this module */
 void dev_init(void)
 {
     dev_devices = list_create((ListDelF) dev_destroy);
 }
 
+/* tear down this module */
 void dev_fini(void)
 {
     list_destroy(dev_devices);
 }
 
+/* add a device to the device list (called from config file parser) */
+void dev_add(Device *dev)
+{
+    list_append(dev_devices, dev);
+}
 
 /*
  *   This is called for each device to get it started on its
@@ -86,16 +101,18 @@ static void _start_dev(Device * dev, bool logit)
 {
     dev->logit = logit;
     switch (dev->type) {
-    case TCP_DEV:
-    case PMD_DEV:
-    case TELNET_DEV:
-	dev_nb_connect(dev);
-	break;
-    case TTY_DEV:
-    case SNMP_DEV:
-    case NO_DEV:
-    default:
-	err_exit(FALSE, "no such powerman device");
+	case TCP_DEV:
+	case PMD_DEV:
+	case TELNET_DEV:
+	    dev_nb_connect(dev);
+	    break;
+	case TTY_DEV:
+	    err_exit(FALSE, "tty device is unimplemented");
+	case SNMP_DEV:
+	    err_exit(FALSE, "snmp device is unimplemented");
+	case NO_DEV:
+	default:
+	    err_exit(FALSE, "attempt to start unimplemented device");
     }
 }
 
@@ -202,12 +219,13 @@ void dev_nb_connect(Device * dev)
 	dev->error = FALSE;
 	dev->status = DEV_CONNECTED;
 	act = act_create(PM_LOG_IN);
-	dev_acttodev(dev, act);
+	_acttodev(dev, act);
     } else {
 	dev->status = DEV_CONNECTING;
     }
     freeaddrinfo(addrinfo);
 }
+
 
 /*
  * Called from dev_connect() (or possibly 
@@ -219,7 +237,7 @@ void dev_nb_connect(Device * dev)
  *   We need to create the action and initiate the first step in
  * the send/expect script.
  */
-void dev_acttodev(Device * dev, Action * sact)
+static void _acttodev(Device * dev, Action * sact)
 {
     Action *act;
 
@@ -229,9 +247,8 @@ void dev_acttodev(Device * dev, Action * sact)
     CHECK_MAGIC(sact);
 
     if (!dev->loggedin && (sact->com != PM_LOG_IN)) {
-	syslog(LOG_ERR,
-	       "Attempt to initiate Action %s while not logged in",
-	       pm_coms[sact->com]);
+	syslog(LOG_ERR, "Attempt to initiate Action %s while not logged in", 
+			command_str[sact->com]);
 	return;
     }
     /* Some devices do not implemnt some actions - ignore */
@@ -259,18 +276,18 @@ void dev_acttodev(Device * dev, Action * sact)
      */
     while ((act->cur = list_next(act->itr))) {
 	switch (act->cur->type) {
-	case SEND:
+	case EL_SEND:
 	    syslog(LOG_DEBUG, "start script");
 	    dev->status |= DEV_SENDING;
 	    _process_send(dev);
 	    break;
-	case EXPECT:
+	case EL_EXPECT:
 	    Gettimeofday(&(dev->time_stamp), NULL);
 	    dev->status |= DEV_EXPECTING;
 	    return;
-	case DELAY:
+	case EL_DELAY:
 	    return;
-	case SND_EXP_UNKNOWN:
+	case EL_NONE:
 	default:
 	}
     }
@@ -282,6 +299,16 @@ void dev_acttodev(Device * dev, Action * sact)
     act_del_queuehead(dev->acts);
 }
 
+void dev_apply_action(Action *act)
+{
+    Device *dev;
+    ListIterator itr;
+
+    itr = list_iterator_create(dev_devices);
+    while ((dev = list_next(itr)))
+	_acttodev(dev, act);
+    list_iterator_destroy(itr);
+}
 
 /* 
  *   There are several cases of what the desired end result is. 
@@ -325,7 +352,7 @@ void _set_targets(Device * dev, Action * sact)
     case PM_RESET:
     case PM_NAMES:
 	assert(sact->target != NULL);
-	if (dev->prot->mode == LITERAL) {
+	if (dev->prot->mode == SM_LITERAL) {
 	    _do_target_some(dev, sact);
 	} else {		/* dev->prot->mode == REGEX */
 
@@ -476,7 +503,7 @@ void dev_connect(Device * dev)
     dev->error = FALSE;
     dev->status = DEV_CONNECTED;
     act = act_create(PM_LOG_IN);
-    dev_acttodev(dev, act);
+    _acttodev(dev, act);
 }
 
 /*
@@ -553,7 +580,7 @@ void dev_process_script(Device * dev)
     if (act == NULL)
 	return;
     assert(act->cur != NULL);
-    if ((act->cur->type == EXPECT) && buf_isempty(dev->from))
+    if ((act->cur->type == EL_EXPECT) && buf_isempty(dev->from))
 	return;
 
     /* 
@@ -564,11 +591,11 @@ void dev_process_script(Device * dev)
      * and
      * 2) There's no sends to process
      *   a)  (act = top_Action(dev->acts)) == NULL, or
-     *   b)  script_el->type == EXPECT
+     *   b)  script_el->type == EL_EXPECT
      */
     while (!done) {
 	switch (act->cur->type) {
-	case EXPECT:
+	case EL_EXPECT:
 	    done = _process_expect(dev);
 	    /* 
 	     * XXX Band-aid (jg)
@@ -581,10 +608,10 @@ void dev_process_script(Device * dev)
 	    if (done)
 		return;
 	    break;
-	case SEND:
+	case EL_SEND:
 	    done = _process_send(dev);
 	    break;
-	case DELAY:
+	case EL_DELAY:
 	    done = _process_delay(dev);
 	    break;
 	default:
@@ -595,7 +622,7 @@ void dev_process_script(Device * dev)
 		dev->loggedin = TRUE;
 	    act_del_queuehead(dev->acts);
 	} else {
-	    if (act->cur->type == EXPECT) {
+	    if (act->cur->type == EL_EXPECT) {
 		gettimeofday(&(dev->time_stamp), NULL);
 		dev->status |= DEV_EXPECTING;
 	    }
@@ -627,7 +654,7 @@ bool _process_expect(Device * dev)
 
     assert(act != NULL);
     assert(act->cur != NULL);
-    assert(act->cur->type == EXPECT);
+    assert(act->cur->type == EL_EXPECT);
 
     re = &(act->cur->s_or_e.expect.exp);
 
@@ -684,7 +711,7 @@ bool _process_send(Device * dev)
     assert(act != NULL);
     CHECK_MAGIC(act);
     assert(act->cur != NULL);
-    assert(act->cur->type == SEND);
+    assert(act->cur->type == EL_SEND);
 
     fmt = str_get(act->cur->s_or_e.send.fmt);
 
@@ -710,7 +737,7 @@ bool _process_delay(Device * dev)
 
     assert(act != NULL);
     assert(act->cur != NULL);
-    assert(act->cur->type == DELAY);
+    assert(act->cur->type == EL_DELAY);
 
     if (dev->logit)
 	printf("_process_delay(%s): %ld.%-6.6ld \n",
@@ -940,9 +967,15 @@ Device *dev_create(const char *name)
  * in the parser when the devices have been parsed into a list and 
  * a node line referes to a device by its name.  
  */
-int dev_match(Device * dev, void *key)
+static int _match_name(Device * dev, void *key)
 {
     return (str_match(dev->name, (char *) key));
+}
+
+
+Device *dev_findbyname(char *name)
+{
+    return list_find_first(dev_devices, (ListFindF) _match_name, name);
 }
 
 /*
@@ -1029,7 +1062,7 @@ static bool _match_regex(Device * dev, String expect)
     assert(act != NULL);
     CHECK_MAGIC(act);
     assert(act->cur != NULL);
-    assert(act->cur->type == EXPECT);
+    assert(act->cur->type == EL_EXPECT);
 
     re = &(act->cur->s_or_e.expect.exp);
     n = Regexec(re, str, nmatch, pmatch, eflags);

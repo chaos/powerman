@@ -42,166 +42,102 @@
 #define UPDATE_SECONDS	300
 #define NOT_SET		(-1)
 
-/* 
- * Devices:
- * Older iceboxes and WTI units communicated via a serial port (TTY).
- * Newer iceboxes use a variety of RAW TCP communication.  Baytechs and
- * newer WTI units use a telnet listener.  There is some speculation
- * that we may see SNMP based units eventually.  The initial vicebox
- * design will only handle RAW TCP.  I may add TTY if it ends up working
- * in time.  
- *
- *   N.B.  Though this enumeration properly belongs in the Devices
- * section there is some dependency on it that I din't diagnose
- * that make the compiler happier if this is here.  Hrmph.
- */
-
 /*
- *   Script_El structures come in three varieties.  Script elements
- * may be "SEND" objects with a single "printf(fmt, ...)" style fmt
- * string, "EXPECT" objects with two compiled RegEx objects - one for 
- * recognizing when a complete input is in the buffer, the other for 
- * matching in in conjunction with Interpretation structures - 
- * and "DELAY" objects that have a single struct timeval and cause 
- * that much time to be wasted at that point in the script.
+ * Script element (send, expect, or delay).
  */
-typedef enum { SND_EXP_UNKNOWN, SEND, EXPECT, DELAY } Script_El_T;
-
+typedef enum { EL_NONE, EL_SEND, EL_EXPECT, EL_DELAY } Script_El_Type;
 typedef struct {
-    String fmt;
-} Send_T;
-
-/* Review: noodle on necessity of completion regex */
-/* the map is a list of Interpretation structures */
-typedef struct {
-    regex_t completion;
-    regex_t exp;
-    List map;
-} Expect_T;
-
-typedef struct {
-    struct timeval tv;
-} Delay_T;
-
-typedef union {
-    Send_T send;
-    Expect_T expect;
-    Delay_T delay;
-} S_E_U;
-
-typedef struct {
-    Script_El_T type;
-    S_E_U s_or_e;		/* send => fmt */
-    /* expect => completion, exp */
-    /* delay => tv */
+    Script_El_Type type;
+    union {
+	struct {
+	    String fmt;		/* printf(fmt, ...) style format string */
+	} send;
+	struct {
+	    regex_t exp;	/* compiled regex */
+	    List map;		/* list of Interpretation structures */
+	} expect;
+	struct {
+	    struct timeval tv;	/* delay at this point in the script */
+	} delay;
+    } s_or_e;
 } Script_El;
 
 /*
- * The protocol passes around a string as its target of action. 
- * Some devices only know "port#" or "all" (all actual devices) 
- * as a target string, others (powermand device protocol) 
- * understand and pass around regexes.  Some devices do have
- * syntax for specifying multiple target ports, but it varies
- * from one device to the next, and specifying it in a general
- * way would be burdensome.  
+ * Set of scripts (11) defining a protocol.  
+ * Each script is a list of expect/send/delays.
  */
-typedef enum { NO_MODE, REGEX, LITERAL } String_Mode;
-
-/*
- *   Each Device gets a Protocol structure and there is on 
- * degenerate one for the client protocol.  In addition to
- * having num_scripts (always == 11) scripts the mode lets
- * the interface between powermand and powerman use RegEx
- * strings instead of lieteral strings.  The eleven lists
- * in "scripts" are all of Script_El structures.
- */
-/* Review: convert array of lists to 11 individual items */
+typedef enum { SM_NONE, SM_REGEX, SM_LITERAL } String_Mode;
 typedef struct {
-    int num_scripts;
-    String_Mode mode;
-    List *scripts;		/* description of the send/expect   */
+    int		    num_scripts;/* number of scripts in scripts list (11) */
+    String_Mode	    mode;	/* strings are interpreted as regex/literal */
+    List	    *scripts;	/* array of lists of Script_El's */
 } Protocol;
 
 /*
- *  A Spec_El is the embodiment of what will become a Send, an 
- * Expect, or a Delay in a Protocol.  The Expect's regex
- * is kept uncompiled here, or the Send's string is in the string1 field.
+ * Unprocessed Script_El (used during parsing).
  */
-/* Review: should be private */
-typedef struct spec_element_struct {
-    Script_El_T type;
-    String string1;
-    struct timeval tv;
-    List map;
+typedef struct {
+    Script_El_Type  type;	/* delay/expect/send */
+    String	    string1;	/* expect string, send fmt */
+    struct timeval  tv;		/* delay value */
+    List	    map;	/* interpretations */
 } Spec_El;
 
 /*
- *  A structure of type Spec holds the abstract embodiment of
- * what will end up in each of (potentially) many Protocol structs.
+ * Unprocessed Protocol (used during parsing).
+ * This data will be copied for each instantiation of a device.
  */
-/* Review: should be private */
 typedef struct {
-    String name;
-    Dev_Type type;
-    String off;
-    String on;
-    String all;
-    int size;
-    struct timeval timeout;
-    int num_scripts;
-    String *plugname;
-    String_Mode mode;
-    List *scripts;		/* An array of pointers to lists */
+    String	    name;	/* specification name, e.g. "icebox" */
+    Dev_Type	    type;	/* device type, e.g. TCP_DEV */
+    String	    off;	/* off string, e.g. "OFF" */
+    String	    on;		/* on string, e.g. "ON" */
+    String	    all;	/* all string, e.g. "*" */
+    int		    size;	/* number of plugs per device */
+    struct timeval  timeout;	/* timeout for this device */
+    int		    num_scripts;/* number of scripts this device (11) */
+    String	    *plugname;	/* list of plug names (e.g. "1" thru "10") */
+    String_Mode	    mode;	/* interp mode, e.g. literal */
+    List	    *scripts;	/* array of lists of Spec_El's */
 } Spec;
 
-/* 
- *   Each node and each plug in a cluster is represented by a state
- * intialized to ST_UNKNOWN, but usually ON or OFF.  For each such
- * value there is also a pointer to the device it is connected to
- * and the index in the device.
+/*
+ * Node
  */
-typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } State_Val;
-
-
+typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } State_Val; /* plug state */
 typedef struct {
-    String name;		/* This is how the node is known to the cluster  */
-    State_Val p_state;		/* p_state is plug state, i.e. hard-power status */
-    Device *p_dev;		/* It is possible for there to be two different  */
-    int p_index;		/*   devices, on for har- and one for soft-power */
-    State_Val n_state;		/* n_state is node state, i.e. soft-power status */
-    Device *n_dev;		/* The (Device, index) pair tell where the node  */
-    int n_index;		/* is managed.                                   */
-     MAGIC;
+    String	    name;	/* hostname */
+    State_Val	    p_state;	/* plug state, i.e. hard-power status */
+    Device	    *p_dev;	/* device used for plug state */
+    int		    p_index;	/* port index into plug state device */
+    State_Val	    n_state;	/* node state, i.e. soft-power status */
+    Device	    *n_dev;	/* device used for node state */
+    int		    n_index;	/* port index into node state device */
+    MAGIC;
 } Node;
 
 /*
- *   An EXPECT script element employs a list of these to pull apart
- * the string it has matched.  The regexec() function sets up an 
- * array of indexes to any substrings matched in the RegEx.  Each 
- * Interpretation associates one such substring index with a particular 
- * plug of the device in question.  "val" is set to point to the 
- * place in the matched string indicated by the "match_pos" index.
- * "node" is initialized at the time the config file is read to point
- * to the corresponding Node structure so the semantic value of
- * "val" may be updated.  Perfectly clear right?
+ * Interpretation - a Script_El map entry.
  */
 typedef struct {
-    String plug_name;
-    int match_pos;
-    char *val;
-    Node *node;
+    String	    plug_name;	/* plug name e.g. "10" */
+    int		    match_pos;	/* offset into string where match is */
+    char	    *val;	/* pointer based on match_pos */
+    Node	    *node;	/* where to update matched values */
 } Interpretation;
 
-
+/*
+ * Defines the set of nodes managed by powerman.
+ */
 typedef struct {
-    int num;			/* node count */
-    List nodes;			/* list of Node structures */
+    int		    num;	/* node count */
+    List	    nodes;	/* list of Node structures */
 } Cluster;
 
 
 Protocol *conf_init_client_protocol(void);
 
-Script_El *conf_script_el_create(Script_El_T type, char *s1, List map, 
+Script_El *conf_script_el_create(Script_El_Type type, char *s1, List map, 
 		struct timeval tv);
 void conf_script_el_destroy(Script_El * script_el);
 
@@ -209,7 +145,7 @@ Spec *conf_spec_create(char *name);
 int conf_spec_match(Spec * spec, void *key);
 void conf_spec_destroy(Spec * spec);
 
-Spec_El *conf_spec_el_create(Script_El_T type, char *str1, List map);
+Spec_El *conf_spec_el_create(Script_El_Type type, char *str1, List map);
 void conf_spec_el_destroy(Spec_El * specl);
 
 Node *conf_node_create(const char *name);
@@ -246,3 +182,7 @@ int conf_get_listen_port(void);
 void conf_set_listen_port(int val);
 
 #endif				/* CONFIG_H */
+
+/*
+ * vi:softtabstop=4
+ */

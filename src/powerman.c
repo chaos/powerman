@@ -45,7 +45,6 @@
 #include "config.h"
 #include "device.h"
 #include "error.h"
-#include "powermand.h"
 #include "wrappers.h"
 #include "hostlist.h"
 

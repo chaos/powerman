@@ -49,7 +49,6 @@ extern int yyline;
 #include "wrappers.h"
 #include "error.h"
 #include "config.h"
-#include "powermand.h"
 extern void yyerror();
 	
 #define MAX_INCLUDE_DEPTH 10   /* How many include files? */

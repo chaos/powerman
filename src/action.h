@@ -27,8 +27,12 @@
 #ifndef ACTION_H
 #define ACTION_H
 
+#include "client.h"
+
+/* Indices into script arrays */
+/* Note: keep in sync with command_str[] array in device.c */
 #define PM_ERROR            0
-#define PM_LOG_IN           1	/* actions: indexes into script arrays */
+#define PM_LOG_IN           1
 #define PM_CHECK_LOGIN      2
 #define PM_LOG_OUT          3
 #define PM_UPDATE_PLUGS     4
@@ -52,18 +56,14 @@
  */
 
 struct action_struct {
-    Client *client;
-    int seq;			/* sequence number from client */
-    int com;			/* one of the PM_* above */
-    ListIterator itr;		/* next place in the script sequence */
-    Script_El *cur;		/* current place in the script sequence */
-    String target;		/* node name, regex, or device plug name */
-     MAGIC;
+    Client 		*client;
+    int 		seq;	/* sequence number from client */
+    int 		com;	/* one of the PM_* above */
+    ListIterator 	itr;	/* next place in the script sequence */
+    Script_El 		*cur;	/* current place in the script sequence */
+    String 		target;	/* node name, regex, or device plug name */
+    MAGIC;
 };
-
-extern char *pm_coms[];		/* string represetnations of the PM_* coms */
-
-/* prototypes */
 
 /* enque requests for hard- and soft-power state */
 void act_update(void);
@@ -92,3 +92,7 @@ void act_init(void);
 void act_fini(void);
 
 #endif				/* ACTION_H */
+
+/*
+ *  vi:softtabstop=4
+ */

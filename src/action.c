@@ -38,30 +38,10 @@
 #include "buffer.h"
 #include "config.h"
 #include "device.h"
-#include "powermand.h"
 #include "client.h"
 #include "action.h"
 
 static List act_actions = NULL;
-
-/* Each of these represents a script that must be completed.
- * An error message and two of the debug "dump" routines rely on
- * this array for the names of the client protocol operations.
- * The header file has corresponding #define values.
- */
-char *pm_coms[] = {
-    "PM_ERROR",
-    "PM_LOG_IN",
-    "PM_CHECK_LOGIN",
-    "PM_LOG_OUT",
-    "PM_UPDATE_PLUGS",
-    "PM_UPDATE_NODES",
-    "PM_POWER_ON",
-    "PM_POWER_OFF",
-    "PM_POWER_CYCLE",
-    "PM_RESET",
-    "PM_NAMES"
-};
 
 /*
  *   The main select() loop will generate this function call 
@@ -119,38 +99,32 @@ Action *act_find(void)
  */
 bool act_initiate(Action * act)
 {
-    Device *dev;
-    ListIterator itr;
-
     assert(act != NULL);
     CHECK_MAGIC(act);
 
     switch (act->com) {
-    case PM_ERROR:
-    case PM_LOG_IN:
-    case PM_CHECK_LOGIN:
-    case PM_LOG_OUT:
-    case PM_NAMES:
-	act_finish(act);
-	if ((act = act_find()) != NULL)
-	    return act_initiate(act);
-	return FALSE;
-    case PM_UPDATE_PLUGS:
-    case PM_UPDATE_NODES:
-    case PM_POWER_ON:
-    case PM_POWER_OFF:
-    case PM_POWER_CYCLE:
-    case PM_RESET:
-	break;
-    default:
-	assert(FALSE);
+	case PM_ERROR:
+        case PM_LOG_IN:
+        case PM_CHECK_LOGIN:
+        case PM_LOG_OUT:
+	case PM_NAMES:
+	    if ((act = act_find()) != NULL)
+		return act_initiate(act);
+	    return FALSE;
+	case PM_UPDATE_PLUGS:
+	case PM_UPDATE_NODES:
+	case PM_POWER_ON:
+        case PM_POWER_OFF:
+        case PM_POWER_CYCLE:
+        case PM_RESET:
+	   break;
+	default:
+	    assert(FALSE);
     }
-    itr = list_iterator_create(dev_devices);
-    while ((dev = list_next(itr)))
-	dev_acttodev(dev, act);
-    list_iterator_destroy(itr);
+    dev_apply_action(act);
     return TRUE;
 } 
+
 /*
  *    From either act_initiate() or the main select() loop this function
  * replies to a client if appropriate, marks the timestamp (suppressing

@@ -1,4 +1,8 @@
 2002-09-17 garlick
+	* Reformatting, cleanup, doc of data structures
+	* Made device list static in device.c
+
+2002-09-17 garlick
 	* Fix bug introduced in cleanup where actions were initiated but
 	  not completed.  Select loop should only set status to STAT_OCCUPIED
 	  if action was one requiring completion.

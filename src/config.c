@@ -31,13 +31,13 @@
 #include <time.h>
 #include <string.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "powerman.h"
 #include "error.h"
 #include "list.h"
 #include "config.h"
 #include "device.h"
-#include "powermand.h"
 #include "action.h"
 #include "wrappers.h"
 #include "string.h"
@@ -116,7 +116,7 @@ conf_fini(void)
  *                                                                 *
  *******************************************************************/
 
-Script_El *conf_script_el_create(Script_El_T type, char *s1,
+Script_El *conf_script_el_create(Script_El_Type type, char *s1,
 		List map, struct timeval tv)
 {
     Script_El *script_el;
@@ -125,14 +125,14 @@ Script_El *conf_script_el_create(Script_El_T type, char *s1,
     script_el = (Script_El *) Malloc(sizeof(Script_El));
     script_el->type = type;
     switch (type) {
-    case SEND:
+    case EL_SEND:
 	script_el->s_or_e.send.fmt = str_create(s1);
 	break;
-    case EXPECT:
+    case EL_EXPECT:
 	Regcomp(&(script_el->s_or_e.expect.exp), s1, cflags);
 	script_el->s_or_e.expect.map = map;
 	break;
-    case DELAY:
+    case EL_DELAY:
 	script_el->s_or_e.delay.tv = tv;
 	break;
     default:
@@ -144,13 +144,13 @@ void conf_script_el_destroy(Script_El * script_el)
 {
     assert(script_el != NULL);
     switch (script_el->type) {
-    case SEND:
+    case EL_SEND:
 	str_destroy(script_el->s_or_e.send.fmt);
 	break;
-    case EXPECT:
+    case EL_EXPECT:
 	list_destroy(script_el->s_or_e.expect.map);
 	break;
-    case DELAY:
+    case EL_DELAY:
     default:
     }
     Free(script_el);
@@ -179,7 +179,7 @@ Spec *conf_spec_create(char *name)
     spec->size = 0;
     spec->timeout.tv_sec = 0;
     spec->timeout.tv_usec = 0;
-    spec->mode = NO_MODE;
+    spec->mode = SM_NONE;
     spec->scripts = (List *) Malloc(spec->num_scripts * sizeof(List));
     for (i = 0; i < spec->num_scripts; i++)
 	spec->scripts[i] = NULL;
@@ -241,19 +241,19 @@ conf_find_spec(char *name)
  *                                                                 *
  *******************************************************************/
 
-Spec_El *conf_spec_el_create(Script_El_T type, char *str1, List map)
+Spec_El *conf_spec_el_create(Script_El_Type type, char *str1, List map)
 {
     Spec_El *specl;
 
     specl = (Spec_El *) Malloc(sizeof(Spec_El));
     specl->type = type;
     switch (type) {
-    case SEND:
-    case EXPECT:
+    case EL_SEND:
+    case EL_EXPECT:
 	specl->tv.tv_sec = 0;
 	specl->tv.tv_usec = 0;
 	break;
-    case DELAY:
+    case EL_DELAY:
 	conf_strtotv(&(specl->tv), str1);
 	break;
     default:

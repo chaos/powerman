@@ -48,7 +48,6 @@
 #include "list.h"
 #include "config.h"
 #include "device.h"
-#include "powermand.h"
 #include "action.h"
 #include "daemon.h"
 #include "client.h"
@@ -120,9 +119,11 @@ int main(int argc, char **argv)
 	case 't':		/* --telemetry */
 	    debug_telemetry = TRUE;
 	    break;
+#if 0
 	case 'V':
 	    printf("%s-%s\n", PROJECT, VERSION);
 	    exit(0);
+#endif
 	default:
 	    err_exit(FALSE, "unrecognized cmd line option (see --help).");
 	    exit(0);

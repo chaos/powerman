@@ -31,31 +31,20 @@
 
 #define NO_PORT           (-1)
 
-
 typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE } Client_Status;
-
-
-/*
- *  Each client is represented by one of these.  The read and write
- * status move between busy and idle, except that read status goes
- * to done when there is nothing more to be read from the socket.
- * As soon as write status becomes idle and read status is done the
- * client structure is discarded.
- */
-struct client_struct {
-    bool loggedin;		/* has the client logged in? */
-    Client_Status read_status;
-    Client_Status write_status;
-    int seq;			/* Each command from the client get a sequence number */
-    int fd;			/* file desriptor for  the socket */
-    String ip;			/* IP address of the client's host */
-    unsigned short int port;	/* Port of actual client connection */
-    String host;		/* host name of client host */
-/* the two buffers for non-blocking I/O as per Stevens */
-    Buffer to;
-    Buffer from;
-     MAGIC;
-};
+typedef struct {
+    bool 		loggedin;	/* has the client logged in? */
+    Client_Status 	read_status;
+    Client_Status 	write_status;
+    int 		seq;		/* command sequence (per client) */
+    int 		fd;		/* file desriptor for  the socket */
+    String 		ip;		/* IP address of the client's host */
+    unsigned short int 	port;		/* Port of client connection */
+    String 		host;		/* host name of client host */
+    Buffer 		to;		/* out buffer */
+    Buffer 		from;		/* in buffer */
+    MAGIC;
+} Client;
 
 void cli_reply(Action *act);
 

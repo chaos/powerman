@@ -33,12 +33,12 @@
 #include <string.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <stdio.h>
 
 #include "powerman.h"
 #include "list.h"
 #include "config.h"
 #include "device.h"
-#include "powermand.h"
 #include "action.h"
 #include "client.h"
 #include "error.h"
@@ -61,7 +61,7 @@ static char *makeCheckLoginSec(char *s2);
 static Interpretation *makeMapLine(char *s2, char *s3);
 static List makeMapSecHead(Interpretation *s1);
 static List makeMapSec(List s1, Interpretation *s2);
-static char *makeScriptEl(Script_El_T mode, char *s2, List s4);
+static char *makeScriptEl(Script_El_Type mode, char *s2, List s4);
 static char *makeLogInSec(char *s2);
 static char *makeInterp(char *s2);
 static char *makeSpecSize(char *s2);
@@ -247,16 +247,16 @@ script_list	: script_list script_el
 		| script_el 
 ;
 script_el	: TOK_EXPECT TOK_STRING_VAL {
-    $$ = (char *)makeScriptEl(EXPECT, $2, NULL);
+    $$ = (char *)makeScriptEl(EL_EXPECT, $2, NULL);
 }
 		| TOK_EXPECT TOK_STRING_VAL map_sec {
-    $$ = (char *)makeScriptEl(EXPECT, $2, (List)$3);
+    $$ = (char *)makeScriptEl(EL_EXPECT, $2, (List)$3);
 }
 		| TOK_SEND TOK_STRING_VAL {
-    $$ = (char *)makeScriptEl(SEND, $2, NULL);
+    $$ = (char *)makeScriptEl(EL_SEND, $2, NULL);
 }
 		| TOK_DELAY TOK_STRING_VAL {
-    $$ = (char *)makeScriptEl(DELAY, $2, NULL);
+    $$ = (char *)makeScriptEl(EL_DELAY, $2, NULL);
 }
 ;
 map_sec		: map_sec map_line {
@@ -440,7 +440,7 @@ static Spec *check_Spec()
 	err_exit(FALSE, "missing All string for specification %s", name);
     if( (current_spec->type != PMD_DEV) && (current_spec->size == 0) )
 	err_exit(FALSE, "missing Size field for specification %s", name);
-    if( current_spec->mode == NO_MODE )
+    if( current_spec->mode == SM_NONE)
 	err_exit(FALSE, "missing interpretation mode field for specification %s", name);
 
     /* Store the spec in list internal to config.c */
@@ -548,13 +548,13 @@ static char *makeInterp(char *s2)
     int n;
     int len = strlen("LITERAL");
 
-    if( current_spec->mode != NO_MODE )
+    if( current_spec->mode != SM_NONE)
 	err_exit(FALSE, "interpretation mode field already seen for this specification");
 	
     if ( (n = strncmp(s2, "LITERAL", len)) == 0 ) {
-	current_spec->mode = LITERAL;
+	current_spec->mode = SM_LITERAL;
     } else if ( (n = strncmp(s2, "REGEX", len)) == 0 ) {
-	current_spec->mode = REGEX;
+	current_spec->mode = SM_REGEX;
     } else {
 	err_exit(FALSE, "illegal string interpretation mode in config file");
     }
@@ -571,7 +571,7 @@ static char *makeLogInSec(char *s2)
     return s2;
 }
 
-static char *makeScriptEl(Script_El_T mode, char *s2, List s4)
+static char *makeScriptEl(Script_El_Type mode, char *s2, List s4)
 {
     Spec_El *specl;
     int i;
@@ -816,7 +816,7 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 	}
     }
 
-    list_append(dev_devices, dev);
+    dev_add(dev);
     return s2;
 }
 
@@ -841,7 +841,7 @@ static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
     node = conf_node_create(s2);
     conf_addnode(node);
     /* find the device controlling this nodes plug */
-    node->p_dev = list_find_first(dev_devices, (ListFindF) dev_match, s3);
+    node->p_dev = dev_findbyname(s3);
     if( node->p_dev == NULL ) 
 	err_exit(FALSE, "failed to find device %s", s3);
     /*
@@ -874,7 +874,7 @@ static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 	node->n_dev = node->p_dev;
     } else {
 	assert(s6 != NULL);
-	node->n_dev = list_find_first(dev_devices, (ListFindF) dev_match, s3);
+	node->n_dev = dev_findbyname(s3);
 	if( node->n_dev == NULL ) 
 	    err_exit(FALSE, "failed to find device %s", s3);
 	plug = list_find_first(node->n_dev->plugs, (ListFindF) dev_plug_match, s6);
@@ -889,10 +889,10 @@ static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 	script_itr = list_iterator_create(script);
 	while( (script_el = list_next(script_itr)) ) {
 	    switch( script_el->type ) {
-		case SEND :
-		case DELAY :
+		case EL_SEND :
+		case EL_DELAY :
 		    break;
-		case EXPECT :
+		case EL_EXPECT :
 		    if( script_el->s_or_e.expect.map == NULL ) 
 			continue;
 		    interp = list_find_first(script_el->s_or_e.expect.map, 
@@ -900,8 +900,8 @@ static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 		    if( interp != NULL )
 			interp->node = node;
 		    break;
-		case SND_EXP_UNKNOWN :
-		    default :
+		case EL_NONE :
+		default :
 	    }
 	}
     }
