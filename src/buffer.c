@@ -128,13 +128,10 @@ send_Buffer(Buffer b, const char *fmt, ...)
  * be tunable in the config file, but this is an utterly unused
  * code path (I think), so I've neglected it.  If for some reason
  * writes do back up then the program will hang in this loop 
- * indefinitely.  Note that the log will be screaming about this
- * situation.  
+ * indefinitely.  
  */
 	while( b->in + len > b->end )
 	{
-		if( ! is_log_buffer(b) ) /* bogus, but the log uses this code, too */
-			log_it(0, "Blocking for (up to) 1 second waiting for buffer space for descriptor %d", b->fd);
 		FD_ZERO(&rset);
 		FD_ZERO(&wset);
 		FD_SET(b->fd, &wset);
@@ -148,7 +145,7 @@ send_Buffer(Buffer b, const char *fmt, ...)
 
 /* We have space (the usual case from the start) */
 	strncpy(b->in, str, len + 1);
-	if( ! is_log_buffer(b) ) /* bogus */
+	if( ! is_log_buffer(b) ) /* avoid recursion, log uses buffer */
 		log_it(0, "send \"%s\" to descriptor %d", b->in, b->fd);
 	b->in += len;
 	*(b->in) = '\0';
@@ -179,7 +176,7 @@ check_Buffer(Buffer b, int len)
 	if( (b->in + len >  b->high) &&
 	    (b->out > b->low) )
 	{
-		if( ! is_log_buffer(b) ) /* bogus */
+		if( ! is_log_buffer(b) ) /* avoid recursion, log uses buffer  */
 			log_it(0, "Buffer shift required on descriptr %d", b->fd);
 		for (i = 0; i <  num; i++)
 			b->buf[i] = b->buf[i + del];
