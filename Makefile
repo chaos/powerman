@@ -26,14 +26,14 @@ tests :
 	$(MAKE) -C test
 
 install: all
-	$(mkinstalldirs)			$(DESTDIR)$(bindir)
+	$(mkinstalldirs) -m 0755		$(DESTDIR)$(bindir)
 	$(INSTALL) src/powerman			$(DESTDIR)$(bindir)/
 	ln -s $(bindir)/powerman		$(DESTDIR)$(bindir)/off
 	ln -s $(bindir)/powerman		$(DESTDIR)$(bindir)/on
 	ln -s $(bindir)/powerman		$(DESTDIR)$(bindir)/pm
-	$(mkinstalldirs)			$(DESTDIR)$(sbindir)
+	$(mkinstalldirs) -m 0755		$(DESTDIR)$(sbindir)
 	$(INSTALL) src/powermand		$(DESTDIR)$(sbindir)/
-	$(mkinstalldirs)			$(DESTDIR)$(packagedir)
+	$(mkinstalldirs) -m 0755		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/baytech.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/baytech-rpc28-nc.dev	$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/baytech-rpc3-nc.dev	$(DESTDIR)$(packagedir)
@@ -51,14 +51,14 @@ install: all
 	$(INSTALL) etc/ipmi.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/cyclades-pm8.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/ipmipower.dev            $(DESTDIR)$(packagedir)
-	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man1
+	$(mkinstalldirs) -m 0755		$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/powerman.1	$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/powermand.1	$(DESTDIR)$(mandir)/man1
-	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man5
+	$(mkinstalldirs) -m 0755		$(DESTDIR)$(mandir)/man5
 	$(INSTALL) -m 644 man/powerman.conf.5  	$(DESTDIR)$(mandir)/man5
-	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man7
+	$(mkinstalldirs) -m 0755		$(DESTDIR)$(mandir)/man7
 	$(INSTALL) -m 644 man/powerman-devices.7 $(DESTDIR)$(mandir)/man7
-	$(mkinstalldirs) 			$(DESTDIR)/etc/rc.d/init.d
+	$(mkinstalldirs) -m 0755		$(DESTDIR)/etc/rc.d/init.d
 	$(INSTALL) -m 755 scripts/powerman.init $(DESTDIR)/etc/rc.d/init.d/powerman
 
 clean:
