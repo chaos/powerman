@@ -273,7 +273,10 @@ static Command *_create_command(Client *c, int com, char *arg1)
      * unlink from it in _destroy_command().  If client goes away prematurely,
      * query actions still have valid pointers.
      */
-    if (cmd && (cmd->com == PM_STATUS_PLUGS || cmd->com == PM_STATUS_NODES)) {
+    if (cmd && (cmd->com == PM_STATUS_PLUGS 
+			    || cmd->com == PM_STATUS_NODES
+			    || cmd->com == PM_STATUS_TEMP
+			    || cmd->com == PM_STATUS_BEACON)) {
 	if (cmd->hl)
 	    cmd->arglist = dev_create_arglist(cmd->hl);
 	else
