@@ -164,7 +164,8 @@ static void _dbg_actions(Device * dev)
                  "%d,", act->com);
     }
     list_iterator_destroy(itr);
-    tmpstr[strlen(tmpstr) - 1] = '\0';  /* zap trailing comma */
+    if (strlen(tmpstr) > 0)
+        tmpstr[strlen(tmpstr) - 1] = '\0';  /* zap trailing comma */
     dbg(DBG_ACTION, "%s: %s", dev->name, tmpstr);
 }
 
