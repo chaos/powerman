@@ -11,18 +11,10 @@
 # named "hawk", integrated into the mainboard.  The RSA adapter can forward 
 # power on/off/status commands to the hawks via RS485.
 # 
-# Normally the RSA's provide a web front end which is scripted by IBM's "xcat"
-# Linux system software distribution.  PowerMan uses the telnet interface 
-# which has an undocumented, line-oriented "debug mode", accessed by typing 
-# ctrl-D after logging in to the screen-oriented interface.  The screen-
-# oriented telnet menus only export power control capability for the node 
-# hosting the RSA adapter, not for those on the RS485 chain.
-#
-# The capability used by PowerMan was added to RSA firmware for us in April
-# 2003.  The initial firmware image files we used were GEET117A.tgz (x345) 
-# and T2ET116-.tgz (x335).  The RSA firmware is flashed from Linux using the 
-# same utility as BIOS firmware.  Use the "-f" switch to update RSA firmware.
-# After you have flashed the RSA firmware, you need to reboot the box.
+# Normally the RSA's provide a web front end.  PowerMan uses an undocumented
+# debug interface available by telnetting into the RSA and typing ctrl-D.
+# The 'power' command in debug mode was added in April 2003.   See f/w images:
+# GEET117A.tgz (x345) and T2ET116-.tgz (x335).
 #
 specification {
 	name 		"ibmrsa"
@@ -64,4 +56,5 @@ specification {
 		send "power 1 %s\r\n"
 		expect "Status = on\r\n"
 	}
+# No plug names - the names will come from the 'node' entrise in powerman.conf
 }
