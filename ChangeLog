@@ -5,6 +5,8 @@
 	  - no response does not cause a timeout
 	  - expect timeout should cause actions to be retried
 	  - results need to be included in the client reply
+	* Added separate ice box v3 config - i think the timeouts/delays
+	  are going to be subtly different but worth caring about at MCR scale.
 
 2002-09-25 garlick
 	* Removed inter-dev delay (behlendo)
