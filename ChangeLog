@@ -5,6 +5,7 @@
 	* Made device read/write error handling a little cleaner.
 	* Don't set plug state to unknown before querying status to avoid
 	  triggering race described in FIXME comment in client.c _parse_input()
+	* Tagged powerman-1-0-10.
 
 2002-10-06 garlick
 	* More man page edits.
