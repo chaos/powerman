@@ -5,14 +5,6 @@
 #     off "gif" files, if any, and the code should allow that 
 #     they don't exist
 
-proc usage msg {
-  global argv0
-  puts "usage: $argv0 \[file\]"
-  puts "file   = load file as config file"
-  puts $msg
-  exit
-}
-
 # Global initializations can only take place at the root context.  
 # Procs can access globals but can not create and pass them up.
 
@@ -50,6 +42,8 @@ if {[file exists $powerlib]} {
 
 set nodes [list_nodes]
 if {[llength $nodes] < 1} {usage "I don't see any nodes"}
+set response [check $nodes on]
+set lockout_val 1
 
 frame .top
 button .top.all_on -text "All On" -command all_on
@@ -58,29 +52,40 @@ button .top.all_reset -text "All Reset" -command all_reset
 pack .top.all_on .top.all_off .top.all_reset -side left
 pack .top
 
-set response [check $nodes on]
 foreach node_struct $cluster {
     set node [lindex $node_struct 0]
-    if {[lsearch -exact $response $node] < 0} {
-	set use_gif [lindex $node_struct 4]
-    } else {
-	set use_gif [lindex $node_struct 3]
-    }
+    set use_gif [lindex $node_struct 4]
     if {[file exists $lib_dir/$use_gif]} {
-      set image [image create photo -format gif -file $lib_dir/$use_gif]
+      set image_off($node) [image create photo -format gif -file $lib_dir/$use_gif]
     } else {
-      set image ""
+      set image_off($node) ""
     }
-    frame .$node 
-    label .$node.label -text "$node"
-    button .$node.button  -text "$node" -image $image -command "toggle_node $node"
-    set console_image [image create photo -format gif -file $lib_dir/console.gif]
-    button .$node.console -text "Console" -image $console_image -command "make_console $node"
-    pack .$node.label .$node.button .$node.console -side left
-    pack .$node
-}
+    set use_gif [lindex $node_struct 3]
+    if {[file exists $lib_dir/$use_gif]} {
+      set image_on($node) [image create photo -format gif -file $lib_dir/$use_gif]
+    } else {
+      set image_on($node) ""
+    }
+    if {[lsearch -exact $response $node] < 0} {
+      set image $image_off($node)
+    } else {
+      set image $image_on($node)
+    }
+    set use_gif "$lib_dir/console.gif"
+    if {[file exists $use_gif]} {
+      set console_image [image create photo -format gif -file $use_gif]
+    } else {
+      set console_image ""
+    }
 
-set lockout_val 1
+    frame .nf($node)
+    label .nf($node).name -text "$node"
+    button .nf($node).control  -text "$node" -image $image -command "toggle_node $node"
+    button .nf($node).console -text "Console" -image $console_image -command "make_console $node"
+    pack .nf($node).name -side left -expand 1 -anchor w
+    pack .nf($node).control .nf($node).console -side left
+    pack .nf($node) -fill x
+}
 
 frame .bottom
 button .bottom.lockout -text "unlocked" -command toggle_lockout
@@ -96,6 +101,15 @@ button .bottom.done -text "done" -command exit
 pack .bottom.lockout  .bottom.done -side left
 pack .bottom
 
+after 1000 check_all
+
+proc usage msg {
+  global argv0
+  puts "usage: $argv0 \[file\]"
+  puts "file   = load file as config file"
+  puts $msg
+  exit
+}
 
 proc toggle_lockout {} {
     global lockout_val
@@ -125,7 +139,7 @@ proc toggle_node a_node {
 #            puts "power $a_node off"
         }
     }
-#  after 10000 check_all 
+#  after 1000 check_all 
 }
 
 proc make_console a_node {
@@ -136,24 +150,20 @@ proc check_all {} {
     global nodes
     global cluster
     global lib_dir
+    global image_off
+    global image_on
 
     set response [check $nodes on]
     foreach node_struct $cluster {
         set node [lindex $node_struct 0]
 	if {[lsearch -exact $response $node] < 0} {
-            set use_gif [lindex $node_struct 4]
-	    .$node.label configure -foreground red
+            .nf($node).control configure -image $image_off($node)
+	    .nf($node).name configure -foreground red
 	} else {
-            set use_gif [lindex $node_struct 3]
-	    .$node.label configure -foreground black
+            .nf($node).control configure -image $image_on($node)
+	    .nf($node).name configure -foreground black
 	}
-        if {[file exists $lib_dir/$use_gif]} {
-          set image [image create photo -format gif -file $lib_dir/$use_gif]
-        } else {
-          set image ""
-        }
-        .$node.button configure -image $image
-	pack .$node .$node.label .$node.button
+	pack .nf($node).control .nf($node).name .nf($node)
     }
     after 1000 check_all
 }
@@ -185,4 +195,3 @@ proc all_reset {} {
   }
 }
 
-after 1000 check_all
