@@ -5,6 +5,10 @@
 # $Id$
 #   by Chris Dunlap <cdunlap@llnl.gov>
 ##
+####################################################################
+# Copyright (C) 2000 Regents of the University of California
+# See ../DISCLAIMER
+####################################################################
 
 
 proc alpha_do_rmc_cmd {spawn_id output_id console echo cmd} {

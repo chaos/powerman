@@ -1,4 +1,12 @@
 #!/bin/bash
+####################################################################
+# $Id$
+# by Andrew C. Uselton <uselton2@llnl.gov> 
+# Copyright (C) 2000 Regents of the University of California
+# See ../DISCLAIMER
+# v. 0-0-1:  2001-07-11
+# v. 0-0-2:  2001-07-31
+####################################################################
 VERSION="powerman-0.1"
 DOC="/usr/doc/$VERSION"
 LIB="/usr/lib/powerman"
@@ -10,6 +18,7 @@ then
   exit
 fi
 if [ -f README -a \
+     -f DISCLAIMER -a \
      -f check -a \
      -f clustermon -a \
      -f clusterview -a \
@@ -19,9 +28,24 @@ if [ -f README -a \
      -f etc/powerman.conf -a \
      -d lib -a \
      -f lib/powerlib.tcl -a \
+     -f lib/digi.tcl -a \
+     -f lib/etherwake.tcl -a \
+     -f lib/rmc.tcl -a \
+     -f lib/tux_check.tcl -a \
+     -f lib/tux_power.tcl -a \
+     -f lib/wti.tcl -a \
      -f lib/alpha.exp -a \
+     -f lib/wtf.exp -a \
      -f lib/ditty_check -a \
      -f lib/console.gif -a \
+     -f lib/active.gif -a \
+     -f lib/error.gif -a \
+     -f lib/inactive.gif -a \
+     -f lib/login.gif -a \
+     -f lib/rmc.gif -a \
+     -f lib/shell.gif -a \
+     -f lib/srm.gif -a \
+     -f lib/unknown.gif -a \
      -f lib/cs20_off.gif -a \
      -f lib/cs20_on.gif -a \
      -f lib/es40_off.gif -a \
@@ -68,6 +92,8 @@ then
 fi
 echo "copy README to $DOC"
 cp README $DOC
+echo "copy DISCLAIMER to $DOC"
+cp DISCLAIMER $DOC
 
 echo "copy check to $BIN"
 cp check $BIN
@@ -83,12 +109,42 @@ cp etc/powerman.conf $ETC
 
 echo "copy lib/powerlib.tcl to $LIB"
 cp lib/powerlib.tcl $LIB
+echo "copy lib/digi.tcl to $LIB"
+cp lib/digi.tcl $LIB
+echo "copy lib/etherwake.tcl to $LIB"
+cp lib/etherwake.tcl $LIB
+echo "copy lib/rmc.tcl to $LIB"
+cp lib/rmc.tcl $LIB
+echo "copy lib/tux_check.tcl to $LIB"
+cp lib/tux_check.tcl $LIB
+echo "copy lib/tux_power.tcl to $LIB"
+cp lib/tux_power.tcl $LIB
+echo "copy lib/wti.tcl to $LIB"
+cp lib/wti.tcl $LIB
 echo "copy lib/alpha.exp to $LIB"
 cp lib/alpha.exp $LIB
+echo "copy lib/wtf.exp to $LIB"
+cp lib/wtf.exp $LIB
 echo "copy lib/ditty_check to $LIB"
 cp lib/ditty_check $LIB
 echo "copy lib/console.gif to $LIB"
 cp lib/console.gif $LIB
+echo "copy lib/active.gif to $LIB"
+cp lib/active.gif $LIB
+echo "copy lib/error.gif to $LIB"
+cp lib/error.gif $LIB
+echo "copy lib/inactive.gif to $LIB"
+cp lib/inactive.gif $LIB
+echo "copy lib/login.gif to $LIB"
+cp lib/login.gif $LIB
+echo "copy lib/rmc.gif to $LIB"
+cp lib/rmc.gif $LIB
+echo "copy lib/shell.gif to $LIB"
+cp lib/shell.gif $LIB
+echo "copy lib/srm.gif to $LIB"
+cp lib/srm.gif $LIB
+echo "copy lib/unknown.gif to $LIB"
+cp lib/unknown.gif $LIB
 echo "copy ether-wake to $LIB"
 cp ether-wake $LIB
 echo "copy lib/cs20_off.gif to $LIB"

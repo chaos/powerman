@@ -1,0 +1,50 @@
+#!/bin/sh
+####################################################################
+# $Id$
+# by Andrew C. Uselton <uselton2@llnl.gov> 
+# Copyright (C) 2000 Regents of the University of California
+# See ../DISCLAIMER
+# v. 0-0-1:  2001-07-11
+# v. 0-0-2:  2001-07-31
+####################################################################
+while [ "X$1" != "X" ]
+do
+  echo "$1:unknown"
+  shift
+  if [ "X$1" != "X" ] 
+  then
+    echo "$1:inactive"
+    shift
+  fi
+  if [ "X$1" != "X" ] 
+  then
+    echo "$1:rmc"
+    shift
+  fi
+  if [ "X$1" != "X" ] 
+  then
+    echo "$1:srm"
+    shift
+  fi
+  if [ "X$1" != "X" ] 
+  then
+    echo "$1:login"
+    shift
+  fi
+  if [ "X$1" != "X" ] 
+  then
+    echo "$1:active"
+    shift
+  fi
+  if [ "X$1" != "X" ] 
+  then
+    echo "$1:shell"
+    shift
+  fi
+  if [ "X$1" != "X" ] 
+  then
+    echo "$1:error"
+    shift
+  fi
+done
+ 
