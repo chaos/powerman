@@ -1,13 +1,18 @@
+2002-12-24 garlick
+    * Fix POWERMAN_VERSION string to include %{release} when building
+      with make rpm tag=HEAD.
+    * Added skeletal --verbose option
+
 2002-12-23 garlick
     * Added -D,--device [targets] command for getting status of RPC
-      controlling [targets].  (List all devices if no targets specified).
+      controlling [targets]. 
     * Suppress 'Query complete' message in client.
 
 2002-12-22 garlick
     * Updated list.[ch] and cbuf.[ch] to latest lsd-tools versions.
 
 2002-12-20 garlick
-    * Added powerman --version and powermand --version options.
+    * Added powerman/powermand --version option.
 
 2002-11-21 garlick
     * Fixed etc/icebox3.dev to handle flashing multiple beacons.

@@ -464,6 +464,9 @@ static void _parse_input(Client * c, char *input)
         _client_printf(c, CP_RSP_HELP);                 /* help */
     } else if (!strncasecmp(str, CP_NODES, strlen(CP_NODES))) {
         _client_query_nodes_reply(c);                   /* nodes */
+    } else if (!strncasecmp(str, CP_VERBOSE, strlen(CP_VERBOSE))) {
+        c->verbose = !c->verbose;                       /* verbose */
+        _client_printf(c, CP_RSP_VERBOSE, c->verbose ? "ON" : "OFF");
     } else if (!strncasecmp(str, CP_QUIT, strlen(CP_QUIT))) {
         _client_printf(c, CP_RSP_QUIT);                 /* quit */
         _handle_write(c);
@@ -683,6 +686,7 @@ static void _create_client(void)
     client->from = NULL;
     client->cmd = NULL;
     client->client_id = _next_cli_id();
+    client->verbose = FALSE;
 
     client->fd = Accept(listen_fd, &saddr, &saddr_size);
     /* client died after it initiated connect and before we could accept */

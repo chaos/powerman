@@ -54,7 +54,7 @@ static int _process_response(void);
 
 static int server_fd = -1;
 
-#define OPT_STRING "01crlqfubntLd:VD"
+#define OPT_STRING "01crlqfubntLd:VDv"
 static const struct option long_options[] = {
     {"on", no_argument, 0, '1'},
     {"off", no_argument, 0, '0'},
@@ -71,6 +71,7 @@ static const struct option long_options[] = {
     {"destination", required_argument, 0, 'd'},
     {"version", no_argument, 0, 'V'},
     {"device", no_argument, 0, 'D'},
+    {"verbose", no_argument, 0, 'v'},
     {0, 0, 0, 0}
 };
 
@@ -91,6 +92,7 @@ int main(int argc, char **argv)
     } cmd = CMD_NONE;
     char *port = NULL;
     char *host = NULL;
+    bool verbose = FALSE;
 
     prog = basename(argv[0]);
     err_init(prog);
@@ -156,6 +158,9 @@ int main(int argc, char **argv)
             _version();
             /*NOTREACHED*/
             break;
+        case 'v':              /* --verbose */
+            verbose = TRUE;
+            break;
         default:
             _usage();
             /*NOTREACHED*/
@@ -182,6 +187,14 @@ int main(int argc, char **argv)
 
     _connect_to_server(host ? host : SERVER_HOSTNAME, 
                        port ? port : SERVER_PORT);
+
+    if (verbose) {
+        dprintf(server_fd, CP_VERBOSE CP_EOL);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        if (res != 0)
+            goto done;
+    }
 
     /*
      * Execute the commands.
@@ -281,6 +294,7 @@ int main(int argc, char **argv)
         _usage();
     }
 
+done:
     _disconnect_from_server();
 
     exit(res);
@@ -299,6 +313,7 @@ static void _usage(void)
  "-f --flash     Turn beacon on        -u --unflash   Turn beacon off\n"
  "-b --beacon    Query beacon status   -n --node      Query node status\n"
  "-t --temp      Query temperature     -V --version   Report powerman version\n"
+ "-D --device    Report device status  -v --verbose   Include debugging info\n"
   );
     exit(1);
 }
@@ -366,15 +381,15 @@ static void _disconnect_from_server(void)
  */
 static bool _supress(int num)
 {
-    bool res;
+    char *ignoreme[] = { CP_RSP_QUERY_COMPLETE, CP_RSP_VERBOSE };
+    bool res = FALSE;
+    int i;
 
-    switch(num) {
-        case 106:       /* Query complete */
+    for (i = 0; i < sizeof(ignoreme)/sizeof(char *); i++) {
+        if (strtol(ignoreme[i], (char **) NULL, 10) == num) {
             res = TRUE;
             break;
-        default:
-            res = FALSE;
-            break;
+        }
     }
 
     return res;
