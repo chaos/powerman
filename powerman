@@ -58,6 +58,11 @@ proc read_nodes node_list {
   return $return_nodes
 }
 
+
+if { [exec id -u] } {
+    usage "You must be root to run this"
+}
+
 namespace eval app {}
 
 if {$argc < 1} { usage "need arguments" }

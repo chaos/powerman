@@ -7,6 +7,13 @@
 # v. 0-0-1:  2001-07-11
 # v. 0-0-2:  2001-07-31
 ####################################################################
+USERID=`id -u`
+if [ ! "X$USERID" = "X0" ]
+then
+    echo "You must be root to run this"
+    exit
+fi
+
 while [ 1 ]
 do
   clustermon $*

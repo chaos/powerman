@@ -155,6 +155,10 @@ proc check_consoles {} {
 # 
 ####################################################################
 
+if { [exec id -u] } {
+    usage "You must be root to run this"
+}
+
 # This namespace is for variables that must be set here but are mainly 
 # used in the library.
 namespace eval app {}
