@@ -1,12 +1,9 @@
-Short Term:
-* Store scripts in a list and search the list for the script name, rather than
-  hard code the list.  
 * vpcd --hung_rpc can cause client to hang forever while login action
   repeatedly times out and is reinitiated ("real" action never makes it to 
   head of device queue).
 * Replace bogus buffer.c with Chris's generic circular buffer module.
-
-Long term:
+* Store scripts in a list and search the list for the script name, rather than
+  hard code the list.  
 * Build failure simulator test suite
 * Package with autoconf
 * Power sequencing.  Provide a way of expressing the max number of outlets

@@ -52,7 +52,7 @@ static int _process_response(void);
 
 static int server_fd = -1;
 
-#define OPT_STRING "01crlq"
+#define OPT_STRING "01crlqfubnt"
 static const struct option long_options[] = {
     {"on", no_argument, 0, '1'},
     {"off", no_argument, 0, '0'},
@@ -60,6 +60,11 @@ static const struct option long_options[] = {
     {"reset", no_argument, 0, 'r'},
     {"list", no_argument, 0, 'l'},
     {"query", no_argument, 0, 'q'},
+    {"flash", no_argument, 0, 'f'},
+    {"unflash", no_argument, 0, 'u'},
+    {"beacon", no_argument, 0, 'b'},
+    {"node", no_argument, 0, 'n'},
+    {"temp", no_argument, 0, 't'},
     {0, 0, 0, 0}
 };
 
@@ -85,7 +90,7 @@ int main(int argc, char **argv)
     int res = 0;
     char *prog;
     enum { CMD_NONE, CMD_ON, CMD_OFF, CMD_LIST, CMD_CYCLE, CMD_RESET,
-        CMD_REPORT
+        CMD_QUERY, CMD_FLASH, CMD_UNFLASH, CMD_BEACON, CMD_TEMP, CMD_NODE
     } cmd = CMD_NONE;
 
     prog = basename(argv[0]);
@@ -120,13 +125,32 @@ int main(int argc, char **argv)
             cmd = CMD_RESET;
             break;
         case 'q':              /* --query */
-            cmd = CMD_REPORT;
+            cmd = CMD_QUERY;
+            break;
+        case 'f':              /* --flash */
+            cmd = CMD_FLASH;
+            break;
+        case 'u':              /* --unflash */
+            cmd = CMD_UNFLASH;
+            break;
+        case 'b':              /* --beacon */
+            cmd = CMD_BEACON;
+            break;
+        case 'n':              /* --node */
+            cmd = CMD_NODE;
+            break;
+        case 't':              /* --temp */
+            cmd = CMD_TEMP;
             break;
         default:
             _usage();
             break;
         }
     }
+
+    if (cmd == CMD_NONE)
+        _usage();
+
     /* remaining arguments used to build a single hostlist argument */
     while (optind < argc) {
         if (!have_targets) {
@@ -149,12 +173,12 @@ int main(int argc, char **argv)
     switch (cmd) {
     case CMD_LIST:
         if (have_targets)
-            _usage();
+            err_exit(FALSE, "option does not accept targets");
         dprintf(server_fd, CP_NODES CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
-    case CMD_REPORT:
+    case CMD_QUERY:
         if (have_targets)
             dprintf(server_fd, CP_STATUS CP_EOL, targstr);
         else
@@ -164,29 +188,67 @@ int main(int argc, char **argv)
         break;
     case CMD_ON:
         if (!have_targets)
-            _usage();
+            err_exit(FALSE, "option requires targets");
         dprintf(server_fd, CP_ON CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_OFF:
         if (!have_targets)
-            _usage();
+            err_exit(FALSE, "option requires targets");
         dprintf(server_fd, CP_OFF CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_RESET:
         if (!have_targets)
-            _usage();
+            err_exit(FALSE, "option requires targets");
         dprintf(server_fd, CP_RESET CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_CYCLE:
         if (!have_targets)
-            _usage();
+            err_exit(FALSE, "option requires targets");
         dprintf(server_fd, CP_CYCLE CP_EOL, targstr);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        break;
+    case CMD_FLASH:
+        if (!have_targets)
+            err_exit(FALSE, "option requires targets");
+        dprintf(server_fd, CP_BEACON_ON CP_EOL, targstr);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        break;
+    case CMD_UNFLASH:
+        if (!have_targets)
+            err_exit(FALSE, "option requires targets");
+        dprintf(server_fd, CP_BEACON_OFF CP_EOL, targstr);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        break;
+    case CMD_BEACON:
+        if (have_targets)
+            dprintf(server_fd, CP_BEACON CP_EOL, targstr);
+        else
+            dprintf(server_fd, CP_BEACON_ALL CP_EOL);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        break;
+    case CMD_TEMP:
+        if (have_targets)
+            dprintf(server_fd, CP_TEMP CP_EOL, targstr);
+        else
+            dprintf(server_fd, CP_TEMP_ALL CP_EOL);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        break;
+    case CMD_NODE:
+        if (have_targets)
+            dprintf(server_fd, CP_SOFT CP_EOL, targstr);
+        else
+            dprintf(server_fd, CP_SOFT_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
@@ -206,11 +268,13 @@ int main(int argc, char **argv)
 static void _usage(void)
 {
     printf("Usage: %s [OPTIONS] [TARGETS]\n", "powerman");
-    printf("\
-  -c --cycle     Power cycle targets   -r --reset    Reset targets\n\
-  -1 --on        Power on targets      -0 --off      Power off targets\n\
-  -q --query     List on/off/unknown   -l --list     List available targets\n\
-  -h --help      Display this help\n");
+    printf(
+  "-1 --on        Power on targets      -0 --off       Power off targets\n"
+  "-q --query     Query plug status     -l --list      List available targets\n"
+  "-c --cycle     Power cycle targets   -r --reset     Reset targets\n"
+  "-f --flash     Turn beacon on        -u --unflash   Turn beacon off\n"
+  "-b --beacon    Query beacon status   -n --node      Query node status\n"
+  "-t --temp      Query temperature     -h --help      Display this help\n");
     exit(1);
 }
 

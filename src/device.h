@@ -58,11 +58,18 @@ typedef struct {
  */
 typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING,
         DEV_CONNECTED } ConnectStat;
+/* bitwise values for dev->script_status */
+#define DEV_LOGGED_IN   1
+#define DEV_SENDING     2
+#define DEV_EXPECTING   4
+#define DEV_DELAYING    8
 typedef struct {
     char *name;                 /* name of device */
-    char *all;                  /* string for to select all plugs */
+
+    char *all;                  /* string to select all plugs */
     regex_t on_re;              /* regex to match "on" in query */
     regex_t off_re;             /* regex to match "off" in query */
+
     Dev_Type type;              /* type of device e.g. TCP_DEV */
     union {                     /* type-specific device information */
         struct {
@@ -72,7 +79,7 @@ typedef struct {
     } devu;
 
     ConnectStat connect_status;
-    int script_status;          /* DEV_ bits reprepsenting script state */
+    int script_status;          /* DEV_* bits reprepsenting script state */
 
     int fd;
     List acts;                  /* queue of Actions */
@@ -82,9 +89,8 @@ typedef struct {
     Buffer to;                  /* buffer -> device */
     Buffer from;                /* buffer <- device */
 
-    int num_plugs;              /* Plug count for this device */
     List plugs;                 /* list of Plugs */
-    Protocol *prot;             /* list of expect/send scripts */
+    Protocol *prot;             /* array of expect/send scripts */
 
     struct timeval last_retry;  /* time of last reconnect retry */
     int retry_count;            /* number of retries attempted */

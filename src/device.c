@@ -47,12 +47,6 @@
 #include "client_proto.h"
 
 
-/* bitwise values for dev->script_status */
-#define DEV_LOGGED_IN   1
-#define DEV_SENDING     2
-#define DEV_EXPECTING   4
-#define DEV_DELAYING    8
-
 /*
  * Actions are appended to a per device list in dev->acts
  */
@@ -774,8 +768,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
         }
 
         if (stalled) {          /* if stalled, set timeout for select */
-            if (act->cur->type != EL_DELAY)     /* FIXME: why test this? */
-                _update_timeout(timeout, &timeleft);
+            _update_timeout(timeout, &timeleft);
         } else {
             bool error = act->error;
 
@@ -982,7 +975,6 @@ Device *dev_create(const char *name)
     dev->to = NULL;
     dev->from = NULL;
     dev->prot = NULL;
-    dev->num_plugs = 0;
     dev->plugs = list_create((ListDelF) dev_plug_destroy);
     dev->retry_count = 0;
     dev->stat_successful_connects = 0;

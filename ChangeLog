@@ -2,6 +2,7 @@
     * Fix bug where inappropriate match ($N) values caused a runtime assert.
     * Attempting to initiate a command to a device now short circuits
       exponential reconnect backoff.
+    * Implemented --beacon, --flash, --unflash, --temp, and --node in client.
 
 2002-10-24 garlick
     * Changed magic vim comment at bottom of each file for tab expansion.

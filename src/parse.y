@@ -585,7 +585,7 @@ static char *makePlugNameLine(char *s2)
     if( current_spec->plugname == NULL ) 
         _errormsg("plug name line does not preceded by size line");
     if( current_spec->size <= 0 ) 
-        _errormsg("invalide size");
+        _errormsg("invalid size");
     while( (current_spec->plugname[i] != NULL) && (i < current_spec->size) )
         i++;
     if( i == current_spec->size )
@@ -625,7 +625,6 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     case TCP_DEV :
         dev->devu.tcpd.host = Strdup(s4);
         dev->devu.tcpd.service = Strdup(s5);
-        dev->num_plugs = spec->size;
         for (i = 0; i < spec->size; i++) {
             plug = dev_plug_create(spec->plugname[i]);
             list_append(dev->plugs, plug);

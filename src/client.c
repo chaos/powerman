@@ -440,7 +440,7 @@ static void _parse_input(Client * c, char *input)
         cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish,
                                            c->client_id, cmd->arglist);
         if (cmd->pending == 0) {
-            _client_msg(c, CP_ERR_NOACTION);
+            _client_msg(c, CP_ERR_UNIMPL);
             _destroy_command(cmd);
             cmd = NULL;
         }
