@@ -79,8 +79,8 @@ install: all
 	$(INSTALL) src/powermand		$(DESTDIR)$(sbindir)/
 	$(mkinstalldirs)			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/baytech.dev		$(DESTDIR)$(packagedir)
-	$(INSTALL) etc/baytech-rcp28.dev	$(DESTDIR)$(packagedir)
-	$(INSTALL) etc/baytech-rcp3.dev		$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/baytech-rpc28.dev	$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/baytech-rpc3.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/icebox.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/icebox3.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/wti.dev			$(DESTDIR)$(packagedir)
