@@ -14,41 +14,32 @@
 # needed on my setup...
 #
 specification  "wti-rps10" {
-	timeout 	5 
+	timeout 	5
 
 	plug name { "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" }
 
 	script login {
 		delay 2
 	}
-# Do not define STATUS_ALL_SCRIPT because there may not be all 10
-# boxes in a chain, and any missing ones will not respond, causing
-# expect to time out
 	script status {
-		send "\r"	#  XXX - testing jg
 		send "\030\030\002\030\030\002\030\030%s?\r"
 		expect "Plug ([0-9]) (On|Off)"
 		setplugstate $1 $2 off="Off" on="On"
 		expect "Complete"
-		#delay 0.5
 	}
 	script on {
-		send "\r"	#  XXX - testing jg
 		send "\030\030\002\030\030\002\030\030%s1\r"
 		expect "Plug [0-9] On"
 		expect "Complete"
-		#delay 0.5
 	}
 	script off {
-		send "\r"	#  XXX - testing jg
 		send "\030\030\002\030\030\002\030\030%s0\r"
 		expect "Plug [0-9] Off"
 		expect "Complete"
-		#delay 0.5
 	}
 # The T command is dip switch configurable for 5 or 10 second delay
+# Shorter delays have to be done in s/w.
 	script cycle {
-		send "\r"	#  XXX - testing jg
 		send "\030\030\002\030\030\002\030\030%s0\r"
 		expect "Plug [0-9] Off"
 		expect "Complete"
@@ -56,6 +47,5 @@ specification  "wti-rps10" {
 		send "\030\030\002\030\030\002\030\030%s1\r"
 		expect "Plug [0-9] On"
 		expect "Complete"
-		#delay 0.5
 	}
 }
