@@ -1,3 +1,10 @@
+2002-10-05 garlick
+	* More man page updates
+	* TODO update
+	* Move README to d1oc/Overview.txt
+	* Removed Retagging
+	* Removed various outdated scripts in scripts subdir
+
 2002-10-04 garlick
 	* Client now performs on and off command if executable is 
 	  linked to "on" and "off".  Install links "on", "off", and "pm"

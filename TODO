@@ -1,47 +1,22 @@
-* When querying power status, don't query all power controlers
-* Failed action at the device level are never reported to the client
-* Timeouts need to be added to the send/expect interactions with the devices.
-* Increased warning/error verbosity from the client (and server)
 * Build failure simulator test suite
 * Package with autoconf
 * Still several small memory leaks, find them
 * Reformat code w/out tabs
-* Remove any server side caching.  Consider disabling periodic polling.
-  [Note: login timeouts are an issue if polling is disabled.]
-* Investigate controling the timing of commands delivered to power controlers.
-* powerman client needs to interpret response codes from server and clean
-  them up (e.g. strip off numerical response prefixes) when shown to the user.
+* Power sequencing, e.g. max number of devices doing on/off/cycle in parallel
+  per subpanel (and express device-subpanel relationship and subpanel max 
+  parallelism in config file)
 * powerman client needs to implement option for expanding hostranges
-* powerman client needs option for querying status of individual node for
-  Kimberlite failover interface.
-* De-serialize commands issued to the devices.  They should be issued
-  in parallel and the results colated. [Note: they appear to be issued in 
-  parallel now, but delays are implemented as inline Delay() calls, thus
-  delays are serialized. -jg]
-* Find this bug in powermand (exhibited on mdev when doing a powerman -0 
-  on one node):
-  > (no debugging symbols found)...(no debugging symbols found)...
-  > Program received signal SIGSEGV, Segmentation fault.
-  > 0x4207fb8a in strcmp () from /lib/i686/libc.so.6
-  > (gdb) bt
-  > #0  0x4207fb8a in strcmp () from /lib/i686/libc.so.6
-  > #1  0x0804cf58 in hostrange_hn_within ()
-  > #2  0x0804e90a in hostlist_find ()
-  > #3  0x0805299e in _do_target_some ()
-  > #4  0x08052830 in _set_targets ()
-  > #5  0x080525c2 in _acttodev ()
-  > #6  0x0805270a in dev_apply_action ()
-  > #7  0x080514fb in act_initiate ()
-  > #8  0x080547f7 in _select_loop ()
-  > #9  0x0805457d in main ()
-  > #10 0x42017589 in __libc_start_main () from /lib/i686/libc.so.6
-* Audit code for reconnecting to power control devices.  Failure case: start
-  powermand with vpcd config.  Start vpcd.  Reconnect does not occur until
-  "update interval" expires (client activity doesn't cause reconnect).
-  Subsequently, daemon does not prompt for commands.  SIGINT in the debugger  
-  shows dev_process_select -> dev_handle_read -> buf_read -> ?? -> read.
-* Reconnect algorithm should be sane: exponential backoff & retry with cap
-  of one minute or so.
 * Make it so commands involving scripts that are not defined result in errors.
   For example, PM_RESET script should be optional, and the user should be told
   of a PM_CYCLE is the only thing available, then they can try that.
+* Issuing a command involving an RPC that is currently in connect-retry mode
+  causes the client to hang forever.
+* Make "soft" power status query possible in server
+* Client should have option for verifying soft power status (expand hostranges
+  and issue warnings where plug is on but node is off).  Needs to be optional
+  since would double cluster query latency.  
+* Consider supporting additional ICE commands such as querying temperature and 
+  beacon status in ice box, toggling beacon, extracting firmware version, 
+  updating firmware, etc.  
+* Consider a way for users to arbitrarily map a device script to a server 
+  command (e.g. don't hard code the number of scripts?)

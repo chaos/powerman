@@ -26,52 +26,36 @@
 \."#################################################################
 .\"
 .TH PowerMan 1 "Release 1.0.0" "LLNL" "PowerMan"
-
 .SH NAME
 powermand \- power control and monitoring daemon
-
 .SH SYNOPSIS
 .B powermand
 .I "[-options]"
 .LP
-
 .SH DESCRIPTION
 .B powermand
 provides power monitoring and power management on a 
 cluster of nodes.  
-
 .SH OPTIONS
 .LP
 .I "-c configfile"
 .br
 .I "--config_file configfile"
 .br
-Provide an alternate name or location for the configuration file.  
-Configuration files are usually located in 
-.I /etc/powerman/powerman.conf
-though they can be anywhere.  
-.I configfile
-must be an absolute path.
+Override the default location of the powerman configuration file
+.I /etc/powerman/powerman.conf.
 .LP
 .I "-f"
 .br
 .I "--foreground"
 .br
-For debugging it may be helpfull to suppress the "daemonization".
+Do not daemonize, and send debugging/error messages to stderr instead of syslog.
 .LP
 .I "-h"
 .br
 .I "--help"
 .br
 Provide a synopsis of the command options.
-.LP
-.I "-k"
-.br
-.I "--kill"
-.br
-Send a 
-.I SIGTERM
-to a running daemon, causing it to abort.  
 .LP
 .I "-L"
 .br
@@ -81,32 +65,20 @@ Print license information about
 .B PowerMan
 and exit.
 .LP
-.\".I "-r"
-.\".br
-.\".I "--reread_config"
-.\".br
-.\"Send a 
-.\".I SIGHUP 
-.\"to a running daemon causing it reread its config file.
-.LP
 .I "-V"
 .br
 .I "--version"
 .br
 Print the version of the program and exit.
-
 .SH "FILES"
 /usr/bin/powermand
 .br
 /usr/bin/powerman
 .br
 /etc/powerman/powerman.conf
-.br
-
 .SH "ORIGIN"
 Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Linux 
 clusters.  This software is open source and distributed under
 the terms of the Gnu GPL.  
-
 .SH "SEE ALSO"
 powerman(1) powerman.conf(5)

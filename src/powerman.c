@@ -52,14 +52,14 @@ static int _process_response(void);
 
 static int server_fd = -1;
 
-#define OPT_STRING "01crlz"
+#define OPT_STRING "01crlq"
 static const struct option long_options[] = {
     {"on", no_argument, 0, '1'},
     {"off", no_argument, 0, '0'},
     {"cycle", no_argument, 0, 'c'},
     {"reset", no_argument, 0, 'r'},
     {"list", no_argument, 0, 'l'},
-    {"report", no_argument, 0, 'z'},
+    {"query", no_argument, 0, 'q'},
     {0, 0, 0, 0}
 };
 
@@ -116,7 +116,7 @@ int main(int argc, char **argv)
 	    case 'r':	/* --reset */
 		cmd = CMD_RESET;
 		break;
-	    case 'z':	/* --report */
+	    case 'q':	/* --query */
 		cmd = CMD_REPORT;
 		break;
 	    default:
