@@ -26,9 +26,7 @@ The possible configuration settings are:
 
   # (optional) if plug names are static, they should be defined.  Any 
   # reference to a plug name in the powerman.conf must match one of the 
-  # defined plug names.  Devices with dynamic plug names should not include 
-  # a plug name directive, and the plug reference should be left off in the 
-  # powerman.conf
+  # defined plug names.  
   plug name { <string list> }
 
   # (optional) if a ping script is defined, and pingperiod is nonzero, the
@@ -42,7 +40,7 @@ status, etc.  Scripts have inputs and outputs depending on <script_name>
 the form:
 
   script <script_name> {
- 	# statements
+	# statements
   }
 
 XXX not done yet
