@@ -61,7 +61,7 @@ struct action_struct {
     int 		com;	/* one of the PM_* above */
     ListIterator 	itr;	/* next place in the script sequence */
     Script_El 		*cur;	/* current place in the script sequence */
-    String 		target;	/* node name, regex, or device plug name */
+    String 		target;	/* node name hostlist */
     MAGIC;
 };
 

@@ -46,6 +46,7 @@
 #include "string.h"
 #include "buffer.h"
 #include "util.h"
+#include "hostlist.h"
 
 static void _set_targets(Device * dev, Action * sact);
 static Action *_do_target_copy(Device * dev, Action * sact, String target);
@@ -247,22 +248,22 @@ static void _acttodev(Device * dev, Action * sact)
     CHECK_MAGIC(sact);
 
     if (!dev->loggedin && (sact->com != PM_LOG_IN)) {
-	syslog(LOG_ERR, "Attempt to initiate Action %s while not logged in", 
-			command_str[sact->com]);
-	return;
+        syslog(LOG_ERR, "Attempt to initiate Action %s while not logged in", 
+			         command_str[sact->com]);
+        return;
     }
     /* Some devices do not implemnt some actions - ignore */
     if (dev->prot->scripts[sact->com] == NULL)
-	return;
+        return;
 
-    /* This actually creates the one or more Actions for hte Device */
+    /* This actually creates the one or more Actions for the Device */
     _set_targets(dev, sact);
 
     /* Look at action at the head of the Device's queue */
     /* and start its script */
     act = list_peek(dev->acts);
     if (act == NULL)
-	return;
+        return;
     assert(act->itr != NULL);
     /* act->itr is always pointing at the next unconsumed Script_El
      * act->cur is always the one being worked on
@@ -306,7 +307,7 @@ void dev_apply_action(Action *act)
 
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr)))
-	_acttodev(dev, act);
+        _acttodev(dev, act);
     list_iterator_destroy(itr);
 }
 
@@ -329,40 +330,42 @@ void _set_targets(Device * dev, Action * sact)
     Action *act;
 
     switch (sact->com) {
-    case PM_LOG_IN:
-	/* reset script of preempted action so it starts over */
-	if (!list_is_empty(dev->acts)) {
-	    act = list_peek(dev->acts);
-	    list_iterator_reset(act->itr);
-	}
-	act = _do_target_copy(dev, sact, NULL);
-	list_push(dev->acts, act);
-	break;
-    case PM_ERROR:
-    case PM_CHECK_LOGIN:
-    case PM_LOG_OUT:
-    case PM_UPDATE_PLUGS:
-    case PM_UPDATE_NODES:
-	act = _do_target_copy(dev, sact, NULL);
-	list_append(dev->acts, act);
-	break;
-    case PM_POWER_ON:
-    case PM_POWER_OFF:
-    case PM_POWER_CYCLE:
-    case PM_RESET:
-    case PM_NAMES:
-	assert(sact->target != NULL);
-	if (dev->prot->mode == SM_LITERAL) {
-	    _do_target_some(dev, sact);
-	} else {		/* dev->prot->mode == REGEX */
+        case PM_LOG_IN:
+            /* reset script of preempted action so it starts over */
+            if (!list_is_empty(dev->acts)) {
+                act = list_peek(dev->acts);
+                list_iterator_reset(act->itr);
+            }
 
-	    act = _do_target_copy(dev, sact, sact->target);
-	    list_append(dev->acts, act);
-	}
-	break;
-    default:
-	assert(FALSE);
+            act = _do_target_copy(dev, sact, NULL);
+            list_push(dev->acts, act);
+            break;
+        case PM_ERROR:
+        case PM_CHECK_LOGIN:
+        case PM_LOG_OUT:
+        case PM_UPDATE_PLUGS:
+        case PM_UPDATE_NODES:
+            act = _do_target_copy(dev, sact, NULL);
+            list_append(dev->acts, act);
+            break;
+        case PM_POWER_ON:
+        case PM_POWER_OFF:
+        case PM_POWER_CYCLE:
+        case PM_RESET:
+        case PM_NAMES:
+            assert(sact->target != NULL);
+
+            if (dev->prot->mode == SM_LITERAL) {
+                _do_target_some(dev, sact);
+            } else {		/* dev->prot->mode == REGEX */
+                act = _do_target_copy(dev, sact, sact->target);
+                list_append(dev->acts, act);
+            }
+            break;
+        default:
+            assert(FALSE);
     }
+
     return;
 }
 
@@ -388,10 +391,10 @@ Action *_do_target_copy(Device * dev, Action * sact, String target)
 
 /* 
  *   This is the tricky case for _set_targets().  We have a target in
- * the Server Action, and it is a RegEx.  We have to sequence through
+ * the Server Action, and it is a hostlist.  We have to sequence through
  * each plug and see if the node connected to the plug has a name
  * that matches that RegEx.  If it does we add it to a tentative list
- * of new Actions for the Device, but we're no through.  If all of
+ * of new Actions for the Device, but we're not through.  If all of
  * the plugs' nodes match then we want to send the Device's special
  * "all" signal (every device has one).  Conversely, no plugs match
  * then no actions are added.  
@@ -400,62 +403,50 @@ void _do_target_some(Device * dev, Action * sact)
 {
     Action *act;
     List new_acts;
-    int n;
-    bool all;
-    bool any;
+    bool all = TRUE, any = FALSE;
     Plug *plug;
     ListIterator plug_i;
-    size_t nm = MAX_MATCH;
-    regmatch_t pm[MAX_MATCH];
-    int eflags = 0;
-    regex_t nre;
-    reg_syntax_t cflags = REG_EXTENDED;
+    hostlist_t hl;
 
-    all = TRUE;
-    any = FALSE;
     new_acts = list_create((ListDelF) act_destroy);
-    Regcomp(&nre, str_get(sact->target), cflags);
+
+    if ((hl = hostlist_create(str_get(sact->target))) == NULL) {
+	      syslog(LOG_ERR, "Unable to create hostlist");
+        return;
+    }
+
     plug_i = list_iterator_create(dev->plugs);
     while ((plug = list_next(plug_i))) {
-	/* If plug->node == NULL it means that there is no
-	 * node pluged into that plug (or that node is not
-	 * under management by this powermand).  In such a
-	 * case do not use the "all" target in the action.
-	 */
-	if (plug->node == NULL) {
-	    all = FALSE;
-	    continue;
-	}
-	/*
-	 * check if plug->node->name matches the target re.
-	 * if it does make a new act for it and set any to TRUE.
-	 * if it doesn't, set all to FALSE.
-	 */
-	n = Regexec(&nre, str_get(plug->node->name), nm, pm, eflags);
+        /* If plug->node == NULL it means that there is no node pluged
+         * into that plug, not not managed by powerman.  Never use the
+         * all in this case
+         */
+        if (plug->node == NULL) {
+            all = FALSE;
+            continue;
+        }
 
-	if ((n == REG_NOMATCH)
-	    || ((pm[0].rm_eo - pm[0].rm_so)
-		!= str_length(plug->node->name))) {
-	    all = FALSE;
-	} else {
-	    any = TRUE;
-	    act = _do_target_copy(dev, sact, plug->name);
-	    list_append(new_acts, act);
-	}
+        /* check if plug->node->name matches the target */
+        if (hostlist_find(hl, str_get(plug->node->name)) != -1) {
+            any = TRUE;
+            act = _do_target_copy(dev, sact, plug->name);
+            list_append(new_acts, act);
+        } else {
+            all = FALSE;
+        }
     }
-    list_iterator_destroy(plug_i);
-    regfree(&nre);
 
     if (all) {
-	/* list of new_acts is destroyed at the end of this function */
-	act = _do_target_copy(dev, sact, dev->all);
-	list_append(dev->acts, act);
-    } else if (any) {
-	/* we have some but not all so we need to stick them all on the queue */
-	while ((act = list_pop(new_acts))) {
-	    list_append(dev->acts, act);
-	}
+        act = _do_target_copy(dev, sact, dev->all);
+        list_append(dev->acts, act);
+    } else {
+        if (any)
+            while ((act = list_pop(new_acts)))
+                list_append(dev->acts, act);
     }
+
+    hostlist_destroy(hl);
+    list_iterator_destroy(plug_i);
     list_destroy(new_acts);
 }
 

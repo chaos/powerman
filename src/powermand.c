@@ -200,7 +200,8 @@ static void _select_loop(void)
     enum { STAT_QUIESCENT, STAT_OCCUPIED } status = STAT_QUIESCENT;
 
     Gettimeofday(&time_stamp, NULL);
-    while (1) {
+
+   while (1) {
 	/* Initialize rset, wset, maxfd */
 	FD_ZERO(&rset);
 	FD_ZERO(&wset);
@@ -234,15 +235,15 @@ static void _select_loop(void)
 	if ((!active_devs) && ((act = act_find()) != NULL)) {
 	    /* a previous action may need a reply sent back to a client */
 	    if (status == STAT_OCCUPIED) {
-		act_finish(act);
-		Gettimeofday(&time_stamp, NULL);
-		status = STAT_QUIESCENT;
+          act_finish(act);
+          Gettimeofday(&time_stamp, NULL);
+          status = STAT_QUIESCENT;
 	    }
 
 	    /* double check - if there was an action in the queue, launch it */
 	    if ((act = act_find()) != NULL) {
-		if (act_initiate(act))
-		    status = STAT_OCCUPIED;
+		      if (act_initiate(act))
+		          status = STAT_OCCUPIED;
 	    }
 	}
     }

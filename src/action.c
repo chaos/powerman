@@ -103,24 +103,26 @@ bool act_initiate(Action * act)
     CHECK_MAGIC(act);
 
     switch (act->com) {
-	case PM_ERROR:
+        case PM_ERROR:
         case PM_LOG_IN:
         case PM_CHECK_LOGIN:
         case PM_LOG_OUT:
-	case PM_NAMES:
-	    if ((act = act_find()) != NULL)
-		return act_initiate(act);
-	    return FALSE;
-	case PM_UPDATE_PLUGS:
-	case PM_UPDATE_NODES:
-	case PM_POWER_ON:
+        case PM_NAMES:
+            act_finish(act);
+            if ((act = act_find()) != NULL)
+                return act_initiate(act);
+            return FALSE;
+        case PM_UPDATE_PLUGS:
+        case PM_UPDATE_NODES:
+        case PM_POWER_ON:
         case PM_POWER_OFF:
         case PM_POWER_CYCLE:
         case PM_RESET:
-	   break;
-	default:
-	    assert(FALSE);
+            break;
+        default:
+            assert(FALSE);
     }
+
     dev_apply_action(act);
     return TRUE;
 } 
@@ -137,7 +139,7 @@ void act_finish(Action * act)
 {
     /* act->client == NULL means that there is no client expecting a reply. */
     if (act->client != NULL)
-	cli_reply(act);
+        cli_reply(act);
     act_del_queuehead(act_actions);
 }
 
@@ -161,10 +163,10 @@ void act_destroy(Action * act)
     CHECK_MAGIC(act);
 
     if (act->target != NULL)
-	str_destroy(act->target);
+        str_destroy(act->target);
     act->target = NULL;
     if (act->itr != NULL)
-	list_iterator_destroy(act->itr);
+        list_iterator_destroy(act->itr);
     act->itr = NULL;
     act->cur = NULL;
     CLEAR_MAGIC(act);
