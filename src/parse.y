@@ -575,7 +575,7 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
     /* find that spec */
     spec = findSpec(specstr);
     if ( spec == NULL ) 
-    _errormsg("device specification not found");
+        _errormsg("device specification not found");
 
     /* make the Device */
     dev = dev_create(devstr, spec->type);
