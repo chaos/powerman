@@ -33,4 +33,4 @@ all : $(PICS)
 	fig2dev -L jpeg  $< $@
 
 clean :
-	rm -f *~ *.o .#* *.jpeg
+	rm -f *~ *.o .#* $(PICS)

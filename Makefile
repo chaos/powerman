@@ -72,8 +72,8 @@ docs :
 install: all
 	$(mkinstalldirs)			$(DESTDIR)$(bindir)
 	$(mkinstalldirs)			$(DESTDIR)$(sbindir)
-	$(INSTALL) bin/powerman			$(DESTDIR)$(bindir)/
-	$(INSTALL) bin/powermand		$(DESTDIR)$(sbindir)/
+	$(INSTALL) src/powerman			$(DESTDIR)$(bindir)/
+	$(INSTALL) src/powermand		$(DESTDIR)$(sbindir)/
 	$(mkinstalldirs)			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/baytech.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/icebox.dev		$(DESTDIR)$(packagedir)
@@ -105,23 +105,12 @@ uninstall: distclean
 	rm -Rf $(DESTDIR)$(docdir)
 
 clean:
-	rm -f *~ *.o .#*
+	find . -name \*~ -o -name .#* | xargs rm -f
 	make -C src clean
 	make -C doc clean
 	make -C vicebox clean
 
-allclean: clean
-	cd aux; rm -f *~ *.o
-	cd bin; rm -f *~ *.o
-	cd etc; rm -f *~ *.o
-	cd lib; rm -f *~ *.o
-	cd log; rm -f *~ *.o
-	cd man; rm -f *~ *.o
-	cd scripts; rm -f *~ *.o
-
-distclean: allclean
-	cd bin; rm -f powerman powermand vicebox svicebox; cd ..
-	cd doc; rm -f *.ps; cd ..
+distclean: clean
 	rm -f *.tgz* *.rpm
 
 include Make-rpm.mk

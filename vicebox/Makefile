@@ -26,7 +26,6 @@
 ####################################################################
 
 PACKAGE= powerman
-VERSION= 1.0.0
 SHELL=   /bin/sh
 MAKE=    /usr/bin/make
 CC    = gcc
@@ -55,7 +54,7 @@ OBJS = vicebox.o wrappers.o vice_error.o
 all :  vicebox svicebox
 
 vicebox : $(OBJS)
-	$(CC) $(COPTS) -o ${srcbin}/vicebox $(OBJS) $(INC) $(LIB)
+	$(CC) $(COPTS) -o $@ $(OBJS) $(INC) $(LIB)
 
 vicebox.o : vicebox.c vicebox.h
 	$(CC) $(COPTS) -c -o $@ $< $(INC)
@@ -67,8 +66,8 @@ vice_error.o : vice_error.c vicebox.h
 	$(CC) $(COPTS) -c -o $@ $< $(INC)
 
 svicebox : svicebox.c
-	$(CC) $(COPTS) -c -o ${srcbin}/svicebox svicebox.c $(INC)
+	$(CC) $(COPTS) -o $@ svicebox.c $(INC)
 
 clean :
 	rm -f *~ *.o
-
+	rm -f vicebox svicebox

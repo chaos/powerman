@@ -25,7 +25,6 @@
 ####################################################################
 
 PACKAGE= powerman
-VERSION= 1.0.0
 SHELL=   /bin/sh
 MAKE=    /usr/bin/make
 CC    = gcc
@@ -60,13 +59,13 @@ SERVER_OBJS = $(SERVER_UTIL) action.o config.o device.o listener.o  \
 CLIENT_OBJS = $(COMMON_OBJS) powerman.o
 
 
-all :  ${srcbin}/powerman ${srcbin}/powermand tags depend
+all :  powerman powermand tags depend
 
-${srcbin}/powermand : $(SERVER_OBJS)
+powermand : $(SERVER_OBJS)
 	$(mkinstalldirs)	${srcbin}
 	$(CC) $(COPTS) -o $@ $(SERVER_OBJS) $(INC) $(LIB)
 
-${srcbin}/powerman : $(CLIENT_OBJS)
+powerman : $(CLIENT_OBJS)
 	$(mkinstalldirs)	${srcbin}
 	$(CC) $(COPTS) -o $@ $(CLIENT_OBJS) $(INC) $(LIB)
 
@@ -97,6 +96,7 @@ depend:
 
 clean :
 	rm -f *~ *.o .#* parse_* TAGS
+	rm -f powerman powermand
 
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
