@@ -28,6 +28,7 @@
 #define CONFIG_H
 
 #include <regex.h>
+#include <sys/time.h>
 #include <sys/types.h>
 
 #include "list.h"
