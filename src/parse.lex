@@ -157,6 +157,7 @@ yes                               {   return TOK_YES; }
 no                                {   return TOK_NO; }
 \{                                {   return TOK_BEGIN; }
 \}                                {   return TOK_END; }
+=                                 {   return TOK_EQUALS; }
 script                            {   return TOK_SCRIPT; }
 alias                             {   return TOK_ALIAS; }
 include                        BEGIN(lex_incl);

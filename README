@@ -32,9 +32,9 @@ o In addition to the new constructs described above, the device script syntax
     "specification" and the open brace for the device specification.
   - Device types are no longer quoted strings.
   - The "map" command was renamed to "setstatus" and there can now be
-    intervening statements between an "expect" and "setstatus" lines that
-    reference subexpression matches
-  - The "setstatus" command can take a subexpression offset for the plug
+    intervening statements between an "expect" and "setstatus" lines.  
+    Subexpression match lines persist until the next "expect" in the script.
+  - The "setstatus" command can now take a subexpression offset for the plug
     name parameter in lieu of the literal plug name (quoted string).
 
 +------------+
@@ -66,6 +66,8 @@ o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4)
 o WTI RPS-10
 
 o IBM RSA Remote Supervisor Adapter (T2ET16- for x335, GEET117A for x345) (*)
+
+o Rackable Systems Phantom Remote Management Module (v3.0.4)
 
 Devices marked with an asterisk (*) are deployed on LLNL production clusters 
 of substantial size.

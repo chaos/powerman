@@ -1,3 +1,8 @@
+2003-04-18 garlick
+    * Get rid of "onstring" and "offstring" and add optional on="regex"
+      off="regex" parameters to setstatus stmt.
+    * Beginnings of phantom device support.
+
 2003-04-17 garlick
     * Implement "foreachnode" and "foreachplug" constructs which will execute
       an inner block of statements N times, where N is the number of configured

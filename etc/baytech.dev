@@ -13,8 +13,6 @@
 #
 specification "baytech" {
 	type 		TELNET
-	offstring 	"Off"
-	onstring  	"On"
 	timeout 	10   # about 5 sec for cycle command
 	pingperiod 	90
 
@@ -42,7 +40,7 @@ specification "baytech" {
 		expect "Circuit Breaker:[^\n]*\r\n"	
 		foreachplug {
 			expect "([0-9]+)[ ]+(On|Off)"
-			setstatus $1 $2
+			setstatus $1 $2 on="On" off="Off"
 		}
 		expect "RPC-3>"
 	}

@@ -47,13 +47,16 @@
 /*
  * A PreScript is a list of PreStmts.
  */
+#define PRESTMT_MAGIC 0x89786756
 typedef struct {
+    int magic;
     StmtType type;              /* delay/expect/send */
     char *str;                  /* expect string, send fmt, setstatus plug */
     struct timeval tv;          /* delay value */
     int mp1;                    /* setstatus plug, setplugname plug match pos */
     int mp2;                    /* settatus stat, setplugname node match pos */
-    List stmts;                 /* subblock */
+    List prestmts;              /* subblock */
+    List interps;               /* interpretations for setstatus */
 } PreStmt;
 typedef List PreScript;
 
@@ -64,8 +67,6 @@ typedef List PreScript;
 typedef struct {
     char *name;                 /* specification name, e.g. "icebox" */
     DevType type;               /* device type, e.g. TCP_DEV */
-    char *off;                  /* off string, e.g. "OFF" */
-    char *on;                   /* on string, e.g. "ON" */
     struct timeval timeout;     /* timeout for this device */
     struct timeval ping_period; /* ping period for this device 0.0 = none */
     List plugs;                 /* list of plug names (e.g. "1" thru "10") */
@@ -83,7 +84,7 @@ static void makeClientPort(char *s2);
 
 /* device config */
 static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr, 
-                      char *mp1str, char *mp2str, List prestmts);
+                      char *mp1str, char *mp2str, List prestmts, List interps);
 static void destroyPreStmt(PreStmt *p);
 static Spec *makeSpec(char *name);
 static Spec *findSpec(char *name);
@@ -91,6 +92,10 @@ static int matchSpec(Spec * spec, void *key);
 static void destroySpec(Spec * spec);
 static void _clear_current_spec(void);
 static void makeScript(int com, List stmts);
+static void destroyInterp(Interp *i);
+static Interp *makeInterp(InterpState state, char *str);
+static List copyInterpList(List ilist);
+static void _dbg_interp(char *str, List il);
 
 /* utility functions */
 static void _errormsg(char *msg);
@@ -131,7 +136,7 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 
 /* general */
 %token TOK_MATCHPOS TOK_STRING_VAL TOK_NUMERIC_VAL TOK_YES TOK_NO
-%token TOK_BEGIN TOK_END TOK_UNRECOGNIZED
+%token TOK_BEGIN TOK_END TOK_UNRECOGNIZED TOK_EQUALS
 
 /* deprecated in 1.0.16 */
 %token TOK_B_NODES TOK_E_NODES TOK_B_GLOBAL TOK_E_GLOBAL TOK_OLD_PORT
@@ -212,8 +217,6 @@ spec_item_list  : spec_item_list spec_item
                 | spec_item
 ;
 spec_item       : spec_type
-                | spec_off_regex
-                | spec_on_regex
                 | spec_timeout
                 | spec_ping_period
                 | spec_plug_list
@@ -225,18 +228,6 @@ spec_type       : TOK_SPEC_TYPE TOK_TYPE_TCP {
     current_spec.type = TELNET_DEV;
 }               | TOK_SPEC_TYPE TOK_TYPE_SERIAL {
     current_spec.type = SERIAL_DEV;
-}
-;
-spec_off_regex  : TOK_OFF_STRING TOK_STRING_VAL {
-    if (current_spec.off != NULL)
-        _errormsg("duplicate off string");
-    current_spec.off = Strdup($2);
-}
-;
-spec_on_regex   : TOK_ON_STRING TOK_STRING_VAL {
-    if (current_spec.on != NULL)
-        _errormsg("duplicate on string");
-    current_spec.on = Strdup($2);
 }
 ;
 spec_timeout    : TOK_DEV_TIMEOUT TOK_NUMERIC_VAL {
@@ -321,28 +312,51 @@ stmt_list       : stmt_list stmt {
 }
 ;
 stmt            : TOK_EXPECT TOK_STRING_VAL {
-    $$ = (char *)makePreStmt(STMT_EXPECT, $2, NULL, NULL, NULL, NULL);
+    $$ = (char *)makePreStmt(STMT_EXPECT, $2, NULL, NULL, NULL, NULL, NULL);
 }               | TOK_SEND TOK_STRING_VAL {
-    $$ = (char *)makePreStmt(STMT_SEND, $2, NULL, NULL, NULL, NULL);
+    $$ = (char *)makePreStmt(STMT_SEND, $2, NULL, NULL, NULL, NULL, NULL);
 }               | TOK_DELAY TOK_NUMERIC_VAL {
-    $$ = (char *)makePreStmt(STMT_DELAY, NULL, $2, NULL, NULL, NULL);
-}               | TOK_SETPLUGNAME TOK_MATCHPOS TOK_NUMERIC_VAL TOK_MATCHPOS 
-                  TOK_NUMERIC_VAL {
-    $$ = (char *)makePreStmt(STMT_SETPLUGNAME, NULL, NULL, $5, $3, NULL);
-}               | TOK_SETSTATUS TOK_STRING_VAL TOK_MATCHPOS TOK_NUMERIC_VAL {
-    $$ = (char *)makePreStmt(STMT_SETSTATUS, $2, NULL, NULL, $4, NULL);
-}               | TOK_SETSTATUS TOK_MATCHPOS TOK_NUMERIC_VAL TOK_MATCHPOS 
-                  TOK_NUMERIC_VAL {
-    $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, $3, $5, NULL);
-}               | TOK_SETSTATUS TOK_MATCHPOS TOK_NUMERIC_VAL {
-    $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, NULL, $3, NULL);
+    $$ = (char *)makePreStmt(STMT_DELAY, NULL, $2, NULL, NULL, NULL, NULL);
+}               | TOK_SETPLUGNAME regmatch regmatch {
+    $$ = (char *)makePreStmt(STMT_SETPLUGNAME, NULL, NULL, $2, $3, NULL, NULL);
+}               | TOK_SETSTATUS TOK_STRING_VAL regmatch {
+    $$ = (char *)makePreStmt(STMT_SETSTATUS, $2, NULL, NULL, $3, NULL, NULL);
+}               | TOK_SETSTATUS TOK_STRING_VAL regmatch interp_list {
+    $$ = (char *)makePreStmt(STMT_SETSTATUS, $2, NULL, NULL, $3, NULL,(List)$4);
+}               | TOK_SETSTATUS regmatch regmatch {
+    $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, $2, $3, NULL, NULL);
+}               | TOK_SETSTATUS regmatch regmatch interp_list {
+    $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, $2, $3, NULL,(List)$4);
+}               | TOK_SETSTATUS regmatch {
+    $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, NULL, $2, NULL, NULL);
+}               | TOK_SETSTATUS regmatch interp_list {
+    $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, NULL,$2,NULL,(List)$3);
 }               | TOK_FOREACHNODE stmt_block {
-    $$ = (char *)makePreStmt(STMT_FOREACHNODE, NULL, NULL, NULL, NULL,(List)$2);
+    $$ = (char *)makePreStmt(STMT_FOREACHNODE, NULL, NULL, NULL, NULL, 
+                             (List)$2, NULL);
 }               | TOK_FOREACHPLUG stmt_block {
-    $$ = (char *)makePreStmt(STMT_FOREACHPLUG, NULL, NULL, NULL, NULL,(List)$2);
+    $$ = (char *)makePreStmt(STMT_FOREACHPLUG, NULL, NULL, NULL, NULL, 
+                             (List)$2, NULL);
 }
 ;
-
+interp_list       : interp_list interp { 
+    list_append((List)$1, $2); 
+    $$ = $1; 
+}               | interp { 
+    $$ = (char *)list_create((ListDelF)destroyInterp);
+    list_append((List)$$, $1); 
+}
+;
+interp            : TOK_ON TOK_EQUALS TOK_STRING_VAL {
+    $$ = (char *)makeInterp(ST_ON, $3);
+}                 | TOK_OFF TOK_EQUALS TOK_STRING_VAL {
+    $$ = (char *)makeInterp(ST_OFF, $3);
+}
+;
+regmatch          : TOK_MATCHPOS TOK_NUMERIC_VAL {
+    $$ = $2;
+}
+;
 %%
 
 void scanner_init(char *filename);
@@ -382,15 +396,16 @@ static void _spec_missing(char *msg)
             msg, scanner_file(), scanner_line());
 }
 
-/* makePreStmt(type, str, tv, mp1(plug), mp2(stat/node) */
+/* makePreStmt(type, str, tv, mp1(plug), mp2(stat/node), prestmts, interps */
 static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr, 
-                      char *mp1str, char *mp2str, List prestmts)
+                      char *mp1str, char *mp2str, List prestmts, 
+                      List interps)
 {
     PreStmt *new;
 
     new = (PreStmt *) Malloc(sizeof(PreStmt));
-    memset(new, 0, sizeof(PreStmt));
 
+    new->magic = PRESTMT_MAGIC;
     new->type = type;
     new->mp1 = mp1str ? _strtolong(mp1str) : -1;
     new->mp2 = mp2str ? _strtolong(mp2str) : -1;
@@ -398,19 +413,25 @@ static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
         new->str = Strdup(str);
     if (tvstr)
         _doubletotv(&new->tv, _strtodouble(tvstr));
-    new->stmts = prestmts;
+    new->prestmts = prestmts;
+    new->interps = interps;
 
     return new;
 }
 
 static void destroyPreStmt(PreStmt *p)
 {
+    assert(p->magic == PRESTMT_MAGIC);
+    p->magic = 0;
     if (p->str)
         Free(p->str);
     p->str = NULL;
-    if (p->stmts)
-        list_destroy(p->stmts);
-    p->stmts = NULL;
+    if (p->prestmts)
+        list_destroy(p->prestmts);
+    p->prestmts = NULL;
+    if (p->interps)
+        list_destroy(p->interps);
+    p->interps = NULL;
     Free(p);
 }
 
@@ -420,8 +441,6 @@ static void _clear_current_spec(void)
 
     current_spec.name = NULL;
     current_spec.type = NO_DEV;
-    current_spec.off = NULL;
-    current_spec.on = NULL;
     current_spec.plugs = NULL;
     timerclear(&current_spec.timeout);
     timerclear(&current_spec.ping_period);
@@ -448,10 +467,6 @@ static Spec *makeSpec(char *name)
     current_spec.name = Strdup(name);
     if (current_spec.type == NO_DEV)
         _spec_missing("type");
-    if(current_spec.off == NULL)
-        _spec_missing("offstring");
-    if(current_spec.on == NULL)
-        _spec_missing("onstring");
 
     /* FIXME: check for manditory scripts here?  what are they? */
 
@@ -468,10 +483,6 @@ static void destroySpec(Spec * spec)
 
     if (spec->name)
         Free(spec->name);
-    if (spec->off)
-        Free(spec->off);
-    if (spec->on)
-        Free(spec->on);
     if (spec->plugs)
         list_destroy(spec->plugs);
     for (i = 0; i < NUM_SCRIPTS; i++)
@@ -497,6 +508,73 @@ static void makeScript(int com, List stmts)
     current_spec.prescripts[com] = stmts;
 }
 
+static void _dbg_interp(char *str, List il)
+{
+    Interp *i;
+    ListIterator itr;
+
+    if (il != NULL) {
+        printf("XXX %s: ", str);
+        itr = list_iterator_create(il);
+        while ((i = list_next(itr))) {
+            assert(i->magic == INTERP_MAGIC);
+            printf("%s %d ", i->str, i->state);
+        }
+        list_iterator_destroy(itr);
+        printf("\n");
+    } else
+        printf("XXX %s: [empty]\n", str);
+}
+
+static Interp *makeInterp(InterpState state, char *str)
+{
+    Interp *new = (Interp *)Malloc(sizeof(Interp));
+
+    new->magic = INTERP_MAGIC; 
+    new->str = Strdup(str); 
+    new->re = NULL;  /* defer compilation until copyInterpList */
+    new->state = state;
+
+    return new;
+}
+
+static void destroyInterp(Interp *i)
+{
+    assert(i->magic == INTERP_MAGIC);
+    i->magic = 0;
+    Free(i->str);
+    if (i->re) {
+        regfree(i->re);
+        Free(i->re);
+    }
+    Free(i);
+}
+
+static List copyInterpList(List il)
+{
+    reg_syntax_t cflags = REG_EXTENDED | REG_NOSUB;
+    ListIterator itr;
+    Interp *ip, *icpy;
+    List new = NULL;
+
+    if (il != NULL) {
+        new = list_create((ListDelF) destroyInterp);
+
+        itr = list_iterator_create(il);
+        while((ip = list_next(itr))) {
+            assert(ip->magic == INTERP_MAGIC);
+            icpy = makeInterp(ip->state, ip->str);
+            icpy->re = (regex_t *)Malloc(sizeof(regex_t));
+            Regcomp(icpy->re, icpy->str, cflags);
+            assert(icpy->magic == INTERP_MAGIC);
+            list_append(new, icpy);
+        }
+        list_iterator_destroy(itr);
+    }
+
+    return new;
+}
+
 /**
  ** Powerman.conf stuff.
  **/
@@ -510,8 +588,12 @@ static void destroyStmt(Stmt *stmt)
         Free(stmt->u.send.fmt);
         break;
     case STMT_EXPECT:
+        regfree(&stmt->u.expect.exp);
         break;
     case STMT_DELAY:
+        break;
+    case STMT_SETSTATUS:
+        list_destroy(stmt->u.setstatus.interps);
         break;
     case STMT_FOREACHNODE:
     case STMT_FOREACHPLUG:
@@ -529,6 +611,7 @@ static Stmt *makeStmt(PreStmt *p)
     reg_syntax_t cflags = REG_EXTENDED;
     ListIterator itr;
 
+    assert(p->magic == PRESTMT_MAGIC);
     stmt = (Stmt *) Malloc(sizeof(Stmt));
     stmt->type = p->type;
     switch (p->type) {
@@ -536,7 +619,7 @@ static Stmt *makeStmt(PreStmt *p)
         stmt->u.send.fmt = Strdup(p->str);
         break;
     case STMT_EXPECT:
-        Regcomp(&(stmt->u.expect.exp), p->str, cflags);
+        Regcomp(&stmt->u.expect.exp, p->str, cflags);
         break;
     case STMT_SETSTATUS:
         stmt->u.setstatus.stat_mp = p->mp2;
@@ -544,6 +627,7 @@ static Stmt *makeStmt(PreStmt *p)
             stmt->u.setstatus.plug_name = Strdup(p->str);
         else
             stmt->u.setstatus.plug_mp = p->mp1;
+        stmt->u.setstatus.interps = copyInterpList(p->interps);
         break;
     case STMT_SETPLUGNAME:
         stmt->u.setplugname.plug_mp = p->mp1;
@@ -555,8 +639,9 @@ static Stmt *makeStmt(PreStmt *p)
     case STMT_FOREACHNODE:
     case STMT_FOREACHPLUG:
         stmt->u.foreach.stmts = list_create((ListDelF) destroyStmt);
-        itr = list_iterator_create(p->stmts);
+        itr = list_iterator_create(p->prestmts);
         while((subp = list_next(itr))) {
+            assert(subp->magic == PRESTMT_MAGIC);
             list_append(stmt->u.foreach.stmts, makeStmt(subp));
         }
         list_iterator_destroy(itr);
@@ -573,7 +658,6 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
     Device *dev;
     Spec *spec;
     char *plugname;
-    reg_syntax_t cflags = REG_EXTENDED;
     int i;
 
     /* find that spec */
@@ -614,9 +698,6 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
     }
 
     /* transfer remaining info from the spec to the device */
-    re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
-    Regcomp( &(dev->on_re), spec->on, cflags | REG_NOSUB);
-    Regcomp( &(dev->off_re), spec->off, cflags | REG_NOSUB);
     for (i = 0; i < NUM_SCRIPTS; i++) {
         PreStmt *p;
 

@@ -13,8 +13,6 @@
 #
 specification  "wti-rps10" {
 	type 		SERIAL
-	offstring 	"Off"
-	onstring  	"On"
 	timeout 	5 
 
 	plug name { "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" }
@@ -28,7 +26,7 @@ specification  "wti-rps10" {
 	script status {
 		send "\030\030\002\030\030\002\030\030%s?\r"
 		expect "Plug ([0-9]) (On|Off)"
-		setstatus $1 $2
+		setstatus $1 $2 off="Off" on="On"
 		expect "Complete"
 		#delay 0.5
 	}

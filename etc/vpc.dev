@@ -4,8 +4,6 @@
 #
 specification "vpc" {
 	type 		TCP
-	offstring 	"OFF"
-	onstring  	"ON"
 	timeout 	5.0
 #	pingperiod 	10.0
 
@@ -27,7 +25,7 @@ specification "vpc" {
 		send "stat\r\n"
 		foreachplug {
 			expect "plug ([0-9]+): (ON|OFF)"
-			setstatus $1 $2
+			setstatus $1 $2 on="ON" off="OFF"
 		}
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
@@ -36,7 +34,7 @@ specification "vpc" {
 		send "stat_soft\r\n"
 		foreachplug {
 			expect "plug ([0-9]+): (ON|OFF)"
-			setstatus $1 $2
+			setstatus $1 $2 on="ON" off="OFF"
 		}
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "

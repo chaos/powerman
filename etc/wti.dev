@@ -12,8 +12,6 @@
 #
 specification "wti" {
 	type 		TELNET
-	offstring 	"OFF"
-	onstring  	"ON"
 	timeout 	30  # "/boot *" command takes about 20 sec
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
@@ -33,7 +31,7 @@ specification "wti" {
 		expect "\\+\r\n"
 		foreachplug {
 			expect " ([0-9]+)[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
-			setstatus $1 $2
+			setstatus $1 $2 off="OFF" on="ON"
 		}
 		expect "\\+\r\n"
 		expect "NPS> "

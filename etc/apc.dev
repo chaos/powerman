@@ -7,8 +7,6 @@
 #
 specification "apc" {
 	type 		TELNET
-	offstring 	"OFF"
-	onstring  	"ON"
 	timeout 	10  
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
@@ -32,7 +30,7 @@ specification "apc" {
 		send "\r\n"  # refresh
 		foreachplug {
 			expect "([0-9]+)-[^\n]*(ON|OFF)[^\n]*\r\n"
-			setstatus $1 $2
+			setstatus $1 $2 on="ON" off="OFF"
 		}
 		expect "> "
 	}

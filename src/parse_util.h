@@ -24,9 +24,6 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-/* Review: consider moving private data structs to .c file */
-
-
 #ifndef PARSE_UTIL_H
 #define PARSE_UTIL_H
 

@@ -18,8 +18,6 @@
 #
 specification "ibmrsa" {
 	type 		TELNET
-	offstring 	"off"
-	onstring  	"on"
 	timeout  	20
 
 	script login {
@@ -44,7 +42,7 @@ specification "ibmrsa" {
 		send "power 2 0\r\n"
 		foreachnode {
 			expect "Server 0x([0-9A-F]{2}) Status = (on|off)"
-			setstatus $1 $2 
+			setstatus $1 $2 on="on" off="off"
 		}
 	}
 	script on {

@@ -57,6 +57,15 @@
 /* count of scripts above */
 #define NUM_SCRIPTS         22
 
+#define INTERP_MAGIC 0x13434550
+typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } InterpState;
+typedef struct {
+    int magic;
+    InterpState state;
+    char *str;
+    regex_t *re;
+} Interp;
+
 /*
  * A Script is a list of Stmts.
  */
@@ -76,6 +85,7 @@ typedef struct {
             char *plug_name;    /* plug name if literally specified */
             int plug_mp;        /* regex subexp match pos of plug name if not */
             int stat_mp;        /* regex subexp match pos of plug status */
+            List interps;       /* list of possible interpretations */
         } setstatus;
         struct {                /* SETPLUGNAME (regexes refer to prev expect) */
             int plug_mp;        /* regex match position of plug name */
@@ -94,11 +104,10 @@ typedef List Script;
 /*
  * Query actions fill ArgList with values and return them to the client.
  */
-typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } ArgState;
 typedef struct {
     char *node;                 /* node name */
     char *val;                  /* value as returned by the device */
-    ArgState state;             /* interpreted value, if appropriate */
+    InterpState state;          /* interpreted value, if appropriate */
 } Arg;
 typedef struct {
     List argv;                  /* list of Arg structures */
@@ -128,9 +137,6 @@ typedef enum { TELNET_NONE, TELNET_CMD, TELNET_OPT } TelnetState;
 typedef struct {
     int magic;
     char *name;                 /* name of device */
-
-    regex_t on_re;              /* regex to match "on" in query */
-    regex_t off_re;             /* regex to match "off" in query */
 
     char *specname;             /* name of specification, e.g. "icebox3" */
     DevType type;               /* type of device e.g. TCP_DEV */

@@ -14,4 +14,6 @@
   powerman using existing capabilities.
 * Support HTTP_DEV for devices such as the IBM RSA adapter that are most 
   efficiently managed that way.
-* Take an flock F_WRLCK on serial devices to peacfully coexist with conman.
+* Take an flock F_WRLCK on serial devices to peacefully coexist with conman.
+* Any serial-controlled device could be placed behind a terminal server and
+  accessed via telnet.  Make this selectable via powerman.conf.

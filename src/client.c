@@ -316,7 +316,7 @@ static void _client_query_device_reply(Client * c, char *arg)
 
 /* helper for _client_query_status_reply */
 static int _argval_ranged_string(ArgList * arglist, char *str, int len,
-                                 ArgState state)
+                                 InterpState state)
 {
     hostlist_t hl = hostlist_create(NULL);
     ListIterator itr;

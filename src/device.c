@@ -90,9 +90,7 @@ static bool _process_expect(Device * dev, Action *act, ExecCtx *e);
 static bool _process_send(Device * dev, Action *act, ExecCtx *e);
 static bool _process_delay(Device * dev, Action *act, ExecCtx *e, 
         struct timeval *timeout);
-static void _set_argval_state(ArgList * arglist, char *node,
-                              ArgState state);
-static void _set_argval(ArgList * arglist, char *node, char *val);
+static void _set_argval(ArgList * arglist, char *node, char *val, List interps);
 static int _match_name(Device * dev, void *key);
 static void _handle_read(Device * dev);
 static void _handle_write(Device * dev);
@@ -1001,7 +999,7 @@ static bool _process_setstatus(Device *dev, Action *act, ExecCtx *e)
     char *plug_name = NULL;
 
     /* 
-     * Usage: setstatus [plug] status
+     * Usage: setstatus [plug] status [interps]
      * plug can be literal plug name, or regex match, or omitted, 
      * (implying target plug name).
      */
@@ -1018,11 +1016,7 @@ static bool _process_setstatus(Device *dev, Action *act, ExecCtx *e)
         char *node = _plug_to_node(dev, plug_name);
 
         if (str && node) {
-            if (_findregex(&dev->on_re, str, strlen(str), 0, NULL))
-                _set_argval_state(act->arglist, node, ST_ON);
-            if (_findregex(&dev->off_re, str, strlen(str), 0, NULL))
-                _set_argval_state(act->arglist, node, ST_OFF);
-            _set_argval(act->arglist, node, str);
+            _set_argval(act->arglist, node, str, e->cur->u.setstatus.interps);
             Free(str);
         } 
         /* if no match, do nothing */
@@ -1256,8 +1250,6 @@ void dev_destroy(Device * dev)
 
     Free(dev->name);
     Free(dev->specname);
-    regfree(&(dev->on_re));
-    regfree(&(dev->off_re));
     switch (dev->type) {
     case TELNET_DEV:
     case TCP_DEV:
@@ -1372,7 +1364,7 @@ ArgList *dev_link_arglist(ArgList * arglist)
     return arglist;
 }
 
-/* helper for _set_argval_onoff */
+/* helper for _set_argval */
 static int _arg_match(Arg * arg, void *key)
 {
     return (strcmp(arg->node, (char *) key) == 0 
@@ -1382,23 +1374,26 @@ static int _arg_match(Arg * arg, void *key)
 /*
  * Set the value of the argument with key = node.
  */
-static void _set_argval_state(ArgList * arglist, char *node, ArgState state)
+static void _set_argval(ArgList * arglist, char *node, char *val, List interps)
 {
     Arg *arg;
 
-    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node)))
-        arg->state = state;
-}
+    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node))) {
+        ListIterator itr;
+        Interp *i;
 
-/*
- * Set the value of the argument with key = node.
- */
-static void _set_argval(ArgList * arglist, char *node, char *val)
-{
-    Arg *arg;
-
-    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node)))
         arg->val = Strdup(val);
+
+        /* check for a matching interpretation (will default to ST_UNKNOWN) */
+        itr = list_iterator_create(interps);
+        while ((i = list_next(itr))) {
+            if (_findregex(i->re, val, strlen(val), 0, NULL)) {
+                arg->state = i->state;
+                break;
+            }
+        }
+        list_iterator_destroy(itr);
+    }
 }
 
 static void _process_ping(Device * dev, struct timeval *timeout)

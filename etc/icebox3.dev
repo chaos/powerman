@@ -9,8 +9,6 @@
 #
 specification "icebox3" {
 	type 		TCP
-	offstring 	"0|OFF"		# 0/1 for STATUS and STATUS_SOFT
-	onstring  	"1|ON"		#     and OFF/ON for STATUS_BEACON
 	timeout 	20
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
@@ -26,30 +24,30 @@ specification "icebox3" {
 	script status_all {
 		send "ps *\r\n"
 		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
-		setstatus "1" $1
-		setstatus "2" $2
-		setstatus "3" $3
-		setstatus "4" $4
-		setstatus "5" $5
-		setstatus "6" $6
-		setstatus "7" $7
-		setstatus "8" $8
-		setstatus "9" $9
-		setstatus "10" $10
+		setstatus "1" $1 off="0" on="1"
+		setstatus "2" $2 off="0" on="1"
+		setstatus "3" $3 off="0" on="1"
+		setstatus "4" $4 off="0" on="1"
+		setstatus "5" $5 off="0" on="1"
+		setstatus "6" $6 off="0" on="1"
+		setstatus "7" $7 off="0" on="1"
+		setstatus "8" $8 off="0" on="1"
+		setstatus "9" $9 off="0" on="1"
+		setstatus "10" $10 off="0" on="1"
 	}
 	script status_soft_all {
 		send "ns *\r\n"
 		expect "N1:([012]) N2:([012]) N3:([012]) N4:([012]) N5:([012]) N6:([012]) N7:([012]) N8:([012]) N9:([012]) N10:([012])[[:space:]]*\r\n"
-		setstatus "1" $1
-		setstatus "2" $2
-		setstatus "3" $3
-		setstatus "4" $4
-		setstatus "5" $5
-		setstatus "6" $6
-		setstatus "7" $7
-		setstatus "8" $8
-		setstatus "9" $9
-		setstatus "10" $10
+		setstatus "1" $1 off="0" on="1"
+		setstatus "2" $2 off="0" on="1"
+		setstatus "3" $3 off="0" on="1"
+		setstatus "4" $4 off="0" on="1"
+		setstatus "5" $5 off="0" on="1"
+		setstatus "6" $6 off="0" on="1"
+		setstatus "7" $7 off="0" on="1"
+		setstatus "8" $8 off="0" on="1"
+		setstatus "9" $9 off="0" on="1"
+		setstatus "10" $10 off="0" on="1"
 	}
 	# Assumption: v3 implies that "ts" is deprecated in favor of "is"
 	script status_temp_all {
@@ -69,16 +67,16 @@ specification "icebox3" {
 	script status_beacon_all {
                 send "be *\r\n"
                 expect "N1:([A-Z]+) N2:([A-Z]+) N3:([A-Z]+) N4:([A-Z]+) N5:([A-Z]+) N6:([A-Z]+) N7:([A-Z]+) N8:([A-Z]+) N9:([A-Z]+) N10:([A-Z]+) N11:[A-Z]+ N12:[A-Z]+[[:space:]]*\r\n"
-                setstatus "1" $1
-                setstatus "2" $2
-                setstatus "3" $3
-                setstatus "4" $4
-                setstatus "5" $5
-                setstatus "6" $6
-                setstatus "7" $7
-                setstatus "8" $8
-                setstatus "9" $9
-                setstatus "10" $10
+                setstatus "1" $1 off="OFF" on="ON"
+                setstatus "2" $2 off="OFF" on="ON"
+                setstatus "3" $3 off="OFF" on="ON"
+                setstatus "4" $4 off="OFF" on="ON"
+                setstatus "5" $5 off="OFF" on="ON"
+                setstatus "6" $6 off="OFF" on="ON"
+                setstatus "7" $7 off="OFF" on="ON"
+                setstatus "8" $8 off="OFF" on="ON"
+                setstatus "9" $9 off="OFF" on="ON"
+                setstatus "10" $10 off="OFF" on="ON"
         }
 	script on {
 		send "ph %s\r\n"
