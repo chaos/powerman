@@ -38,9 +38,9 @@
 #include "list.h"
 #include "pm_string.h"
 
-#define NUM_SCRIPTS        11
-#define UPDATE_SECONDS    100
-#define NOT_SET         (-1)
+#define NUM_SCRIPTS	11
+#define UPDATE_SECONDS	300
+#define NOT_SET		(-1)
 
 /* 
  * Devices:
