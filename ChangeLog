@@ -58,7 +58,6 @@
 
     * : tag powerman-1-0-19
 
->>>>>>> 1.249
 2003-12-04 Jim Garlick <garlick@llnl.gov>
 
     * etc/cyclades-pm8.dev: fixed status script to not fail intermittently
