@@ -7,8 +7,8 @@ begin protocol specification
 	plug count 8
 	device timeout 5.0
 	begin LOGIN_SCRIPT
-		send "\r\n"
-		expect "[0-9]* vpc> "
+		send "login\r\n"
+		expect "[0-9]* OK"
 	end LOGIN_SCRIPT
 	begin LOGOUT_SCRIPT
 		send "logoff\r\n"
