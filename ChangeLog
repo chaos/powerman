@@ -1,3 +1,10 @@
+2003-07-23 Jim Garlick <garlick@llnl.gov>
+
+    * etc/ibmrsa.dev: Tweaked for new firmware release.
+
+    * etc/ibmrsa-smc.dev: New.  Config for RSA connected to main board via
+    system management connector.
+
 2003-07-21 Jim Garlick <garlick@llnl.gov>
 
     * : minor code cleanup

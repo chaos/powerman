@@ -16,6 +16,7 @@ specification "baytech-rpc28-nc" {
 
 	script login {
 		send "temp\r\n"
+		expect "Internal Temperature[^C]+ C"
 		expect ">"
 	}
 	script logout {
@@ -23,6 +24,7 @@ specification "baytech-rpc28-nc" {
 	}
 	script status_all {
 		send "temp\r\n"
+		expect "Internal Temperature[^C]+ C"
 		expect ">"
 		send "status\r\n"
 		expect "Internal Temperature[^C]+ C"
