@@ -61,8 +61,8 @@
 #define CP_TEMP_ALL	"temp"
 #define CP_BEACON	"beacon %s"
 #define CP_BEACON_ALL	"beacon"
-#define CP_BEACON_ON	"beacon_on %s"
-#define CP_BEACON_OFF	"beacon_off %s"
+#define CP_BEACON_ON	"flash %s"
+#define CP_BEACON_OFF	"unflash %s"
 
 /* 
  * Responses - 
@@ -98,9 +98,9 @@
 							CP_EOL \
 	"304 beacon [<nodes>]   - query beacon status (if available)" \
 							CP_EOL \
-	"304 beacon_on <nodes>  - set beacon to ON (if available)" \
+	"304 flash <nodes>      - set beacon to ON (if available)" \
 							CP_EOL \
-	"304 beacon_off <nodes> - set beacon to OFF (if available)" \
+	"304 unflash <nodes>    - set beacon to OFF (if available)" \
 							CP_EOL \
 	"304 help               - display help"		CP_EOL	\
 	"104 quit               - logout"		CP_EOL
