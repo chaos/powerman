@@ -76,6 +76,8 @@ static void _prompt_loop(int num, int fd)
 	    printf("%d: lost connection\n", num);
 	    break;
 	}
+	if (strlen(buf) == 0)
+	    continue;
 	if (strcmp(buf, "logoff") == 0) {
 	    printf("%d: logoff\n", num);
 	    dprintf(fd, "%d OK\n", seq);
