@@ -50,23 +50,29 @@
 static void _set_targets(Device * dev, Action * sact);
 static Action *_do_target_copy(Device * dev, Action * sact, char *target);
 static void _do_target_some(Device * dev, Action * sact);
-static void _do_reconnect(Device * dev);
+static bool _reconnect(Device * dev);
+static bool _finish_connect(Device * dev, struct timeval *tv);
+bool _time_to_reconnect(Device *dev, struct timeval *tv);
+static void _disconnect(Device * dev);
 static bool _process_expect(Device * dev);
 static bool _process_send(Device * dev);
 static bool _process_delay(Device * dev);
 static void _do_device_semantics(Device * dev, List map);
-static void _do_pmd_semantics(Device * dev, List map);
 static bool _match_regex(Device * dev, char *expect);
 static void _acttodev(Device * dev, Action * sact);
 static int _match_name(Device * dev, void *key);
+static void _handle_read(Device * dev);
+static void _handle_write(Device * dev);
+static void _process_script(Device * dev);
+static void _recover(Device * dev);
+static bool _overdue(struct timeval * time_stamp, struct timeval * timeout);
 
 static List dev_devices = NULL;
 
 /* NOTE: array positions correspond to values of PM_* in action.h */
 static char *command_str[] = {
-    "PM_ERROR", "PM_LOG_IN", "PM_CHECK_LOGIN", "PM_LOG_OUT", "PM_UPDATE_PLUGS",
-    "PM_UPDATE_NODES", "PM_POWER_ON", "PM_POWER_OFF", "PM_POWER_CYCLE",
-    "PM_RESET", "PM_NAMES"
+    "PM_LOG_IN", "PM_LOG_OUT", "PM_UPDATE_PLUGS", "PM_UPDATE_NODES", 
+    "PM_POWER_ON", "PM_POWER_OFF", "PM_POWER_CYCLE", "PM_RESET"
 };
 
 /* initialize this module */
@@ -86,48 +92,6 @@ void dev_add(Device *dev)
 {
     list_append(dev_devices, dev);
 }
-
-/*
- *   This is called for each device to get it started on its
- * connection.  It probably will be after a few trips through the 
- * main select() loop before the devices actually connect.
- *   The first three device types connect in more or less the same 
- * way.  A TTY_DEV would be easily initiated by connecting a 
- * file descriptor to some /dev/tty entry.  I haven't implemented
- * this, and we don't plan on putting any such equipment into 
- * production soon, so I'm not worried about it.
- */
-static void _start_dev(Device * dev, bool logit)
-{
-    dev->logit = logit;
-    switch (dev->type) {
-	case TCP_DEV:
-	case PMD_DEV:
-	case TELNET_DEV:
-	    dev_nb_connect(dev);
-	    break;
-	case TTY_DEV:
-	    err_exit(FALSE, "tty device is unimplemented");
-	case SNMP_DEV:
-	    err_exit(FALSE, "snmp device is unimplemented");
-	case NO_DEV:
-	default:
-	    err_exit(FALSE, "attempt to start unimplemented device");
-    }
-}
-
-
-/* initialize all the power control devices */
-void dev_start_all(bool logit)
-{
-    Device *dev;
-    ListIterator itr = list_iterator_create(dev_devices);
-
-    while ((dev = list_next(itr)))
-	_start_dev(dev, logit);
-    list_iterator_destroy(itr);
-}
-
 
 /*
  * Telemetry logging callback for Buffer outgoing to device.
@@ -154,24 +118,101 @@ static void _buflogfun_from(unsigned char *mem, int len, void *arg)
 }
 
 /*
+ * Test whether timeout has occurred
+ *  time_stamp (IN) 
+ *  timeout (IN)
+ *  RETURN		TRUE if (time_stamp + timeout > now)
+ */
+static bool _overdue(struct timeval * time_stamp, struct timeval * timeout)
+{
+    struct timeval now;
+    struct timeval limit;
+    bool result = FALSE;
+
+    /* timeradd(time_stamp, timeout, limit) */
+    limit.tv_usec = time_stamp->tv_usec + timeout->tv_usec;
+    limit.tv_sec = time_stamp->tv_sec + timeout->tv_sec;
+    if (limit.tv_usec > 1000000) {
+	limit.tv_sec++;
+	limit.tv_usec -= 1000000;
+    }
+    gettimeofday(&now, NULL);
+    /* timercmp(now, limit, >) */
+    if ((now.tv_sec > limit.tv_sec) ||
+	((now.tv_sec == limit.tv_sec) && (now.tv_usec > limit.tv_usec)))
+	result = TRUE;
+    return result;
+}
+
+/* 
+ * If tv is less than timeout, or timeout is zero, set timeout = tv.
+ */
+void _update_timeout(struct timeval *timeout, struct timeval *tv)
+{
+    if (timercmp(tv, timeout, <) || (!timeout->tv_sec && !timeout->tv_sec))
+	*timeout = *tv;
+}
+
+/* 
+ * Return TRUE if OK to attempt reconnect.  If FALSE, put the time left 
+ * in timeout if it is less than timeout or if timeout is zero.
+ */
+bool _time_to_reconnect(Device *dev, struct timeval *timeout)
+{
+    static int rtab[] = { 1, 2, 4, 8, 15, 30, 60 };
+    int max_rtab_index = sizeof(rtab)/sizeof(int) - 1;
+    bool result = TRUE;
+
+    if (dev->reconnect_count > 0) {
+	    int rix = dev->reconnect_count - 1;
+	    struct timeval now, timesince, retry;
+
+	    timerclear(&retry);
+	    retry.tv_sec = rtab[rix > max_rtab_index ? max_rtab_index : rix];
+
+	    /* timesince = now - dev->last_reconnect */
+	    Gettimeofday(&now, NULL);
+	    timersub(&now, &dev->last_reconnect, &timesince);
+
+	    if (timercmp(&timesince, &retry, <)) {  /* timesince < retry */
+		if (timeout) {
+		    struct timeval timeleft;
+
+		    /* timeleft = retry - timesince */
+		    timersub(&retry, &timesince, &timeleft);
+
+		    _update_timeout(timeout, &timeleft);
+		}
+		result = FALSE;
+	    }
+    }
+    return result;
+}
+
+
+/*
  *   The dev struct is initialized with all the needed host info.
  * This is my copying of Stevens' nonblocking connect.  After we 
  * have a file descriptor we create buffers for sending and 
  * receiving.  At the bottom, in the unlikely event the the 
  * connect completes immediately we launch the log in script.
  */
-void dev_nb_connect(Device * dev)
+static bool _reconnect(Device * dev)
 {
-    int n;
     struct addrinfo hints, *addrinfo;
     int sock_opt;
     int fd_settings;
 
     CHECK_MAGIC(dev);
-    assert((dev->type == TCP_DEV) || (dev->type == PMD_DEV) ||
-	   (dev->type == TELNET_DEV));
-    assert(dev->status == DEV_NOT_CONNECTED);
+    assert(dev->type == TCP_DEV);
+    assert(dev->connect_status == DEV_NOT_CONNECTED);
     assert(dev->fd == -1);
+
+    if (dev->logit)
+	printf("_reconnect: %s\n", dev->name);
+
+    Gettimeofday(&dev->last_reconnect, NULL);
+    dev->reconnect_count++;
 
     memset(&hints, 0, sizeof(struct addrinfo));
     addrinfo = &hints;
@@ -179,14 +220,12 @@ void dev_nb_connect(Device * dev)
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
     switch (dev->type) {
-    case TCP_DEV:
-	Getaddrinfo(dev->devu.tcpd.host, dev->devu.tcpd.service, &hints, &addrinfo);
-	break;
-    case PMD_DEV:
-	Getaddrinfo(dev->devu.pmd.host, dev->devu.pmd.service, &hints, &addrinfo);
-	break;
-    default:
-	err_exit(FALSE, "unknown device type %d", dev->type);
+	case TCP_DEV:
+	    Getaddrinfo(dev->devu.tcpd.host, dev->devu.tcpd.service, 
+			    &hints, &addrinfo);
+	    break;
+	default:
+	    err_exit(FALSE, "unknown device type %d", dev->type);
     }
 
     dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
@@ -210,26 +249,16 @@ void dev_nb_connect(Device * dev)
     Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
 
     /* 0 = connected; -1 implies EINPROGRESS */
-    n = Connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
-    if (n >= 0) {
-	Action *act;
-
-	dev->error = FALSE;
-	dev->status = DEV_CONNECTED;
-	act = act_create(PM_LOG_IN);
-	_acttodev(dev, act);
-    } else {
-	dev->status = DEV_CONNECTING;
-    }
+    dev->connect_status = DEV_CONNECTING;
+    if (Connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen) >= 0)
+	_finish_connect(dev, NULL);
     freeaddrinfo(addrinfo);
+
+    return (dev->connect_status == DEV_CONNECTED);
 }
 
 
 /*
- * Called from dev_connect() (or possibly 
- * dev_nb_connect()) with a PM_LOG_IN when connection 
- * is first established.  Otherwise, called from  act_initiate() for 
- * other actions.  
  *   dev arrives here with "targets" filled in to let us know to which 
  * device components to apply the action.  
  *   We need to create the action and initiate the first step in
@@ -269,7 +298,7 @@ static void _acttodev(Device * dev, Action * sact)
      */
     /*
      * FIXME:  Review this and explain why we can move this 
-     * startup processing down to dev_process_script() where it 
+     * startup processing down to _process_script() where it 
      * belongs. 
      */
     while ((act->cur = list_next(act->itr))) {
@@ -280,7 +309,7 @@ static void _acttodev(Device * dev, Action * sact)
 	    _process_send(dev);
 	    break;
 	case EL_EXPECT:
-	    Gettimeofday(&(dev->time_stamp), NULL);
+	    Gettimeofday(&dev->time_stamp, NULL);
 	    dev->status |= DEV_EXPECTING;
 	    return;
 	case EL_DELAY:
@@ -337,8 +366,6 @@ void _set_targets(Device * dev, Action * sact)
             act = _do_target_copy(dev, sact, NULL);
             list_push(dev->acts, act);
             break;
-        case PM_ERROR:
-        case PM_CHECK_LOGIN:
         case PM_LOG_OUT:
         case PM_UPDATE_PLUGS:
         case PM_UPDATE_NODES:
@@ -349,15 +376,8 @@ void _set_targets(Device * dev, Action * sact)
         case PM_POWER_OFF:
         case PM_POWER_CYCLE:
         case PM_RESET:
-        case PM_NAMES:
             assert(sact->target != NULL);
-
-            if (dev->prot->mode == SM_LITERAL) {
-                _do_target_some(dev, sact);
-            } else {		/* dev->prot->mode == REGEX */
-                act = _do_target_copy(dev, sact, sact->target);
-                list_append(dev->acts, act);
-            }
+	    _do_target_some(dev, sact);
             break;
         default:
             assert(FALSE);
@@ -446,13 +466,14 @@ void _do_target_some(Device * dev, Action * sact)
  * reconnect, log that fact.  When all is well initiate the
  * logon script.
  */
-void dev_connect(Device * dev)
+static bool _finish_connect(Device *dev, struct timeval *tv)
 {
     int rc;
     int err = 0;
     int len = sizeof(err);
     Action *act;
 
+    assert(dev->connect_status == DEV_CONNECTING);
     rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &err, &len);
     /*
      *  If an error occurred, Berkeley-derived implementations
@@ -462,34 +483,29 @@ void dev_connect(Device * dev)
     if (rc < 0)
 	err = errno;
     if (err) {
-	close(dev->fd);
-	dev->fd = -1;
-	dev->error = TRUE;
-	dev->status = DEV_NOT_CONNECTED;
-	buf_clear(dev->to);
-	buf_clear(dev->from);
-	syslog(LOG_INFO, "Failure attempting to connect to %s: %m\n", dev->name);
-	/*
-	 *  Back in the main loop after the update interval has passed,
-	 *  device will attempt another dev_nb_connect().
-	 */
-	return;
-    } else if (dev->error) {
-	syslog(LOG_INFO, "Connection to %s re-established\n", dev->name);
+	syslog(LOG_INFO, "connect to %s: %m\n", dev->name);
+	if (dev->logit)
+	    printf("_finish_connect: %s: %s\n", dev->name, strerror(errno));
+	_disconnect(dev);
+	if (_time_to_reconnect(dev, tv))
+	    _reconnect(dev);
+    } else {
+	syslog(LOG_INFO, "_finish_connect: %s connected\n", dev->name);
+	dev->connect_status = DEV_CONNECTED;
+	act = act_create(PM_LOG_IN);
+	_acttodev(dev, act);
     }
-    dev->error = FALSE;
-    dev->status = DEV_CONNECTED;
-    act = act_create(PM_LOG_IN);
-    _acttodev(dev, act);
+
+    return (dev->connect_status == DEV_CONNECTED);
 }
 
 /*
  *   The Read gets the string.  If it is EOF then we've lost 
  * our connection with the device and need to reconnect.  
  * buf_read() does the real work.  If something arrives,
- * that is handled in dev_process_script().
+ * that is handled in _process_script().
  */
-void dev_handle_read(Device * dev)
+static void _handle_read(Device * dev)
 {
     int n;
 
@@ -498,45 +514,45 @@ void dev_handle_read(Device * dev)
     if ((n < 0) && (errno == EWOULDBLOCK))
 	return;
     if ((n == 0) || ((n < 0) && (errno == ECONNRESET))) {
-	syslog(LOG_ERR, "Device read problem, reconnecting to %s", dev->name);
+	syslog(LOG_ERR, "read error on %s", dev->name);
 	if (dev->logit)
-	    printf("Device read problem, reconnecting to: %s\n", dev->name);
-	_do_reconnect(dev);
+	    printf("read error on %s\n", dev->name);
+	_disconnect(dev);
+	dev->reconnect_count = 0;
+	_reconnect(dev);
 	return;
     }
 }
 
-/*
- *   Reset the Device's state and restart the whole nonblocking
- * connect interction.
- * If EOF on a device connection means we lost the connection then I 
- * need to reconnect.  Once reconnected a LOG_IN will automatically
- * be generated.  If the current action was a LOG_IN then just delete
- * it, otherwise leave it for completion after we're reconnected.
- */
-void _do_reconnect(Device * dev)
+static void _disconnect(Device *dev)
 {
     Action *act;
 
+    assert(dev->connect_status == DEV_CONNECTING 
+		    || dev->connect_status == DEV_CONNECTED);
 
-    Close(dev->fd);
-    dev->fd = -1;
+    if (dev->logit)
+	printf("_disconnect: %s\n", dev->name);
 
-    assert(dev->from != NULL);
-    buf_destroy(dev->from);
-    dev->from = NULL;
-
-    assert(dev->to != NULL);
-    buf_destroy(dev->to);
-    dev->to = NULL;
-
-    dev->status = DEV_NOT_CONNECTED;
-    dev->loggedin = FALSE;
-    if (((act = list_peek(dev->acts)) != NULL) && (act->com == PM_LOG_IN)) {
-	act_del_queuehead(dev->acts);
+    /* close socket if open */
+    if (dev->fd != NO_FD) {
+	Close(dev->fd);
+	dev->fd = NO_FD;
     }
-    dev_nb_connect(dev);
-    return;
+
+    /* flush buffers */
+    if (dev->from != NULL)
+	buf_clear(dev->from);
+    if (dev->to != NULL)
+	buf_clear(dev->to);
+
+    /* update state */
+    dev->connect_status = DEV_NOT_CONNECTED;
+    dev->loggedin = FALSE;
+
+    /* delete PM_LOG_IN action queued for this device, if any */
+    if (((act = list_peek(dev->acts)) != NULL) && (act->com == PM_LOG_IN))
+	act_del_queuehead(dev->acts);
 }
 
 /*
@@ -547,7 +563,7 @@ void _do_reconnect(Device * dev)
  * processing is done if we're stuck at an EXPECT with no 
  * matching stuff in the input buffer.
  */
-void dev_process_script(Device * dev)
+static void _process_script(Device * dev)
 {
     Action *act = list_peek(dev->acts);
     bool done = FALSE;
@@ -598,7 +614,7 @@ void dev_process_script(Device * dev)
 	    act_del_queuehead(dev->acts);
 	} else {
 	    if (act->cur->type == EL_EXPECT) {
-		gettimeofday(&(dev->time_stamp), NULL);
+		gettimeofday(&dev->time_stamp, NULL);
 		dev->status |= DEV_EXPECTING;
 	    }
 	}
@@ -615,10 +631,7 @@ void dev_process_script(Device * dev)
  * be expecting, so we go to the buffer and look to see if there's a
  * possible new input.  If the regex matches, extract the expect string.
  * If there is an Interpretation map for the expect then send that info to
- * the semantic processors.  There are two because PMD_DEV devices
- * are handled differently (a PMD_DEV is an instance of powermand
- * acting as intermediary for another powermand in a distributed 
- * control arrangement).   
+ * the semantic processor.  
  */
 bool _process_expect(Device * dev)
 {
@@ -654,12 +667,8 @@ bool _process_expect(Device * dev)
     res = _match_regex(dev, expect);
     assert(res == TRUE); /* the first regexec worked, this one should too */
 
-    if (act->cur->s_or_e.expect.map != NULL) {
-	if (dev->type == PMD_DEV)
-	    _do_pmd_semantics(dev, act->cur->s_or_e.expect.map);
-	else
-	    _do_device_semantics(dev, act->cur->s_or_e.expect.map);
-    }
+    if (act->cur->s_or_e.expect.map != NULL)
+	_do_device_semantics(dev, act->cur->s_or_e.expect.map);
     Free(expect);
 
     if (dev->logit)
@@ -672,7 +681,7 @@ bool _process_expect(Device * dev)
  * printf(fmt, ...) style.  If it has a "%s" then call buf_printf
  * with the target as its last argument.  Otherwise just send the
  * string and update the device's status.  The TRUE return value
- * is for the while( ! done ) loop in dev_process_script().
+ * is for the while( ! done ) loop in _process_script().
  */
 bool _process_send(Device * dev)
 {
@@ -722,65 +731,8 @@ bool _process_delay(Device * dev)
     return FALSE;
 }
 
-
 /*
- *   The two update commands are the only ones that change the 
- * internal state of the cluster data structure.  When an 
- * update script completes one sequences through the Plugs/Nodes
- * for the Device and reads the state value picked up by the 
- * interpretation for that node.
- *
- *  The problem is the same for PMD_DEV and other device types.
- * The data is just arranged differently.  For PMD it's always
- * vector of 1's and 0's withas many as the PMD device has nodes.
- */
-void _do_pmd_semantics(Device * dev, List map)
-{
-    Action *act;
-    char *ch;
-    Plug *plug;
-    ListIterator plug_i;
-    Interpretation *interp = list_peek(map);
-
-    CHECK_MAGIC(dev);
-
-    act = list_peek(dev->acts);
-    assert(act != NULL);
-
-    ch = interp->val;
-    plug_i = list_iterator_create(dev->plugs);
-    switch (act->com) {
-    case PM_UPDATE_PLUGS:
-	while ((plug = list_next(plug_i))) {
-	    if (plug->node == NULL)
-		continue;
-	    plug->node->p_state = ST_UNKNOWN;
-	    if (*(ch) == '1')
-		plug->node->p_state = ST_ON;
-	    if (*(ch) == '0')
-		plug->node->p_state = ST_OFF;
-	    ch++;
-	}
-	break;
-    case PM_UPDATE_NODES:
-	while ((plug = list_next(plug_i))) {
-	    if (plug->node == NULL)
-		continue;
-	    plug->node->n_state = ST_UNKNOWN;
-	    if (*(ch) == '1')
-		plug->node->n_state = ST_ON;
-	    if (*(ch) == '0')
-		plug->node->n_state = ST_OFF;
-	    ch++;
-	}
-	break;
-    default:
-    }
-    list_iterator_destroy(plug_i);
-}
-
-/*
- *   For non-PMD devices the reply for a device may be in one or 
+ *   The reply for a device may be in one or 
  * several EXPECT's Intterpretation maps.  This function goes
  * through all the Interpretations for this EXPECT and sets the
  * plug or node states for whatever plugs it finds.
@@ -858,7 +810,7 @@ void _do_device_semantics(Device * dev, List map)
  *   buf_write does all the work here except for changing the 
  * device state.
  */
-void dev_handle_write(Device * dev)
+static void _handle_write(Device * dev)
 {
     int n;
 
@@ -871,30 +823,21 @@ void dev_handle_write(Device * dev)
 	dev->status &= ~DEV_SENDING;
 }
 
-/*
- *   A device can only be stalled while it's inthe  EXPECTING 
- * state.  The dev->timeout value can be set in the config file.
- */
-bool dev_stalled(Device * dev)
-{
-    return ((dev->status & DEV_EXPECTING) &&
-	    util_overdue(&(dev->time_stamp), &(dev->timeout)));
-}
 
 /*
  *   When a Device drops its connection you have to clear out its
  * Actions, and set its nodes and plugs to an UNKNOWN state.
  */
-void dev_recover(Device * dev)
+static void _recover(Device * dev)
 {
     Plug *plug;
     ListIterator plug_i;
 
     assert(dev != NULL);
 
-    syslog(LOG_ERR, "Expect timed out, reconnecting to %s", dev->name);
+    syslog(LOG_ERR, "expect timeout on %s", dev->name);
     if (dev->logit)
-        printf("Expect timed out, reconnecting to %s\n", dev->name);
+        printf("expect timeout %s\n", dev->name);
     while (!list_is_empty(dev->acts))
 	act_del_queuehead(dev->acts);
     plug_i = list_iterator_create(dev->plugs);
@@ -904,7 +847,9 @@ void dev_recover(Device * dev)
 	    plug->node->n_state = ST_UNKNOWN;
 	}
     }
-    _do_reconnect(dev);
+    _disconnect(dev);
+    dev->reconnect_count = 0;
+    _reconnect(dev);
 }
 
 Device *dev_create(const char *name)
@@ -916,19 +861,20 @@ Device *dev_create(const char *name)
     dev->name = Strdup(name);
     dev->type = NO_DEV;
     dev->loggedin = FALSE;
-    dev->error = FALSE;
-    dev->status = DEV_NOT_CONNECTED;
+    dev->connect_status = DEV_NOT_CONNECTED;
+    dev->status = 0;
     dev->fd = NO_FD;
     dev->acts = list_create((ListDelF) act_destroy);
-    gettimeofday(&(dev->time_stamp), NULL);
-    dev->timeout.tv_sec = 0;
-    dev->timeout.tv_usec = 0;
+    gettimeofday(&dev->time_stamp, NULL);
+    timerclear(&dev->timeout);
     dev->to = NULL;
     dev->from = NULL;
     dev->prot = NULL;
     dev->num_plugs = 0;
     dev->plugs = list_create((ListDelF) dev_plug_destroy);
     dev->logit = FALSE;
+    dev->reconnect_count = 0;
+    timerclear(&dev->last_reconnect);
     return dev;
 }
 
@@ -967,10 +913,7 @@ void dev_destroy(Device * dev)
     if (dev->type == TCP_DEV) {
         Free(dev->devu.tcpd.host);
         Free(dev->devu.tcpd.service);
-    } else if (dev->type == PMD_DEV) {
-        Free(dev->devu.pmd.host);
-        Free(dev->devu.pmd.service);
-    }
+    } 
     list_destroy(dev->acts);
     list_destroy(dev->plugs);
 
@@ -991,12 +934,9 @@ void dev_destroy(Device * dev)
 Plug *dev_plug_create(const char *name)
 {
     Plug *plug;
-    reg_syntax_t cflags = REG_EXTENDED;
 
     plug = (Plug *) Malloc(sizeof(Plug));
     plug->name = Strdup(name);
-    re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
-    Regcomp(&(plug->name_re), name, cflags);
     plug->node = NULL;
     return plug;
 }
@@ -1013,7 +953,6 @@ int dev_plug_match(Plug * plug, void *key)
 
 void dev_plug_destroy(Plug * plug)
 {
-    regfree(&(plug->name_re));
     Free(plug->name);
     Free(plug);
 }
@@ -1062,25 +1001,6 @@ static bool _match_regex(Device * dev, char *expect)
     if (act->cur->s_or_e.expect.map == NULL)
 	return TRUE;
 
-    /*
-     *   Here is where we have a problem with the powermand to pmd 
-     * protocol.  PMD_DEV devices do not all have the exact same
-     * number of nodes.  Thus we can't write an explicite regex
-     * with a substring for each node.  We do, however, know just
-     * how many nodes there are, and we know that a pmd replies 
-     * with a list of ones and zeros.  So interpret PMD_DEV replies
-     * directly, and without recourse to regex recognition.  The
-     * rest of the structure should work.  The config file lists
-     * exactly one "map" structure for the expects for UPDATE_*. 
-     * Just set "val" to point to its corresponding vector of
-     * ones and zeros.  Let _do_pmd_semantics() pull it apart.
-     */
-
-    if (dev->type == PMD_DEV) {
-	interp = list_peek(act->cur->s_or_e.expect.map);
-	interp->val = expect;
-	return TRUE;
-    }
     map_i = list_iterator_create(act->cur->s_or_e.expect.map);
     while ((interp = list_next(map_i))) {
 	assert((pmatch[interp->match_pos].rm_so < MAX_BUF) &&
@@ -1093,7 +1013,27 @@ static bool _match_regex(Device * dev, char *expect)
     return TRUE;
 }
 
-void dev_prepfor_select(fd_set *rset, fd_set *wset, int *maxfd)
+/*
+ * Called prior to the select loop to initiate connects to all devices.
+ */
+void dev_initial_connect(bool logit)
+{
+    Device *dev;
+    ListIterator itr;
+
+    itr = list_iterator_create(dev_devices);
+    while ((dev = list_next(itr))) {
+	assert(dev->connect_status == DEV_NOT_CONNECTED);
+	dev->logit = logit;
+	_reconnect(dev);
+    }
+    list_iterator_destroy(itr);
+}
+
+/*
+ * Called before select to ready fd_sets and maxfd.
+ */
+void dev_pre_select(fd_set *rset, fd_set *wset, int *maxfd)
 {
     Device *dev;
     ListIterator itr;
@@ -1109,65 +1049,87 @@ void dev_prepfor_select(fd_set *rset, fd_set *wset, int *maxfd)
 
 	/* The descriptor becomes writable when a non-blocking connect 
 	 * (ie, DEV_CONNECTING) completes. */
-	if ((dev->status & DEV_CONNECTING) || (dev->status & DEV_SENDING))
+	if ((dev->connect_status == DEV_CONNECTING) 
+			|| (dev->status & DEV_SENDING))
 	    FD_SET(dev->fd, wset);
     }
     list_iterator_destroy(itr);
 }
 
-
-bool dev_process_select(fd_set *rset, fd_set *wset, bool over_time)
+/* 
+ * Called after select to process ready file descriptors, timeouts, etc.
+ */
+void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *tv)
 {
     Device *dev;
+    Action *act;
     ListIterator itr;
-    bool active_devs = FALSE;   /* active_devs == FALSE => Quiescent */
-    bool activity;              /* activity == TRUE => scripts need service */
+    bool scripts_complete = TRUE;
+    /* Only when all device are idle is the cluster Quiescent */
+    /* and only then can a new action be initiated from the queue. */
+    static enum { STAT_QUIESCENT, STAT_OCCUPIED } status = STAT_QUIESCENT;
+
 
     itr = list_iterator_create(dev_devices);
 
-    /* Device reading and writing? */
     while ((dev = list_next(itr))) {
-	/* we only initiate device recover once per update period.  
-	 * Otherwise we can get swamped with reconnect messages.
-	 */
-	if (over_time && (dev->status == DEV_NOT_CONNECTED))
-	    dev_nb_connect(dev);
+	bool scripts_need_service = FALSE;
 
-	if (dev->fd < 0)
+	/* (re)connect if device not connected */
+	if (dev->connect_status == DEV_NOT_CONNECTED 
+			&& _time_to_reconnect(dev, tv)) {
+	    if (!_reconnect(dev))
+		continue;
+	}
+	if (dev->fd == NO_FD)
 	    continue;
-
-	activity = FALSE;
-
-	/* Any active device is sufficient to suppress starting next action */
-	if (dev->status & (DEV_SENDING | DEV_EXPECTING))
-	    active_devs = TRUE;
 
 	/* The first activity is always the signal of a newly connected device.
 	 * Run the log in script to get back into business as usual. */
-	if ((dev->status == DEV_CONNECTING)) {
+	if ((dev->connect_status == DEV_CONNECTING)) {
 	    if (FD_ISSET(dev->fd, rset) || FD_ISSET(dev->fd, wset))
-		dev_connect(dev);
-	    continue;
+		if (!_finish_connect(dev, tv))
+		    continue;
 	}
+	assert(dev->fd >= 0);
 	if (FD_ISSET(dev->fd, rset)) {
-	    dev_handle_read(dev);
-	    activity = TRUE;
+	    _handle_read(dev);
+	    scripts_need_service = TRUE;
 	}
 	if (FD_ISSET(dev->fd, wset)) {
-	    dev_handle_write(dev);
-	    activity = TRUE;
+	    _handle_write(dev);
+	    scripts_need_service = TRUE;
 	}
 	/* Since I/O took place we need to see if the scripts should run */
-	if (activity)
-	    dev_process_script(dev);
-	/* dev->timeout may be set in the config file */
-	if (dev_stalled(dev))
-	    dev_recover(dev);
+	if (scripts_need_service)
+	    _process_script(dev);
+
+	/* stalled on an expect */
+	if ((dev->status & DEV_EXPECTING)) {
+	    if (_overdue(&dev->time_stamp, &dev->timeout))
+		_recover(dev);
+	}
+
+	if (dev->status & (DEV_SENDING | DEV_EXPECTING))
+	    scripts_complete = FALSE;
     }
 
     list_iterator_destroy(itr);
 
-    return active_devs;
+    /* launch the next action in the queue */
+    if (scripts_complete && ((act = act_find()) != NULL)) {
+	/* a previous action may need a reply sent back to a client */
+	if (status == STAT_OCCUPIED) {
+	    act_finish(act);
+	    status = STAT_QUIESCENT;
+	}
+
+	/* double check - if there was an action in the queue, launch it */
+	if ((act = act_find()) != NULL) {
+	    dev_apply_action(act);
+	    status = STAT_OCCUPIED;
+	}
+    }
 }
 
 /*

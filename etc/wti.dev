@@ -30,67 +30,62 @@ begin protocol specification
 	off string "OFF"
 	on string  "ON"
 	all string "*"
-	size "8"
-	device timeout "1.0"
-	string interpretation mode "LITERAL"
-	begin PM_LOG_IN 
+	plug count 8
+	device timeout 1.0
+	begin LOGIN_SCRIPT
 		expect "\n"
 		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA\IAC\DONT\TELOPT_TTYPE"
 		expect "word: "
 		send "wti\r\n"
 		expect "NPS> "
-	end PM_LOG_IN
-	begin PM_CHECK_LOGIN
-		send "\r\n"
-		expect "NPS> "
-	end PM_CHECK_LOGIN
-	begin PM_LOG_OUT
+	end LOGIN_SCRIPT
+	begin LOGOUT_SCRIPT
 		send "/x\r\n"
-	end PM_LOG_OUT
-	begin PM_UPDATE_PLUGS 
+	end LOGOUT_SCRIPT
+	begin UPDATE_SCRIPT
 		send "/s\r\n"
 		expect "WTI2"
 		expect "Default"
 		expect "\\+\r\n"
 		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
-			map "1" "1"
+			map $1 "1"
 		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
-			map "1" "2"
+			map $1 "2"
 		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
-			map "1" "3"
+			map $1 "3"
 		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
-			map "1" "4"
+			map $1 "4"
 		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
-			map "1" "5"
+			map $1 "5"
 		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
-			map "1" "6"
+			map $1 "6"
 		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
-			map "1" "7"
+			map $1 "7"
 		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
-			map "1" "8"
+			map $1 "8"
 		expect "\\+\r\n"
 		expect "NPS> "
-	end PM_UPDATE_PLUGS 
-	begin PM_POWER_ON
+	end UPDATE_SCRIPT
+	begin ON_SCRIPT
 		send "/on %s\r\n"
 		expect "NPS> "
-		delay "0.3"
-	end PM_POWER_ON
-	begin PM_POWER_OFF
+		delay 0.3
+	end ON_SCRIPT
+	begin OFF_SCRIPT
 		send "/off %s\r\n"
 		expect "NPS> "
-		delay "0.3"
-	end PM_POWER_OFF
-	begin PM_POWER_CYCLE
+		delay 0.3
+	end OFF_SCRIPT
+	begin CYCLE_SCRIPT
 		send "/boot %s\r\n"
 		expect "NPS> "
-		delay "0.3"
-	end PM_POWER_CYCLE
-	begin PM_RESET
+		delay 0.3
+	end CYCLE_SCRIPT
+	begin RESET_SCRIPT
 		send "/boot %s\r\n"
 		expect "NPS> "
-		delay "0.3"
-	end PM_RESET
+		delay 0.3
+	end RESET_SCRIPT
 	plug name "1"
 	plug name "2"
 	plug name "3"

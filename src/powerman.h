@@ -69,7 +69,6 @@ typedef enum { FALSE = 0, TRUE = 1 } bool;
 typedef struct action_struct Action;	/* FIXME: circular definition */
 typedef struct device_struct Device;	/* FIXME: circular definition */
 
-typedef enum { NO_DEV, TTY_DEV, TCP_DEV, TELNET_DEV, SNMP_DEV,
-	PMD_DEV } Dev_Type;
+typedef enum { NO_DEV, TCP_DEV } Dev_Type;
 
 #endif				/* POWERMAN_H */

@@ -7,10 +7,9 @@
 # Config file for the new PowerMan daemon
 include "/etc/powerman/icebox.dev"
 begin global
-	client listener port "10101"
-	timeout interval "1.0"
-	inter-device delay "0.2"
-	update interval "100.0"
+	client listener port 10101
+	timeout interval 1.0
+	update interval 100.0
 end global
 device "Icebox" "icebox" "ice-test" "1010"
 begin nodes

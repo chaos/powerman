@@ -6,7 +6,6 @@
 * Package with autoconf
 * Still several small memory leaks, find them
 * Reformat code w/out tabs
-* define out_of_memory() handler as fatal error.
 * Remove any server side caching.  Consider disabling periodic polling.
   [Note: login timeouts are an issue if polling is disabled.]
 * Investigate controling the timing of commands delivered to power controlers.
@@ -36,12 +35,13 @@
   > #8  0x080547f7 in _select_loop ()
   > #9  0x0805457d in main ()
   > #10 0x42017589 in __libc_start_main () from /lib/i686/libc.so.6
-* Fix parse error line number reporting.  It needs to take into account
-  the include directive and report file::line (introduce an error and see).
 * Audit code for reconnecting to power control devices.  Failure case: start
-  powermand with vpcd config.  Start vpcd.  Reconnect does not occur for about
-  five minutes; subsequently, daemon does not prompt for commands.  SIGINT 
-  in the debugger shows code is in dev_process_select -> dev_handle_read 
-  -> dev_read -> ?? -> read.
+  powermand with vpcd config.  Start vpcd.  Reconnect does not occur until
+  "update interval" expires (client activity doesn't cause reconnect).
+  Subsequently, daemon does not prompt for commands.  SIGINT in the debugger  
+  shows dev_process_select -> dev_handle_read -> buf_read -> ?? -> read.
 * Reconnect algorithm should be sane: exponential backoff & retry with cap
   of one minute or so.
+* Make it so commands involving scripts that are not defined result in errors.
+  For example, PM_RESET script should be optional, and the user should be told
+  of a PM_CYCLE is the only thing available, then they can try that.

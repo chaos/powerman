@@ -55,7 +55,7 @@ void cli_listen(void);
 
 bool cli_exists(Client *cli);
 
-void cli_process_select(fd_set *rset, fd_set *wset, bool over_time);
-void cli_prepfor_select(fd_set *rset, fd_set *wset, int *maxfd);
+void cli_post_select(fd_set *rset, fd_set *wset);
+void cli_pre_select(fd_set *rset, fd_set *wset, int *maxfd);
 
 #endif				/* CLIENT_H */

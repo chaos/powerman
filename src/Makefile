@@ -6,7 +6,7 @@ PACKAGE=	powerman
 SHELL=		/bin/sh
 CC=		gcc
 
-DEFS=	#	-DNDEBUG
+DEFS=		# -DNDEBUG
 #CFLAGS= 	-O -Wall
 #LDFLAGS=	-s
 CFLAGS= 	-g -Wall
@@ -30,11 +30,11 @@ sbindir=        ${exec_prefix}/sbin
 libdir=         ${exec_prefix}/lib
 packagedir=     ${etcdir}/${PACKAGE}
 
-COMMON_OBJS = list.o wrappers.o error.o hostlist.o
+COMMON_OBJS = wrappers.o error.o hostlist.o
 
 SERVER_UTIL = $(COMMON_OBJS) daemon.o util.o buffer.o
 
-SERVER_OBJS = $(SERVER_UTIL) action.o config.o device.o \
+SERVER_OBJS = $(SERVER_UTIL) list.o action.o config.o device.o \
 	      powermand.o client.o parse_lex.o parse_tab.o
 
 CLIENT_OBJS = $(COMMON_OBJS) powerman.o
@@ -65,6 +65,9 @@ parse_tab.c parse_tab.h: parse.y
 
 parse_tab.o: parse_tab.c parse_tab.h powerman.h
 	$(CC) $(COPTS) -c -o parse_tab.o parse_tab.c
+
+list.o: list.c
+	$(CC) $(COPTS) -DWITH_OOMF -o $@ -c $<
 
 tags: *.[ch]
 	-ctags -e *.[chy] *.lex 2>/dev/null

@@ -349,7 +349,10 @@ static Action *_parse_input(Client *c, char *input)
     } else if (!strncasecmp(str, CP_QUERY_NODES, strlen(CP_QUERY_NODES))) {
 	_client_query_nodes_reply(c);
     } else if (!strncasecmp(str, CP_QUIT, strlen(CP_QUIT))) {
-        act = act_create(PM_LOG_OUT);			/* quit */
+	_client_msg(c, CP_RSP_QUIT);			/* quit */
+	_handle_client_write(c);
+	c->read_status = CLI_DONE;
+	c->write_status = CLI_IDLE;
     } else if (sscanf(str, CP_ON, arg1) == 1) {
         act = act_create(PM_POWER_ON);			/* on */
 	args = 1;
@@ -395,12 +398,6 @@ void cli_reply(Action * act)
     assert(c->fd != NO_FD);
 
     switch (act->com) {
-        case PM_LOG_OUT:	/* quit */
-	    _client_msg(c, CP_RSP_QUIT);
-            _handle_client_write(c);
-            c->read_status = CLI_DONE;
-            c->write_status = CLI_IDLE;
-            break;
         case PM_UPDATE_PLUGS:  /* query-status */
 	    _client_query_status_reply(c);
             break;
@@ -411,10 +408,8 @@ void cli_reply(Action * act)
 	    /* FIXME: always returns success! */
 	    _client_msg(c, CP_RSP_SUCCESS);
             break;
-        case PM_ERROR:		/* shouldn't happen */
-        case PM_NAMES:
-        case PM_CHECK_LOGIN:
         case PM_UPDATE_NODES:
+        case PM_LOG_OUT:
         default:
             assert(FALSE);
 	    _client_msg(c, CP_ERR_INTERNAL);
@@ -598,7 +593,7 @@ static void _create_client(void)
 
 
 /* handle any client activity (new connection or read/write) */
-void cli_process_select(fd_set *rset, fd_set *wset, bool over_time)
+void cli_post_select(fd_set *rset, fd_set *wset)
 {
     ListIterator itr;
     Client *client;
@@ -629,7 +624,7 @@ void cli_process_select(fd_set *rset, fd_set *wset, bool over_time)
 }
 
 
-void cli_prepfor_select(fd_set *rset, fd_set *wset, int *maxfd)
+void cli_pre_select(fd_set *rset, fd_set *wset, int *maxfd)
 {
     ListIterator itr;
     Client *client;

@@ -26,12 +26,12 @@
 
 %{
 
-	extern int yyline; /* For parse error reporting */
 #define YYSTYPE char *  /*  The generic type returned by all parse matches */
 #undef YYDEBUG          /* no debug code plese */
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <math.h>	/* for HUGE_VAL and trunc */
 #include <assert.h>
 #include <stdio.h>
 
@@ -47,7 +47,7 @@
 #include "wrappers.h"
 
 /* prototypes for parse handler routines */
-static char *makeNode(char *s1, char *s2, char *s4, char *s5, char *s7);
+static char *makeNode(char *s2, char *s3, char *s4);
 static char *makeDevice(char *s2, char *s3, char *s4, char *s5);
 static char *makePlugNameLine(char *s2);
 static char *makeResetSec(char *s2);
@@ -57,13 +57,11 @@ static char *makePowerOnSec(char *s2);
 static char *makeUpdateNodesSec(char *s2);
 static char *makeUpdatePlugsSec(char *s2);
 static char *makeLogOutSec(char *s2);
-static char *makeCheckLoginSec(char *s2);
 static Interpretation *makeMapLine(char *s2, char *s3);
 static List makeMapSecHead(Interpretation *s1);
 static List makeMapSec(List s1, Interpretation *s2);
-static char *makeScriptEl(Script_El_Type mode, char *s2, List s4);
+static char *makeScriptEl(Script_El_Type mode, char *s2, List s3);
 static char *makeLogInSec(char *s2);
-static char *makeInterp(char *s2);
 static char *makeSpecSize(char *s2);
 static char *makeSpecAll(char *s2);
 static char *makeSpecOn(char *s2);
@@ -77,12 +75,14 @@ static char *makeUpdate(char *s2);
 static char *makeTimeOut(char *s2);
 static char *makeTCPWrappers();
 static char *makeGlobalSec(char *s2);
-extern void yyerror();
 
 extern int yylex();
-extern void yyerror();
+void yyerror();
+static void _errormsg(char *msg);
+static long _strtolong(char *str);
+static double _strtodouble(char *str);
+static void _doubletotv(struct timeval *tv, double val);
 
- int yyline = 0;      /* For parse error reporting */
  Spec *current_spec = NULL;  /* Holds a Spec as it is built */
  List current_script = NULL; /* Holds a script as it is built */
 %}
@@ -103,16 +103,13 @@ extern void yyerror();
 %token TOK_OFF_STRING
 %token TOK_ON_STRING
 %token TOK_ALL_STRING
-%token TOK_SIZE
-%token TOK_STRING_INTERP_MODE
+%token TOK_PLUG_COUNT
 %token TOK_B_PM_LOG_IN
 %token TOK_EXPECT
 %token TOK_MAP
 %token TOK_SEND
 %token TOK_DELAY
 %token TOK_E_PM_LOG_IN
-%token TOK_B_PM_CHECK_LOGIN
-%token TOK_E_PM_CHECK_LOGIN
 %token TOK_B_PM_LOG_OUT
 %token TOK_E_PM_LOG_OUT
 %token TOK_B_PM_UPDATE_PLUGS
@@ -135,6 +132,8 @@ extern void yyerror();
 %token TOK_NODE
 %token TOK_E_NODES
 %token TOK_STRING_VAL
+%token TOK_MATCHPOS
+%token TOK_NUMERIC_VAL
 %token TOK_TELNET
 %token TOK_UNRECOGNIZED
 
@@ -181,7 +180,6 @@ specification_item : spec_type_line
 		| all_string_line 
 		| spec_size_line 
 		| dev_timeout
-		| interp_line 
 ;
 spec_type_line	: TOK_SPEC_TYPE TOK_STRING_VAL {
     $$ = (char *)makeSpecType($2);
@@ -199,16 +197,12 @@ all_string_line : TOK_ALL_STRING TOK_STRING_VAL {
     $$ = (char *)makeSpecAll($2);
 }
 ;
-spec_size_line	: TOK_SIZE TOK_STRING_VAL {
+spec_size_line	: TOK_PLUG_COUNT TOK_NUMERIC_VAL {
     $$ = (char *)makeSpecSize($2);
 }
 ;
-dev_timeout	: TOK_DEV_TIMEOUT TOK_STRING_VAL {
+dev_timeout	: TOK_DEV_TIMEOUT TOK_NUMERIC_VAL {
     $$ = (char *)makeDevTimeout($2);
-}
-;
-interp_line	: TOK_STRING_INTERP_MODE  TOK_STRING_VAL {
-    $$ = (char *)makeInterp($2);
 }
 ;
 spec_script_list : spec_script_list spec_script 
@@ -216,9 +210,6 @@ spec_script_list : spec_script_list spec_script
 ;
 spec_script	: TOK_B_PM_LOG_IN script_list TOK_E_PM_LOG_IN {
     $$ = (char *)makeLogInSec($2);
-}
-		| TOK_B_PM_CHECK_LOGIN script_list TOK_E_PM_CHECK_LOGIN {
-    $$ = (char *)makeCheckLoginSec($2);
 }
 		| TOK_B_PM_LOG_OUT script_list TOK_E_PM_LOG_OUT {
     $$ = (char *)makeLogOutSec($2);
@@ -254,7 +245,7 @@ script_el	: TOK_EXPECT TOK_STRING_VAL {
 		| TOK_SEND TOK_STRING_VAL {
     $$ = (char *)makeScriptEl(EL_SEND, $2, NULL);
 }
-		| TOK_DELAY TOK_STRING_VAL {
+		| TOK_DELAY TOK_NUMERIC_VAL {
     $$ = (char *)makeScriptEl(EL_DELAY, $2, NULL);
 }
 ;
@@ -265,8 +256,8 @@ map_sec		: map_sec map_line {
     $$ = (char *)makeMapSecHead((Interpretation *)$1);
 }
 ;
-map_line : TOK_MAP TOK_STRING_VAL TOK_STRING_VAL {
-    $$ = (char *)makeMapLine($2, $3);
+map_line : TOK_MAP TOK_MATCHPOS TOK_NUMERIC_VAL TOK_STRING_VAL {
+    $$ = (char *)makeMapLine($3, $4);
 }
 ;
 plug_name_sec	: plug_name_sec plug_name_line 
@@ -295,15 +286,15 @@ TCP_wrappers	: TOK_TCP_WRAPPERS {
     $$ = (char *)makeTCPWrappers();
 }
 ;
-client_port	: TOK_CLIENT_PORT TOK_STRING_VAL {
+client_port	: TOK_CLIENT_PORT TOK_NUMERIC_VAL {
     $$ = (char *)makeClientPort($2);
 }
 ;
-timeout		: TOK_TIMEOUT TOK_STRING_VAL {
+timeout		: TOK_TIMEOUT TOK_NUMERIC_VAL {
     $$ = (char *)makeTimeOut($2);
 }
 ;
-update		: TOK_UPDATE TOK_STRING_VAL {
+update		: TOK_UPDATE TOK_NUMERIC_VAL {
     $$ = (char *)makeUpdate($2);
 }
 ;
@@ -325,16 +316,17 @@ node_sec	: TOK_B_NODES node_list TOK_E_NODES
 node_list	: node_list node_line  
 		| node_line 
 ;
-node_line	: TOK_NODE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL {
-    $$ = (char *)makeNode($2, $3, $4, $5, $6);
-}
-		| TOK_NODE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL {
-    $$ = (char *)makeNode($2, $3, $4, NULL, NULL);
+node_line	: TOK_NODE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL {
+    $$ = (char *)makeNode($2, $3, $4);
 }
 ;
 
 %%
 
+void scanner_init(char *filename);
+void scanner_fini(void);
+int scanner_line(void);
+char *scanner_file(void);
 
 /*
  * Entry point into the yacc/lex parser.
@@ -343,18 +335,22 @@ int parse_config_file (char *filename)
 {
     extern FILE *yyin; /* part of lexer */
 
+    scanner_init(filename);
+
     yyin = fopen(filename, "r");
     if (!yyin)
 	err_exit(TRUE, "%s", filename);
     yyparse();
     fclose(yyin);
+
+    scanner_fini();
     return 0;
 } 
 
 static char *makeGlobalSec(char *s2)
 {
     if (conf_get_listen_port() == NO_PORT)
-	err_exit(FALSE, "missing listener port");
+	_errormsg("global stanza missing client listener port");
     return NULL;
 }
 
@@ -366,14 +362,12 @@ static char *makeTCPWrappers()
 
 static char *makeClientPort(char *s2)
 {
-    int n;
-    int port;
+    int port = _strtolong(s2);
 
     if (conf_get_listen_port() != NO_PORT)
-	err_exit(FALSE, "listener port can be set only once");
-    n = sscanf(s2, "%d", &port);
-    if (n != 1 || port < 0)
-	err_exit(FALSE, "listener port %s must be a positive integer\n", s2);
+	_errormsg("duplicate client listener port");
+    if (port < 1)
+	_errormsg("bogus client listener port");
     conf_set_listen_port(port); 
     return s2;
 }
@@ -382,7 +376,7 @@ static char *makeTimeOut(char *s2)
 {
     struct timeval tv;
 
-    conf_strtotv(&tv, s2);
+    _doubletotv(&tv, _strtodouble(s2));
     conf_set_select_timeout(&tv);
     return s2;
 }
@@ -391,9 +385,15 @@ static char *makeUpdate(char *s2)
 {
     struct timeval tv;
 
-    conf_strtotv(&tv, s2);
+    _doubletotv(&tv, _strtodouble(s2));
     conf_set_update_interval(&tv);
     return s2;
+}
+
+static void _spec_missing(char *msg)
+{
+    err_exit(FALSE, "protocol specification missing %s: %s::%d\n",
+		    msg, scanner_file(), scanner_line());
 }
 
 /*
@@ -416,17 +416,15 @@ static Spec *check_Spec()
     }
     name = current_spec->name;
     if( current_spec->type == NO_DEV )
-	err_exit(FALSE, "missing type for specification %s", name);
+	_spec_missing("specification type");
     if( current_spec->off == NULL )
-	err_exit(FALSE, "missing Off string for specification %s", name);
+	_spec_missing("off string");
     if( current_spec->on == NULL )
-	err_exit(FALSE, "missing On string for specification %s", name);
+	_spec_missing("on string");
     if( current_spec->all == NULL )
-	err_exit(FALSE, "missing All string for specification %s", name);
-    if( (current_spec->type != PMD_DEV) && (current_spec->size == 0) )
-	err_exit(FALSE, "missing Size field for specification %s", name);
-    if( current_spec->mode == SM_NONE)
-	err_exit(FALSE, "missing interpretation mode field for specification %s", name);
+	_spec_missing("all string");
+    if( (current_spec->size == 0) )
+	_spec_missing("size");
 
     /* Store the spec in list internal to config.c */
     conf_add_spec(current_spec);
@@ -444,7 +442,7 @@ static char *makeSpecName(char *s2)
      * specification info.
      */
     if( current_spec != NULL )
-	err_exit(FALSE, "there is already a specification in progress");
+	_errormsg("specification name must be first");
     current_spec = conf_spec_create(s2);
     return s2;
 }
@@ -454,25 +452,16 @@ static char *makeSpecType(char *s2)
     int n;
 
     if( current_spec->type != NO_DEV )
-	err_exit(FALSE, "specification type already seen");
+	_errormsg("duplicate specification type");
     if( (n = strncmp(s2, "TCP", 3)) == 0)
 	current_spec->type = TCP_DEV;
-    if( (n = strncmp(s2, "PMD", 3)) == 0)
-	current_spec->type = PMD_DEV;
-    if( (n = strncmp(s2, "TTY", 3)) == 0)
-	current_spec->type = TTY_DEV;
-    if( (n = strncmp(s2, "Telnet", 6)) == 0)
-	current_spec->type = TELNET_DEV;
-    if( (n = strncmp(s2, "SNMP", 4)) == 0)
-	current_spec->type = SNMP_DEV;
     return s2;
 }
 
 static char *makeSpecOff(char *s2)
 {
     if( current_spec->off != NULL )
-	err_exit(FALSE, "off string %s for this specification already seen", 
-			    current_spec->off);
+	_errormsg("duplicate off string");
     current_spec->off = Strdup(s2);
     return s2;
 }
@@ -480,8 +469,7 @@ static char *makeSpecOff(char *s2)
 static char *makeSpecOn(char *s2)
 {
     if( current_spec->on != NULL )
-	err_exit(FALSE, "on string %s for this specification already seen", 
-    current_spec->on);
+	_errormsg("duplicate on string");
     current_spec->on = Strdup(s2);
     return s2;
 }
@@ -489,99 +477,61 @@ static char *makeSpecOn(char *s2)
 static char *makeSpecAll(char *s2)
 {
     if( current_spec->all != NULL )
-	err_exit(FALSE, "all string %s for this specification already seen", 
-			    current_spec->all);
+	_errormsg("duplicate all string");
     current_spec->all = Strdup(s2);
     return s2;
 }
 
 static char *makeSpecSize(char *s2)
 {
-    int size = 0;
-    int n;
+    int size = _strtolong(s2);
     int i;
 
-    if( current_spec->type == PMD_DEV )
-	err_exit(FALSE, "PowerMan device types may not list a size");
     if( current_spec->size != 0 )
-	err_exit(FALSE, "size field already seen for this specification");
-    n = sscanf(s2, "%d", &size);
-    if( n != 1) 
-	err_exit(FALSE, "sailed to interpret size \"%s\"", s2);
-    assert( size >= 0 );
+	_errormsg("duplicate plug count");
+    if (size < 1)
+	_errormsg("invalid plug count");
     current_spec->size = size;
-    /* PMD_DEV devices don't know their size yet */
-    /* allow for size == 0 and set plugname to NULL */
-    if( size == 0 )
-	current_spec->plugname = NULL;
-    else {
-	current_spec->plugname = (char **)Malloc(size * sizeof(char *));
-	for (i = 0; i < size; i++)
-	    current_spec->plugname[i] = NULL;
-    }
+    current_spec->plugname = (char **)Malloc(size * sizeof(char *));
+    for (i = 0; i < size; i++)
+	current_spec->plugname[i] = NULL;
     return s2;
 }
 
 static char *makeDevTimeout(char *s2)
 {
-    conf_strtotv( &(current_spec->timeout), s2);
-    return s2;
-}
-
-static char *makeInterp(char *s2)
-{
-    int n;
-    int len = strlen("LITERAL");
-
-    if( current_spec->mode != SM_NONE)
-	err_exit(FALSE, "interpretation mode field already seen for this specification");
-	
-    if ( (n = strncmp(s2, "LITERAL", len)) == 0 ) {
-	current_spec->mode = SM_LITERAL;
-    } else if ( (n = strncmp(s2, "REGEX", len)) == 0 ) {
-	current_spec->mode = SM_REGEX;
-    } else {
-	err_exit(FALSE, "illegal string interpretation mode in config file");
-    }
+    _doubletotv(&current_spec->timeout, _strtodouble(s2));
     return s2;
 }
 
 static char *makeLogInSec(char *s2)
 {
     if( current_spec->scripts[PM_LOG_IN] != NULL )
-	err_exit(FALSE, "log in script already seen for this specification");
+	_errormsg("duplicate log_in script");
 
     current_spec->scripts[PM_LOG_IN] = current_script;
     current_script = NULL;
     return s2;
 }
 
-static char *makeScriptEl(Script_El_Type mode, char *s2, List s4)
+static char *makeScriptEl(Script_El_Type mode, char *s2, List s3)
 {
     Spec_El *specl;
-    int i;
-    int len;
-    bool found = FALSE;
-    char buf1[MAX_BUF];
+    struct timeval tv;
 
     /*
-     * Four kinds of thing could be arriving.  An EXPECT with an 
-     * interpretation will have non-NULL values in all positions.
-     * An EXPECT without an interpretation will have s4 equal to NULL.  
-     * A SEND will have s4 NULL, but it may have a "%s" in it.  If it 
-     * does the "found" branch below insures that it is still in place.   
-     * A DELAY will have s4 both NULL.  The values are passed on to
-     * conf_spec_el_create to be constructed.
+     * Four kinds of thing could be arriving.  
+     * - EXPECT with an interpretation (s2, s3)
+     * - EXPECT without an interpretation (s2, NULL)
+     * - SEND (s2, NULL)   (s2 may contain a "%s") 
+     * - DELAY (s2, NULL)
      */
-    len = strlen(s2);
-    for (i = 0; i < len; i++)
-	if (s2[i] == '%') 
-	    found = TRUE;
-    if (found)
-	sprintf(buf1, s2, "%s");
-    else
-	sprintf(buf1, s2);
-    specl = conf_spec_el_create(mode, buf1, s4);
+    if (mode == EL_DELAY) {
+	_doubletotv(&tv, _strtodouble(s2));
+	specl = conf_spec_el_create(mode, NULL, &tv, s3);
+    } else {
+	specl = conf_spec_el_create(mode, s2, NULL, s3);
+    }
     if (current_script == NULL)
 	current_script = list_create((ListDelF) conf_spec_el_destroy);
     list_append(current_script, specl);
@@ -603,32 +553,21 @@ static List makeMapSecHead(Interpretation *s1)
     return map;
 }
 
-static Interpretation *makeMapLine(char *s2, char *s3)
+static Interpretation *makeMapLine(char *s3, char *s4)
 {
     Interpretation *interp;
-    int n;
 
-    interp = conf_interp_create(s3);
-    n = sscanf(s2, "%d", &(interp->match_pos));
-    if( n != 1) 
-	err_exit(FALSE, "could not interpret %s as an integer", s2);
+    interp = conf_interp_create(s4);
+    interp->match_pos = _strtolong(s3);
+    if (interp->match_pos < 1)
+	_errormsg("invalid match position value");
     return interp;
-}
-
-static char *makeCheckLoginSec(char *s2)
-{
-    if( current_spec->scripts[PM_CHECK_LOGIN] != NULL )
-	err_exit(FALSE, 
-		"check log in script already seen for this specification");
-    current_spec->scripts[PM_CHECK_LOGIN] = current_script;
-    current_script = NULL;
-    return s2;
 }
 
 static char *makeLogOutSec(char *s2)
 {
     if( current_spec->scripts[PM_LOG_OUT] != NULL )
-	err_exit(FALSE, "log out script already seen for this specification");
+	_errormsg("duplicate log_out script");
 
     current_spec->scripts[PM_LOG_OUT] = current_script;
     current_script = NULL;
@@ -638,7 +577,7 @@ static char *makeLogOutSec(char *s2)
 static char *makeUpdatePlugsSec(char *s2)
 {
     if( current_spec->scripts[PM_UPDATE_PLUGS] != NULL )
-	err_exit(FALSE, "update plugs script already seen for this specification");
+	_errormsg("duplicate update_plugs script");
     current_spec->scripts[PM_UPDATE_PLUGS] = current_script;
     current_script = NULL;
     return s2;
@@ -647,8 +586,7 @@ static char *makeUpdatePlugsSec(char *s2)
 static char *makeUpdateNodesSec(char *s2)
 {
     if( current_spec->scripts[PM_UPDATE_NODES] != NULL )
-	err_exit(FALSE, 
-		    "update nodes script already seen for this specification");
+	_errormsg("duplicate update_nodes script");
     current_spec->scripts[PM_UPDATE_NODES] = current_script;
     current_script = NULL;
     return s2;
@@ -657,7 +595,7 @@ static char *makeUpdateNodesSec(char *s2)
 static char *makePowerOnSec(char *s2)
 {
     if( current_spec->scripts[PM_POWER_ON] != NULL )
-	err_exit(FALSE, "power on script already seen for this specification");
+	_errormsg("duplicate power_on script");
     current_spec->scripts[PM_POWER_ON] = current_script;
     current_script = NULL;
     return s2;
@@ -666,7 +604,7 @@ static char *makePowerOnSec(char *s2)
 static char *makePowerOffSec(char *s2)
 {
     if( current_spec->scripts[PM_POWER_OFF] != NULL )
-	err_exit(FALSE, "power off script already seen for this specification");
+	_errormsg("duplicate power_off script");
     current_spec->scripts[PM_POWER_OFF] = current_script;
     current_script = NULL;
     return s2;
@@ -675,8 +613,7 @@ static char *makePowerOffSec(char *s2)
 static char *makePowerCycleSec(char *s2)
 {
     if( current_spec->scripts[PM_POWER_CYCLE] != NULL )
-	err_exit(FALSE, 
-		    "power cycle script already seen for this specification");
+	_errormsg("duplicate power_cycle script");
     current_spec->scripts[PM_POWER_CYCLE] = current_script;
     current_script = NULL;
     return s2;
@@ -685,7 +622,7 @@ static char *makePowerCycleSec(char *s2)
 static char *makeResetSec(char *s2)
 {
     if( current_spec->scripts[PM_RESET] != NULL )
-	err_exit(FALSE, "reset script already seen for this specification");
+	_errormsg("duplicate reset script");
     current_spec->scripts[PM_RESET] = current_script;
     current_script = NULL;
     return s2;
@@ -696,27 +633,26 @@ static char *makePlugNameLine(char *s2)
     int i = 0;
 
     if( current_spec == NULL ) 
-	err_exit(FALSE, "plug Name Line outside of Spec");
+	_errormsg("plug name outside of protocol specification");
     if( current_spec->plugname == NULL ) 
-	err_exit(FALSE, "plug Name Line without plugname array");
+	_errormsg("plug name line does not preceded by size line");
     if( current_spec->size <= 0 ) 
-	err_exit(FALSE, "plug Name Line with spec size = %d", 
-				    current_spec->size);
+	_errormsg("invalide size");
     while( (current_spec->plugname[i] != NULL) && (i < current_spec->size) )
 	i++;
     if( i == current_spec->size )
-	err_exit(FALSE, "more than %d Plug Name Lines", current_spec->size);
+	_errormsg("too many plug names lines");
     current_spec->plugname[i] = Strdup(s2);
     return s2;
 }
 
 /*
- * This and makeNode() are the only interesting pieces of the
- * parser.  We've hit a Device line.  The four parameters are the
- * proper name for the Device (s2), the name of the Spec to use (s3),
- * the (internet) host name of the Device (s4), and the TCP port
- * on which it is listening (s5).  From these facts we can fully 
- * build a Device structure.
+ * We've hit a Device line.  
+ * s2: proper name for the Device
+ * s3: name of the Spec to use
+ * s4: the internet host name of the Device
+ * s5: the TCP port on which it is listening.
+ * From this information we can build a complete Device structure.
  */   
 static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 {
@@ -729,7 +665,7 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     /* find that spec */
     spec = conf_find_spec(s3);
     if ( spec == NULL ) 
-	err_exit(FALSE, "Device specification %s not found", s3);
+	_errormsg("device specification not found");
 
     /* make the Device */
     dev = dev_create(s2);
@@ -746,12 +682,8 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 		list_append(dev->plugs, plug);
 	    }
 	    break;
-	case PMD_DEV :
-	    dev->devu.pmd.host = Strdup(s4);
-	    dev->devu.pmd.service = Strdup(s5);
-	    break;
 	default :
-	    err_exit(FALSE, "That device type is not implemented yet");
+	    _errormsg("unimplemented device type");
     }
     /* begin transfering info from the Spec to the Device */
     dev->all = Strdup(spec->all);
@@ -759,7 +691,6 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     Regcomp( &(dev->on_re), spec->on, cflags);
     Regcomp( &(dev->off_re), spec->off, cflags);
     dev->prot = (Protocol *)Malloc(sizeof(Protocol));
-    dev->prot->mode = spec->mode;
 	
     /* 
      *   Each script needs to be transferred and any Interpretations need
@@ -803,12 +734,10 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 /*
  * s1 : literal "node"
  * s2 : node name
- * s3 : hard power state device
- * s4 : hard power state plug name
- * s5 : (optional) soft power state device
- * s6 : (optional) soft power state plug name
+ * s3 : device name
+ * s4 : plug name
  */
-static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
+static char *makeNode(char *s2, char *s3, char *s4)
 {
     int i;
     Node *node;
@@ -821,51 +750,31 @@ static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
     node = conf_node_create(s2);
     conf_addnode(node);
     /* find the device controlling this nodes plug */
-    node->p_dev = dev_findbyname(s3);
-    if( node->p_dev == NULL ) 
-	err_exit(FALSE, "failed to find device %s", s3);
+    node->dev = dev_findbyname(s3);
+    if( node->dev == NULL ) 
+	_errormsg("unknown device");
     /*
-     * PMD_DEV Plugs get created here, other Device types have Plugs
-     * defined in their Spec, and they must be searched to match the node
+     * Plugs are defined in Spec, and they must be searched to match the node
      */
-    switch( node->p_dev->type ) {
-	case PMD_DEV :
-	    node->p_dev->num_plugs++;
-	    plug = dev_plug_create(s4);
-	    list_append(node->p_dev->plugs, plug);
-	    plug->node = node;
-	    break;
+    switch( node->dev->type ) {
 	case TCP_DEV :
-	    plug = list_find_first(node->p_dev->plugs, 
+	    plug = list_find_first(node->dev->plugs, 
 			    (ListFindF) dev_plug_match, s4);
-	    if( plug == NULL ) 
-		err_exit(FALSE, "can not locate plug %s on device %s", s4, s3);
+	    if( plug == NULL )  {
+		fprintf(stderr, "%s\n", s4);
+		_errormsg("unknown plug");
+	    }
 	    plug->node = node;
 	    break;
 	default :
-	    err_exit(FALSE, "that device type is not implemented yet");
-    }
-    /*
-     * Some device support hard- and soft-power status.  If not a second
-     * pair of entries will be need for the soft power status device.
-     */
-    if ( s5 == NULL) {
-	assert(s6 == NULL);
-	node->n_dev = node->p_dev;
-    } else {
-	assert(s6 != NULL);
-	node->n_dev = dev_findbyname(s3);
-	if( node->n_dev == NULL ) 
-	    err_exit(FALSE, "failed to find device %s", s3);
-	plug = list_find_first(node->n_dev->plugs, (ListFindF) dev_plug_match, s6);
-		plug->node = node;
+	    _errormsg("unimplemented device type");
     }
     /*
      * Finally an exhaustive search of the Interpretations in a device
      * is required because this node will be the target of some
      */
     for (i = 0; i < NUM_SCRIPTS; i++) {
-	script = node->p_dev->prot->scripts[i];
+	script = node->dev->prot->scripts[i];
 	script_itr = list_iterator_create(script);
 	while( (script_el = list_next(script_itr)) ) {
 	    switch( script_el->type ) {
@@ -888,12 +797,44 @@ static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
     return s2;
 }
 
-/* Other support functions not directly invoked from parse rules */
+static double _strtodouble(char *str)
+{
+    char *endptr;
+    double val = strtod(str, &endptr);
+
+    if (val == 0.0 && endptr == str)
+	_errormsg("error parsing double value");
+    if ((val == HUGE_VAL || val == -HUGE_VAL) && errno == ERANGE)
+	_errormsg("double value would cause overflow");
+    return val;
+}
+
+static long _strtolong(char *str)
+{
+    char *endptr;
+    long val = strtol(str, &endptr, 0);
+
+    if (val == 0 && endptr == str)
+	_errormsg("error parsing long integer value");
+    if ((val == LONG_MIN || val == LONG_MAX) && errno == ERANGE)
+	_errormsg("long integer value would cause under/overflow");
+    return val;
+}
+
+static void _doubletotv(struct timeval *tv, double val)
+{
+    tv->tv_sec = (val * 10.0)/10; /* crude round-down without -lm */
+    tv->tv_usec = ((val - tv->tv_sec) * 1000000.0);
+}
+
+static void _errormsg(char *msg)
+{
+    err_exit(FALSE, "%s: %s::%d\n", msg, scanner_file(), scanner_line());
+}
 
 void yyerror()
 {
-    errno = 0;
-    err_exit(FALSE, "parse error on line %d", yyline);
+    _errormsg("parse error");
 }
 
 /*

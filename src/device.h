@@ -30,20 +30,21 @@
 #include <regex.h>
 #include "buffer.h"
 
-/* bitwise values for dev->status */
+/* valudes for dev->connect_status */
 #define DEV_NOT_CONNECTED 0
 #define DEV_CONNECTING    1
 #define DEV_CONNECTED     2
-#define DEV_LOGGED_IN     4
-#define DEV_SENDING       8
-#define DEV_EXPECTING     16
+
+/* bitwise values for dev->status */
+#define DEV_LOGGED_IN     1
+#define DEV_SENDING       2
+#define DEV_EXPECTING     4
 
 /*
  * Plug
  */
 typedef struct {
-    char      *name;	    /* how the plug is known to the device */
-    regex_t	    name_re;
+    char	    *name;	    /* how the plug is known to the device */
     Node	    *node;	    
 } Plug;
 
@@ -51,37 +52,33 @@ typedef struct {
  * Device
  */
 struct device_struct {
-    char      *name;
-    char      *all;
-    regex_t	    on_re;
-    regex_t	    off_re;
-    Dev_Type	    type;
-    union {
-	/*TTY_Dev ttyd;*/
+    char	    *name;	    /* name of device */
+    char	    *all;	    /* string for to select all plugs */
+    regex_t	    on_re;	    /* regex to match "on" in query */
+    regex_t	    off_re;	    /* regex to match "off" in query */
+    Dev_Type	    type;	    /* type of device e.g. TCP_DEV */
+    union {			    /* type-specific device information */
 	struct {
 	    char    *host;
 	    char    *service;
 	} tcpd;
-	/*SNMP_Dev snmpd;*/
-	/*telnet_Dev telnetd;*/
-	struct {
-	    char    *host;
-	    char    *service;
-	} pmd;
     } devu;
-    bool	    loggedin;
-    bool	    error;
-    int		    status;
+    bool	    loggedin;	    /* is device logged in */
+    int		    status:4;	    /* DEV_ bits reprepsenting dev state */
+    int		    connect_status:4; /* DEV_ bits reprepsenting dev state */
+
     int		    fd;
-    List	    acts;
+    List	    acts;	    /* queue of Actions */
     struct timeval  time_stamp;	    /* update this after each operation */
     struct timeval  timeout;
-    Buffer	    to;
-    Buffer	    from;
-    int		    num_plugs;
-    List	    plugs;	/* list of Plugs structures */
-    Protocol	    *prot;
-    bool	    logit;
+    Buffer	    to;		    /* buffer -> device */
+    Buffer	    from;	    /* buffer <- device */
+    int		    num_plugs;	    /* Plug count for this device */
+    List	    plugs;	    /* list of Plugs */
+    Protocol	    *prot;	    /* list of expect/send scripts */
+    bool	    logit;	    /* if true, call log function in buffer.c */
+    struct timeval  last_reconnect; /* time of last reconnect attempt */
+    int		    reconnect_count;/* number of reconnects attempted */
     MAGIC;
 };
 /* FIXME: data structures are circular here - typedef in powerman.h jg */
@@ -90,15 +87,8 @@ struct device_struct {
 void dev_init(void);
 void dev_fini(void);
 void dev_add(Device *dev);
-void dev_start_all(bool logit);
-void dev_nb_connect(Device * dev);
-void dev_handle_read(Device * dev);
-void dev_connect(Device * dev);
-void dev_process_script(Device * dev);
-void dev_handle_write(Device * dev);
-bool dev_stalled(Device * dev);
-void dev_recover(Device * dev);
 void dev_apply_action(Action *act);
+void dev_initial_connect(bool logit);
 
 Device *dev_create();
 void dev_destroy(Device * dev);
@@ -108,8 +98,8 @@ Plug *dev_plug_create(const char *name);
 int dev_plug_match(Plug * plug, void *key);
 void dev_plug_destroy(Plug * plug);
 
-void dev_prepfor_select(fd_set *rset, fd_set *wset, int *maxfd);
-bool dev_process_select(fd_set *rset, fd_set *wset, bool over_time);
+void dev_pre_select(fd_set *rset, fd_set *wset, int *maxfd);
+void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *tv);
 
 #endif				/* DEVICE_H */
 

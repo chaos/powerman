@@ -1,108 +1,68 @@
-#
-# $Id$
-# $Source$
-#
-# config file for virtual power controller in powerman/test dir
-#
 begin protocol specification
 	specification name "vpc"
 	specification type "TCP"
 	off string "OFF"
 	on string  "ON"
 	all string "*"
-	size "10"
-	device timeout "5.0"
-	string interpretation mode "LITERAL"
-	begin PM_LOG_IN 
+	plug count 8
+	device timeout 5.0
+	begin LOGIN_SCRIPT
 		send "\r\n"
 		expect "[0-9]* vpc> "
-	end PM_LOG_IN
-	begin PM_CHECK_LOGIN
-		send "\r\n"
-		expect "[0-9]* vpc> "
-	end PM_CHECK_LOGIN
-	begin PM_LOG_OUT
+	end LOGIN_SCRIPT
+	begin LOGOUT_SCRIPT
 		send "logoff\r\n"
 		expect "[0-9]* OK"
-	end PM_LOG_OUT
-	begin PM_UPDATE_PLUGS
+	end LOGOUT_SCRIPT
+	begin STATUS_SCRIPT
 		send "stat\r\n"
 		expect "plug 0: (ON|OFF)"
-			map "1" "0"
+			map $1 "0"
 		expect "plug 1: (ON|OFF)"
-			map "1" "1"
+			map $1 "1"
 		expect "plug 2: (ON|OFF)"
-			map "1" "2"
+			map $1 "2"
 		expect "plug 3: (ON|OFF)"
-			map "1" "3"
+			map $1 "3"
 		expect "plug 4: (ON|OFF)"
-			map "1" "4"
+			map $1 "4"
 		expect "plug 5: (ON|OFF)"
-			map "1" "5"
+			map $1 "5"
 		expect "plug 6: (ON|OFF)"
-			map "1" "6"
+			map $1 "6"
 		expect "plug 7: (ON|OFF)"
-			map "1" "7"
-		expect "plug 8: (ON|OFF)"
-			map "1" "8"
-		expect "plug 9: (ON|OFF)"
-			map "1" "9"
+			map $1 "7"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end PM_UPDATE_PLUGS 
-	begin PM_UPDATE_NODES
-		send "stat\r\n"
-		expect "plug 0: (ON|OFF)"
-			map "1" "0"
-		expect "plug 1: (ON|OFF)"
-			map "1" "1"
-		expect "plug 2: (ON|OFF)"
-			map "1" "2"
-		expect "plug 3: (ON|OFF)"
-			map "1" "3"
-		expect "plug 4: (ON|OFF)"
-			map "1" "4"
-		expect "plug 5: (ON|OFF)"
-			map "1" "5"
-		expect "plug 6: (ON|OFF)"
-			map "1" "6"
-		expect "plug 7: (ON|OFF)"
-			map "1" "7"
-		expect "plug 8: (ON|OFF)"
-			map "1" "8"
-		expect "plug 9: (ON|OFF)"
-			map "1" "9"
-		expect "[0-9]* OK"
-		expect "[0-9]* vpc> "
-	end PM_UPDATE_NODES
-	begin PM_POWER_ON
+	end STATUS_SCRIPT
+	begin ON_SCRIPT
 		send "on %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end PM_POWER_ON
-	begin PM_POWER_OFF
+	end ON_SCRIPT
+	begin OFF_SCRIPT
 		send "off %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end PM_POWER_OFF
-	begin PM_POWER_CYCLE
+	end OFF_SCRIPT
+	begin CYCLE_SCRIPT
 		send "off %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-		delay "1.0"
+		delay 1.0
 		send "on %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end PM_POWER_CYCLE
-	begin PM_RESET
+	end CYCLE_SCRIPT
+	begin RESET_SCRIPT
 		send "off %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-		delay "1.0"
+		delay 1.0
 		send "on %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end PM_RESET
+	end RESET_SCRIPT
 	plug name "0"
 	plug name "1"
 	plug name "2"
@@ -111,6 +71,4 @@ begin protocol specification
 	plug name "5"
 	plug name "6"
 	plug name "7"
-	plug name "8"
-	plug name "9"
 end protocol specification

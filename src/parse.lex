@@ -25,18 +25,10 @@
 \*****************************************************************************/
 /* Lex Definitions */
 
-/* 
- * the "incl" state is used for picking up the name
- * of an include file - strate from the lex man page
- */
-%x lex_incl lex_str
+%x lex_incl lex_str 	
 
 %{
-extern int yyline;
-	/* 
-	 *    N.B. You must define YYSTYPE before including ioa_tab.h or the
-	 *  type will be set to an int
-	 */
+/* N.B. must define YYSTYPE before including ioa_tab.h or type will be int. */
 #define YYSTYPE char *
 #include <string.h>
 #include <stdio.h>
@@ -51,20 +43,16 @@ extern int yyline;
 #include "config.h"
 extern void yyerror();
 	
-#define MAX_INCLUDE_DEPTH 10   /* How many include files? */
- YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH]; /* and their buffers */
- int include_stack_ptr = 0;  /* which one is current? */
-	
- char string_buf[MAX_BUF];    /* for getting any kind of string */
- char *string_buf_ptr;
-	
-	
+#define MAX_INCLUDE_DEPTH 10
+static YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
+static int linenum[MAX_INCLUDE_DEPTH];
+static char *filename[MAX_INCLUDE_DEPTH];
+static int include_stack_ptr = 0;
+static char string_buf[MAX_BUF];
+static char *string_buf_ptr;
 %}
-
-
 /* Lex Options */
 %option nounput
-
 
 %%
 
@@ -72,11 +60,16 @@ extern void yyerror();
 	/* yyin gets initialized in parse.y */
 %}
 
-
-#[^\n]*\n { yyline++; }  
+#[^\n]*\n { linenum[include_stack_ptr]++; }  
 
 [ \t]+ {  /* Eat up white space */ }
-[\n]   {  yyline++; }
+
+[\n]   {  linenum[include_stack_ptr]++; }
+
+([0-9]+)|([0-9]+"."[0-9]*)  { yylval = yytext; return TOK_NUMERIC_VAL; }
+
+\$	{ return TOK_MATCHPOS; }
+
 \"                             string_buf_ptr = string_buf; BEGIN(lex_str);
 <lex_str>{ 
 	\"                           {   /* end of string */
@@ -184,30 +177,27 @@ specification[ \t]+type           {   return TOK_SPEC_TYPE; }
 off[ \t]+string                   {   return TOK_OFF_STRING; }
 on[ \t]+string                    {   return TOK_ON_STRING; }
 all[ \t]+string                   {   return TOK_ALL_STRING; }
-size                              {   return TOK_SIZE; }
-string[ \t]+interpretation[ \t]+mode   {   return TOK_STRING_INTERP_MODE; }
-begin[ \t]+PM_LOG_IN              {   return TOK_B_PM_LOG_IN; }
+plug[ \t]+count                   {   return TOK_PLUG_COUNT; }
 expect                            {   return TOK_EXPECT; }
 map                               {   return TOK_MAP; }
 send                              {   return TOK_SEND; }
 delay                             {   return TOK_DELAY; }
-end[ \t]+PM_LOG_IN                {   return TOK_E_PM_LOG_IN; }
-begin[ \t]+PM_CHECK_LOGIN         {   return TOK_B_PM_CHECK_LOGIN; }
-end[ \t]+PM_CHECK_LOGIN           {   return TOK_E_PM_CHECK_LOGIN; }
-begin[ \t]+PM_LOG_OUT             {   return TOK_B_PM_LOG_OUT; }
-end[ \t]+PM_LOG_OUT               {   return TOK_E_PM_LOG_OUT; }
-begin[ \t]+PM_UPDATE_PLUGS        {   return TOK_B_PM_UPDATE_PLUGS; }
-end[ \t]+PM_UPDATE_PLUGS          {   return TOK_E_PM_UPDATE_PLUGS; }
-begin[ \t]+PM_UPDATE_NODES        {   return TOK_B_PM_UPDATE_NODES; }
-end[ \t]+PM_UPDATE_NODES          {   return TOK_E_PM_UPDATE_NODES; }
-begin[ \t]+PM_POWER_ON            {   return TOK_B_PM_POWER_ON; }
-end[ \t]+PM_POWER_ON              {   return TOK_E_PM_POWER_ON; }
-begin[ \t]+PM_POWER_OFF           {   return TOK_B_PM_POWER_OFF; }
-end[ \t]+PM_POWER_OFF             {   return TOK_E_PM_POWER_OFF; }
-begin[ \t]+PM_POWER_CYCLE         {   return TOK_B_PM_POWER_CYCLE; }
-end[ \t]+PM_POWER_CYCLE           {   return TOK_E_PM_POWER_CYCLE; }
-begin[ \t]+PM_RESET               {   return TOK_B_PM_RESET; }
-end[ \t]+PM_RESET                 {   return TOK_E_PM_RESET; }
+begin[ \t]+LOGIN_SCRIPT           {   return TOK_B_PM_LOG_IN; }
+end[ \t]+LOGIN_SCRIPT             {   return TOK_E_PM_LOG_IN; }
+begin[ \t]+LOGOUT_SCRIPT          {   return TOK_B_PM_LOG_OUT; }
+end[ \t]+LOGOUT_SCRIPT            {   return TOK_E_PM_LOG_OUT; }
+begin[ \t]+STATUS_SCRIPT          {   return TOK_B_PM_UPDATE_PLUGS; }
+end[ \t]+STATUS_SCRIPT            {   return TOK_E_PM_UPDATE_PLUGS; }
+begin[ \t]+STATUS_SOFT_SCRIPT     {   return TOK_B_PM_UPDATE_NODES; }
+end[ \t]+STATUS_SOFT_SCRIPT       {   return TOK_E_PM_UPDATE_NODES; }
+begin[ \t]+ON_SCRIPT              {   return TOK_B_PM_POWER_ON; }
+end[ \t]+ON_SCRIPT                {   return TOK_E_PM_POWER_ON; }
+begin[ \t]+OFF_SCRIPT             {   return TOK_B_PM_POWER_OFF; }
+end[ \t]+OFF_SCRIPT               {   return TOK_E_PM_POWER_OFF; }
+begin[ \t]+CYCLE_SCRIPT           {   return TOK_B_PM_POWER_CYCLE; }
+end[ \t]+CYCLE_SCRIPT             {   return TOK_E_PM_POWER_CYCLE; }
+begin[ \t]+RESET_SCRIPT           {   return TOK_B_PM_RESET; }
+end[ \t]+RESET_SCRIPT             {   return TOK_E_PM_RESET; }
 end[ \t]+protocol[ \t]+specification   {   return TOK_E_SPEC; }
 device                            {   return TOK_DEVICE; }
 end[ \t]+global                   {   return TOK_E_GLOBAL; }
@@ -217,7 +207,7 @@ node                              {   return TOK_NODE; }
 end[ \t]+nodes                    {   return TOK_E_NODES; }
 include                        BEGIN(lex_incl);
 <lex_incl>[ \t]*             {    /* eat white space */ }
-<lex_incl>[\n]               { yyline++; }
+<lex_incl>[\n]               { linenum[include_stack_ptr]++; }
 <lex_incl>[^ \t\n]+                { /* got include file name */
 	int len;
 	
@@ -230,8 +220,9 @@ include                        BEGIN(lex_incl);
 	include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
 	
 	yyin = fopen( yytext + 1, "r" );
-	
-	if ( yyin == NULL )err_exit(TRUE, "%s", yytext + 1);
+	if ( yyin == NULL )
+		err_exit(TRUE, "%s", yytext + 1);
+	filename[include_stack_ptr] = Strdup(yytext + 1);
 	
 	yy_switch_to_buffer( yy_create_buffer( yyin, YY_BUF_SIZE ) );
 	BEGIN(INITIAL);
@@ -255,3 +246,37 @@ include                        BEGIN(lex_incl);
 
 %%
 
+void
+scanner_init(char *filename0)
+{
+	int i;	
+
+	for (i = 0; i < MAX_INCLUDE_DEPTH; i++) {
+		linenum[i] = 1;
+		filename[i] = NULL;
+	}
+	filename[0] = Strdup(filename0);
+}
+
+void
+scanner_fini(void)
+{
+	int i;	
+
+	for (i = 0; i < MAX_INCLUDE_DEPTH; i++) {
+		if (filename[i] != NULL)
+			Free(filename[i]);
+	}
+}
+
+int
+scanner_line(void)
+{
+	return linenum[include_stack_ptr];
+}
+
+char *
+scanner_file(void)
+{
+	return filename[include_stack_ptr];
+}

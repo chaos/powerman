@@ -1,6 +1,36 @@
+2002-09-25 garlick
+	* Removed inter-dev delay (behlendo)
+
+2002-09-23 garlick
+	* Create per-device reconnect state (count and time stamp)
+	* Removed seperate soft power monitoring device from Plug.
+	* Remove periodic status query.
+	* Implement a sane reconnect algorithm.
+	* Handle 'quit' command immediately (don't queue it).
+
+2002-09-22 garlick
+	* Improve handling of numeric values in config files.  They are no 
+	  longer specified in quotes.  Floats are parsed by strtod; integers
+	  are parsed by strtol.
+	* Regex match positions in "map" lines are now specified as $N
+	  rathern than "N".
+	* Changed "size" to "plug count" in device configuration.
+	* Defined fatal out_of_memory function in powermand.c for list.[ch].
+	* Removed PM_CHECK_LOGIN script.
+	* Renamed script names in config files (e.g. PM_LOG_IN -> LOGIN_SCRIPT).
+	* Removed PM_NAMES and PM_ERROR action types.
+
+2002-09-21 garlick
+	* Got rid of unimplemented device types (SNMP, TTY, TELNET) and PMD 
+	  device type.  Deleted 'string interpretation mode' and associated 
+	  code/data structures used for PMD device type.
+	* Fixed lexer/parser to report correct file and line number when
+	  errors occur (works with include files).  Reworded many parsing 
+	  error messages.
+
 2002-09-20 garlick
 	* Moved vicebox stuff to test subdir and got rid of redundant
-	  exit_error.c and wrappers.c.
+	  exit_error.c and wrappers.c.  Added virtual power controller vpcd.c.
 	* Brian updated the TODO file.
 	* Cleanup of functions in client.c, util.c.
 	* Tagged powerman-1-0-4.

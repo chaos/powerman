@@ -76,33 +76,5 @@ unsigned char *util_memstr(unsigned char *mem, int len)
 }
 
 /*
- * Test whether timeout has occurred
- *  time_stamp (IN) 
- *  timeout (IN)
- *  RETURN		TRUE if (time_stamp + timeout > now)
- */
-bool util_overdue(struct timeval * time_stamp, struct timeval * timeout)
-{
-    struct timeval now;
-    struct timeval limit;
-    bool result = FALSE;
-
-    /* timeradd(time_stamp, timeout, limit) */
-    limit.tv_usec = time_stamp->tv_usec + timeout->tv_usec;
-    limit.tv_sec = time_stamp->tv_sec + timeout->tv_sec;
-    if (limit.tv_usec > 1000000) {
-	limit.tv_sec++;
-	limit.tv_usec -= 1000000;
-    }
-    gettimeofday(&now, NULL);
-    /* timercmp(now, limit, >) */
-    if ((now.tv_sec > limit.tv_sec) ||
-	((now.tv_sec == limit.tv_sec) && (now.tv_usec > limit.tv_usec)))
-	result = TRUE;
-    return result;
-}
-
-
-/*
  * vi:softtabstop=4
  */

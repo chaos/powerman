@@ -43,23 +43,6 @@
 static List act_actions = NULL;
 
 /*
- *   The main select() loop will generate this function call 
- * periodically.  The frequency can be set in the config file.
- */
-void act_update(void)
-{
-    Action *act;
-
-    syslog(LOG_INFO, "updating plugs and nodes");
-
-    act = act_create(PM_UPDATE_PLUGS);
-    list_append(act_actions, act);
-
-    act = act_create(PM_UPDATE_NODES);
-    list_append(act_actions, act);
-}
-
-/*
  *   This function retrieves the Action at the head of the queue.
  * It must verify that the retrieved action is for a client who 
  * still exists.  Internally generated Actions (from act_update())
@@ -84,50 +67,8 @@ Action *act_find(void)
     return act;
 }
 
-
 /*
- *   The devices have gone idle and the cluster quiescent.  It's
- * time to start a new action.  The first five ACTION types 
- * may be handled immediately, and yet another action pulled 
- * from the queue.  act_initiate() is called recursively until 
- * some Action comes to the head of the list that requires device
- * communication (or the list runs out and the function returns).
- *   When an Action is encountered thatrequires device 
- * communication the cluster is marked "Occupied" (return value TRUE)
- * and corresponding Actions are dispatched to each appropriate device.
- */
-bool act_initiate(Action * act)
-{
-    assert(act != NULL);
-    CHECK_MAGIC(act);
-
-    switch (act->com) {
-        case PM_ERROR:
-        case PM_LOG_IN:
-        case PM_CHECK_LOGIN:
-        case PM_LOG_OUT:
-        case PM_NAMES:
-            act_finish(act);
-            if ((act = act_find()) != NULL)
-                return act_initiate(act);
-            return FALSE;
-        case PM_UPDATE_PLUGS:
-        case PM_UPDATE_NODES:
-        case PM_POWER_ON:
-        case PM_POWER_OFF:
-        case PM_POWER_CYCLE:
-        case PM_RESET:
-            break;
-        default:
-            assert(FALSE);
-    }
-
-    dev_apply_action(act);
-    return TRUE;
-} 
-
-/*
- *    From either act_initiate() or the main select() loop this function
+ *    This function
  * replies to a client if appropriate, marks the timestamp (suppressing
  * an act_update() for update_interval), and destroys the Action
  * strucutre.
@@ -193,9 +134,11 @@ void act_del_queuehead(List acts)
 
 void act_add(Action *act)
 {
+    /* PM_LOG_IN actions are always queued directly to the device */
+    assert(act->com != PM_LOG_IN);
+
     list_append(act_actions, act);
 }
-
 
 void act_init(void)
 {

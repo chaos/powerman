@@ -32,17 +32,15 @@
 
 /* Indices into script arrays */
 /* Note: keep in sync with command_str[] array in device.c */
-#define PM_ERROR            0
-#define PM_LOG_IN           1
-#define PM_CHECK_LOGIN      2
-#define PM_LOG_OUT          3
-#define PM_UPDATE_PLUGS     4
-#define PM_UPDATE_NODES     5
-#define PM_POWER_ON         6
-#define PM_POWER_OFF        7
-#define PM_POWER_CYCLE      8
-#define PM_RESET            9
-#define PM_NAMES           10
+/* Note: NUM_SCRIPTS in config.h should also agree */
+#define PM_LOG_IN           0
+#define PM_LOG_OUT          1
+#define PM_UPDATE_PLUGS     2
+#define PM_UPDATE_NODES     3
+#define PM_POWER_ON         4
+#define PM_POWER_OFF        5
+#define PM_POWER_CYCLE      6
+#define PM_RESET            7
 
 /*
  *   Actions are created and either 1) appended to a list that is 
@@ -67,14 +65,8 @@ struct action_struct {
     MAGIC;
 };
 
-/* enque requests for hard- and soft-power state */
-void act_update(void);
-
 /* Get and validate the next action in the queue */
 Action *act_find(void);
-
-/* process Action and (possibly) dispatch to devices */
-bool act_initiate(Action * act);
 
 /* clean up and reply to client */
 void act_finish(Action * act);

@@ -94,5 +94,6 @@
 #define CP_ERR_HLINVAL	"206 Invalid hostlist range"	CP_EOL
 #define CP_ERR_HLUNK	"207 hostlist error"		CP_EOL
 #define CP_ERR_NOSUCHNODES "208 no such nodes: %s"	CP_EOL
+#define CP_ERR_BUSY     "209 busy, try again later"	CP_EOL
 
 #endif /* CLIENT_PROTO_H */

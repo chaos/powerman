@@ -59,8 +59,8 @@ static List		tmp_specs = NULL;
 /*
  * Some configurable values - accessor functions defined below.
  */
-static struct timeval	conf_select_timeout = { 0L, 0L };
-static struct timeval	conf_update_inter = { 0L, 0L };
+static struct timeval	conf_select_timeout;
+static struct timeval	conf_update_inter;
 static bool		conf_use_tcp_wrap = FALSE;
 static int		conf_listen_port = NO_PORT;
 static Cluster	        *conf_cluster = NULL;
@@ -74,6 +74,9 @@ conf_init(char *filename)
 {
     struct stat stbuf;
     int parse_config_file(char *filename);
+
+    timerclear(&conf_select_timeout);
+    timerclear(&conf_update_inter);
 
     /* initialize cluster */
     conf_cluster = _cluster_create();
@@ -178,7 +181,6 @@ Spec *conf_spec_create(char *name)
     spec->size = 0;
     spec->timeout.tv_sec = 0;
     spec->timeout.tv_usec = 0;
-    spec->mode = SM_NONE;
     for (i = 0; i < NUM_SCRIPTS; i++)
 	spec->scripts[i] = NULL;
     return spec;
@@ -200,11 +202,9 @@ static void _spec_destroy(Spec * spec)
     Free(spec->on);
     Free(spec->all);
 
-    if (spec->type != PMD_DEV) {
-	for (i = 0; i < spec->size; i++)
-	    Free(spec->plugname[i]);
-	Free(spec->plugname);
-    }
+    for (i = 0; i < spec->size; i++)
+	Free(spec->plugname[i]);
+    Free(spec->plugname);
     for (i = 0; i < NUM_SCRIPTS; i++)
 	list_destroy(spec->scripts[i]);
     Free(spec);
@@ -236,33 +236,35 @@ conf_find_spec(char *name)
  *                                                                 *
  *******************************************************************/
 
-Spec_El *conf_spec_el_create(Script_El_Type type, char *str1, List map)
+Spec_El *conf_spec_el_create(Script_El_Type type, char *str1, 
+		struct timeval *tv, List map)
 {
     Spec_El *specl;
 
     specl = (Spec_El *) Malloc(sizeof(Spec_El));
+    memset(specl, 0, sizeof(Spec_El));
     specl->type = type;
     switch (type) {
     case EL_SEND:
     case EL_EXPECT:
-	specl->tv.tv_sec = 0;
-	specl->tv.tv_usec = 0;
+	assert(str1 != NULL && tv == NULL);
+	specl->string1 = Strdup(str1);
 	break;
     case EL_DELAY:
-	conf_strtotv(&(specl->tv), str1);
+	assert(str1 == NULL && tv != NULL);
+	specl->tv = *tv;
 	break;
     default:
 	assert(FALSE);
     }
-    specl->string1 = Strdup(str1);
     specl->map = map;
     return specl;
 }
 
 void conf_spec_el_destroy(Spec_El * specl)
 {
-    assert(specl->string1 != NULL);
-    Free(specl->string1);
+    if (specl->string1 != NULL)
+	Free(specl->string1);
     specl->string1 = NULL;
     if (specl->map != NULL)
 	list_destroy(specl->map);
@@ -314,11 +316,8 @@ Node *conf_node_create(const char *name)
     INIT_MAGIC(node);
     node->name = Strdup(name);
     node->p_state = ST_UNKNOWN;
-    node->p_dev = NULL;
-    node->p_index = NOT_SET;
     node->n_state = ST_UNKNOWN;
-    node->n_dev = NULL;
-    node->n_index = NOT_SET;
+    node->dev = NULL;
     return node;
 }
 
@@ -374,44 +373,6 @@ void conf_interp_destroy(Interpretation * interp)
 {
     Free(interp->plug_name);
     Free(interp);
-}
-
-/*
- *  During parsing struct timeval values in the config file will be
- * entered as decimals.  The lexer picks out the string and this 
- * function translates that arbitrary precision string into the 
- * seconds, micro-seconds form of a struct timeval.  Right now
- * it insists there be an integer,  decimal, integer.  I could 
- * improve the thing by allowing a variety of formats: 
- * 10 10.10 0.10 .10 
- */
-#define TMPSTRLEN 32
-void conf_strtotv(struct timeval *tv, char *s)
-{
-    int len;
-    char decimal[TMPSTRLEN];
-    int sec;
-    int usec;
-    int n;
-
-    assert(tv != NULL);
-    n = sscanf(s, "%d.%s", &sec, decimal);
-    if ((n != 2) || (sec < 0))
-	err_exit(FALSE, "couldn't get the seconds and useconds from %s", s);
-    len = strlen(decimal);
-    n = sscanf(decimal, "%d", &usec);
-    if ((n != 1) || (usec < 0))
-	err_exit(FALSE, "couldn't get the useconds from %s", decimal);
-    while (len > 6) {
-	usec /= 10;
-	len--;
-    }
-    while (len < 6) {
-	usec *= 10;
-	len++;
-    }
-    tv->tv_sec = sec;
-    tv->tv_usec = usec;
 }
 
 /*

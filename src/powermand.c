@@ -59,7 +59,7 @@
 static void _usage(char *prog);
 static void _noop_handler(int signum);
 static void _exit_handler(int signum);
-static void _select_loop(void);
+static void _select_loop(bool debug);
 
 static const char *powerman_license =
     "Copyright (C) 2001-2002 The Regents of the University of California.\n"
@@ -89,7 +89,7 @@ int main(int argc, char **argv)
     int c;
     int lindex;
     char *config_filename = NULL;
-    bool debug_telemetry = FALSE;
+    bool debug = FALSE;
     bool daemonize = TRUE;
 
     /* initialize various modules */
@@ -117,7 +117,7 @@ int main(int argc, char **argv)
 	    printf("%s", powerman_license);
 	    exit(0);
 	case 't':		/* --telemetry */
-	    debug_telemetry = TRUE;
+	    debug = TRUE;
 	    break;
 #if 0
 	case 'V':
@@ -131,7 +131,7 @@ int main(int argc, char **argv)
 	}
     }
 
-    if (debug_telemetry && daemonize == TRUE)
+    if (debug && daemonize == TRUE)
 	err_exit(FALSE, "--telemetry cannot be used in daemon mode");
 
     if (geteuid() != 0)
@@ -150,15 +150,12 @@ int main(int argc, char **argv)
     if (daemonize)
 	daemon_init();
 
-    /* initialize all the power control devs */
-    dev_start_all(debug_telemetry);
-
     /* initialize listener */
     cli_listen();
 
     /* We now have a socket at listener fd running in listen mode */
     /* and a file descriptor for communicating with each device */
-    _select_loop();
+    _select_loop(debug);
     /*NOTREACHED*/
     return 0;
 }
@@ -174,6 +171,10 @@ static void _usage(char *prog)
     printf("  -V --version\t\tDisplay version information\n");
 }
 
+static bool _tvzero(struct timeval *tv)
+{
+    return ((tv->tv_sec == 0 && tv->tv_usec == 0) ? TRUE : FALSE);
+}
 
 /*
  * This loop does not terminate except via the program being killed.  
@@ -187,69 +188,47 @@ static void _usage(char *prog)
  * "quiecent" and a new action may be initiated from the list 
  * queued up by the clients.  
  */
-static void _select_loop(void)
+#define TV_FOREVER { 100000L, 0L }
+static void _select_loop(bool debug)
 {
     int maxfd;
-    struct timeval tv_select;
-    struct timeval tv_update;
-    int n;
+    struct timeval tmout;
     fd_set rset;
     fd_set wset;
-    bool over_time;		/* for update actions */
-    bool active_devs;		/* active_devs == FALSE => Quiescent */
-    Action *act;
-    struct timeval time_stamp;	/* last update */
-    /* Only when all device are idle is the cluster Quiescent */
-    /* and only then can a new action be initiated from the queue. */
-    enum { STAT_QUIESCENT, STAT_OCCUPIED } status = STAT_QUIESCENT;
 
-    Gettimeofday(&time_stamp, NULL);
+    /* start non-blocking connections to all the devices */
+    dev_initial_connect(debug);
 
-   while (1) {
-	/* Initialize rset, wset, maxfd */
+    timerclear(&tmout);
+
+    while (1) {
+	/* set maxfd and read/write fd sets for select call */
 	FD_ZERO(&rset);
 	FD_ZERO(&wset);
 	maxfd = 0;
-	cli_prepfor_select(&rset, &wset, &maxfd);
-	dev_prepfor_select(&rset, &wset, &maxfd);
+	cli_pre_select(&rset, &wset, &maxfd);
+	dev_pre_select(&rset, &wset, &maxfd);
 
-        /* some "select" implementations are reputed to alter tv so set it anew
-	 * with each iteration.  timeout_interval may be set in the config file.
-         */
-	conf_get_select_timeout(&tv_select);
-	n = Select(maxfd + 1, &rset, &wset, NULL, &tv_select);
+	/* XXX */
+	if (debug) {
+	    if (_tvzero(&tmout))
+		printf("select - no timeout\n");
+	    else
+		printf("select - timeout %ld.%-6.6ld sec\n", 
+			    tmout.tv_sec, tmout.tv_usec);
+	}
 
-	/* update_interval may be set in the config file.  Any activity will 
-	 * suppress updates for that period, not just other updates.
+        /* Note: some selects modify timeval arg */
+	Select(maxfd + 1, &rset, &wset, NULL, _tvzero(&tmout) ? NULL : &tmout);
+	timerclear(&tmout);
+
+	/* 
+	 * Process activity on client and device fd's.
+	 * If a device requires a timeout, for example to reconnect or
+	 * to process a scripted delay, tmout is updated.
 	 */
-	conf_get_update_interval(&tv_update);
-	over_time = util_overdue(&time_stamp, &tv_update);
-
-	/* Process activity on client and device fd's */
-	cli_process_select(&rset, &wset, over_time);
-	active_devs = dev_process_select(&rset, &wset, over_time);
-
-	/* queue up an "update nodes" and "update plugs" for the cluster */
-	if (over_time) {
-	    act_update();
-	    Gettimeofday(&time_stamp, NULL);
-	}
-
-	/* launch the next action in the queue */
-	if ((!active_devs) && ((act = act_find()) != NULL)) {
-	    /* a previous action may need a reply sent back to a client */
-	    if (status == STAT_OCCUPIED) {
-          act_finish(act);
-          Gettimeofday(&time_stamp, NULL);
-          status = STAT_QUIESCENT;
-	    }
-
-	    /* double check - if there was an action in the queue, launch it */
-	    if ((act = act_find()) != NULL) {
-		      if (act_initiate(act))
-		          status = STAT_OCCUPIED;
-	    }
-	}
+	cli_post_select(&rset, &wset);
+	dev_post_select(&rset, &wset, &tmout);
     }
     /*NOTREACHED*/
 }
@@ -266,6 +245,14 @@ static void _exit_handler(int signum)
     dev_fini();
     conf_fini();
     err_exit(FALSE, "exiting on signal %d", signum);
+}
+
+/* out of memory handler for list.[ch] routines */
+void *out_of_memory(void)
+{
+    err_exit(FALSE, "list routines out of memory");
+    /*NOTREACHED*/
+    return NULL;
 }
 
 /*

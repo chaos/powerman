@@ -38,7 +38,8 @@
 #include "list.h"
 #include "string.h"
 
-#define NUM_SCRIPTS	11
+#define NUM_SCRIPTS	8
+
 #define UPDATE_SECONDS	300
 #define NOT_SET		(-1)
 
@@ -63,12 +64,9 @@ typedef struct {
 } Script_El;
 
 /*
- * Set of scripts (11) defining a protocol.  
- * Each script is a list of expect/send/delays.
+ * Set of scripts - each script is a list of expect/send/delays.
  */
-typedef enum { SM_NONE, SM_REGEX, SM_LITERAL } String_Mode;
 typedef struct {
-    String_Mode	    mode;	/* strings are interpreted as regex/literal */
     List	    scripts[NUM_SCRIPTS]; /* array of lists of Script_El's */
 } Protocol;
 
@@ -92,11 +90,10 @@ typedef struct {
     char        *off;	/* off string, e.g. "OFF" */
     char        *on;		/* on string, e.g. "ON" */
     char        *all;	/* all string, e.g. "*" */
-    int		    size;	/* number of plugs per device */
+    int		size;	/* number of plugs per device */
     struct timeval  timeout;	/* timeout for this device */
     char        **plugname;	/* list of plug names (e.g. "1" thru "10") */
-    String_Mode	    mode;	/* interp mode, e.g. literal */
-    List	    scripts[NUM_SCRIPTS]; /* array of lists of Spec_El's */
+    List	scripts[NUM_SCRIPTS]; /* array of lists of Spec_El's */
 } Spec;
 
 /*
@@ -104,13 +101,10 @@ typedef struct {
  */
 typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } State_Val; /* plug state */
 typedef struct {
-    char        *name;	/* hostname */
-    State_Val	  p_state;	/* plug state, i.e. hard-power status */
-    Device	    *p_dev;	/* device used for plug state */
-    int		    p_index;	/* port index into plug state device */
+    char	    *name;	/* hostname */
+    State_Val	    p_state;	/* plug state, i.e. hard-power status */
     State_Val	    n_state;	/* node state, i.e. soft-power status */
-    Device	    *n_dev;	/* device used for node state */
-    int		    n_index;	/* port index into node state device */
+    Device	    *dev;	/* device */
     MAGIC;
 } Node;
 
@@ -143,7 +137,8 @@ Spec *conf_spec_create(char *name);
 int conf_spec_match(Spec * spec, void *key);
 void conf_spec_destroy(Spec * spec);
 
-Spec_El *conf_spec_el_create(Script_El_Type type, char *str1, List map);
+Spec_El *conf_spec_el_create(Script_El_Type type, char *str1, 
+		struct timeval *tv, List map);
 void conf_spec_el_destroy(Spec_El * specl);
 
 Node *conf_node_create(const char *name);
@@ -153,7 +148,6 @@ void conf_node_destroy(Node * node);
 Interpretation *conf_interp_create(char *name);
 int conf_interp_match(Interpretation * interp, void *key);
 void conf_interp_destroy(Interpretation * interp);
-void conf_strtotv(struct timeval *tv, char *s);
 
 void conf_init(char *filename);
 void conf_fini(void);
