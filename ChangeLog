@@ -133,4 +133,5 @@
 #	Push tty openning and locking code into pm_utils.  Remove all
 #	pacing delays except for when "setting"
 #	Removed annoying "pm:  " from version string.
+#	Adjusted some of the "bad replies" handling for iceboxes.
 ####################################################################

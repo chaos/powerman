@@ -117,7 +117,7 @@ def init_tty(tty_struct):
     global tty
 
     try:
-        tty = open(tty_struct.name, 'r+')
+        tty = os.open(tty_struct.name, os.O_RDWR | os.O_SYNC, 0)
     except IOError:
         exit_error(18, tty_struct.name)
     tty_struct.device = tty
@@ -128,7 +128,7 @@ def init_tty(tty_struct):
     while (not tty_struct.locked and retry_count):
         retry_count = retry_count - 1
         try:
-            fcntl.lockf(tty.fileno(), FCNTL.LOCK_EX | FCNTL.LOCK_NB)
+            fcntl.lockf(tty, FCNTL.LOCK_EX | FCNTL.LOCK_NB)
             tty_struct.locked = 1
         except IOError:
             if (retry_count):
@@ -136,7 +136,7 @@ def init_tty(tty_struct):
             else:
                 exit_error(19, tty_struct.name)
     try:
-        tty_struct.prev_attrs = termios.tcgetattr(tty.fileno())
+        tty_struct.prev_attrs = termios.tcgetattr(tty)
     except IOError:
         exit_error(22, tty_struct.name)
     tty_struct.attrs = tty_struct.prev_attrs[:]
@@ -145,43 +145,48 @@ def init_tty(tty_struct):
     tty_struct.attrs[2] = TERMIOS.CSIZE | TERMIOS.CREAD | TERMIOS.CLOCAL
     tty_struct.attrs[3] = 0
     try:
-        termios.tcsetattr(tty.fileno(), TERMIOS.TCSANOW, tty_struct.attrs)
+        termios.tcsetattr(tty, TERMIOS.TCSANOW, tty_struct.attrs)
     except IOError:
         exit_error(23, tty_struct.name)
 
 def fini_tty(tty_struct):
     try:
-        termios.tcsetattr(tty_struct.device.fileno(), TERMIOS.TCSANOW, tty_struct.prev_attrs)
+        termios.tcsetattr(tty_struct.device, TERMIOS.TCSANOW, tty_struct.prev_attrs)
     except IOError:
         exit_error(24, tty_struct.name)
-    fcntl.lockf(tty_struct.device.fileno(), FCNTL.LOCK_UN)
-    tty_struct.device.close()
+    fcntl.lockf(tty_struct.device, FCNTL.LOCK_UN)
+    os.close(tty_struct.device)
     
 
 def prompt(string):
     global tty
     
     log("say:  " + string)
-    tty.write('\r\n' + string + '\r\n')
-    tty.flush()
+    try:
+        os.write(tty, string + '\r\n')
+    except IOError:
+        log("IOError in write")
     if (string[-2:] == "rb"):
         return "OK"
     done = 0
+    timed_out = 0
     retry_count = 0
     response = ""
-    extra = ""
-    while (not done and (retry_count < 2)):
+    input = ""
+    while (not done and not timed_out):
         retry_count = retry_count + 1
         signal.alarm(READ_TIMEOUT)
         try:
-            response = tty.readline()
+            response = response + os.read(tty, BUF_SIZE)
         except OSError:
-            pass
+            timed_out = 1
         signal.alarm(ALARM_OFF)
+        trace(response)
         if (response[-1:] == '\n'):
             done = 1
-    if(len(response)):
-        trace(response)
+    if (done and (retry_count > 1)):
+        log("   after " + str(retry_count) + " reads")
+    if((len(response) > 0) and (response[-1:] == '\n')):
         response = response[:-1]
         if (response[-1:] == '\r'):
             response = response[:-1]
@@ -189,12 +194,12 @@ def prompt(string):
             log("icebox reply did not end in \\r\\n")
             signal.alarm(READ_TIMEOUT)
             try:
-                extra = tty.readline()
+                input = os.read(tty, BUF_SIZE)
             except OSError:
                 pass
             signal.alarm(ALARM_OFF)
-            trace(extra)
-    log("hear:  " + response + extra)
+            trace(input)
+    log("hear:  " + response + input)
     return response
 
 def init_alarm():
@@ -202,7 +207,8 @@ def init_alarm():
 
 
 def ReadTimeout(sig, stack):
-    log("timed out in readline")
+    log("timed out in blocking read")
 
 ALARM_OFF    = 0
 READ_TIMEOUT = 1
+BUF_SIZE     = 1024

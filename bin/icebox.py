@@ -86,6 +86,9 @@ class PortClass:
         good_response = 0
         while (not good_response and (retry_count < 10)):
             retry_count = retry_count + 1
+            # Linux Network guys think this might clear out a corrupted
+            # buffer if there was any noise prior to prompting
+            # pm_utils.prompt("")
             response = pm_utils.prompt(target)
             if(response == ''):
                 continue
@@ -174,6 +177,9 @@ class BoxClass:
             good_response = 0
             while (not (good_response == 10) and (retry_count < 10)):
                 retry_count = retry_count + 1
+                # Linux Network guys think this might clear out a corrupted
+                # buffer if there was any noise prior to prompting
+                # pm_utils.prompt("")
                 response = pm_utils.prompt(target)
                 if(response == ''):
                     continue
