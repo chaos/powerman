@@ -5,7 +5,7 @@
 # See ./DISCLAIMER
 ####################################################################
 # Config file for the new PowerMan daemon
-include "/etc/powerman/icebox.spec"
+include "/etc/powerman/icebox.dev"
 begin global
 	cluster name "tux"
 	log file "/tmp/powermand.log.ice-test" "0"
