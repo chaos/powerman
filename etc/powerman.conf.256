@@ -5,7 +5,7 @@
 # See ./DISCLAIMER
 ####################################################################
 # Config file for the new PowerMan daemon
-include "vicebox.spec"
+include "/etc/powerman/vicebox.dev"
 begin global
 	cluster name "tux"
 	log file "/tmp/powermand.log.256" "0"
@@ -13,7 +13,6 @@ begin global
 	timeout interval "1.0"
 	inter-device delay "0.2"
 	update interval "100.0"
-	inter-device delay "0.200000"
 end global
 device "ViceBox000" "vicebox" "localhost" "11000"
 device "ViceBox001" "vicebox" "localhost" "11001"

@@ -651,7 +651,11 @@ o Make sure there are no vicebox and powermand servers running
   > powermand -k if your pretty sure it hasn't been corrupted
   > telnet again to verify
 ---
-
+  and make sure PowerMan is not already installed.
+---
+  > rpm -e powerman
+---
+ 
 o If you have access to the CVS repository containing PowerMan you can
   check it out:
 ---
@@ -663,28 +667,45 @@ o If you have access to the CVS repository containing PowerMan you can
 ---
   > http://www.llnl.gov/linux/powerman
 ---
-  and skip the next step about making the RPM.
+  and skip the next step about making the RPM.  If you are using CVS
+  you'll want to verify that old rpms aren't lying around.
+---
+  > ls *.tgz *.rpm
+  powerman-1.0.0-200207171715.i386.rpm
+  powerman-1.0.0-200207171715.src.rpm
+  powerman-1.0.0-200207171715.tgz
+  > rm -f *.tgz *.rpm
+---
 
 o During development I'll make RPMs from the CVS HEAD, usually you
-  will want to make the default tagged version.
+  will want to make the default tagged version.  If there already are
+  RPMs present you may want to remove them.  This step will also
+  require access to the CVS repository.   
 ---
+  > ls *.rpm *.tgz
+  > make distclean
   > make rpm (tag=HEAD)
 ---
-  This step will also require access to the CVS repository.  
 
-o You'll have to be root-equivalent to install the RPMs
+o You'll have to be root-equivalent to install the RPMs, and you may
+  want to get rid of any previously installed pieces.
 ---
   > su <root-equiv>
+  # rm -rf /usr/src/redhat/BUILD/powerman*
+  # rm -rf /usr/src/redhat/RPMS/i386/powerman*
+  # rm -rf /usr/src/redhat/SOURCES/powerman*
+  # rm -rf /usr/src/redhat/SPECS/powerman*
+  # rm -rf /usr/src/redhat/SRPMS/powerman*
   # ls *.src.rpm
   # rpm -i powerman-version-date.src.rpm
   # rpm -ba /usr/src/redhat/SPECS/powerman.spec
   # ls /usr/src/redhat/RPMS/i386/powerman*
-  # rpm -i /usr/src/redhat/RPMS/i386/powerman-version-date.src.rpm
+  # rpm -i /usr/src/redhat/RPMS/i386/powerman-version-date.i386.rpm
   # PMDIR=/usr/src/redhat/BUILD/powerman-version
   # export PMDIR
   # cd $PMDIR
 ---
-  
+
 o You'll want to have at least three windows open to carry out the 
   following.  If you're already in window W1 then in window W2 log
   in as root equivalent.  Window W3 can be a regular user.  I'll
@@ -698,10 +719,10 @@ o A script invokes one instance of the vicebox emulator suitable for
   had PowerMan installed on your system, the two files are already in
   /etc/powerman. 
 ---
-  W1# $PMDIR/scripts/start-pm.1
+  W1# $PMDIR/scripts/start-pm-1.sh
 ---
   
-o The prompt does not return.  The is because the last step of the
+o The prompt does not return.  This is because the last step of the
   script is to execute "tail -f logfile".  Since there wasn't any
   previous content in the logfile nothing appears.  Needless to say in
   subsequent tests you'll see the tail of the file.
@@ -777,9 +798,10 @@ o  If you've lingered over these notes while running the examples, you
   significantly.  This is deliberate.  The configuration file has a
   setting for "interDev" that controls how often powermand is willing
   to dispatch commands to power control devices.  Some devices can be
-  overdriven.  the result is lost communications that powermand has to
-  detect by a timeout (which may be set in the device configuraiton
-  file).  
+  overdriven, on the one hand, and sudden widespread power commands
+  can be unacceptably sudden.  The result is a power spike or lost
+  communications that   powermand has to detect by a timeout (which
+  may be set in the device configuraiton file).  
 
 o  To finish up this demonstration exercise the powermand "kill"
   option.  

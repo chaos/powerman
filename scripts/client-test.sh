@@ -26,6 +26,7 @@
 ####################################################################
 #-----tests for start-pm-1.sh---------------------------------------
 #!/bin/bash
+STAMP=`date`
 #In all of the following you have to exscape the glob special
 # characters so the shell won't expand them.  The "set args ..."
 # bit is what you say in gdb to put it on the command line.
@@ -76,6 +77,8 @@ $PMDIR/bin/powerman -nx tux[3456]
 # "set args -qz \*" means "list the matching nodes"
 $PMDIR/bin/powerman -qz \*
 #
+echo $STAMP
+date
 exit
 #-----tests for start-pm-16.sh---------------------------------------
 # "set args -qz \*" now showing 160 nodes
