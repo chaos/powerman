@@ -23,6 +23,13 @@ o To make it possible to support devices that have variable numbers of plugs
 o Support added for IBM RSA Remote Supervisor Adapter in telnet debug mode.
   The ibmrsa.dev script utilizes the three features listed above.
 
+o For devices that have only a command to toggle power, PowerMan now supports
+  the conditionals "ifon" and "ifoff" which will execute a subblock of script
+  if the plug is on or off respectively.
+
+o Support added for Rackable Systems Phantom Remote Management Module.
+  The phantom.dev script utilizes the ifon/ifoff feature above.
+
 o In addition to the new constructs described above, the device script syntax
   has changed in the following non-backwards compatible way:
   - Instead of repeating 'plug name "name"' statements, all the plug names
@@ -36,7 +43,9 @@ o In addition to the new constructs described above, the device script syntax
     Subexpression match lines persist until the next "expect" in the script.
   - The "setstatus" command can now take a subexpression offset for the plug
     name parameter in lieu of the literal plug name (quoted string).
-
+  - The "onstring" and "offstring" constructs are replaced with off="regex"/
+    on="regex" arguments to "setstatus".
+  
 +------------+
 | Bugs fixed |
 +------------+
@@ -46,6 +55,9 @@ o Increased power cycle time to 2 seconds on all power controllers.  The
 
 o Serial connections were made non-blocking (blocking in an open would
   hang powermand).
+
+o Workaround for getaddrinfo bug in glibc-2.3.2-27.9 that caused client
+  core dumps under RedHat 9.
 
 +-----------------+
 | Supported RPC's |
