@@ -3,29 +3,11 @@
 # by Andrew C. Uselton <uselton2@llnl.gov> 
 # Copyright (C) 2000 Regents of the University of California
 # See ../DISCLAIMER
-#
-# I may want to return to this preamble and define some more of the 
-# standard tags.
-#
-# v. 0-1-2:  2001-09-05
-#            Add the Post Install step setting digi to suid root
-# v. 0-1-3:  2001-09-05
-#            Update version to current value
-# v. 0-1-4:  2001-09-05
-#            Fix man page references so they can be ".1" or ".1.gz"
-#            Make powerman/etc/*.conf be "noreplace" config files
-# v. 0-1-5:  2001-09-05
-# v. 0-1-6:  2001-09-07
-#            add icebox and make a few changes to the code
-# v. 0-1-7:  2001-09-17
-#            fixed corner case for unfull icebox and one bug 
-#            related to \r\n
-#            This is the version released for the pca/b clusters
 ####################################################################
  
 %define name    powerman
 %define version 0.1.7
-%define release 3
+%define release 4
 
 Name: %name
 Version: %version
