@@ -425,11 +425,6 @@ _binstr(char *str, int len)
 
 	for (i = j = 0; i < len; i++)
 	{
-		if (isprint(str[i]))
-		{
-			cpy[j++] = str[i];
-			continue;
-		}
 		switch (str[i])
 		{
 			case '\r':
@@ -441,9 +436,16 @@ _binstr(char *str, int len)
 				j += 2;	
 				break;
 			default:
-				sprintf(&cpy[j], "\\%.3o", str[i]);
-				j += 4;
+				if (isprint(str[i]))
+					cpy[j++] = str[i];
+				else
+				{
+					sprintf(&cpy[j], "\\%.3o", str[i]);
+					j += 4;
+				}
+				break;
 		}
+		assert(j < cpysize || i == len);
 	}
 	cpy[j] = '\0';
 	return cpy;
@@ -832,7 +834,7 @@ handle_Device_write(Device *dev, int debug)
 	if (debug)
 	{
 		char str[MAX_BUF];
-		int len = peek_line_Buffer(dev->to, str, MAX_BUF);
+		int len = peek_string_Buffer(dev->to, str, MAX_BUF);
 
 		if (len > 0)
 		{
