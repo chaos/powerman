@@ -27,6 +27,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "powerman.h"
 
@@ -197,9 +198,9 @@ do_Action(Globals *g, Action *act)
 	ListIterator dev_i;
 	int dev_com = PM_ERROR;
 
-	ASSERT(g != NULL);
+	assert(g != NULL);
 	CHECK_MAGIC(g);
-	ASSERT(act != NULL);
+	assert(act != NULL);
 	CHECK_MAGIC(act);
 
 	switch (act->com)
@@ -222,7 +223,7 @@ do_Action(Globals *g, Action *act)
 		dev_com = act->com;
 		break;
 	default :
-		ASSERT(FALSE);
+		assert(FALSE);
 	}
 	g->status = Occupied;
 	dev_i = list_iterator_create(g->devs);

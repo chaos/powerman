@@ -329,8 +329,8 @@ Regcomp(regex_t *preg, const char *regex, int cflags)
 	int i = 0;
 	int j = 0;
 
-	ASSERT(regex != NULL);
-	ASSERT(strlen(regex) < sizeof(buf));
+	assert(regex != NULL);
+	assert(strlen(regex) < sizeof(buf));
 
 /* My lame hack because regcomp won't interpret '\r' and '\n' */
 	while ( (i < MAX_REG_BUF) && (regex[j] != '\0') )

@@ -41,20 +41,14 @@ typedef enum { FALSE=0, TRUE=1 } bool;
 #ifndef NDEBUG
 /* Use debugging macros */
 
-#  define ASSERT(f)    \
-        if(f)        \
-        {}           \
-        else         \
-        exit_msg("Assertion failed: %s, line %u", __FILE__, __LINE__)
 #  define MAGIC            int magic
 #  define INIT_MAGIC(x)    (x)->magic = (MAGIC_VAL)
-#  define CHECK_MAGIC(x)   ASSERT((x)->magic == MAGIC_VAL)
+#  define CHECK_MAGIC(x)   assert((x)->magic == MAGIC_VAL)
 #  define CLEAR_MAGIC(x)   (x)->magic = (0)
 
 #  define MAGIC_VAL          0xdeadbee0
 #else
 /* Don't use debugging macros */
-#  define ASSERT(f)
 #  define MAGIC            
 #  define INIT_MAGIC(x, y) 
 #  define CHECK_MAGIC(x)

@@ -29,6 +29,7 @@
 #include <syslog.h>
 #include <tcpd.h>
 #include <fcntl.h>
+#include <assert.h>
 
 #include "powerman.h"
 #include "wrappers.h"

@@ -31,6 +31,7 @@
 #include <ctype.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "powerman.h"
 #include "list.h"
@@ -151,11 +152,12 @@ main(int argc, char **argv)
 	init_error(argv[0], NULL);
 	conf = process_command_line(argc, argv);
 
-	if( geteuid() != 0 ) exit_msg("Must be root");
+	/*if( geteuid() != 0 ) exit_msg("Must be root");*/
 
 	cluster = connect_to_server(conf);
 	if( list_is_empty(cluster) ) 
 		exit_msg("No cluster members found");
+	print_Targets(cluster); /* XXX debug */
 	process_targets(conf, cluster);
 	free_Config(conf);
 	list_destroy(cluster);
@@ -609,7 +611,7 @@ send_server(Config *conf, String str)
 		sprintf(buf, DO_RESET_FMT, get_String(str));
 		break;
 	default :
-		ASSERT(FALSE);
+		assert(FALSE);
 	}
 	reply = dialog(conf->fd, buf) ;
 	return reply;
@@ -644,7 +646,7 @@ publish_reply(Config *conf, List cluster, List reply)
 		print_Targets(reply);
 		break;
 	default :
-		ASSERT(FALSE);
+		assert(FALSE);
 		break;
 	}
 }
@@ -680,10 +682,10 @@ get_next_subrange(List nodes)
 	Node *node;
 	Node *first_node;
 
-	ASSERT(nodes != NULL);
+	assert(nodes != NULL);
 
 	first_node = (Node *)list_pop(nodes);
-	ASSERT(first_node != NULL);
+	assert(first_node != NULL);
 
 	list = list_create(xfree_Node);
 	list_append(list, (void *)first_node);
@@ -708,13 +710,13 @@ subrange_report(List nodes, bool soft, State_Val state, char *state_string)
 	char buf[MAX_BUF];
 	bool first;
 
-	ASSERT(nodes != NULL);
+	assert(nodes != NULL);
 	node_i = list_iterator_create(nodes);
 	while( (node = (Node *)list_next(node_i)) )
 	{
-		ASSERT(node != NULL);
-		ASSERT(node->name != NULL);
-		ASSERT( !empty_String(node->name) );
+		assert(node != NULL);
+		assert(node->name != NULL);
+		assert( !empty_String(node->name) );
 
 		if( soft )
 		{
@@ -788,7 +790,7 @@ print_list(Config *conf, List cluster, List targ, State_Val state)
 	ListIterator itr;
 	String t;
 
-	ASSERT( targ != NULL );
+	assert( targ != NULL );
 	itr = list_iterator_create(targ);
 	while( (t = (String )list_next(itr)) && !is_prompt(t) )
 	{
@@ -811,7 +813,7 @@ print_Targets(List targ)
 	String t;
 	ListIterator itr;
 
-	ASSERT( targ != NULL );
+	assert( targ != NULL );
 	itr = list_iterator_create(targ);
 	while( (t = (String )list_next(itr)) && !is_prompt(t) )
 	{
@@ -896,7 +898,7 @@ append_Nodes(List cluster, List reply)
 	ListIterator itr;
 	String targ;
 	
-	ASSERT( reply != NULL );
+	assert( reply != NULL );
 	itr = list_iterator_create(reply);
 	while( (targ = (String)list_next(itr)) && !is_prompt(targ) )
 	{
@@ -925,8 +927,8 @@ join_Nodes(List list1, List list2)
 {
 	Node *node;
 
-	ASSERT( list1 != NULL );
-	ASSERT( list2 != NULL );
+	assert( list1 != NULL );
+	assert( list2 != NULL );
 	while( (node = (Node *)list_pop(list2)) )
 	{
 		list_append(list1, (void *)node);
@@ -942,16 +944,16 @@ update_Nodes_soft_state(List cluster, List reply)
 	int i = 0;
 	String targ;
 
-	ASSERT( reply != NULL );
+	assert( reply != NULL );
 	targ = (String)list_pop(reply);
-	ASSERT( targ != NULL );
-	ASSERT( !empty_String(targ) );
+	assert( targ != NULL );
+	assert( !empty_String(targ) );
 
 	node_i = list_iterator_create(cluster);
 	node = (Node *)list_next(node_i);
 	for(i = 0; i < length_String(targ); i++)
 	{
-		ASSERT( node != NULL );
+		assert( node != NULL );
 		switch(byte_String(targ, i))
 		{
 		case '0' :
@@ -979,16 +981,16 @@ update_Nodes_hard_state(List cluster, List reply)
 	int i = 0;
 	String targ;
 
-	ASSERT( reply != NULL );
+	assert( reply != NULL );
 	targ = (String)list_pop(reply);
-	ASSERT( targ != NULL );
-	ASSERT( !empty_String(targ) );
+	assert( targ != NULL );
+	assert( !empty_String(targ) );
 
 	node_i = list_iterator_create(cluster);
 	node = (Node *)list_next(node_i);
 	for (i = 0; i < length_String(targ); i++)
 	{
-		ASSERT( node != NULL );
+		assert( node != NULL );
 		switch(byte_String(targ, i))
 		{
 		case '0' :
@@ -1026,10 +1028,10 @@ xmake_Node(const char *name)
 static int
 cmp_Nodes(void *node1, void *node2)
 {
-	ASSERT(((Node *)node1) != NULL);
-	ASSERT(((Node *)node1)->name != NULL);
-	ASSERT(((Node *)node2) != NULL);
-	ASSERT(((Node *)node2)->name != NULL);
+	assert(((Node *)node1) != NULL);
+	assert(((Node *)node1)->name != NULL);
+	assert(((Node *)node2) != NULL);
+	assert(((Node *)node2)->name != NULL);
 
 	return cmp_String(((Node *)node1)->name, 
 			  ((Node *)node2)->name);
@@ -1056,7 +1058,7 @@ is_prompt(String targ)
 	int i = 0;
 	bool result = FALSE;
 	
-	ASSERT(targ != NULL);
+	assert(targ != NULL);
 
 	for (i = 0; i < length_String(targ); i++)
 	{

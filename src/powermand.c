@@ -43,6 +43,7 @@
 #include <sys/stat.h>
 #include <syslog.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "powerman.h"
 #include "list.h"

@@ -29,6 +29,7 @@
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "powerman.h"
 
@@ -68,7 +69,7 @@ make_Buffer(int fd)
 {
 	Buffer b;
 
-	ASSERT(fd >= 0);
+	assert(fd >= 0);
 	b = (Buffer)Malloc(sizeof(struct buffer_implementation));
 	b->magic = BUF_MAGIC;
 	b->fd = fd;
@@ -107,8 +108,8 @@ send_Buffer(Buffer b, const char *fmt, ...)
 	struct timeval tv;
 	int maxfd;
       
-      	ASSERT(b != NULL);	
-      	ASSERT(b->magic == BUF_MAGIC);
+      	assert(b != NULL);	
+      	assert(b->magic == BUF_MAGIC);
 	maxfd = b->fd + 1;
 
 /* get at most MAX_BUF of what the caller wanted to send */
@@ -169,8 +170,8 @@ check_Buffer(Buffer b, int len)
 	int num;
 	int i;
 
-      	ASSERT(b != NULL);	
-      	ASSERT(b->magic == BUF_MAGIC);
+      	assert(b != NULL);	
+      	assert(b->magic == BUF_MAGIC);
 
 	del = b->out - b->start;
 	num = b->in - b->out;
@@ -200,15 +201,15 @@ write_Buffer(Buffer b)
  */
 	int n;
 
-      	ASSERT(b != NULL);	
-      	ASSERT(b->magic == BUF_MAGIC);
+      	assert(b != NULL);	
+      	assert(b->magic == BUF_MAGIC);
 
 	n = Write(b->fd, b->out, (int) (b->in - b->out));
 	if ( n < 0 ) return n; /* EWOULDBLOCK */
 
 	memset(b->out, 0, n);
 	b->out += n;
-	ASSERT(b->out <= b->in);
+	assert(b->out <= b->in);
 	if ( b->out == b->in )
 		b->out = b->in = b->start;
 	return n;
@@ -229,11 +230,11 @@ read_Buffer(Buffer b)
 	int len;
 	char str[MAX_BUF + 1];
 
-      	ASSERT(b != NULL);	
-      	ASSERT(b->magic == BUF_MAGIC);
+      	assert(b != NULL);	
+      	assert(b->magic == BUF_MAGIC);
 
         /* initial check of buffer, can we reset ->in and ->out? */
-	ASSERT(b->out <= b->in);
+	assert(b->out <= b->in);
 	if (b->out == b->in)
 	{
 		memset(b->start, 0, b->in - b->start);
@@ -268,8 +269,8 @@ read_Buffer(Buffer b)
 bool
 empty_Buffer(Buffer b)
 {
-      	ASSERT(b != NULL);	
-      	ASSERT(b->magic == BUF_MAGIC);
+      	assert(b != NULL);	
+      	assert(b->magic == BUF_MAGIC);
 
 	return (b->in == b->out);
 }
@@ -297,13 +298,13 @@ get_str_from_Buffer(Buffer b, regex_t *re, char *str, int length)
 	char *pos;
 	int len;
 
-      	ASSERT(b != NULL);	
-      	ASSERT(b->magic == BUF_MAGIC);
+      	assert(b != NULL);	
+      	assert(b->magic == BUF_MAGIC);
 
 	len = b->in - b->out;
 
 	memset(str, 0, length);
-	ASSERT(len + 1 < length);
+	assert(len + 1 < length);
 	strncpy(str, b->out, len + 1);
 	if( re == NULL )
 		/* get a line */
@@ -351,8 +352,8 @@ dump_Buffer(Buffer b)
 	int top;
 	char *str;
 
-      	ASSERT(b != NULL);	
-      	ASSERT(b->magic == BUF_MAGIC);
+      	assert(b != NULL);	
+      	assert(b->magic == BUF_MAGIC);
 
 	fprintf(stderr, "\t\tBuffer: %0x\n\t\t\t", (unsigned int)b);
 	for(i = MAX_BUF; i > 0; i--)
@@ -376,8 +377,8 @@ dump_Buffer(Buffer b)
 void
 free_Buffer(void *b)
 {
-      	ASSERT(b != NULL);	
-      	ASSERT(((Buffer)b)->magic == BUF_MAGIC);	
+      	assert(b != NULL);	
+      	assert(((Buffer)b)->magic == BUF_MAGIC);	
 	Free(b, sizeof(Buffer));
 }
 

@@ -26,6 +26,7 @@
 
 #include <string.h>
 #include <errno.h>
+#include <assert.h>
 
 #include "powerman.h"
 #include "list.h"
@@ -170,10 +171,10 @@ find_Client_script(Protocol *p, Cluster *cluster, String expect)
 	while ( (!found_it) && (act->com < (NUM_SCRIPTS - 1)) )
 	{
 		act->com++;
-		ASSERT( p->scripts[act->com] != NULL );
+		assert( p->scripts[act->com] != NULL );
 		act->itr = list_iterator_create(p->scripts[act->com]);
 		act->cur = list_next(act->itr);
-		ASSERT(act->cur->type == EXPECT);
+		assert(act->cur->type == EXPECT);
 		re = &(act->cur->s_or_e.expect.exp);
 		found_it = match_Client_template(cluster, act, re, expect);
 		list_iterator_destroy(act->itr);
@@ -211,7 +212,7 @@ match_Client_template(Cluster *cluster, Action *act, regex_t *re, String expect)
 	switch (act->com)
 	{
 	case PM_ERROR :
-		ASSERT( FALSE );
+		assert( FALSE );
 	case PM_LOG_IN :
 	case PM_CHECK_LOGIN :
 	case PM_LOG_OUT :
@@ -224,17 +225,17 @@ match_Client_template(Cluster *cluster, Action *act, regex_t *re, String expect)
 	case PM_POWER_CYCLE :
 	case PM_RESET :
 	case PM_NAMES :
-		ASSERT (( pmatch[1].rm_so >= 0 ) && (pmatch[1].rm_so < MAX_BUF));
-		ASSERT (( pmatch[1].rm_eo >= 0 ) && (pmatch[1].rm_eo < MAX_BUF));
+		assert (( pmatch[1].rm_so >= 0 ) && (pmatch[1].rm_so < MAX_BUF));
+		assert (( pmatch[1].rm_eo >= 0 ) && (pmatch[1].rm_eo < MAX_BUF));
 		l = pmatch[1].rm_eo - pmatch[1].rm_so;
 		if ( l == 0 ) return FALSE;
-		ASSERT ( (l > 0 ) && (l < MAX_BUF) );
+		assert ( (l > 0 ) && (l < MAX_BUF) );
 		strncpy(buf, str + pmatch[1].rm_so, l);
 		buf[l] = '\0';
 		act->target = make_String(buf);
 		return TRUE;
 	default :
-		ASSERT( FALSE );
+		assert( FALSE );
 	}
 	return FALSE; /* shouldn't ever reach this */
 }
@@ -262,7 +263,7 @@ client_reply(Cluster *cluster, Action *act)
 
 	CHECK_MAGIC(act);
 	CHECK_MAGIC(client);
-	ASSERT(client->fd != NO_FD);
+	assert(client->fd != NO_FD);
 
 	client->write_status = CLI_WRITING;
 	if( (act->client->loggedin == FALSE) &&
@@ -326,7 +327,7 @@ client_reply(Cluster *cluster, Action *act)
 			send_Buffer(client->to, "%d PowerMan> ", seq);
 			break;
 		default :
-			ASSERT( FALSE );
+			assert( FALSE );
 		}
 		list_iterator_destroy(node_i);
 	}

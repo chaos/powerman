@@ -27,6 +27,7 @@
 #include <string.h>
 #include <ctype.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "powerman.h"
 #include "pm_string.h"
@@ -106,13 +107,13 @@ make_String(const char *cs)
 		n = sscanf(buf, "%d", &(s->index));
 		if( n != 1 )
 			exit_msg("Failure interpreting first index of \"%s\"", cs);
-		ASSERT( s->width == rightb - dash - 1 );
+		assert( s->width == rightb - dash - 1 );
 		strncpy(buf, dash + 1, s->width);
 		buf[s->width] = '\0';
 		n = sscanf(buf, "%d", &(index2));
 		if( n != 1 )
 			exit_msg("Failure interpreting second index of \"%s\"", cs);
-		ASSERT(index2 > s->index);
+		assert(index2 > s->index);
 		s->count = index2 - s->index;
 	}
 	else
@@ -141,13 +142,13 @@ copy_String(String s)
 
 	if( s == NULL ) return NULL;
 
-	ASSERT(s->magic == STRING_MAGIC);
+	assert(s->magic == STRING_MAGIC);
 
 	new = (String)Malloc(sizeof(struct string_implementation));
 	*new = *s;
 	if (s->length > 0) {
-		ASSERT(s->string != NULL);
-		ASSERT(strlen(s->string) == s->length);
+		assert(s->string != NULL);
+		assert(strlen(s->string) == s->length);
 		new->string = Malloc(s->length + 1);
 		strncpy(new->string, s->string, s->length + 1);
 	}
@@ -158,25 +159,25 @@ copy_String(String s)
 char *
 get_String(String s)
 {
-	ASSERT(s != NULL);
-	ASSERT(s->magic == STRING_MAGIC);
+	assert(s != NULL);
+	assert(s->magic == STRING_MAGIC);
 	return s->string;
 }
 
 unsigned char 
 byte_String(String s, int offset)
 {
-	ASSERT( s != NULL );
-	ASSERT(s->magic == STRING_MAGIC);
-	ASSERT( (offset >= 0) && (offset < s->length) );
+	assert( s != NULL );
+	assert(s->magic == STRING_MAGIC);
+	assert( (offset >= 0) && (offset < s->length) );
 	return s->string[offset];
 }
 
 int 
 length_String(String s)
 {
-	ASSERT( s != NULL );
-	ASSERT(s->magic == STRING_MAGIC);
+	assert( s != NULL );
+	assert(s->magic == STRING_MAGIC);
 	return s->length;
 }
 
@@ -184,8 +185,8 @@ length_String(String s)
 int 
 prefix_String(String s)
 {
-	ASSERT( s != NULL );
-	ASSERT(s->magic == STRING_MAGIC);
+	assert( s != NULL );
+	assert(s->magic == STRING_MAGIC);
 	return s->prefix;
 }
 
@@ -193,8 +194,8 @@ prefix_String(String s)
 int 
 index_String(String s)
 {
-	ASSERT( s != NULL );
-	ASSERT(s->magic == STRING_MAGIC);
+	assert( s != NULL );
+	assert(s->magic == STRING_MAGIC);
 	return s->index;
 }
 
@@ -205,16 +206,16 @@ cmp_String(String s1, String s2)
 	int result = 0;
 	int len;
 
-	ASSERT( (s1 != NULL) && (s2 != NULL) );
-	ASSERT(s1->magic == STRING_MAGIC);
-	ASSERT(s2->magic == STRING_MAGIC);
+	assert( (s1 != NULL) && (s2 != NULL) );
+	assert(s1->magic == STRING_MAGIC);
+	assert(s2->magic == STRING_MAGIC);
 	if( (s1->length == 0) && (s2->length == 0) )
 		return 0;
 	if( s1->length == 0 )
 		return -1;
 	if( s2->length == 0 )
 		return 1;
-	ASSERT( (s1->string != NULL) && (s2->string != NULL) );
+	assert( (s1->string != NULL) && (s2->string != NULL) );
 	len = MIN(s1->prefix, s2->prefix);
 	result = strncmp(s1->string, s2->string, len);
 	if( result != 0 ) return result;
@@ -230,9 +231,9 @@ prefix_match(String s1, String s2)
 {
 	int n;
 
-	ASSERT( (s1 != NULL) && (s2 != NULL) );
-	ASSERT(s1->magic == STRING_MAGIC);
-	ASSERT(s2->magic == STRING_MAGIC);
+	assert( (s1 != NULL) && (s2 != NULL) );
+	assert(s1->magic == STRING_MAGIC);
+	assert(s2->magic == STRING_MAGIC);
 
 	if( s1->prefix != s2->prefix ) return FALSE;
 	n = strncmp(s1->string, s2->string, s1->prefix);
@@ -244,8 +245,8 @@ prefix_match(String s1, String s2)
 bool
 empty_String(String s)
 {
-	ASSERT( s != NULL );
-	ASSERT(s->magic == STRING_MAGIC);
+	assert( s != NULL );
+	assert(s->magic == STRING_MAGIC);
 	return (s->string == NULL );
 }
 
@@ -256,7 +257,7 @@ free_String(void *str)
 
 	if( s != NULL )
 	{
-		ASSERT(s->magic == STRING_MAGIC);
+		assert(s->magic == STRING_MAGIC);
 		if( s->string != NULL )
 		{
 			Free(s->string, s->length + 1);
@@ -272,8 +273,8 @@ match_String(String s, char *cs)
 	int len;
 	int n;
 
-	ASSERT(s != NULL);
-	ASSERT(s->magic == STRING_MAGIC);
+	assert(s != NULL);
+	assert(s->magic == STRING_MAGIC);
 
 	len = strlen(cs);
 	if(len != s->length) return FALSE;

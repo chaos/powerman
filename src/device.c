@@ -32,6 +32,7 @@
 #include <string.h>
 #include <sys/socket.h>
 #include <syslog.h>
+#include <assert.h>
 
 #include "powerman.h"
 #include "list.h"
@@ -105,7 +106,7 @@ initiate_nonblocking_connect(Device *dev)
 	int fd_settings;
 
 	CHECK_MAGIC(dev);
-	ASSERT( (dev->type == TCP_DEV) || (dev->type == PMD_DEV) || 
+	assert( (dev->type == TCP_DEV) || (dev->type == PMD_DEV) || 
 		(dev->type == TELNET_DEV) );
 
 	memset(&hints, 0, sizeof(struct addrinfo));
@@ -163,9 +164,9 @@ map_Action_to_Device(Device *dev, Action *sact)
 {
 	Action *act;
 
-	ASSERT(dev != NULL);
+	assert(dev != NULL);
 	CHECK_MAGIC(dev);
-	ASSERT(sact != NULL);
+	assert(sact != NULL);
 	CHECK_MAGIC(sact);
 
 	if ( !dev->loggedin && (sact->com != PM_LOG_IN) )
@@ -184,7 +185,7 @@ map_Action_to_Device(Device *dev, Action *sact)
 	/* and start its script */ 
 	act = (Action *)list_peek(dev->acts);
 	if (act == NULL) return;
-	ASSERT( act->itr != NULL );
+	assert( act->itr != NULL );
 	/* act->itr is always pointing at the next unconsumed Script_El */
 	/* act->cur is always the one being worked on */
 	/* We may process one or more, but probably not the whole list */
@@ -264,7 +265,7 @@ set_targets(Device *dev, Action *sact)
 	case PM_POWER_CYCLE :
 	case PM_RESET :
 	case PM_NAMES :
-		ASSERT(sact->target != NULL);
+		assert(sact->target != NULL);
 		if ( dev->prot->mode == LITERAL)
 		{
 			do_target_some(dev, sact);
@@ -276,7 +277,7 @@ set_targets(Device *dev, Action *sact)
 		}
 		break;
 	default :
-		ASSERT( FALSE );
+		assert( FALSE );
 	}
 	return;
 }
@@ -475,7 +476,7 @@ process_script(Device *dev)
 	bool done = FALSE;
 
 	if (act == NULL) return;
-	ASSERT(act->cur != NULL);
+	assert(act->cur != NULL);
 	if ( ( act->cur->type == EXPECT ) &&
 		 empty_Buffer(dev->from) ) return;
 	/* 
@@ -544,9 +545,9 @@ process_expect(Device *dev)
 	Action *act = (Action *)list_peek(dev->acts);
 	String expect;
 
-	ASSERT(act != NULL);
-	ASSERT(act->cur != NULL);
-	ASSERT(act->cur->type == EXPECT);
+	assert(act != NULL);
+	assert(act->cur != NULL);
+	assert(act->cur->type == EXPECT);
 	
 	re = &(act->cur->s_or_e.expect.completion);
 	
@@ -588,10 +589,10 @@ process_send(Device *dev)
 	CHECK_MAGIC(dev);
 
 	act  = (Action *)list_peek(dev->acts);
-	ASSERT(act != NULL);
+	assert(act != NULL);
 	CHECK_MAGIC(act);
-	ASSERT(act->cur != NULL);
-	ASSERT(act->cur->type == SEND);
+	assert(act->cur != NULL);
+	assert(act->cur->type == SEND);
 
 	fmt  = get_String(act->cur->s_or_e.send.fmt);
 	
@@ -615,9 +616,9 @@ process_delay(Device *dev)
 {
 	Action *act = (Action *)list_peek(dev->acts);
 	
-	ASSERT (act != NULL);
-	ASSERT (act->cur != NULL);
-	ASSERT(act->cur->type == DELAY);
+	assert (act != NULL);
+	assert (act->cur != NULL);
+	assert(act->cur->type == DELAY);
 	
 	Delay( &(act->cur->s_or_e.delay.tv) );
 
@@ -648,7 +649,7 @@ do_PMD_semantics(Device *dev, List map)
 	CHECK_MAGIC(dev);
 
 	act = (Action *)list_peek(dev->acts);
-	ASSERT(act != NULL);
+	assert(act != NULL);
 
 	ch = interp->val;
 	plug_i = list_iterator_create(dev->plugs);
@@ -703,8 +704,8 @@ do_Device_semantics(Device *dev, List map)
 	CHECK_MAGIC(dev);
 
 	act = (Action *)list_peek(dev->acts);
-	ASSERT(act != NULL);
-	ASSERT( map != NULL );
+	assert(act != NULL);
+	assert( map != NULL );
 	map_i = list_iterator_create(map);
 
 	switch(act->com)
@@ -712,7 +713,7 @@ do_Device_semantics(Device *dev, List map)
 	case PM_UPDATE_PLUGS :
 		while( ((Interpretation *)interp = list_next(map_i)) )
 		{
-			ASSERT(interp->node != NULL);
+			assert(interp->node != NULL);
 			interp->node->p_state = ST_UNKNOWN;
 			re = &(dev->on_re);
 			str = interp->val;
@@ -734,7 +735,7 @@ do_Device_semantics(Device *dev, List map)
 	case PM_UPDATE_NODES :
 		while( ((Interpretation *)interp = list_next(map_i)) )
 		{
-			ASSERT(interp->node != NULL);
+			assert(interp->node != NULL);
 			interp->node->n_state = ST_UNKNOWN;
 			re = &(dev->on_re);
 			str = interp->val;
@@ -795,7 +796,7 @@ recover_Device(Device *dev)
 	ListIterator plug_i;
 
 
-	ASSERT( dev != NULL );
+	assert( dev != NULL );
 	while( !list_is_empty(dev->acts) )
 		del_Action(dev->acts);
 	plug_i = list_iterator_create(dev->plugs);
@@ -1059,10 +1060,10 @@ match_RegEx(Device *dev, String expect)
 
 	CHECK_MAGIC(dev);
 	act = (Action *)list_peek(dev->acts);
-	ASSERT(act != NULL);
+	assert(act != NULL);
 	CHECK_MAGIC(act);
-	ASSERT(act->cur != NULL);
-	ASSERT(act->cur->type == EXPECT);
+	assert(act->cur != NULL);
+	assert(act->cur->type == EXPECT);
 
 	re     = &(act->cur->s_or_e.expect.exp);
 	re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
@@ -1104,9 +1105,9 @@ match_RegEx(Device *dev, String expect)
 	map_i = list_iterator_create(act->cur->s_or_e.expect.map);
 	while( (interp = (Interpretation *)list_next(map_i)) )
 	{
-		ASSERT( (pmatch[interp->match_pos].rm_so < MAX_BUF) &&
+		assert( (pmatch[interp->match_pos].rm_so < MAX_BUF) &&
 			(pmatch[interp->match_pos].rm_so >= 0) );
-		ASSERT( (pmatch[interp->match_pos].rm_eo < MAX_BUF) &&
+		assert( (pmatch[interp->match_pos].rm_eo < MAX_BUF) &&
 			(pmatch[interp->match_pos].rm_eo >= 0) );
 		interp->val = str + pmatch[interp->match_pos].rm_so;
 	}

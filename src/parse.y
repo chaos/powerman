@@ -32,6 +32,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include "powerman.h"
 #include "list.h"
@@ -409,7 +410,7 @@ makeLogFile(char *s2, char *s3)
 	int n;
 	int level;
 
-	ASSERT( s2 != NULL );
+	assert( s2 != NULL );
 
 /* gets the "log" fd, prints a timestamp */
 /* log level 0 is the most restrictive */
@@ -464,7 +465,7 @@ makeUpdate(char *s2)
 {
 
 
-	ASSERT( cheat->cluster != NULL );
+	assert( cheat->cluster != NULL );
 	set_tv( &(cheat->cluster->update_interval), s2);
 	return s2;
 }
@@ -586,7 +587,7 @@ makeSpecSize(char *s2)
 		exit_msg("Size field already seen for this specification");
 	n = sscanf(s2, "%d", &size);
 	if( n != 1) exit_msg("Failed to interpret size \"%s\"", s2);
-	ASSERT( size >= 0 );
+	assert( size >= 0 );
 	current_spec->size = size;
 	/* PMD_DEV devices don't know their size yet */
 	/* allow for size == 0 and set plugname to NULL */
@@ -969,12 +970,12 @@ makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 /* pair of entries will be need for the soft power status device.    */ 
 	if ( s5 == NULL)
 	{
-		ASSERT(s6 == NULL);
+		assert(s6 == NULL);
 		node->n_dev = node->p_dev;
 	}
 	else
 	{
-		ASSERT(s6 != NULL);
+		assert(s6 != NULL);
 		node->n_dev = list_find_first(cheat->devs, match_Device, s3);
 		if( node->n_dev == NULL ) exit_msg("Failed to find device %s", s3);
 		plug = list_find_first(node->n_dev->plugs, match_Plug, (void *)s6);

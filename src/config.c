@@ -27,6 +27,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <string.h>
+#include <assert.h>
 
 #include "powerman.h"
 #include "exit_error.h"
@@ -274,7 +275,7 @@ dump_Expect(Expect_T *expect)
 void
 free_Script_El(void *script_el)
 {
-	ASSERT( script_el != NULL );
+	assert( script_el != NULL );
 	switch( ((Script_El *)script_el)->type)
 	{
 	case SEND :
@@ -450,7 +451,7 @@ make_Spec_El(Script_El_T type, char *str1, char *str2, List map)
 		set_tv( &(specl->tv), str1);
 		break;
 	default :
-		ASSERT( FALSE );
+		assert( FALSE );
 	}
 	specl->string1 = make_String(str1);
 	specl->string2 = make_String(str2);
@@ -492,8 +493,8 @@ dump_Spec_El(Spec_El *specl)
 void
 free_Spec_El(void *specl)
 {
-	ASSERT( ((Spec_El *)specl)->string1 != NULL );
-	ASSERT( ((Spec_El *)specl)->string2 != NULL );
+	assert( ((Spec_El *)specl)->string1 != NULL );
+	assert( ((Spec_El *)specl)->string2 != NULL );
 	free_String( (void *)((Spec_El *)specl)->string1 );
 	((Spec_El *)specl)->string1 = NULL;
 	free_String( (void *)((Spec_El *)specl)->string2 );
@@ -724,7 +725,7 @@ set_tv(struct timeval *tv, char *s)
 	int usec;
 	int n;
 
-	ASSERT( tv != NULL );
+	assert( tv != NULL );
 	n = sscanf(s, "%d.%s", &sec, decimal);
 	if( (n != 2) || (sec < 0) ) 
 		exit_msg("couldn't get the seconds and useconds from %s", s);
