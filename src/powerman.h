@@ -48,7 +48,7 @@ typedef enum { FALSE = 0, TRUE = 1 } bool;
 #else
 /* Don't use debugging macros */
 #  define MAGIC
-#  define INIT_MAGIC(x, y)
+#  define INIT_MAGIC(x)
 #  define CHECK_MAGIC(x)
 #  define CLEAR_MAGIC(x)
 #endif

@@ -52,7 +52,6 @@ typedef struct {
  */
 struct device_struct {
     char      *name;
-    Spec	    *spec;
     char      *all;
     regex_t	    on_re;
     regex_t	    off_re;

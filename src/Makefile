@@ -6,10 +6,9 @@ PACKAGE=	powerman
 SHELL=		/bin/sh
 CC=		gcc
 
-#DEFS=		-DNDEBUG
+DEFS=	#	-DNDEBUG
 #CFLAGS= 	-O -Wall
 #LDFLAGS=	-s
-DEFS=		
 CFLAGS= 	-g -Wall
 LDFLAGS=	
 

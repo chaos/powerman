@@ -142,12 +142,14 @@ Script_El *conf_script_el_create(Script_El_Type type, char *s1,
 void conf_script_el_destroy(Script_El * script_el)
 {
     assert(script_el != NULL);
+
     switch (script_el->type) {
     case EL_SEND:
 	Free(script_el->s_or_e.send.fmt);
 	break;
     case EL_EXPECT:
-	list_destroy(script_el->s_or_e.expect.map);
+    if (script_el->s_or_e.expect.map != NULL)
+        list_destroy(script_el->s_or_e.expect.map);
 	break;
     case EL_DELAY:
     default:

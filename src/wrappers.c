@@ -40,6 +40,10 @@
 
 #define MAX_REG_BUF 64000
 
+#ifndef NDEBUG
+static int memory_alloc = 0;
+#endif
+
 /*
  *   Taken nearly verbatim from Stevens, "UNIX Network Programming".
  * Some are my own extrapolations of his ideas, but should be
@@ -204,7 +208,9 @@ char *Malloc(int size)
 	err_exit(FALSE, "out of memory");
     p[0] = MALLOC_MAGIC;	/* add "secret" magic cookie */
     p[1] = size;		/* store size in buffer */
-
+#ifndef NDEBUG
+    memory_alloc += size;
+#endif
     new = (char *) &p[2];
     memset(new, 0, size);
     return new;
@@ -219,6 +225,9 @@ void Free(void *ptr)
 	assert(p[0] == MALLOC_MAGIC);	/* magic cookie still there? */
 	size = p[1];
 	memset(p, 0, size + 2 * sizeof(int));
+#ifndef NDEBUG
+	memory_alloc -= size;
+#endif
 	free(p);
     }
 }
@@ -334,9 +343,7 @@ static void _str_subst(char *s1, int len, const char *s2, const char *s3)
     char *p;
 
     while ((p = strstr(s1, s2)) != NULL) {
-	int delta_size = s3len - s2len;
-
-	assert(strlen(s1) + delta_size + 1 <= len);
+	assert(strlen(s1) + (s3len - s2len) + 1 <= len);
 	memmove(p + s3len, p + s2len, strlen(p + s2len) + 1);
 	memcpy(p, s3, s3len);
     }
@@ -413,6 +420,12 @@ Sigfunc *Signal(int signo, Sigfunc * func)
 
     return (oact.sa_handler);
 }
+
+#ifndef NDEBUG
+int Memory(void) {
+    return memory_alloc;
+}
+#endif
 
 /*
  * vi:softtabstop=4

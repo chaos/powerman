@@ -748,7 +748,6 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 
     /* make the Device */
     dev = dev_create(s2);
-    /*dev->spec = spec;*/ /* XXX */
     dev->type = spec->type;
     dev->timeout = spec->timeout;
     /* set up the host name and port */

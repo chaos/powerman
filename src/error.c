@@ -39,6 +39,7 @@
 #include "powerman.h"
 #include "list.h"
 #include "error.h"
+#include "wrappers.h"
 
 static char *err_prog = NULL;	/* basename of calling program */
 static bool err_ttyvalid = TRUE;	/* use stderr until told otherwise */
@@ -91,6 +92,9 @@ void err_exit(bool errno_valid, const char *fmt, ...)
 	    syslog(LOG_ERR, "%s", buf);
     }
 
+#ifndef NDEBUG
+	  fprintf(stderr, "memory not reclaimed: %d\n", Memory());
+#endif
     exit(1);
 }
 

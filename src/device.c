@@ -950,15 +950,20 @@ Device *dev_findbyname(char *name)
     return list_find_first(dev_devices, (ListFindF) _match_name, name);
 }
 
-/*
- *  Should I free protocol elements and targets here?
- */
+
 void dev_destroy(Device * dev)
 {
+    int i;
     CHECK_MAGIC(dev);
 
     Free(dev->name);
     Free(dev->all);
+    regfree(&(dev->on_re));
+    regfree(&(dev->off_re));
+  /*
+       Dev_Type
+ */
+
     if (dev->type == TCP_DEV) {
         Free(dev->devu.tcpd.host);
         Free(dev->devu.tcpd.service);
@@ -968,6 +973,12 @@ void dev_destroy(Device * dev)
     }
     list_destroy(dev->acts);
     list_destroy(dev->plugs);
+
+    if (dev->prot != NULL)
+        for (i = 0; i < NUM_SCRIPTS; i++)
+            if (dev->prot->scripts[i] != NULL)
+                list_destroy(dev->prot->scripts[i]);
+
     CLEAR_MAGIC(dev);
     if (dev->to != NULL)
 	buf_destroy(dev->to);
@@ -1024,7 +1035,6 @@ static bool _match_regex(Device * dev, char *expect)
     int eflags = 0;
     Interpretation *interp;
     ListIterator map_i;
-    int len = strlen(expect);
 
     CHECK_MAGIC(dev);
     act = list_peek(dev->acts);
@@ -1040,7 +1050,7 @@ static bool _match_regex(Device * dev, char *expect)
 	return FALSE;
     if (pmatch[0].rm_so == -1 || pmatch[0].rm_eo == -1)
 	return FALSE;
-    assert(pmatch[0].rm_so <= len);
+    assert(pmatch[0].rm_so <= strlen(expect));
 
     /* 
      *  The "foreach" construct assumes that the initializer is never NULL

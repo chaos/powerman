@@ -139,9 +139,13 @@ int main(int argc, char **argv)
 
     Signal(SIGHUP, _noop_handler);
     Signal(SIGTERM, _exit_handler);
+    Signal(SIGINT, _exit_handler);
 
     /* parses config file */
     conf_init(config_filename ? config_filename : DFLT_CONFIG_FILE);
+
+    if (config_filename != NULL)
+      Free(config_filename);
 
     if (daemonize)
 	daemon_init();
@@ -257,6 +261,10 @@ static void _noop_handler(int signum)
 
 static void _exit_handler(int signum)
 {
+    cli_fini();
+		act_fini();
+    dev_fini();
+    conf_fini();
     err_exit(FALSE, "exiting on signal %d", signum);
 }
 

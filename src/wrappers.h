@@ -63,6 +63,7 @@ int Regexec(const regex_t * preg, const char *string,
 pid_t Fork(void);
 typedef void Sigfunc(int);
 Sigfunc *Signal(int signo, Sigfunc * func);
+int Memory(void);
 void Gettimeofday(struct timeval *tv, struct timezone *tz);
 time_t Time(time_t * t);
 char *Strncpy(char *s1, const char *s2, int len);
