@@ -40,7 +40,7 @@ begin protocol specification
 	on string  "ON"
 	all string "*"
 	plug count 8
-	device timeout 22  # "/boot *" command takes about 20 sec
+	device timeout 30  # "/boot *" command takes about 20 sec
 	begin LOGIN_SCRIPT
 		expect "\n"
 		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA\IAC\DONT\TELOPT_TTYPE"
