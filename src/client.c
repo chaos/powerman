@@ -320,6 +320,7 @@ static int _argval_ranged_string(ArgList * arglist, char *str, int len,
                 hostlist_push(hl, arg->node);
         }
         list_iterator_destroy(itr);
+        hostlist_sort(hl);
         if (hostlist_ranged_string(hl, len, str) != -1)
             res = 0;
         hostlist_destroy(hl);
