@@ -1,3 +1,4 @@
+#!/bin/bash
 ####################################################################
 # $Id$
 # by Andrew C. Uselton <uselton2@llnl.gov> 
@@ -24,11 +25,9 @@
 #   with PowerMan; if not, write to the Free Software Foundation, Inc.,
 #   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 ####################################################################
-#!/bin/bash
-POWERMANDIR="/home/auselton/src/powerman"
 if [ ! -f /tmp/powermand.log.1 ]
 then
   touch /tmp/powermand.log.1
 fi
-$POWERMANDIR/bin/vicebox 11000 &
+$PMDIR/bin/vicebox 11000 &
 tail -f /tmp/powermand.log.1

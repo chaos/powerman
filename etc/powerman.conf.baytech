@@ -5,6 +5,7 @@
 # See ./DISCLAIMER
 ####################################################################
 # Config file for the new PowerMan daemon
+include "baytech.spec"
 begin global
 	cluster name "tux"
 	log file "/tmp/powermand.log.baytech" "0"
@@ -12,9 +13,8 @@ begin global
 	timeout interval "1.0"
 	inter-device delay "0.2"
 	update interval "100.0"
-	include "baytech.spec"
-	device "Baytech" "baytech" "baytech" "23"
 end global
+device "Baytech" "baytech" "baytech" "23"
 begin nodes
 	node "tux0" "Baytech" "1"
 	node "tux1" "Baytech" "2"

@@ -5,6 +5,7 @@
 # See ./DISCLAIMER
 ####################################################################
 # Config file for the new PowerMan daemon
+include "wti.spec"
 begin global
 	cluster name "tux"
 	log file "/tmp/powermand.log.wti" "0"
@@ -12,9 +13,8 @@ begin global
 	timeout interval "1.0"
 	inter-device delay "0.2"
 	update interval "100.0"
-	include "wti.spec"
-	device "WTI" "wti" "wti2" "23"
 end global
+device "WTI" "wti" "wti2" "23"
 begin nodes
 	node "tux0" "WTI" "1"
 	node "tux1" "WTI" "2"
