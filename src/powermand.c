@@ -158,18 +158,6 @@ static void _version(void)
     exit(0);
 }
 
-/*
- * This loop does not terminate except via the program being killed.  
- * The loop pauses for timeout_interval or until there is activity on 
- * a descriptor.  That activity could be a new client or I/O to a client 
- * or a device.  Once per update_interval we intiate both an "update nodes" 
- * and an "update plugs" query for every node in the cluster.  Each time 
- * through the loop the scripts managing the I/O to the clients and the 
- * devices are examined and nudged along if they can make progress.  If all 
- * the devices have completed their assigned tasks the cluster becomes 
- * "quiecent" and a new action may be initiated from the list 
- * queued up by the clients.  
- */
 static void _select_loop(void)
 {
     struct timeval tmout;
@@ -177,7 +165,9 @@ static void _select_loop(void)
 
     timerclear(&tmout);
 
-    /* start non-blocking connections to all the devices */
+    /* start non-blocking connections to all the devices - finish them inside
+     * the poll loop.
+     */
     dev_initial_connect();
 
     while (1) {
@@ -200,7 +190,7 @@ static void _select_loop(void)
         n = Poll(pfd, timerisset(&tmout) ? &tmout : NULL);
         timerclear(&tmout);
 
-        dbg(DBG_POLL, "post-pool revents [%s]=%d", 
+        dbg(DBG_POLL, "post-poll revents [%s]=%d", 
                 PollfdStr(pfd, tmpstr, sizeof(tmpstr)), n);
 
         /* 

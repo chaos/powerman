@@ -33,12 +33,3 @@ ibmh8.dev		ADEV (1 chain)
 			ALC (53 chains)
 			Lilac
 ipmipower.dev		TDEV (1 group)
-
-3. Other tests
-
-vpc tests: 		see Makefile for several invocations of powermand that
-			can use vpcd.  For example, it is possible to simulate 
-			a 256 device, 4096 plug configuration on a laptop.
-			vpcd can run both in "pipe" and "tcp" mode.
-
-

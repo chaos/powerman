@@ -38,6 +38,8 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <pty.h>
+
 
 #include "powerman.h"
 #include "parse_util.h"
@@ -46,7 +48,6 @@
 #include "device_pipe.h"
 #include "error.h"
 #include "debug.h"
-#include "pty.h"
 #include "argv.h"
 
 typedef struct {
@@ -90,7 +91,8 @@ bool pipe_connect(Device * dev)
     assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
-    pid = pty_fork(&fd, ptyname);
+    pid = forkpty(&fd, ptyname, NULL, NULL);
+
     if (pid < 0) {
         err(FALSE, "_pipe_connect(%s): pty_fork error", dev->name);
     } else if (pid == 0) {      /* child */

@@ -327,7 +327,6 @@ PollfdStr(Pollfd_t pfd, char *str, int len)
     memset(str, '.', len);
     for (i = 0; i < pfd->nfds; i++) {
         int fd = pfd->ufds[i].fd;
-        short events = pfd->ufds[i].events;
         short revents = pfd->ufds[i].revents;
 
         if (fd < len - 1) {

@@ -92,8 +92,8 @@ static bool _process_delay(Device * dev, Action *act, ExecCtx *e,
 static void _set_argval(ArgList * arglist, char *node, char *val, List interps);
 static InterpState _get_argval(ArgList *arglist, char *node);
 static int _match_name(Device * dev, void *key);
-static void _handle_read(Device * dev, struct timeval *timeout);
-static void _handle_write(Device * dev, struct timeval *timeout);
+static bool _handle_read(Device * dev);
+static bool _handle_write(Device * dev);
 static void _process_action(Device * dev, struct timeval *timeout);
 static bool _timeout(struct timeval *timestamp, struct timeval *timeout,
                      struct timeval *timeleft);
@@ -482,8 +482,8 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
         count = _enqueue_actions(dev, com, hl, complete_fun, vpf_fun, 
                 client_id, arglist);
         if (count > 0 && dev->connect_state != DEV_CONNECTED)
-            dev->retry_count = 0;   /* expedite retries on this device */
-        total += count;
+            dev->retry_count = 0;   /* expedite retries on this device since */
+        total += count;             /*   the user is beating on us... */
     }
     list_iterator_destroy(itr);
 
@@ -672,7 +672,7 @@ static void _login(Device *dev)
 /*
  * Select says device is ready for reading.
  */
-static void _handle_read(Device * dev, struct timeval *timeout)
+static bool _handle_read(Device * dev)
 {
     int n;
     int dropped;
@@ -691,15 +691,15 @@ static void _handle_read(Device * dev, struct timeval *timeout)
         err(FALSE, "read returned EOF on %s", dev->name);
         goto err;
     }
-    return;
+    return FALSE;
 err:
-    _reconnect(dev, timeout);
+    return TRUE;
 }
 
 /*
  * Select says device is ready for writing.
  */
-static void _handle_write(Device * dev, struct timeval *timeout)
+static bool _handle_write(Device * dev)
 {
     int n;
 
@@ -713,9 +713,9 @@ static void _handle_write(Device * dev, struct timeval *timeout)
         err(FALSE, "write sent no data on %s", dev->name);
         goto err;
     }
-    return;
+    return FALSE;
 err:
-    _reconnect(dev, timeout);
+    return TRUE;
 }
 
 static void _disconnect(Device * dev)
@@ -725,7 +725,7 @@ static void _disconnect(Device * dev)
     assert(dev->disconnect != NULL);
     dev->disconnect(dev);
 
-    /* flush buffers */
+    /* empty buffers */
     cbuf_flush(dev->from);
     cbuf_flush(dev->to);
 
@@ -815,7 +815,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 act->errnum = ACT_EEXPFAIL;
 
             if (act->vpf_fun) {
-                unsigned char mem[MAX_DEV_BUF];
+                static unsigned char mem[MAX_DEV_BUF];
                 int len = cbuf_peek(dev->from, mem, MAX_DEV_BUF);
                 char *memstr = dbg_memstr(mem, len);
     
@@ -1447,6 +1447,54 @@ void dev_pre_poll(Pollfd_t pfd)
     list_iterator_destroy(itr);
 }
 
+/* One of the poll bits is set for the device - handle it! */
+static bool
+_handle_ready_device(Device *dev, short flags)
+{
+    assert(dev->connect_state != DEV_NOT_CONNECTED);
+    assert(dev->fd != NO_FD);
+
+    /* error cases (won't get here with select - only poll) */
+    if (flags & POLLHUP) {
+        err(FALSE, "%s: poll: hangup", dev->name);
+        goto ioerr;
+    }
+    if (flags & POLLERR) {
+        err(FALSE, "%s: poll: error", dev->name);
+        goto ioerr;
+    }
+    if (flags & POLLNVAL) {
+        err(FALSE, "%s: poll: fd not open", dev->name);
+        goto ioerr;
+    }
+    /* ready for writing */
+    if (flags & POLLOUT) {
+        if (dev->connect_state == DEV_CONNECTING) {
+            assert(dev->finish_connect != NULL);
+            if (!dev->finish_connect(dev))
+                goto ioerr;
+            assert(dev->connect_state == DEV_CONNECTED);
+            _login(dev);            /* enqueue login if connected */
+            goto success;           /* don't want to test read bit */
+        } else {
+            assert(dev->connect_state == DEV_CONNECTED);
+            if (_handle_write(dev))
+                goto ioerr;
+        }
+    }
+    /* ready for reading */
+    if (flags & POLLIN) {
+        if (_handle_read(dev))
+            goto ioerr;
+        if (dev->preprocess != NULL)
+            dev->preprocess(dev);   /* preprocess input, e.g. telnet escapes */
+    }
+success:
+    return FALSE;
+ioerr:
+    return TRUE;
+}
+
 /* 
  * Called after select to process ready file descriptors, timeouts, etc.
  */
@@ -1458,72 +1506,35 @@ void dev_post_poll(Pollfd_t pfd, struct timeval *timeout)
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
         short flags = dev->fd != NO_FD ? PollfdRevents(pfd, dev->fd) : 0;
+        bool ioerr = FALSE;
 
-        /* handle poll errors */
-        /* NOTE: this won't happen if emulating poll with select */
-        if (dev->connect_state != DEV_NOT_CONNECTED) {
-            if (flags & POLLHUP) {
-                err(FALSE, "%s: poll: hangup", dev->name);
-                _reconnect(dev, timeout);
-            }
-            if (flags & POLLERR) {
-                err(FALSE, "%s: poll: error", dev->name);
-                _reconnect(dev, timeout);
-            }
-            if (flags & POLLNVAL) {
-                err(FALSE, "%s: poll: fd not open", dev->name);
-                _reconnect(dev, timeout);
-            }
-        }
+        /* A device is "ready", e.g. it can be read/written or has an error */
+        if (flags)
+            ioerr = _handle_ready_device(dev, flags);
 
-        /* reconnect if necessary */
-        if (dev->connect_state == DEV_NOT_CONNECTED) {
-            _reconnect(dev, timeout);
-        /* complete non-blocking connect if ready */
-        } else if ((dev->connect_state == DEV_CONNECTING)) {
-            assert(dev->fd != NO_FD);
-            if (flags & POLLOUT) {
-                assert(dev->finish_connect != NULL);
-                if (dev->finish_connect(dev)) {
-                    _login(dev);
-                } else {
-                    _reconnect(dev, timeout);
-                } 
-                flags &= ~POLLOUT; /* avoid _handle_write error */
-            }
-        }
-
-        /* if this device needs a ping, put it in the qeuue */
-        if ((dev->connect_state == DEV_CONNECTED)) {
-            assert(dev->fd != NO_FD);
-            _process_ping(dev, timeout);
-        }
-
-        /* 
-         * read/write from/to buffer
-         * NOTE: _handle_{read,write} can initiate reconnect on error.
+        /* Either initiate reconnect or recalculate timeout (for backoff)
+         * so poll will unblock then.  If successful, _reconnect()
+         * will enqueue a login action which will need processing below.
          */
-        if (dev->connect_state == DEV_CONNECTED) {
-            assert(dev->fd != NO_FD);
-            if (flags & POLLIN)
-                _handle_read(dev, timeout);
-        }
-        if (dev->connect_state == DEV_CONNECTED) {
-            assert(dev->fd != NO_FD);
-            if (flags & POLLOUT)
-                _handle_write(dev, timeout);
-        }
+        if (ioerr || dev->connect_state == DEV_NOT_CONNECTED)
+            _reconnect(dev, timeout); /* can update dev->connect_state */
 
-        /* handle device-specific preprocessing such as telnet escapes */
-        if (dev->connect_state == DEV_CONNECTED && dev->preprocess != NULL) {
-            assert(dev->fd != NO_FD);
-            dev->preprocess(dev);
-        }
+        /* If we are periodically "pinging" this device, we may need to
+         * enqueue a ping action, or update the timeout so poll will
+         * unblock when it is time to enqueue one.
+         */
+        if (dev->connect_state == DEV_CONNECTED)
+            _process_ping(dev, timeout);
 
-        /* process actions */
-        if (list_peek(dev->acts)) {
-            _process_action(dev, timeout);
-        }
+        /* If any actions are enqueued, process them.  This is state machine 
+         * activity and I/O to/from cbufs, not device I/O.  Update timeout so 
+         * poll will unblock to handle non-responsive devices, or processing 
+         * of scripted delays.  Note that we are not necessarily connected
+         * to the device - users may enqueue actions on an unconnected device,
+         * which expedites a reconnect;  if the reconnect then times out,
+         * we have to time out the actions (e.g. tell the user).
+         */
+         _process_action(dev, timeout);
     }
     list_iterator_destroy(itr);
 }

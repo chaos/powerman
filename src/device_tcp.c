@@ -88,10 +88,7 @@ void tcp_destroy(void *data)
 }
 
 /*
- *   We've supposedly reconnected, so check if we really are.
- * If not go into reconnect mode.  If this is a succeeding
- * reconnect, log that fact.  When all is well initiate the
- * logon script.
+ * Complete a non-blocking TCP connect.
  */
 bool tcp_finish_connect(Device * dev)
 {
@@ -121,8 +118,8 @@ bool tcp_finish_connect(Device * dev)
 }
 
 /*
- * Nonblocking TCP connect.
- * tcp_finish_connect will finish the job.
+ * Initiate a non-blocking TCP connect.  tcp_finish_connect() will finish 
+ * the job when the main poll() loop unblocks again, unless we finish here.
  */
 bool tcp_connect(Device * dev)
 {
@@ -284,9 +281,9 @@ static void _telnet_init(Device * dev)
  */
 static void _telnet_preprocess(Device * dev)
 {
+    static unsigned char peek[MAX_DEV_BUF];
+    static unsigned char device[MAX_DEV_BUF];
     TcpDev *tcp = (TcpDev *)dev->data;
-    unsigned char peek[MAX_DEV_BUF];
-    unsigned char device[MAX_DEV_BUF];
     int len, i, k;
 
     len = cbuf_peek(dev->from, peek, MAX_DEV_BUF);

@@ -19,12 +19,14 @@ VERSTR=		$(shell if test -n "$(VERSION)"; then \
 DEFS=		-DHAVE_CONFIG_H -DPOWERMAN_VERSION=\"$(VERSTR)\"
 #DEFS+=		-DNDEBUG
 CFLAGS= 	-g -Wall $(DEFS) 
+# uncomment for gmon
+CFLAGS+=	-pg
 
-LIBS=		-lfl -lwrap -lnsl
+LIBS=		-lfl -lwrap -lnsl -lutil
 
 COMMON_OBJS = wrappers.o error.o hostlist.o debug.o
 
-SERVER_UTIL = $(COMMON_OBJS) daemon.o cbuf.o hprintf.o argv.o pty.o
+SERVER_UTIL = $(COMMON_OBJS) daemon.o cbuf.o hprintf.o argv.o #hash.o
 
 SERVER_OBJS = $(SERVER_UTIL) list.o parse_util.o device.o \
 	      powermand.o client.o parse_lex.o parse_tab.o \
@@ -36,7 +38,7 @@ CLIENT_OBJS = $(COMMON_OBJS) powerman.o
 all:  powerman powermand
 
 powermand: $(SERVER_OBJS)
-	$(CC) -o $@ $(SERVER_OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $(SERVER_OBJS) $(LIBS)
 
 powerman: $(CLIENT_OBJS)
 	$(CC) -o $@ $(CLIENT_OBJS) $(LIBS)
@@ -65,6 +67,7 @@ depend:
 clean:
 	-rm -f *~ *.o .\#* parse_tab.c parse_tab.h parse_lex.c
 	-rm -f powerman powermand
+	-rm -f gmon.out
 
 realclean: clean
 	-rm -f cscope*.out tags TAGS
