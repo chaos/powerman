@@ -126,12 +126,12 @@ begin protocol specification
 	begin BEACON_ON_SCRIPT
 		send "be %s on\r\n"
 		expect "OK\r\n"
-		#delay 2  # This is required for firmware < B68
+		delay 2
 	end BEACON_ON_SCRIPT
 	begin BEACON_OFF_SCRIPT
 		send "be %s off\r\n"
 		expect "OK\r\n"
-		#delay 2  # This is required for firmware < B68
+		delay 2
 	end BEACON_OFF_SCRIPT
 	plug name "1"
 	plug name "2"
