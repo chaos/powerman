@@ -240,6 +240,7 @@ def usage(msg):
     print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
     print "-f fan   = fanout for parallelism (default: 256 where implemented)"
     print "-l ldir  = powerman lirary directory (default: /usr/lib/powerman)"
+    print "-L       = log commands and responses to $powermandir/log/log_file (icebox only)"
     print "-q       = be quiet about any errors that may have occurred"
     print "-r       = reverse sense, i.e. check for  nodes that are off"
     print "-t       = query temperatur rather than power status"
@@ -305,7 +306,7 @@ except KeyError:
 # Parse the command line, check for sanity, and set globals
 
 try:
-    options, args = getopt.getopt(sys.argv[1:], 'ac:f:l:qrtVw:')
+    options, args = getopt.getopt(sys.argv[1:], 'ac:f:l:LqrtVw:')
 except getopt.error:
     usage("Error processing options")
 
@@ -323,6 +324,8 @@ for opt in options:
     elif (op == '-l'):
         powermandir  = val
         opts = "-l " + val + opts
+    elif (op == '-L'):
+        opts = "-L " + opts
     elif (op == '-q'):
         verbose = 0
         opts = "-q " + opts
