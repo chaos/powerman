@@ -40,49 +40,6 @@
 #include "client.h"
 #include "action.h"
 
-static List act_actions = NULL;
-
-/*
- *   This function retrieves the Action at the head of the queue.
- * It must verify that the retrieved action is for a client who 
- * still exists.  Internally generated Actions (from act_update())
- * do not have this concern, so they are not checked.  If the
- * client has disconnected the Action is discarded.
- */
-Action *act_find(void)
-{
-    Action *act = NULL;
-
-    while ((!list_is_empty(act_actions)) && (act == NULL)) {
-	act = list_peek(act_actions);
-	/* act->client == NULL is a special internally generated action */
-	if (act->client == NULL)
-	    continue;
-	if (cli_exists(act->client))
-	    continue;
-	/* I could log an event: "client abort prior to action completion" */
-	act_del_queuehead(act_actions);
-	act = NULL;
-    }
-    return act;
-}
-
-/*
- *    This function
- * replies to a client if appropriate, marks the timestamp (suppressing
- * an act_update() for update_interval), and destroys the Action
- * strucutre.
- *
- * Destroys:  Action
- */
-void act_finish(Action * act)
-{
-    /* act->client == NULL means that there is no client expecting a reply. */
-    if (act->client != NULL)
-        cli_reply(act);
-    act_del_queuehead(act_actions);
-}
-
 Action *act_create(int com)
 {
     Action *act;
@@ -96,6 +53,8 @@ Action *act_create(int com)
     act->cur = NULL;
     act->target = NULL;
     act->hl = NULL;
+    act->error = FALSE;
+    timerclear(&act->time_stamp);
     return act;
 }
 
@@ -121,8 +80,6 @@ void act_destroy(Action * act)
 
 /*
  *  Get rid of the Action at the head of the queue.
- *
- * Destroys:  Action
  */
 void act_del_queuehead(List acts)
 {
@@ -130,24 +87,6 @@ void act_del_queuehead(List acts)
 
     act = list_pop(acts);
     act_destroy(act);
-}
-
-void act_add(Action *act)
-{
-    /* PM_LOG_IN actions are always queued directly to the device */
-    assert(act->com != PM_LOG_IN);
-
-    list_append(act_actions, act);
-}
-
-void act_init(void)
-{
-    act_actions = list_create((ListDelF) act_destroy);
-}
-
-void act_fini(void)
-{
-    list_destroy(act_actions);
 }
 
 /*

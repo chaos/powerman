@@ -124,14 +124,12 @@ static void _prompt_loop(int num, int fd)
 		continue;
 	    }
 	    printf("%d: on %d\n", num, n1);
-	    if (errcount == 0 && opt_drop_command) {
-		printf("XXX: dropping OK response to 'on' command\n");
-		errcount++;
+	    if (opt_drop_command && errcount++ == 0) {
+		printf("vpcd: dropping OK response to 'on' command\n");
 		goto noresp;
 	    }
-	    if (errcount == 0 && opt_bad_response) {
-		printf("XXX: responding to 'on' with UNKONWN instead of OK\n");
-		errcount++;
+	    if (opt_bad_response && errcount++ == 0) {
+		printf("vpcd: responding to 'on' with UNKONWN instead of OK\n");
 		goto unknown;
 	    }
 	    dev[num].plug[n1] = 1;
@@ -246,7 +244,7 @@ static void _usage(void)
 {
     fprintf(stderr, "Usage: vpcd [one option]\n"
 "--drop_command       drop response to first \"on\" command\n"
-"--bad_response	      respond to first \"on\" command with UNKNOWN\n");
+"--bad_response       respond to first \"on\" command with UNKNOWN\n");
     exit(1);	    
 }
 

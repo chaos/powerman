@@ -94,7 +94,7 @@ int main(int argc, char **argv)
 
     /* initialize various modules */
     err_init(argv[0]);
-    act_init();
+    /*act_init();*/
     dev_init();	 
     cli_init();
 
@@ -246,7 +246,7 @@ static void _noop_handler(int signum)
 static void _exit_handler(int signum)
 {
     cli_fini();
-		act_fini();
+    /*act_fini();*/
     dev_fini();
     conf_fini();
     err_exit(FALSE, "exiting on signal %d", signum);

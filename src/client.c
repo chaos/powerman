@@ -46,6 +46,7 @@
 #include "hostlist.h"
 #include "client_proto.h"
 #include "debug.h"
+#include "device.h"
 
 #define LISTEN_BACKLOG    5
 
@@ -81,7 +82,9 @@ static int listen_fd = NO_FD;
 static List cli_clients = NULL;
 
 
-/* Initialize module */
+/*
+ * Initialize module.
+ */
 void cli_init(void)
 {
     /* create cli_clients list */
@@ -89,13 +92,18 @@ void cli_init(void)
 }
 
 
-/* Finalize module */
+/* 
+ * Finalize module.
+ */
 void cli_fini(void)
 {
     /* destroy clients */
     list_destroy(cli_clients);
 }
 
+/* 
+ * Issue appropriate error message to client given a hostlist-generated errno.
+ */
 static void _hostlist_error(Client *c)
 {
     switch (errno) {
@@ -111,11 +119,15 @@ static void _hostlist_error(Client *c)
     }
 }
 
+/* helper for _node_exists() */
 static int _match_nodename(Node* node, void *key)
 {
     return (strcmp((char *)key, node->name) == 0);
 }
 
+/* 
+ * Return TRUE if node exists in the powerman configuration 
+ */
 static bool _node_exists(char *name)
 {
     List nodes = conf_getnodes();
@@ -125,6 +137,11 @@ static bool _node_exists(char *name)
     return (node == NULL ? FALSE : TRUE);
 }
 
+/* 
+ * Build a hostlist_t from a string, validating each node name against 
+ * powerman configuration.  If any bogus nodes are found, issue error 
+ * message to client and return NULL.
+ */
 static hostlist_t _hostlist_create_validated(Client *c, char *str)
 {
     hostlist_t hl = NULL;
@@ -169,12 +186,14 @@ static hostlist_t _hostlist_create_validated(Client *c, char *str)
     return hl;
 }
 
-/* list nodes */
+/* 
+ * Reply to client request for list of nodes in powerman configuration.
+ */
 static void _client_query_nodes_reply(Client *c)
 {
     List nodes = conf_getnodes();
     hostlist_t hl;
-    char hosts[CP_LINEMAX]; /* FIXME: doesn't include prefix to response */
+    char hosts[CP_LINEMAX];
     ListIterator itr;
     Node *node;
 
@@ -196,16 +215,18 @@ static void _client_query_nodes_reply(Client *c)
     list_iterator_destroy(itr);
 }
 
-/* list on/off/unknown status nodes */
+/* 
+ * Reply to client request for node status.
+ */
 static void _client_query_status_reply(Client *c)
 {
     List nodes = conf_getnodes();
     hostlist_t hl_on = hostlist_create(NULL);
     hostlist_t hl_off = hostlist_create(NULL);
     hostlist_t hl_unk = hostlist_create(NULL);
-    char on[CP_LINEMAX];    /* FIXME: doesn't include prefix to response */
-    char off[CP_LINEMAX];   /* FIXME: doesn't include prefix to response */
-    char unk[CP_LINEMAX];   /* FIXME: doesn't include prefix to response */
+    char on[CP_LINEMAX];
+    char off[CP_LINEMAX];
+    char unk[CP_LINEMAX];
     ListIterator itr = list_iterator_create(nodes);
     Node *node;
 
@@ -251,69 +272,6 @@ done:
 	hostlist_destroy(hl_unk);
 }
 
-/*
- *   Select has indicated that there is material read to
- * be read on the fd associated with the Client c. 
- *   If there was in fact stuff to read then that stuff is put
- * in the "from" buffer for the client.  If a (or several) 
- * recognizable command(s) is (are) present then it is interpreted 
- * and put in a Server Action struct which is queued to
- * be processed when the server is Quiescent.  If the 
- * material is recognizably wrong then an error is returned 
- * to the client.  If there isn't a complete command (no '\n')
- * then the "from" buf keeps the data for later completion.
- * If there was nothing to read then it may be time to 
- * close the connection to the client.   
- */
-static void _handle_client_read(Client * c)
-{
-    int n;
-    char buf[CP_LINEMAX];
-
-    CHECK_MAGIC(c);
-
-    n = buf_read(c->from);
-    if ((n < 0) && (errno == EWOULDBLOCK))
-        return;
-
-    /* EOF close or wait for writes to finish */
-    if (n <= 0) {
-        c->read_status = CLI_DONE;
-        return;
-    }
-
-    while (buf_getline(c->from, buf, sizeof(buf)) > 0) {
-	Action *act = _parse_input(c, buf);
-
-	if (act != NULL) {
-	    act->client = c;
-	    act->seq = c->seq++;
-	    act_add(act);
-	}
-    }
-}
-
-/*
- *   Select has notified that it is willing to accept some 
- * write data.
- *   If the client is wanting to close the connection 
- * and the write buffer is clear then close the 
- * connection.
- */
-static void _handle_client_write(Client * c)
-{
-    int n;
-
-    CHECK_MAGIC(c);
-
-    n = buf_write(c->to);
-    if (n < 0)
-        return;	/* EWOULDBLOCK */
-
-    if (buf_isempty(c->to))
-        c->write_status = CLI_IDLE;
-}
-
 /* helper for _parse_input that deletes leading & trailing whitespace */
 static char *_strip_whitespace(char *str)
 {
@@ -343,28 +301,33 @@ static Action *_parse_input(Client *c, char *input)
 
     if (strlen(str) >= CP_LINEMAX) {
 	_client_msg(c, CP_ERR_TOOLONG);			/* error: too long */
+    } else if (c->busy) {
+	_client_msg(c, CP_ERR_CLIBUSY);			/* error: busy */
+	goto noprompt;
     } else if (!strncasecmp(str, CP_HELP, strlen(CP_HELP))) {
 	_client_msg(c, CP_RSP_HELP);			/* help */
-    } else if (!strncasecmp(str, CP_QUERY_STATUS, strlen(CP_QUERY_STATUS))) {
-	act = act_create(PM_UPDATE_PLUGS);		/* query-status */
-    } else if (!strncasecmp(str, CP_QUERY_NODES, strlen(CP_QUERY_NODES))) {
-	_client_query_nodes_reply(c);
+    } else if (!strncasecmp(str, CP_NODES, strlen(CP_NODES))) {
+	_client_query_nodes_reply(c);			/* nodes */
     } else if (!strncasecmp(str, CP_QUIT, strlen(CP_QUIT))) {
 	_client_msg(c, CP_RSP_QUIT);			/* quit */
 	_handle_client_write(c);
 	c->read_status = CLI_DONE;
 	c->write_status = CLI_IDLE;
+	goto noprompt;
     } else if (sscanf(str, CP_ON, arg1) == 1) {
-        act = act_create(PM_POWER_ON);			/* on */
+        act = act_create(PM_POWER_ON);			/* on hostlist */
 	args = 1;
     } else if (sscanf(str, CP_OFF, arg1) == 1) {
-        act = act_create(PM_POWER_OFF);			/* off */
+        act = act_create(PM_POWER_OFF);			/* off hostlist */
 	args = 1;
     } else if (sscanf(str, CP_CYCLE, arg1) == 1) {
-        act = act_create(PM_POWER_CYCLE);		/* cycle */
+        act = act_create(PM_POWER_CYCLE);		/* cycle hostlist */
 	args = 1;
     } else if (sscanf(str, CP_RESET, arg1) == 1) {
-        act = act_create(PM_RESET);			/* reset */
+        act = act_create(PM_RESET);			/* reset hostlist */
+	args = 1;
+    } else if (sscanf(str, CP_STATUS, arg1) == 1) {
+	act = act_create(PM_UPDATE_PLUGS);		/* status hostlist */
 	args = 1;
     } else {
 	_client_msg(c, CP_ERR_UNKNOWN);			/* error: unknown */
@@ -383,20 +346,47 @@ static Action *_parse_input(Client *c, char *input)
     /* reissue prompt if we didn't queue up an action */
     if (act == NULL)
 	_client_prompt(c);
+
+noprompt:
     return act; 
+}
+
+void cli_errmsg(Action * act, char *msg)
+{
+    Client *c;
+
+    assert(act != NULL);
+    CHECK_MAGIC(act);
+    c = act->client;
+
+    /* if client has gone away do nothing */
+    if (c == NULL || !cli_exists(c))
+	return;
+    _client_msg(c, msg);
 }
 
 /*
  * Return the results of an action to the client.
- * FIXME: results should be a part of the action.
+ * Called after completion of each device action.
  */
 void cli_reply(Action * act)
 {
-    Client *c = act->client;
+    Client *c;
 
+    assert(act != NULL);
     CHECK_MAGIC(act);
-    CHECK_MAGIC(c);
-    assert(c->fd != NO_FD);
+    c = act->client;
+
+    /* if client has gone away do nothing */
+    if (c == NULL || !cli_exists(c))
+	return;
+
+    c->act_count--;
+    if (act->error)
+	c->act_error = TRUE;
+
+    if (c->act_count > 0)
+	return;
 
     switch (act->com) {
         case PM_UPDATE_PLUGS:  /* query-status */
@@ -406,17 +396,21 @@ void cli_reply(Action * act)
         case PM_POWER_OFF:	/* off */
         case PM_POWER_CYCLE:	/* cycle */
         case PM_RESET:		/* reset */
-	    /* FIXME: always returns success! */
-	    _client_msg(c, CP_RSP_SUCCESS);
+	    if (c->act_error)
+		_client_msg(c, CP_ERR_COMPLETE);
+	    else
+		_client_msg(c, CP_RSP_COMPLETE);
             break;
         case PM_UPDATE_NODES:
         case PM_LOG_OUT:
+	case PM_LOG_IN:
         default:
             assert(FALSE);
 	    _client_msg(c, CP_ERR_INTERNAL);
             break;
     }
 
+    c->busy = FALSE;
     _client_prompt(c);
 }
 
@@ -520,7 +514,9 @@ static void _create_client(void)
     INIT_MAGIC(client);
     client->read_status = CLI_READING;
     client->write_status = CLI_IDLE;
-    client->seq = 0;
+    client->act_count = 0;
+    client->act_error = FALSE;
+    client->busy = FALSE;
 
     client->fd = Accept(listen_fd, &saddr, &saddr_size);
     /* client died after it initiated connect and before we could accept */
@@ -592,39 +588,70 @@ static void _create_client(void)
     _client_prompt(client);
 }
 
-
-/* handle any client activity (new connection or read/write) */
-void cli_post_select(fd_set *rset, fd_set *wset)
+/* 
+ * select(2) write handler for the client 
+ */
+static void _handle_client_read(Client * c)
 {
-    ListIterator itr;
-    Client *client;
-    
-    /* New connection?  Instantiate a new client object. */
-    if (FD_ISSET(listen_fd, rset))
-        _create_client();
+    int n;
+    char buf[CP_LINEMAX];
 
-    itr = list_iterator_create(cli_clients);
-    /* Client reading and writing?  */
-    while ((client = list_next(itr))) {
-        if (client->fd < 0)
-            continue;
+    CHECK_MAGIC(c);
 
-        if (FD_ISSET(client->fd, rset))
-            _handle_client_read(client);
-
-        if (FD_ISSET(client->fd, wset))
-            _handle_client_write(client);
-
-        /* Is this connection done? */
-        if ((client->read_status == CLI_DONE) &&
-            (client->write_status == CLI_IDLE))
-            list_delete(itr);
+    n = buf_read(c->from);
+    if ((n < 0) && (errno == EWOULDBLOCK)) {
+	/* FIXME: should never happen?  need an error here */
+        return;
     }
 
-    list_iterator_destroy(itr);
+    /* EOF close or wait for writes to finish */
+    if (n <= 0) {
+        c->read_status = CLI_DONE;
+        return;
+    }
+
+    while (buf_getline(c->from, buf, sizeof(buf)) > 0) {
+	Action *act = _parse_input(c, buf);
+
+	if (act != NULL) {
+	    act->client = c;
+	    c->act_count = dev_apply_action(act); 
+	    c->act_error = FALSE;   /* clear error flag */
+	    c->busy = TRUE;	    /* prevent another command from starting */	
+	    /* FIXME: change args to dev_apply_action to be 
+	     * - script index
+	     * - hostlist argument (may be null)
+	     * - client pointer
+	     * We just create the old "server action" as a means
+	     * to pass arguments into the device module at this point.
+	     */
+	    act_destroy(act); /* see?  killed it and nothing bad happened */
+	}
+    }
 }
 
+/* 
+ * select(2) write handler for the client 
+ */
+static void _handle_client_write(Client * c)
+{
+    int n;
 
+    CHECK_MAGIC(c);
+
+    n = buf_write(c->to);
+    if (n < 0) {
+	/* FIXME: should never happen?  need an error here */
+        return;	/* EWOULDBLOCK */
+    }
+
+    if (buf_isempty(c->to))
+        c->write_status = CLI_IDLE;
+}
+
+/*
+ * Prep rset/wset/maxfd for the main select call.
+ */
 void cli_pre_select(fd_set *rset, fd_set *wset, int *maxfd)
 {
     ListIterator itr;
@@ -657,13 +684,40 @@ void cli_pre_select(fd_set *rset, fd_set *wset, int *maxfd)
             *maxfd = MAX(*maxfd, client->fd);
         }
     }
-
     list_iterator_destroy(itr);
 
     dbg(DBG_CLIENT, "fds are [%s] listen fd %d", 
 		    dbg_fdsetstr(&cli_fdset, *maxfd + 1, 
 			    fdsetstr, sizeof(fdsetstr)), listen_fd);
-		    
+}
+
+/* 
+ * Handle any client activity (new connection or read/write).
+ */
+void cli_post_select(fd_set *rset, fd_set *wset)
+{
+    ListIterator itr;
+    Client *client;
+    
+    if (FD_ISSET(listen_fd, rset))
+        _create_client();
+
+    itr = list_iterator_create(cli_clients);
+    while ((client = list_next(itr))) {
+        if (client->fd < 0)
+            continue;
+
+        if (FD_ISSET(client->fd, rset))
+            _handle_client_read(client);
+
+        if (FD_ISSET(client->fd, wset))
+            _handle_client_write(client);
+
+        if ((client->read_status == CLI_DONE) &&
+            (client->write_status == CLI_IDLE))
+            list_delete(itr);
+    }
+    list_iterator_destroy(itr);
 }
 
 /*

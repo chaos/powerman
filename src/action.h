@@ -62,6 +62,8 @@ struct action_struct {
     Script_El    *cur;    /* current place in the script sequence */
     char         *target; /* string version of hostlist */
     hostlist_t   hl;      /* target hostlist */
+    bool	 error;	  /* completion status */
+    struct timeval  time_stamp; /* time stamp for timeouts */
     MAGIC;
 };
 

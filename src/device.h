@@ -88,7 +88,7 @@ struct device_struct {
 void dev_init(void);
 void dev_fini(void);
 void dev_add(Device *dev);
-void dev_apply_action(Action *act);
+int dev_apply_action(Action *act);
 void dev_initial_connect(void);
 
 Device *dev_create();

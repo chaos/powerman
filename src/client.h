@@ -35,17 +35,20 @@ typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE } Client_Status;
 typedef struct {
     Client_Status 	read_status;
     Client_Status 	write_status;
-    int 		seq;		/* command sequence (per client) */
     int 		fd;		/* file desriptor for  the socket */
-    char    *ip;		/* IP address of the client's host */
+    char    		*ip;		/* IP address of the client's host */
     unsigned short int 	port;		/* Port of client connection */
-    char    *host;		/* host name of client host */
-    Buffer 	to;		/* out buffer */
-    Buffer 	from;		/* in buffer */
+    char    		*host;		/* host name of client host */
+    Buffer 		to;		/* out buffer */
+    Buffer 		from;		/* in buffer */
+    int			act_count;	/* pending device actions */
+    bool		act_error;	/* cumulative error flag for actions */
+    bool		busy;		/* "lock" for one command at a time */
     MAGIC;
 } Client;
 
 void cli_reply(Action *act);
+void cli_errmsg(Action *act, char *msg);
 
 void cli_init(void);
 void cli_fini(void);
@@ -56,5 +59,6 @@ bool cli_exists(Client *cli);
 
 void cli_post_select(fd_set *rset, fd_set *wset);
 void cli_pre_select(fd_set *rset, fd_set *wset, int *maxfd);
+
 
 #endif				/* CLIENT_H */

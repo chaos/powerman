@@ -138,14 +138,14 @@ int main(int argc, char **argv)
 	case CMD_LIST:
 	    if (have_targets)
 		_usage();
-	    dprintf(server_fd, CP_QUERY_NODES CP_EOL);
+	    dprintf(server_fd, CP_NODES CP_EOL);
 	    _getline();
 	    _expect(CP_PROMPT);
 	    break;
 	case CMD_REPORT:
-	    if (have_targets)
+	    if (!have_targets)
 		_usage();
-	    dprintf(server_fd, CP_QUERY_STATUS CP_EOL);
+	    dprintf(server_fd, CP_STATUS CP_EOL, targstr);
 	    _getline();
 	    _getline();
 	    _getline();

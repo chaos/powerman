@@ -1,3 +1,16 @@
+2002-10-02 garlick
+	* Changed protocol so query-status is now status and requires an
+	  argument, and query-nodes is now nodes.
+	* No more server action queue.
+	* Device actions notify client when they complete.  A count of 
+	  outstanding actions in the client structure is decremented as 
+	  each completes and when zero, returns success or failure depending
+	  on wether any of the actions failed.
+	* Device actions now have an error flag.  If set, when the action
+	  completes, an error flag is set in the client.
+	* More than one client may initiate actions in parallel across the
+	  cluster.  This works as each device has a queue.
+
 2002-09-30 garlick
 	* Added debug.[ch] and changed --telemetry to --debug mask
 	* Fixed bug where _reconnect did not update the file descriptor

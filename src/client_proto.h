@@ -52,12 +52,12 @@
  */
 #define CP_HELP		"help"
 #define CP_QUIT		"quit"
-#define CP_RESET	"reset %s"		/* arg1: hostlist */
-#define CP_CYCLE	"cycle %s"		/* arg1: hostlist */
-#define CP_ON		"on %s"			/* arg1: hostlist */
-#define CP_OFF		"off %s"		/* arg1: hostlist */
-#define CP_QUERY_NODES	"query-nodes"
-#define CP_QUERY_STATUS	"query-status"
+#define CP_RESET	"reset %s"
+#define CP_CYCLE	"cycle %s"
+#define CP_ON		"on %s"
+#define CP_OFF		"off %s"
+#define CP_NODES	"nodes"
+#define CP_STATUS	"status %s"
 
 /* 
  * Responses - response codes from 100-199 are success, 200-299 are failure.
@@ -75,14 +75,15 @@
        	"102 off:     %s" 				CP_EOL	\
 	"102 unknown: %s" 				CP_EOL	/* hostlists */
 #define CP_RSP_HELP 	\
-	"104 query-status         - query power status"	CP_EOL	\
-	"104 query-nodes          - query node list" 	CP_EOL	\
+	"104 nodes                - query node list" 	CP_EOL	\
+	"104 status <nodes>       - query power status"	CP_EOL	\
 	"104 on <nodes>           - hard power on" 	CP_EOL	\
 	"104 off <nodes>          - hard power off"	CP_EOL	\
 	"104 cycle <nodes>        - hard power cycle"	CP_EOL	\
 	"104 reset <nodes>        - soft power reset"	CP_EOL	\
 	"104 help                 - display help"	CP_EOL	\
 	"104 quit                 - logout"		CP_EOL
+#define CP_RSP_COMPLETE	"105 Command completed successfully" CP_EOL
 
 /* failure */
 #define CP_ERR_FAILURE	"200 Failure"			CP_EOL /* generic */
@@ -92,8 +93,10 @@
 #define CP_ERR_INTERNAL	"204 Internal error"		CP_EOL
 #define CP_ERR_HLRANGE	"205 Too many hosts in range"	CP_EOL
 #define CP_ERR_HLINVAL	"206 Invalid hostlist range"	CP_EOL
-#define CP_ERR_HLUNK	"207 hostlist error"		CP_EOL
-#define CP_ERR_NOSUCHNODES "208 no such nodes: %s"	CP_EOL
-#define CP_ERR_BUSY     "209 busy, try again later"	CP_EOL
+#define CP_ERR_HLUNK	"207 Hostlist error"		CP_EOL
+#define CP_ERR_NOSUCHNODES "208 No such nodes: %s"	CP_EOL
+#define CP_ERR_COMPLETE	"209 Command completed with errors" CP_EOL
+#define CP_ERR_TIMEOUT	"210 Command timed out" 	CP_EOL
+#define CP_ERR_CLIBUSY	"211 Command in progress, shuddup please" CP_EOL
 
 #endif /* CLIENT_PROTO_H */
