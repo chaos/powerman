@@ -42,7 +42,7 @@ begin protocol specification
 	begin LOGOUT_SCRIPT
 		send "/x\r\n"
 	end LOGOUT_SCRIPT
-	begin UPDATE_SCRIPT
+	begin STATUS_SCRIPT
 		send "/s\r\n"
 		expect "WTI2"
 		expect "Default"
@@ -65,7 +65,7 @@ begin protocol specification
 			map $1 "8"
 		expect "\\+\r\n"
 		expect "NPS> "
-	end UPDATE_SCRIPT
+	end STATUS_SCRIPT
 	begin ON_SCRIPT
 		send "/on %s\r\n"
 		expect "NPS> "
