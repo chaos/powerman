@@ -1,5 +1,7 @@
 2002-09-25 garlick
 	* Removed inter-dev delay (behlendo)
+	* Removed timeout interval and update interval.
+	* Disabled automatic status queries.
 
 2002-09-23 garlick
 	* Create per-device reconnect state (count and time stamp)

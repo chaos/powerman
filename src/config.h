@@ -158,12 +158,6 @@ Spec *conf_find_spec(char *name);
 void conf_addnode(Node *node);
 List conf_getnodes(void);
 
-void conf_set_select_timeout(struct timeval *tv);
-void conf_get_select_timeout(struct timeval *tv);
-
-void conf_set_update_interval(struct timeval *tv);
-void conf_get_update_interval(struct timeval *tv);
-
 bool conf_get_use_tcp_wrappers(void);
 void conf_set_use_tcp_wrappers(bool val);
 

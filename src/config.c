@@ -59,8 +59,6 @@ static List		tmp_specs = NULL;
 /*
  * Some configurable values - accessor functions defined below.
  */
-static struct timeval	conf_select_timeout;
-static struct timeval	conf_update_inter;
 static bool		conf_use_tcp_wrap = FALSE;
 static int		conf_listen_port = NO_PORT;
 static Cluster	        *conf_cluster = NULL;
@@ -74,9 +72,6 @@ conf_init(char *filename)
 {
     struct stat stbuf;
     int parse_config_file(char *filename);
-
-    timerclear(&conf_select_timeout);
-    timerclear(&conf_update_inter);
 
     /* initialize cluster */
     conf_cluster = _cluster_create();
@@ -379,10 +374,6 @@ void conf_interp_destroy(Interpretation * interp)
  * Accessor functions for misc. configurable values.
  */
 
-void conf_set_select_timeout(struct timeval *tv) { conf_select_timeout = *tv; }
-void conf_get_select_timeout(struct timeval *tv) { *tv = conf_select_timeout; }
-void conf_set_update_interval(struct timeval *tv) { conf_update_inter = *tv; }
-void conf_get_update_interval(struct timeval *tv) { *tv = conf_update_inter; }
 bool conf_get_use_tcp_wrappers(void)	        { return conf_use_tcp_wrap; }
 void conf_set_use_tcp_wrappers(bool val)	{ conf_use_tcp_wrap = val; }
 void conf_set_listen_port(int val)		{ conf_listen_port = val; }

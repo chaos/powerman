@@ -90,6 +90,11 @@ static void _prompt_loop(int num, int fd)
 	    dprintf(fd, "%d OK\n", seq);
 	    break;
 	}
+	if (strcmp(buf, "login") == 0) {	/* logon */
+	    printf("%d: logon\n", num);
+	    goto ok;
+	    break;
+	}
 	if (strcmp(buf, "stat") == 0) {		/* stat */
 	    for (i = 0; i < NUM_PLUGS; i++)
 		dprintf(fd, "plug %d: %s\n", i, dev[num].plug[i] ? "ON":"OFF");

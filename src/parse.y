@@ -71,8 +71,6 @@ static char *makeSpecName(char *s2);
 static Spec *check_Spec();
 static char *makeClientPort(char *s2);
 static char *makeDevTimeout(char *s2);
-static char *makeUpdate(char *s2);
-static char *makeTimeOut(char *s2);
 static char *makeTCPWrappers();
 static char *makeGlobalSec(char *s2);
 
@@ -279,8 +277,6 @@ global_item_list : global_item_list global_item
 ;
 global_item	: TCP_wrappers
 		| client_port 
-		| timeout          /* select() loop pace */
-		| update           /* cluster update interval */
 ;
 TCP_wrappers	: TOK_TCP_WRAPPERS {
     $$ = (char *)makeTCPWrappers();
@@ -288,14 +284,6 @@ TCP_wrappers	: TOK_TCP_WRAPPERS {
 ;
 client_port	: TOK_CLIENT_PORT TOK_NUMERIC_VAL {
     $$ = (char *)makeClientPort($2);
-}
-;
-timeout		: TOK_TIMEOUT TOK_NUMERIC_VAL {
-    $$ = (char *)makeTimeOut($2);
-}
-;
-update		: TOK_UPDATE TOK_NUMERIC_VAL {
-    $$ = (char *)makeUpdate($2);
 }
 ;
 /**************************************************************/
@@ -369,24 +357,6 @@ static char *makeClientPort(char *s2)
     if (port < 1)
 	_errormsg("bogus client listener port");
     conf_set_listen_port(port); 
-    return s2;
-}
-
-static char *makeTimeOut(char *s2)
-{
-    struct timeval tv;
-
-    _doubletotv(&tv, _strtodouble(s2));
-    conf_set_select_timeout(&tv);
-    return s2;
-}
-
-static char *makeUpdate(char *s2)
-{
-    struct timeval tv;
-
-    _doubletotv(&tv, _strtodouble(s2));
-    conf_set_update_interval(&tv);
     return s2;
 }
 

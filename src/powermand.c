@@ -188,7 +188,6 @@ static bool _tvzero(struct timeval *tv)
  * "quiecent" and a new action may be initiated from the list 
  * queued up by the clients.  
  */
-#define TV_FOREVER { 100000L, 0L }
 static void _select_loop(bool debug)
 {
     int maxfd;

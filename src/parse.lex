@@ -66,7 +66,7 @@ static char *string_buf_ptr;
 
 [\n]   {  linenum[include_stack_ptr]++; }
 
-([0-9]+)|([0-9]+"."[0-9]*)  { yylval = yytext; return TOK_NUMERIC_VAL; }
+([0-9]+)|([0-9]+"."[0-9]*)|("."[0-9]+)  { yylval = yytext; return TOK_NUMERIC_VAL; }
 
 \$	{ return TOK_MATCHPOS; }
 
@@ -165,9 +165,6 @@ static char *string_buf_ptr;
 }
 begin[ \t]+global                 {   return TOK_B_GLOBAL; }
 TCP[ \t]+wrappers                 {   return TOK_TCP_WRAPPERS; }
-timeout[ \t]+interval             {   return TOK_TIMEOUT; }
-inter-device[ \t]+delay           {   return TOK_INTERDEV; }
-update[ \t]+interval              {   return TOK_UPDATE; }
 device[ \t]+timeout               {   return TOK_DEV_TIMEOUT; }
 log[ \t]+file                     {   return TOK_LOG_FILE; }
 client[ \t]+listener[ \t]+port    {   return TOK_CLIENT_PORT; }
