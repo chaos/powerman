@@ -197,22 +197,34 @@ void Delay(struct timeval *tv)
 
 /* Review: look into dmalloc */
 #define MALLOC_MAGIC 0xf00fbaab
+#define MALLOC_PAD_SIZE   16
+#define MALLOC_PAD_FILL 0x55
+
+static int _checkfill(unsigned char *buf, unsigned char fill, int size)
+{
+    while (size-- > 0)
+        if (buf[size] != fill)
+            return 0;
+    return 1;
+}
+
 char *Malloc(int size)
 {
     char *new;
     int *p;
 
     assert(size > 0 && size <= INT_MAX);
-    p = (int *) malloc(size + 2*sizeof(int));
+    p = (int *) malloc(2*sizeof(int) + size + MALLOC_PAD_SIZE);
     if (p == NULL)
         err_exit(FALSE, "out of memory");
-    p[0] = MALLOC_MAGIC;        /* add "secret" magic cookie */
-    p[1] = size;                /* store size in buffer */
+    p[0] = MALLOC_MAGIC;                           /* magic cookie */
+    p[1] = size;                                   /* store size in buffer */
 #ifndef NDEBUG
     memory_alloc += size;
 #endif
     new = (char *) &p[2];
     memset(new, 0, size);
+    memset(new + size, MALLOC_PAD_FILL, MALLOC_PAD_SIZE);
     return new;
 }
 
@@ -226,7 +238,8 @@ char *Realloc(char *item , int newsize)
     assert(newsize > 0 && newsize <= INT_MAX);
     assert(p[0] == MALLOC_MAGIC);
     oldsize = p[1];
-    p = (int *)realloc(p, newsize + 2*sizeof(int));
+    assert(_checkfill(item + oldsize, MALLOC_PAD_FILL, MALLOC_PAD_SIZE));
+    p = (int *)realloc(p, 2*sizeof(int) + newsize + MALLOC_PAD_SIZE);
     if (p == NULL)
         err_exit(FALSE, "out of memory");
     assert(p[0] == MALLOC_MAGIC);
@@ -237,6 +250,7 @@ char *Realloc(char *item , int newsize)
     new = (char *) &p[2];
     if (newsize > oldsize)
         memset(new + oldsize, 0, newsize - oldsize);
+    memset(new + newsize, MALLOC_PAD_FILL, MALLOC_PAD_SIZE);
     return new;
 }
 
@@ -248,7 +262,8 @@ void Free(void *ptr)
 
         assert(p[0] == MALLOC_MAGIC);   /* magic cookie still there? */
         size = p[1];
-        memset(p, 0, size + 2 * sizeof(int));
+        assert(_checkfill(ptr + size, MALLOC_PAD_FILL, MALLOC_PAD_SIZE));
+        memset(p, 0, 2*sizeof(int) + size + MALLOC_PAD_SIZE);
 #ifndef NDEBUG
         memory_alloc -= size;
 #endif
