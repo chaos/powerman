@@ -122,8 +122,10 @@ static bool _validate_config(void)
                 err(FALSE, "alias '%s' references nonexistant node '%s'",
                         a->name, host);
                 valid = FALSE;
+                free(host);
                 break;
-            }
+            } else 
+                free(host);
         }
         hostlist_iterator_destroy(hitr);
     }
@@ -153,10 +155,13 @@ bool conf_addnodes(char *nodelist)
 
     while ((node = hostlist_next(itr))) {
         if (conf_node_exists(node)) {
+            free(node);
             res = FALSE;
             break; 
+        } else {
+            hostlist_push(conf_nodes, node);
+            free(node);
         }
-        hostlist_push(conf_nodes, node);
     }
     hostlist_iterator_destroy(itr);
     hostlist_destroy(hl);
@@ -228,6 +233,7 @@ void conf_exp_aliases(hostlist_t hl)
             hostlist_iterator_reset(itr); /* not sure of itr position after
                                              insertion/deletion so reset */
         }
+        free(host);
     }
     hostlist_iterator_destroy(itr);
 

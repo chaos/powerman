@@ -131,17 +131,20 @@ static ListNode list_node_alloc (void);
 static void list_node_free (ListNode p);
 static ListIterator list_iterator_alloc (void);
 static void list_iterator_free (ListIterator i);
+#ifdef MYALLOC
 static void * list_alloc_aux (int size, void *pfreelist);
 static void list_free_aux (void *x, void *pfreelist);
-
+#endif
 
 /***************
  *  Variables  *
  ***************/
 
+#ifdef MYALLOC
 static List list_free_lists = NULL;
 static ListNode list_free_nodes = NULL;
 static ListIterator list_free_iterators = NULL;
+#endif
 
 #ifdef WITH_PTHREADS
 static pthread_mutex_t list_free_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -725,45 +728,72 @@ list_node_destroy (List l, ListNode *pp)
 static List
 list_alloc (void)
 {
+#ifdef MYALLOC
     return(list_alloc_aux(sizeof(struct list), &list_free_lists));
+#else
+    return(malloc(sizeof(struct list)));
+#endif
 }
 
 
 static void
 list_free (List l)
 {
-    return(list_free_aux(l, &list_free_lists));
+#ifdef MYALLOC
+    list_free_aux(l, &list_free_lists);
+#else
+    free(l);
+#endif
+    return;
 }
 
 
 static ListNode
 list_node_alloc (void)
 {
+#ifdef MYALLOC
     return(list_alloc_aux(sizeof(struct listNode), &list_free_nodes));
+#else
+    return(malloc(sizeof(struct listNode)));
+#endif
 }
 
 
 static void
 list_node_free (ListNode p)
 {
-    return(list_free_aux(p, &list_free_nodes));
+#ifdef MYALLOC
+    list_free_aux(p, &list_free_nodes);
+#else
+    free(p);
+#endif
+    return;
 }
 
 
 static ListIterator
 list_iterator_alloc (void)
 {
+#ifdef MYALLOC
     return(list_alloc_aux(sizeof(struct listIterator), &list_free_iterators));
+#else
+    return(malloc(sizeof(struct listIterator)));
+#endif
 }
 
 
 static void
 list_iterator_free (ListIterator i)
 {
-    return(list_free_aux(i, &list_free_iterators));
+#ifdef MYALLOC
+    list_free_aux(i, &list_free_iterators);
+#else
+    free(i);
+#endif
+    return;
 }
 
-
+#ifdef MYALLOC
 static void *
 list_alloc_aux (int size, void *pfreelist)
 {
@@ -814,7 +844,7 @@ list_free_aux (void *x, void *pfreelist)
     list_mutex_unlock(&list_free_lock);
     return;
 }
-
+#endif
 
 #ifndef NDEBUG
 #ifdef WITH_PTHREADS

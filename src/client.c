@@ -30,6 +30,7 @@
 #include <ctype.h>
 #include <syslog.h>
 #include <stdarg.h>
+#include <stdlib.h>
 
 #include <arpa/inet.h>
 #include <tcpd.h>
@@ -193,6 +194,7 @@ static hostlist_t _hostlist_create_validated(Client * c, char *str)
         if (!conf_node_exists(host)) {
             valid = FALSE;
             hostlist_push_host(badhl, host);
+            free(host); /* hostlist_next strdups returned string */
         }
     }
     if (!valid) {
@@ -231,6 +233,7 @@ static void _client_query_nodes_reply(Client * c)
         }
         while ((node = hostlist_next(itr))) {
             _client_printf(c, CP_INFO_XNODES, node);
+            free(node); /* hostlist_next strdups returned string */
         }
         hostlist_iterator_destroy(itr);
         
@@ -712,6 +715,7 @@ static void _destroy_client(Client *c)
     if (c->host)
         Free(c->host);
     Free(c);
+
 }
 
 /* helper for _find_client */
@@ -846,6 +850,7 @@ static void _create_client(void)
     /* prompt the client */
     _client_printf(c, CP_VERSION, POWERMAN_VERSION);
     _client_printf(c, CP_PROMPT);
+
 }
 
 /* 

@@ -34,6 +34,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "powerman.h"
 #include "list.h"
@@ -192,6 +193,7 @@ pl_err_t pluglist_map(PlugList pl, char *nodelist, char *pluglist)
                 res = _pluglist_map_next(pl, node);
             else
                 res = _pluglist_map_one(pl, node, node);
+            free(node);
             if (res != EPL_SUCCESS)
                     break;
         }
@@ -214,11 +216,17 @@ pl_err_t pluglist_map(PlugList pl, char *nodelist, char *pluglist)
                 res = _pluglist_map_one(pl, node, name);
             else
                 res = EPL_NOPLUGS;
+            free(node);
+            free(name);
             if (res != EPL_SUCCESS)
                 break;
         }
-        if (res == EPL_SUCCESS && hostlist_next(pitr) != NULL)
-            res = EPL_NONODES;
+        if (res == EPL_SUCCESS) {
+            char *tmp = hostlist_next(pitr);
+            if (tmp != NULL)
+                res = EPL_NONODES;
+            free(tmp);
+        }
 
         hostlist_iterator_destroy(pitr);
         hostlist_iterator_destroy(nitr);

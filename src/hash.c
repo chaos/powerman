@@ -179,6 +179,7 @@ hash_destroy (hash_t h)
     assert (h->magic = ~HASH_MAGIC);    /* clear magic via assert abuse */
     lsd_mutex_unlock (&h->mutex);
     lsd_mutex_destroy (&h->mutex);
+    free (h->table);
     free (h);
     return;
 }

@@ -42,6 +42,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "powerman.h"
 #include "list.h"
@@ -102,6 +103,7 @@ ArgList arglist_create(hostlist_t hl)
         Arg *arg = _create_arg(node);
 
         hash_insert(new->args, arg->node, arg);
+        free(node); /* hostlist_next strdups returned string */
     }
     hostlist_iterator_destroy(itr);
     new->hl = hostlist_copy(hl);
@@ -157,8 +159,10 @@ Arg *arglist_next(ArgListIterator itr)
     char *node;
 
     node = hostlist_next(itr->itr);
-    if (node != NULL)
+    if (node != NULL) {
         arg = hash_find(itr->arglist->args, node);
+        free(node); /* hostlist_next strdups returned string */
+    }
 
     return arg;
 }

@@ -754,6 +754,7 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
         case EPL_NONODES:
             _errormsg("more plugs than nodes");
         default:
+            break;
     }
 
     if (!conf_addnodes(nodestr))

@@ -155,13 +155,15 @@ static void _dbg_actions(Device * dev)
 {
     char tmpstr[1024];
     Action *act;
-    ListIterator itr = list_iterator_create(dev->acts);
-
+    ListIterator itr; 
+    
     tmpstr[0] = '\0';
+    itr = list_iterator_create(dev->acts);
     while ((act = list_next(itr))) {
         snprintf(tmpstr + strlen(tmpstr), sizeof(tmpstr) - strlen(tmpstr),
                  "%d,", act->com);
     }
+    list_iterator_destroy(itr);
     tmpstr[strlen(tmpstr) - 1] = '\0';  /* zap trailing comma */
     dbg(DBG_ACTION, "%s: %s", dev->name, tmpstr);
 }
@@ -1221,6 +1223,8 @@ void dev_destroy(Device * dev)
 
     cbuf_destroy(dev->to);
     cbuf_destroy(dev->from);
+    if (dev->matchstr)
+        Free(dev->matchstr);
     Free(dev);
 }
 

@@ -64,11 +64,16 @@ test64.conf: mkconf.pl		# 4 ptys x 16 plugs each
 	./mkconf.pl 64 >$@
 run64: test64.conf
 	../src/powermand -f -c $<
+run64vg: test64.conf
+	 valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=8 ../src/powermand -f -c $<
 
 test2048.conf: mkconf.pl	# 128 ptys x 16 plugs each
 	./mkconf.pl 2048 >$@
 run2048: test2048.conf
 	../src/powermand -f -c $<
+run2048vg: test2048.conf
+	 valgrind --tool=memcheck --leak-check=yes --show-reachable=yes --num-callers=8 ../src/powermand -f -c $<
+	
 
 test4096.conf: mkconf.pl	# 256 ptys x 16 plugs each
 	./mkconf.pl 4096 >$@

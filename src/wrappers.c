@@ -405,6 +405,7 @@ char *wrap_malloc(char *file, int line, int size)
     char *new;
     int *p;
 
+
     assert(size > 0 && size <= INT_MAX);
     p = (int *) malloc(2*sizeof(int) + size + MALLOC_PAD_SIZE);
     if (p == NULL)
@@ -425,6 +426,7 @@ char *wrap_realloc(char *file, int line, char *item , int newsize)
     char *new;
     int *p = (int *)item - 2;
     int oldsize;
+
 
     assert(item != NULL);
     assert(newsize > 0 && newsize <= INT_MAX);

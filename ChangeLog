@@ -1,3 +1,36 @@
+2005-03-09 Jim Garlick <garlick@llnl.gov>
+
+    * src/device.c: fixed memory leak dbg_actions (gnat powerman/233).
+
+2005-02-25 Jim Garlick <garlick@llnl.gov>
+
+    * test/Makefile: run64vg and run2048vg targets added for valgrind.
+
+    * src/list.[ch]: updated to latest from lsd-tools project.
+    There appears to be a memory leak fix in here.
+
+    * src/hash.c: fixed memory leak in hash_destroy(), also fixed in
+    latest from lsd-tools.  Didn't update because latest requires thread.h
+    stuff and didn't want to hassle.
+
+    * src/hostlist.c: updated to latest from lsd-tools project.
+
+    * src/arglist.c: fixed two memory leaks 
+    strings returned by hostlist_next() must be freed
+
+    * src/client.c: fixed two memory leaks
+    strings returned by hostlist_next() must be freed
+
+    * src/parse_util.c: fixed three memory leaks
+    strings returned by hostlist_next() must be freed
+
+    * src/pluglist.c: fixed four memory leaks
+    strings returned by hostlist_next() must be freed
+
+    * src/device.c: fixed memory leak in dev_destroy().
+
+    * src/parse.y: add a missing 'break' after default case stmt.
+
 2004-09-21 Albert Chu <chu11@llnl.gov>
 
     * ChangeLog: Fixed dates in ChangeLog.  It's 2004 not 2003.
