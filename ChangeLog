@@ -2,6 +2,8 @@
 
     * src/device.c: fixed memory leak dbg_actions (gnat powerman/233).
 
+    * src/list.c: turn on MYALLOC.
+
 2005-02-25 Jim Garlick <garlick@llnl.gov>
 
     * test/Makefile: run64vg and run2048vg targets added for valgrind.
@@ -14,6 +16,8 @@
     stuff and didn't want to hassle.
 
     * src/hostlist.c: updated to latest from lsd-tools project.
+    Added "MYALLOC" define to allow local memory allocator to be turned
+    on and off when debugging with valgrind.
 
     * src/arglist.c: fixed two memory leaks 
     strings returned by hostlist_next() must be freed

@@ -39,6 +39,8 @@
 #include <string.h>
 #include "list.h"
 
+#define MYALLOC
+
 
 /*********************
  *  lsd_fatal_error  *

@@ -715,7 +715,6 @@ static void _destroy_client(Client *c)
     if (c->host)
         Free(c->host);
     Free(c);
-
 }
 
 /* helper for _find_client */
@@ -850,7 +849,6 @@ static void _create_client(void)
     /* prompt the client */
     _client_printf(c, CP_VERSION, POWERMAN_VERSION);
     _client_printf(c, CP_PROMPT);
-
 }
 
 /* 
