@@ -39,15 +39,17 @@ mkinstalldirs=	 $(SHELL) $(top_srcdir)/aux/mkinstalldirs
 COPTS=   -g -O2 -Wall
 INC= 
 
-top_srcdir=     .
-prefix=		/usr
-exec_prefix=    ${prefix}
-bindir=	 ${exec_prefix}/bin
-sbindir= ${exec_prefix}/sbin
-libdir=	 ${exec_prefix}/lib
-mandir=	 $(prefix)/man
-etcdir=	 /etc
-packagedir=     ${etcdir}/${PACKAGE}
+top_srcdir	=	.
+prefix		=	/usr
+exec_prefix	=	${prefix}
+bindir		=	${exec_prefix}/bin
+sbindir		= 	${exec_prefix}/sbin
+libdir		=	${exec_prefix}/lib
+mandir		=	$(prefix)/man
+etcdir		=	/etc
+packagedir	=	${etcdir}/${PACKAGE}
+piddir		=	/var/run/${PACKAGE}
+docdir		=	${prefix}/share/doc
 # I've removed the doc and packagedoc variables and their install commands.
 # I'm pretty sure the the %doc directive in the rpm spec file does that for 
 # me.
@@ -61,26 +63,36 @@ all:
 	$(CC) $(COPTS) $< -o $@ $(INC) $(LIB)
 
 install: 
-# All of this needs to be redone
-	$(mkinstalldirs)		$(DESTDIR)$(bindir)
-	$(INSTALL) bin/pm		$(DESTDIR)$(bindir)/
-	$(INSTALL) bin/pmkill		$(DESTDIR)$(bindir)/
-	$(mkinstalldirs)		$(DESTDIR)$(packagedir)
-	$(INSTALL) bin/digi.py		$(DESTDIR)$(packagedir)
-	$(INSTALL) bin/etherwake.py	$(DESTDIR)$(packagedir)
-	$(INSTALL) src/ether-wake	$(DESTDIR)$(packagedir)
-	$(INSTALL) bin/icebox.py	$(DESTDIR)$(packagedir)
-	$(INSTALL) bin/pm_classes.py	$(DESTDIR)$(packagedir)
-	$(INSTALL) bin/pm_utils.py	$(DESTDIR)$(packagedir)
-	$(INSTALL) bin/rmc		$(DESTDIR)$(packagedir)
-	$(INSTALL) bin/rmc.py		$(DESTDIR)$(packagedir)
-	$(INSTALL) bin/wti.py		$(DESTDIR)$(packagedir)
-	$(mkinstalldirs)		$(DESTDIR)$(etcdir)
-	$(INSTALL) -m 644 etc/powerman.conf  $(DESTDIR)$(etcdir)
-	$(mkinstalldirs)		$(DESTDIR)$(mandir)/man1
-	$(INSTALL) -m 644 man/pm.1	$(DESTDIR)$(mandir)/man1
-	$(mkinstalldirs)		$(DESTDIR)$(mandir)/man5
-	$(INSTALL) -m 644 man/powerman.conf.5  $(DESTDIR)$(mandir)/man5
+	$(mkinstalldirs)			$(DESTDIR)$(bindir)
+	$(INSTALL) bin/powerman			$(DESTDIR)$(bindir)/
+	$(INSTALL) bin/powermand		$(DESTDIR)$(bindir)/
+	$(mkinstalldirs)			$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/baytech.dev		$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/icebox.dev		$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/wti.dev			$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/vicebox.dev		$(DESTDIR)$(packagedir)
+	$(INSTALL) -m 644 etc/powerman.conf	$(DESTDIR)$(packagedir)
+	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man1
+	$(INSTALL) -m 644 man/powerman.1	$(DESTDIR)$(mandir)/man1
+	$(INSTALL) -m 644 man/powermand.1	$(DESTDIR)$(mandir)/man1
+	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man5
+	$(INSTALL) -m 644 man/powerman.conf.5  	$(DESTDIR)$(mandir)/man5
+	$(mkinstalldirs)			$(DESTDIR)$(piddir)
+	# Add $(docdir) files as they become available (but see above)
+
+uninstall: 
+	rm -f $(DESTDIR)$(bindir)/powerman
+	rm -f $(DESTDIR)$(bindir)/powermand
+	rm -f $(DESTDIR)$(packagedir)/baytech.dev
+	rm -f $(DESTDIR)$(packagedir)/icebox.dev
+	rm -f $(DESTDIR)$(packagedir)/wti.dev
+	rm -f $(DESTDIR)$(packagedir)/vicebox.dev
+	mv $(DESTDIR)$(packagedir)/powerman.conf	$(packagedir)/powerman.conf.bak
+	rm -f $(DESTDIR)$(mandir)/man1/powerman.1
+	rm -f $(DESTDIR)$(mandir)/man1/powermand.1
+	rm -f $(DESTDIR)$(mandir)/man5/powerman.conf.5
+	rm -Rf $(DESTDIR)$(piddir)
+	# Add $(docdir) files as they become available
 
 clean:
 	rm -f *~ *.o .#*

@@ -25,9 +25,10 @@
 #   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 ####################################################################
 #!/bin/bash
+POWERMANDIR="/home/auselton/src/powerman"
 if [ ! -f /tmp/powermand.log.1 ]
 then
   touch /tmp/powermand.log.1
 fi
-/home/auselton/src/powerman/bin/vicebox 11000 &
+$POWERMANDIR/bin/vicebox 11000 &
 tail -f /tmp/powermand.log.1
