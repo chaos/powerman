@@ -130,8 +130,6 @@ typedef struct {
  * Device
  */
 typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectState;
-typedef enum { TELNET_NONE, TELNET_CMD, TELNET_OPT } TelnetState;
-typedef enum { TYPE_TCP, TYPE_SERIAL } DeviceType;
 
 #define DEV_MAGIC       0xbeefb111
 typedef struct _device {
@@ -140,13 +138,6 @@ typedef struct _device {
 
     char *specname;             /* name of specification, e.g. "icebox3" */
 
-    char *host;                 /* hostname or special file */
-    char *port;                 /* port number */
-    char *flags;                /* flags (e.g. baud) */
-
-    TelnetState tstate;         /* state of telnet processing */
-    unsigned char tcmd;         /* buffered telnet command */
-
     ConnectState connect_state; /* is device connected/open? */
     bool logged_in;             /* TRUE if login script has run successfully */
 
@@ -154,6 +145,7 @@ typedef struct _device {
     regmatch_t pmatch[MAX_MATCH_POS+1];
 
     int fd;
+
     List acts;                  /* queue of Actions */
 
     struct timeval timeout;     /* configurable device timeout */
@@ -172,11 +164,14 @@ typedef struct _device {
 
     int stat_successful_connects;
     int stat_successful_actions;
-                                /* connect/disconnect/preprocess methods */
+                                /* network (e.g. tcp/serial)-specific methods */
     bool (*connect)(struct _device *dev); 
     bool (*finish_connect)(struct _device *dev);
     void (*preprocess)(struct _device *dev);
     void (*disconnect)(struct _device *dev);
+    void (*destroy)(void *data);
+
+    void *data;
 } Device;
 
 typedef enum { ACT_ESUCCESS, ACT_EEXPFAIL, ACT_EABORT, ACT_ECONNECTTIMEOUT,

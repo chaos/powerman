@@ -24,6 +24,10 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+/*
+ * Implement connect/disconnect device methods for serial devices.
+ */
+
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -33,20 +37,17 @@
 #include <termios.h>
 
 #include "powerman.h"
-#include "list.h"
 #include "parse_util.h"
 #include "device.h"
+#include "device_serial.h"
 #include "error.h"
 #include "wrappers.h"
-#include "cbuf.h"
-#include "hostlist.h"
 #include "debug.h"
-#include "client_proto.h"
-#include "device_serial.h"
 
-/*
- * Implement connect/disconnect device methods for serial devices.
- */
+typedef struct {
+    char *special;
+    char *flags;
+} SerialDev;
 
 typedef struct {
     int baud;
@@ -62,6 +63,27 @@ static baudmap_t baudmap[] = {
     {19200, B19200}, 
     {38400, B38400},
 };
+
+void *serial_create(char *special, char *flags)
+{
+    SerialDev *ser = (SerialDev *)Malloc(sizeof(SerialDev));
+
+    ser->special = Strdup(special);
+    ser->flags = Strdup(flags);
+
+    return (void *)ser;
+}
+
+void serial_destroy(void *data)
+{
+    SerialDev *ser = (SerialDev *)data;
+
+    if (ser->special)
+        Free(ser->special);
+    if (ser->flags)
+        Free(ser->flags);
+    Free(ser);
+}
 
 /* Set up serial port: 0 on success, <0 on error */
 static int _serial_setup(char *devname, int fd, int baud, int databits, 
@@ -154,6 +176,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
  */
 bool serial_connect(Device * dev)
 {
+    SerialDev *ser;
     int baud = 9600, databits = 8, stopbits = 1; 
     char parity = 'N';
     int res;
@@ -163,10 +186,12 @@ bool serial_connect(Device * dev)
     assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
-    dev->fd = open(dev->host, O_RDWR | O_NONBLOCK | O_NOCTTY);
+    ser = (SerialDev *)dev->data;
+
+    dev->fd = open(ser->special, O_RDWR | O_NONBLOCK | O_NOCTTY);
     if (dev->fd < 0) {
         dbg(DBG_DEVICE, "_serial_connect: %s open %s failed", 
-                dev->name, dev->host);
+                dev->name, ser->special);
         goto out;
     }
     if (!isatty(dev->fd)) {
@@ -186,7 +211,7 @@ bool serial_connect(Device * dev)
     /* FIXME: take an flock F_WRLOCK to coexist with conman */
 
     /* parse the serial flags and set up port accordingly */
-    sscanf(dev->flags, "%d,%d%c%d", &baud, &databits, &parity, &stopbits);
+    sscanf(ser->flags, "%d,%d%c%d", &baud, &databits, &parity, &stopbits);
     res = _serial_setup(dev->name, dev->fd, baud, databits, parity, stopbits);
     if (res < 0)
         goto out;

@@ -35,16 +35,11 @@
  */
 
 #include <errno.h>
-#include <sys/time.h>
-#include <time.h>
 #include <fcntl.h>
 #include <ctype.h>
 #include <string.h>
-#include <stdarg.h>
 #include <sys/socket.h>
 #include <assert.h>
-#include <unistd.h>
-#include <stdio.h>
 #define TELOPTS
 #define TELCMDS
 #include <arpa/telnet.h>
@@ -55,14 +50,42 @@
 #include "device.h"
 #include "error.h"
 #include "wrappers.h"
-#include "cbuf.h"
-#include "hostlist.h"
 #include "debug.h"
-#include "client_proto.h"
 #include "device_tcp.h"
+
+typedef enum { TELNET_NONE, TELNET_CMD, TELNET_OPT } TelnetState;
+typedef struct {
+    char *host;
+    char *port;
+    TelnetState tstate;         /* state of telnet processing */
+    unsigned char tcmd;         /* buffered telnet command */
+} TcpDev;
 
 static void _telnet_init(Device *dev);
 static void _telnet_preprocess(Device * dev);
+
+void *tcp_create(char *host, char *port)
+{
+    TcpDev *tcp = (TcpDev *)Malloc(sizeof(TcpDev));
+
+    tcp->host = Strdup(host);
+    tcp->port = Strdup(port);
+    tcp->tstate = TELNET_NONE;
+    tcp->tcmd = 0;
+
+    return (void *)tcp;
+}
+
+void tcp_destroy(void *data)
+{
+    TcpDev *tcp = (TcpDev *)data;
+
+    if (tcp->host)
+        Free(tcp->host);
+    if (tcp->port)
+        Free(tcp->port);
+    Free(tcp);
+}
 
 /*
  *   We've supposedly reconnected, so check if we really are.
@@ -104,6 +127,7 @@ bool tcp_finish_connect(Device * dev)
  */
 bool tcp_connect(Device * dev)
 {
+    TcpDev *tcp;
     struct addrinfo hints, *addrinfo;
     int sock_opt;
     int fd_settings;
@@ -111,6 +135,8 @@ bool tcp_connect(Device * dev)
     assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
+
+    tcp = (TcpDev *)dev->data;
 
     Gettimeofday(&dev->last_retry, NULL);
     dev->retry_count++;
@@ -120,7 +146,7 @@ bool tcp_connect(Device * dev)
     hints.ai_flags = AI_CANONNAME;
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    Getaddrinfo(dev->host, dev->port, &hints, &addrinfo);
+    Getaddrinfo(tcp->host, tcp->port, &hints, &addrinfo);
 
     dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
                      addrinfo->ai_protocol);
@@ -152,6 +178,7 @@ void tcp_disconnect(Device * dev)
     assert(dev->connect_state == DEV_CONNECTING
            || dev->connect_state == DEV_CONNECTED);
 
+    err(FALSE, "tcp_disconnect: %s: disconnected", dev->name);
     dbg(DBG_DEVICE, "tcp_disconnect: %s on fd %d", dev->name, dev->fd);
 
     /* close socket if open */
@@ -233,8 +260,10 @@ static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
  */
 static void _telnet_init(Device * dev)
 {
-    dev->tstate = TELNET_NONE;
-    dev->tcmd = 0;
+    TcpDev *tcp = (TcpDev *)dev->data;
+
+    tcp->tstate = TELNET_NONE;
+    tcp->tcmd = 0;
 #if 0
     _telnet_sendopt(dev, DONT, TELOPT_NAWS);
     _telnet_sendopt(dev, DONT, TELOPT_TTYPE);
@@ -250,16 +279,17 @@ static void _telnet_init(Device * dev)
  */
 static void _telnet_preprocess(Device * dev)
 {
+    TcpDev *tcp = (TcpDev *)dev->data;
     unsigned char peek[MAX_DEV_BUF];
     unsigned char device[MAX_DEV_BUF];
     int len, i, k;
 
     len = cbuf_peek(dev->from, peek, MAX_DEV_BUF);
     for (i = 0, k = 0; i < len; i++) {
-        switch (dev->tstate) {
+        switch (tcp->tstate) {
         case TELNET_NONE:
             if (peek[i] == IAC)
-                dev->tstate = TELNET_CMD;
+                tcp->tstate = TELNET_CMD;
             else
                 device[k++] = peek[i];
             break;
@@ -267,24 +297,24 @@ static void _telnet_preprocess(Device * dev)
             switch (peek[i]) {
             case IAC:           /* escaped IAC */
                 device[k++] = peek[i];
-                dev->tstate = TELNET_NONE;
+                tcp->tstate = TELNET_NONE;
                 break;
             case DONT:          /* option commands - one more byte coming */
             case DO:
             case WILL:
             case WONT:
-                dev->tcmd = peek[i];
-                dev->tstate = TELNET_OPT;
+                tcp->tcmd = peek[i];
+                tcp->tstate = TELNET_OPT;
                 break;
             default:            /* single char commands - process immediately */
                 _telnet_recvcmd(dev, peek[i]);
-                dev->tstate = TELNET_NONE;
+                tcp->tstate = TELNET_NONE;
                 break;
             }
             break;
         case TELNET_OPT:        /* option char - process stored command */
-            _telnet_recvopt(dev, dev->tcmd, peek[i]);
-            dev->tstate = TELNET_NONE;
+            _telnet_recvopt(dev, tcp->tcmd, peek[i]);
+            tcp->tstate = TELNET_NONE;
             break;
         }
     }

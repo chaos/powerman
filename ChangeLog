@@ -1,3 +1,7 @@
+2003-05-06 Jim Garlick <garlick@llnl.gov>
+    * src/{device*,parse.y}: abstract tcp- or serial-specific data in
+    device_serial.c and device_tcp.c.
+
 2003-05-05 Jim Garlick <garlick@llnl.gov>
     * src/{device.[ch],device_tcp.c,device_serial.c}: renamed 
     dev->connect_status to dev->connect_state and fixed a couple of places 

@@ -635,56 +635,45 @@ static Stmt *makeStmt(PreStmt *p)
     return stmt;
 }
 
-static DeviceType _parse_hoststr(char *hoststr, char *flagstr, 
-                                 char **host, char **port, char **flags)
+static void _parse_hoststr(Device *dev, char *hoststr, char *flagstr)
 {
-    DeviceType devtype;
-
     /* serial device */
     if (hoststr[0] == '/') {
         struct stat sb;
 
-        if (stat(hoststr, &sb) == 0 && ((sb.st_mode & S_IFCHR))) {
-            *host = Strdup(hoststr);
-            *port = NULL;
-            *flags = Strdup(flagstr);
-        } else 
+        if (stat(hoststr, &sb) == -1 || (!(sb.st_mode & S_IFCHR))) 
             _errormsg("serial device not found or not a char special file");
 
-        devtype = TYPE_SERIAL;
+        dev->data           = serial_create(hoststr, flagstr);
+        dev->destroy        = serial_destroy;
+        dev->connect        = serial_connect;
+        dev->disconnect     = serial_disconnect;
+        dev->finish_connect = NULL;
+        dev->preprocess     = NULL;
 
-    /* network device */
+    /* tcp device */
     } else {
-        char *cp = strchr(hoststr, ':');
+        char *port = strchr(hoststr, ':');
         int n;
 
-        /* case 1: host='host:port', flags=NULL */
-        if (cp) {
-            *cp++ = '\0';
-            n = _strtolong(cp); /* verify port number */
-            if (n < 1 || n > 65535)
-                _errormsg("port number out of range");
-            *host = Strdup(hoststr);
-            *port = Strdup(cp);
-            *flags = NULL;
-        }
-
-        /* case 2: host='host', flags='port' (deprecated) */
-        else if (flagstr != NULL) {
+        if (port) {                 /* host='host:port', flags=NULL */
+            *port++ = '\0';
+        } else if (flagstr != NULL){/* host='host', flags='port' (deprecated) */
+            port = flagstr;
             _warnmsg("port number in flags is deprecated");
-            n = _strtolong(flagstr);
-            if (n < 1 || n > 65535)
-                _errormsg("port number out of range");
-            *host = Strdup(hoststr);
-            *port = Strdup(flagstr);
-            *flags = NULL;
         } else
             _errormsg("hostname is missing :port");
 
-        devtype = TYPE_TCP;
+        n = _strtolong(port);       /* verify port number */
+        if (n < 1 || n > 65535)
+            _errormsg("port number out of range");
+        dev->data           = tcp_create(hoststr, port);
+        dev->destroy        = tcp_destroy;
+        dev->connect        = tcp_connect;
+        dev->disconnect     = tcp_disconnect;
+        dev->finish_connect = tcp_finish_connect;
+        dev->preprocess     = tcp_preprocess;
     }
-    
-    return devtype;     
 }
 
 static void makeDevice(char *devstr, char *specstr, char *hoststr, 
@@ -694,8 +683,6 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
     Device *dev;
     Spec *spec;
     char *plugname;
-    char *host, *port, *flags;
-    DeviceType devtype;
     int i;
 
     /* find that spec */
@@ -703,30 +690,13 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
     if ( spec == NULL ) 
         _errormsg("device specification not found");
 
-    /* deduce the device type from hoststr */
-    devtype = _parse_hoststr(hoststr, flagstr, &host, &port, &flags);
-
     /* make the Device */
     dev = dev_create(devstr);
     dev->specname = Strdup(specstr);
     dev->timeout = spec->timeout;
     dev->ping_period = spec->ping_period;
-    dev->host = host;
-    dev->port = port;
-    dev->flags = flags;
 
-    if (devtype == TYPE_SERIAL) {
-        dev->connect = serial_connect;
-        dev->disconnect = serial_disconnect;
-        dev->finish_connect = NULL;
-        dev->preprocess = NULL;
-    } else {
-        assert(devtype == TYPE_TCP);
-        dev->connect = tcp_connect;
-        dev->disconnect = tcp_disconnect;
-        dev->finish_connect = tcp_finish_connect;
-        dev->preprocess = tcp_preprocess;
-    }
+    _parse_hoststr(dev, hoststr, flagstr);
 
     /* create plugs */
     if (spec->plugs) {

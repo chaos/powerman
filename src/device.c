@@ -1231,9 +1231,7 @@ Device *dev_create(const char *name)
     dev->fd = NO_FD;
     dev->acts = list_create((ListDelF) _destroy_action);
     dev->matchstr = NULL;
-    dev->host = NULL;
-    dev->port = NULL;
-    dev->flags = NULL;
+    dev->data = NULL;
 
     timerclear(&dev->timeout);
     timerclear(&dev->last_retry);
@@ -1245,9 +1243,6 @@ Device *dev_create(const char *name)
 
     dev->from = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
     cbuf_opt_set(dev->from, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
-
-    dev->tstate = TELNET_NONE;
-    dev->tcmd = 0;
 
     for (i = 0; i < NUM_SCRIPTS; i++)
         dev->scripts[i] = NULL;
@@ -1279,12 +1274,10 @@ void dev_destroy(Device * dev)
 
     Free(dev->name);
     Free(dev->specname);
-    if (dev->host)
-        Free(dev->host);
-    if (dev->port)
-        Free(dev->port);
-    if (dev->flags)
-        Free(dev->flags);
+    if (dev->data) {
+        assert(dev->destroy != NULL);
+        dev->destroy(dev->data);
+    }
     list_destroy(dev->acts);
     list_destroy(dev->plugs);
     for (i = 0; i < NUM_SCRIPTS; i++)
