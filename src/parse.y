@@ -756,8 +756,8 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
      * Some devices do not specify plug names in advance.  For these devices,
      * a Node line must not reference a plug name (that field is omitted).
      * Instead, we simply create a plug entry for each node configured for 
-     * the device.  The names will be filled in later via 'setaddr' statements 
-     * (see ibmrsa.dev).
+     * the device.  The names will be filled in later via 'setplugname' 
+     * statements (see ibmrsa.dev).
      */
     } else {
         plug = dev_plug_create(NULL);
