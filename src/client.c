@@ -287,6 +287,10 @@ void usage(char * prog)
     return;
 }
 
+/* 
+ *   This should be changed to allow for a '-' in place of the 
+ * file name, which would then cause it to read from stdin.
+ */
 void
 read_Targets(Config *conf, char *name)
 {
