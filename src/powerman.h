@@ -69,8 +69,6 @@ typedef enum { FALSE = 0, TRUE = 1 } bool;
 /* XXX try to migrate data types back to modules that define them */
 typedef struct client_struct Client;
 typedef struct action_struct Action;
-typedef struct listener_struct Listener;
-
 typedef struct device_struct Device;
 
 typedef enum { NO_DEV, TTY_DEV, TCP_DEV, TELNET_DEV, SNMP_DEV,

@@ -47,6 +47,9 @@
 static int _spec_match(Spec *spec, void *key);
 static void _spec_destroy(Spec *spec);
 
+static Cluster *_cluster_create(void);
+static void _cluster_destroy(Cluster * cluster);
+
 /* 
  * Device specifications only exist during parsing.
  * After that their contents are copied for each instantiation of the device and
@@ -59,8 +62,11 @@ static List		tmp_specs = NULL;
  */
 static struct timeval	conf_select_timeout = { 0L, 0L };
 static struct timeval	conf_write_pause = { 0L, 0L };
-static bool		conf_use_tcp_wrappers = FALSE;
-static unsigned short	conf_listen_port = NO_PORT;
+static struct timeval	conf_update_inter = { 0L, 0L };
+static bool		conf_use_tcp_wrap = FALSE;
+static int		conf_listen_port = NO_PORT;
+
+Cluster		       *conf_cluster = NULL; /* FIXME: make private */
 
 /* 
  * initialize module
@@ -71,6 +77,9 @@ conf_init(char *filename)
 {
     struct stat stbuf;
     int parse_config_file(char *filename);
+
+    /* initialize cluster */
+    conf_cluster = _cluster_create();
 
     /* initialize 'tmp_specs' list */
     list_create((ListDelF) _spec_destroy);
@@ -96,6 +105,7 @@ conf_init(char *filename)
 void
 conf_fini(void)
 {
+    _cluster_destroy(conf_cluster);
 }
 
 /*******************************************************************
@@ -273,21 +283,18 @@ void conf_spec_el_destroy(Spec_El * specl)
  *                                                                 *
  *******************************************************************/
 
-Cluster *conf_cluster_create(void)
+static Cluster *_cluster_create(void)
 {
     Cluster *cluster;
 
     cluster = (Cluster *) Malloc(sizeof(Cluster));
-    cluster->update_interval.tv_sec = UPDATE_SECONDS;
-    cluster->update_interval.tv_usec = 0;
     cluster->num = 0;
     cluster->nodes = list_create((ListDelF) conf_node_destroy);
-    Gettimeofday(&(cluster->time_stamp), NULL);
     return cluster;
 }
 
 
-void conf_cluster_destroy(Cluster * cluster)
+static void _cluster_destroy(Cluster * cluster)
 {
     list_destroy(cluster->nodes);
     Free(cluster);
@@ -409,45 +416,16 @@ void conf_strtotv(struct timeval *tv, char *s)
  * Accessor functions for misc. configurable values.
  */
 
-void conf_set_select_timeout(struct timeval *tv)    
-{ 
-    conf_select_timeout = *tv; 
-}
-
-void conf_get_select_timeout(struct timeval *tv)
-{ 
-    *tv = conf_select_timeout; 
-}
-
-void conf_set_write_pause(struct timeval *tv)
-{ 
-    conf_write_pause = *tv; 
-}
-
-void conf_get_write_pause(struct timeval *tv)
-{ 
-    *tv = conf_write_pause; 
-}
-
-bool conf_get_use_tcp_wrappers(void)
-{ 
-    return conf_use_tcp_wrappers; 
-}
-
-void conf_set_use_tcp_wrappers(bool val)
-{ 
-    conf_use_tcp_wrappers = val; 
-}
-
-void conf_set_listen_port(unsigned short val)
-{
-    conf_listen_port = val;
-}
-
-unsigned short conf_get_listen_port(void)
-{
-    return conf_listen_port;
-}
+void conf_set_select_timeout(struct timeval *tv) { conf_select_timeout = *tv; }
+void conf_get_select_timeout(struct timeval *tv) { *tv = conf_select_timeout; }
+void conf_set_write_pause(struct timeval *tv)	{ conf_write_pause = *tv; }
+void conf_get_write_pause(struct timeval *tv)	{ *tv = conf_write_pause; }
+void conf_set_update_interval(struct timeval *tv) { conf_update_inter = *tv; }
+void conf_get_update_interval(struct timeval *tv) { *tv = conf_update_inter; }
+bool conf_get_use_tcp_wrappers(void)	        { return conf_use_tcp_wrap; }
+void conf_set_use_tcp_wrappers(bool val)	{ conf_use_tcp_wrap = val; }
+void conf_set_listen_port(int val)		{ conf_listen_port = val; }
+int conf_get_listen_port(void)			{ return conf_listen_port; }
 
 /*
  * vi:softtabstop=4

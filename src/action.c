@@ -42,6 +42,8 @@
 #include "client.h"
 #include "action.h"
 
+static List powerman_actions = NULL;
+
 /* Each of these represents a script that must be completed.
  * An error message and two of the debug "dump" routines rely on
  * this array for the names of the client protocol operations.
@@ -65,18 +67,17 @@ char *pm_coms[] = {
  *   The main select() loop will generate this function call 
  * periodically.  The frequency can be set in the config file.
  */
-void act_update(Cluster * cluster, List acts)
+void act_update(void)
 {
     Action *act;
 
-    Gettimeofday(&(cluster->time_stamp), NULL);
     syslog(LOG_INFO, "updating plugs and nodes");
 
     act = act_create(PM_UPDATE_PLUGS);
-    list_append(acts, act);
+    list_append(powerman_actions, act);
 
     act = act_create(PM_UPDATE_NODES);
-    list_append(acts, act);
+    list_append(powerman_actions, act);
 }
 
 /*
@@ -86,27 +87,19 @@ void act_update(Cluster * cluster, List acts)
  * do not have this concern, so they are not checked.  If the
  * client has disconnected the Action is discarded.
  */
-Action *act_find(List acts, List clients)
+Action *act_find(void)
 {
-    Client *client;
     Action *act = NULL;
 
-    while ((!list_is_empty(acts)) && (act == NULL)) {
-	act = list_peek(acts);
+    while ((!list_is_empty(powerman_actions)) && (act == NULL)) {
+	act = list_peek(powerman_actions);
 	/* act->client == NULL is a special internally generated action */
 	if (act->client == NULL)
 	    continue;
-
-	/* What if the client has disappeared since enqueuing the action? */
-	client =
-	    list_find_first(clients, (ListFindF) cli_match, act->client);
-	if (client != NULL)
+	if (cli_exists(act->client))
 	    continue;
-
-	/* I could log an event here: "client abort prior to action 
-	 * completion"  
-	 */
-	act_del_queuehead(acts);
+	/* I could log an event: "client abort prior to action completion" */
+	act_del_queuehead(powerman_actions);
 	act = NULL;
     }
     return act;
@@ -124,13 +117,11 @@ Action *act_find(List acts, List clients)
  * communication the cluster is marked "Occupied" and corresponding
  * Actions are dispatched to each appropriate device.
  */
-void act_initiate(Globals * g, Action * act)
+void act_initiate(Action * act)
 {
     Device *dev;
-    ListIterator dev_i;
+    ListIterator itr;
 
-    assert(g != NULL);
-    CHECK_MAGIC(g);
     assert(act != NULL);
     CHECK_MAGIC(act);
 
@@ -140,9 +131,9 @@ void act_initiate(Globals * g, Action * act)
     case PM_CHECK_LOGIN:
     case PM_LOG_OUT:
     case PM_NAMES:
-	act_finish(g, act);
-	if ((act = act_find(g->acts, g->clients)) != NULL)
-	    act_initiate(g, act);
+	act_finish(act);
+	if ((act = act_find()) != NULL)
+	    act_initiate(act);
 	return;
     case PM_UPDATE_PLUGS:
     case PM_UPDATE_NODES:
@@ -154,11 +145,10 @@ void act_initiate(Globals * g, Action * act)
     default:
 	assert(FALSE);
     }
-    g->status = Occupied;
-    dev_i = list_iterator_create(g->devs);
-    while ((dev = list_next(dev_i)))
+    itr = list_iterator_create(powerman_devs);
+    while ((dev = list_next(itr)))
 	dev_acttodev(dev, act);
-    list_iterator_destroy(dev_i);
+    list_iterator_destroy(itr);
 }
 
 /*
@@ -169,14 +159,12 @@ void act_initiate(Globals * g, Action * act)
  *
  * Destroys:  Action
  */
-void act_finish(Globals * g, Action * act)
+void act_finish(Action * act)
 {
     /* act->client == NULL means that there is no client expecting a reply. */
     if (act->client != NULL)
-	cli_reply(g->cluster, act);
-    Gettimeofday(&(g->cluster->time_stamp), NULL);
-    act_del_queuehead(g->acts);
-    g->status = Quiescent;
+	cli_reply(conf_cluster, act);
+    act_del_queuehead(powerman_actions);
 }
 
 Action *act_create(int com)
@@ -221,6 +209,22 @@ void act_del_queuehead(List acts)
 
     act = list_pop(acts);
     act_destroy(act);
+}
+
+void act_add(Action *act)
+{
+    list_append(powerman_actions, act);
+}
+
+
+void act_init(void)
+{
+    powerman_actions = list_create((ListDelF) act_destroy);
+}
+
+void act_fini(void)
+{
+    list_destroy(powerman_actions);
 }
 
 /*

@@ -57,16 +57,16 @@ struct client_struct {
      MAGIC;
 };
 
-void cli_handle_read(Cluster * cluster, List acts, Client * c);
-void cli_handle_write(Client * c);
 void cli_reply(Cluster * cluster, Action * act);
-
-Client *cli_create();
-int cli_match(Client * client, void *key);
-void cli_destroy(Client * client);
-void cli_add(Client * client);
 
 void cli_init(void);
 void cli_fini(void);
+
+void cli_listen(void);
+
+bool cli_exists(Client *cli);
+
+void cli_process_select(fd_set *rset, fd_set *wset, bool over_time);
+void cli_prepfor_select(fd_set *rset, fd_set *wset, int *maxfd);
 
 #endif				/* CLIENT_H */

@@ -32,31 +32,4 @@
 #define PROJECT "powerman"
 #define VERSION "1.0.0"
 
-#define TIMEOUT_SECONDS     1	/* default value for select(,,,tv) */
-#define INTER_DEV_USECONDS 200000	/* default Delay() after device write */
-
-/* Only when all device are devices are idle is the cluster Quiescent */
-/* and only then can a new action be initiated from the queue.        */
-typedef enum { Quiescent, Occupied } Server_Status;
-
-
-/*
- *   Upper level functions in the calling hierarchy need enough of
- * the following to make it worth grouping together.  
- *
- *   FIXME:  The state information should be separate from the
- * configuration information.
- */
-typedef struct {
-    Listener *listener;		/* listener module info */
-    Server_Status status;	/* (Quiescent, Occupied) */
-    Cluster *cluster;		/* Cluster state info */
-    List acts;			/* Action queue */
-    List devs;			/* device module info */
-     MAGIC;
-} Globals;
-
-extern Globals *cheat;
-extern bool debug_telemetry;
-
 #endif				/* POWERMAND_H */

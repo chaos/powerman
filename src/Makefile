@@ -35,7 +35,7 @@ COMMON_OBJS = list.o string.o wrappers.o error.o hostlist.o
 
 SERVER_UTIL = $(COMMON_OBJS) daemon.o util.o buffer.o
 
-SERVER_OBJS = $(SERVER_UTIL) action.o config.o device.o listener.o  \
+SERVER_OBJS = $(SERVER_UTIL) action.o config.o device.o \
 	      powermand.o client.o parse_lex.o parse_tab.o
 
 CLIENT_OBJS = $(COMMON_OBJS) powerman.o

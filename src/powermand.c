@@ -51,26 +51,16 @@
 #include "powermand.h"
 #include "action.h"
 #include "daemon.h"
-#include "listener.h"
 #include "client.h"
 #include "error.h"
 #include "wrappers.h"
 #include "util.h"
 
 /* prototypes */
-static void usage(char *prog);
-static void do_select_loop(Globals * g);
-static int find_max_fd(Globals * g, fd_set * rset, fd_set * wset);
-static Globals *make_Globals();
-static void noop_handler(int signum);
-static void exit_handler(int signum);
-
-/* This is synonymous with the Globals *g declared in main().
- * I call attention to global access as "cheat".  This only
- * happens in the parser.
- */
-Globals *cheat;
-
+static void _usage(char *prog);
+static void _noop_handler(int signum);
+static void _exit_handler(int signum);
+static void _select_loop(void);
 
 static const char *powerman_license =
     "Copyright (C) 2001-2002 The Regents of the University of California.\n"
@@ -93,35 +83,21 @@ static const struct option long_options[] = {
     {0, 0, 0, 0}
 };
 
-/* initialize all the power control devices */
-void _initialize_devs(List devs, bool debug_telemetry)
-{
-    Device *dev;
-    ListIterator itr = list_iterator_create(devs);
-
-    while ((dev = list_next(itr)))
-	dev_init(dev, debug_telemetry);
-    list_iterator_destroy(itr);
-}
-
-
 static const struct option *longopts = long_options;
-
 
 int main(int argc, char **argv)
 {
     int c;
     int lindex;
-    Globals *g;
     char *config_filename = NULL;
     bool debug_telemetry = FALSE;
     bool daemonize = TRUE;
 
-    /* initialize error module */
+    /* initialize various modules */
     err_init(argv[0]);
-
-    /* FIXME: initialize a big blob of globals */
-    cheat = g = make_Globals();
+    act_init();
+    dev_init();	 
+    cli_init();
 
     /* parse command line options */
     opterr = 0;
@@ -129,14 +105,14 @@ int main(int argc, char **argv)
 	switch (c) {
 	case 'c':		/* --config_file */
 	    if (config_filename != NULL)
-		usage(argv[0]);
+		_usage(argv[0]);
 	    config_filename = Strdup(optarg);
 	    break;
 	case 'f':		/* --foreground */
 	    daemonize = FALSE;
 	    break;
 	case 'h':		/* --help */
-	    usage(argv[0]);
+	    _usage(argv[0]);
 	    exit(0);
 	case 'L':		/* --license */
 	    printf("%s", powerman_license);
@@ -160,10 +136,8 @@ int main(int argc, char **argv)
     if (geteuid() != 0)
 	err_exit(FALSE, "must be root");
 
-    Signal(SIGHUP, noop_handler);
-    Signal(SIGTERM, exit_handler);
-
-    cli_init();
+    Signal(SIGHUP, _noop_handler);
+    Signal(SIGTERM, _exit_handler);
 
     /* parses config file */
     conf_init(config_filename ? config_filename : DFLT_CONFIG_FILE);
@@ -172,18 +146,19 @@ int main(int argc, char **argv)
 	daemon_init();
 
     /* initialize all the power control devs */
-    _initialize_devs(g->devs, debug_telemetry);
+    dev_start_all(debug_telemetry);
 
     /* initialize listener */
-    listen_init();
+    cli_listen();
 
     /* We now have a socket at listener fd running in listen mode */
     /* and a file descriptor for communicating with each device */
-    do_select_loop(g);
+    _select_loop();
+    /*NOTREACHED*/
     return 0;
 }
 
-static void usage(char *prog)
+static void _usage(char *prog)
 {
     printf("Usage: %s [OPTIONS]\n", prog);
     printf("  -c --config_file FILE\tSpecify configuration [%s]\n",
@@ -196,265 +171,92 @@ static void usage(char *prog)
 
 
 /*
- *   By the time we get here the config file has been successfully 
- * parsed and the Globals data structure is set up.  This loop does 
- * not terminate except via the program being killed.  The loop
- * pauses for g->timout_interval or until there is activity on 
- * a descriptor.  That activity could be a new client, a log entry 
- * ready to write, or I/O to a client or a device.  Each possiblity 
- * is examined and handled in turn.   Once an hour a timestamp is 
- * sent to the log.  Once per g->cluster->update_interval the daemon
- * intiates both an "update nodes" and an "update plugs" query for
- * every node in the cluster.  Each time through the loop the 
- * scripts managing the I/O to the clients and the devices are 
- * examined and nudged along if they can make progress.  If all the
- * devices have completed their assigned tasks the cluster becomes 
+ * This loop does not terminate except via the program being killed.  
+ * The loop pauses for timeout_interval or until there is activity on 
+ * a descriptor.  That activity could be a new client or I/O to a client 
+ * or a device.  Once per update_interval we intiate both an "update nodes" 
+ * and an "update plugs" query for every node in the cluster.  Each time 
+ * through the loop the scripts managing the I/O to the clients and the 
+ * devices are examined and nudged along if they can make progress.  If all 
+ * the devices have completed their assigned tasks the cluster becomes 
  * "quiecent" and a new action may be initiated from the list 
  * queued up by the clients.  
  */
-static void do_select_loop(Globals * g)
+static void _select_loop(void)
 {
-    int maxfd = 0;
-    struct timeval tv;
-    Client *client;
-    ListIterator cli_i;
-    Device *dev;
-    ListIterator dev_i;
+    int maxfd;
+    struct timeval tv_select;
+    struct timeval tv_update;
     int n;
     fd_set rset;
     fd_set wset;
     bool over_time;		/* for update actions */
     bool active_devs;		/* active_devs == FALSE => Quiescent */
-    bool activity;		/* activity == TRUE => scripts need service */
     Action *act;
+    struct timeval time_stamp;	/* last update */
+    /* Only when all device are devices are idle is the cluster Quiescent */
+    /* and only then can a new action be initiated from the queue.        */
+    enum { Quiescent, Occupied } status = Quiescent;
 
-    CHECK_MAGIC(g);
-
-    cli_i = list_iterator_create(g->clients);
-    dev_i = list_iterator_create(g->devs);
-
+    Gettimeofday(&time_stamp, NULL);
     while (1) {
-	over_time = FALSE;
-	active_devs = FALSE;
+	/* Initialize rset, wset, maxfd */
+	FD_ZERO(&rset);
+	FD_ZERO(&wset);
+	maxfd = 0;
+	cli_prepfor_select(&rset, &wset, &maxfd);
+	dev_prepfor_select(&rset, &wset, &maxfd);
 
-	/* 
-	 * set up for and call select
-	 * find_max_fd() has a side effect of setting wset and rset based on
-	 * "status" values in the devices, and the "read" and "write" values
-	 * in the clients, log, and listener.
-	 */
-	maxfd = find_max_fd(g, &rset, &wset);
-        /* 
-         * some "select" implementations are reputed to alter tv so set it
-         * anew with each iteration.  timeout_interval may be set in the
-         * config file.
+        /* some "select" implementations are reputed to alter tv so set it anew
+	 * with each iteration.  timeout_interval may be set in the config file.
          */
-	conf_get_select_timeout(&tv);
-	n = Select(maxfd + 1, &rset, &wset, NULL, &tv);
+	conf_get_select_timeout(&tv_select);
+	n = Select(maxfd + 1, &rset, &wset, NULL, &tv_select);
 
-	/* New connection? */
-	if (FD_ISSET(listen_get_fd(), &rset))
-	    listen_handler();
-
-	/* Client reading and writing?  */
-	list_iterator_reset(cli_i);
-	while ((client = list_next(cli_i))) {
-	    if (client->fd < 0)
-		continue;
-
-	    if (FD_ISSET(client->fd, &rset))
-		cli_handle_read(g->cluster, g->acts, client);
-	    if (FD_ISSET(client->fd, &wset))
-		cli_handle_write(client);
-	    /* Is this connection done? */
-	    if ((client->read_status == CLI_DONE) &&
-		(client->write_status == CLI_IDLE))
-		list_delete(cli_i);
-	}
-
-	/* update_interval may be set in the config file.
-	 * Any activity will suppress updates for that
-	 * period, not just other updates.
+	/* update_interval may be set in the config file.  Any activity will 
+	 * suppress updates for that period, not just other updates.
 	 */
-	over_time = util_overdue(&(g->cluster->time_stamp),
-			    &(g->cluster->update_interval));
+	conf_get_update_interval(&tv_update);
+	over_time = util_overdue(&time_stamp, &tv_update);
 
-	/* Device reading and writing? */
-	list_iterator_reset(dev_i);
-	while ((dev = list_next(dev_i))) {
-	    /* we only initiate device recover once per
-	     * update period.  Otherwise we can get
-	     * swamped with reconnect messages.
-	     */
-	    if (over_time && (dev->status == DEV_NOT_CONNECTED))
-		dev_nb_connect(dev);
+	/* Process activity on client and device fd's */
+	cli_process_select(&rset, &wset, over_time);
+	active_devs = dev_process_select(&rset, &wset, over_time);
 
-	    if (dev->fd < 0)
-		continue;
-
-	    activity = FALSE;
-
-	    /* Any active device is sufficient to
-	     * suppress starting the next action
-	     */
-	    if (dev->status & (DEV_SENDING | DEV_EXPECTING))
-		active_devs = TRUE;
-
-	    /* The first activity is always the signal
-	     * of a newly connected device.  We'll have
-	     * run the log in script to get back into
-	     * business as usual.
-	     */
-	    if ((dev->status == DEV_CONNECTING)) {
-		if (FD_ISSET(dev->fd, &rset) || FD_ISSET(dev->fd, &wset))
-		    dev_connect(dev);
-		continue;
-	    }
-	    if (FD_ISSET(dev->fd, &rset)) {
-		dev_handle_read(dev);
-		activity = TRUE;
-	    }
-	    if (FD_ISSET(dev->fd, &wset)) {
-		struct timeval tv_delay;
-
-		dev_handle_write(dev);
-		conf_get_write_pause(&tv_delay);
-		Delay(&tv_delay);
-		activity = TRUE;
-	    }
-	    /*
-	     * Since some I/O took place we need to see
-	     * if the scripts need to be nudged along
-	     */
-	    if (activity)
-		dev_process_script(dev);
-	    /*
-	     * dev->timeout may be set in the config file.
-	     */
-	    if (dev_stalled(dev))
-		dev_recover(dev);
-	}
 	/* queue up an update action */
-	if (over_time)
-	    act_update(g->cluster, g->acts);
-	/* launch the nexxt action in the queue */
-	if ((!active_devs) &
-	    ((act = act_find(g->acts, g->clients)) != NULL)) {
-	    /* A previous action may need a reply sent
-	     * back to a client.
-	     */
-	    if (g->status == Occupied)
-		act_finish(g, act);
-	    /*
-	     * Double check.  If there really was an
-	     * action in the queue, launch it.
-	     */
-	    if ((act = act_find(g->acts, g->clients)) != NULL)
-		act_initiate(g, act);
+	if (over_time) {
+	    act_update();
+	    Gettimeofday(&time_stamp, NULL);
+	}
+
+	/* launch the next action in the queue */
+	if ((!active_devs) & ((act = act_find()) != NULL)) {
+	    /* d previous action may need a reply sent back to a client */
+	    if (status == Occupied) {
+		act_finish(act);
+		status = Quiescent;
+		Gettimeofday(&time_stamp, NULL);
+	    }
+
+	    /* double check - if there was an action in the queue, launch it */
+	    if ((act = act_find()) != NULL) {
+		act_initiate(act);
+		status = Occupied;
+	    }
 	}
     }
+    /*NOTREACHED*/
 }
 
-/*
- *   This not only generates the needed maxfd for the select loop.
- * It sets the read and write fd_sets as well.  log write is always on,
- * listener read is always on, each client maintains READING and WRITING
- * status in its data structure, device read is always on, and device
- * write stsus is also maintained in the device structure.  
- */
-static int find_max_fd(Globals * g, fd_set * rs, fd_set * ws)
+static void _noop_handler(int signum)
 {
-    Client *client;
-    Device *dev;
-    ListIterator itr;
-    int maxfd = 0;
-    int fd;
-
-    CHECK_MAGIC(g);
-
-    /*
-     * Build the FD_SET's: rs, ws
-     */
-    FD_ZERO(rs);
-    FD_ZERO(ws);
-    if ((fd = listener_get_fd()) != NO_FD) {
-	assert(fd >= 0);
-	FD_SET(fd, rs);
-	maxfd = MAX(maxfd, fd);
-    }
-    itr = list_iterator_create(g->clients);
-    while ((client = list_next(itr))) {
-	if (client->fd < 0)
-	    continue;
-
-	if (client->read_status == CLI_READING) {
-	    FD_SET(client->fd, rs);
-	    maxfd = MAX(maxfd, client->fd);
-	}
-	if (client->write_status == CLI_WRITING) {
-	    FD_SET(client->fd, ws);
-	    maxfd = MAX(maxfd, client->fd);
-	}
-    }
-    list_iterator_destroy(itr);
-
-    itr = list_iterator_create(g->devs);
-    while ((dev = list_next(itr))) {
-	if (dev->fd < 0)
-	    continue;
-
-	/* To handle telnet I'm having it always ready to read.
-	 */
-	FD_SET(dev->fd, rs);
-	maxfd = MAX(maxfd, dev->fd);
-
-	/* The descriptor becomes writable when a non-blocking
-	 * connect (ie, DEV_CONNECTING) completes.
-	 */
-	if ((dev->status & DEV_CONNECTING) || (dev->status & DEV_SENDING)) {
-	    FD_SET(dev->fd, ws);
-	}
-    }
-    list_iterator_destroy(itr);
-
-    return maxfd;
+    /* do nothing */
 }
 
-static void noop_handler(int signum)
-{
-}
-
-static void exit_handler(int signum)
+static void _exit_handler(int signum)
 {
     err_exit(FALSE, "exiting on signal %d", signum);
 }
-
-static Globals *make_Globals()
-{
-    Globals *g;
-
-    g = (Globals *) Malloc(sizeof(Globals));
-    INIT_MAGIC(g);
-
-    g->status = Quiescent;
-    g->acts = list_create((ListDelF) act_destroy);
-    g->devs = list_create((ListDelF) dev_destroy);
-    g->cluster = conf_cluster_create();
-    return g;
-}
-
-#if 0
-static void free_Globals(Globals * g)
-{
-    conf_cluster_destroy(g->cluster);
-    list_destroy(g->acts);
-    list_iterator_create(g->clients);
-    list_destroy(g->clients);
-    list_destroy(g->devs);
-    Free(g);
-}
-#endif
-
 
 /*
  * vi:softtabstop=4

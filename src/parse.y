@@ -41,7 +41,6 @@
 #include "powermand.h"
 #include "action.h"
 #include "client.h"
-#include "listener.h"
 #include "error.h"
 #include "string.h"
 #include "buffer.h"
@@ -85,8 +84,6 @@ extern int yylex();
 extern void yyerror();
 
  int yyline = 0;      /* For parse error reporting */
- /* char *conf = NULL; */   /* Currently unused.  The return result of the parse */
- Globals *cheat;      /* A way of getting at the Globals structure */
  Spec *current_spec = NULL;  /* Holds a Spec as it is built */
  List current_script = NULL; /* Holds a script as it is built */
 %}
@@ -164,13 +161,6 @@ properties_sec : specifications_sec global_sec
 
 /**************************************************************/
 /* Section 1) Specifications                                  */
-/*                                                            */
-/*   As currently implemented, the "cheat" reference to a     */
-/* Globals structure exists prior to entering the parser.     */
-/* Thus Spec structures may be added to it as they are        */
-/* defined.  When the code goes organic the specifications    */
-/* list will have to be handed out of this section of code.   */
-/*                                                            */
 /**************************************************************/
 specifications_sec : specifications_sec specification
 		| specification
@@ -288,7 +278,8 @@ plug_name_line	: TOK_PLUG_NAME TOK_STRING_VAL {
 }
 ;
 /**************************************************************/
-/* Section 2) Global Config variables and properties */
+/* Section 2) Global Config variables and properties          */
+/**************************************************************/
 global_sec : TOK_B_GLOBAL global_item_list TOK_E_GLOBAL {
     $$ = makeGlobalSec($2);
 }
@@ -323,7 +314,8 @@ update		: TOK_UPDATE TOK_STRING_VAL {
 }
 ;
 /**************************************************************/
-/* 3) Devices list */
+/* 3) Devices list					      */
+/**************************************************************/
 devices_sec	: devices_sec device_line
 		| device_line
 ;
@@ -332,7 +324,8 @@ device_line	: TOK_DEVICE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL TOK_STRING
 }
 ;
 /**************************************************************/
-/* 4) Cluster (nodes list) */
+/* 4) Cluster (nodes list)				      */
+/**************************************************************/
 node_sec	: TOK_B_NODES node_list TOK_E_NODES 
 ;
 node_list	: node_list node_line  
@@ -366,10 +359,8 @@ int parse_config_file (char *filename)
 
 static char *makeGlobalSec(char *s2)
 {
-    if( cheat->cluster == NULL )
-	err_exit(FALSE, "missing cluster name");
-    if( cheat->listener->port == NO_PORT )
-	err_exit(FALSE, "missing Listener port");
+    if (conf_get_listen_port() == NO_PORT)
+	err_exit(FALSE, "missing listener port");
     return NULL;
 }
 
@@ -384,16 +375,12 @@ static char *makeClientPort(char *s2)
     int n;
     int port;
 
-    if( cheat->listener->port != NO_PORT )
-	err_exit(FALSE, "listener port %d already encountered", 
-			cheat->listener->port);
-
+    if (conf_get_listen_port() != NO_PORT)
+	err_exit(FALSE, "listener port can be set only once");
     n = sscanf(s2, "%d", &port);
-    if ( n == 1) {
-	cheat->listener->port = port;
-    } else {
-	err_exit(FALSE, "unable to identify port %s", s2);
-    }
+    if (n != 1 || port < 0)
+	err_exit(FALSE, "listener port %s must be a positive integer\n", s2);
+    conf_set_listen_port(port); 
     return s2;
 }
 
@@ -417,8 +404,10 @@ static char *makeInterDev(char *s2)
 
 static char *makeUpdate(char *s2)
 {
-    assert( cheat->cluster != NULL );
-    conf_strtotv( &(cheat->cluster->update_interval), s2);
+    struct timeval tv;
+
+    conf_strtotv(&tv, s2);
+    conf_set_update_interval(&tv);
     return s2;
 }
 
@@ -827,7 +816,7 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 	}
     }
 
-    list_append(cheat->devs, dev);
+    list_append(powerman_devs, dev);
     return s2;
 }
 
@@ -849,11 +838,12 @@ static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
     Script_El *script_el;
     Plug *plug;
 
-    cheat->cluster->num++;
+    assert(conf_cluster != NULL);
+    conf_cluster->num++;
     node = conf_node_create(s2);
-    list_append(cheat->cluster->nodes, node);
+    list_append(conf_cluster->nodes, node);
     /* find the device controlling this nodes plug */
-    node->p_dev = list_find_first(cheat->devs, (ListFindF) dev_match, s3);
+    node->p_dev = list_find_first(powerman_devs, (ListFindF) dev_match, s3);
     if( node->p_dev == NULL ) 
 	err_exit(FALSE, "failed to find device %s", s3);
     /*
@@ -886,7 +876,7 @@ static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 	node->n_dev = node->p_dev;
     } else {
 	assert(s6 != NULL);
-	node->n_dev = list_find_first(cheat->devs, (ListFindF) dev_match, s3);
+	node->n_dev = list_find_first(powerman_devs, (ListFindF) dev_match, s3);
 	if( node->n_dev == NULL ) 
 	    err_exit(FALSE, "failed to find device %s", s3);
 	plug = list_find_first(node->n_dev->plugs, (ListFindF) dev_plug_match, s6);

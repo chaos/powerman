@@ -196,8 +196,6 @@ typedef struct {
 typedef struct {
     int num;			/* node count */
     List nodes;			/* list of Node structures */
-    struct timeval time_stamp;	/* last update */
-    struct timeval update_interval;	/* how long before next update */
 } Cluster;
 
 
@@ -213,9 +211,6 @@ void conf_spec_destroy(Spec * spec);
 
 Spec_El *conf_spec_el_create(Script_El_T type, char *str1, List map);
 void conf_spec_el_destroy(Spec_El * specl);
-
-Cluster *conf_cluster_create(void);
-void conf_cluster_destroy(Cluster * cluster);
 
 Node *conf_node_create(const char *name);
 int conf_node_match(Node * node, void *key);
@@ -237,11 +232,15 @@ void conf_get_select_timeout(struct timeval *tv);
 void conf_set_write_pause(struct timeval *tv);
 void conf_get_write_pause(struct timeval *tv);
 
+void conf_set_update_interval(struct timeval *tv);
+void conf_get_update_interval(struct timeval *tv);
+
 bool conf_get_use_tcp_wrappers(void);
 void conf_set_use_tcp_wrappers(bool val);
 
-unsigned short conf_get_listen_port(void);
-void conf_set_listen_port(unsigned short val);
+int conf_get_listen_port(void);
+void conf_set_listen_port(int val);
 
+extern Cluster *conf_cluster; /* XXX make this private!!! */
 
 #endif				/* CONFIG_H */

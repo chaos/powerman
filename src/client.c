@@ -29,26 +29,39 @@
 #include <assert.h>
 #include <syslog.h>
 
+#include <arpa/inet.h>
+#include <tcpd.h>
+#include <fcntl.h>
+
 #include "powerman.h"
+#include "wrappers.h"
 #include "list.h"
 #include "config.h"
 #include "powermand.h"
-#include "action.h"
-#include "error.h"
-#include "wrappers.h"
-#include "string.h"
-#include "buffer.h"
 #include "client.h"
+#include "buffer.h"
+#include "error.h"
+#include "string.h"
 #include "util.h"
+#include "action.h"
 
-static List clients = NULL;
+#define LISTEN_BACKLOG    5
 
 /* prototypes */
-static Action *_process_input(Cluster *cluster, Client *c);
-static Action *_find_cli_script(Cluster *cluster, String expect);
-static bool _match_cli_template(Cluster *cluster, Action *act, regex_t *re,String expect);
+static Action *_process_input(Client *c);
+static Action *_find_cli_script(String expect);
+static bool _match_cli_template(Action *act, regex_t *re,String expect);
+static void _destroy_client(Client * client);
 
-/* client protocol (built by cli_init) */
+/* tcp wrappers support */
+extern int hosts_ctl(char *daemon, char *client_name, char *client_addr, 
+		char *client_user);
+int allow_severity = LOG_INFO;		/* logging level for accepted reqs */
+int deny_severity = LOG_WARNING;	/* logging level for rejected reqs */
+
+/* module data */
+static int listen_fd = NO_FD;
+static List powerman_clients = NULL;
 static Protocol *client_prot = NULL;
 
 
@@ -75,8 +88,8 @@ void cli_init(void)
 
     assert(client_prot == NULL);
 
-    /* create clients list */
-    clients = list_create((ListDelF) cli_destroy);
+    /* create powerman_clients list */
+    powerman_clients = list_create((ListDelF) _destroy_client);
 
     /* 
      * Initialize the expect/send pairs for the client protocol. 
@@ -117,6 +130,9 @@ cli_fini(void)
 
     assert(client_prot != NULL);
 
+    /* destroy clients */
+    list_destroy(powerman_clients);
+
     /* destroy client protocol */
     for (i = 0; i < client_prot->num_scripts; i++)
 	list_destroy(client_prot->scripts[i]);
@@ -124,12 +140,6 @@ cli_fini(void)
     client_prot = NULL;
 }
 
-
-void
-cli_add(Client *cli)
-{
-    list_append(clients, cli);
-}
 
 /*
  *   Select has indicated that there is material read to
@@ -145,7 +155,7 @@ cli_add(Client *cli)
  * If there was nothing to read then it may be time to 
  * close the connection to the client.   
  */
-void cli_handle_read(Cluster * cluster, List acts, Client * c)
+static void _handle_client_read(Client * c)
 {
     int n;
     Action *act = NULL;
@@ -169,9 +179,9 @@ void cli_handle_read(Cluster * cluster, List acts, Client * c)
          * Action fields client, seq, com, num and target for later
          * processing, and enqueue the Action.  
          */
-	act = _process_input(cluster, c);
+	act = _process_input(c);
 	if (act != NULL)
-	    list_append(acts, act);
+	act_add(act);
     }
     while (act != NULL);
 
@@ -188,7 +198,7 @@ void cli_handle_read(Cluster * cluster, List acts, Client * c)
  * others require sending the Server Action to the devices 
  * first.
  */
-static Action *_process_input(Cluster * cluster, Client * c)
+static Action *_process_input(Client * c)
 {
     Action *act;
     String expect;
@@ -199,7 +209,7 @@ static Action *_process_input(Cluster * cluster, Client * c)
     if (expect == NULL)
 	return NULL;
 
-    act = _find_cli_script(cluster, expect);
+    act = _find_cli_script(expect);
     str_destroy(expect);
     if (act != NULL) {
 	act->client = c;
@@ -215,7 +225,7 @@ static Action *_process_input(Cluster * cluster, Client * c)
  * and the write buffer is clear then close the 
  * connection.
  */
-void cli_handle_write(Client * c)
+static void _handle_client_write(Client * c)
 {
     int n;
 
@@ -235,7 +245,7 @@ void cli_handle_write(Client * c)
  * A complete command would be indicated by a '\n'.  There
  * could be more than one.
  */
-static Action *_find_cli_script(Cluster * cluster, String expect)
+static Action *_find_cli_script(String expect)
 {
     Action *act;
     bool found_it = FALSE;
@@ -252,7 +262,7 @@ static Action *_find_cli_script(Cluster * cluster, String expect)
 	act->cur = list_next(act->itr);
 	assert(act->cur->type == EXPECT);
 	re = &(act->cur->s_or_e.expect.exp);
-	found_it = _match_cli_template(cluster, act, re, expect);
+	found_it = _match_cli_template(act, re, expect);
 	list_iterator_destroy(act->itr);
 	act->itr = NULL;
     }
@@ -268,8 +278,7 @@ static Action *_find_cli_script(Cluster * cluster, String expect)
  * Client sent in.  Finding one, it puts it in tthe Action's "target"
  * field.
  */
-static bool _match_cli_template(Cluster * cluster, Action * act, 
-		regex_t * re, String expect)
+static bool _match_cli_template(Action * act, regex_t * re, String expect)
 {
     int n;
     int l;
@@ -407,24 +416,6 @@ void cli_reply(Cluster * cluster, Action * act)
 }
 
 
-Client *cli_create(void)
-{
-    Client *client;
-
-    client = (Client *) Malloc(sizeof(Client));
-    INIT_MAGIC(client);
-    client->loggedin = FALSE;
-    client->read_status = CLI_READING;
-    client->write_status = CLI_IDLE;
-    client->seq = 0;
-    client->fd = NO_FD;
-    client->ip = NULL;
-    client->port = NO_PORT;
-    client->host = NULL;
-    client->to = NULL;
-    client->from = NULL;
-    return client;
-}
 
 /*
  *   This match utility is compatible with the list API's ListFindF
@@ -433,12 +424,12 @@ Client *cli_create(void)
  * into use in the act_find() when there is a chance an Action 
  * no longer has a client associated with it.
  */
-int cli_match(Client * client, void *key)
+static int _match_client(Client * client, void *key)
 {
     return (client == key);
 }
 
-void cli_destroy(Client * client)
+static void _destroy_client(Client * client)
 {
     CHECK_MAGIC(client);
 
@@ -454,6 +445,205 @@ void cli_destroy(Client * client)
     Free(client);
 }
 
+bool cli_exists(Client *cli)
+{
+    Client *client;
+
+    client = list_find_first(powerman_clients, (ListFindF) _match_client, cli);
+    return (client == NULL ? FALSE : TRUE);
+}
+
+/*
+ *  This is a conventional implementation of the code in Stevens.
+ * The Listener already exists and on entry and on completion the
+ * descriptor is waiting on new connections.
+ */
+void cli_listen(void)
+{
+    struct sockaddr_in saddr;
+    int saddr_size = sizeof(struct sockaddr_in);
+    int sock_opt;
+    int fd_settings;
+    unsigned short listen_port;
+
+    /* 
+     * "All TCP servers should specify [the SO_REUSEADDR] socket option ..."
+     *                                                  - Stevens, UNP p194 
+     */
+    listen_fd = Socket(PF_INET, SOCK_STREAM, 0);
+
+    sock_opt = 1;
+    Setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &(sock_opt), sizeof(sock_opt));
+    /* 
+     *   A client could abort before a ready connection is accepted.  "The fix
+     * for this problem is to:  1.  Always set a listening socket nonblocking
+     * if we use select ..."                            - Stevens, UNP p424
+     */
+    fd_settings = Fcntl(listen_fd, F_GETFL, 0);
+    Fcntl(listen_fd, F_SETFL, fd_settings | O_NONBLOCK);
+
+    saddr.sin_family = AF_INET;
+    listen_port = conf_get_listen_port();
+    saddr.sin_port = htons(listen_port);
+    saddr.sin_addr.s_addr = INADDR_ANY;
+    Bind(listen_fd, &saddr, saddr_size);
+
+    Listen(listen_fd, LISTEN_BACKLOG);
+}
+
+
+/*
+ * Read activity has been detected on the listener socket.  A connection
+ * request has been received.  The new client is commemorated with a
+ * Client data structure, it gets buffers for sending and receiving, 
+ * and is vetted through TCP wrappers.
+ */
+static void _create_client(void)
+{
+    Client *client;
+    struct sockaddr_in saddr;
+    int saddr_size = sizeof(struct sockaddr_in);
+    int fd_settings;
+    bool accepted_client = TRUE;
+    char buf[MAX_BUF];
+    struct hostent *hent;
+    char *ip;
+    char *host;
+    char *fqdn;
+    char *p;
+
+    /* create client data structure */
+    client = (Client *) Malloc(sizeof(Client));
+    INIT_MAGIC(client);
+    client->loggedin = FALSE;
+    client->read_status = CLI_READING;
+    client->write_status = CLI_IDLE;
+    client->seq = 0;
+
+    client->fd = Accept(listen_fd, &saddr, &saddr_size);
+    if (client->fd < 0)
+    /* client died after it initiated connect and before we could accept */
+    {
+	_destroy_client(client);
+	syslog(LOG_ERR, "Client aborted connection attempt");
+	return;
+    }
+
+    /* Got the new client, now look at TCP wrappers */
+    /* get client->ip */
+    if (inet_ntop(AF_INET, &saddr.sin_addr, buf, MAX_BUF) == NULL) {
+	Close(client->fd);
+	_destroy_client(client);
+	syslog(LOG_ERR, "Unable to convert network address into string");
+	return;
+    }
+    client->to = buf_create(client->fd, MAX_BUF, NULL, NULL);
+    client->from = buf_create(client->fd, MAX_BUF, NULL, NULL);
+    client->port = ntohs(saddr.sin_port);
+    p = buf;
+    while ((p - buf < MAX_BUF) && (*p != '/'))
+	p++;
+    if (*p == '/')
+	*p = '\0';
+    client->ip = str_create(buf);
+    ip = str_get(client->ip);
+    fqdn = ip;
+    host = STRING_UNKNOWN;
+
+    /* get client->host */
+    if ((hent =
+	 gethostbyaddr((const char *) &saddr.sin_addr,
+		       sizeof(struct in_addr), AF_INET)) == NULL) {
+	syslog(LOG_ERR, "Unable to get host name from network address");
+    } else {
+	client->host = str_create(hent->h_name);
+	host = str_get(client->host);
+	fqdn = host;
+    }
+
+    if (conf_get_use_tcp_wrappers() == TRUE) {
+	accepted_client = hosts_ctl(DAEMON_NAME, host, ip, STRING_UNKNOWN);
+	if (accepted_client == FALSE) {
+	    Close(client->fd);
+	    _destroy_client(client);
+	    syslog(LOG_ERR, "Client rejected: <%s, %d>", fqdn,
+		   client->port);
+	    return;
+	}
+    }
+
+    /*
+     * We'll need to add the new fd to the list, mark it non-blocking,
+     * and initiate the PM_LOG_IN sequence.
+     */
+    fd_settings = Fcntl(client->fd, F_GETFL, 0);
+    Fcntl(client->fd, F_SETFL, fd_settings | O_NONBLOCK);
+
+    /* append to the list of clients */
+    list_append(powerman_clients, client);
+
+    syslog(LOG_DEBUG, "New connection: <%s, %d> on descriptor %d",
+	   fqdn, client->port, client->fd);
+    client->write_status = CLI_WRITING;
+    buf_printf(client->to, "PowerMan V1.0.0\r\npassword> ");
+}
+
+
+/* handle any client activity (new connection or read/write) */
+void cli_process_select(fd_set *rset, fd_set *wset, bool over_time)
+{
+    ListIterator itr;
+    Client *client;
+    
+    /* New connection?  Instantiate a new client object. */
+    if (FD_ISSET(listen_fd, rset))
+	_create_client();
+
+    itr = list_iterator_create(powerman_clients);
+    /* Client reading and writing?  */
+	while ((client = list_next(itr))) {
+	    if (client->fd < 0)
+		continue;
+	    if (FD_ISSET(client->fd, rset))
+		_handle_client_read(client);
+	    if (FD_ISSET(client->fd, wset))
+		_handle_client_write(client);
+
+	    /* Is this connection done? */
+	    if ((client->read_status == CLI_DONE) &&
+		(client->write_status == CLI_IDLE))
+		list_delete(itr);
+	}
+    list_iterator_destroy(itr);
+}
+
+void cli_prepfor_select(fd_set *rset, fd_set *wset, int *maxfd)
+{
+    ListIterator itr;
+    Client *client;
+
+    if (listen_fd != NO_FD) {
+	assert(listen_fd >= 0);
+	FD_SET(listen_fd, rset);
+	*maxfd = MAX(*maxfd, listen_fd);
+    }
+
+    itr = list_iterator_create(powerman_clients);
+    while ((client = list_next(itr))) {
+	if (client->fd < 0)
+	    continue;
+
+	if (client->read_status == CLI_READING) {
+	    FD_SET(client->fd, rset);
+	    *maxfd = MAX(*maxfd, client->fd);
+	}
+	if (client->write_status == CLI_WRITING) {
+	    FD_SET(client->fd, wset);
+	    *maxfd = MAX(*maxfd, client->fd);
+	}
+    }
+    list_iterator_destroy(itr);
+}
 
 /*
  * vi:softtabstop=4

@@ -59,6 +59,18 @@ static void _do_device_semantics(Device * dev, List map);
 static void _do_pmd_semantics(Device * dev, List map);
 static bool _match_regex(Device * dev, String expect);
 
+List powerman_devs = NULL;	/* FIXME: make private */
+
+void dev_init(void)
+{
+    powerman_devs = list_create((ListDelF) dev_destroy);
+}
+
+void dev_fini(void)
+{
+    list_destroy(powerman_devs);
+}
+
 
 /*
  *   This is called for each device to get it started on its
@@ -70,7 +82,7 @@ static bool _match_regex(Device * dev, String expect);
  * this, and we don't plan on putting any such equipment into 
  * production soon, so I'm not worried about it.
  */
-void dev_init(Device * dev, bool logit)
+static void _start_dev(Device * dev, bool logit)
 {
     dev->logit = logit;
     switch (dev->type) {
@@ -86,6 +98,19 @@ void dev_init(Device * dev, bool logit)
 	err_exit(FALSE, "no such powerman device");
     }
 }
+
+
+/* initialize all the power control devices */
+void dev_start_all(bool logit)
+{
+    Device *dev;
+    ListIterator itr = list_iterator_create(powerman_devs);
+
+    while ((dev = list_next(itr)))
+	_start_dev(dev, logit);
+    list_iterator_destroy(itr);
+}
+
 
 /*
  * Telemetry logging callback for Buffer outgoing to device.
@@ -1054,6 +1079,87 @@ static bool _match_regex(Device * dev, String expect)
     }
     list_iterator_destroy(map_i);
     return TRUE;
+}
+
+void dev_prepfor_select(fd_set *rset, fd_set *wset, int *maxfd)
+{
+    Device *dev;
+    ListIterator itr;
+
+    itr = list_iterator_create(powerman_devs);
+    while ((dev = list_next(itr))) {
+	if (dev->fd < 0)
+	    continue;
+
+	/* To handle telnet I'm having it always ready to read.  */
+	FD_SET(dev->fd, rset);
+	*maxfd = MAX(*maxfd, dev->fd);
+
+	/* The descriptor becomes writable when a non-blocking connect 
+	 * (ie, DEV_CONNECTING) completes. */
+	if ((dev->status & DEV_CONNECTING) || (dev->status & DEV_SENDING))
+	    FD_SET(dev->fd, wset);
+    }
+    list_iterator_destroy(itr);
+}
+
+
+bool dev_process_select(fd_set *rset, fd_set *wset, bool over_time)
+{
+    Device *dev;
+    ListIterator itr;
+    bool active_devs;           /* active_devs == FALSE => Quiescent */
+    bool activity;              /* activity == TRUE => scripts need service */
+
+    itr = list_iterator_create(powerman_devs);
+
+    /* Device reading and writing? */
+    while ((dev = list_next(itr))) {
+	/* we only initiate device recover once per update period.  
+	 * Otherwise we can get swamped with reconnect messages.
+	 */
+	if (over_time && (dev->status == DEV_NOT_CONNECTED))
+	    dev_nb_connect(dev);
+
+	if (dev->fd < 0)
+	    continue;
+
+	activity = FALSE;
+
+	/* Any active device is sufficient to suppress starting next action */
+	if (dev->status & (DEV_SENDING | DEV_EXPECTING))
+	    active_devs = TRUE;
+
+	/* The first activity is always the signal of a newly connected device.
+	 * Run the log in script to get back into business as usual. */
+	if ((dev->status == DEV_CONNECTING)) {
+	    if (FD_ISSET(dev->fd, rset) || FD_ISSET(dev->fd, wset))
+		dev_connect(dev);
+	    continue;
+	}
+	if (FD_ISSET(dev->fd, rset)) {
+	    dev_handle_read(dev);
+	    activity = TRUE;
+	}
+	if (FD_ISSET(dev->fd, wset)) {
+	    struct timeval tv_delay;
+
+	    dev_handle_write(dev);
+	    conf_get_write_pause(&tv_delay);
+	    Delay(&tv_delay);		/* FIXME: blocks whole select loop! */
+	    activity = TRUE;
+	}
+	/* Since I/O took place we need to see if the scripts should run */
+	if (activity)
+	    dev_process_script(dev);
+	/* dev->timeout may be set in the config file */
+	if (dev_stalled(dev))
+	    dev_recover(dev);
+    }
+
+    list_iterator_destroy(itr);
+
+    return active_devs;
 }
 
 /*

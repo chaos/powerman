@@ -108,7 +108,9 @@ struct device_struct {
 
 
 /* device.c extern prototypes */
-void dev_init(Device * dev, bool logit);
+void dev_init(void);
+void dev_fini(void);
+void dev_start_all(bool logit);
 void dev_nb_connect(Device * dev);
 void dev_acttodev(Device * dev, Action * act);
 void dev_handle_read(Device * dev);
@@ -125,5 +127,10 @@ void dev_destroy(Device * dev);
 Plug *dev_plug_create(const char *name);
 int dev_plug_match(Plug * plug, void *key);
 void dev_plug_destroy(Plug * plug);
+
+void dev_prepfor_select(fd_set *rset, fd_set *wset, int *maxfd);
+bool dev_process_select(fd_set *rset, fd_set *wset, bool over_time);
+
+extern List powerman_devs;		/* make me private */
 
 #endif				/* DEVICE_H */
