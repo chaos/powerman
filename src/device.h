@@ -30,7 +30,7 @@
 #include <regex.h>
 #include "cbuf.h"
 #include "hostlist.h"
-#include "hash.h"
+#include "arglist.h"
 
 /* Indices into script array */
 #define PM_LOG_IN           0
@@ -59,7 +59,6 @@
 #define NUM_SCRIPTS         22
 
 #define INTERP_MAGIC 0x13434550
-typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } InterpState;
 typedef struct {
     int magic;
     InterpState state;
@@ -101,19 +100,6 @@ typedef struct {
     } u;
 } Stmt;
 typedef List Script;
-
-/*
- * Query actions fill ArgList with values and return them to the client.
- */
-typedef struct {
-    char *node;                 /* node name */
-    char *val;                  /* value as returned by the device */
-    InterpState state;          /* interpreted value, if appropriate */
-} Arg;
-typedef struct {
-    hash_t args;                /* hash of Arg structs */
-    int refcount;               /* free when refcount == 0 */
-} ArgList;
 
 /*
  * Plug maps plug name/number to a node name.  Each device maintains a list.
@@ -184,7 +170,7 @@ void dev_init(void);
 void dev_fini(void);
 void dev_add(Device * dev);
 int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun, 
-        VerbosePrintf vpf_fun, int client_id, ArgList * arglist);
+        VerbosePrintf vpf_fun, int client_id, ArgList arglist);
 bool dev_check_actions(int com, hostlist_t hl);
 void dev_initial_connect(void);
 
@@ -200,10 +186,6 @@ void dev_plug_destroy(Plug * plug);
 
 void dev_pre_poll(Pollfd_t pfd);
 void dev_post_poll(Pollfd_t pfd, struct timeval *tv);
-
-ArgList *dev_create_arglist(hostlist_t hl);
-ArgList *dev_link_arglist(ArgList * arglist);
-void dev_unlink_arglist(ArgList * arglist);
 
 #endif                          /* DEVICE_H */
 

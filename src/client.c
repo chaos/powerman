@@ -48,7 +48,7 @@
 #include "debug.h"
 #include "device.h"
 #include "hprintf.h"
-#include "hash.h"
+#include "arglist.h"
 
 #define LISTEN_BACKLOG    5
 
@@ -60,7 +60,7 @@ typedef struct {
     hostlist_t hl;              /* target nodes */
     int pending;                /* count of pending device actions */
     bool error;                 /* cumulative error flag for actions */
-    ArgList *arglist;           /* argument for query commands */
+    ArgList arglist;            /* argument for query commands */
 } Command;
 
 #define CLI_MAGIC    0xdadadada
@@ -339,67 +339,61 @@ static void _client_query_device_reply(Client * c, char *arg)
 
 }
 
-/* helpers for _client_query_status_reply */
-static int _dump_arg_exprange(Arg *arg, Client *c)
-{
-    _client_printf(c, CP_INFO_XSTATUS, arg->node, arg->state == ST_ON ? "on" 
-            : arg->state == ST_OFF ? "off" : "unknown");
-    return 0;
-}
-static int _build_unknown_list(Arg *arg, hostlist_t hl)
-{
-    if (arg->state == ST_UNKNOWN)
-        hostlist_push(hl, arg->node);
-    return 0;
-}
-static int _build_on_list(Arg *arg, hostlist_t hl)
-{
-    if (arg->state == ST_ON)
-        hostlist_push(hl, arg->node);
-    return 0;
-}
-static int _build_off_list(Arg *arg, hostlist_t hl)
-{
-    if (arg->state == ST_OFF)
-        hostlist_push(hl, arg->node);
-    return 0;
-}
-
 /* 
  * Reply to client request for plug/soft status.
  */
 static void _client_query_status_reply(Client * c, bool error)
 {
-    hash_t args;
+    Arg *arg;
+    ArgListIterator itr;
 
     assert(c->cmd != NULL);
-    args = c->cmd->arglist->args;
 
     if (c->exprange) {
-        hash_for_each(args, (hash_arg_f)_dump_arg_exprange, c);
+        itr = arglist_iterator_create(c->cmd->arglist);
+        while ((arg = arglist_next(itr))) {
+            _client_printf(c, CP_INFO_XSTATUS, arg->node, 
+                    arg->state == ST_ON ? "on" 
+                    : arg->state == ST_OFF ? "off" : "unknown");
+        }
+        arglist_iterator_destroy(itr);
 
     } else {
         char on[CP_LINEMAX], off[CP_LINEMAX], unknown[CP_LINEMAX];
-        hostlist_t hl;
-        int n;
+        hostlist_t hl_on, hl_off, hl_unknown;
+        int n = 0;
 
-        hl = hostlist_create(NULL);
-        hash_for_each(args, (hash_arg_f)_build_unknown_list, hl);
-        hostlist_sort(hl);
-        n = hostlist_ranged_string(hl, CP_LINEMAX, unknown);
-        hostlist_destroy(hl);
+        hl_on = hostlist_create(NULL);
+        hl_off = hostlist_create(NULL);
+        hl_unknown = hostlist_create(NULL);
 
-        hl = hostlist_create(NULL);
-        hash_for_each(args, (hash_arg_f)_build_on_list, hl);
-        hostlist_sort(hl);
-        n |= hostlist_ranged_string(hl, CP_LINEMAX, on);
-        hostlist_destroy(hl);
+        itr = arglist_iterator_create(c->cmd->arglist);
+        while ((arg = arglist_next(itr))) {
+            switch (arg->state) {
+                case ST_UNKNOWN:
+                    hostlist_push(hl_unknown, arg->node);
+                    break;
+                case ST_ON:
+                    hostlist_push(hl_on, arg->node);
+                    break;
+                case ST_OFF:
+                    hostlist_push(hl_off, arg->node);
+                    break;
+            }
+        }
+        arglist_iterator_destroy(itr);
 
-        hl = hostlist_create(NULL);
-        hash_for_each(args, (hash_arg_f)_build_off_list, hl);
-        hostlist_sort(hl);
-        n |= hostlist_ranged_string(hl, CP_LINEMAX, off);
-        hostlist_destroy(hl);
+        hostlist_sort(hl_unknown);
+        hostlist_sort(hl_on);
+        hostlist_sort(hl_off);
+
+        n |= hostlist_ranged_string(hl_unknown, CP_LINEMAX, unknown);
+        n |= hostlist_ranged_string(hl_on, CP_LINEMAX, on);
+        n |= hostlist_ranged_string(hl_off, CP_LINEMAX, off);
+
+        hostlist_destroy(hl_unknown);
+        hostlist_destroy(hl_on);
+        hostlist_destroy(hl_off);
 
         if (n == -1) {
             _internal_error_response(c);
@@ -415,38 +409,32 @@ static void _client_query_status_reply(Client * c, bool error)
         _client_printf(c, CP_RSP_QRY_COMPLETE);
 }
 
-/* helper for _client_query_status_reply_nointerp */
-static int _dump_arg_data_nointerp(Arg *arg, Client *c)
-{
-    if (arg->val)
-        _client_printf(c, CP_INFO_XSTATUS, arg->node, arg->val);
-    return 0;
-}
-
-/* helper for _client_query_status_reply_nointerp */
-static int _build_unknown_nointerp_list(Arg *arg, hostlist_t hl)
-{
-    if (!arg->val)
-        hostlist_push(hl, arg->node);
-    return 0;
-}
-
 /* 
  * Reply to client request for temperature/beacon status.
  */
 static void _client_query_status_reply_nointerp(Client * c, bool error)
 {
+    Arg *arg;
+    ArgListIterator itr;
     hostlist_t hl = hostlist_create(NULL);
     char tmpstr[CP_LINEMAX];
-    hash_t args;
+    int n;
 
     assert(c->cmd != NULL);
-    args = c->cmd->arglist->args;
 
-    hash_for_each(args, (hash_arg_f)_dump_arg_data_nointerp,c);
-    hash_for_each(args, (hash_arg_f)_build_unknown_nointerp_list, hl);
+    itr = arglist_iterator_create(c->cmd->arglist);
+    while ((arg = arglist_next(itr))) {
+        _client_printf(c, CP_INFO_XSTATUS, arg->node, arg->val);
+        if (!arg->val)
+            hostlist_push(hl, arg->node);
+    }
+    arglist_iterator_destroy(itr);
+
     if (!hostlist_is_empty(hl)) {
-        if (hostlist_ranged_string(hl, sizeof(tmpstr), tmpstr) == -1) {
+        hostlist_sort(hl);
+        n = hostlist_ranged_string(hl, sizeof(tmpstr), tmpstr);
+        hostlist_destroy(hl);
+        if (n == -1) {
             _internal_error_response(c); /* truncation */
             return;
         }
@@ -494,7 +482,7 @@ static Command *_create_command(Client * c, int com, char *arg1)
      * actions, because we want to allow 'setstatus' in any context.
      */
     if (cmd) {
-        cmd->arglist = dev_create_arglist(cmd->hl);
+        cmd->arglist = arglist_create(cmd->hl);
         if (cmd->arglist == NULL) {
             _destroy_command(cmd);
             _internal_error_response(c);
@@ -512,7 +500,7 @@ static void _destroy_command(Command * cmd)
     if (cmd->hl)
         hostlist_destroy(cmd->hl);
     if (cmd->arglist)
-        dev_unlink_arglist(cmd->arglist);
+        arglist_unlink(cmd->arglist);
     Free(cmd);
 }
 

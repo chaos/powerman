@@ -24,32 +24,40 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#ifndef POWERMAN_H
-#define POWERMAN_H
+/*
+ * The ArgList is used to pass the list of "target nodes" into a device
+ * script, and then to pass the result back to the client.
+ */
 
-typedef enum { FALSE = 0, TRUE = 1 } bool;
+#ifndef ARGLIST_H
+#define ARGLIST_H
 
-#define NO_FD           (-1)
+#include "powerman.h"
 
-#ifndef MAX
-#  define MAX(x, y) (((x) > (y))? (x) : (y))
-#endif                          /* MAX */
-#ifndef MIN
-#  define MIN(x, y) (((x) < (y))? (x) : (y))
-#endif                          /* MIN */
+typedef struct {
+    char *node;                 /* node name */
+    char *val;                  /* value as returned by the device */
+    InterpState state;          /* interpreted value, if appropriate */
+} Arg;
 
-#define DAEMON_NAME   		"powermand"
-#define PID_FILE_NAME 		"/var/run/powerman/powerman.pid"
-#define PID_DIR       		"/var/run/powerman"
-#define ROOT_DIR      		"/etc/powerman"
-#define DFLT_CONFIG_FILE 	"/etc/powerman/powerman.conf"
+typedef struct arglist_iterator *ArgListIterator;
+typedef struct arglist *ArgList;
 
-#define DFLT_PORT           "10101"
-#define DFLT_HOSTNAME       "localhost"
+/* create/destroy */
+ArgList arglist_create(hostlist_t hl); /* refcount = 1 */
+ArgList arglist_link(ArgList arglist); /* ++refcount */
+void arglist_unlink(ArgList arglist);  /* --refcount (destroy if 0) */
 
-typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } InterpState;
+/* accessor */
+void arglist_set(ArgList arglist, char *node, char *val, InterpState state);
+bool arglist_get(ArgList arglist, char *node, char *val, InterpState *state);
 
-#endif                          /* POWERMAN_H */
+/* iteration */
+ArgListIterator arglist_iterator_create(ArgList arglist);
+void arglist_iterator_destroy(ArgListIterator itr);
+Arg *arglist_next(ArgListIterator itr);
+
+#endif
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

@@ -1,3 +1,11 @@
+2003-12-21 Jim Garlick <garlick@llnl.gov>
+
+    * src/arglist.[ch]: New.  Pulled content from device.c and tried to
+    abstract more effectively.  Make it possible to preserve order of
+    arglist despite the use of a hash table for efficiency.
+
+    * src/device.c, src/client.c: use new arglist interfaces.
+
 2003-12-19 Jim Garlick <garlick@llnl.gov>
 
     * Makefile, powerman.spec, man/powerman.1: remove 'on' and 'off' sym links.

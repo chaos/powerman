@@ -46,6 +46,7 @@
 #include "debug.h"
 #include "client_proto.h"
 #include "hprintf.h"
+#include "arglist.h"
 
 /* ExecCtx's are the state for the execution of a block of statements.
  * They are stacked on the Action (new ExecCtx pushed when executing an
@@ -76,7 +77,7 @@ typedef struct {
     ActError errnum;            /* errno for action */
     struct timeval time_stamp;  /* time stamp for timeouts */
     struct timeval delay_start; /* time stamp for delay completion */
-    ArgList *arglist;           /* argument for query actions (list of Arg's) */
+    ArgList arglist;            /* argument for query actions (list of Arg's) */
 } Action;
 
 
@@ -89,8 +90,6 @@ static bool _process_expect(Device * dev, Action *act, ExecCtx *e);
 static bool _process_send(Device * dev, Action *act, ExecCtx *e);
 static bool _process_delay(Device * dev, Action *act, ExecCtx *e, 
         struct timeval *timeout);
-static void _set_argval(ArgList * arglist, char *node, char *val, List interps);
-static InterpState _get_argval(ArgList *arglist, char *node);
 static int _match_name(Device * dev, void *key);
 static bool _handle_read(Device * dev);
 static bool _handle_write(Device * dev);
@@ -100,14 +99,14 @@ static bool _timeout(struct timeval *timestamp, struct timeval *timeout,
 static int _get_all_script(Device * dev, int com);
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
                             ActionCB complete_fun, VerbosePrintf vpf_fun,
-                            int client_id, ArgList * arglist);
+                            int client_id, ArgList arglist);
 static Action *_create_action(Device * dev, int com, Plug *target,
                               ActionCB complete_fun, VerbosePrintf vpf_fun,
-                              int client_id, ArgList * arglist);
+                              int client_id, ArgList arglist);
 static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
                                       ActionCB complete_fun, 
                                       VerbosePrintf vpf_fun,
-                                      int client_id, ArgList * arglist);
+                                      int client_id, ArgList arglist);
 static unsigned char *_findregex(regex_t * re, unsigned char *str,
                                  int len, size_t nm, regmatch_t pm[]);
 static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[]);
@@ -259,7 +258,7 @@ static void _rewind_action(Action *act)
 
 static Action *_create_action(Device * dev, int com, Plug *target,
                               ActionCB complete_fun, VerbosePrintf vpf_fun,
-                              int client_id, ArgList * arglist)
+                              int client_id, ArgList arglist)
 {
     Action *act;
     ExecCtx *e;
@@ -277,7 +276,7 @@ static Action *_create_action(Device * dev, int com, Plug *target,
     list_push(act->exec, e);
 
     act->errnum = ACT_ESUCCESS;
-    act->arglist = arglist ? dev_link_arglist(arglist) : NULL;
+    act->arglist = arglist ? arglist_link(arglist) : NULL;
     timerclear(&act->time_stamp);
     return act;
 }
@@ -291,7 +290,7 @@ static void _destroy_action(Action * act)
         list_destroy(act->exec);
     act->exec = NULL;
     if (act->arglist)
-        dev_unlink_arglist(act->arglist);
+        arglist_unlink(act->arglist);
     act->arglist = NULL;
     Free(act);
 }
@@ -465,7 +464,7 @@ bool dev_check_actions(int com, hostlist_t hl)
  * actions "check in".
  */
 int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun, 
-        VerbosePrintf vpf_fun, int client_id, ArgList * arglist)
+        VerbosePrintf vpf_fun, int client_id, ArgList arglist)
 {
     Device *dev;
     ListIterator itr;
@@ -492,7 +491,7 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
 
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
                             ActionCB complete_fun, VerbosePrintf vpf_fun,
-                            int client_id, ArgList * arglist)
+                            int client_id, ArgList arglist)
 {
     Action *act;
     int count = 0;
@@ -604,7 +603,7 @@ static bool _is_query_action(int com)
 static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
                                       ActionCB complete_fun, 
                                       VerbosePrintf vpf_fun, 
-                                      int client_id, ArgList * arglist)
+                                      int client_id, ArgList arglist)
 {
     List new_acts = list_create((ListDelF) _destroy_action);
     bool all = TRUE;
@@ -911,11 +910,12 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
         e->processing = FALSE; 
 
     } else {
-        InterpState state = _get_argval(act->arglist, 
-                e->target ? e->target->node : NULL);
+        InterpState state = ST_UNKNOWN;
         bool condition = FALSE;
         ExecCtx *new;
-
+      
+        if (e->target)
+            arglist_get(act->arglist, e->target->node, NULL, &state);
         if (e->cur->type == STMT_IFON && state == ST_ON)
             condition = TRUE;
         else if (e->cur->type == STMT_IFOFF && state == ST_OFF)
@@ -1003,9 +1003,22 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
         char *node = _plug_to_node(dev, plug_name);
 
         if (str && node) {
-            _set_argval(act->arglist, node, str, e->cur->u.setplugstate.interps);
-            Free(str);
+            InterpState state = ST_UNKNOWN;
+            ListIterator itr;
+            Interp *i;
+
+            itr = list_iterator_create(e->cur->u.setplugstate.interps);
+            while ((i = list_next(itr))) {
+                if (Regexec(i->re, str, 0, NULL, 0) != REG_NOMATCH) {
+                    state = i->state;
+                    break;
+                }
+            }
+            list_iterator_destroy(itr);
+            arglist_set(act->arglist, node, str, state);
         } 
+        if (str)
+            Free(str);
         /* if no match, do nothing */
         Free(plug_name); 
     }
@@ -1205,103 +1218,6 @@ void dev_plug_destroy(Plug * plug)
         Free(plug->name);
     Free(plug->node);
     Free(plug);
-}
-
-static void _destroy_arg(Arg * arg)
-{
-    assert(arg != NULL);
-    assert(arg->node != NULL);
-    Free(arg->node);
-    if (arg->val)
-        Free(arg->val);
-    Free(arg);
-}
-
-/*
- * Create arglist.
- */
-ArgList *dev_create_arglist(hostlist_t hl)
-{
-    ArgList *new = (ArgList *) Malloc(sizeof(ArgList));
-    hostlist_iterator_t itr;
-    Arg *arg;
-    char *node;
-    int hash_size;
-
-    new->refcount = 1;
-    hash_size = hostlist_count(hl); /* reasonable? */
-    new->args = hash_create(hash_size, (hash_key_f)hash_key_string, 
-            (hash_cmp_f)strcmp, (hash_del_f)_destroy_arg);
-
-    if ((itr = hostlist_iterator_create(hl)) == NULL) {
-        dev_unlink_arglist(new);
-        return NULL;
-    }
-    while ((node = hostlist_next(itr)) != NULL) {
-        arg = (Arg *) Malloc(sizeof(Arg));
-        arg->node = Strdup(node);
-        arg->state = ST_UNKNOWN;
-        arg->val = NULL;
-        hash_insert(new->args, arg->node, arg);
-    }
-    hostlist_iterator_destroy(itr);
-
-    return new;
-}
-
-/*
- * Decrement the refcount for arglist and free when zero.
- */
-void dev_unlink_arglist(ArgList * arglist)
-{
-    if (--arglist->refcount == 0) {
-        hash_destroy(arglist->args);
-        Free(arglist);
-    }
-}
-
-/*
- * Increment the ref count for arglist.
- */
-ArgList *dev_link_arglist(ArgList * arglist)
-{
-    arglist->refcount++;
-    return arglist;
-}
-
-static InterpState _get_argval(ArgList *arglist, char *node)
-{
-    Arg *arg;
-
-    if (node != NULL && (arg = hash_find(arglist->args, node)) != NULL)
-        return arg->state;
-
-    return ST_UNKNOWN;
-}
-
-/*
- * Set the value of the argument with key = node.
- */
-static void _set_argval(ArgList *arglist, char *node, char *val, List interps)
-{
-    Arg *arg;
-
-    if (node != NULL && (arg = hash_find(arglist->args, node)) != NULL) {
-        ListIterator itr;
-        Interp *i;
-
-        arg->val = Strdup(val);
-
-        /* check for a matching interpretation (will default to ST_UNKNOWN) */
-        itr = list_iterator_create(interps);
-        while ((i = list_next(itr))) {
-            if (_findregex(i->re, val, strlen(val), 0, NULL)) {
-                arg->state = i->state;
-                break;
-            }
-        }
-        list_iterator_destroy(itr);
-    }
 }
 
 static void _process_ping(Device * dev, struct timeval *timeout)
