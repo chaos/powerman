@@ -126,8 +126,4 @@ Plug *dev_plug_create(const char *name);
 int dev_plug_match(Plug * plug, void *key);
 void dev_plug_destroy(Plug * plug);
 
-/* calculate if time_stamp + timeout > now */
-bool dev_overdue(struct timeval *time_stamp, struct timeval *timeout);
-
-
 #endif				/* DEVICE_H */

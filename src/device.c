@@ -852,7 +852,7 @@ void dev_handle_write(Device * dev)
 bool dev_stalled(Device * dev)
 {
     return ((dev->status & DEV_EXPECTING) &&
-	    dev_overdue(&(dev->time_stamp), &(dev->timeout)));
+	    util_overdue(&(dev->time_stamp), &(dev->timeout)));
 }
 
 /*
@@ -1054,29 +1054,6 @@ static bool _match_regex(Device * dev, String expect)
     }
     list_iterator_destroy(map_i);
     return TRUE;
-}
-
-
-/*
- * This is just time_stamp + timeout > now?
- */
-bool dev_overdue(struct timeval * time_stamp, struct timeval * timeout)
-{
-    struct timeval now;
-    struct timeval limit;
-    bool result = FALSE;
-
-    limit.tv_usec = time_stamp->tv_usec + timeout->tv_usec;
-    limit.tv_sec = time_stamp->tv_sec + timeout->tv_sec;
-    if (limit.tv_usec > 1000000) {
-	limit.tv_sec++;
-	limit.tv_usec -= 1000000;
-    }
-    gettimeofday(&now, NULL);
-    if ((now.tv_sec > limit.tv_sec) ||
-	((now.tv_sec == limit.tv_sec) && (now.tv_usec > limit.tv_usec)))
-	result = TRUE;
-    return result;
 }
 
 /*

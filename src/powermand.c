@@ -56,6 +56,7 @@
 #include "client.h"
 #include "error.h"
 #include "wrappers.h"
+#include "util.h"
 
 /* prototypes */
 static void usage(char *prog);
@@ -293,7 +294,7 @@ static void do_select_loop(Globals * g)
 	 * Any activity will suppress updates for that
 	 * period, not just other updates.
 	 */
-	over_time = dev_overdue(&(g->cluster->time_stamp),
+	over_time = util_overdue(&(g->cluster->time_stamp),
 			    &(g->cluster->update_interval));
 
 	/* Device reading and writing? */
@@ -385,8 +386,7 @@ static int find_max_fd(Globals * g, fd_set * rs, fd_set * ws)
 {
     Client *client;
     Device *dev;
-    ListIterator cli_i;
-    ListIterator dev_i;
+    ListIterator itr;
     int maxfd = 0;
 
     CHECK_MAGIC(g);
@@ -401,8 +401,8 @@ static int find_max_fd(Globals * g, fd_set * rs, fd_set * ws)
 	FD_SET(g->listener->fd, rs);
 	maxfd = MAX(maxfd, g->listener->fd);
     }
-    cli_i = list_iterator_create(g->clients);
-    while ((client = list_next(cli_i))) {
+    itr = list_iterator_create(g->clients);
+    while ((client = list_next(itr))) {
 	if (client->fd < 0)
 	    continue;
 
@@ -415,10 +415,10 @@ static int find_max_fd(Globals * g, fd_set * rs, fd_set * ws)
 	    maxfd = MAX(maxfd, client->fd);
 	}
     }
-    list_iterator_destroy(cli_i);
+    list_iterator_destroy(itr);
 
-    dev_i = list_iterator_create(g->devs);
-    while ((dev = list_next(dev_i))) {
+    itr = list_iterator_create(g->devs);
+    while ((dev = list_next(itr))) {
 	if (dev->fd < 0)
 	    continue;
 
@@ -434,7 +434,7 @@ static int find_max_fd(Globals * g, fd_set * rs, fd_set * ws)
 	    FD_SET(dev->fd, ws);
 	}
     }
-    list_iterator_destroy(dev_i);
+    list_iterator_destroy(itr);
 
     return maxfd;
 }
