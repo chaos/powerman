@@ -720,7 +720,7 @@ process_delay(Device *dev)
 	
 	Delay( &tv );
 
-	return TRUE;
+	return FALSE;
 }
 
 
