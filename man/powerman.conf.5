@@ -330,17 +330,12 @@ PowerMan recognizes most of the telnet commands as escape sequences.
 See telnet.h for the codes and the baytech.dev device file for an
 example of their use. 
 .LP
-  expect "<exp>" "<completion>"
+  expect "<exp>"
 .br
 An expect script-el induces PowerMan to read from the device and 
 interpret what is read.  The exp field is a RegEx, possibly with 
 substrings to match.  Standard RegEx is used except that it is
-extended with the escape codes '\\r' and '\\n'.  The completion RegEx
-tells PowerMan when it has seen enough to attempt interpretting
-the input stream.  This is redundant and will be removed in the 
-next version of PowerMan.  For line oriented input, as in the 
-current device specification, the completion is just "\\n".  For
-other devices the completion might be a prompt like ">".  An
+extended with the escape codes '\\r' and '\\n'. An
 awkward detail about the current implementation is that the buffer
 space available in a compiled RegEx expression is only 256 bytes.
 A long or complicated RegEx will exceed this space and cause
