@@ -14,3 +14,5 @@
   (with timeout).
 * Device timeout should be per expect line
 * Redesign the device language to be more general.
+* Fix hostlist_* error handling to use lsd errors
+* Spec file should restart daemon if already running (see swmlogger.spec)
