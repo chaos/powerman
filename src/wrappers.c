@@ -203,7 +203,7 @@ char *Malloc(int size)
     int *p;
 
     assert(size > 0 && size <= INT_MAX);
-    p = (int *) malloc(size + 2 * sizeof(int));
+    p = (int *) malloc(size + 2*sizeof(int));
     if (p == NULL)
         err_exit(FALSE, "out of memory");
     p[0] = MALLOC_MAGIC;        /* add "secret" magic cookie */
@@ -213,6 +213,28 @@ char *Malloc(int size)
 #endif
     new = (char *) &p[2];
     memset(new, 0, size);
+    return new;
+}
+
+char *Realloc(char *item , int newsize)
+{
+    char *new;
+    int *p = (int *)item - 2;
+    int oldsize;
+
+    assert(item != NULL);
+    assert(newsize > 0 && newsize <= INT_MAX);
+    p = (int *)realloc(p, newsize + 2*sizeof(int));
+    if (p == NULL)
+        err_exit(FALSE, "out of memory");
+    assert(p[0] == MALLOC_MAGIC);
+    oldsize = p[1];
+    p[1] = newsize;
+#ifndef NDEBUG
+    memory_alloc += (newsize - oldsize);
+#endif
+    new = (char *) &p[2];
+    memset(new + oldsize, 0, newsize - oldsize);
     return new;
 }
 

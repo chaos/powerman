@@ -30,6 +30,7 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <string.h>
+#include <stdarg.h>
 #include <sys/socket.h>
 #include <assert.h>
 #include <unistd.h>
@@ -41,11 +42,13 @@
 #include "device.h"
 #include "error.h"
 #include "wrappers.h"
-#include "buffer.h"
+#include "cbuf.h"
 #include "hostlist.h"
 #include "debug.h"
 #include "client_proto.h"
 
+#define MIN_DEV_BUF     1024
+#define MAX_DEV_BUF     8192
 
 /*
  * Actions are appended to a per device list in dev->acts
@@ -97,7 +100,7 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
                                       ArgList * arglist);
 static unsigned char *_findregex(regex_t * re, unsigned char *str,
                                  int len);
-static char *_getregex_buf(Buffer b, regex_t * re);
+static char *_getregex_buf(cbuf_t b, regex_t * re);
 static bool _command_needs_device(Device * dev, hostlist_t hl);
 static void _process_ping(Device * dev, struct timeval *timeout);
 
@@ -134,6 +137,7 @@ static unsigned char *_findregex(regex_t * re, unsigned char *str, int len)
     regmatch_t pmatch[MAX_MATCH_POS + 1];
     int eflags = 0;
 
+    /* FIXME: len not observed before assertion! */
     n = Regexec(re, str, nmatch, pmatch, eflags);
     if (n != REG_NOERROR)
         return NULL;
@@ -144,32 +148,46 @@ static unsigned char *_findregex(regex_t * re, unsigned char *str, int len)
 }
 
 /*
- * Apply regular expression to the contents of a Buffer.
+ * Apply regular expression to the contents of a cbuf_t.
  * If there is a match, return (and consume) from the beginning
  * of the buffer to the last character of the match.
- * NOTE: embedded \0 chars are converted to \377 by buf_getstr/buf_getline and
- * buf_peekstr/buf_getstr because libc regex functions would treat these as 
- * string terminators.  As a result, \0 chars cannot be matched explicitly.
+ * NOTE: embedded \0 chars are converted to \377 because libc regex 
+ * functions would treat these as string terminators.  As a result, 
+ * \0 chars cannot be matched explicitly.
  *  b (IN)  buffer to apply regex to
  *  re (IN) regular expression
  *  RETURN  String match (caller must free) or NULL if no match
  */
-static char *_getregex_buf(Buffer b, regex_t * re)
+static char *_getregex_buf(cbuf_t b, regex_t * re)
 {
-    unsigned char str[MAX_BUF];
-    int bytes_peeked = buf_peekstr(b, str, MAX_BUF);
+    unsigned char *str = Malloc(MAX_DEV_BUF + 1);
     unsigned char *match_end;
+    int bytes_peeked = cbuf_peek(b, str, MAX_DEV_BUF);
+    int i, dropped;
 
-    if (bytes_peeked == 0)
+    if (bytes_peeked <= 0) {            /* FIXME: any -1 handling needed? */
+        if (bytes_peeked < 0)
+            err(TRUE, "_getregex_buf: cbuf_peek returned %d", bytes_peeked);
+        Free(str);
         return NULL;
+    }
+    assert(bytes_peeked <= MAX_DEV_BUF);
+    for (i = 0; i < bytes_peeked; i++) {/* convert embedded \0 to \377 */
+        if (str[i] == '\0')
+            str[i] = '\377';
+    }
+    str[bytes_peeked] = '\0';           /* null terminate result */
     match_end = _findregex(re, str, bytes_peeked);
     if (match_end == NULL)
         return NULL;
     assert(match_end - str <= strlen(str));
     *match_end = '\0';
-    buf_eat(b, match_end - str);        /* only consume up to what matched */
+                                        /* match: consume that much buffer */
+    dropped = cbuf_drop(b, match_end - str);
+    if (dropped != match_end - str)
+        err((dropped < 0), "_getregex_buf: cbuf_drop returned %d", dropped);
 
-    return Strdup(str);
+    return str;
 }
 
 static Action *_create_action(Device * dev, int com, char *target,
@@ -237,8 +255,9 @@ List dev_getdevices(void)
     return dev_devices;
 }
 
+#if 0
 /*
- * Telemetry logging callback for Buffer outgoing to device.
+ * Telemetry logging callback for cbuf_t outgoing to device.
  */
 static void _buflogfun_to(unsigned char *mem, int len, void *arg)
 {
@@ -250,7 +269,7 @@ static void _buflogfun_to(unsigned char *mem, int len, void *arg)
 }
 
 /*
- * Telemetry logging callback for Buffer incoming from device.
+ * Telemetry logging callback for cbuf_t incoming from device.
  */
 static void _buflogfun_from(unsigned char *mem, int len, void *arg)
 {
@@ -260,6 +279,7 @@ static void _buflogfun_from(unsigned char *mem, int len, void *arg)
     dbg(DBG_DEV_TELEMETRY, "D(%s): %s", dev->name, str);
     Free(str);
 }
+#endif
 
 /*
  * Test whether timeout has occurred
@@ -362,11 +382,6 @@ static bool _reconnect(Device * dev)
 
     dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
                      addrinfo->ai_protocol);
-
-    assert(dev->to == NULL);
-    dev->to = buf_create(dev->fd, MAX_BUF, _buflogfun_to, dev);
-    assert(dev->from == NULL);
-    dev->from = buf_create(dev->fd, MAX_BUF, _buflogfun_from, dev);
 
     dbg(DBG_DEVICE, "_reconnect: %s on fd %d", dev->name, dev->fd);
 
@@ -649,8 +664,9 @@ static void _handle_read(Device * dev)
     int n;
 
     CHECK_MAGIC(dev);
-    n = buf_read(dev->from);
-    assert(n >= 0 || errno == ECONNRESET || errno == EWOULDBLOCK);
+    do { 
+        n = cbuf_write_from_fd(dev->from, dev->fd, -1, NULL);
+    } while (n < 0 && errno == EINTR); 
     if (n < 0) {
         err(TRUE, "read error on %s", dev->name);
         _disconnect(dev);
@@ -674,16 +690,16 @@ static void _handle_write(Device * dev)
 
     CHECK_MAGIC(dev);
 
-    n = buf_write(dev->to);
-    assert(n >= 0 || errno == EAGAIN || errno == ECONNRESET
-           || errno == EPIPE);
+    do {
+        n = cbuf_read_to_fd(dev->to, dev->fd, -1);
+    } while (n < 0 && errno == EINTR);
     if (n < 0) {
         err(TRUE, "write error on %s", dev->name);
         _disconnect(dev);
         _reconnect(dev);
     }
     if (n == 0) {
-        err(TRUE, "write sent no data on %s", dev->name);
+        err(FALSE, "write sent no data on %s", dev->name);
         _disconnect(dev);
         _reconnect(dev);
         /* XXX: is this even possible? */
@@ -705,11 +721,9 @@ static void _disconnect(Device * dev)
         dev->fd = NO_FD;
     }
 
-    /* destroy buffers */
-    buf_destroy(dev->from);
-    dev->from = NULL;
-    buf_destroy(dev->to);
-    dev->to = NULL;
+    /* flush buffers */
+    cbuf_flush(dev->from);
+    cbuf_flush(dev->to);
 
     /* update state */
     dev->connect_status = DEV_NOT_CONNECTED;
@@ -834,23 +848,49 @@ static bool _process_expect(Device * dev)
         _match_subexpressions(dev, act, expect);
         Free(expect);
         finished = TRUE;
-    } else {                    /* no match */
-        unsigned char mem[MAX_BUF];
-        int len = buf_peekstr(dev->from, mem, MAX_BUF);
+    } 
+#if 0
+    else {                    /* no match */
+        unsigned char mem[MAX_DEV_BUF];
+        int len = buf_peekstr(dev->from, mem, MAX_DEV_BUF);
         char *str = dbg_memstr(mem, len);
 
         dbg(DBG_SCRIPT, "_process_expect(%s): no match: '%s'",
             dev->name, str);
         Free(str);
     }
-
+#endif
     return finished;
+}
+
+/*
+ * Allocate a string and sprintf to it, resizing until sprintf succedes.
+ * Result must be destroyed with Free().
+ */
+#define CHUNKSIZE 80
+static char *_malloc_printf(const char *fmt, ...)
+{
+    va_list ap;
+    char *str = NULL;
+    int len, size = 0;
+
+    do {
+
+        str = (size == 0) ? Malloc(CHUNKSIZE) : Realloc(str, size + CHUNKSIZE);
+        size += CHUNKSIZE;
+
+        va_start(ap, fmt);
+        len = vsnprintf(str, size, fmt, ap);
+        va_end(ap);
+
+    } while (len == -1 || len > size);
+
+    return str;
 }
 
 static bool _process_send(Device * dev)
 {
     Action *act = list_peek(dev->acts);
-    char *fmt;
     bool finished = FALSE;
 
     assert(act != NULL);
@@ -858,18 +898,24 @@ static bool _process_send(Device * dev)
     assert(act->cur != NULL);
     assert(act->cur->type == STMT_SEND);
 
-    fmt = act->cur->u.send.fmt;
-
     /* first time through? */
     if (!(dev->script_status & DEV_SENDING)) {
+        int dropped = 0;
+        char *str = _malloc_printf(act->cur->u.send.fmt, act->target);
+        int written = cbuf_write(dev->to, str, strlen(str), &dropped);
+
+        if (written < 0)
+            err(TRUE, "_process_send(%s): cbuf_write returned %d", 
+                    dev->name, written);
+        else if (written != strlen(str))
+            err(FALSE, "_process_send(%s): buffer overrun, %d dropped", 
+                    dev->name, dropped);
+        assert(written < 0 || (dropped == strlen(str) - written));
         dev->script_status |= DEV_SENDING;
-        if (act->target == NULL)
-            buf_printf(dev->to, fmt);
-        else
-            buf_printf(dev->to, fmt, act->target);
+        Free(str);
     }
 
-    if (buf_isempty(dev->to)) { /* finished! */
+    if (cbuf_is_empty(dev->to)) { /* finished! */
         dbg(DBG_SCRIPT, "_process_send(%s): send complete", dev->name);
         dev->script_status &= ~DEV_SENDING;
         finished = TRUE;
@@ -914,8 +960,8 @@ static char *_copy_pmatch(char *str, regmatch_t m)
 {
     char *new;
 
-    assert(m.rm_so < MAX_BUF && m.rm_so >= 0);
-    assert(m.rm_eo < MAX_BUF && m.rm_eo >= 0);
+    assert(m.rm_so < MAX_DEV_BUF && m.rm_so >= 0);
+    assert(m.rm_eo < MAX_DEV_BUF && m.rm_eo >= 0);
     assert(m.rm_eo - m.rm_so > 0);
 
     new = Malloc(m.rm_eo - m.rm_so + 1);
@@ -986,8 +1032,8 @@ Device *dev_create(const char *name)
     timerclear(&dev->last_retry);
     timerclear(&dev->last_ping);
     timerclear(&dev->ping_period);
-    dev->to = NULL;
-    dev->from = NULL;
+    dev->to = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
+    dev->from = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
     for (i = 0; i < NUM_SCRIPTS; i++)
         dev->scripts[i] = NULL;
     dev->plugs = list_create((ListDelF) dev_plug_destroy);
@@ -1030,10 +1076,8 @@ void dev_destroy(Device * dev)
             list_destroy(dev->scripts[i]);
 
     CLEAR_MAGIC(dev);
-    if (dev->to != NULL)
-        buf_destroy(dev->to);
-    if (dev->from != NULL)
-        buf_destroy(dev->from);
+    cbuf_destroy(dev->to);
+    cbuf_destroy(dev->from);
     Free(dev);
 }
 

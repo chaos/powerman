@@ -27,7 +27,7 @@
 #ifndef CLIENT_H
 #define CLIENT_H
 
-#include "buffer.h"
+#include "cbuf.h"
 #include "hostlist.h"
 #include "device.h"
 
@@ -49,8 +49,8 @@ typedef struct {
     char *ip;                   /* IP address of the client's host */
     unsigned short int port;    /* Port of client connection */
     char *host;                 /* host name of client host */
-    Buffer to;                  /* out buffer */
-    Buffer from;                /* in buffer */
+    cbuf_t to;                  /* out buffer */
+    cbuf_t from;                /* in buffer */
     Command *cmd;               /* command (there can be only one) */
     int client_id;              /* client identifier */
      MAGIC;

@@ -46,6 +46,7 @@ int Select(int maxfd, fd_set * rset, fd_set * wset, fd_set * eset,
            struct timeval *tv);
 void Delay(struct timeval *tv);
 char *Malloc(int size);
+char *Realloc(char *item, int newsize);
 void Free(void *ptr);
 char *Strdup(const char *str);
 void Report_Memory();

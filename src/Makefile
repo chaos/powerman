@@ -32,7 +32,7 @@ packagedir=     ${etcdir}/${PACKAGE}
 
 COMMON_OBJS = wrappers.o error.o hostlist.o debug.o
 
-SERVER_UTIL = $(COMMON_OBJS) daemon.o buffer.o
+SERVER_UTIL = $(COMMON_OBJS) daemon.o cbuf.o
 
 SERVER_OBJS = $(SERVER_UTIL) list.o config.o device.o \
 	      powermand.o client.o parse_lex.o parse_tab.o

@@ -42,7 +42,6 @@
 #include "client.h"
 #include "error.h"
 #include "string.h"
-#include "buffer.h"
 #include "wrappers.h"
 
 /* prototypes for parse handler routines */

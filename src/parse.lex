@@ -36,7 +36,6 @@
 
 #include "parse_tab.h"
 #include "powerman.h"
-#include "buffer.h"
 #include "list.h"
 #include "wrappers.h"
 #include "error.h"
@@ -48,7 +47,7 @@ static YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
 static int linenum[MAX_INCLUDE_DEPTH];
 static char *filename[MAX_INCLUDE_DEPTH];
 static int include_stack_ptr = 0;
-static char string_buf[MAX_BUF];
+static char string_buf[8192];
 static char *string_buf_ptr;
 static List line_ptrs;
 

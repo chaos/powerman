@@ -28,7 +28,7 @@
 #define DEVICE_H
 
 #include <regex.h>
-#include "buffer.h"
+#include "cbuf.h"
 #include "hostlist.h"
 
 /*
@@ -86,8 +86,8 @@ typedef struct {
 
     struct timeval timeout;     /* configurable device timeout */
 
-    Buffer to;                  /* buffer -> device */
-    Buffer from;                /* buffer <- device */
+    cbuf_t to;                  /* buffer -> device */
+    cbuf_t from;                /* buffer <- device */
 
     List plugs;                 /* list of Plugs */
     Script scripts[NUM_SCRIPTS]; /* array of scripts */
