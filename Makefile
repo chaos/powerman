@@ -6,7 +6,7 @@
 ####################################################################
 
 PACKAGE= powerman
-VERSION= 0.1.9
+VERSION= 0.2.0
 SHELL=   /bin/sh
 MAKE=    /usr/bin/make
 CC=      gcc
