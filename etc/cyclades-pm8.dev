@@ -2,21 +2,18 @@
 # cyclades-pm8.dev,v 1.1 2003/08/05 22:36:28 garlick Exp
 # /chaos/cvs/powerman/etc/cyclades-pm8.dev,v
 #
-# Cyclades PM8i s/w v. 1.0.9a
+# Cyclades PM8/PM8i s/w v. 1.0.9a
 #
 specification "pm8" {
 	timeout 	10
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
 
-# Unfortunately it seems there is a non-configurable login timeout.
-# Typing exit and two carriage returns will get you to a Username: prompt 
-# if you are at pm> or Username: to begin with.  So the login script is 
-# really a logoff script, and every command is wrapped in login/logoff.
-# XXX powerman should make this easier!
+# We may get logged out due to inactivity timeout, so every command is 
+# wrapped in the login/logoff sequence.
 
 	script login {
-		send "exit\r\r"
+		send "exit\r\r" # works whether logged in or not
 		expect "Username:"
 	}
 	script status_all {
