@@ -417,6 +417,7 @@ static Spec *check_Spec()
 {
     Spec *this_spec;
     char *name;
+    int i;
 
     name = current_spec->name;
     if( current_spec->type == NO_DEV )
@@ -429,6 +430,9 @@ static Spec *check_Spec()
     _spec_missing("all string");*/ /* this is optional */
     if( (current_spec->size == 0) )
         _spec_missing("size");
+    for (i = 0; i < current_spec->size; i++) 
+        if (current_spec->plugname[i] == NULL)
+            _spec_missing("plug name(s)");
 
     /* Store the spec in list internal to config.c */
     conf_add_spec(current_spec);

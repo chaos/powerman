@@ -1119,6 +1119,7 @@ Plug *dev_plug_create(const char *name)
 {
     Plug *plug;
 
+    assert(name != NULL);
     plug = (Plug *) Malloc(sizeof(Plug));
     plug->name = Strdup(name);
     plug->node = NULL;
