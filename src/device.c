@@ -237,7 +237,7 @@ static void _destroy_exec_ctx(ExecCtx *e)
     Free(e);
 }
 
-static void _rewind_action(Device *dev, Action *act)
+static void _rewind_action(Action *act)
 {
     ExecCtx *e;
 
@@ -485,7 +485,7 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
         /* reset script of preempted action so it starts over */
         if (!list_is_empty(dev->acts)) {
             act = list_peek(dev->acts);
-            _rewind_action(dev, act);
+            _rewind_action(act);
             dbg(DBG_ACTION, "resetting iterator for non-login action");
         }
         act = _create_action(dev, com, NULL, complete_fun, vpf_fun,

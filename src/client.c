@@ -50,6 +50,35 @@
 
 #define LISTEN_BACKLOG    5
 
+#define MIN_CLIENT_BUF     1024
+#define MAX_CLIENT_BUF     1024*1024
+
+typedef struct {
+    int com;                    /* script index */
+    hostlist_t hl;              /* target nodes */
+    int pending;                /* count of pending device actions */
+    bool error;                 /* cumulative error flag for actions */
+    ArgList *arglist;           /* argument for query commands */
+} Command;
+
+#define CLI_MAGIC    0xdadadada
+typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE } Client_Status;
+typedef struct {
+    int magic;
+    Client_Status read_status;
+    Client_Status write_status;
+    int fd;                     /* file desriptor for  the socket */
+    char *ip;                   /* IP address of the client's host */
+    unsigned short int port;    /* Port of client connection */
+    char *host;                 /* host name of client host */
+    cbuf_t to;                  /* out buffer */
+    cbuf_t from;                /* in buffer */
+    Command *cmd;               /* command (there can be only one) */
+    int client_id;              /* client identifier */
+    bool telemetry;             /* client wants telemetry debugging info */
+    bool exprange;              /* client wants host ranges expanded */
+} Client;
+
 /* prototypes for internal functions */
 static Command *_create_command(Client * c, int com, char *arg1);
 static void _destroy_command(Command * cmd);
@@ -69,9 +98,6 @@ static void _destroy_client(Client * c);
 static void _create_client(void);
 static void _act_finish(int client_id, ActError acterr, const char *fmt, ...);
 static void _telemetry_printf(int client_id, const char *fmt, ...);
-
-#define MIN_CLIENT_BUF     1024
-#define MAX_CLIENT_BUF     1024*1024
 
 /* tcp wrappers support */
 extern int hosts_ctl(char *daemon, char *client_name, char *client_addr,

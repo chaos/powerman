@@ -29,8 +29,6 @@
 
 typedef enum { FALSE = 0, TRUE = 1 } bool;
 
-typedef enum { NO_DEV, TCP_DEV, SERIAL_DEV, TELNET_DEV } DevType;
-
 #define NO_FD           (-1)
 
 #ifndef MAX

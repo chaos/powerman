@@ -45,7 +45,6 @@
 #include "device_serial.h"
 #include "device_pipe.h"
 #include "device_tcp.h"
-#include "client.h"
 #include "error.h"
 #include "string.h"
 #include "wrappers.h"
