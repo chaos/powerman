@@ -424,7 +424,7 @@ static Spec *check_Spec()
      * perahps some commands are unimplemented.  Put empty lists in their
      * array spots so other routines don't faulter.
      */
-    for (i = 0; i < current_spec->num_scripts; i++) {
+    for (i = 0; i < NUM_SCRIPTS; i++) {
 	if( current_spec->scripts[i] == NULL ) {
 	    current_spec->scripts[i] = list_create((ListDelF) conf_spec_el_destroy);
 	}
@@ -739,7 +739,6 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     Spec *spec;
     reg_syntax_t cflags = REG_EXTENDED;
     int i;
-    List *scripts;
     Plug *plug;
 
     /* find that spec */
@@ -776,9 +775,6 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     Regcomp( &(dev->on_re), str_get(spec->on), cflags);
     Regcomp( &(dev->off_re), str_get(spec->off), cflags);
     dev->prot = (Protocol *)Malloc(sizeof(Protocol));
-    dev->prot->num_scripts = NUM_SCRIPTS;
-    scripts = (List *)Malloc(dev->prot->num_scripts*sizeof(List));
-    dev->prot->scripts = scripts;
     dev->prot->mode = spec->mode;
 	
     /* 
@@ -786,7 +782,7 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
      * to be set up.  The conf_script_el_create() call transforms the EXPECT strings
      * into compiled RegEx recognizers. 
      */
-    for (i = 0; i < dev->prot->num_scripts; i++) {
+    for (i = 0; i < NUM_SCRIPTS; i++) {
 	ListIterator script;
 	Spec_El *specl;
 	Script_El *script_el;
@@ -795,7 +791,7 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 	List map;
 	ListIterator map_i;
 
-	scripts[i] = list_create((ListDelF) conf_script_el_destroy);
+	dev->prot->scripts[i] = list_create((ListDelF) conf_script_el_destroy);
 	script = list_iterator_create(spec->scripts[i]);
 	while( (specl = list_next(script)) ) {
 	    if( specl->map == NULL )
@@ -812,7 +808,7 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 	    }
 	    script_el = conf_script_el_create(specl->type, str_get(specl->string1), 
 						map, specl->tv);
-	    list_append(scripts[i], script_el);
+	    list_append(dev->prot->scripts[i], script_el);
 	}
     }
 
@@ -884,7 +880,7 @@ static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
      * Finally an exhaustive search of the Interpretations in a device
      * is required because this node will be the target of some
      */
-    for (i = 0; i < node->p_dev->prot->num_scripts; i++) {
+    for (i = 0; i < NUM_SCRIPTS; i++) {
 	script = node->p_dev->prot->scripts[i];
 	script_itr = list_iterator_create(script);
 	while( (script_el = list_next(script_itr)) ) {

@@ -175,13 +175,11 @@ Spec *conf_spec_create(char *name)
     spec = (Spec *) Malloc(sizeof(Spec));
     spec->name = str_create(name);
     spec->type = NO_DEV;
-    spec->num_scripts = NUM_SCRIPTS;
     spec->size = 0;
     spec->timeout.tv_sec = 0;
     spec->timeout.tv_usec = 0;
     spec->mode = SM_NONE;
-    spec->scripts = (List *) Malloc(spec->num_scripts * sizeof(List));
-    for (i = 0; i < spec->num_scripts; i++)
+    for (i = 0; i < NUM_SCRIPTS; i++)
 	spec->scripts[i] = NULL;
     return spec;
 }
@@ -209,9 +207,8 @@ static void _spec_destroy(Spec * spec)
 	    str_destroy(spec->plugname[i]);
 	Free(spec->plugname);
     }
-    for (i = 0; i < spec->num_scripts; i++)
+    for (i = 0; i < NUM_SCRIPTS; i++)
 	list_destroy(spec->scripts[i]);
-    Free(spec->scripts);
     Free(spec);
 }
 

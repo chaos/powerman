@@ -68,9 +68,8 @@ typedef struct {
  */
 typedef enum { SM_NONE, SM_REGEX, SM_LITERAL } String_Mode;
 typedef struct {
-    int		    num_scripts;/* number of scripts in scripts list (11) */
     String_Mode	    mode;	/* strings are interpreted as regex/literal */
-    List	    *scripts;	/* array of lists of Script_El's */
+    List	    scripts[NUM_SCRIPTS]; /* array of lists of Script_El's */
 } Protocol;
 
 /*
@@ -95,10 +94,9 @@ typedef struct {
     String	    all;	/* all string, e.g. "*" */
     int		    size;	/* number of plugs per device */
     struct timeval  timeout;	/* timeout for this device */
-    int		    num_scripts;/* number of scripts this device (11) */
     String	    *plugname;	/* list of plug names (e.g. "1" thru "10") */
     String_Mode	    mode;	/* interp mode, e.g. literal */
-    List	    *scripts;	/* array of lists of Spec_El's */
+    List	    scripts[NUM_SCRIPTS]; /* array of lists of Spec_El's */
 } Spec;
 
 /*

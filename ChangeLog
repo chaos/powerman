@@ -1,6 +1,7 @@
 2002-09-17 garlick
 	* Reformatting, cleanup, doc of data structures
 	* Made device list static in device.c
+	* Use static array allocation for scripts[]
 
 2002-09-17 garlick
 	* Fix bug introduced in cleanup where actions were initiated but
