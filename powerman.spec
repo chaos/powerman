@@ -54,7 +54,7 @@ mkdir -p "$RPM_BUILD_ROOT"
 DESTDIR="$RPM_BUILD_ROOT" make install
 
 %clean
-rm -rf "$RPM_BUILD_ROOT"
+#rm -rf "$RPM_BUILD_ROOT"
 
 %pre
 #if [ -x /etc/rc.d/init.d/powerman ]; then
