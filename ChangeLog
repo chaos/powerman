@@ -123,6 +123,7 @@
 	  commands are being processed.
 	* Updated baytech and icebox configs to use 10 sec timeout.
 	  Baytech at least seems to require > 2sec to respond sometimes.
+	  Fixed a thinko I introduced to the config file earlier.
 	* Fix get_String_from_Buffer() to only consume buffer up to and
 	  including regex match - not whole buffer.
 	* Server telemetry now shows the buffer contents when reporting
