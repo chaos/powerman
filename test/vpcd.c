@@ -191,6 +191,15 @@ static void _prompt_loop(int num, int fd)
             printf("%d: off %d\n", num, n1);
             goto ok;
         }
+        if (sscanf(buf, "toggle %d", &n1) == 1) {  /* toggle <plugnum> */
+            if (n1 < 0 || n1 >= NUM_PLUGS) {
+                dprintf(fd, "%d BADVAL: %d\n", seq, n1);
+                continue;
+            }
+            dev[num].plug[n1] = dev[num].plug[n1] == 0 ? 1 : 0;
+            printf("%d: toggle %d\n", num, n1);
+            goto ok;
+        }
         if (strcmp(buf, "on *") == 0) { /* on * */
             for (i = 0; i < NUM_PLUGS; i++)
                 dev[num].plug[i] = 1;
@@ -201,6 +210,12 @@ static void _prompt_loop(int num, int fd)
             for (i = 0; i < NUM_PLUGS; i++)
                 dev[num].plug[i] = 0;
             printf("%d: off *\n", num);
+            goto ok;
+        }
+        if (strcmp(buf, "toggle *") == 0) {
+            for (i = 0; i < NUM_PLUGS; i++)
+                dev[num].plug[i] = dev[num].plug[i] == 0 ? 1 : 0;
+            printf("%d: toggle *\n", num);
             goto ok;
         }
       unknown:

@@ -21,7 +21,7 @@ specification  "phantom" {
 		send "P?\r\n"
 		expect "(0|1)\r"
 		setstatus "1" $1 on="1" off="0"
-		ifoff "1" {
+		ifoff {
 			send "PT\r\n"
 			expect "ok\r"
 		}
@@ -30,11 +30,23 @@ specification  "phantom" {
 		send "P?\r\n"
 		expect "(0|1)\r"
 		setstatus "1" $1 on="1" off="0"
-		ifon "1" {
+		ifon {
 			send "PT\r\n"
 			expect "ok\r"
 		}
 	}		
+	script cycle {
+		send "P?\r\n"
+		expect "(0|1)\r"
+		setstatus "1" $1 on="1" off="0"
+		ifon {
+			send "PT\r\n"
+			expect "ok\r"
+		}
+		delay 2
+		send "PT\r\n"
+		expect "ok\r"
+	}
 	script beacon_on {
 		send "L1\r\n"	# LED on
 		expect "ok\r"
