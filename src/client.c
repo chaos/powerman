@@ -41,6 +41,8 @@
 #include "client.h"
 #include "util.h"
 
+static List clients = NULL;
+
 /* prototypes */
 static Action *_process_input(Cluster *cluster, Client *c);
 static Action *_find_cli_script(Cluster *cluster, String expect);
@@ -72,6 +74,9 @@ void cli_init(void)
     List *scripts;
 
     assert(client_prot == NULL);
+
+    /* create clients list */
+    clients = list_create((ListDelF) cli_destroy);
 
     /* 
      * Initialize the expect/send pairs for the client protocol. 
@@ -117,6 +122,13 @@ cli_fini(void)
 	list_destroy(client_prot->scripts[i]);
     Free(client_prot);
     client_prot = NULL;
+}
+
+
+void
+cli_add(Client *cli)
+{
+    list_append(clients, cli);
 }
 
 /*

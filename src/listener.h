@@ -30,23 +30,10 @@
 #define LISTEN_BACKLOG    5
 
 
-/*
- *  The listener port is sp[ecified in the config file.  The file 
- * descriptor here is the one the listener ends up listeneing on. (duh)
- * The "read" field is always TRUE in this implementation, but is used
- * to govern whether to include the listener fd in the select().
- */
-struct listener_struct {
-	int port;              
-	int fd;
-	bool read;
-	MAGIC;
-};
-
 /* listener.c extern prototypes */
-Listener *listen_create(void);
-void listen_init(Listener *listener);
-void listen_handler(Globals *g);
-void listen_free(Listener *listener);
+void listen_init(void);
+void listen_handler(void);
+void listen_free(void);
+int listen_get_fd(void);
 
 #endif /* LISTENER_H */

@@ -175,9 +175,9 @@ int main(int argc, char **argv)
     _initialize_devs(g->devs, debug_telemetry);
 
     /* initialize listener */
-    listen_init(g->listener);
+    listen_init();
 
-    /* We now have a socket at g->listener->fd running in listen mode */
+    /* We now have a socket at listener fd running in listen mode */
     /* and a file descriptor for communicating with each device */
     do_select_loop(g);
     return 0;
@@ -249,12 +249,12 @@ static void do_select_loop(Globals * g)
          * anew with each iteration.  timeout_interval may be set in the
          * config file.
          */
-	tv = g->timeout_interval;
+	conf_get_select_timeout(&tv);
 	n = Select(maxfd + 1, &rset, &wset, NULL, &tv);
 
 	/* New connection? */
-	if (FD_ISSET(g->listener->fd, &rset))
-	    listen_handler(g);
+	if (FD_ISSET(listen_get_fd(), &rset))
+	    listen_handler();
 
 	/* Client reading and writing?  */
 	list_iterator_reset(cli_i);
@@ -315,13 +315,11 @@ static void do_select_loop(Globals * g)
 		activity = TRUE;
 	    }
 	    if (FD_ISSET(dev->fd, &wset)) {
+		struct timeval tv_delay;
+
 		dev_handle_write(dev);
-		/*
-		 * We may want to pace the commands
-		 * sent to the cluster.  interDev
-		 * may be set in the config file.
-		 */
-		Delay(&(g->interDev));
+		conf_get_write_pause(&tv_delay);
+		Delay(&tv_delay);
 		activity = TRUE;
 	    }
 	    /*
@@ -370,6 +368,7 @@ static int find_max_fd(Globals * g, fd_set * rs, fd_set * ws)
     Device *dev;
     ListIterator itr;
     int maxfd = 0;
+    int fd;
 
     CHECK_MAGIC(g);
 
@@ -378,10 +377,10 @@ static int find_max_fd(Globals * g, fd_set * rs, fd_set * ws)
      */
     FD_ZERO(rs);
     FD_ZERO(ws);
-    if (g->listener->read) {
-	assert(g->listener->fd >= 0);
-	FD_SET(g->listener->fd, rs);
-	maxfd = MAX(maxfd, g->listener->fd);
+    if ((fd = listener_get_fd()) != NO_FD) {
+	assert(fd >= 0);
+	FD_SET(fd, rs);
+	maxfd = MAX(maxfd, fd);
     }
     itr = list_iterator_create(g->clients);
     while ((client = list_next(itr))) {
@@ -437,13 +436,6 @@ static Globals *make_Globals()
     g = (Globals *) Malloc(sizeof(Globals));
     INIT_MAGIC(g);
 
-    g->timeout_interval.tv_sec = TIMEOUT_SECONDS;
-    g->timeout_interval.tv_usec = 0;
-    g->interDev.tv_sec = 0;
-    g->interDev.tv_usec = INTER_DEV_USECONDS;
-    g->TCP_wrappers = FALSE;
-    g->listener = listen_create();
-    g->clients = list_create((ListDelF) cli_destroy);
     g->status = Quiescent;
     g->acts = list_create((ListDelF) act_destroy);
     g->devs = list_create((ListDelF) dev_destroy);
@@ -456,7 +448,6 @@ static void free_Globals(Globals * g)
 {
     conf_cluster_destroy(g->cluster);
     list_destroy(g->acts);
-    listen_destroy(g->listener);
     list_iterator_create(g->clients);
     list_destroy(g->clients);
     list_destroy(g->devs);

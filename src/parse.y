@@ -375,7 +375,7 @@ static char *makeGlobalSec(char *s2)
 
 static char *makeTCPWrappers()
 {
-    cheat->TCP_wrappers = TRUE;
+    conf_set_use_tcp_wrappers(TRUE);
     return NULL;
 }
 
@@ -399,13 +399,19 @@ static char *makeClientPort(char *s2)
 
 static char *makeTimeOut(char *s2)
 {
-    conf_strtotv( &(cheat->timeout_interval), s2);
+    struct timeval tv;
+
+    conf_strtotv(&tv, s2);
+    conf_set_select_timeout(&tv);
     return s2;
 }
 
 static char *makeInterDev(char *s2)
 {
-    conf_strtotv( &(cheat->interDev), s2);
+    struct timeval tv;
+
+    conf_strtotv(&tv, s2);
+    conf_set_write_pause(&tv);
     return s2;
 }
 

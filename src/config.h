@@ -231,4 +231,17 @@ void conf_fini(void);
 void conf_add_spec(Spec *spec);
 Spec *conf_find_spec(char *name);
 
+void conf_set_select_timeout(struct timeval *tv);
+void conf_get_select_timeout(struct timeval *tv);
+
+void conf_set_write_pause(struct timeval *tv);
+void conf_get_write_pause(struct timeval *tv);
+
+bool conf_get_use_tcp_wrappers(void);
+void conf_set_use_tcp_wrappers(bool val);
+
+unsigned short conf_get_listen_port(void);
+void conf_set_listen_port(unsigned short val);
+
+
 #endif				/* CONFIG_H */

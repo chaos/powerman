@@ -50,17 +50,12 @@ extern int hosts_ctl(char *daemon, char *client_name, char *client_addr,
 int allow_severity = LOG_INFO;		/* logging level for accepted reqs */
 int deny_severity = LOG_WARNING;	/* logging level for rejected reqs */
 
-Listener *listen_create()
+
+static int listen_fd = NO_FD;
+
+int listen_get_fd(void)
 {
-    Listener *listener;
-
-    listener = (Listener *) Malloc(sizeof(Listener));
-    INIT_MAGIC(listener);
-
-    listener->port = NO_PORT;
-    listener->fd = NO_FD;
-    listener->read = FALSE;
-    return listener;
+    return listen_fd;
 }
 
 /*
@@ -68,38 +63,37 @@ Listener *listen_create()
  * The Listener already exists and on entry and on completion the
  * descriptor is waiting on new connections.
  */
-void listen_init(Listener * listener)
+void listen_init(void)
 {
     struct sockaddr_in saddr;
     int saddr_size = sizeof(struct sockaddr_in);
     int sock_opt;
     int fd_settings;
+    unsigned short listen_port;
 
-    CHECK_MAGIC(listener);
     /* 
      * "All TCP servers should specify [the SO_REUSEADDR] socket option ..."
      *                                                  - Stevens, UNP p194 
      */
-    listener->fd = Socket(PF_INET, SOCK_STREAM, 0);
-    listener->read = TRUE;
+    listen_fd = Socket(PF_INET, SOCK_STREAM, 0);
 
     sock_opt = 1;
-    Setsockopt(listener->fd, SOL_SOCKET, SO_REUSEADDR,
-	       &(sock_opt), sizeof(sock_opt));
+    Setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &(sock_opt), sizeof(sock_opt));
     /* 
      *   A client could abort before a ready connection is accepted.  "The fix
      * for this problem is to:  1.  Always set a listening socket nonblocking
      * if we use select ..."                            - Stevens, UNP p424
      */
-    fd_settings = Fcntl(listener->fd, F_GETFL, 0);
-    Fcntl(listener->fd, F_SETFL, fd_settings | O_NONBLOCK);
+    fd_settings = Fcntl(listen_fd, F_GETFL, 0);
+    Fcntl(listen_fd, F_SETFL, fd_settings | O_NONBLOCK);
 
     saddr.sin_family = AF_INET;
-    saddr.sin_port = htons(listener->port);
+    listen_port = conf_get_listen_port();
+    saddr.sin_port = htons(listen_port);
     saddr.sin_addr.s_addr = INADDR_ANY;
-    Bind(listener->fd, &saddr, saddr_size);
+    Bind(listen_fd, &saddr, saddr_size);
 
-    Listen(listener->fd, LISTEN_BACKLOG);
+    Listen(listen_fd, LISTEN_BACKLOG);
 }
 
 /*
@@ -108,9 +102,8 @@ void listen_init(Listener * listener)
  * Client data structure, it gets buffers for sending and receiving, 
  * and is vetted through TCP wrappers.
  */
-void listen_handler(Globals * g)
+void listen_handler(void)
 {
-    Listener *listener = g->listener;
     Client *client;
     struct sockaddr_in saddr;
     int saddr_size = sizeof(struct sockaddr_in);
@@ -123,11 +116,9 @@ void listen_handler(Globals * g)
     char *fqdn;
     char *p;
 
-    CHECK_MAGIC(listener);
-
     client = cli_create();
 
-    client->fd = Accept(listener->fd, &saddr, &saddr_size);
+    client->fd = Accept(listen_fd, &saddr, &saddr_size);
     if (client->fd < 0)
     /* client died after it initiated connect and before we could accept */
     {
@@ -168,7 +159,7 @@ void listen_handler(Globals * g)
 	fqdn = host;
     }
 
-    if (g->TCP_wrappers == TRUE) {
+    if (conf_get_use_tcp_wrappers() == TRUE) {
 	accepted_client = hosts_ctl(DAEMON_NAME, host, ip, STRING_UNKNOWN);
 	if (accepted_client == FALSE) {
 	    Close(client->fd);
@@ -185,19 +176,17 @@ void listen_handler(Globals * g)
      */
     fd_settings = Fcntl(client->fd, F_GETFL, 0);
     Fcntl(client->fd, F_SETFL, fd_settings | O_NONBLOCK);
-    list_append(g->clients, client);
+
+    client_add(client);
     syslog(LOG_DEBUG, "New connection: <%s, %d> on descriptor %d",
 	   fqdn, client->port, client->fd);
     client->write_status = CLI_WRITING;
     buf_printf(client->to, "PowerMan V1.0.0\r\npassword> ");
 }
 
-void listen_destroy(Listener * listener)
+void listen_destroy(void)
 {
-    CHECK_MAGIC(listener);
-
-    CLEAR_MAGIC(listener);
-    Free(listener);
+    /* XXX add tear down here */
 }
 
 /*

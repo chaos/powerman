@@ -42,6 +42,7 @@
 #include "wrappers.h"
 #include "string.h"
 #include "config.h"
+#include "client.h"
 
 static int _spec_match(Spec *spec, void *key);
 static void _spec_destroy(Spec *spec);
@@ -51,7 +52,15 @@ static void _spec_destroy(Spec *spec);
  * After that their contents are copied for each instantiation of the device and
  * the original specification is not used.
  */
-static List specs = NULL;                
+static List		tmp_specs = NULL;                
+
+/*
+ * Some configurable values - accessor functions defined below.
+ */
+static struct timeval	conf_select_timeout = { 0L, 0L };
+static struct timeval	conf_write_pause = { 0L, 0L };
+static bool		conf_use_tcp_wrappers = FALSE;
+static unsigned short	conf_listen_port = NO_PORT;
 
 /* 
  * initialize module
@@ -63,7 +72,7 @@ conf_init(char *filename)
     struct stat stbuf;
     int parse_config_file(char *filename);
 
-    /* initialize 'specs' list */
+    /* initialize 'tmp_specs' list */
     list_create((ListDelF) _spec_destroy);
 
     /* validate config file */
@@ -78,9 +87,9 @@ conf_init(char *filename)
      */
     parse_config_file(filename);
 
-    /* destroy 'specs' list */
-    list_destroy(specs);
-    specs = NULL;
+    /* destroy 'tmp_specs' list */
+    list_destroy(tmp_specs);
+    tmp_specs = NULL;
 }
 
 /* finalize module */
@@ -176,7 +185,7 @@ static int _spec_match(Spec * spec, void *key)
     return FALSE;
 }
 
-/* list destructor for specs */
+/* list destructor for tmp_specs */
 static void _spec_destroy(Spec * spec)
 {
     int i;
@@ -201,15 +210,15 @@ static void _spec_destroy(Spec * spec)
 void
 conf_add_spec(Spec *spec)
 {
-    assert(specs != NULL);
-    list_append(specs, spec);
+    assert(tmp_specs != NULL);
+    list_append(tmp_specs, spec);
 }
 
 /* find and return a Spec from the internal list */
 Spec *
 conf_find_spec(char *name)
 {   
-    return list_find_first(specs, (ListFindF) _spec_match, name);
+    return list_find_first(tmp_specs, (ListFindF) _spec_match, name);
 }
 
 /*******************************************************************
@@ -396,8 +405,49 @@ void conf_strtotv(struct timeval *tv, char *s)
     tv->tv_usec = usec;
 }
 
+/*
+ * Accessor functions for misc. configurable values.
+ */
 
+void conf_set_select_timeout(struct timeval *tv)    
+{ 
+    conf_select_timeout = *tv; 
+}
 
+void conf_get_select_timeout(struct timeval *tv)
+{ 
+    *tv = conf_select_timeout; 
+}
+
+void conf_set_write_pause(struct timeval *tv)
+{ 
+    conf_write_pause = *tv; 
+}
+
+void conf_get_write_pause(struct timeval *tv)
+{ 
+    *tv = conf_write_pause; 
+}
+
+bool conf_get_use_tcp_wrappers(void)
+{ 
+    return conf_use_tcp_wrappers; 
+}
+
+void conf_set_use_tcp_wrappers(bool val)
+{ 
+    conf_use_tcp_wrappers = val; 
+}
+
+void conf_set_listen_port(unsigned short val)
+{
+    conf_listen_port = val;
+}
+
+unsigned short conf_get_listen_port(void)
+{
+    return conf_listen_port;
+}
 
 /*
  * vi:softtabstop=4

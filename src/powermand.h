@@ -48,11 +48,7 @@ typedef enum { Quiescent, Occupied } Server_Status;
  * configuration information.
  */
 typedef struct {
-    struct timeval timeout_interval;	/* select(,,,tv) value */
-    struct timeval interDev;	/* Delay() after a device write */
-    bool TCP_wrappers;		/* Config: use TCP wrappers? */
     Listener *listener;		/* listener module info */
-    List clients;		/* server module info */
     Server_Status status;	/* (Quiescent, Occupied) */
     Cluster *cluster;		/* Cluster state info */
     List acts;			/* Action queue */

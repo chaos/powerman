@@ -64,6 +64,7 @@ void cli_reply(Cluster * cluster, Action * act);
 Client *cli_create();
 int cli_match(Client * client, void *key);
 void cli_destroy(Client * client);
+void cli_add(Client * client);
 
 void cli_init(void);
 void cli_fini(void);
