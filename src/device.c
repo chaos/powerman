@@ -379,6 +379,15 @@ do_target_some(Device *dev, Action *sact)
 	plug_i = list_iterator_create(dev->plugs);
 	while( (plug = (Plug *)list_next(plug_i)) )
 	{
+		/* If plug->node == NULL it means that there is no */
+		/* node pluged into that plug (or that node is not */
+		/* under management by this powermand).  In such a */
+		/* case do use the "all" target in the action.     */
+		if (plug->node == NULL) 
+		{
+			all = FALSE;
+			continue;
+		}
 /* check if plug->node->name matches the target re */
 /* if it does make a new act for it and set any to TRUE */
 /* if it doesn't, set all to FALSE */

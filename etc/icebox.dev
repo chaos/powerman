@@ -8,7 +8,7 @@ begin protocol specification
 	device timeout "10.0"
 	string interpretation mode "LITERAL"
 	begin PM_LOG_IN 
-		expect "V2\.2\r\n"
+		expect "V[23][^\n]*\r\n"
 		send "auth icebox\r\n"
 		expect "OK\r\n"
 	end PM_LOG_IN
@@ -37,7 +37,7 @@ begin protocol specification
 # This is the query for soft power status
 	begin PM_UPDATE_NODES 
 		send "ns *\r\n"
-		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
+		expect "N1:([012]) N2:([012]) N3:([012]) N4:([012]) N5:([012]) N6:([012]) N7:([012]) N8:([012]) N9:([012]) N10:([012])[[:space:]]*\r\n"
 			map "1" "1"
 			map "2" "2"
 			map "3" "3"

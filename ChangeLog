@@ -158,3 +158,17 @@
  	  Our test baytech has the f/w rev F 5.00, and pengra baytechs have
 	  rev F 5.01.  The latter prompts (Y/N)> after every power action.
 	* Put back baytech.dev, documenting that prompting is configurable.
+
+2002-08-16 auselton
+	* Chris tells me he updatd the date format in the "make rpm"
+	  target stuff.
+	* icebox.dev's script for PM_UPDATE_NODES now allows for a node
+	  status of "2" (== "unavailable") in its expect.  This is in 
+	  keeping with the change to the protocol in V3.0 of the icebox
+	  firmware.
+	* device.c: do_target_some() had a bug similar to that addressed 
+	  by Gregg Hommes above.  If a plug does not have a node plugged
+	  into it then a) it should be skipped when trying to determine
+	  the targets for a device, and b) that is a sufficient condition 
+	  for not using the "all" target on the device.
+	
