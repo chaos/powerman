@@ -24,7 +24,7 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#define _GNU_SOURCE  /* for dprintf */
+#define _GNU_SOURCE             /* for dprintf */
 #include <stdio.h>
 #include <string.h>
 #define _GNU_SOURCE
@@ -41,7 +41,7 @@
 #include "client_proto.h"
 
 #define SERVER_HOSTNAME "localhost"
-#define SERVER_PORT	"10101"
+#define SERVER_PORT     "10101"
 
 static void _connect_to_server(void);
 static void _disconnect_from_server(void);
@@ -85,57 +85,60 @@ int main(int argc, char **argv)
     int res = 0;
     char *prog;
     enum { CMD_NONE, CMD_ON, CMD_OFF, CMD_LIST, CMD_CYCLE, CMD_RESET,
-	    CMD_REPORT } cmd = CMD_NONE;
+        CMD_REPORT
+    } cmd = CMD_NONE;
 
     prog = basename(argv[0]);
     err_init(prog);
 
     if (strcmp(prog, "on") == 0)
-	cmd = CMD_ON;
+        cmd = CMD_ON;
     else if (strcmp(prog, "off") == 0)
-	cmd = CMD_OFF;
-	    
+        cmd = CMD_OFF;
+
     /*
      * Parse options.
      */
     opterr = 0;
-    while ((c = getopt_long(argc, argv,OPT_STRING,longopts,&longindex)) != -1) {
-	switch (c) {
-	    case 'l':	/* --list */
-		cmd = CMD_LIST;
-		break;
-	    case '1':	/* --on */
-		cmd = CMD_ON;
-		break;
-	    case '0':	/* --off */
-		cmd = CMD_OFF;
-		break;
-	    case 'c':	/* --cycle */
-		cmd = CMD_CYCLE;
-		break;
-	    case 'r':	/* --reset */
-		cmd = CMD_RESET;
-		break;
-	    case 'q':	/* --query */
-		cmd = CMD_REPORT;
-		break;
-	    default:
-		_usage();
-		break;
-	}
+    while ((c =
+            getopt_long(argc, argv, OPT_STRING, longopts,
+                        &longindex)) != -1) {
+        switch (c) {
+        case 'l':              /* --list */
+            cmd = CMD_LIST;
+            break;
+        case '1':              /* --on */
+            cmd = CMD_ON;
+            break;
+        case '0':              /* --off */
+            cmd = CMD_OFF;
+            break;
+        case 'c':              /* --cycle */
+            cmd = CMD_CYCLE;
+            break;
+        case 'r':              /* --reset */
+            cmd = CMD_RESET;
+            break;
+        case 'q':              /* --query */
+            cmd = CMD_REPORT;
+            break;
+        default:
+            _usage();
+            break;
+        }
     }
     /* remaining arguments used to build a single hostlist argument */
     while (optind < argc) {
-	if (!have_targets) {
-	    targets = hostlist_create(NULL);
-	    have_targets = TRUE;
-	}
-	hostlist_push(targets, argv[optind]);
-	optind++;
+        if (!have_targets) {
+            targets = hostlist_create(NULL);
+            have_targets = TRUE;
+        }
+        hostlist_push(targets, argv[optind]);
+        optind++;
     }
     if (have_targets) {
-	hostlist_sort(targets);
-	hostlist_ranged_string(targets, sizeof(targstr), targstr);
+        hostlist_sort(targets);
+        hostlist_ranged_string(targets, sizeof(targstr), targstr);
     }
 
     _connect_to_server();
@@ -144,52 +147,52 @@ int main(int argc, char **argv)
      * Execute the commands.
      */
     switch (cmd) {
-	case CMD_LIST:
-	    if (have_targets)
-		_usage();
-	    dprintf(server_fd, CP_NODES CP_EOL);
-	    res = _process_response();
-	    _expect(CP_PROMPT);
-	    break;
-	case CMD_REPORT:
-	    if (have_targets)
-		dprintf(server_fd, CP_STATUS CP_EOL, targstr);
-	    else
-		dprintf(server_fd, CP_STATUS_ALL CP_EOL);
-	    res = _process_response();
-	    _expect(CP_PROMPT);
-	    break;
-	case CMD_ON:
-	    if (!have_targets)
-		_usage();
-	    dprintf(server_fd, CP_ON CP_EOL, targstr);
-	    res = _process_response();
-	    _expect(CP_PROMPT);
-	    break;
-	case CMD_OFF:
-	    if (!have_targets)
-		_usage();
-	    dprintf(server_fd, CP_OFF CP_EOL, targstr);
-	    res = _process_response();
-	    _expect(CP_PROMPT);
-	    break;
-	case CMD_RESET:
-	    if (!have_targets)
-		_usage();
-	    dprintf(server_fd, CP_RESET CP_EOL, targstr);
-	    res = _process_response();
-	    _expect(CP_PROMPT);
-	    break;
-	case CMD_CYCLE:
-	    if (!have_targets)
-		_usage();
-	    dprintf(server_fd, CP_CYCLE CP_EOL, targstr);
-	    res = _process_response();
-	    _expect(CP_PROMPT);
-	    break;
-	case CMD_NONE:
-	default:
-	    _usage();
+    case CMD_LIST:
+        if (have_targets)
+            _usage();
+        dprintf(server_fd, CP_NODES CP_EOL);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        break;
+    case CMD_REPORT:
+        if (have_targets)
+            dprintf(server_fd, CP_STATUS CP_EOL, targstr);
+        else
+            dprintf(server_fd, CP_STATUS_ALL CP_EOL);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        break;
+    case CMD_ON:
+        if (!have_targets)
+            _usage();
+        dprintf(server_fd, CP_ON CP_EOL, targstr);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        break;
+    case CMD_OFF:
+        if (!have_targets)
+            _usage();
+        dprintf(server_fd, CP_OFF CP_EOL, targstr);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        break;
+    case CMD_RESET:
+        if (!have_targets)
+            _usage();
+        dprintf(server_fd, CP_RESET CP_EOL, targstr);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        break;
+    case CMD_CYCLE:
+        if (!have_targets)
+            _usage();
+        dprintf(server_fd, CP_CYCLE CP_EOL, targstr);
+        res = _process_response();
+        _expect(CP_PROMPT);
+        break;
+    case CMD_NONE:
+    default:
+        _usage();
     }
 
     _disconnect_from_server();
@@ -225,8 +228,8 @@ static void _connect_to_server(void)
 
     Getaddrinfo(SERVER_HOSTNAME, SERVER_PORT, &hints, &addrinfo);
 
-    server_fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype, 
-		    addrinfo->ai_protocol);
+    server_fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
+                       addrinfo->ai_protocol);
 
     Connect(server_fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
     freeaddrinfo(addrinfo);
@@ -252,21 +255,22 @@ static int _getline(void)
     char *p = buf;
     int num;
 
-    while (size > 1) { /* leave room for terminating null */
-	if (Read(server_fd, p, 1) <= 0)
-	    err_exit(TRUE, "lost connection with server\n");
-	if (*p == '\r')
-	    continue;
-	if (*p == '\n')
-	    break;
-	size--; p++;
+    while (size > 1) {          /* leave room for terminating null */
+        if (Read(server_fd, p, 1) <= 0)
+            err_exit(TRUE, "lost connection with server\n");
+        if (*p == '\r')
+            continue;
+        if (*p == '\n')
+            break;
+        size--;
+        p++;
     }
     *p = '\0';
     if (strlen(buf) > 4)
-	printf("%s\n", buf + 4);
+        printf("%s\n", buf + 4);
     else
-	err_exit(FALSE, "unexpected response from server\n");
-    num = strtol(buf, (char **)NULL, 10);
+        err_exit(FALSE, "unexpected response from server\n");
+    num = strtol(buf, (char **) NULL, 10);
     return (num == LONG_MIN || num == LONG_MAX) ? -1 : num;
 }
 
@@ -275,7 +279,7 @@ static int _process_response(void)
     int num;
 
     do {
-	num = _getline();
+        num = _getline();
     } while (!CP_IS_ALLDONE(num));
     return (CP_IS_FAILURE(num) ? num : 0);
 }
@@ -292,12 +296,12 @@ static void _expect(char *str)
     assert(strlen(str) < sizeof(buf));
     res = Read(server_fd, buf, strlen(str));
     if (res < 0)
-	err_exit(TRUE, "lost connection with server\n");
+        err_exit(TRUE, "lost connection with server\n");
     if (res != strlen(str))
-	err_exit(FALSE, "short read\n");
+        err_exit(FALSE, "short read\n");
     buf[res] = '\0';
     if (strcmp(str, buf) != 0)
-	err_exit(FALSE, "%s\n", buf);
+        err_exit(FALSE, "%s\n", buf);
 }
 
 /*

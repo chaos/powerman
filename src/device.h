@@ -36,74 +36,75 @@
  */
 typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } ArgState;
 typedef struct {
-    char         *node;   /* key */
-    char	 *val;  /* value as returned by the device */
-    ArgState     state;   /* interpreted value, if appropriate */
+    char *node;                 /* key */
+    char *val;                  /* value as returned by the device */
+    ArgState state;             /* interpreted value, if appropriate */
 } Arg;
 typedef struct {
-    List	 argv;    /* list of Arg structures */
-    int          refcount;/* free when refcount == 0 */
+    List argv;                  /* list of Arg structures */
+    int refcount;               /* free when refcount == 0 */
 } ArgList;
 
 /*
  * Plug maps plug name/number to a node name.  Each device maintains a list.
  */
 typedef struct {
-    char	    *name;	    /* how the plug is known to the device */
-    char	    *node;	    /* node name */
+    char *name;                 /* how the plug is known to the device */
+    char *node;                 /* node name */
 } Plug;
 
 /*
  * Device
  */
-typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectStat;
+typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING,
+        DEV_CONNECTED } ConnectStat;
 typedef struct {
-    char	    *name;	    /* name of device */
-    char	    *all;	    /* string for to select all plugs */
-    regex_t	    on_re;	    /* regex to match "on" in query */
-    regex_t	    off_re;	    /* regex to match "off" in query */
-    Dev_Type	    type;	    /* type of device e.g. TCP_DEV */
-    union {			    /* type-specific device information */
-	struct {
-	    char    *host;
-	    char    *service;
-	} tcpd;
+    char *name;                 /* name of device */
+    char *all;                  /* string for to select all plugs */
+    regex_t on_re;              /* regex to match "on" in query */
+    regex_t off_re;             /* regex to match "off" in query */
+    Dev_Type type;              /* type of device e.g. TCP_DEV */
+    union {                     /* type-specific device information */
+        struct {
+            char *host;
+            char *service;
+        } tcpd;
     } devu;
 
-    ConnectStat	    connect_status;
-    int		    script_status;  /* DEV_ bits reprepsenting script state */
+    ConnectStat connect_status;
+    int script_status;          /* DEV_ bits reprepsenting script state */
 
-    int		    fd;
-    List	    acts;	    /* queue of Actions */
+    int fd;
+    List acts;                  /* queue of Actions */
 
-    struct timeval  timeout;	    /* configurable device timeout */
+    struct timeval timeout;     /* configurable device timeout */
 
-    Buffer	    to;		    /* buffer -> device */
-    Buffer	    from;	    /* buffer <- device */
+    Buffer to;                  /* buffer -> device */
+    Buffer from;                /* buffer <- device */
 
-    int		    num_plugs;	    /* Plug count for this device */
-    List	    plugs;	    /* list of Plugs */
-    Protocol	    *prot;	    /* list of expect/send scripts */
+    int num_plugs;              /* Plug count for this device */
+    List plugs;                 /* list of Plugs */
+    Protocol *prot;             /* list of expect/send scripts */
 
-    struct timeval  last_retry;     /* time of last reconnect retry */
-    int		    retry_count;    /* number of retries attempted */
+    struct timeval last_retry;  /* time of last reconnect retry */
+    int retry_count;            /* number of retries attempted */
 
-    struct timeval  last_ping;	    /* time of last ping (if any) */
-    struct timeval  ping_period;    /* configurable ping period (0.0 = none) */
+    struct timeval last_ping;   /* time of last ping (if any) */
+    struct timeval ping_period; /* configurable ping period (0.0 = none) */
 
-    int		    stat_successful_connects;
-    int		    stat_successful_actions;
+    int stat_successful_connects;
+    int stat_successful_actions;
 
-    MAGIC;
+     MAGIC;
 } Device;
 
-typedef void (*ActionCB)(int client_id, char *errfmt, char *errarg);
+typedef void (*ActionCB) (int client_id, char *errfmt, char *errarg);
 
 void dev_init(void);
 void dev_fini(void);
-void dev_add(Device *dev);
-int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, int client_id,
-		ArgList *arglist);
+void dev_add(Device * dev);
+int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun,
+                        int client_id, ArgList * arglist);
 bool dev_check_actions(int com, hostlist_t hl);
 void dev_initial_connect(void);
 
@@ -116,14 +117,14 @@ Plug *dev_plug_create(const char *name);
 int dev_plug_match(Plug * plug, void *key);
 void dev_plug_destroy(Plug * plug);
 
-void dev_pre_select(fd_set *rset, fd_set *wset, int *maxfd);
-void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *tv);
+void dev_pre_select(fd_set * rset, fd_set * wset, int *maxfd);
+void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *tv);
 
 ArgList *dev_create_arglist(hostlist_t hl);
-ArgList *dev_link_arglist(ArgList *arglist);
-void dev_unlink_arglist(ArgList *arglist);
+ArgList *dev_link_arglist(ArgList * arglist);
+void dev_unlink_arglist(ArgList * arglist);
 
-#endif				/* DEVICE_H */
+#endif                          /* DEVICE_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

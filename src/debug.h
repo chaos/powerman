@@ -29,11 +29,11 @@
 void dbg_notty(void);
 void dbg_setmask(unsigned long mask);
 void dbg(unsigned long channel, const char *fmt, ...);
-char *dbg_fdsetstr(fd_set *set, int n, char *str, int len);
+char *dbg_fdsetstr(fd_set * set, int n, char *str, int len);
 char *dbg_tvstr(struct timeval *tv, char *str, int len);
 unsigned char *dbg_memstr(unsigned char *mem, int len);
 
-#endif /* DEBUG_H */
+#endif                          /* DEBUG_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

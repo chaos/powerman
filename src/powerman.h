@@ -54,10 +54,10 @@ typedef enum { NO_DEV, TCP_DEV } Dev_Type;
 
 #ifndef MAX
 #  define MAX(x, y) (((x) > (y))? (x) : (y))
-#endif				/* MAX */
+#endif                          /* MAX */
 #ifndef MIN
 #  define MIN(x, y) (((x) < (y))? (x) : (y))
-#endif				/* MIN */
+#endif                          /* MIN */
 
 #define DAEMON_NAME   		"powermand"
 #define PID_FILE_NAME 		"/var/run/powerman/powerman.pid"
@@ -65,7 +65,7 @@ typedef enum { NO_DEV, TCP_DEV } Dev_Type;
 #define ROOT_DIR      		"/etc/powerman"
 #define DFLT_CONFIG_FILE 	"/etc/powerman/powerman.conf"
 
-#endif				/* POWERMAN_H */
+#endif                          /* POWERMAN_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

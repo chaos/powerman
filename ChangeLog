@@ -1,449 +1,456 @@
 2002-10-24 garlick
-	* Changed magic vim comment at bottom of each file for tab expansion.
-	* Tagged before-2nd-indent
+    * Changed magic vim comment at bottom of each file for tab expansion.
+    * Tagged before-2nd-indent
+    * Ran indent -no-tabs -kr *.[ch] on everything in src except 
+      hostlist.[ch] and list.[ch] 
+    * Tagged after-2nd-indent
 
 2002-10-22 garlick
-	* Fixed bug where buf_readline() would occasionally assert on the 
-	  size of destination buffer on client read (gnat powerman/123)
+    * Fixed bug where buf_readline() would occasionally assert on the 
+      size of destination buffer on client read (gnat powerman/123)
 
 2002-10-21 garlick
-	* Added "devices" query to get mapping of devices to nodes and
-	  per-device statistics (reconnects, successful actions).
-	* Renamed "TCP wrappers" to "tcpwrappers", added to etc/powerman.conf.
-	* Fixed bug where tcp wrappers denial would kill powermand.
-	* Tagged powerman-1-0-13
+    * Added "devices" query to get mapping of devices to nodes and
+      per-device statistics (reconnects, successful actions).
+    * Renamed "TCP wrappers" to "tcpwrappers", added to etc/powerman.conf.
+    * Fixed bug where tcp wrappers denial would kill powermand.
+    * Tagged powerman-1-0-13
 
 2002-10-21 grondo
-	* hostlist.c : fixed bug where test matches testN
+    * hostlist.c : fixed bug where test matches testN
 
 2002-10-20 garlick
-	* Added temperature support for icebox.dev.
-	* Added temperature and beacon support for icebox3.dev.
+    * Added temperature support for icebox.dev.
+    * Added temperature and beacon support for icebox3.dev.
 
 2002-10-19 garlick
-	* Fixded bug in _update_timeout where usecs were not checked for zero
-	  when testing if timer is set.
-	* Tagged powerman-1-0-12
+    * Fixded bug in _update_timeout where usecs were not checked for zero
+      when testing if timer is set.
+    * Tagged powerman-1-0-12
 
 2002-10-18 garlick
-	* Added several new script types and factored code for building scripts
-	  in parse.y (now there is one function - makeScriptSec()).
-	* Implemented "ping period N" directive in device scripts which
-	  enables PING_SCRIPT to run every N seconds.  This works around
-	  broken TCP implementations in RPC's (such as Baytech's) which don't
-	  send a FIN when they tear down a connection (which would unblock
-	  powerman's select call and cause a reconnect).  Configured
-	  90 second ping period for Baytech.
-	* Changed logic for "all" plug processing.  If _ALL version of
-	  script is defined, use that.  If all string "*" is defined, use
-	  that.  If neither is defined, use one command per plug.
+    * Added several new script types and factored code for building scripts
+      in parse.y (now there is one function - makeScriptSec()).
+    * Implemented "ping period N" directive in device scripts which
+      enables PING_SCRIPT to run every N seconds.  This works around
+      broken TCP implementations in RPC's (such as Baytech's) which don't
+      send a FIN when they tear down a connection (which would unblock
+      powerman's select call and cause a reconnect).  Configured
+      90 second ping period for Baytech.
+    * Changed logic for "all" plug processing.  If _ALL version of
+      script is defined, use that.  If all string "*" is defined, use
+      that.  If neither is defined, use one command per plug.
 
 2002-10-16 garlick
-	* Make Action struct private to device.c
-	* Move script names to config.h.
-	* Merged _match_regex into _match_subexpression.  Removed intermediate
-	  regex match data from Interpretation struct (now temporary in 
-	  _match_subexpression).
-	* Fixed bug where query for N-1 plugs on an N-plug device resulted
-	  in N-1 separate queries, each acquiring state for the whole device.
-	* Fixed bug where read returned EOF occasionally.  This was a read
-	  attempt on a zero length buffer.  It turns out the read buffer was
-	  huge and never was compacted.  Reduced buffer size from 64K to 8K.
-	* Tagged powerman-1-0-11.
+    * Make Action struct private to device.c
+    * Move script names to config.h.
+    * Merged _match_regex into _match_subexpression.  Removed intermediate
+      regex match data from Interpretation struct (now temporary in 
+      _match_subexpression).
+    * Fixed bug where query for N-1 plugs on an N-plug device resulted
+      in N-1 separate queries, each acquiring state for the whole device.
+    * Fixed bug where read returned EOF occasionally.  This was a read
+      attempt on a zero length buffer.  It turns out the read buffer was
+      huge and never was compacted.  Reduced buffer size from 64K to 8K.
+    * Tagged powerman-1-0-11.
 
  2002-10-14 garlick
-	* Remove RESET_SCRIPT definitions in wti and baytech device files.
-	* Got rid of Cluster and Node data structures.
-	* Plug state is no longer global - seperate copy for each client cmd.
-	* Fixed memory leaks in _create_client/_destroy_client.
-	* Trimmed TODO file.
-	* Fixed bug where actions could not make progress torward timeout
-	  while device is in unconnected state.
+    * Remove RESET_SCRIPT definitions in wti and baytech device files.
+    * Got rid of Cluster and Node data structures.
+    * Plug state is no longer global - seperate copy for each client cmd.
+    * Fixed memory leaks in _create_client/_destroy_client.
+    * Trimmed TODO file.
+    * Fixed bug where actions could not make progress torward timeout
+      while device is in unconnected state.
 
 2002-10-11 garlick
-	* Fix bug in vpcd where empty line would look like EOF on socket.
+    * Fix bug in vpcd where empty line would look like EOF on socket.
 
 2002-10-08 garlick
-	* Fixed bug where Action "found" client by client struct address, but
-	  if client had died, address could still be valid.  Now we use a 
-	  unique integer identifier to find client.
-	* Made device read/write error handling a little cleaner.
-	* Don't set plug state to unknown before querying status to avoid
-	  triggering race described in FIXME comment in client.c _parse_input()
-	* Tagged powerman-1-0-10.
+    * Fixed bug where Action "found" client by client struct address, but
+      if client had died, address could still be valid.  Now we use a 
+      unique integer identifier to find client.
+    * Made device read/write error handling a little cleaner.
+    * Don't set plug state to unknown before querying status to avoid
+      triggering race described in FIXME comment in client.c _parse_input()
+    * Tagged powerman-1-0-10.
 
 2002-10-06 garlick
-	* More man page edits.
+    * More man page edits.
 
 2002-10-06 garlick
-	* Updated hostlist.[ch] to latest from the pdsh sources.
-	* Tagged powerman-1-0-9.
+    * Updated hostlist.[ch] to latest from the pdsh sources.
+    * Tagged powerman-1-0-9.
 
 2002-10-06 garlick
-	* _process_send can now time out.
-	* Clean up device.c select handling a bit to make it clear why actions
-	  will not time out if device is not connected. 
-	* _handle_write now handles errors from buf_write.
-	* Client now returns error on unimplemented commands.
-	* Changed powerman "-z --report" option to "-q --query"
-	* Added soft power status support to vpc, fixed login logic in vpc,
-	  Added --soft-off test.
-	* Don't clear wset bit after finish_connect unless fd != -1.
-	* Tagged powerman-1-0-8.
+    * _process_send can now time out.
+    * Clean up device.c select handling a bit to make it clear why actions
+      will not time out if device is not connected. 
+    * _handle_write now handles errors from buf_write.
+    * Client now returns error on unimplemented commands.
+    * Changed powerman "-z --report" option to "-q --query"
+    * Added soft power status support to vpc, fixed login logic in vpc,
+      Added --soft-off test.
+    * Don't clear wset bit after finish_connect unless fd != -1.
+    * Tagged powerman-1-0-8.
 
 2002-10-05 garlick
-	* More man page updates
-	* Updated TODO, moved README to doc/Overview.txt, removed Retagging.
-	* Removed various outdated scripts in scripts subdir.
-	* Added --off_rpc and --hung_rpc options to vpcd for testing.
-	* Updated timeouts from 0.3 to 0.5 in icebox3.dev (determined to be
-	  safe on MCR).
+    * More man page updates
+    * Updated TODO, moved README to doc/Overview.txt, removed Retagging.
+    * Removed various outdated scripts in scripts subdir.
+    * Added --off_rpc and --hung_rpc options to vpcd for testing.
+    * Updated timeouts from 0.3 to 0.5 in icebox3.dev (determined to be
+      safe on MCR).
 
 2002-10-04 garlick
-	* Client now performs on and off command if executable is 
-	  linked to "on" and "off".  Install links "on", "off", and "pm"
-	  in spec file.
-	* Set all plug/node state to ST_UNKNOWN prior to status query command.
-	* Updated client man page.
+    * Client now performs on and off command if executable is 
+      linked to "on" and "off".  Install links "on", "off", and "pm"
+      in spec file.
+    * Set all plug/node state to ST_UNKNOWN prior to status query command.
+    * Updated client man page.
 
 2002-10-04 garlick
-	* Now properly handles the case of one ice box hanging.
-	  (tested with vpcd --bad_response)
-	* Don't call action callback from within dev_enqueue_actions
-	  (triggers act->cmd != NULL assertion in _act_finish).
-	  Error handling was inappropriate anyway - try silently ignoring
-	  unimplemented commands, and queuing actions for un-logged-in devices.
-	* Client works again (though still minimal)
-	* Tagged powerman-1-0-7.
+    * Now properly handles the case of one ice box hanging.
+      (tested with vpcd --bad_response)
+    * Don't call action callback from within dev_enqueue_actions
+      (triggers act->cmd != NULL assertion in _act_finish).
+      Error handling was inappropriate anyway - try silently ignoring
+      unimplemented commands, and queuing actions for un-logged-in devices.
+    * Client works again (though still minimal)
+    * Tagged powerman-1-0-7.
 
 2002-10-02 garlick
-	* Created Command data structure to represent what was called
-	  a "server action" and moved device action functions to device.c 
-	  and got rid of action.[ch]
-	* Device actions now execute a callback to the client code rather
-	  than call exported functions.
-	* Made the status command's hostlist argument optional.
+    * Created Command data structure to represent what was called
+      a "server action" and moved device action functions to device.c 
+      and got rid of action.[ch]
+    * Device actions now execute a callback to the client code rather
+      than call exported functions.
+    * Made the status command's hostlist argument optional.
 
 2002-10-02 behlendo
-  	* Fixed memory leak in config parsing.  Memory was being malloc'ed
-    	  for each line in the config file as it was parsed; pointers to this
-    	  memory were not preserved and the memory was never free'd.  These
-    	  pointers are now tracked and free'd after scanning completes.
+    * Fixed memory leak in config parsing.  Memory was being malloc'ed
+      for each line in the config file as it was parsed; pointers to this
+      memory were not preserved and the memory was never free'd.  These
+      pointers are now tracked and free'd after scanning completes.
 
 2002-10-02 garlick
-	* Changed protocol so query-status is now status and requires an
-	  argument, and query-nodes is now nodes.
-	* No more server action queue.
-	* Device actions notify client when they complete.  A count of 
-	  outstanding actions in the client structure is decremented as 
-	  each completes and when zero, returns success or failure depending
-	  on wether any of the actions failed.
-	* Device actions now have an error flag.  If set, when the action
-	  completes, an error flag is set in the client.
-	* More than one client may initiate actions in parallel across the
-	  cluster.  This works as each device has a queue.
+    * Changed protocol so query-status is now status and requires an
+      argument, and query-nodes is now nodes.
+    * No more server action queue.
+    * Device actions notify client when they complete.  A count of 
+      outstanding actions in the client structure is decremented as 
+      each completes and when zero, returns success or failure depending
+      on wether any of the actions failed.
+    * Device actions now have an error flag.  If set, when the action
+      completes, an error flag is set in the client.
+    * More than one client may initiate actions in parallel across the
+      cluster.  This works as each device has a queue.
 
 2002-09-30 garlick
-	* Added debug.[ch] and changed --telemetry to --debug mask
-	* Fixed bug where _reconnect did not update the file descriptor
-	  in the underlying buffer.
+    * Added debug.[ch] and changed --telemetry to --debug mask
+    * Fixed bug where _reconnect did not update the file descriptor
+      in the underlying buffer.
 
 2002-09-29 garlick
-	* Tagged powerman-1-0-6.
+    * Tagged powerman-1-0-6.
 
 2002-09-25 garlick
-	* Reimplement _process_delay() so it uses the select loop to time out.
-	* Incomplete work on _process_expect() so it uses the select loop
-	  to time out. TODO: 
-	  - no response does not cause a timeout
-	  - results need to be included in the client reply
-	* Added separate ice box v3 config - i think the timeouts/delays
-	  are going to be subtly different but worth caring about at MCR scale.
+    * Reimplement _process_delay() so it uses the select loop to time out.
+    * Incomplete work on _process_expect() so it uses the select loop
+      to time out. TODO: 
+      - no response does not cause a timeout
+      - results need to be included in the client reply
+    * Added separate ice box v3 config - i think the timeouts/delays
+      are going to be subtly different but worth caring about at MCR scale.
 
 2002-09-25 garlick
-	* Removed inter-dev delay (behlendo)
-	* Removed timeout interval and update interval.
-	* Disabled automatic status queries.
-	* Tagged powerman-1-0-5.
+    * Removed inter-dev delay (behlendo)
+    * Removed timeout interval and update interval.
+    * Disabled automatic status queries.
+    * Tagged powerman-1-0-5.
 
 2002-09-23 garlick
-	* Create per-device reconnect state (count and time stamp)
-	* Removed seperate soft power monitoring device from Plug.
-	* Remove periodic status query.
-	* Implement a sane reconnect algorithm.
-	* Handle 'quit' command immediately (don't queue it).
+    * Create per-device reconnect state (count and time stamp)
+    * Removed seperate soft power monitoring device from Plug.
+    * Remove periodic status query.
+    * Implement a sane reconnect algorithm.
+    * Handle 'quit' command immediately (don't queue it).
 
 2002-09-22 garlick
-	* Improve handling of numeric values in config files.  They are no 
-	  longer specified in quotes.  Floats are parsed by strtod; integers
-	  are parsed by strtol.
-	* Regex match positions in "map" lines are now specified as $N
-	  rathern than "N".
-	* Changed "size" to "plug count" in device configuration.
-	* Defined fatal out_of_memory function in powermand.c for list.[ch].
-	* Removed PM_CHECK_LOGIN script.
-	* Renamed script names in config files (e.g. PM_LOG_IN -> LOGIN_SCRIPT).
-	* Removed PM_NAMES and PM_ERROR action types.
+    * Improve handling of numeric values in config files.  They are no 
+      longer specified in quotes.  Floats are parsed by strtod; integers
+      are parsed by strtol.
+    * Regex match positions in "map" lines are now specified as $N
+      rathern than "N".
+    * Changed "size" to "plug count" in device configuration.
+    * Defined fatal out_of_memory function in powermand.c for list.[ch].
+    * Removed PM_CHECK_LOGIN script.
+    * Renamed script names in config files (e.g. PM_LOG_IN -> LOGIN_SCRIPT).
+    * Removed PM_NAMES and PM_ERROR action types.
 
 2002-09-21 garlick
-	* Got rid of unimplemented device types (SNMP, TTY, TELNET) and PMD 
-	  device type.  Deleted 'string interpretation mode' and associated 
-	  code/data structures used for PMD device type.
-	* Fixed lexer/parser to report correct file and line number when
-	  errors occur (works with include files).  Reworded many parsing 
-	  error messages.
+    * Got rid of unimplemented device types (SNMP, TTY, TELNET) and PMD 
+      device type.  Deleted 'string interpretation mode' and associated 
+      code/data structures used for PMD device type.
+    * Fixed lexer/parser to report correct file and line number when
+      errors occur (works with include files).  Reworded many parsing 
+      error messages.
 
 2002-09-20 garlick
-	* Moved vicebox stuff to test subdir and got rid of redundant
-	  exit_error.c and wrappers.c.  Added virtual power controller vpcd.c.
-	* Brian updated the TODO file.
-	* Cleanup of functions in client.c, util.c.
-	* Tagged powerman-1-0-4.
+    * Moved vicebox stuff to test subdir and got rid of redundant
+      exit_error.c and wrappers.c.  Added virtual power controller vpcd.c.
+    * Brian updated the TODO file.
+    * Cleanup of functions in client.c, util.c.
+    * Tagged powerman-1-0-4.
 
 2002-09-18 garlick
-	* Client protocol now in client_proto.h
-	* Numbered response codes
-	* Cleanup of control flow in client.c
-	* Bad nodes in on/off/reset.. etc cause the whole command to abort
-	* query-status command response is three hostlists rather than bitmap
-	* soft power status deprecated in protocl (consider generating 
-	  warnings when nodes are accessed which have soft != hard) 
+    * Client protocol now in client_proto.h
+    * Numbered response codes
+    * Cleanup of control flow in client.c
+    * Bad nodes in on/off/reset.. etc cause the whole command to abort
+    * query-status command response is three hostlists rather than bitmap
+    * soft power status deprecated in protocl (consider generating 
+      warnings when nodes are accessed which have soft != hard) 
 
 2002-09-18 behlendorf
-	* Added some basic memory accounting functionality
-	* Fixed several memory leaks
-	* Removed string.[ch] and replaced all String structures and functions
-	  with equivilant char * replacements.  
-	* Parsed hostlists now stored in the action structure and free'd
-	  when the action is completed.
-	* Badly formated hostlists no longer crash the daemon.
-	* Fixed segfault related to quit command, client connections are
-	  now properly cleaned up on the daemon side.
+    * Added some basic memory accounting functionality
+    * Fixed several memory leaks
+    * Removed string.[ch] and replaced all String structures and functions
+      with equivilant char * replacements.  
+    * Parsed hostlists now stored in the action structure and free'd
+      when the action is completed.
+    * Badly formated hostlists no longer crash the daemon.
+    * Fixed segfault related to quit command, client connections are
+      now properly cleaned up on the daemon side.
 
 2002-09-18 behlendorf
-	* Fixed coalescing of actions to the devices.
+    * Fixed coalescing of actions to the devices.
 
 2002-09-17 behlendorf
-	* Reworked the powerman client/server protocol (highlights follow)
-	* Removed send/expect parsing, replaced with a simple switch.
-	* Host lists have replaced regexs in the protocol.
-	* Powerman authentication step removed.
-	* Check login command removed.
+    * Reworked the powerman client/server protocol (highlights follow)
+    * Removed send/expect parsing, replaced with a simple switch.
+    * Host lists have replaced regexs in the protocol.
+    * Powerman authentication step removed.
+    * Check login command removed.
 
 2002-09-17 garlick
-	* Reformatting, cleanup, doc of data structures
-	* Made device list static in device.c
-	* Use static array allocation for scripts[]
+    * Reformatting, cleanup, doc of data structures
+    * Made device list static in device.c
+    * Use static array allocation for scripts[]
 
 2002-09-17 garlick
-	* Fix bug introduced in cleanup where actions were initiated but
-	  not completed.  Select loop should only set status to STAT_OCCUPIED
-	  if action was one requiring completion.
-	* Tagged powerman-1-0-3.
+    * Fix bug introduced in cleanup where actions were initiated but
+      not completed.  Select loop should only set status to STAT_OCCUPIED
+      if action was one requiring completion.
+    * Tagged powerman-1-0-3.
 
 2002-09-16 garlick
-	* Got rid of remnants of second "completion" expect script 
-	* Got rid of cheat->g global structure.
-	* Reduced interdependencies between modules.
-	* Tagged powerman-1-0-2.
+    * Got rid of remnants of second "completion" expect script 
+    * Got rid of cheat->g global structure.
+    * Reduced interdependencies between modules.
+    * Tagged powerman-1-0-2.
 
 2002-09-14 garlick
-	* Renamed functions to use lower case module prefix.
-	* Renamed client.[ch] -> server.[ch].
-	* Renamed pm_string.[ch] -> string.[ch]
-	* Renamed exit_error.[ch] -> error.[ch]
-	* Indented inline comments.
-	* Made some globals local to powermand.c
+    * Renamed functions to use lower case module prefix.
+    * Renamed client.[ch] -> server.[ch].
+    * Renamed pm_string.[ch] -> string.[ch]
+    * Renamed exit_error.[ch] -> error.[ch]
+    * Indented inline comments.
+    * Made some globals local to powermand.c
 
 2002-09-13 garlick
-	* Ran indent -kr *.[ch] on everything in src except hostlist.[ch]
-	  and list.[ch] 
-	* Tagged src with after-indent.
-	* Got rid of NDUMP code (deprecated debugging stuff).
-	* Added "vi:softtabstop=4" to *.c
+    * Ran indent -kr *.[ch] on everything in src except hostlist.[ch]
+      and list.[ch] 
+    * Tagged src with after-indent.
+    * Got rid of NDUMP code (deprecated debugging stuff).
+    * Added "vi:softtabstop=4" to *.c
 
 2002-09-12 garlick
-	* Brian documented some problems in the top of TODO.
-	* Chris cleaned up some type casting.
-	* Chris fixed icebox.dev to add delay after cmds to prevent 
-	  icebox "ERROR 5" (resource is busy).  This was causing "bulk" 
-  	  commands to fail on MCR
-	* Tagged powerman-1-0-1.
+    * Brian documented some problems in the top of TODO.
+    * Chris cleaned up some type casting.
+    * Chris fixed icebox.dev to add delay after cmds to prevent 
+      icebox "ERROR 5" (resource is busy).  This was causing "bulk" 
+        commands to fail on MCR
+    * Tagged powerman-1-0-1.
 
 2002-09-06 dun
-	* Fixed bug where downed network device would cause select to spin.
+    * Fixed bug where downed network device would cause select to spin.
 
 2002-08-16 auselton
-	* Chris tells me he updated the date format in the "make rpm"
-	  target stuff.
-	* icebox.dev's script for PM_UPDATE_NODES now allows for a node
-	  status of "2" (== "unavailable") in its expect.  This is in 
-	  keeping with the change to the protocol in V3.0 of the icebox
-	  firmware.
-	* device.c (do_target_some) had a bug similar to that addressed 
-	  by Gregg Hommes above.  If a plug does not have a node plugged
-	  into it then a) it should be skipped when trying to determine
-	  the targets for a device, and b) that is a sufficient condition 
-	  for not using the "all" target on the device.
+    * Chris tells me he updated the date format in the "make rpm"
+      target stuff.
+    * icebox.dev's script for PM_UPDATE_NODES now allows for a node
+      status of "2" (== "unavailable") in its expect.  This is in 
+      keeping with the change to the protocol in V3.0 of the icebox
+      firmware.
+    * device.c (do_target_some) had a bug similar to that addressed 
+      by Gregg Hommes above.  If a plug does not have a node plugged
+      into it then a) it should be skipped when trying to determine
+      the targets for a device, and b) that is a sufficient condition 
+      for not using the "all" target on the device.
 
 2002-08-14 garlick
-	* Split baytech.dev into baytechF500.dev and baytechF501.dev.
- 	  Our test baytech has the f/w rev F 5.00, and pengra baytechs have
-	  rev F 5.01.  The latter prompts (Y/N)> after every power action.
-	* Put back baytech.dev, documenting that prompting is configurable.
+    * Split baytech.dev into baytechF500.dev and baytechF501.dev.
+       Our test baytech has the f/w rev F 5.00, and pengra baytechs have
+      rev F 5.01.  The latter prompts (Y/N)> after every power action.
+    * Put back baytech.dev, documenting that prompting is configurable.
 
 2002-08-10 hommes
-	* Modify do_PMD_semantics() in device.c to set plug->node->p_state
-	  and plug->node->n_state only if the plug is associated with node.
-	  (previous behavior was assertion failure)
-	* Modify loops in do_Device_semantics() in device.c to skip iteration
-	  if variable interp->node is NULL. (previous behavior was assertion
-	  failure)
-	* Fix dump_Plug() function in device.c to print node name only if
-	  variable plug->node is not NULL.
-	* The match_Regex() function in device.c had duplicate tests for
-	  "pmatch[0].rm_so == -1". Changed second one to
-	  "pmatch[0].rm_se == -1"
-	* Removed local variable <dev_com> which was set but never used in
-	  do_Action() in action.c.  
+    * Modify do_PMD_semantics() in device.c to set plug->node->p_state
+      and plug->node->n_state only if the plug is associated with node.
+      (previous behavior was assertion failure)
+    * Modify loops in do_Device_semantics() in device.c to skip iteration
+      if variable interp->node is NULL. (previous behavior was assertion
+      failure)
+    * Fix dump_Plug() function in device.c to print node name only if
+      variable plug->node is not NULL.
+    * The match_Regex() function in device.c had duplicate tests for
+      "pmatch[0].rm_so == -1". Changed second one to
+      "pmatch[0].rm_se == -1"
+    * Removed local variable <dev_com> which was set but never used in
+      do_Action() in action.c.  
 
 2002-08-09 garlick
-	* Sort hostlists before display in powerman.c
-	* Comment out baytech password expect/send in baytech.dev.
-	  Pengra doesn't use passwords.
+    * Sort hostlists before display in powerman.c
+    * Comment out baytech password expect/send in baytech.dev.
+      Pengra doesn't use passwords.
 
 2002-08-08 garlick
-	* Make some char *'s into unsigned char *'s that are carrying
-	  non-printable values such as \376 (baytech telnet telnet handshake)).
-	* Redo telemetry logging to support callback at the Buffer level.
-	* Fixed a memory leak where buffers were reallocated on a device
-	  reconnect but old ones weren't freed.
-	* Telemetry logging on server now shows when expect or delay
-	  commands are being processed.
-	* Updated baytech and icebox configs to use 10 sec timeout.
-	  Baytech at least seems to require > 2sec to respond sometimes.
-	  Fixed a thinko I introduced to the config file earlier.
-	* Instead of stripping NULL's out of buffers when creating strings,
-	  convert them to \377.
-	* Fix get_String_from_Buffer() to only consume buffer up to and
-	  including regex match - not whole buffer (Gregg H.)
-	* Server telemetry now shows the buffer contents when reporting
-	  no match.
+    * Make some char *'s into unsigned char *'s that are carrying
+      non-printable values such as \376 (baytech telnet telnet handshake)).
+    * Redo telemetry logging to support callback at the Buffer level.
+    * Fixed a memory leak where buffers were reallocated on a device
+      reconnect but old ones weren't freed.
+    * Telemetry logging on server now shows when expect or delay
+      commands are being processed.
+    * Updated baytech and icebox configs to use 10 sec timeout.
+      Baytech at least seems to require > 2sec to respond sometimes.
+      Fixed a thinko I introduced to the config file earlier.
+    * Instead of stripping NULL's out of buffers when creating strings,
+      convert them to \377.
+    * Fix get_String_from_Buffer() to only consume buffer up to and
+      including regex match - not whole buffer (Gregg H.)
+    * Server telemetry now shows the buffer contents when reporting
+      no match.
 
 2002-08-07 garlick
-	* Did away with Log - just use syslog.  Removed log from configuration 
-	  syntax.
-	* Added delay back into default powerman.conf.
-	* Added "\nnn" (octal byte) support to config file for expect/send 
-	  sequences.
+    * Did away with Log - just use syslog.  Removed log from configuration 
+      syntax.
+    * Added delay back into default powerman.conf.
+    * Added "\nnn" (octal byte) support to config file for expect/send 
+      sequences.
 
 2002-08-06 garlick
-	* Added --telemetry option to server.
+    * Added --telemetry option to server.
 
 2002-08-05 garlick
-	* Moved string stuff out of buffer.c into util.c and refactored.
-	* Found problem with short reads, process_script() would delete
-	  actions if they didn't match the partial buffer.
-	* Config file cleanup (removed second expect "completion" regex,
-	  cluster name).
-	* Took vicebox.dev out of spec file install.
-	* Made a general helper function for wrapped regcomp special
-	  character expansion.
+    * Moved string stuff out of buffer.c into util.c and refactored.
+    * Found problem with short reads, process_script() would delete
+      actions if they didn't match the partial buffer.
+    * Config file cleanup (removed second expect "completion" regex,
+      cluster name).
+    * Took vicebox.dev out of spec file install.
+    * Made a general helper function for wrapped regcomp special
+      character expansion.
 
 2002-08-02 garlick
-	* A bit more cleanup in pm_string.c.
-	* ON, OFF changed to ST_ON, ST_OFF
-	* Transferred all remaining inline review comments.
-	* Reworked log.c.
-	* Fixed all [v]snprintf's to check for both result == -1 
-  	  (glibc <= 2.0.6) and result > len (glibc >= 2.1, C99 standard).
+    * A bit more cleanup in pm_string.c.
+    * ON, OFF changed to ST_ON, ST_OFF
+    * Transferred all remaining inline review comments.
+    * Reworked log.c.
+    * Fixed all [v]snprintf's to check for both result == -1 
+        (glibc <= 2.0.6) and result > len (glibc >= 2.1, C99 standard).
 
 2002-08-01 garlick
-	* Do not use ${srcbin} for products.  Clean up other Makefile targets.
-	* Added --telemetry to client to allow us to watch protocol happen.
-	* Change client to not request list of nodes from daemon unless
-	  requesting status.
-	* Convert completely over to hostlist.c routines in client.
-	* Remove --soft option and always warn if plug=on and node=off.
-	* Removed duplicate hostlist handling from pm_string.c.
-	* Added powerman init script
+    * Do not use ${srcbin} for products.  Clean up other Makefile targets.
+    * Added --telemetry to client to allow us to watch protocol happen.
+    * Change client to not request list of nodes from daemon unless
+      requesting status.
+    * Convert completely over to hostlist.c routines in client.
+    * Remove --soft option and always warn if plug=on and node=off.
+    * Removed duplicate hostlist handling from pm_string.c.
+    * Added powerman init script
 
 2002-07-29 dun
-	* Fixed parms to gethostbyaddr().
+    * Fixed parms to gethostbyaddr().
 
 2002-07-29 garlick
-	* Make --queryon, --queryoff work with or without targets on cmd line.
+    * Make --queryon, --queryoff work with or without targets on cmd line.
 
 2002-07-28 garlick
-	* Fixed bug where log fd was always being checked for writeability
-	  in main select loop, chewing 100% of a CPU.
-	* Commenting out the "log file" config line now disables logging.
-	* Made wrapper Malloc/Free more robust (embed size/magic cookie in
-	  each buffer allocated).  Size is no longer a parameter to Free.
+    * Fixed bug where log fd was always being checked for writeability
+      in main select loop, chewing 100% of a CPU.
+    * Commenting out the "log file" config line now disables logging.
+    * Made wrapper Malloc/Free more robust (embed size/magic cookie in
+      each buffer allocated).  Size is no longer a parameter to Free.
 
 2002-07-27 garlick
-	* Renamed main.[ch] to powermand.[ch]; renamed client.c to powerman.c.
-	* Moved set_tv() from powermand.c to config.c.
-	* Moved overdue() from powermand.c to device.c.
-	* Moved read_Config_file() from config.c to powermand.c and exported
-	  init_Client_protocol() from config.c.
-	* Created get_String_from_Buffer() buffer in util.[ch] to eliminate
-	  dependence of buffer.h pm_string.h.
-	* Fixed Delay to account for select EINTR.
-	* Created gettimeofday wrapper.
-	* Fixed Read/Write to retry on EINTR and handle other errors gracefully
-	* Have Free() wrapper clear memory to zero magic cookies, etc..
-	* Made Buffer an opaque type with magic cookie.
-	* Made String an opaque type with magic cookie.
-	* Give appropriate errors when powermand config file is not set or 
-	  set improperly, and start with a default config file.
-	* Powermand options changed per code review.
-	* Moved system includes out of powerman.h.
-	* Merged general code review suggestions in to TODO file
-	  (but not the specific yet)
-	* Added support for quadrics style host ranges in powerman client.
-	* Move powermand from bin to sbin.
-	* Use standard assert instead of powerman.h one so we get killed
-	  with a SIGABORT and get debugger stack traces.
-	* Added some list_iterator_destroy's to match list_iterator_create's
-	  in powerman.c
-	* Pid file stuff moved to pidlock.c and disabled for the moment.
+    * Renamed main.[ch] to powermand.[ch]; renamed client.c to powerman.c.
+    * Moved set_tv() from powermand.c to config.c.
+    * Moved overdue() from powermand.c to device.c.
+    * Moved read_Config_file() from config.c to powermand.c and exported
+      init_Client_protocol() from config.c.
+    * Created get_String_from_Buffer() buffer in util.[ch] to eliminate
+      dependence of buffer.h pm_string.h.
+    * Fixed Delay to account for select EINTR.
+    * Created gettimeofday wrapper.
+    * Fixed Read/Write to retry on EINTR and handle other errors gracefully
+    * Have Free() wrapper clear memory to zero magic cookies, etc..
+    * Made Buffer an opaque type with magic cookie.
+    * Made String an opaque type with magic cookie.
+    * Give appropriate errors when powermand config file is not set or 
+      set improperly, and start with a default config file.
+    * Powermand options changed per code review.
+    * Moved system includes out of powerman.h.
+    * Merged general code review suggestions in to TODO file
+      (but not the specific yet)
+    * Added support for quadrics style host ranges in powerman client.
+    * Move powermand from bin to sbin.
+    * Use standard assert instead of powerman.h one so we get killed
+      with a SIGABORT and get debugger stack traces.
+    * Added some list_iterator_destroy's to match list_iterator_create's
+      in powerman.c
+    * Pid file stuff moved to pidlock.c and disabled for the moment.
 
 2002-07-26 garlick
-	* Reformatted ChangeLog
-	* Added 'make depend' target to address missing dependencies.
-	  Added .c.o production and removed some redundant targets.
-	  Modified powerman, powermand targets to match products to address
-	  extraneous relinks (src/Makefile).
-	* Moved check for root to after process_command_line() so root 
-	  privilege is not required to get --help (src/client.c)
-	* Moved Report_Memory() to wrappers.c and made allocated_memory static
-	  (src/exit_error.c)
-	* Added init_error()  and exit_msg() functions to exit_error.
-	  The exit_error() function now uses strerror() and does not close
-	  file descriptors, flush stderr, or close log before exit.  Added 
-	  syslog_on_error() accessor function for syslog_on (src/exit_error.c)
-	* Client now uses exit_error.c (src/client.c)
-	* Rename some client options per code review.  Reduced verbosity
-	  of usage() output. (src/client.c)
-	* Config->com is now an enum and command format strings are 
-	  individually #defined and end in _FMT (src/client.c)
-	* Made all functions in client static and discovered duplicate 
-	  functions defined in config.[ch].  Prepended 'x' to client versions
-	  for now (factor later) (src/client.h)
-	* Added accessor functions and made 'log' private to log module 
-	  (src/log.[ch])
-	* Made clean target clean up after default target, remove no-op cd
-   	  commands, employ make -C where appropriate, do not build vicebox 
-	  by default (Makefile)
-	* Fixed compilation errors if NDUMP is not defined; added exit callback
-	  to init_error() (null in client, set in server if NDUMP defined).
-	* Updated powerman.1 to match option changes.
-	* bzero->memset
-	* Took local includes out of powerman.h (still need to do sys includes)
+    * Reformatted ChangeLog
+    * Added 'make depend' target to address missing dependencies.
+      Added .c.o production and removed some redundant targets.
+      Modified powerman, powermand targets to match products to address
+      extraneous relinks (src/Makefile).
+    * Moved check for root to after process_command_line() so root 
+      privilege is not required to get --help (src/client.c)
+    * Moved Report_Memory() to wrappers.c and made allocated_memory static
+      (src/exit_error.c)
+    * Added init_error()  and exit_msg() functions to exit_error.
+      The exit_error() function now uses strerror() and does not close
+      file descriptors, flush stderr, or close log before exit.  Added 
+      syslog_on_error() accessor function for syslog_on (src/exit_error.c)
+    * Client now uses exit_error.c (src/client.c)
+    * Rename some client options per code review.  Reduced verbosity
+      of usage() output. (src/client.c)
+    * Config->com is now an enum and command format strings are 
+      individually #defined and end in _FMT (src/client.c)
+    * Made all functions in client static and discovered duplicate 
+      functions defined in config.[ch].  Prepended 'x' to client versions
+      for now (factor later) (src/client.h)
+    * Added accessor functions and made 'log' private to log module 
+      (src/log.[ch])
+    * Made clean target clean up after default target, remove no-op cd
+         commands, employ make -C where appropriate, do not build vicebox 
+      by default (Makefile)
+    * Fixed compilation errors if NDUMP is not defined; added exit callback
+      to init_error() (null in client, set in server if NDUMP defined).
+    * Updated powerman.1 to match option changes.
+    * bzero->memset
+    * Took local includes out of powerman.h (still need to do sys includes)
 
 2002-07-25 uselton
-	* With the release of version 1.0.0 the code has been
-	  entirely rewritten.  ChangeLog truncated.
-	* Tagged powerman-1-0-0.
+    * With the release of version 1.0.0 the code has been
+      entirely rewritten.  ChangeLog truncated.
+    * Tagged powerman-1-0-0.
+
+#
+# vi:tabstop=4 shiftwidth=4 expandtab
+#
 

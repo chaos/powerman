@@ -36,14 +36,14 @@
 /* Wrapper functions (in wrappers.c) */
 int Socket(int family, int type, int protocol);
 int Setsockopt(int fd, int level, int optname, const void *opt_val,
-	       socklen_t optlen);
+               socklen_t optlen);
 int Bind(int fd, struct sockaddr_in *addr, socklen_t len);
 int Getsockopt(int fd, int level, int optname, void *opt_val,
-	       socklen_t * optlen);
+               socklen_t * optlen);
 int Listen(int fd, int backlog);
 int Fcntl(int fd, int cmd, int arg);
 int Select(int maxfd, fd_set * rset, fd_set * wset, fd_set * eset,
-	   struct timeval *tv);
+           struct timeval *tv);
 void Delay(struct timeval *tv);
 char *Malloc(int size);
 void Free(void *ptr);
@@ -56,10 +56,10 @@ int Write(int fd, unsigned char *p, int max);
 int Open(char *str, int flags, int mode);
 int Close(int fd);
 int Getaddrinfo(char *host, char *service, struct addrinfo *hints,
-		struct addrinfo **addrinfo);
+                struct addrinfo **addrinfo);
 void Regcomp(regex_t * preg, const char *regex, int cflags);
 int Regexec(const regex_t * preg, const char *string,
-	    size_t nmatch, regmatch_t pmatch[], int eflags);
+            size_t nmatch, regmatch_t pmatch[], int eflags);
 pid_t Fork(void);
 typedef void Sigfunc(int);
 Sigfunc *Signal(int signo, Sigfunc * func);
@@ -68,7 +68,7 @@ void Gettimeofday(struct timeval *tv, struct timezone *tz);
 time_t Time(time_t * t);
 char *Strncpy(char *s1, const char *s2, int len);
 
-#endif				/* WRAPPERS_H */
+#endif                          /* WRAPPERS_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

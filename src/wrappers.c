@@ -56,19 +56,19 @@ int Socket(int family, int type, int protocol)
 
     fd = socket(family, type, protocol);
     if (fd < 0)
-	err_exit(TRUE, "socket");
+        err_exit(TRUE, "socket");
     return fd;
 }
 
 int
 Setsockopt(int fd, int level, int optname, const void *opt_val,
-	   socklen_t optlen)
+           socklen_t optlen)
 {
     int ret_code;
 
     ret_code = setsockopt(fd, level, optname, opt_val, optlen);
     if (ret_code < 0)
-	err_exit(TRUE, "setsockopt");
+        err_exit(TRUE, "setsockopt");
     return ret_code;
 }
 
@@ -79,19 +79,19 @@ int Bind(int fd, struct sockaddr_in *saddr, socklen_t len)
 
     ret_code = bind(fd, (struct sockaddr *) saddr, len);
     if (ret_code < 0)
-	err_exit(TRUE, "bind");
+        err_exit(TRUE, "bind");
     return ret_code;
 }
 
 int
 Getsockopt(int fd, int level, int optname, void *opt_val,
-	   socklen_t * optlen)
+           socklen_t * optlen)
 {
     int ret_code;
 
     ret_code = getsockopt(fd, level, optname, opt_val, optlen);
     if (ret_code < 0)
-	err_exit(TRUE, "getsockopt");
+        err_exit(TRUE, "getsockopt");
     return ret_code;
 }
 
@@ -101,7 +101,7 @@ int Listen(int fd, int backlog)
 
     ret_code = listen(fd, backlog);
     if (ret_code < 0)
-	err_exit(TRUE, "listen");
+        err_exit(TRUE, "listen");
     return ret_code;
 }
 
@@ -111,7 +111,7 @@ int Fcntl(int fd, int cmd, int arg)
 
     ret_code = fcntl(fd, cmd, arg);
     if (ret_code < 0)
-	err_exit(TRUE, "fcntl");
+        err_exit(TRUE, "fcntl");
     return ret_code;
 }
 
@@ -129,24 +129,24 @@ time_t Time(time_t * t)
 
     n = time(t);
     if (n < 0)
-	err_exit(TRUE, "time");
+        err_exit(TRUE, "time");
     return n;
 }
 
 void Gettimeofday(struct timeval *tv, struct timezone *tz)
 {
     if (gettimeofday(tv, tz) < 0)
-	err_exit(TRUE, "gettimeofday");
+        err_exit(TRUE, "gettimeofday");
 }
 
 static void _clear_sets(fd_set * rset, fd_set * wset, fd_set * eset)
 {
     if (rset != NULL)
-	FD_ZERO(rset);
+        FD_ZERO(rset);
     if (wset != NULL)
-	FD_ZERO(wset);
+        FD_ZERO(wset);
     if (eset != NULL)
-	FD_ZERO(eset);
+        FD_ZERO(eset);
 }
 
 /*
@@ -165,25 +165,25 @@ Select(int maxfd, fd_set * rset, fd_set * wset, fd_set * eset,
 
     /* prep for EINTR handling */
     if (tv) {
-	tv_orig = *tv;
-	Gettimeofday(&start, NULL);
+        tv_orig = *tv;
+        Gettimeofday(&start, NULL);
     }
     /* repeat select if interrupted */
     do {
-	n = select(maxfd, rset, wset, eset, tv);
-	if (n < 0 && errno != EINTR)	/* unrecov error */
-	    err_exit(TRUE, "select");
-	if (n < 0 && tv != NULL) {	/* EINTR - adjust tv */
-	    Gettimeofday(&end, NULL);
-	    timersub(&end, &start, &delta);	/* delta = end-start */
-	    timersub(&tv_orig, &delta, tv);	/* tv = tvsave-delta */
-	}
-	if (n < 0)
-	    fprintf(stderr, "retrying interrupted select\n");
+        n = select(maxfd, rset, wset, eset, tv);
+        if (n < 0 && errno != EINTR)    /* unrecov error */
+            err_exit(TRUE, "select");
+        if (n < 0 && tv != NULL) {      /* EINTR - adjust tv */
+            Gettimeofday(&end, NULL);
+            timersub(&end, &start, &delta);     /* delta = end-start */
+            timersub(&tv_orig, &delta, tv);     /* tv = tvsave-delta */
+        }
+        if (n < 0)
+            fprintf(stderr, "retrying interrupted select\n");
     } while (n < 0);
     /* XXX main select loop needs this fd_sets cleared on timeout */
     if (n == 0)
-	_clear_sets(rset, wset, eset);
+        _clear_sets(rset, wset, eset);
     return n;
 }
 
@@ -205,9 +205,9 @@ char *Malloc(int size)
     assert(size > 0 && size <= INT_MAX);
     p = (int *) malloc(size + 2 * sizeof(int));
     if (p == NULL)
-	err_exit(FALSE, "out of memory");
-    p[0] = MALLOC_MAGIC;	/* add "secret" magic cookie */
-    p[1] = size;		/* store size in buffer */
+        err_exit(FALSE, "out of memory");
+    p[0] = MALLOC_MAGIC;        /* add "secret" magic cookie */
+    p[1] = size;                /* store size in buffer */
 #ifndef NDEBUG
     memory_alloc += size;
 #endif
@@ -219,16 +219,16 @@ char *Malloc(int size)
 void Free(void *ptr)
 {
     if (ptr != NULL) {
-	int *p = (int *) ptr - 2;
-	int size;
+        int *p = (int *) ptr - 2;
+        int size;
 
-	assert(p[0] == MALLOC_MAGIC);	/* magic cookie still there? */
-	size = p[1];
-	memset(p, 0, size + 2 * sizeof(int));
+        assert(p[0] == MALLOC_MAGIC);   /* magic cookie still there? */
+        size = p[1];
+        memset(p, 0, size + 2 * sizeof(int));
 #ifndef NDEBUG
-	memory_alloc -= size;
+        memory_alloc -= size;
 #endif
-	free(p);
+        free(p);
     }
 }
 
@@ -249,15 +249,15 @@ int Accept(int fd, struct sockaddr_in *addr, socklen_t * addrlen)
 
     new = accept(fd, (struct sockaddr *) addr, addrlen);
     if (new < 0) {
-	/* 
-	 *   A client could abort before a ready connection is accepted.  
-	 *  "The fix for this problem is to:  ...  2.  "Ignore the following 
-	 *  errors ..."  - Stevens, UNP p424
-	 */
-	if (!((errno == EWOULDBLOCK) ||
-	      (errno == ECONNABORTED) ||
-	      (errno == EPROTO) || (errno == EINTR)))
-	    err_exit(TRUE, "accept");
+        /* 
+         *   A client could abort before a ready connection is accepted.  
+         *  "The fix for this problem is to:  ...  2.  "Ignore the following 
+         *  errors ..."  - Stevens, UNP p424
+         */
+        if (!((errno == EWOULDBLOCK) ||
+              (errno == ECONNABORTED) ||
+              (errno == EPROTO) || (errno == EINTR)))
+            err_exit(TRUE, "accept");
     }
     return new;
 }
@@ -268,8 +268,8 @@ int Connect(int fd, struct sockaddr *addr, socklen_t addrlen)
 
     n = connect(fd, addr, addrlen);
     if (n < 0) {
-	if (errno != EINPROGRESS)
-	    err_exit(TRUE, "connect");
+        if (errno != EINPROGRESS)
+            err_exit(TRUE, "connect");
     }
     return n;
 }
@@ -279,10 +279,10 @@ int Read(int fd, unsigned char *p, int max)
     int n;
 
     do {
-	n = read(fd, p, max);
+        n = read(fd, p, max);
     } while (n < 0 && errno == EINTR);
     if (n < 0 && errno != EWOULDBLOCK && errno != ECONNRESET)
-	err_exit(TRUE, "read");
+        err_exit(TRUE, "read");
     return n;
 }
 
@@ -291,10 +291,10 @@ int Write(int fd, unsigned char *p, int max)
     int n;
 
     do {
-	n = write(fd, p, max);
+        n = write(fd, p, max);
     } while (n < 0 && errno == EINTR);
     if (n < 0 && errno != EAGAIN && errno != ECONNRESET && errno != EPIPE)
-	err_exit(TRUE, "write");
+        err_exit(TRUE, "write");
     return n;
 }
 
@@ -305,7 +305,7 @@ int Open(char *str, int flags, int mode)
     assert(str != NULL);
     fd = open(str, flags, mode);
     if (fd < 0)
-	err_exit(TRUE, "open %s", str);
+        err_exit(TRUE, "open %s", str);
     return fd;
 }
 
@@ -315,20 +315,20 @@ int Close(int fd)
 
     n = close(fd);
     if (n < 0)
-	err_exit(TRUE, "close");
+        err_exit(TRUE, "close");
     return n;
 }
 
 int
 Getaddrinfo(char *host, char *service, struct addrinfo *hints,
-	    struct addrinfo **addrinfo)
+            struct addrinfo **addrinfo)
 {
     int n;
 
     n = getaddrinfo(host, service, hints, addrinfo);
     if (n != 0)
-	err_exit(FALSE, "getaddrinfo host %s service %s: %s",
-		 host, service, gai_strerror(n));
+        err_exit(FALSE, "getaddrinfo host %s service %s: %s",
+                 host, service, gai_strerror(n));
     return n;
 }
 
@@ -343,9 +343,9 @@ static void _str_subst(char *s1, int len, const char *s2, const char *s3)
     char *p;
 
     while ((p = strstr(s1, s2)) != NULL) {
-	assert(strlen(s1) + (s3len - s2len) + 1 <= len);
-	memmove(p + s3len, p + s2len, strlen(p + s2len) + 1);
-	memcpy(p, s3, s3len);
+        assert(strlen(s1) + (s3len - s2len) + 1 <= len);
+        memmove(p + s3len, p + s2len, strlen(p + s2len) + 1);
+        memcpy(p, s3, s3len);
     }
 }
 
@@ -371,12 +371,12 @@ void Regcomp(regex_t * preg, const char *regex, int cflags)
      */
     n = regcomp(preg, buf, cflags);
     if (n != REG_NOERROR)
-	err_exit(FALSE, "regcomp failed");
+        err_exit(FALSE, "regcomp failed");
 }
 
 int
 Regexec(const regex_t * preg, const char *string,
-	size_t nmatch, regmatch_t pmatch[], int eflags)
+        size_t nmatch, regmatch_t pmatch[], int eflags)
 {
     int n;
     char buf[MAX_REG_BUF];
@@ -393,7 +393,7 @@ pid_t Fork(void)
     pid_t pid;
 
     if ((pid = fork()) == -1)
-	err_exit(TRUE, "fork");
+        err_exit(TRUE, "fork");
     return (pid);
 }
 
@@ -406,23 +406,24 @@ Sigfunc *Signal(int signo, Sigfunc * func)
     sigemptyset(&act.sa_mask);
     act.sa_flags = 0;
     if (signo == SIGALRM) {
-#ifdef	SA_INTERRUPT
-	act.sa_flags |= SA_INTERRUPT;	/* SunOS 4.x */
+#ifdef  SA_INTERRUPT
+        act.sa_flags |= SA_INTERRUPT;   /* SunOS 4.x */
 #endif
     } else {
-#ifdef	SA_RESTART
-	act.sa_flags |= SA_RESTART;	/* SVR4, 44BSD */
+#ifdef  SA_RESTART
+        act.sa_flags |= SA_RESTART;     /* SVR4, 44BSD */
 #endif
     }
     n = sigaction(signo, &act, &oact);
     if (n < 0)
-	err_exit(TRUE, "sigaction");
+        err_exit(TRUE, "sigaction");
 
     return (oact.sa_handler);
 }
 
 #ifndef NDEBUG
-int Memory(void) {
+int Memory(void)
+{
     return memory_alloc;
 }
 #endif

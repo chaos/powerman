@@ -42,29 +42,28 @@
 #include "config.h"
 #include "client.h"
 
-static int _spec_match(Spec *spec, void *key);
-static void _spec_destroy(Spec *spec);
+static int _spec_match(Spec * spec, void *key);
+static void _spec_destroy(Spec * spec);
 
 /* 
  * Device specifications only exist during parsing.
  * After that their contents are copied for each instantiation of the device and
  * the original specification is not used.
  */
-static List		tmp_specs = NULL;                
+static List tmp_specs = NULL;
 
 /*
  * Some configurable values - accessor functions defined below.
  */
-static bool		conf_use_tcp_wrap = FALSE;
-static int		conf_listen_port = NO_PORT;
-static hostlist_t	conf_nodes = NULL;
+static bool conf_use_tcp_wrap = FALSE;
+static int conf_listen_port = NO_PORT;
+static hostlist_t conf_nodes = NULL;
 
 /* 
  * initialize module
  * parse the named config file - on error, exit with a message to stderr 
  */
-void
-conf_init(char *filename)
+void conf_init(char *filename)
 {
     struct stat stbuf;
     int parse_config_file(char *filename);
@@ -75,9 +74,9 @@ conf_init(char *filename)
 
     /* validate config file */
     if (stat(filename, &stbuf) < 0)
-	err_exit(TRUE, "%s", filename);
+        err_exit(TRUE, "%s", filename);
     if ((stbuf.st_mode & S_IFMT) != S_IFREG)
-	err_exit(FALSE, "%s is not a regular file\n", filename);
+        err_exit(FALSE, "%s is not a regular file\n", filename);
 
     /* 
      * Call yacc parser against config file.  The parser calls support 
@@ -92,11 +91,10 @@ conf_init(char *filename)
 }
 
 /* finalize module */
-void
-conf_fini(void)
+void conf_fini(void)
 {
     if (conf_nodes != NULL)
-	hostlist_destroy(conf_nodes);
+        hostlist_destroy(conf_nodes);
 }
 
 /*******************************************************************
@@ -109,7 +107,7 @@ conf_fini(void)
  *******************************************************************/
 
 Script_El *conf_script_el_create(Script_El_Type type, char *s1,
-		List map, struct timeval tv)
+                                 List map, struct timeval tv)
 {
     Script_El *script_el;
     reg_syntax_t cflags = REG_EXTENDED;
@@ -118,15 +116,15 @@ Script_El *conf_script_el_create(Script_El_Type type, char *s1,
     script_el->type = type;
     switch (type) {
     case EL_SEND:
-	script_el->s_or_e.send.fmt = Strdup(s1);
-	break;
+        script_el->s_or_e.send.fmt = Strdup(s1);
+        break;
     case EL_EXPECT:
-	Regcomp(&(script_el->s_or_e.expect.exp), s1, cflags);
-	script_el->s_or_e.expect.map = map;
-	break;
+        Regcomp(&(script_el->s_or_e.expect.exp), s1, cflags);
+        script_el->s_or_e.expect.map = map;
+        break;
     case EL_DELAY:
-	script_el->s_or_e.delay.tv = tv;
-	break;
+        script_el->s_or_e.delay.tv = tv;
+        break;
     default:
     }
     return script_el;
@@ -138,12 +136,12 @@ void conf_script_el_destroy(Script_El * script_el)
 
     switch (script_el->type) {
     case EL_SEND:
-	Free(script_el->s_or_e.send.fmt);
-	break;
+        Free(script_el->s_or_e.send.fmt);
+        break;
     case EL_EXPECT:
-    if (script_el->s_or_e.expect.map != NULL)
-        list_destroy(script_el->s_or_e.expect.map);
-	break;
+        if (script_el->s_or_e.expect.map != NULL)
+            list_destroy(script_el->s_or_e.expect.map);
+        break;
     case EL_DELAY:
     default:
     }
@@ -173,14 +171,14 @@ Spec *conf_spec_create(char *name)
     timerclear(&spec->timeout);
     timerclear(&spec->ping_period);
     for (i = 0; i < NUM_SCRIPTS; i++)
-	spec->scripts[i] = NULL;
+        spec->scripts[i] = NULL;
     return spec;
 }
 
 /* list 'match' function for conf_find_spec() */
 static int _spec_match(Spec * spec, void *key)
 {
-    return (strcmp(spec->name, (char *)key) == 0);
+    return (strcmp(spec->name, (char *) key) == 0);
 }
 
 /* list destructor for tmp_specs */
@@ -192,29 +190,27 @@ static void _spec_destroy(Spec * spec)
     Free(spec->off);
     Free(spec->on);
     if (spec->all)
-	Free(spec->all);
+        Free(spec->all);
 
     for (i = 0; i < spec->size; i++)
-	Free(spec->plugname[i]);
+        Free(spec->plugname[i]);
     Free(spec->plugname);
     for (i = 0; i < NUM_SCRIPTS; i++)
-	if (spec->scripts[i])
-	    list_destroy(spec->scripts[i]);
+        if (spec->scripts[i])
+            list_destroy(spec->scripts[i]);
     Free(spec);
 }
 
 /* add a Spec to the internal list */
-void
-conf_add_spec(Spec *spec)
+void conf_add_spec(Spec * spec)
 {
     assert(tmp_specs != NULL);
     list_append(tmp_specs, spec);
 }
 
 /* find and return a Spec from the internal list */
-Spec *
-conf_find_spec(char *name)
-{   
+Spec *conf_find_spec(char *name)
+{
     return list_find_first(tmp_specs, (ListFindF) _spec_match, name);
 }
 
@@ -229,8 +225,8 @@ conf_find_spec(char *name)
  *                                                                 *
  *******************************************************************/
 
-Spec_El *conf_spec_el_create(Script_El_Type type, char *str1, 
-		struct timeval *tv, List map)
+Spec_El *conf_spec_el_create(Script_El_Type type, char *str1,
+                             struct timeval * tv, List map)
 {
     Spec_El *specl;
 
@@ -240,15 +236,15 @@ Spec_El *conf_spec_el_create(Script_El_Type type, char *str1,
     switch (type) {
     case EL_SEND:
     case EL_EXPECT:
-	assert(str1 != NULL && tv == NULL);
-	specl->string1 = Strdup(str1);
-	break;
+        assert(str1 != NULL && tv == NULL);
+        specl->string1 = Strdup(str1);
+        break;
     case EL_DELAY:
-	assert(str1 == NULL && tv != NULL);
-	specl->tv = *tv;
-	break;
+        assert(str1 == NULL && tv != NULL);
+        specl->tv = *tv;
+        break;
     default:
-	assert(FALSE);
+        assert(FALSE);
     }
     specl->map = map;
     return specl;
@@ -257,10 +253,10 @@ Spec_El *conf_spec_el_create(Script_El_Type type, char *str1,
 void conf_spec_el_destroy(Spec_El * specl)
 {
     if (specl->string1 != NULL)
-	Free(specl->string1);
+        Free(specl->string1);
     specl->string1 = NULL;
     if (specl->map != NULL)
-	list_destroy(specl->map);
+        list_destroy(specl->map);
     specl->map = NULL;
     Free(specl);
 }
@@ -277,7 +273,7 @@ bool conf_addnode(char *node)
 {
     /* nodes must be unique */
     if (conf_node_exists(node))
-	return FALSE;
+        return FALSE;
 
     hostlist_push(conf_nodes, node);
     return TRUE;
@@ -324,10 +320,23 @@ void conf_interp_destroy(Interpretation * interp)
  * Accessor functions for misc. configurable values.
  */
 
-bool conf_get_use_tcp_wrappers(void)	        { return conf_use_tcp_wrap; }
-void conf_set_use_tcp_wrappers(bool val)	{ conf_use_tcp_wrap = val; }
-void conf_set_listen_port(int val)		{ conf_listen_port = val; }
-int conf_get_listen_port(void)			{ return conf_listen_port; }
+bool conf_get_use_tcp_wrappers(void)
+{
+    return conf_use_tcp_wrap;
+}
+
+void conf_set_use_tcp_wrappers(bool val)
+{
+    conf_use_tcp_wrap = val;
+}
+void conf_set_listen_port(int val)
+{
+    conf_listen_port = val;
+}
+int conf_get_listen_port(void)
+{
+    return conf_listen_port;
+}
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

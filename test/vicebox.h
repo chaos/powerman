@@ -42,28 +42,28 @@
 
 #include "powerman.h"
 
-#define MAX_BUF 2000		/* an 80x25 screen full of bytes. */
-				  /* wti and baytech have some sreen */
-				  /* oriented display modes */
+#define MAX_BUF 2000            /* an 80x25 screen full of bytes. */
+                                  /* wti and baytech have some sreen */
+                                  /* oriented display modes */
 #define VICEBOX_PORT     10101
 #define NUM_ICEBOX_PLUGS   10
 #define NUM_NODES          10
 #define NUM_ICEBOX_EXPECTS 10
 #define MAX_PLUGS          10
 #define MAX_NODES          10
-#define MAX_EXPECTS        10	/* connect, check connection, disconnect,    */
-			      /*   plug query, node query,                 */
-			      /*   power on, power off, power cycle, reset, */
-			      /*   error                                   */
+#define MAX_EXPECTS        10   /* connect, check connection, disconnect,    */
+                              /*   plug query, node query,                 */
+                              /*   power on, power off, power cycle, reset, */
+                              /*   error                                   */
 
-#define READ      0		/* fd_set types */
+#define READ      0             /* fd_set types */
 #define WRITE     1
 #define EXCEPTION 2
 
 #define EXP_NOT_FOUND    (-1)
 #define EXP_FOUND        1
 #define ILLEGAL_EXP      (-2)
-#define LOG_IN           0	/* expect indexes */
+#define LOG_IN           0      /* expect indexes */
 #define CHECK_LOGIN      1
 #define LOG_OUT          2
 #define PLUG_QUERY       3
@@ -75,14 +75,14 @@
 #define EXPECT_ERROR     9
 
 
-#define TTY_NAME_LEN     11	/* "/dev/ttyS0" is 11 characters with '\0' */
+#define TTY_NAME_LEN     11     /* "/dev/ttyS0" is 11 characters with '\0' */
 #define ERROR_LIMIT      60
 #define TIMEOUT_SECONDS  60
 
 #define LISTEN_BACKLOG    5
 #define EMPTY_FD         (-1)
 
-#define LOG			/* Not implemented yet */
+#define LOG                     /* Not implemented yet */
 #ifndef NDEBUG
 #define ASSERT assert
 #define VMAGIC            int magic
@@ -128,7 +128,8 @@ typedef struct sockaddr_in Saddr;
  * in time.  
  */
 typedef enum channel_enum { CH_UNKNOWN, TTY, RAW_TCP, TELNET,
-	SNMP } Ch_Type;
+    SNMP
+} Ch_Type;
 
 typedef enum FD_List_status_struct { NOT_CONNECTED, CONNECTED,
     LOGGED_IN
@@ -202,12 +203,12 @@ typedef struct fd_list_struct {
 /* the two buffers for non-blocking I/O as per Stevens */
     Buffer to;
     Buffer from;
-    Saddr saddr;		/* scratch space for working on the fd */
+    Saddr saddr;                /* scratch space for working on the fd */
     int saddr_size;
     int sock_opt;
     int fd_settings;
     struct timeval time;
-    int error_count;		/* has this fd been hearing too much noise? */
+    int error_count;            /* has this fd been hearing too much noise? */
 } FD_List;
 
 /*
@@ -218,23 +219,23 @@ typedef struct vicebox_struct {
     VMAGIC;
     char name[MAX_BUF + 1];
     char log_file[MAX_BUF + 1];
-    Ch_Type type;		/* only RAW_TCP for now */
-    int tcp_port;		/* hard coded 1010 for now */
-    fd_set rset;		/* scratch space for controlling call to */
-    fd_set wset;		/*   socket                              */
+    Ch_Type type;               /* only RAW_TCP for now */
+    int tcp_port;               /* hard coded 1010 for now */
+    fd_set rset;                /* scratch space for controlling call to */
+    fd_set wset;                /*   socket                              */
     fd_set eset;
     FD_List *log;
-    FD_List *listener;		/* socket in listen mode */
-    FD_List *fds;		/* all the open connections */
-    unsigned char off_val;	/* this is all semantic state   */
-    unsigned char on_val;	/*   information for the icebox */
-    int num_plugs;		/*   being emulated             */
+    FD_List *listener;          /* socket in listen mode */
+    FD_List *fds;               /* all the open connections */
+    unsigned char off_val;      /* this is all semantic state   */
+    unsigned char on_val;       /*   information for the icebox */
+    int num_plugs;              /*   being emulated             */
     State plug_states[MAX_PLUGS];
     int num_nodes;
     State node_states[MAX_PLUGS];
     int num_expects;
-    Expect expects[MAX_EXPECTS];	/* description of the send/expect   */
-    int longest_expect;		/*   strings for the icbox protocol */
+    Expect expects[MAX_EXPECTS];        /* description of the send/expect   */
+    int longest_expect;         /*   strings for the icbox protocol */
 } Vicebox;
 
 
@@ -271,3 +272,7 @@ void log_it(Vicebox * v, char *str);
 int process_com(Vicebox * v, char *dest, char *src, int max);
 int recognize_com(Vicebox * v, char *exp, char *str, int len);
 int semantic_action(Vicebox * v, FD_List * fdl, int exp, int node);
+
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */

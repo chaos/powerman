@@ -42,8 +42,8 @@
 #include "wrappers.h"
 #include "debug.h"
 
-static char *err_prog = NULL;		/* basename of calling program */
-static bool err_ttyvalid = TRUE;	/* use stderr until told otherwise */
+static char *err_prog = NULL;   /* basename of calling program */
+static bool err_ttyvalid = TRUE;        /* use stderr until told otherwise */
 
 #define ERROR_BUFLEN 1024
 
@@ -52,7 +52,7 @@ static bool err_ttyvalid = TRUE;	/* use stderr until told otherwise */
  */
 void err_init(char *prog)
 {
-    char *p = strrchr(prog, '/');	/* store only the basename */
+    char *p = strrchr(prog, '/');       /* store only the basename */
 
     err_prog = p ? p + 1 : prog;
 }
@@ -66,24 +66,24 @@ void err_notty(void)
 }
 
 /* helper for err, err_exit */
-static void _verr(bool errno_valid, const char *fmt, va_list ap) 
+static void _verr(bool errno_valid, const char *fmt, va_list ap)
 {
     char buf[ERROR_BUFLEN];
     int er = errno;
 
-    assert(err_prog!= NULL);
+    assert(err_prog != NULL);
 
-    vsnprintf(buf, ERROR_BUFLEN, fmt, ap); /* overflow ignored on purpose */
+    vsnprintf(buf, ERROR_BUFLEN, fmt, ap);      /* overflow ignored on purpose */
     if (errno_valid) {
-	if (err_ttyvalid)
-	    fprintf(stderr, "%s: %s: %s\n", err_prog, buf, strerror(er));
-	else
-	    syslog(LOG_ERR, "%s: %s", buf, strerror(er));
-    } else {
-	if (err_ttyvalid)
-	    fprintf(stderr, "%s: %s\n", err_prog, buf);
+        if (err_ttyvalid)
+            fprintf(stderr, "%s: %s: %s\n", err_prog, buf, strerror(er));
         else
-	    syslog(LOG_ERR, "%s", buf);
+            syslog(LOG_ERR, "%s: %s", buf, strerror(er));
+    } else {
+        if (err_ttyvalid)
+            fprintf(stderr, "%s: %s\n", err_prog, buf);
+        else
+            syslog(LOG_ERR, "%s", buf);
     }
 }
 

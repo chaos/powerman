@@ -46,56 +46,56 @@ int main(int argc, char **argv)
     vice = init_vb(argc, argv);
 /* We now have a socket at vice->listener->fd running in listen mode */
     while (1) {
-	int maxfd;
-	struct timeval tv;
-	FD_List *fdl;
-	int n;
+        int maxfd;
+        struct timeval tv;
+        FD_List *fdl;
+        int n;
 
 /* set up and call the select */
-	set_FD_List(vice->fds, &(vice->rset), READ);
-	FD_SET(vice->listener->fd, &(vice->rset));
-	set_FD_List(vice->fds, &(vice->wset), WRITE);
-	if (vice->log->write)
-	    FD_SET(vice->log->fd, &(vice->wset));
-	maxfd = max_FD_List(vice->fds);
-	maxfd = MAX(maxfd, vice->listener->fd);
-	maxfd = MAX(maxfd, vice->log->fd);
-	tv = vice->listener->time;
+        set_FD_List(vice->fds, &(vice->rset), READ);
+        FD_SET(vice->listener->fd, &(vice->rset));
+        set_FD_List(vice->fds, &(vice->wset), WRITE);
+        if (vice->log->write)
+            FD_SET(vice->log->fd, &(vice->wset));
+        maxfd = max_FD_List(vice->fds);
+        maxfd = MAX(maxfd, vice->listener->fd);
+        maxfd = MAX(maxfd, vice->log->fd);
+        tv = vice->listener->time;
 
-	n = Select(maxfd + 1, &(vice->rset), &(vice->wset), NULL, &tv);
-	if (n == 0)
-	    log_it(vice, "Timed out.");
+        n = Select(maxfd + 1, &(vice->rset), &(vice->wset), NULL, &tv);
+        if (n == 0)
+            log_it(vice, "Timed out.");
 /* 
  * There is work to be done.  Is it a new connection?
  */
-	if (FD_ISSET(vice->listener->fd, &(vice->rset)))
-	    handle_listener(vice);
+        if (FD_ISSET(vice->listener->fd, &(vice->rset)))
+            handle_listener(vice);
 
 /*
  * Or a log write?
  */
-	if (FD_ISSET(vice->log->fd, &(vice->wset)))
-	    handle_log(vice);
+        if (FD_ISSET(vice->log->fd, &(vice->wset)))
+            handle_log(vice);
 /*
  * Is there reading and writing that we need to continue managing?
  * vice->fds is a doubly linked, circular list with an EMPTY_FD node
  * always present at the head, i.e. vice->fds->fd == EMPTY_FD, so 
  * avoid that one and do the rest.
  */
-	for (fdl = vice->fds->next; fdl != vice->fds; fdl = fdl->next) {
-	    if (FD_ISSET(fdl->fd, &(vice->rset)))
-		handle_read(vice, fdl);
-	    if (FD_ISSET(fdl->fd, &(vice->wset)))
-		handle_write(vice, fdl);
-	    if (fdl->status == NOT_CONNECTED) {
-		FD_List *next = fdl->next;
+        for (fdl = vice->fds->next; fdl != vice->fds; fdl = fdl->next) {
+            if (FD_ISSET(fdl->fd, &(vice->rset)))
+                handle_read(vice, fdl);
+            if (FD_ISSET(fdl->fd, &(vice->wset)))
+                handle_write(vice, fdl);
+            if (fdl->status == NOT_CONNECTED) {
+                FD_List *next = fdl->next;
 
-		close(fdl->fd);
-		del_FD_List(vice->fds, fdl);
-		fdl = next;
-		log_it(vice, "Connection Reset by Peer");
-	    }
-	}
+                close(fdl->fd);
+                del_FD_List(vice->fds, fdl);
+                fdl = next;
+                log_it(vice, "Connection Reset by Peer");
+            }
+        }
     }
     return 0;
 }
@@ -120,9 +120,9 @@ Vicebox *init_vb(int argc, char **argv)
     int port = -1;
 
     if (argc > 1) {
-	n = sscanf(argv[1], "%d", &port);
-	if ((n != 1) || (port < 1025) || (port > 60000))
-	    port = -1;
+        n = sscanf(argv[1], "%d", &port);
+        if ((n != 1) || (port < 1025) || (port > 60000))
+            port = -1;
     }
     v = (Vicebox *) Malloc(sizeof(Vicebox));
     VINIT_MAGIC(v, VICEBOX_MAGIC);
@@ -132,16 +132,16 @@ Vicebox *init_vb(int argc, char **argv)
     flags = O_WRONLY | O_CREAT | O_APPEND | O_NONBLOCK;
     log_fd = open(v->log_file, flags, S_IRUSR | S_IWUSR);
     if (log_fd < 0)
-	err_exit(TRUE, "Problem opening log file %s", v->log_file);
+        err_exit(TRUE, "Problem opening log file %s", v->log_file);
     v->log = make_FD_List(log_fd);
     t = time(NULL);
     log_it(v, ctime(&t));
 
     v->type = RAW_TCP;
     if (port == -1)
-	v->tcp_port = VICEBOX_PORT;
+        v->tcp_port = VICEBOX_PORT;
     else
-	v->tcp_port = port;
+        v->tcp_port = port;
     FD_ZERO(&(v->rset));
     FD_ZERO(&(v->wset));
     FD_ZERO(&(v->eset));
@@ -161,15 +161,15 @@ Vicebox *init_vb(int argc, char **argv)
     v->on_val = '1';
     v->num_plugs = NUM_ICEBOX_PLUGS;
     for (plug = 0; plug < v->num_plugs; plug++)
-	v->plug_states[plug] = OFF;
+        v->plug_states[plug] = OFF;
     v->num_nodes = NUM_ICEBOX_PLUGS;
     for (node = 0; node < v->num_nodes; node++)
-	v->node_states[node] = OFF;
+        v->node_states[node] = OFF;
 
 /* initialize the expect/send pairs for the icebox protocol */
     v->num_expects = NUM_ICEBOX_EXPECTS;
     for (expect = 0; expect < v->num_expects; expect++) {
-	init_expect(&(v->expects[expect]));
+        init_expect(&(v->expects[expect]));
     }
     v->longest_expect = 0;
     v->expects[LOG_IN].in_use = TRUE;
@@ -180,49 +180,49 @@ Vicebox *init_vb(int argc, char **argv)
     set_string(&(v->expects[CHECK_LOGIN].send), "OK");
     set_string(&(v->expects[CHECK_LOGIN].expect), "");
     v->longest_expect = MAX(v->longest_expect,
-			    v->expects[CHECK_LOGIN].expect.length);
+                            v->expects[CHECK_LOGIN].expect.length);
     v->expects[LOG_OUT].in_use = TRUE;
     set_string(&(v->expects[LOG_OUT].send), "");
     set_string(&(v->expects[LOG_OUT].expect), "q");
     v->longest_expect = MAX(v->longest_expect,
-			    v->expects[LOG_OUT].expect.length);
+                            v->expects[LOG_OUT].expect.length);
     v->expects[PLUG_QUERY].in_use = TRUE;
     set_string(&(v->expects[PLUG_QUERY].send),
-	       "N1:%p1 N2:%p2 N3:%p3 N4:%p4 N5:%p5 N6:%p6 N7:%p7 N8:%p8 N9:%p9 N10:%p10");
+               "N1:%p1 N2:%p2 N3:%p3 N4:%p4 N5:%p5 N6:%p6 N7:%p7 N8:%p8 N9:%p9 N10:%p10");
     set_string(&(v->expects[PLUG_QUERY].expect), "ps %d");
     v->longest_expect = MAX(v->longest_expect,
-			    v->expects[PLUG_QUERY].expect.length);
+                            v->expects[PLUG_QUERY].expect.length);
     v->expects[NODE_QUERY].in_use = TRUE;
     set_string(&(v->expects[NODE_QUERY].send),
-	       "N1:%n1 N2:%n2 N3:%n3 N4:%n4 N5:%n5 N6:%n6 N7:%n7 N8:%n8 N9:%n9 N10:%n10");
+               "N1:%n1 N2:%n2 N3:%n3 N4:%n4 N5:%n5 N6:%n6 N7:%n7 N8:%n8 N9:%n9 N10:%n10");
     set_string(&(v->expects[NODE_QUERY].expect), "ns %d");
     v->longest_expect = MAX(v->longest_expect,
-			    v->expects[NODE_QUERY].expect.length);
+                            v->expects[NODE_QUERY].expect.length);
     v->expects[POWER_ON].in_use = TRUE;
     set_string(&(v->expects[POWER_ON].send), "OK");
     set_string(&(v->expects[POWER_ON].expect), "ph %d");
     v->longest_expect = MAX(v->longest_expect,
-			    v->expects[POWER_ON].expect.length);
+                            v->expects[POWER_ON].expect.length);
     v->expects[POWER_OFF].in_use = TRUE;
     set_string(&(v->expects[POWER_OFF].send), "OK");
     set_string(&(v->expects[POWER_OFF].expect), "pl %d");
     v->longest_expect = MAX(v->longest_expect,
-			    v->expects[POWER_OFF].expect.length);
+                            v->expects[POWER_OFF].expect.length);
     v->expects[POWER_CYCLE].in_use = FALSE;
     set_string(&(v->expects[POWER_CYCLE].send), "");
     set_string(&(v->expects[POWER_CYCLE].expect), "");
     v->longest_expect = MAX(v->longest_expect,
-			    v->expects[POWER_CYCLE].expect.length);
+                            v->expects[POWER_CYCLE].expect.length);
     v->expects[RESET].in_use = TRUE;
     set_string(&(v->expects[RESET].send), "OK");
     set_string(&(v->expects[RESET].expect), "rp %d");
     v->longest_expect = MAX(v->longest_expect,
-			    v->expects[RESET].expect.length);
+                            v->expects[RESET].expect.length);
     v->expects[EXPECT_ERROR].in_use = TRUE;
     set_string(&(v->expects[EXPECT_ERROR].send), "ERROR 0");
     set_string(&(v->expects[EXPECT_ERROR].expect), "");
     v->longest_expect = MAX(v->longest_expect,
-			    v->expects[EXPECT_ERROR].expect.length);
+                            v->expects[EXPECT_ERROR].expect.length);
     return v;
 }
 
@@ -247,7 +247,7 @@ FD_List *make_listener(int port)
  */
     listener->sock_opt = 1;
     Setsockopt(listener->fd, SOL_SOCKET, SO_REUSEADDR,
-	       &(listener->sock_opt), sizeof(listener->sock_opt));
+               &(listener->sock_opt), sizeof(listener->sock_opt));
 /* 
  *   A client could abort before a ready connection is accepted.  "The fix
  * for this problem is to:  1.  Always set a listening socket nonblocking
@@ -260,7 +260,7 @@ FD_List *make_listener(int port)
     listener->saddr.sin_port = htons(port);
     listener->saddr.sin_addr.s_addr = INADDR_ANY;
     Bind(listener->fd,
-	 (Saddr *) & (listener->saddr), listener->saddr_size);
+         (Saddr *) & (listener->saddr), listener->saddr_size);
 
     Listen(listener->fd, LISTEN_BACKLOG);
     return listener;
@@ -286,27 +286,27 @@ void handle_listener(Vicebox * vice)
     new = make_FD_List(EMPTY_FD);
 
     new->fd = Accept(vice->listener->fd,
-		     &(new->saddr), &(new->saddr_size));
+                     &(new->saddr), &(new->saddr_size));
     if (new->fd < 0)
 /* client died after it initiated connect and before we could accept */
     {
-	VCLEAR_MAGIC(new);
-	free(new);
-	log_it(vice, "Aborted connection attempt");
+        VCLEAR_MAGIC(new);
+        free(new);
+        log_it(vice, "Aborted connection attempt");
     } else {
 /*
  * We'll need to add the new fd to the list, mark it non-blocking,
  * and mark it as needing to be read.  
  */
-	add_FD_List(vice->fds, new);
-	new->fd_settings = Fcntl(new->fd, F_GETFL, 0);
-	Fcntl(new->fd, F_SETFL, new->fd_settings | O_NONBLOCK);
-	strncpy(new->to.in, "V2.2\r\n", 6);
-	new->to.in += 6;
-	set_write_FD_List(new);
-	FD_SET(new->fd, &(vice->wset));
-	log_it(vice, "New connection");
-	new->status = CONNECTED;
+        add_FD_List(vice->fds, new);
+        new->fd_settings = Fcntl(new->fd, F_GETFL, 0);
+        Fcntl(new->fd, F_SETFL, new->fd_settings | O_NONBLOCK);
+        strncpy(new->to.in, "V2.2\r\n", 6);
+        new->to.in += 6;
+        set_write_FD_List(new);
+        FD_SET(new->fd, &(vice->wset));
+        log_it(vice, "New connection");
+        new->status = CONNECTED;
     }
 }
 
@@ -317,16 +317,16 @@ void handle_log(Vicebox * vice)
     VALIDATE(vice, VICEBOX_MAGIC);
 
     n = write(vice->log->fd, vice->log->to.out,
-	      (int) (vice->log->to.in - vice->log->to.out));
+              (int) (vice->log->to.in - vice->log->to.out));
     if (n < 0) {
-	if (errno != EWOULDBLOCK)
-	    err_exit(TRUE, "Log error");
-	goto handle_log_out;
+        if (errno != EWOULDBLOCK)
+            err_exit(TRUE, "Log error");
+        goto handle_log_out;
     }
     vice->log->to.out += n;
     if (vice->log->to.out == vice->log->to.in) {
-	vice->log->to.in = vice->log->to.out = vice->log->to.start;
-	vice->log->write = FALSE;
+        vice->log->to.in = vice->log->to.out = vice->log->to.start;
+        vice->log->write = FALSE;
     }
   handle_log_out:
     ;
@@ -359,11 +359,11 @@ void handle_read(Vicebox * vice, FD_List * fdl)
     ASSERT((fdl->read) && !(fdl->write) && !(fdl->exception));
     n = Read(fdl->fd, fdl->from.start, MAX_BUF);
     if (n < 0) {
-	if (errno == EWOULDBLOCK)
-	    log_it(vice, "False alarm, nothing to read.");
-	else
-	    fdl->status = NOT_CONNECTED;	/* ECONNRESET */
-	goto handle_read_out;
+        if (errno == EWOULDBLOCK)
+            log_it(vice, "False alarm, nothing to read.");
+        else
+            fdl->status = NOT_CONNECTED;        /* ECONNRESET */
+        goto handle_read_out;
     }
     if (n == 0) {
 /* 
@@ -371,29 +371,29 @@ void handle_read(Vicebox * vice, FD_List * fdl)
  * know we are done, because we aren't set to read at all unless the 
  * prior write is complete. 
  */
-	fdl->status = NOT_CONNECTED;
-	goto handle_read_out;
+        fdl->status = NOT_CONNECTED;
+        goto handle_read_out;
     }
     fdl->from.in += n;
     exp = find_expect(vice, fdl, fdl->from.start,
-		      (int) (fdl->from.in - fdl->from.start));
+                      (int) (fdl->from.in - fdl->from.start));
     if (exp == EXP_NOT_FOUND)
 /* 
  * This is the case where it could be legal we justy haven't seen 
  * enough yet.
  */
     {
-	log_it(vice, "Partial read.");
-	goto handle_read_out;
+        log_it(vice, "Partial read.");
+        goto handle_read_out;
     }
 /*	log_it(vice, fdl->from.start); */
     if (exp == ILLEGAL_EXP) {
-	if ((fdl->error_count)++ > ERROR_LIMIT) {
-	    close(fdl->fd);
-	    del_FD_List(vice->fds, fdl);
-	} else
-	    exp_send(vice, fdl, EXPECT_ERROR);
-	goto handle_read_out;
+        if ((fdl->error_count)++ > ERROR_LIMIT) {
+            close(fdl->fd);
+            del_FD_List(vice->fds, fdl);
+        } else
+            exp_send(vice, fdl, EXPECT_ERROR);
+        goto handle_read_out;
     }
     exp_send(vice, fdl, exp);
     fdl->error_count = 0;
@@ -420,15 +420,15 @@ void handle_write(Vicebox * vice, FD_List * fdl)
 
     n = write(fdl->fd, fdl->to.out, (int) (fdl->to.in - fdl->to.out));
     if (n < 0) {
-	if (errno != EWOULDBLOCK)
-	    err_exit(TRUE, "Write error");
-	goto handle_write_out;
+        if (errno != EWOULDBLOCK)
+            err_exit(TRUE, "Write error");
+        goto handle_write_out;
     }
     fdl->to.out += n;
     if (fdl->to.out == fdl->to.in) {
-	fdl->to.in = fdl->to.out = fdl->to.start;
-	if (fdl != vice->log)
-	    set_read_FD_List(fdl);
+        fdl->to.in = fdl->to.out = fdl->to.start;
+        if (fdl != vice->log)
+            set_read_FD_List(fdl);
     }
   handle_write_out:
     ;
@@ -451,7 +451,7 @@ int max_FD_List(FD_List * head)
     VALIDATE(head, FD_LIST_MAGIC);
     max = head->fd;
     for (l = head->next; l != head; l = l->next) {
-	max = MAX(max, l->fd);
+        max = MAX(max, l->fd);
     }
     return max;
 }
@@ -470,21 +470,21 @@ void set_FD_List(FD_List * head, fd_set * set, int mode)
     VALIDATE(head, FD_LIST_MAGIC);
     FD_ZERO(set);
     for (l = head->next; l != head; l = l->next) {
-	switch (mode) {
-	case READ:
-	    val = l->read;
-	    break;
-	case WRITE:
-	    val = l->write;
-	    break;
-	case EXCEPTION:
-	    val = l->exception;
-	    break;
-	default:
-	    ASSERT(FALSE);
-	}
-	if (val)
-	    FD_SET(l->fd, set);
+        switch (mode) {
+        case READ:
+            val = l->read;
+            break;
+        case WRITE:
+            val = l->write;
+            break;
+        case EXCEPTION:
+            val = l->exception;
+            break;
+        default:
+            ASSERT(FALSE);
+        }
+        if (val)
+            FD_SET(l->fd, set);
     }
 }
 
@@ -530,11 +530,11 @@ void Valid_FD_List(FD_List * fdl)
     ASSERT(fdl != NULL);
     ASSERT(fdl->magic == FD_LIST_MAGIC);
     if (fdl->fd == EMPTY_FD) {
-	for (item = fdl->next; item != fdl; item = item->next) {
-	    ASSERT(item != NULL);
-	    ASSERT(item->magic == FD_LIST_MAGIC);
-	    ASSERT(item->fd != EMPTY_FD);
-	}
+        for (item = fdl->next; item != fdl; item = item->next) {
+            ASSERT(item != NULL);
+            ASSERT(item->magic == FD_LIST_MAGIC);
+            ASSERT(item->fd != EMPTY_FD);
+        }
     }
 }
 
@@ -598,8 +598,8 @@ FD_List *find_FD_List(FD_List * head, int fd)
 
     VALIDATE(head, FD_LIST_MAGIC);
     for (find = head->next; find != head; find = find->next) {
-	if (find->fd == fd)
-	    return find;
+        if (find->fd == fd)
+            return find;
     }
     return (FD_List *) NULL;
 }
@@ -615,8 +615,8 @@ void del_FD_List(FD_List * head, FD_List * fdl)
     ASSERT(fdl != NULL);
 #ifndef NDEBUG
     {
-	FD_List *find = find_FD_List(head, fdl->fd);
-	ASSERT(find == fdl);
+        FD_List *find = find_FD_List(head, fdl->fd);
+        ASSERT(find == fdl);
     }
 #endif
     fdl->prev->next = fdl->next;
@@ -689,26 +689,26 @@ int find_expect(Vicebox * v, FD_List * fdl, char *str, int len)
     VALIDATE(v, VICEBOX_MAGIC);
     ASSERT(len > 0);
     if (len > v->longest_expect + 2)
-	return ILLEGAL_EXP;
+        return ILLEGAL_EXP;
     if ((pos = (char *) memchr(str, '\n', len)) == NULL)
-	return EXP_NOT_FOUND;
+        return EXP_NOT_FOUND;
     *pos = '\0';
     len--;
     if (*(pos - 1) == '\r') {
-	ASSERT(len > 0);
-	pos--;
-	*pos = '\0';
-	len--;
+        ASSERT(len > 0);
+        pos--;
+        *pos = '\0';
+        len--;
     }
     if (len == 0)
-	return CHECK_LOGIN;
+        return CHECK_LOGIN;
     for (i = 0; i < v->num_expects; i++) {
-	if (v->expects[i].in_use) {
-	    data = recognize_com(v, v->expects[i].expect.string,
-				 str, v->longest_expect);
-	    if (data != EXP_NOT_FOUND)
-		return semantic_action(v, fdl, i, data);
-	}
+        if (v->expects[i].in_use) {
+            data = recognize_com(v, v->expects[i].expect.string,
+                                 str, v->longest_expect);
+            if (data != EXP_NOT_FOUND)
+                return semantic_action(v, fdl, i, data);
+        }
     }
     return ILLEGAL_EXP;
 }
@@ -727,13 +727,13 @@ void exp_send(Vicebox * v, FD_List * fdl, int msg)
     VALIDATE(v, VICEBOX_MAGIC);
     VALIDATE(fdl, FD_LIST_MAGIC);
     ASSERT((msg >= 0) && (msg < v->num_expects)
-	   && (v->expects[msg].in_use));
+           && (v->expects[msg].in_use));
     fdl->from.in = fdl->from.out = fdl->from.start;
     len = process_com(v, fdl->to.start,
-		      v->expects[msg].send.string,
-		      v->expects[msg].send.length);
+                      v->expects[msg].send.string,
+                      v->expects[msg].send.length);
     if (len < 0)
-	err_exit(TRUE, "process_com failure");
+        err_exit(TRUE, "process_com failure");
     ASSERT(len < MAX_BUF - 2);
     fdl->to.in += len;
     *(fdl->to.in++) = '\r';
@@ -766,39 +766,39 @@ int process_com(Vicebox * v, char *dest, char *src, int max)
 
     d = 0;
     for (s = 0; s < max; s++) {
-	if (src[s] == '\0')
-	    break;
-	if (src[s] != '%') {
-	    dest[d] = src[s];
-	    d++;
-	    continue;
-	}
-	s++;
-	ASSERT((src[s] == 'p') || (src[s] == 'n'));
-	s++;
-	port = src[s] - '0';
-	if ((src[s] == '1') && (src[s + 1] == '0')) {
-	    port = 10;
-	    s++;
-	}
-	ASSERT((port >= 1) && (port <= 10));
-	if (src[s - 1] == 'p')
-	    st = v->plug_states[port - 1];
-	else
-	    st = v->node_states[port - 1];
-	switch (st) {
-	case ON:
-	    dest[d] = v->on_val;
-	    d++;
-	    break;
-	case OFF:
-	    dest[d] = v->off_val;
-	    d++;
-	    break;
-	case ST_UNKNOWN:
-	default:
-	    ASSERT(FALSE);
-	}
+        if (src[s] == '\0')
+            break;
+        if (src[s] != '%') {
+            dest[d] = src[s];
+            d++;
+            continue;
+        }
+        s++;
+        ASSERT((src[s] == 'p') || (src[s] == 'n'));
+        s++;
+        port = src[s] - '0';
+        if ((src[s] == '1') && (src[s + 1] == '0')) {
+            port = 10;
+            s++;
+        }
+        ASSERT((port >= 1) && (port <= 10));
+        if (src[s - 1] == 'p')
+            st = v->plug_states[port - 1];
+        else
+            st = v->node_states[port - 1];
+        switch (st) {
+        case ON:
+            dest[d] = v->on_val;
+            d++;
+            break;
+        case OFF:
+            dest[d] = v->off_val;
+            d++;
+            break;
+        case ST_UNKNOWN:
+        default:
+            ASSERT(FALSE);
+        }
     }
     dest[d] = '\0';
     return d;
@@ -831,33 +831,33 @@ int recognize_com(Vicebox * v, char *exp, char *str, int len)
     ASSERT(len > 0);
 
     for (e = 0; e <= len; e++) {
-	if ((exp[e] == '\0') && (str[s] == '\0'))
+        if ((exp[e] == '\0') && (str[s] == '\0'))
 /* success: return EXP_FOUND or data */
-	    return result;
-	if ((exp[e] == '\0') || (str[s] == '\0'))
+            return result;
+        if ((exp[e] == '\0') || (str[s] == '\0'))
 /* One string ran out before the other */
-	    return EXP_NOT_FOUND;
-	if (exp[e] == '%') {
+            return EXP_NOT_FOUND;
+        if (exp[e] == '%') {
 /* matching against a command that takes an argument: the %d matches */
 /* either '*' or '0'...'9'.  We check elsewhere if it's alegal value */
 /* compared to num_plugs and num_nodes.                              */
-	    if (exp[++e] == 'd') {
-		if ((str[s] == '1') && (str[s + 1] == '0')) {
-		    s++;
-		    data = 'A';
-		} else
-		    data = str[s];
-		s++;
-		if ((data == '*') || (data == 'A') ||
-		    ((data >= '1') && (data <= '9')))
-		    result = data;
-		else
+            if (exp[++e] == 'd') {
+                if ((str[s] == '1') && (str[s + 1] == '0')) {
+                    s++;
+                    data = 'A';
+                } else
+                    data = str[s];
+                s++;
+                if ((data == '*') || (data == 'A') ||
+                    ((data >= '1') && (data <= '9')))
+                    result = data;
+                else
 /* It's a mal-formed command, since the argument was wrong */
-		    return EXP_NOT_FOUND;
-	    }
-	} else if (exp[e] != str[s++])
+                    return EXP_NOT_FOUND;
+            }
+        } else if (exp[e] != str[s++])
 /* failed since the characters didn't match */
-	    return EXP_NOT_FOUND;
+            return EXP_NOT_FOUND;
     }
 /* ran over the match limit.  */
     return EXP_NOT_FOUND;
@@ -877,43 +877,47 @@ int semantic_action(Vicebox * v, FD_List * fdl, int exp, int node)
 
     switch (exp) {
     case LOG_IN:
-	if (fdl->status == CONNECTED)
-	    fdl->status = LOGGED_IN;
-	else
-	    ret = ILLEGAL_EXP;
-	break;
+        if (fdl->status == CONNECTED)
+            fdl->status = LOGGED_IN;
+        else
+            ret = ILLEGAL_EXP;
+        break;
     case LOG_OUT:
-	if (fdl->status == LOGGED_IN)
-	    fdl->status = CONNECTED;
-	else
-	    ret = ILLEGAL_EXP;
-	break;
+        if (fdl->status == LOGGED_IN)
+            fdl->status = CONNECTED;
+        else
+            ret = ILLEGAL_EXP;
+        break;
     case POWER_ON:
     case POWER_CYCLE:
-	s = ON;
+        s = ON;
     case POWER_OFF:
-	if (fdl->status != LOGGED_IN) {
-	    ret = ILLEGAL_EXP;
-	    break;
-	}
-	if (n == '*') {
-	    for (n = 0; n < v->num_plugs; n++)
-		v->plug_states[n] = s;
-	    for (n = 0; n < v->num_nodes; n++)
-		v->node_states[n] = s;
-	    break;
-	}
-	if (n == 'A')
-	    n = 10;
-	else
-	    n -= '0';
-	ASSERT((1 <= n) && (n <= v->num_plugs) && (n <= v->num_nodes));
-	v->plug_states[n - 1] = s;
-	v->node_states[n - 1] = s;
-	break;
+        if (fdl->status != LOGGED_IN) {
+            ret = ILLEGAL_EXP;
+            break;
+        }
+        if (n == '*') {
+            for (n = 0; n < v->num_plugs; n++)
+                v->plug_states[n] = s;
+            for (n = 0; n < v->num_nodes; n++)
+                v->node_states[n] = s;
+            break;
+        }
+        if (n == 'A')
+            n = 10;
+        else
+            n -= '0';
+        ASSERT((1 <= n) && (n <= v->num_plugs) && (n <= v->num_nodes));
+        v->plug_states[n - 1] = s;
+        v->node_states[n - 1] = s;
+        break;
     default:
 /* In this model "reset" is a noop */
-	break;
+        break;
     }
     return ret;
 }
+
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */

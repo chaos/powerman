@@ -53,38 +53,38 @@ void daemon_init(void)
     int res;
 
     if (Fork() != 0)
-	exit(0);		/* parent terminates */
+        exit(0);                /* parent terminates */
 
     /* 1st child continues */
     /* Review: setsid may fail with -1, EPERM */
-    if (setsid() < 0)		/* become session leader */
-	err_exit(TRUE, "setsid");
+    if (setsid() < 0)           /* become session leader */
+        err_exit(TRUE, "setsid");
 
     Signal(SIGHUP, SIG_IGN);
 
     if (Fork() != 0)
-	exit(0);		/* 1st child terminates */
+        exit(0);                /* 1st child terminates */
 
     /* 2nd child continues */
 
     /* change working directory */
     if (chdir(ROOT_DIR) < 0)
-	err_exit(TRUE, "chdir %s", ROOT_DIR);
+        err_exit(TRUE, "chdir %s", ROOT_DIR);
 
     /* clear our file mode creation mask */
     umask(0);
 
     /* Close fd's */
     for (i = 0; i < MAXFD; i++)
-	close(i);		/* ignore errors */
+        close(i);               /* ignore errors */
 
     /* Init syslog */
     /* Review: check for truncation */
     res = snprintf(buf, sizeof(buf), "Started %s", ctime(&t));
     assert(res != -1 && res <= sizeof(buf));
     openlog(DAEMON_NAME, LOG_NDELAY | LOG_PID, LOG_DAEMON);
-    err_notty();	/* tell err_exit that stderr is no good */
-    dbg_notty();	/* tell dbg that stderr is no good */
+    err_notty();                /* tell err_exit that stderr is no good */
+    dbg_notty();                /* tell dbg that stderr is no good */
     syslog(LOG_NOTICE, buf);
 }
 

@@ -27,14 +27,14 @@
 #ifndef EXIT_ERROR_H
 #define EXIT_ERROR_H
 
-#include "powerman.h" /* for bool typedef */
+#include "powerman.h"           /* for bool typedef */
 
 void err_init(char *prog);
 void err_notty(void);
 void err_exit(bool errno_valid, const char *fmt, ...);
 void err(bool errno_valid, const char *fmt, ...);
 
-#endif				/* EXIT_ERROR_H */
+#endif                          /* EXIT_ERROR_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

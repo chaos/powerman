@@ -34,7 +34,8 @@
 typedef struct buffer_implementation *Buffer;
 
 typedef void (BufferLogFun) (unsigned char *mem, int len, void *arg);
-Buffer buf_create(int fd, int length, BufferLogFun logfun, void *logfunarg);
+Buffer buf_create(int fd, int length, BufferLogFun logfun,
+                  void *logfunarg);
 void buf_destroy(Buffer b);
 bool buf_printf(Buffer b, const char *fmt, ...);
 int buf_write(Buffer b);
@@ -49,7 +50,7 @@ int buf_peekstr(Buffer b, unsigned char *str, int len);
 char *buf_getregex(Buffer b, regex_t * re);
 void buf_eat(Buffer b, int len);
 
-#endif				/* BUFFER_H */
+#endif                          /* BUFFER_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

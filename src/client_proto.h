@@ -37,10 +37,10 @@
  * If not quit, goto 3
  */
 
-#define CP_LINEMAX	256		/* max request/response line length */
+#define CP_LINEMAX	256     /* max request/response line length */
 
-#define CP_EOL		"\r\n"		/* line terminator */
-#define CP_PROMPT 	"powerman> "	/* prompt */
+#define CP_EOL		"\r\n"  /* line terminator */
+#define CP_PROMPT 	"powerman> "    /* prompt */
 #define CP_VERSION 	"001 powerman protocol version 2.0" CP_EOL
 
 /* 
@@ -78,12 +78,12 @@
 #define CP_IS_ALLDONE(i)	((i) >= 100 && (i) < 300)
 
 /* success */
-#define CP_RSP_SUCCESS	"100 Success"			CP_EOL	/* generic */
-#define CP_RSP_NODES	"101 %s" 			CP_EOL	/* hostlist */
+#define CP_RSP_SUCCESS	"100 Success"			CP_EOL  /* generic */
+#define CP_RSP_NODES	"101 %s" 			CP_EOL  /* hostlist */
 #define CP_RSP_STATUS	\
 	"302 on:      %s"				CP_EOL	\
        	"302 off:     %s" 				CP_EOL	\
-	"102 unknown: %s" 				CP_EOL	/* hostlists */
+	"102 unknown: %s" 				CP_EOL  /* hostlists */
 #define CP_RSP_QUIT	"103 Goodbye"			CP_EOL
 #define CP_RSP_HELP 	\
 	"304 nodes              - query node list" 	CP_EOL	\
@@ -114,7 +114,7 @@
 #define CP_RSP_QUERY_COMPLETE "106 Query complete"	CP_EOL
 
 /* failure */
-#define CP_ERR_FAILURE	"200 Failure"			CP_EOL /* generic */
+#define CP_ERR_FAILURE	"200 Failure"			CP_EOL  /* generic */
 #define CP_ERR_UNKNOWN	"201 Unknown command"		CP_EOL
 #define CP_ERR_PARSE	"202 Parse error"		CP_EOL
 #define CP_ERR_TOOLONG	"203 Command too long"		CP_EOL
@@ -129,7 +129,7 @@
 #define CP_ERR_NOACTION	"213 Command causes no action" 	CP_EOL
 #define CP_ERR_UNIMPL	"214 Command cannot be handled by power control device(s)" CP_EOL
 
-#endif /* CLIENT_PROTO_H */
+#endif                          /* CLIENT_PROTO_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

@@ -34,14 +34,14 @@
 #include <sys/select.h>
 #include <ctype.h>
 
-#include "powerman.h" /* for bool type */
+#include "powerman.h"           /* for bool type */
 #include "wrappers.h"
 #include "debug.h"
 
 #define DBG_BUFLEN 1024
 
-static unsigned long	dbg_channel_mask = 0;
-static bool		dbg_ttyvalid = 1;
+static unsigned long dbg_channel_mask = 0;
+static bool dbg_ttyvalid = 1;
 
 void dbg_notty(void)
 {
@@ -53,19 +53,18 @@ void dbg_setmask(unsigned long mask)
     dbg_channel_mask = mask;
 }
 
-static char *
-_channel_name(unsigned long channel)
+static char *_channel_name(unsigned long channel)
 {
     static struct {
-	unsigned long chan;
-	char *desc;
+        unsigned long chan;
+        char *desc;
     } tab[] = DBG_NAME_TAB;
     int i = 0;
 
     while (tab[i].chan != 0) {
-	if (tab[i].chan == channel)
-	    break;
-	i++;
+        if (tab[i].chan == channel)
+            break;
+        i++;
     }
     return (tab[i].chan == 0 ? "<unknown>" : tab[i].desc);
 }
@@ -78,24 +77,24 @@ void dbg(unsigned long channel, const char *fmt, ...)
     va_list ap;
 
     if ((channel & dbg_channel_mask) == channel) {
-	char buf[DBG_BUFLEN];
+        char buf[DBG_BUFLEN];
 
-	va_start(ap, fmt);
-	vsnprintf(buf, DBG_BUFLEN, fmt, ap);
-	/* overflow ignored on purpose */
-	va_end(ap);
+        va_start(ap, fmt);
+        vsnprintf(buf, DBG_BUFLEN, fmt, ap);
+        /* overflow ignored on purpose */
+        va_end(ap);
 
-	if (dbg_ttyvalid)
-	    fprintf(stderr, "%s: %s\n", _channel_name(channel), buf);
+        if (dbg_ttyvalid)
+            fprintf(stderr, "%s: %s\n", _channel_name(channel), buf);
         else
-	    syslog(LOG_DEBUG, "%s: %s", _channel_name(channel), buf);
+            syslog(LOG_DEBUG, "%s: %s", _channel_name(channel), buf);
     }
 }
 
 /* 
  * Utility function to turn an fs_set into a string.
  */
-char *dbg_fdsetstr(fd_set *fdset, int n, char *str, int len)
+char *dbg_fdsetstr(fd_set * fdset, int n, char *str, int len)
 {
     int i;
     char *p;
@@ -105,11 +104,11 @@ char *dbg_fdsetstr(fd_set *fdset, int n, char *str, int len)
 
     *str = '\0';
     for (i = 0; i <= n; i++) {
-	if (FD_ISSET(i, fdset))
-	    snprintf(str + strlen(str), len - strlen(str), "%d,", i);
+        if (FD_ISSET(i, fdset))
+            snprintf(str + strlen(str), len - strlen(str), "%d,", i);
     }
-    if ((p = strrchr(str, ','))) /* delete trailing comma */
-	*p = '\0';
+    if ((p = strrchr(str, ',')))        /* delete trailing comma */
+        *p = '\0';
     return str;
 }
 
@@ -125,40 +124,40 @@ char *dbg_tvstr(struct timeval *tv, char *str, int len)
 /*
  * Convert memory to string, turning non-printable character into "C" 
  * representation.  
- *  mem (IN)	target memory
- *  len (IN)	number of characters to convert
- *  RETURN	string (caller must free)
+ *  mem (IN) target memory
+ *  len (IN) number of characters to convert
+ *  RETURN   string (caller must free)
  */
 unsigned char *dbg_memstr(unsigned char *mem, int len)
 {
     int i, j;
-    int strsize = len * 4;	/* worst case */
+    int strsize = len * 4;      /* worst case */
     unsigned char *str = Malloc(strsize + 1);
 
     for (i = j = 0; i < len; i++) {
-	switch (mem[i]) {
-	case '\r':
-	    strcpy(&str[j], "\\r");
-	    j += 2;
-	    break;
-	case '\n':
-	    strcpy(&str[j], "\\n");
-	    j += 2;
-	    break;
-	case '\t':
-	    strcpy(&str[j], "\\t");
-	    j += 2;
-	    break;
-	default:
-	    if (isprint(mem[i]))
-		str[j++] = mem[i];
-	    else {
-		sprintf(&str[j], "\\%.3o", mem[i]);
-		j += 4;
-	    }
-	    break;
-	}
-	assert(j <= strsize || i == len);
+        switch (mem[i]) {
+        case '\r':
+            strcpy(&str[j], "\\r");
+            j += 2;
+            break;
+        case '\n':
+            strcpy(&str[j], "\\n");
+            j += 2;
+            break;
+        case '\t':
+            strcpy(&str[j], "\\t");
+            j += 2;
+            break;
+        default:
+            if (isprint(mem[i]))
+                str[j++] = mem[i];
+            else {
+                sprintf(&str[j], "\\%.3o", mem[i]);
+                j += 4;
+            }
+            break;
+        }
+        assert(j <= strsize || i == len);
     }
     str[j] = '\0';
     return str;

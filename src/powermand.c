@@ -23,13 +23,6 @@
  *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
-/*
- *   Keep in mind that you may want to install the port numbers in the 
- * /etc/services file:
- * powerman	10101/tcp		# powerman client protocol
- * vicebox	11000/tcp		# vicebox raw TCP protocol 
- * icebox	1010/tcp		# icebox raw TCP protocol 
- */
 
 #include <errno.h>
 #include <sys/time.h>
@@ -91,51 +84,54 @@ int main(int argc, char **argv)
 
     /* initialize various modules */
     err_init(argv[0]);
-    /*act_init();*/
-    dev_init();	 
+    /*act_init(); */
+    dev_init();
     cli_init();
 
     /* parse command line options */
     opterr = 0;
-    while ((c = getopt_long(argc, argv, OPT_STRING, longopts, &lindex)) != -1) {
-	switch (c) {
-	case 'c':		/* --config_file */
-	    if (config_filename != NULL)
-		_usage(argv[0]);
-	    config_filename = Strdup(optarg);
-	    break;
-	case 'f':		/* --foreground */
-	    daemonize = FALSE;
-	    break;
-	case 'h':		/* --help */
-	    _usage(argv[0]);
-	    exit(0);
-	case 'L':		/* --license */
-	    printf("%s", powerman_license);
-	    exit(0);
-	case 'd':		/* --debug */
-	    {
-		unsigned long val = strtol(optarg, NULL, 0);
+    while ((c =
+            getopt_long(argc, argv, OPT_STRING, longopts,
+                        &lindex)) != -1) {
+        switch (c) {
+        case 'c':              /* --config_file */
+            if (config_filename != NULL)
+                _usage(argv[0]);
+            config_filename = Strdup(optarg);
+            break;
+        case 'f':              /* --foreground */
+            daemonize = FALSE;
+            break;
+        case 'h':              /* --help */
+            _usage(argv[0]);
+            exit(0);
+        case 'L':              /* --license */
+            printf("%s", powerman_license);
+            exit(0);
+        case 'd':              /* --debug */
+            {
+                unsigned long val = strtol(optarg, NULL, 0);
 
-		if ((val == LONG_MAX || val == LONG_MIN) && errno == ERANGE)
-		    err_exit(TRUE, "strtol on debug mask");
-		dbg_setmask(val);
-	    }
-	    break;
+                if ((val == LONG_MAX || val == LONG_MIN)
+                    && errno == ERANGE)
+                    err_exit(TRUE, "strtol on debug mask");
+                dbg_setmask(val);
+            }
+            break;
 #if 0
-	case 'V':
-	    printf("%s-%s\n", PROJECT, VERSION);
-	    exit(0);
+        case 'V':
+            printf("%s-%s\n", PROJECT, VERSION);
+            exit(0);
 #endif
-	default:
-	    err_exit(FALSE, "unrecognized cmd line option (see --help).");
-	    exit(0);
-	    break;
-	}
+        default:
+            err_exit(FALSE, "unrecognized cmd line option (see --help).");
+            exit(0);
+            break;
+        }
     }
 
     if (geteuid() != 0)
-	err_exit(FALSE, "must be root");
+        err_exit(FALSE, "must be root");
 
     Signal(SIGHUP, _noop_handler);
     Signal(SIGTERM, _exit_handler);
@@ -145,10 +141,10 @@ int main(int argc, char **argv)
     conf_init(config_filename ? config_filename : DFLT_CONFIG_FILE);
 
     if (config_filename != NULL)
-      Free(config_filename);
+        Free(config_filename);
 
     if (daemonize)
-	daemon_init();
+        daemon_init();
 
     /* initialize listener */
     cli_listen();
@@ -156,15 +152,14 @@ int main(int argc, char **argv)
     /* We now have a socket at listener fd running in listen mode */
     /* and a file descriptor for communicating with each device */
     _select_loop();
-    /*NOTREACHED*/
-    return 0;
+     /*NOTREACHED*/ return 0;
 }
 
 static void _usage(char *prog)
 {
     printf("Usage: %s [OPTIONS]\n", prog);
     printf("  -c --config_file FILE\tSpecify configuration [%s]\n",
-	   DFLT_CONFIG_FILE);
+           DFLT_CONFIG_FILE);
     printf("  -f --foreground\tDon't daemonize\n");
     printf("  -h --help\t\tDisplay this help\n");
     printf("  -L --license\t\tDisplay license information\n");
@@ -197,38 +192,38 @@ static void _select_loop(void)
     timerclear(&tmout);
 
     while (1) {
-	dbg(DBG_SELECT, "---------------------");
-	/* set maxfd and read/write fd sets for select call */
-	FD_ZERO(&rset);
-	FD_ZERO(&wset);
-	maxfd = 0;
-	cli_pre_select(&rset, &wset, &maxfd);
-	dev_pre_select(&rset, &wset, &maxfd);
+        dbg(DBG_SELECT, "---------------------");
+        /* set maxfd and read/write fd sets for select call */
+        FD_ZERO(&rset);
+        FD_ZERO(&wset);
+        maxfd = 0;
+        cli_pre_select(&rset, &wset, &maxfd);
+        dev_pre_select(&rset, &wset, &maxfd);
 
-	dbg(DBG_SELECT, "select rset=[%s] wset=[%s] tmout=%s",
-		    dbg_fdsetstr(&rset, maxfd+1, rsetstr, sizeof(rsetstr)),
-		    dbg_fdsetstr(&wset, maxfd+1, wsetstr, sizeof(wsetstr)),
-		    timerisset(&tmout) 
-		    ? dbg_tvstr(&tmout, tmoutstr, sizeof(tmoutstr)) : "NULL");
+        dbg(DBG_SELECT, "select rset=[%s] wset=[%s] tmout=%s",
+            dbg_fdsetstr(&rset, maxfd + 1, rsetstr, sizeof(rsetstr)),
+            dbg_fdsetstr(&wset, maxfd + 1, wsetstr, sizeof(wsetstr)),
+            timerisset(&tmout)
+            ? dbg_tvstr(&tmout, tmoutstr, sizeof(tmoutstr)) : "NULL");
 
         /* Note: some selects modify timeval arg */
-	Select(maxfd+1, &rset, &wset, NULL, timerisset(&tmout) ? &tmout : NULL);
-	timerclear(&tmout);
+        Select(maxfd + 1, &rset, &wset, NULL,
+               timerisset(&tmout) ? &tmout : NULL);
+        timerclear(&tmout);
 
-	dbg(DBG_SELECT, "ready rset=[%s] wset=[%s]", 
-			dbg_fdsetstr(&rset, maxfd+1, rsetstr, sizeof(rsetstr)), 
-			dbg_fdsetstr(&wset, maxfd+1, wsetstr, sizeof(wsetstr)));
+        dbg(DBG_SELECT, "ready rset=[%s] wset=[%s]",
+            dbg_fdsetstr(&rset, maxfd + 1, rsetstr, sizeof(rsetstr)),
+            dbg_fdsetstr(&wset, maxfd + 1, wsetstr, sizeof(wsetstr)));
 
-	/* 
-	 * Process activity on client and device fd's.
-	 * If a device requires a timeout, for example to reconnect or
-	 * to process a scripted delay, tmout is updated.
-	 */
-	cli_post_select(&rset, &wset);
-	dev_post_select(&rset, &wset, &tmout);
+        /* 
+         * Process activity on client and device fd's.
+         * If a device requires a timeout, for example to reconnect or
+         * to process a scripted delay, tmout is updated.
+         */
+        cli_post_select(&rset, &wset);
+        dev_post_select(&rset, &wset, &tmout);
     }
-    /*NOTREACHED*/
-}
+ /*NOTREACHED*/}
 
 static void _noop_handler(int signum)
 {
@@ -238,7 +233,7 @@ static void _noop_handler(int signum)
 static void _exit_handler(int signum)
 {
     cli_fini();
-    /*act_fini();*/
+    /*act_fini(); */
     dev_fini();
     conf_fini();
     err_exit(FALSE, "exiting on signal %d", signum);
@@ -248,8 +243,7 @@ static void _exit_handler(int signum)
 void *out_of_memory(void)
 {
     err_exit(FALSE, "list routines out of memory");
-    /*NOTREACHED*/
-    return NULL;
+     /*NOTREACHED*/ return NULL;
 }
 
 /*

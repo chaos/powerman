@@ -45,14 +45,14 @@
 
 
 struct buffer_implementation {
-    int magic;			/* magic cookie */
-    int fd;			/* file descriptor */
-    BufferLogFun *logfun;	/* log function (NULL OK) */
-    void *logfunarg;		/* argument to log function */
-    int len;			/* size allocated to buffer */
-    unsigned char *buf;		/* buffer */
-    unsigned char *in;		/* incoming goes here (points into buffer) */
-    unsigned char *out;		/* outgoing starts here (points into buffer)  */
+    int magic;                  /* magic cookie */
+    int fd;                     /* file descriptor */
+    BufferLogFun *logfun;       /* log function (NULL OK) */
+    void *logfunarg;            /* argument to log function */
+    int len;                    /* size allocated to buffer */
+    unsigned char *buf;         /* buffer */
+    unsigned char *in;          /* incoming goes here (points into buffer) */
+    unsigned char *out;         /* outgoing starts here (points into buffer)  */
 };
 
 /* length of various segments of buffer */
@@ -77,7 +77,8 @@ struct buffer_implementation {
  *  logfunarg (IN)  see above
  *  RETURN	new Buffer object (malloc failure terminates program)
  */
-Buffer buf_create(int fd, int length, BufferLogFun * logfun, void *logfunarg)
+Buffer buf_create(int fd, int length, BufferLogFun * logfun,
+                  void *logfunarg)
 {
     Buffer b;
 
@@ -120,11 +121,11 @@ bool buf_printf(Buffer b, const char *fmt, ...)
 
     /* compact the buffer */
     if (b->out > b->buf) {
-	int used = _buf_length(b);
+        int used = _buf_length(b);
 
-	memmove(b->buf, b->out, used);
-	b->out = b->buf;
-	b->in = b->buf + used;
+        memmove(b->buf, b->out, used);
+        b->out = b->buf;
+        b->in = b->buf + used;
     }
 
     /* write the "string" */
@@ -132,8 +133,8 @@ bool buf_printf(Buffer b, const char *fmt, ...)
     len = vsnprintf(b->in, _buf_length_post(b), fmt, ap);
     va_end(ap);
     if (len == -1 || len > _buf_length_post(b))
-	return FALSE;
-    b->in += len;		/* does not include NULL byte */
+        return FALSE;
+    b->in += len;               /* does not include NULL byte */
     return TRUE;
 }
 
@@ -149,20 +150,21 @@ int buf_write(Buffer b)
     _buf_check(b);
     _buf_isopen(b);
     if (_buf_length(b) == 0)
-	dbg(DBG_BUFFER, "attempting to write zero bytes to fd %d", b->fd);
+        dbg(DBG_BUFFER, "attempting to write zero bytes to fd %d", b->fd);
     nbytes = Write(b->fd, b->out, _buf_length(b));
     if (nbytes > 0) {
-	if (b->logfun != NULL)
-	    b->logfun(b->out, nbytes, b->logfunarg);
-	b->out += nbytes;
-	_buf_check(b);
-	dbg(DBG_BUFFER, "wrote %d bytes to fd %d", nbytes, b->fd);
+        if (b->logfun != NULL)
+            b->logfun(b->out, nbytes, b->logfunarg);
+        b->out += nbytes;
+        _buf_check(b);
+        dbg(DBG_BUFFER, "wrote %d bytes to fd %d", nbytes, b->fd);
     } else if (nbytes < 0) {
-	dbg(DBG_BUFFER, "write error on fd %d: %s", b->fd, strerror(errno));
-    } else { /* nbytes == 0 */
-	dbg(DBG_BUFFER, "write returned 0 on fd %d", b->fd);
+        dbg(DBG_BUFFER, "write error on fd %d: %s", b->fd,
+            strerror(errno));
+    } else {                    /* nbytes == 0 */
+        dbg(DBG_BUFFER, "write returned 0 on fd %d", b->fd);
     }
-	
+
     return nbytes;
 }
 
@@ -178,18 +180,18 @@ int buf_read(Buffer b)
     _buf_check(b);
     _buf_isopen(b);
     if (_buf_length_post(b) == 0);
-	dbg(DBG_BUFFER, "attempting to read zero bytes from fd %d", b->fd);
+    dbg(DBG_BUFFER, "attempting to read zero bytes from fd %d", b->fd);
     nbytes = Read(b->fd, b->in, _buf_length_post(b));
     if (nbytes > 0) {
-	if (b->logfun != NULL)
-	    b->logfun(b->in, nbytes, b->logfunarg);
-	b->in += nbytes;
-	_buf_check(b);
-	dbg(DBG_BUFFER, "read %d bytes from fd %d", nbytes, b->fd);
+        if (b->logfun != NULL)
+            b->logfun(b->in, nbytes, b->logfunarg);
+        b->in += nbytes;
+        _buf_check(b);
+        dbg(DBG_BUFFER, "read %d bytes from fd %d", nbytes, b->fd);
     } else if (nbytes < 0) {
-	dbg(DBG_BUFFER, "read error on fd %d: %s", b->fd, strerror(errno));
-    } else { /* nbytes == 0 */
-	dbg(DBG_BUFFER, "read returned EOF on fd %d", b->fd);
+        dbg(DBG_BUFFER, "read error on fd %d: %s", b->fd, strerror(errno));
+    } else {                    /* nbytes == 0 */
+        dbg(DBG_BUFFER, "read returned EOF on fd %d", b->fd);
     }
     return nbytes;
 }
@@ -223,15 +225,15 @@ int buf_peekline(Buffer b, unsigned char *str, int len)
 
     _buf_check(b);
     if (buf_isempty(b))
-	return 0;
+        return 0;
     p = memchr(b->out, '\n', _buf_length(b));
     if (p == NULL)
-	return 0;
+        return 0;
     cpy_len = p - b->out + 1;
     assert(cpy_len < len);
     /* Was: memcpy(str, b->out, cpy_len) */
     for (j = i = 0; i < cpy_len; i++)
-	str[j++] = b->out[i] == 0 ? 0377 : b->out[i];
+        str[j++] = b->out[i] == 0 ? 0377 : b->out[i];
     str[j] = '\0';
 
     return cpy_len;
@@ -272,11 +274,11 @@ int buf_peekstr(Buffer b, unsigned char *str, int len)
     _buf_check(b);
     cpy_len = _buf_length(b);
     if (cpy_len == 0)
-	return 0;
+        return 0;
     assert(cpy_len < len);
     /* Was: memcpy(str, b->out, cpy_len) */
     for (j = i = 0; i < cpy_len; i++)
-	str[j++] = b->out[i] == 0 ? 0377 : b->out[i];
+        str[j++] = b->out[i] == 0 ? 0377 : b->out[i];
     str[j] = '\0';
     return cpy_len;
 }
@@ -312,11 +314,11 @@ void buf_eat(Buffer b, int len)
 
     /* compact buffer */
     if (b->out > b->buf) {
-	int used = _buf_length(b);
+        int used = _buf_length(b);
 
-	memmove(b->buf, b->out, used);
-	b->out = b->buf;
-	b->in = b->buf + used;
+        memmove(b->buf, b->out, used);
+        b->out = b->buf;
+        b->in = b->buf + used;
     }
 }
 

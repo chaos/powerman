@@ -34,26 +34,27 @@
 #define NO_PORT           (-1)
 
 typedef struct {
-    int			com;		/* script index */
-    hostlist_t		hl;		/* target nodes */
-    int			pending;	/* count of pending device actions */
-    bool		error;		/* cumulative error flag for actions */
-    ArgList		*arglist;	/* argument for query commands */
+    int com;                    /* script index */
+    hostlist_t hl;              /* target nodes */
+    int pending;                /* count of pending device actions */
+    bool error;                 /* cumulative error flag for actions */
+    ArgList *arglist;           /* argument for query commands */
 } Command;
 
-typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE } Client_Status;
+typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING,
+        CLI_DONE } Client_Status;
 typedef struct {
-    Client_Status 	read_status;
-    Client_Status 	write_status;
-    int 		fd;		/* file desriptor for  the socket */
-    char    		*ip;		/* IP address of the client's host */
-    unsigned short int 	port;		/* Port of client connection */
-    char    		*host;		/* host name of client host */
-    Buffer 		to;		/* out buffer */
-    Buffer 		from;		/* in buffer */
-    Command		*cmd;		/* command (there can be only one) */
-    int			client_id;	/* client identifier */
-    MAGIC;
+    Client_Status read_status;
+    Client_Status write_status;
+    int fd;                     /* file desriptor for  the socket */
+    char *ip;                   /* IP address of the client's host */
+    unsigned short int port;    /* Port of client connection */
+    char *host;                 /* host name of client host */
+    Buffer to;                  /* out buffer */
+    Buffer from;                /* in buffer */
+    Command *cmd;               /* command (there can be only one) */
+    int client_id;              /* client identifier */
+     MAGIC;
 } Client;
 
 void cli_init(void);
@@ -61,10 +62,10 @@ void cli_fini(void);
 
 void cli_listen(void);
 
-void cli_post_select(fd_set *rset, fd_set *wset);
-void cli_pre_select(fd_set *rset, fd_set *wset, int *maxfd);
+void cli_post_select(fd_set * rset, fd_set * wset);
+void cli_pre_select(fd_set * rset, fd_set * wset, int *maxfd);
 
-#endif				/* CLIENT_H */
+#endif                          /* CLIENT_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab
