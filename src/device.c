@@ -478,11 +478,11 @@ process_script(Device *dev)
 	if (act == NULL) return;
 	assert(act->cur != NULL);
 	if ( ( act->cur->type == EXPECT ) &&
-		 empty_Buffer(dev->from) ) return;
+		 is_empty_Buffer(dev->from) ) return;
 	/* 
 	 * The condition for "done" is:
 	 * 1) There is nothing I can interpret in dev->from
-	 *   a) empty_Buffer(dev->from), or
+	 *   a) is_empty_Buffer(dev->from), or
 	 *   b) find_Reg_Ex() fails
 	 * and
 	 * 2) There's no sends to process
@@ -772,7 +772,7 @@ handle_Device_write(Device *dev)
 
 	n = write_Buffer(dev->to);
 	if( n < 0 ) return;
-	if( empty_Buffer(dev->to) ) dev->status &= ~DEV_SENDING;
+	if( is_empty_Buffer(dev->to) ) dev->status &= ~DEV_SENDING;
 }
 /*
  *   A device can only be stalled while it's inthe  EXPECTING 

@@ -63,3 +63,7 @@
 	* Added some list_iterator_destroy's to match list_iterator_create's
 	  in powerman.c
 	* Pid file stuff moved to pidlock.c and disabled for the moment.
+
+2002-07-28 garlick
+	* Fixed bug where log fd was always beeing checked for writeability
+	  in main select loop, causing the loop to spin.

@@ -32,11 +32,12 @@
 
 void make_log(void);
 void init_log(const char *name, int level);
+void start_log(void);
 void log_it(int level, const char *fmt, ...);
 void handle_log(void);
 void free_Log(void);
 bool is_log_buffer(Buffer b);
 int fd_log(void);
-bool writeable_log(void);
+bool write_pending_log(void);
 
 #endif /* LOG_H */

@@ -150,7 +150,7 @@ handle_Client_write(Client *c)
 	n = write_Buffer(c->to);
 	if ( n < 0 ) return; /* EWOULDBLOCK */
 
-	if ( empty_Buffer(c->to) ) c->write_status = CLI_IDLE;
+	if ( is_empty_Buffer(c->to) ) c->write_status = CLI_IDLE;
 }
 
 /*

@@ -70,8 +70,8 @@ daemon_init(void)
 	/* clear our file mode creation mask */
 	umask(0);
 
-	/* Close stdout/stderr/stdin */
-	for (i = 0; i < 3; i++)
+	/* Close fd's */
+	for (i = 0; i < MAXFD; i++)
 		close(i); /* ignore errors */
 
 	/* Init syslog */

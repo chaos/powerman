@@ -41,7 +41,7 @@ Buffer make_Buffer(int fd);
 void send_Buffer(Buffer b, const char *fmt, ...);
 int write_Buffer(Buffer b);
 int read_Buffer(Buffer b);
-bool empty_Buffer(Buffer b);
+bool is_empty_Buffer(Buffer b);
 int get_str_from_Buffer(Buffer b, regex_t *re, char *str, int length);
 #ifndef NDEBUG
 void dump_Buffer(Buffer b);

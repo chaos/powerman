@@ -267,7 +267,7 @@ read_Buffer(Buffer b)
 }
 
 bool
-empty_Buffer(Buffer b)
+is_empty_Buffer(Buffer b)
 {
       	assert(b != NULL);	
       	assert(b->magic == BUF_MAGIC);

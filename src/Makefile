@@ -310,8 +310,8 @@ log.o: /usr/include/time.h /usr/include/sys/stat.h /usr/include/bits/stat.h
 log.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
 log.o: /usr/include/stdio.h /usr/include/libio.h /usr/include/_G_config.h
 log.o: /usr/include/wchar.h /usr/include/bits/wchar.h /usr/include/gconv.h
-log.o: /usr/include/bits/stdio_lim.h powerman.h wrappers.h
-log.o: /usr/include/sys/time.h /usr/include/bits/time.h
+log.o: /usr/include/bits/stdio_lim.h /usr/include/string.h powerman.h
+log.o: wrappers.h /usr/include/sys/time.h /usr/include/bits/time.h
 log.o: /usr/include/sys/select.h /usr/include/bits/select.h
 log.o: /usr/include/bits/sigset.h /usr/include/regex.h /usr/include/netdb.h
 log.o: /usr/include/netinet/in.h /usr/include/stdint.h

@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <stdarg.h>
 #include <stdio.h>
+#include <string.h>
 
 #include "powerman.h"
 #include "wrappers.h"
@@ -43,7 +44,7 @@ typedef struct {
 	int magic;
 	String name;
 	int fd;
-	bool writeable;
+	bool write_pending;
 	Buffer to;
 	int level;
 } Log;
@@ -62,7 +63,6 @@ make_log(void)
 	log->magic = LOG_MAGIC;
 	log->name = NULL;
 	log->fd = NO_FD;
-	log->writeable = FALSE;
 	log->to = NULL;
 	log->level = -1;
 }
@@ -71,10 +71,27 @@ make_log(void)
  *   It's imprtant to avoid openning this until after daemonization
  * is complete.  The log uses the buffer.c interface, and since that
  * interface can log errors, we have to dance a little carefully
- * there or we end up in infinet recursion.
+ * there or we end up in infinite recursion.
  */ 
 void
 init_log(const char *name, int level)
+{
+	int flags, fd;
+
+	assert(log != NULL);
+	assert(log->magic == LOG_MAGIC);
+	if (log->name != NULL) /* config file error? */
+		exit_msg("log can only be initialized once");
+	log->level = level;
+	log->name = make_String( name );
+	/* just a test open while we have tty - start_log does the real open */
+	flags = O_WRONLY | O_CREAT | O_APPEND;
+	fd = Open(get_String(log->name), flags, S_IRUSR | S_IWUSR);
+	Close(fd);
+}
+
+void
+start_log(void)
 {
 	time_t t;
 	int flags;
@@ -82,15 +99,15 @@ init_log(const char *name, int level)
 	assert(log != NULL);
 	assert(log->magic == LOG_MAGIC);
 	if (log->name != NULL)
-		exit_msg("log can only be initialized once");
-	log->name = make_String( name );
-	flags = O_WRONLY | O_CREAT | O_APPEND | O_NONBLOCK;
-	log->fd = Open(get_String(log->name), flags, S_IRUSR | S_IWUSR);
-	log->to = make_Buffer(log->fd);
-	t = Time(NULL);
-	log->level = level;
-	log_it(0, "Started %s", ctime(&t));
+	{	
+		flags = O_WRONLY | O_CREAT | O_APPEND | O_NONBLOCK;
+		log->fd = Open(get_String(log->name), flags, S_IRUSR | S_IWUSR);
+		log->to = make_Buffer(log->fd);
+		t = Time(NULL);
+		log_it(0, "Log started fd %d %s", log->fd, ctime(&t));
+	}
 }
+
 
 /*
  *   Send message to log.  It has a nice vararg sturcture, but
@@ -104,15 +121,16 @@ log_it(int level, const char *fmt, ...)
 
 	assert(log != NULL);
 	assert(log->magic == LOG_MAGIC);
-	if (level > log->level) return;
+	if (log->name != NULL && level <= log->level)  
+	{
+		va_start(ap, fmt);
+		vsnprintf(str, MAX_BUF, fmt, ap);
+		va_end(ap);
+		strncat(str, "\n", MAX_BUF);
+		str[MAX_BUF - 1] = '\0';
 
-	va_start(ap, fmt);
-	vsnprintf(str, MAX_BUF, fmt, ap);
-	va_end(ap);
-
-	send_Buffer(log->to, "PowerManD:  %s\n", str);
-
-	log->writeable = TRUE;
+		send_Buffer(log->to, str);
+	}
 }
 
 /*
@@ -127,7 +145,6 @@ handle_log(void)
 	assert(log != NULL);
 	assert(log->magic == LOG_MAGIC);
 	n = write_Buffer(log->to);
-
 }
 /*
  *   Destructor
@@ -149,8 +166,7 @@ is_log_buffer(Buffer b)
 {
 	if (log != NULL && log->to == b)
 		return TRUE;
-	else
-		return FALSE;
+	return FALSE;
 }
 
 /* Needed to test file descriptor in main select loop */
@@ -163,9 +179,9 @@ fd_log(void)
 }
 
 bool
-writeable_log(void)
+write_pending_log(void)
 {
 	assert(log != NULL);
 	assert(log->magic == LOG_MAGIC);
-	return log->writeable;
+	return (log->name != NULL && !is_empty_Buffer(log->to));
 }

@@ -140,7 +140,10 @@ main(int argc, char **argv)
 	read_Config_file(g);
 
 	if( g->daemonize )
-		daemon_init();
+		daemon_init(); 	/* closes all open fd's, opens syslog */
+				/*   and tells exit_error to use syslog */
+
+	start_log();		/* opens log file (if any) */
 
 	dev_i = list_iterator_create(g->devs);
 	while( (dev = (Device *)list_next(dev_i)) )
@@ -287,7 +290,7 @@ do_select_loop(Globals *g)
 		}
 
                 /* Log write?  */
-		if ( FD_ISSET(fd_log(), &wset) )
+		if ( write_pending_log() && FD_ISSET(fd_log(), &wset) )
 			handle_log();
 
                 /* New connection? */
@@ -397,27 +400,31 @@ find_max_fd(Globals *g, fd_set *rs, fd_set *ws)
 	Client *client;
 	ListIterator c_iter;
 	ListIterator dev_i;
-	int maxfd;
+	int maxfd = 0; 
 
 	CHECK_MAGIC(g);
 
+	/*
+	 * Build the FD_SET's: rs, ws
+	 */
 	FD_ZERO(rs);
 	FD_ZERO(ws);
-
-	if (writeable_log()) FD_SET(fd_log(), ws);
-	if (g->listener->read) FD_SET(g->listener->fd, rs);
-	maxfd = MAX(g->listener->fd, fd_log());
-
+	if (write_pending_log()) {
+		FD_SET(fd_log(), ws);
+		maxfd = MAX(maxfd, fd_log());
+	}
+	if (g->listener->read)  {
+		FD_SET(g->listener->fd, rs);
+		maxfd = MAX(maxfd, g->listener->fd);
+	}
 	c_iter = list_iterator_create(g->clients);
 	while( (((Client *)client) = list_next(c_iter)) )
 	{
-		if (client->read_status == CLI_READING)  
+		if (client->read_status == CLI_READING)
 			FD_SET(client->fd, rs);
 		if (client->write_status == CLI_WRITING) 
 			FD_SET(client->fd, ws);
-		if( FD_ISSET(client->fd, rs) ||
-		    FD_ISSET(client->fd, ws) )
-			maxfd = MAX(maxfd, client->fd);
+		maxfd = MAX(maxfd, client->fd);
 	}
 	list_iterator_destroy(c_iter);
 
@@ -432,6 +439,7 @@ find_max_fd(Globals *g, fd_set *rs, fd_set *ws)
 		maxfd = MAX(maxfd, dev->fd);
 	}
 	list_iterator_destroy(dev_i);
+
 	return maxfd;
 }
 
@@ -456,7 +464,7 @@ sig_hup_handler(int signum)
 static void
 exit_handler(int signum)
 {
-	syslog(LOG_NOTICE, "%s: %m", "done");
+	syslog(LOG_NOTICE, "exiting on signal %d", signum);
 	exit(0);
 }
 
