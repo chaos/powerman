@@ -35,27 +35,39 @@
 #include "powerman.h"
 
 typedef struct {
-    char *node;                 /* node name */
-    char *val;                  /* value as returned by the device */
-    InterpState state;          /* interpreted value, if appropriate */
+    char *node;                 /* node name (in) */
+    char *val;                  /* value as returned by the device (out) */
+    InterpState state;          /* interpreted value, if appropriate (out) */
 } Arg;
 
 typedef struct arglist_iterator *ArgListIterator;
 typedef struct arglist *ArgList;
 
-/* create/destroy */
-ArgList arglist_create(hostlist_t hl); /* refcount = 1 */
-ArgList arglist_link(ArgList arglist); /* ++refcount */
-void arglist_unlink(ArgList arglist);  /* --refcount (destroy if 0) */
+/* Create an arglist with an Arg entry for each node in hl (refcount == 1).
+ */
+ArgList          arglist_create(hostlist_t hl);
 
-/* accessor */
-void arglist_set(ArgList arglist, char *node, char *val, InterpState state);
-bool arglist_get(ArgList arglist, char *node, char **val, InterpState *state);
+/* Do refcount++
+ */
+ArgList          arglist_link(ArgList arglist);
 
-/* iteration */
-ArgListIterator arglist_iterator_create(ArgList arglist);
-void arglist_iterator_destroy(ArgListIterator itr);
-Arg *arglist_next(ArgListIterator itr);
+/* Do refcount--
+ * If the refcount reaches zero, destroy the arglist.
+ */
+void             arglist_unlink(ArgList arglist);
+
+/* Search arglist for an Arg entry that matches node.
+ * Return pointer to Arg on success (points to actual list entry),
+ * or NULL on search failure.
+ */
+Arg *            arglist_find(ArgList arglist, char *node);
+
+/* An iterator interface for Args in Arglists, similar to the
+ * iterators in list.h.
+ */
+ArgListIterator  arglist_iterator_create(ArgList arglist);
+void             arglist_iterator_destroy(ArgListIterator itr);
+Arg *            arglist_next(ArgListIterator itr);
 
 #endif
 

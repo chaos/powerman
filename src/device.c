@@ -944,8 +944,13 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
         bool condition = FALSE;
         ExecCtx *new;
       
-        if (e->target)
-            arglist_get(act->arglist, e->target->node, NULL, &state);
+        if (e->target) {
+            Arg *arg = arglist_find(act->arglist, e->target->node);
+
+            if (arg)
+                state = arg->state;
+        }
+
         if (e->cur->type == STMT_IFON && state == ST_ON)
             condition = TRUE;
         else if (e->cur->type == STMT_IFOFF && state == ST_OFF)
@@ -1036,6 +1041,7 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
             InterpState state = ST_UNKNOWN;
             ListIterator itr;
             Interp *i;
+            Arg *arg;
 
             itr = list_iterator_create(e->cur->u.setplugstate.interps);
             while ((i = list_next(itr))) {
@@ -1045,7 +1051,13 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
                 }
             }
             list_iterator_destroy(itr);
-            arglist_set(act->arglist, node, str, state);
+
+            if ((arg = arglist_find(act->arglist, node))) {
+                arg->state = state;
+                if (arg->val) 
+                    Free(arg->val);
+                arg->val = Strdup(str);
+            }
         } 
         if (str)
             Free(str);

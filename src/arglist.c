@@ -61,7 +61,6 @@ struct arglist {
     int refcount;               /* free when refcount == 0 */
 };
 
-/* destroy an Arg */
 static void _destroy_arg(Arg * arg)
 {
     assert(arg != NULL);
@@ -72,12 +71,21 @@ static void _destroy_arg(Arg * arg)
     Free(arg);
 }
 
-/* create an ArgList */
+static Arg *_create_arg(char *node)
+{
+    Arg *arg = (Arg *) Malloc(sizeof(Arg));
+
+    arg->node = Strdup(node);
+    arg->state = ST_UNKNOWN;
+    arg->val = NULL;
+    
+    return arg;
+}
+
 ArgList arglist_create(hostlist_t hl)
 {
     ArgList new = (ArgList) Malloc(sizeof(struct arglist));
     hostlist_iterator_t itr;
-    Arg *arg;
     char *node;
     int hash_size;
 
@@ -91,10 +99,8 @@ ArgList arglist_create(hostlist_t hl)
         return NULL;
     }
     while ((node = hostlist_next(itr)) != NULL) {
-        arg = (Arg *) Malloc(sizeof(Arg));
-        arg->node = Strdup(node);
-        arg->state = ST_UNKNOWN;
-        arg->val = NULL;
+        Arg *arg = _create_arg(node);
+
         hash_insert(new->args, arg->node, arg);
     }
     hostlist_iterator_destroy(itr);
@@ -103,7 +109,6 @@ ArgList arglist_create(hostlist_t hl)
     return new;
 }
 
-/* decrement the refcount for an ArgList and free when zero */
 void arglist_unlink(ArgList arglist)
 {
     if (--arglist->refcount == 0) {
@@ -113,37 +118,21 @@ void arglist_unlink(ArgList arglist)
     }
 }
 
-/* increment the refcount for an ArgList */
 ArgList arglist_link(ArgList arglist)
 {
     arglist->refcount++;
+
     return arglist;
 }
 
-bool arglist_get(ArgList arglist, char *node, char **val, InterpState *state)
+Arg *arglist_find(ArgList arglist, char *node)
 {
     Arg *arg = NULL;
 
     if (node != NULL)
         arg = hash_find(arglist->args, node);
-    if (arg) {
-        if (val)
-            *val = arg->val;
-        if (state)
-            *state = arg->state;
-    }
 
-    return arg ? TRUE : FALSE;
-}
-
-void arglist_set(ArgList arglist, char *node, char *val, InterpState state)
-{
-    Arg *arg;
-
-    if (node != NULL && (arg = hash_find(arglist->args, node)) != NULL) {
-        arg->val = Strdup(val);
-        arg->state = state;
-    }
+    return arg;
 }
 
 ArgListIterator arglist_iterator_create(ArgList arglist)
