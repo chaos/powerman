@@ -1,5 +1,6 @@
 * Bug: was able to kill powerman by running "while true; do pm -q; done"
-  and interrupting with ^C after many iterations.
+  and interrupting with ^C after many iterations:
+  client.c:416: _act_finish: Assertion `(c)->magic == 0xdeadbee0' failed.
 * Build failure simulator test suite
 * Package with autoconf
 * Still several small memory leaks, find them
