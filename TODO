@@ -1,5 +1,4 @@
 * When querying power status, don't query all power controlers
-* Invalid hosts are silently ignored, warning should be generated
 * Failed action at the device level are never reported to the client
 * Timeouts need to be added to the send/expect interactions with
   the devices.
@@ -12,3 +11,8 @@
 * Remove any server side caching
 * Investigate controling the timing of commands delivered to power
   controlers.
+* powerman client needs to interpret response codes from server and clean
+  them up (e.g. strip off numerical response prefixes) when shown to the user.
+* powerman client needs to implement option for expanding hostranges
+* powerman client needs option for querying status of individual node for
+  Kimberlite failover interface.

@@ -1,3 +1,10 @@
+2002-09-20 garlick
+	* Moved vicebox stuff to test subdir and got rid of redundant
+	  exit_error.c and wrappers.c.
+	* Brian updated the TODO file.
+	* Cleanup of functions in client.c, util.c.
+	* Tagged powerman-1-0-4.
+
 2002-09-18 garlick
 	* Client protocol now in client_proto.h
 	* Numbered response codes
@@ -8,15 +15,15 @@
 	  warnings when nodes are accessed which have soft != hard) 
 
 2002-09-18 behlendorf
-  * Added some basic memory accounting functionality
-  * Fixed several memory leaks
-  * Removed string.[ch] and replaced all String structures and functions
-    with equivilant char * replacements.  
-  * Parsed hostlists now stored in the action structure and free'd
-    when the action is completed.
-  * Badly formated hostlists no longer crash the daemon.
-  * Fixed segfault related to quit command, client connections are
-    now properly cleaned up on the daemon side.
+	* Added some basic memory accounting functionality
+	* Fixed several memory leaks
+	* Removed string.[ch] and replaced all String structures and functions
+	  with equivilant char * replacements.  
+	* Parsed hostlists now stored in the action structure and free'd
+	  when the action is completed.
+	* Badly formated hostlists no longer crash the daemon.
+	* Fixed segfault related to quit command, client connections are
+	  now properly cleaned up on the daemon side.
 
 2002-09-18 behlendorf
 	* Fixed coalescing of actions to the devices.
