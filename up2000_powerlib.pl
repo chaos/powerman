@@ -88,6 +88,19 @@ sub do_off
 	return UP2000Power::plug_on($plug);
 }
 
+sub force_off
+{
+	my ($node) = @_;
+	my $plug;
+
+	$plug = $nodes{$node};
+	printf LINE ("%s%s%s\r\n", $wti_passwd, $plug, $cmd_off);
+	while (<LINE>) {
+	    last if (/Complete/);
+	}
+	return UP2000Power::plug_on($plug);
+}
+
 sub do_on
 {
     my ($node) = @_;
