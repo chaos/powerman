@@ -58,10 +58,10 @@
 #include "wrappers.h"
 
 /* prototypes */
-static void process_command_line(Globals *g, int argc, char **argv);
+static void process_command_line(Globals * g, int argc, char **argv);
 static void usage(char *prog);
-static void do_select_loop(Globals *g);
-static int find_max_fd(Globals *g, fd_set *rset, fd_set *wset);
+static void do_select_loop(Globals * g);
+static int find_max_fd(Globals * g, fd_set * rset, fd_set * wset);
 #ifndef NDUMP
 static void dump_Globals(void);
 static void dump_Server_Status(Server_Status status);
@@ -69,7 +69,7 @@ static void dump_Server_Status(Server_Status status);
 static Globals *make_Globals();
 static void sig_hup_handler(int signum);
 static void exit_handler(int signum);
-static void read_Config_file(Globals *g);
+static void read_Config_file(Globals * g);
 
 /* This is synonymous with the Globals *g declared in main().
  * I call attention to global access as "cheat".  This only
@@ -77,26 +77,25 @@ static void read_Config_file(Globals *g);
  */
 Globals *cheat;
 
-static const char *powerman_license = \
-    "Copyright (C) 2001-2002 The Regents of the University of California.\n"  \
-    "Produced at Lawrence Livermore National Laboratory.\n"                   \
-    "Written by Andrew Uselton <uselton2@llnl.gov>.\n"                           \
-    "http://www.llnl.gov/linux/powerman/\n"                                     \
-    "UCRL-CODE-2002-008\n\n"                                                  \
-    "PowerMan is free software; you can redistribute it and/or modify it\n"     \
-    "under the terms of the GNU General Public License as published by\n"     \
+static const char *powerman_license =
+    "Copyright (C) 2001-2002 The Regents of the University of California.\n"
+    "Produced at Lawrence Livermore National Laboratory.\n"
+    "Written by Andrew Uselton <uselton2@llnl.gov>.\n"
+    "http://www.llnl.gov/linux/powerman/\n"
+    "UCRL-CODE-2002-008\n\n"
+    "PowerMan is free software; you can redistribute it and/or modify it\n"
+    "under the terms of the GNU General Public License as published by\n"
     "the Free Software Foundation.\n";
 
 #define OPT_STRING "c:fhLVt"
-static const struct option long_options[] =
-{
-		{"config_file",    required_argument, 0, 'c'},
-		{"foreground",     no_argument,       0, 'f'},
-		{"help",           no_argument,       0, 'h'},
-		{"license",        no_argument,       0, 'L'},
-		{"version",        no_argument,       0, 'V'},
-		{"telemetry",      no_argument,       0, 't'},
-		{0, 0, 0, 0}
+static const struct option long_options[] = {
+    {"config_file", required_argument, 0, 'c'},
+    {"foreground", no_argument, 0, 'f'},
+    {"help", no_argument, 0, 'h'},
+    {"license", no_argument, 0, 'L'},
+    {"version", no_argument, 0, 'V'},
+    {"telemetry", no_argument, 0, 't'},
+    {0, 0, 0, 0}
 };
 
 static const struct option *longopts = long_options;
@@ -109,9 +108,8 @@ static bool debug_telemetry = FALSE;
  *         exitting clean any mallocs up.  Once it enters the
  *         select loop it stays there until you call the "kill"
  *         option.
- */ 
-int
-main(int argc, char **argv)
+ */
+int main(int argc, char **argv)
 {
 /* 
  *   Globals has the the timeout intervals, a structure for the 
@@ -119,37 +117,38 @@ main(int argc, char **argv)
  * devices, the list of clients, the list of pending actions, 
  * and the cluster state info.
  */
-	Globals *g;
-	Device *dev;
-	ListIterator dev_i;
+    Globals *g;
+    Device *dev;
+    ListIterator dev_i;
 
-	init_error(argv[0]);
-	cheat = g = make_Globals();
-	
-	process_command_line(g, argc, argv);
+    init_error(argv[0]);
+    cheat = g = make_Globals();
 
-	if( geteuid() != 0 ) exit_msg("Must be root");
+    process_command_line(g, argc, argv);
 
-	Signal(SIGHUP, sig_hup_handler);
-	Signal(SIGTERM, exit_handler);
+    if (geteuid() != 0)
+	exit_msg("Must be root");
 
-	read_Config_file(g);
+    Signal(SIGHUP, sig_hup_handler);
+    Signal(SIGTERM, exit_handler);
 
-	if( g->daemonize )
-		daemon_init(); 	/* closes all open fd's, opens syslog */
-				/*   and tells exit_error to use syslog */
+    read_Config_file(g);
 
-	dev_i = list_iterator_create(g->devs);
-	while( (dev = list_next(dev_i)) )
-		init_Device(dev, debug_telemetry);
-	list_iterator_destroy(dev_i);
+    if (g->daemonize)
+	daemon_init();		/* closes all open fd's, opens syslog */
+    /*   and tells exit_error to use syslog */
 
-	init_Listener(g->listener);
+    dev_i = list_iterator_create(g->devs);
+    while ((dev = list_next(dev_i)))
+	init_Device(dev, debug_telemetry);
+    list_iterator_destroy(dev_i);
+
+    init_Listener(g->listener);
 
 /* We now have a socket at g->listener->fd running in listen mode */
 /* and a file descriptor for communicating with each device */
-	do_select_loop(g);
-	return 0;
+    do_select_loop(g);
+    return 0;
 }
 
 /* 
@@ -159,56 +158,56 @@ main(int argc, char **argv)
  * option "-k".  The other options are self explanitory and less
  * important.
  */
-static void
-process_command_line(Globals *g, int argc, char **argv)
+static void process_command_line(Globals * g, int argc, char **argv)
 {
-	int c;
-	int longindex;
+    int c;
+    int longindex;
 
-	opterr = 0;
-	while ((c = getopt_long(argc, argv, OPT_STRING, longopts, &longindex)) != -1) {
-		switch(c) {
-		case 'c':	/* --config_file */
-			if( g->config_file != NULL ) 
-				usage(argv[0]);
-			g->config_file = Strdup(optarg);
-			break;
-		case 'f':	/* --foreground */
-			g->daemonize = FALSE;
-			break;
-		case 'h':	/* --help */
-			usage(argv[0]);
-			exit(0);
-		case 'L':	/* --license */
-			printf("%s", powerman_license);
-			exit(0);
-		case 't':	/* --telemetry */
-			debug_telemetry = TRUE;
-			break;	
-		case 'V':
-			printf("%s-%s\n", PROJECT, VERSION);
-			exit(0);
-		default:
-			exit_msg("Unrecognized cmd line option (see --help).");
-			exit(0);
-			break;
-		}
+    opterr = 0;
+    while ((c =
+	    getopt_long(argc, argv, OPT_STRING, longopts,
+			&longindex)) != -1) {
+	switch (c) {
+	case 'c':		/* --config_file */
+	    if (g->config_file != NULL)
+		usage(argv[0]);
+	    g->config_file = Strdup(optarg);
+	    break;
+	case 'f':		/* --foreground */
+	    g->daemonize = FALSE;
+	    break;
+	case 'h':		/* --help */
+	    usage(argv[0]);
+	    exit(0);
+	case 'L':		/* --license */
+	    printf("%s", powerman_license);
+	    exit(0);
+	case 't':		/* --telemetry */
+	    debug_telemetry = TRUE;
+	    break;
+	case 'V':
+	    printf("%s-%s\n", PROJECT, VERSION);
+	    exit(0);
+	default:
+	    exit_msg("Unrecognized cmd line option (see --help).");
+	    exit(0);
+	    break;
 	}
+    }
 
-	if (debug_telemetry && g->daemonize == TRUE)
-		exit_msg("--telemetry cannot be used in daemon mode");
+    if (debug_telemetry && g->daemonize == TRUE)
+	exit_msg("--telemetry cannot be used in daemon mode");
 
-	if (! g->config_file)
-		g->config_file = Strdup(DFLT_CONFIG_FILE);	
+    if (!g->config_file)
+	g->config_file = Strdup(DFLT_CONFIG_FILE);
 }
 
 
-static void 
-usage(char *prog)
+static void usage(char *prog)
 {
     printf("Usage: %s [OPTIONS]\n", prog);
-    printf("  -c --config_file FILE\tSpecify configuration [%s]\n", 
-		    DFLT_CONFIG_FILE);
+    printf("  -c --config_file FILE\tSpecify configuration [%s]\n",
+	   DFLT_CONFIG_FILE);
     printf("  -f --foreground\tDon't daemonize\n");
     printf("  -h --help\t\tDisplay this help\n");
     printf("  -L --license\t\tDisplay license information\n");
@@ -232,33 +231,31 @@ usage(char *prog)
  * devices have completed their assigned tasks the cluster becomes 
  * "quiecent" and a new action may be initiated from the list 
  * queued up by the clients.  
- */ 
-static void
-do_select_loop(Globals *g)
+ */
+static void do_select_loop(Globals * g)
 {
-	int maxfd = 0;
-	struct timeval tv;
-	Client *client;
-	ListIterator cli_i;
-	Device  *dev;
-	ListIterator dev_i;
-	int n;
-	fd_set rset;
-	fd_set wset;
-	bool over_time;   /* for update actions */
-	bool active_devs; /* active_devs == FALSE => Quiescent */
-	bool activity;    /* activity == TRUE => scripts need service */
-	Action *act;
+    int maxfd = 0;
+    struct timeval tv;
+    Client *client;
+    ListIterator cli_i;
+    Device *dev;
+    ListIterator dev_i;
+    int n;
+    fd_set rset;
+    fd_set wset;
+    bool over_time;		/* for update actions */
+    bool active_devs;		/* active_devs == FALSE => Quiescent */
+    bool activity;		/* activity == TRUE => scripts need service */
+    Action *act;
 
-	CHECK_MAGIC(g);
+    CHECK_MAGIC(g);
 
-	cli_i = list_iterator_create(g->clients);
-	dev_i  = list_iterator_create(g->devs);
+    cli_i = list_iterator_create(g->clients);
+    dev_i = list_iterator_create(g->devs);
 
-	while ( 1 ) 
-	{
-		over_time = FALSE;
-		active_devs  = FALSE;
+    while (1) {
+	over_time = FALSE;
+	active_devs = FALSE;
 
 /* 
  * set up for and call select
@@ -266,126 +263,119 @@ do_select_loop(Globals *g)
  * "status" values in the devices, and the "read" and "write" values
  * in the clients, log, and listener.
  */
-		maxfd = find_max_fd(g, &rset, &wset);
+	maxfd = find_max_fd(g, &rset, &wset);
 /* 
  * some "select" implementations are reputed to alter tv so set it
  * anew with each iteration.  timeout_interval may be set in the
  * config file.
- */  
-		tv = g->timeout_interval;
-		n = Select(maxfd + 1, &rset, &wset, NULL, &tv);
+ */
+	tv = g->timeout_interval;
+	n = Select(maxfd + 1, &rset, &wset, NULL, &tv);
 
-                /* New connection? */
-		if ( FD_ISSET(g->listener->fd, &rset) )
-			handle_Listener(g);
+	/* New connection? */
+	if (FD_ISSET(g->listener->fd, &rset))
+	    handle_Listener(g);
 
-                /* Client reading and writing?  */
-		list_iterator_reset(cli_i);
-		while( (client = list_next(cli_i)) )
-		{
-			if (client->fd < 0)
-				continue;
+	/* Client reading and writing?  */
+	list_iterator_reset(cli_i);
+	while ((client = list_next(cli_i))) {
+	    if (client->fd < 0)
+		continue;
 
-			if (FD_ISSET(client->fd, &rset))
-				handle_Client_read(g->client_prot, g->cluster, 
-						   g->acts, client);
-			if (FD_ISSET(client->fd, &wset))
-				handle_Client_write(client);
-                        /* Is this connection done? */
-			if ( (client->read_status == CLI_DONE) && 
-			     (client->write_status == CLI_IDLE) )
-				list_delete(cli_i);
-		}
-		
-		/* update_interval may be set in the config file.
-		 * Any activity will suppress updates for that
-		 * period, not just other updates.
-		 */
-		over_time = overdue(
-			&(g->cluster->time_stamp),
-			&(g->cluster->update_interval) );
-		
-                /* Device reading and writing? */
-		list_iterator_reset(dev_i);
-		while( (dev = list_next(dev_i)) )
-		{
-			/* we only initiate device recover once per
-			 * update period.  Otherwise we can get
-			 * swamped with reconnect messages.
-			 */
-			if( over_time && (dev->status == DEV_NOT_CONNECTED) )
-				initiate_nonblocking_connect(dev);
-
-			if (dev->fd < 0)
-				continue;
-
-		        activity = FALSE;
-
-			/* Any active device is sufficient to
-			 * suppress starting the next action
-                         */
-			if( dev->status & (DEV_SENDING | DEV_EXPECTING) )
-			     active_devs = TRUE;
-
-			/* The first activity is always the signal
-			 * of a newly connected device.  We'll have
-			 * run the log in script to get back into
-			 * business as usual.
-			 */
-			if( (dev->status == DEV_CONNECTING) )
-			  {
-			    if ( FD_ISSET(dev->fd, &rset) ||
-				 FD_ISSET(dev->fd, &wset) )
-				do_Device_connect(dev);
-				continue;
-			  }
-			if(FD_ISSET(dev->fd, &rset) )
-			  {
-				handle_Device_read(dev);
-				activity = TRUE;
-			  }
-			if(FD_ISSET(dev->fd, &wset))
-			  {
-				handle_Device_write(dev);
-				/*
-				 * We may want to pace the commands
-				 * sent to the cluster.  interDev
-				 * may be set in the config file.
-				 */
-				Delay( &(g->interDev) );
-				activity = TRUE;
-			  }
-			/*
-			 * Since some I/O took place we need to see
-			 * if the scripts need to be nudged along
-			 */
-			if(activity) process_script(dev);
-			/*
-			 * dev->timeout may be set in the config file.
-			 */
-			if( stalled_Device(dev) )
-				recover_Device(dev);
-		}
-		/* queue up an update action */
-		if( over_time )
-			update_Action(g->cluster, g->acts);
-		/* launch the nexxt action in the queue */
-		if ( (!active_devs) & 
-		     ((act = find_Action(g->acts, g->clients)) != NULL) )
-		{
-			/* A previous action may need a reply sent
-			 * back to a client.
-			 */
-			if (g->status == Occupied)
-				finish_Action(g, act);
-			/*
-			 * Double check.  If there really was an
-			 * action in the queue, launch it.
-			 */
-			if ( (act = find_Action(g->acts, g->clients)) != NULL ) 
-				do_Action(g, act);
-		}
+	    if (FD_ISSET(client->fd, &rset))
+		handle_Client_read(g->client_prot, g->cluster,
+				   g->acts, client);
+	    if (FD_ISSET(client->fd, &wset))
+		handle_Client_write(client);
+	    /* Is this connection done? */
+	    if ((client->read_status == CLI_DONE) &&
+		(client->write_status == CLI_IDLE))
+		list_delete(cli_i);
 	}
+
+	/* update_interval may be set in the config file.
+	 * Any activity will suppress updates for that
+	 * period, not just other updates.
+	 */
+	over_time = overdue(&(g->cluster->time_stamp),
+			    &(g->cluster->update_interval));
+
+	/* Device reading and writing? */
+	list_iterator_reset(dev_i);
+	while ((dev = list_next(dev_i))) {
+	    /* we only initiate device recover once per
+	     * update period.  Otherwise we can get
+	     * swamped with reconnect messages.
+	     */
+	    if (over_time && (dev->status == DEV_NOT_CONNECTED))
+		initiate_nonblocking_connect(dev);
+
+	    if (dev->fd < 0)
+		continue;
+
+	    activity = FALSE;
+
+	    /* Any active device is sufficient to
+	     * suppress starting the next action
+	     */
+	    if (dev->status & (DEV_SENDING | DEV_EXPECTING))
+		active_devs = TRUE;
+
+	    /* The first activity is always the signal
+	     * of a newly connected device.  We'll have
+	     * run the log in script to get back into
+	     * business as usual.
+	     */
+	    if ((dev->status == DEV_CONNECTING)) {
+		if (FD_ISSET(dev->fd, &rset) || FD_ISSET(dev->fd, &wset))
+		    do_Device_connect(dev);
+		continue;
+	    }
+	    if (FD_ISSET(dev->fd, &rset)) {
+		handle_Device_read(dev);
+		activity = TRUE;
+	    }
+	    if (FD_ISSET(dev->fd, &wset)) {
+		handle_Device_write(dev);
+		/*
+		 * We may want to pace the commands
+		 * sent to the cluster.  interDev
+		 * may be set in the config file.
+		 */
+		Delay(&(g->interDev));
+		activity = TRUE;
+	    }
+	    /*
+	     * Since some I/O took place we need to see
+	     * if the scripts need to be nudged along
+	     */
+	    if (activity)
+		process_script(dev);
+	    /*
+	     * dev->timeout may be set in the config file.
+	     */
+	    if (stalled_Device(dev))
+		recover_Device(dev);
+	}
+	/* queue up an update action */
+	if (over_time)
+	    update_Action(g->cluster, g->acts);
+	/* launch the nexxt action in the queue */
+	if ((!active_devs) &
+	    ((act = find_Action(g->acts, g->clients)) != NULL)) {
+	    /* A previous action may need a reply sent
+	     * back to a client.
+	     */
+	    if (g->status == Occupied)
+		finish_Action(g, act);
+	    /*
+	     * Double check.  If there really was an
+	     * action in the queue, launch it.
+	     */
+	    if ((act = find_Action(g->acts, g->clients)) != NULL)
+		do_Action(g, act);
+	}
+    }
 }
 
 /*
@@ -394,78 +384,70 @@ do_select_loop(Globals *g)
  * listener read is always on, each client maintains READING and WRITING
  * status in its data structure, device read is always on, and device
  * write stsus is also maintained in the device structure.  
- */ 
-static int
-find_max_fd(Globals *g, fd_set *rs, fd_set *ws)
+ */
+static int find_max_fd(Globals * g, fd_set * rs, fd_set * ws)
 {
-	Client *client;
-	Device *dev;
-	ListIterator cli_i;
-	ListIterator dev_i;
-	int maxfd = 0; 
+    Client *client;
+    Device *dev;
+    ListIterator cli_i;
+    ListIterator dev_i;
+    int maxfd = 0;
 
-	CHECK_MAGIC(g);
+    CHECK_MAGIC(g);
 
-	/*
-	 * Build the FD_SET's: rs, ws
+    /*
+     * Build the FD_SET's: rs, ws
+     */
+    FD_ZERO(rs);
+    FD_ZERO(ws);
+    if (g->listener->read) {
+	assert(g->listener->fd >= 0);
+	FD_SET(g->listener->fd, rs);
+	maxfd = MAX(maxfd, g->listener->fd);
+    }
+    cli_i = list_iterator_create(g->clients);
+    while ((client = list_next(cli_i))) {
+	if (client->fd < 0)
+	    continue;
+
+	if (client->read_status == CLI_READING) {
+	    FD_SET(client->fd, rs);
+	    maxfd = MAX(maxfd, client->fd);
+	}
+	if (client->write_status == CLI_WRITING) {
+	    FD_SET(client->fd, ws);
+	    maxfd = MAX(maxfd, client->fd);
+	}
+    }
+    list_iterator_destroy(cli_i);
+
+    dev_i = list_iterator_create(g->devs);
+    while ((dev = list_next(dev_i))) {
+	if (dev->fd < 0)
+	    continue;
+
+	/* To handle telnet I'm having it always ready to read.
 	 */
-	FD_ZERO(rs);
-	FD_ZERO(ws);
-	if (g->listener->read)  {
-		assert(g->listener->fd >= 0);
-		FD_SET(g->listener->fd, rs);
-		maxfd = MAX(maxfd, g->listener->fd);
+	FD_SET(dev->fd, rs);
+	maxfd = MAX(maxfd, dev->fd);
+
+	/* The descriptor becomes writable when a non-blocking
+	 * connect (ie, DEV_CONNECTING) completes.
+	 */
+	if ((dev->status & DEV_CONNECTING) || (dev->status & DEV_SENDING)) {
+	    FD_SET(dev->fd, ws);
 	}
-	cli_i = list_iterator_create(g->clients);
-	while( (client = list_next(cli_i)) )
-	{
-		if (client->fd < 0)
-			continue;
+    }
+    list_iterator_destroy(dev_i);
 
-		if (client->read_status == CLI_READING)
-                {
-			FD_SET(client->fd, rs);
-			maxfd = MAX(maxfd, client->fd);
-                }
-		if (client->write_status == CLI_WRITING) 
-                {
-			FD_SET(client->fd, ws);
-			maxfd = MAX(maxfd, client->fd);
-		}
-	}
-	list_iterator_destroy(cli_i);
-
-	dev_i = list_iterator_create(g->devs);
-	while( (dev = list_next(dev_i)) )
-	{
-		if (dev->fd < 0)
-			continue;
-
-		/* To handle telnet I'm having it always ready to read.
-                 */
-	        FD_SET(dev->fd, rs);
-		maxfd = MAX(maxfd, dev->fd);
-
-                /* The descriptor becomes writable when a non-blocking
-                 * connect (ie, DEV_CONNECTING) completes.
-                 */
-		if ( (dev->status & DEV_CONNECTING) ||
-		     (dev->status & DEV_SENDING) )
-                {
-	        	FD_SET(dev->fd, ws);
-                }
-	}
-	list_iterator_destroy(dev_i);
-
-	return maxfd;
+    return maxfd;
 }
 
 /*
  *   Eventually this will initiate a re read of the config file and
  * a reinitialization of the internal data structures.
  */
-static void
-sig_hup_handler(int signum)
+static void sig_hup_handler(int signum)
 {
 }
 
@@ -478,11 +460,10 @@ sig_hup_handler(int signum)
  * some client or device connection.  The message would disapear 
  * without a trace.  
  */
-static void
-exit_handler(int signum)
+static void exit_handler(int signum)
 {
-	syslog(LOG_NOTICE, "exiting on signal %d", signum);
-	exit(0);
+    syslog(LOG_NOTICE, "exiting on signal %d", signum);
+    exit(0);
 }
 
 
@@ -490,30 +471,29 @@ exit_handler(int signum)
  *   This function has two jobs.  Get the config file based on the
  * name on the command line, and wrap the call to the parser 
  * (parse.lex and parse.y).  
- */ 
-static void
-read_Config_file(Globals *g)
+ */
+static void read_Config_file(Globals * g)
 {
-	struct stat stbuf;
+    struct stat stbuf;
 
-	CHECK_MAGIC(g);
+    CHECK_MAGIC(g);
 
 /* Did we really get a config file? */
-	if (g->config_file == NULL)
-		exit_msg("no config file specified");
-	if (stat(g->config_file, &stbuf) < 0)
-		exit_error("%s", g->config_file);
-	if( (stbuf.st_mode & S_IFMT) != S_IFREG )
-		exit_msg("%s is not a regular file\n", g->config_file);
-	g->cf = fopen(g->config_file, "r");
-	if( g->cf == NULL ) 
-		exit_error("fopen %s", g->config_file); 
+    if (g->config_file == NULL)
+	exit_msg("no config file specified");
+    if (stat(g->config_file, &stbuf) < 0)
+	exit_error("%s", g->config_file);
+    if ((stbuf.st_mode & S_IFMT) != S_IFREG)
+	exit_msg("%s is not a regular file\n", g->config_file);
+    g->cf = fopen(g->config_file, "r");
+    if (g->cf == NULL)
+	exit_error("fopen %s", g->config_file);
 
-	g->client_prot = init_Client_Protocol();
+    g->client_prot = init_Client_Protocol();
 
-	parse_config_file();
-	
-	fclose(g->cf);
+    parse_config_file();
+
+    fclose(g->cf);
 }
 
 /*
@@ -521,32 +501,31 @@ read_Config_file(Globals *g)
  *
  * produces:  Globals 
  */
-static Globals *
-make_Globals()
+static Globals *make_Globals()
 {
-	Globals *g;
+    Globals *g;
 
-	g = (Globals *)Malloc(sizeof(Globals));
-	INIT_MAGIC(g);
+    g = (Globals *) Malloc(sizeof(Globals));
+    INIT_MAGIC(g);
 
-	g->timeout_interval.tv_sec  = TIMEOUT_SECONDS;
-	g->timeout_interval.tv_usec = 0;
-	g->interDev.tv_sec          = 0;
-	g->interDev.tv_usec         = INTER_DEV_USECONDS;
-	g->daemonize                = TRUE;
-	g->TCP_wrappers             = FALSE;
-	g->listener                 = make_Listener();
-	g->clients                  = list_create((ListDelF) free_Client);
-	g->status                   = Quiescent;
-	g->cluster                  = NULL;
-	g->acts                     = list_create((ListDelF) free_Action);
-	g->client_prot              = NULL;
-	g->specs                    = list_create((ListDelF) free_Spec);
-	g->devs                     = list_create((ListDelF) free_Device);
-	g->config_file              = NULL;
-	g->cf                       = NULL;
-	g->cluster                  = make_Cluster();
-	return g;
+    g->timeout_interval.tv_sec = TIMEOUT_SECONDS;
+    g->timeout_interval.tv_usec = 0;
+    g->interDev.tv_sec = 0;
+    g->interDev.tv_usec = INTER_DEV_USECONDS;
+    g->daemonize = TRUE;
+    g->TCP_wrappers = FALSE;
+    g->listener = make_Listener();
+    g->clients = list_create((ListDelF) free_Client);
+    g->status = Quiescent;
+    g->cluster = NULL;
+    g->acts = list_create((ListDelF) free_Action);
+    g->client_prot = NULL;
+    g->specs = list_create((ListDelF) free_Spec);
+    g->devs = list_create((ListDelF) free_Device);
+    g->config_file = NULL;
+    g->cf = NULL;
+    g->cluster = make_Cluster();
+    return g;
 }
 
 #ifndef NDUMP
@@ -554,66 +533,66 @@ make_Globals()
 /* 
  *   Display a debug listing of everything in the Globals struct.
  */
-static void
-dump_Globals(void)
+static void dump_Globals(void)
 {
-	ListIterator    act_iter;
-	Action         *act;
-	ListIterator    cli_i;
-	Client         *client;
-	ListIterator    d_iter;
-	Device         *dev;
-	int i;
-	Globals *g = cheat;
+    ListIterator act_iter;
+    Action *act;
+    ListIterator cli_i;
+    Client *client;
+    ListIterator d_iter;
+    Device *dev;
+    int i;
+    Globals *g = cheat;
 
-	fprintf(stderr, "Config file: %s\n", g->config_file);
+    fprintf(stderr, "Config file: %s\n", g->config_file);
 #if 0
-	/* FIXME: doesn't compile and doesn't look like loop advances jg */
-	fprintf(stderr, "Specifications:\n");
-	while(g->specs != g->specs->next)
-	{
-		Spec *spec;
+    /* FIXME: doesn't compile and doesn't look like loop advances jg */
+    fprintf(stderr, "Specifications:\n");
+    while (g->specs != g->specs->next) {
+	Spec *spec;
 
-		spec = g->specs->next;
-		dump_Spec(spec);
-	}
+	spec = g->specs->next;
+	dump_Spec(spec);
+    }
 #endif
-	fprintf(stderr, "Globals: %0x\n", (unsigned int)g);
-	fprintf(stderr, "\ttimout interval: %d.%06d sec\n", 
-		(int)g->timeout_interval.tv_sec, 
-		(int)g->timeout_interval.tv_usec);
-	dump_Cluster(g->cluster);
-	dump_Server_Status(g->status);
-	act_iter = list_iterator_create(g->acts);
-	while( (act = list_next(act_iter)) )
-		dump_Action((List)act);
-	list_iterator_destroy(act_iter);
-	dump_Listener(g->listener);
-	cli_i = list_iterator_create(g->clients);
-	while( (client = list_next(cli_i)) )
-		dump_Client(client);
-	list_iterator_destroy(cli_i);
-	fprintf(stderr, "\tClient Scripts:\n");
-	for (i = 0; i < g->client_prot->num_scripts; i++)
-		dump_Script(g->client_prot->scripts[i], i);
-	d_iter = list_iterator_create(g->devs);
-	while( (dev = list_next(d_iter)) )
-		dump_Device(dev);
-	list_iterator_destroy(d_iter);
-	Report_Memory();
-	fprintf(stderr, "That's all.\n");
+    fprintf(stderr, "Globals: %0x\n", (unsigned int) g);
+    fprintf(stderr, "\ttimout interval: %d.%06d sec\n",
+	    (int) g->timeout_interval.tv_sec,
+	    (int) g->timeout_interval.tv_usec);
+    dump_Cluster(g->cluster);
+    dump_Server_Status(g->status);
+    act_iter = list_iterator_create(g->acts);
+    while ((act = list_next(act_iter)))
+	dump_Action((List) act);
+    list_iterator_destroy(act_iter);
+    dump_Listener(g->listener);
+    cli_i = list_iterator_create(g->clients);
+    while ((client = list_next(cli_i)))
+	dump_Client(client);
+    list_iterator_destroy(cli_i);
+    fprintf(stderr, "\tClient Scripts:\n");
+    for (i = 0; i < g->client_prot->num_scripts; i++)
+	dump_Script(g->client_prot->scripts[i], i);
+    d_iter = list_iterator_create(g->devs);
+    while ((dev = list_next(d_iter)))
+	dump_Device(dev);
+    list_iterator_destroy(d_iter);
+    Report_Memory();
+    fprintf(stderr, "That's all.\n");
 }
 
 /*
  * Helper functin for dump_Globals 
  */
-static void
-dump_Server_Status(Server_Status status)
+static void dump_Server_Status(Server_Status status)
 {
-	fprintf(stderr, "\tServer Status: %d: ", status);
-	if (status == Quiescent) fprintf(stderr, "Quiescent\n");
-	else if (status == Occupied) fprintf(stderr, "Occupied\n");
-	else fprintf(stderr, "Unknown\n");
+    fprintf(stderr, "\tServer Status: %d: ", status);
+    if (status == Quiescent)
+	fprintf(stderr, "Quiescent\n");
+    else if (status == Occupied)
+	fprintf(stderr, "Occupied\n");
+    else
+	fprintf(stderr, "Unknown\n");
 }
 
 
@@ -626,22 +605,21 @@ dump_Server_Status(Server_Status status)
  *
  * destroys:  Globals
  */
-static void
-free_Globals(Globals *g)
+static void free_Globals(Globals * g)
 {
-	int i;
+    int i;
 
-	Free(g->config_file);
-	list_destroy(g->specs);
-	free_Cluster(g->cluster);
-	list_destroy(g->acts);
-	free_Listener(g->listener);
-	list_iterator_create(g->clients);
-	list_destroy(g->clients);
-	for (i = 0; i < g->client_prot->num_scripts; i++)
-		list_destroy(g->client_prot->scripts[i]);
-	Free(g->client_prot);
-	list_destroy(g->devs);
-	Free(g);
+    Free(g->config_file);
+    list_destroy(g->specs);
+    free_Cluster(g->cluster);
+    list_destroy(g->acts);
+    free_Listener(g->listener);
+    list_iterator_create(g->clients);
+    list_destroy(g->clients);
+    for (i = 0; i < g->client_prot->num_scripts; i++)
+	list_destroy(g->client_prot->scripts[i]);
+    Free(g->client_prot);
+    list_destroy(g->devs);
+    Free(g);
 }
 #endif

@@ -29,12 +29,13 @@
 
 #include <regex.h>
 
-#define MAX_BUF    64000          /* 2560 nodes with 16 chars per name   */
+#define MAX_BUF    64000	/* 2560 nodes with 16 chars per name   */
 
 typedef struct buffer_implementation *Buffer;
 
-typedef void (BufferLogFun)(unsigned char *mem, int len, void *arg);
-Buffer make_Buffer(int fd, int length, BufferLogFun logfun, void *logfunarg);
+typedef void (BufferLogFun) (unsigned char *mem, int len, void *arg);
+Buffer make_Buffer(int fd, int length, BufferLogFun logfun,
+		   void *logfunarg);
 void free_Buffer(Buffer b);
 bool send_Buffer(Buffer b, const char *fmt, ...);
 int write_Buffer(Buffer b);
@@ -53,4 +54,4 @@ void eat_Buffer(Buffer b, int len);
 void dump_Buffer(Buffer b);
 #endif
 
-#endif /* BUFFER_H */
+#endif				/* BUFFER_H */

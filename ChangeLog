@@ -1,6 +1,13 @@
+2002-09-13 garlick
+	* Ran indent -kr *.[ch] on everything in src except hostlist.[ch]
+	  and list.[ch]
+
 2002-09-12 garlick
 	* Brian documented some problems in the top of TODO.
 	* Chris cleaned up some type casting.
+	* Chris fixed icebox.dev to add delay after cmds to prevent 
+	  icebox "ERROR 5" (resource is busy).  This was causing "bulk" 
+  	  commands to fail on MCR
 	* Tagged powerman-1-0-1.
 
 2002-09-06 dun

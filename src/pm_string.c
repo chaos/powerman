@@ -37,8 +37,8 @@
 #define STRING_MAGIC 0xabbaabba
 
 struct string_implementation {
-	int magic;		/* COOKIE!!! */
-	unsigned char *string;	/* string, NULL terminated */
+    int magic;			/* COOKIE!!! */
+    unsigned char *string;	/* string, NULL terminated */
 };
 
 
@@ -46,96 +46,88 @@ struct string_implementation {
  * Create a String object from character string 'cs'. 
  * Result must be freed with free_String().
  */
-String
-make_String(const unsigned char *cs)
+String make_String(const unsigned char *cs)
 {
-	String s;
+    String s;
 
-	s = (String)Malloc(sizeof(struct string_implementation));
-	s->magic = STRING_MAGIC;
-	s->string = cs ? Strdup(cs) : NULL;
-	return s;
+    s = (String) Malloc(sizeof(struct string_implementation));
+    s->magic = STRING_MAGIC;
+    s->string = cs ? Strdup(cs) : NULL;
+    return s;
 }
 
 /*
  * Free a String object.
  */
-void
-free_String(String s)
+void free_String(String s)
 {
-	assert(s);
-	assert(s->magic == STRING_MAGIC);
-	if(s->string)
-		Free(s->string);
-	Free(s);
+    assert(s);
+    assert(s->magic == STRING_MAGIC);
+    if (s->string)
+	Free(s->string);
+    Free(s);
 }
 
 /* 
  * Copy a String object.  Result must be freed with free_String().
  */
-String
-copy_String(String s)
+String copy_String(String s)
 {
-	assert(s);
-	assert(s->magic == STRING_MAGIC);
-	return make_String(s->string);
+    assert(s);
+    assert(s->magic == STRING_MAGIC);
+    return make_String(s->string);
 }
 
 /*
  * Return a pointer to the string portion of the String.  Result may be NULL.
  */
-unsigned char *
-get_String(String s)
+unsigned char *get_String(String s)
 {
-	assert(s);
-	assert(s->magic == STRING_MAGIC);
-	return s->string;
+    assert(s);
+    assert(s->magic == STRING_MAGIC);
+    return s->string;
 }
 
 /*
  * Return the nth byte of String.
  */
-unsigned char 
-byte_String(String s, int n)
+unsigned char byte_String(String s, int n)
 {
-	assert(s);
-	assert(s->magic == STRING_MAGIC);
-	assert(s->string);
-	assert(n >= 0 && n < strlen(s->string));
-	return s->string[n];
+    assert(s);
+    assert(s->magic == STRING_MAGIC);
+    assert(s->string);
+    assert(n >= 0 && n < strlen(s->string));
+    return s->string[n];
 }
 
 /*
  * Return the length of String (not including NULL).
  */
-int 
-length_String(String s)
+int length_String(String s)
 {
-	assert(s);
-	assert(s->magic == STRING_MAGIC);
-	return s->string ? strlen(s->string) : 0;
+    assert(s);
+    assert(s->magic == STRING_MAGIC);
+    return s->string ? strlen(s->string) : 0;
 }
 
 /*
  * Return TRUE if string is empty.
  */
-bool
-empty_String(String s)
+bool empty_String(String s)
 {
-	assert(s);
-	assert(s->magic == STRING_MAGIC);
-	return (length_String(s) == 0) ? TRUE : FALSE;
+    assert(s);
+    assert(s->magic == STRING_MAGIC);
+    return (length_String(s) == 0) ? TRUE : FALSE;
 }
 
 /*
  * Return TRUE if String 's' is equal to character string 'cs'.
  */
-bool
-match_String(String s, unsigned char *cs)
+bool match_String(String s, unsigned char *cs)
 {
-	assert(s);
-	assert(s->magic == STRING_MAGIC);
-	assert(s->string);
-	assert(cs);
-	return (strcmp(s->string, cs) == 0) ? TRUE : FALSE; 
+    assert(s);
+    assert(s->magic == STRING_MAGIC);
+    assert(s->string);
+    assert(cs);
+    return (strcmp(s->string, cs) == 0) ? TRUE : FALSE;
 }

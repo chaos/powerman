@@ -46,110 +46,103 @@
  * immediately obvious.  
  */
 
-int
-Socket(int family, int type, int protocol)
+int Socket(int family, int type, int protocol)
 {
-	int fd;
+    int fd;
 
-	fd = socket(family, type, protocol);
-	if(fd < 0) 
-		exit_error("socket");
-	return fd;
+    fd = socket(family, type, protocol);
+    if (fd < 0)
+	exit_error("socket");
+    return fd;
 }
 
 int
-Setsockopt( int fd, int level, int optname, const void *opt_val, 
-	    socklen_t optlen ) 
+Setsockopt(int fd, int level, int optname, const void *opt_val,
+	   socklen_t optlen)
 {
-	int ret_code;
+    int ret_code;
 
-	ret_code = setsockopt(fd, level, optname, 
-			      opt_val, optlen);
-	if(ret_code < 0) 
-		exit_error("setsockopt");
-	return ret_code;
+    ret_code = setsockopt(fd, level, optname, opt_val, optlen);
+    if (ret_code < 0)
+	exit_error("setsockopt");
+    return ret_code;
 }
 
 /* Review: socklen_t may not be defined - autoconf this later */
-int
-Bind( int fd, struct sockaddr_in *saddr, socklen_t len )
+int Bind(int fd, struct sockaddr_in *saddr, socklen_t len)
 {
-	int ret_code;
+    int ret_code;
 
-	ret_code = bind(fd, (struct sockaddr *)saddr, len);
-	if(ret_code < 0) 
-		exit_error("bind");
-	return ret_code;
+    ret_code = bind(fd, (struct sockaddr *) saddr, len);
+    if (ret_code < 0)
+	exit_error("bind");
+    return ret_code;
 }
 
 int
-Getsockopt( int fd, int level, int optname, void *opt_val, 
-	    socklen_t *optlen ) 
+Getsockopt(int fd, int level, int optname, void *opt_val,
+	   socklen_t * optlen)
 {
-	int ret_code;
+    int ret_code;
 
-	ret_code = getsockopt(fd, level, optname, 
-			      opt_val, optlen);
-	if(ret_code < 0) 
-		exit_error("getsockopt");
-	return ret_code;
+    ret_code = getsockopt(fd, level, optname, opt_val, optlen);
+    if (ret_code < 0)
+	exit_error("getsockopt");
+    return ret_code;
 }
 
-int
-Listen(int fd, int backlog)
+int Listen(int fd, int backlog)
 {
-	int ret_code;
+    int ret_code;
 
-	ret_code = listen( fd, backlog );
-	if(ret_code < 0) 
-		exit_error("listen");
-	return ret_code;
+    ret_code = listen(fd, backlog);
+    if (ret_code < 0)
+	exit_error("listen");
+    return ret_code;
 }
 
-int
-Fcntl( int fd, int cmd, int arg)
+int Fcntl(int fd, int cmd, int arg)
 {
-	int ret_code;
+    int ret_code;
 
-	ret_code = fcntl(fd, cmd, arg);
-	if(ret_code < 0) 
-		exit_error("fcntl");
-	return ret_code;
+    ret_code = fcntl(fd, cmd, arg);
+    if (ret_code < 0)
+	exit_error("fcntl");
+    return ret_code;
 }
 
-char *
-Strncpy(char *s1, const char *s2, int len)
+char *Strncpy(char *s1, const char *s2, int len)
 {
-	char *res = strncpy(s1, s2, len);
+    char *res = strncpy(s1, s2, len);
 
-	s1[len - 1] = '\0';
-	return res;
+    s1[len - 1] = '\0';
+    return res;
 }
 
-time_t
-Time(time_t *t)
+time_t Time(time_t * t)
 {
-	time_t n;
+    time_t n;
 
-	n = time(t);
-	if (n < 0) 
-		exit_error("time");
-	return n;
+    n = time(t);
+    if (n < 0)
+	exit_error("time");
+    return n;
 }
 
-void
-Gettimeofday(struct timeval *tv, struct timezone *tz)
+void Gettimeofday(struct timeval *tv, struct timezone *tz)
 {
-	if (gettimeofday(tv, tz) < 0)
-		exit_error("gettimeofday");
+    if (gettimeofday(tv, tz) < 0)
+	exit_error("gettimeofday");
 }
 
-static void
-_clear_sets(fd_set *rset, fd_set *wset, fd_set *eset)
+static void _clear_sets(fd_set * rset, fd_set * wset, fd_set * eset)
 {
-	if(rset != NULL) FD_ZERO(rset);
-	if(wset != NULL) FD_ZERO(wset);
-	if(eset != NULL) FD_ZERO(eset);
+    if (rset != NULL)
+	FD_ZERO(rset);
+    if (wset != NULL)
+	FD_ZERO(wset);
+    if (eset != NULL)
+	FD_ZERO(eset);
 }
 
 /*
@@ -159,300 +152,276 @@ _clear_sets(fd_set *rset, fd_set *wset, fd_set *eset)
  * NOTE: fd_sets are cleared on timeout.
  */
 int
-Select(int maxfd, fd_set *rset, fd_set *wset, fd_set *eset, struct timeval *tv)
+Select(int maxfd, fd_set * rset, fd_set * wset, fd_set * eset,
+       struct timeval *tv)
 {
-	int n;
-	struct timeval tv_orig;
-	struct timeval start, end, delta;
+    int n;
+    struct timeval tv_orig;
+    struct timeval start, end, delta;
 
-	/* prep for EINTR handling */
-	if (tv)
-	{
-		tv_orig = *tv;
-		Gettimeofday(&start, NULL);
+    /* prep for EINTR handling */
+    if (tv) {
+	tv_orig = *tv;
+	Gettimeofday(&start, NULL);
+    }
+    /* repeat select if interrupted */
+    do {
+	n = select(maxfd, rset, wset, eset, tv);
+	if (n < 0 && errno != EINTR)	/* unrecov error */
+	    exit_error("select");
+	if (n < 0 && tv != NULL) {	/* EINTR - adjust tv */
+	    Gettimeofday(&end, NULL);
+	    timersub(&end, &start, &delta);	/* delta = end-start */
+	    timersub(&tv_orig, &delta, tv);	/* tv = tvsave-delta */
 	}
-	/* repeat select if interrupted */
-	do
-	{
-		n = select(maxfd, rset, wset, eset, tv);
-		if (n < 0 && errno != EINTR)		/* unrecov error */
-			exit_error("select");
-		if (n < 0 && tv != NULL)		/* EINTR - adjust tv */
-		{	
-			Gettimeofday(&end, NULL);
-			timersub(&end, &start, &delta);	/* delta = end-start */
-			timersub(&tv_orig, &delta, tv);	/* tv = tvsave-delta */
-		}
-		if (n < 0)
-			fprintf(stderr, "retrying interrupted select\n");
-	} while (n < 0);
-	/* XXX main select loop needs this fd_sets cleared on timeout */
-	if (n == 0)
-		_clear_sets(rset, wset, eset);
-	return n;
+	if (n < 0)
+	    fprintf(stderr, "retrying interrupted select\n");
+    } while (n < 0);
+    /* XXX main select loop needs this fd_sets cleared on timeout */
+    if (n == 0)
+	_clear_sets(rset, wset, eset);
+    return n;
 }
 
 
-void
-Delay(struct timeval *tv)
+void Delay(struct timeval *tv)
 {
-	int res;
-	res = Select(0, NULL, NULL, NULL, tv);
-	assert(res == 0);
+    int res;
+    res = Select(0, NULL, NULL, NULL, tv);
+    assert(res == 0);
 }
 
 static int allocated_memory = 0;
 
 /* Review: look into dmalloc */
 #define MALLOC_MAGIC 0xf00fbaab
-char *
-Malloc(int size)
+char *Malloc(int size)
 {
-	char *new;
-	int *p;
+    char *new;
+    int *p;
 
-	assert(size > 0 && size <= INT_MAX);
-	p = (int *)malloc(size + 2*sizeof(int));
-	if (p == NULL)
-		exit_msg("Out of memory");
-	p[0] = MALLOC_MAGIC;                   	/* add "secret" magic cookie */
-	p[1] = size;                            /* store size in buffer */
+    assert(size > 0 && size <= INT_MAX);
+    p = (int *) malloc(size + 2 * sizeof(int));
+    if (p == NULL)
+	exit_msg("Out of memory");
+    p[0] = MALLOC_MAGIC;	/* add "secret" magic cookie */
+    p[1] = size;		/* store size in buffer */
 
-	new = (char *)&p[2];
-	memset(new, 0, size);
-	allocated_memory += size;
-	return new;
+    new = (char *) &p[2];
+    memset(new, 0, size);
+    allocated_memory += size;
+    return new;
 }
 
-void 
-Free(void *ptr)
+void Free(void *ptr)
 {
-	if (ptr != NULL) {
-		int *p = (int *)ptr - 2;
-		int size;
+    if (ptr != NULL) {
+	int *p = (int *) ptr - 2;
+	int size;
 
-		assert(p[0] == MALLOC_MAGIC);  /* magic cookie still there? */
-		size = p[1];
-		memset(p, 0, size + 2*sizeof(int));
-		free(p);
-		allocated_memory -= size;
-	}
+	assert(p[0] == MALLOC_MAGIC);	/* magic cookie still there? */
+	size = p[1];
+	memset(p, 0, size + 2 * sizeof(int));
+	free(p);
+	allocated_memory -= size;
+    }
 }
 
-char *
-Strdup(const char *str)
+char *Strdup(const char *str)
 {
-	char *cpy;
-       
-	cpy = Malloc(strlen(str) + 1);
+    char *cpy;
 
-	strcpy(cpy, str);
-	return cpy;
+    cpy = Malloc(strlen(str) + 1);
+
+    strcpy(cpy, str);
+    return cpy;
 }
 
 
-int
-Accept(int fd, struct sockaddr_in *addr, socklen_t *addrlen)
+int Accept(int fd, struct sockaddr_in *addr, socklen_t * addrlen)
 {
-	int new;
+    int new;
 
-	new = accept(fd, (struct sockaddr *)addr, addrlen);
-	if(new < 0) 
-	{
+    new = accept(fd, (struct sockaddr *) addr, addrlen);
+    if (new < 0) {
 /* 
  *   A client could abort before a ready connection is accepted.  "The fix
  * for this problem is to:  ...  2.  "Ignore the following errors ..."
  *                                                     - Stevens, UNP p424
  */
-		if ( !( (errno == EWOULDBLOCK)  ||
-			(errno == ECONNABORTED) ||
-			(errno == EPROTO)       ||
-			(errno == EINTR) ) )
-			exit_error("accept");
-	}
-	return new;
+	if (!((errno == EWOULDBLOCK) ||
+	      (errno == ECONNABORTED) ||
+	      (errno == EPROTO) || (errno == EINTR)))
+	    exit_error("accept");
+    }
+    return new;
 }
 
-int
-Connect(int fd, struct sockaddr *addr, socklen_t addrlen)
+int Connect(int fd, struct sockaddr *addr, socklen_t addrlen)
 {
-	int n;
+    int n;
 
-	n = connect(fd, addr, addrlen);
-	if(n < 0) 
-	{
-		if (errno != EINPROGRESS)
-			exit_error("connect");
-	}
-	return n;
+    n = connect(fd, addr, addrlen);
+    if (n < 0) {
+	if (errno != EINPROGRESS)
+	    exit_error("connect");
+    }
+    return n;
 }
 
-int
-Read(int fd, unsigned char *p, int max)
+int Read(int fd, unsigned char *p, int max)
 {
-	int n;
+    int n;
 
-	do {
-		n = read(fd, p, max);
-	} while (n < 0 && errno == EINTR);
-	if (n < 0 && errno != EWOULDBLOCK && errno != ECONNRESET) 
-		exit_error("read");
-	return n;
+    do {
+	n = read(fd, p, max);
+    } while (n < 0 && errno == EINTR);
+    if (n < 0 && errno != EWOULDBLOCK && errno != ECONNRESET)
+	exit_error("read");
+    return n;
 }
 
-int
-Write(int fd, unsigned char *p, int max)
+int Write(int fd, unsigned char *p, int max)
 {
-	int n;
+    int n;
 
-	do {
-		n = write(fd, p, max);
-	} while (n < 0 && errno == EINTR);
-	if (n < 0 && errno != EAGAIN && errno != ECONNRESET && errno != EPIPE)
-		exit_error("write");
-	return n;
+    do {
+	n = write(fd, p, max);
+    } while (n < 0 && errno == EINTR);
+    if (n < 0 && errno != EAGAIN && errno != ECONNRESET && errno != EPIPE)
+	exit_error("write");
+    return n;
 }
 
-int
-Open(char *str, int flags, int mode)
+int Open(char *str, int flags, int mode)
 {
-	int fd;
+    int fd;
 
-	assert(str != NULL);
-	fd = open(str, flags, mode);
-	if (fd < 0)
-		exit_error("open %s", str);
-	return fd;
+    assert(str != NULL);
+    fd = open(str, flags, mode);
+    if (fd < 0)
+	exit_error("open %s", str);
+    return fd;
 }
 
-int
-Close(int fd)
+int Close(int fd)
 {
-	int n;
+    int n;
 
-	n = close(fd);
-	if (n < 0)
-		exit_error("close");
-	return n;
+    n = close(fd);
+    if (n < 0)
+	exit_error("close");
+    return n;
 }
 
 int
-Getaddrinfo(char *host, char *service, struct addrinfo *hints, 
+Getaddrinfo(char *host, char *service, struct addrinfo *hints,
 	    struct addrinfo **addrinfo)
 {
-	int n;
+    int n;
 
-	n = getaddrinfo(host, service, hints, addrinfo);
-	if (n != 0)
-		exit_msg("getaddrinfo host %s service %s: %s", 
-				host, service, gai_strerror(n));
-	return n;
+    n = getaddrinfo(host, service, hints, addrinfo);
+    if (n != 0)
+	exit_msg("getaddrinfo host %s service %s: %s",
+		 host, service, gai_strerror(n));
+    return n;
 }
 
 /* 
  * Substitute all occurences of s2 with s3 in s1, 
  * e.g. _str_subst(str, "\\r", "\r") 
  */
-static void
-_str_subst(char *s1, int len, const char *s2, const char *s3)
+static void _str_subst(char *s1, int len, const char *s2, const char *s3)
 {
-	int s2len = strlen(s2);
-	int s3len = strlen(s3);
-	char *p;
+    int s2len = strlen(s2);
+    int s3len = strlen(s3);
+    char *p;
 
-	while ((p = strstr(s1, s2)) != NULL)
-	{
-		int delta_size = s3len - s2len;
+    while ((p = strstr(s1, s2)) != NULL) {
+	int delta_size = s3len - s2len;
 
-		assert(strlen(s1) + delta_size + 1 <= len);
-		memmove(p + s3len, p + s2len, strlen(p + s2len) + 1);
-		memcpy(p, s3, s3len);
-	}
+	assert(strlen(s1) + delta_size + 1 <= len);
+	memmove(p + s3len, p + s2len, strlen(p + s2len) + 1);
+	memcpy(p, s3, s3len);
+    }
 }
 
-void
-Regcomp(regex_t *preg, const char *regex, int cflags)
+void Regcomp(regex_t * preg, const char *regex, int cflags)
 {
-	char buf[MAX_REG_BUF];
-	int n;
+    char buf[MAX_REG_BUF];
+    int n;
 
-	assert(regex != NULL);
-	assert(strlen(regex) < sizeof(buf));
+    assert(regex != NULL);
+    assert(strlen(regex) < sizeof(buf));
 
-	Strncpy(buf, regex, MAX_REG_BUF);
+    Strncpy(buf, regex, MAX_REG_BUF);
 
-	/* convert backslash-prefixed special characters in regex to value */
-	_str_subst(buf, MAX_REG_BUF, "\\r", "\r");
-	_str_subst(buf, MAX_REG_BUF, "\\n", "\n");
+    /* convert backslash-prefixed special characters in regex to value */
+    _str_subst(buf, MAX_REG_BUF, "\\r", "\r");
+    _str_subst(buf, MAX_REG_BUF, "\\n", "\n");
 
-	/*
-	 * N.B.
-	 * The buffer space available in a compiled RegEx expression is only 
-	 * 256 bytes.  A long or complicated RegEx will exceed this space and 
-	 * cause the library call to silently fail.
-	 */
-	n = regcomp(preg, buf, cflags);
-	if (n != REG_NOERROR) 
-		exit_msg("regcomp failed");
+    /*
+     * N.B.
+     * The buffer space available in a compiled RegEx expression is only 
+     * 256 bytes.  A long or complicated RegEx will exceed this space and 
+     * cause the library call to silently fail.
+     */
+    n = regcomp(preg, buf, cflags);
+    if (n != REG_NOERROR)
+	exit_msg("regcomp failed");
 }
 
 int
-Regexec(const regex_t *preg, const char *string, 
+Regexec(const regex_t * preg, const char *string,
 	size_t nmatch, regmatch_t pmatch[], int eflags)
 {
-	int n;
-	char buf[MAX_REG_BUF];
+    int n;
+    char buf[MAX_REG_BUF];
 
-	/* Review: undocumented, is it needed? */	
-	re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
-	Strncpy(buf, string, MAX_REG_BUF);
-	n = regexec(preg, buf, nmatch, pmatch, eflags);
-	return n;
+    /* Review: undocumented, is it needed? */
+    re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
+    Strncpy(buf, string, MAX_REG_BUF);
+    n = regexec(preg, buf, nmatch, pmatch, eflags);
+    return n;
 }
 
-pid_t
-Fork(void)
+pid_t Fork(void)
 {
-        pid_t   pid;
+    pid_t pid;
 
-        if ( (pid = fork()) == -1)
-                exit_error("fork");
-        return(pid);
+    if ((pid = fork()) == -1)
+	exit_error("fork");
+    return (pid);
 }
 
-Sigfunc *
-Signal(int signo, Sigfunc *func)
+Sigfunc *Signal(int signo, Sigfunc * func)
 {
-	struct sigaction act, oact;
-	int n;
+    struct sigaction act, oact;
+    int n;
 
-	act.sa_handler = func;
-	sigemptyset(&act.sa_mask);
-	act.sa_flags = 0;
-	if (signo == SIGALRM) 
-	{
+    act.sa_handler = func;
+    sigemptyset(&act.sa_mask);
+    act.sa_flags = 0;
+    if (signo == SIGALRM) {
 #ifdef	SA_INTERRUPT
-		act.sa_flags |= SA_INTERRUPT;	/* SunOS 4.x */
+	act.sa_flags |= SA_INTERRUPT;	/* SunOS 4.x */
 #endif
-	} 
-	else 
-	{
+    } else {
 #ifdef	SA_RESTART
-		act.sa_flags |= SA_RESTART;		/* SVR4, 44BSD */
+	act.sa_flags |= SA_RESTART;	/* SVR4, 44BSD */
 #endif
-	}
-	n = sigaction(signo, &act, &oact);
-	if ( n < 0) exit_error("sigaction");
+    }
+    n = sigaction(signo, &act, &oact);
+    if (n < 0)
+	exit_error("sigaction");
 
-	return(oact.sa_handler);
+    return (oact.sa_handler);
 }
 
 #ifndef NDUMP
-void
-Report_Memory()
+void Report_Memory()
 {
-	fprintf(stderr, "Remaining allocated memory is: %d\n", 
-		allocated_memory);
+    fprintf(stderr, "Remaining allocated memory is: %d\n",
+	    allocated_memory);
 }
 #endif
-

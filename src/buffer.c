@@ -43,14 +43,14 @@
 
 
 struct buffer_implementation {
-	int magic;		/* magic cookie */
-	int fd;			/* file descriptor */
-	BufferLogFun *logfun;	/* log function (NULL OK) */
-	void *logfunarg;	/* argument to log function */
-	int len;		/* size allocated to buffer */
-	unsigned char *buf;	/* buffer */
-	unsigned char *in;	/* incoming goes here (points into buffer) */
-	unsigned char *out;	/* outgoing starts here (points into buffer)  */
+    int magic;			/* magic cookie */
+    int fd;			/* file descriptor */
+    BufferLogFun *logfun;	/* log function (NULL OK) */
+    void *logfunarg;		/* argument to log function */
+    int len;			/* size allocated to buffer */
+    unsigned char *buf;		/* buffer */
+    unsigned char *in;		/* incoming goes here (points into buffer) */
+    unsigned char *out;		/* outgoing starts here (points into buffer)  */
 };
 
 /* length of various segments of buffer */
@@ -70,30 +70,29 @@ struct buffer_implementation {
  * Construct a Buffer of specified length.
  */
 Buffer
-make_Buffer(int fd, int length, BufferLogFun *logfun, void *logfunarg)
+make_Buffer(int fd, int length, BufferLogFun * logfun, void *logfunarg)
 {
-	Buffer b;
+    Buffer b;
 
-	assert(fd >= 0);
-	b = (Buffer)Malloc(sizeof(struct buffer_implementation));
-	b->magic = BUF_MAGIC;
-	b->fd = fd;
-	b->logfun = logfun;
-	b->logfunarg = logfunarg;
-	b->len = length;
-	b->in = b->out = b->buf = Malloc(b->len);
-	return b;
+    assert(fd >= 0);
+    b = (Buffer) Malloc(sizeof(struct buffer_implementation));
+    b->magic = BUF_MAGIC;
+    b->fd = fd;
+    b->logfun = logfun;
+    b->logfunarg = logfunarg;
+    b->len = length;
+    b->in = b->out = b->buf = Malloc(b->len);
+    return b;
 }
 
 /*
  * Free a Buffer.
  */
-void
-free_Buffer(Buffer b)
+void free_Buffer(Buffer b)
 {
-	_buf_check(b);
-	Free(b->buf);
-	Free(b);
+    _buf_check(b);
+    Free(b->buf);
+    Free(b);
 }
 
 /*
@@ -102,84 +101,77 @@ free_Buffer(Buffer b)
  * If there is still insufficient space, block up to 1 second until 
  * there is space.  Return TRUE if data was successfully added to buffer.
  */
-bool
-send_Buffer(Buffer b, const char *fmt, ...)
+bool send_Buffer(Buffer b, const char *fmt, ...)
 {
-	va_list ap;
-	int len;
-     
-       	_buf_check(b);	
+    va_list ap;
+    int len;
 
-	/* compact the buffer */
-	if (b->out > b->buf)
-	{
-		int used = _buf_length(b);
+    _buf_check(b);
 
-		memmove(b->buf, b->out, used);
-		b->out = b->buf;
-		b->in = b->buf + used;
-	}
+    /* compact the buffer */
+    if (b->out > b->buf) {
+	int used = _buf_length(b);
 
-	/* write the "string" */
-	va_start(ap, fmt);
-	len = vsnprintf(b->in, _buf_length_post(b), fmt, ap);
-	va_end(ap);
-	if (len == -1 || len > _buf_length_post(b))
-		return FALSE;
-	b->in += len; /* does not include NULL byte */
-	return TRUE;
+	memmove(b->buf, b->out, used);
+	b->out = b->buf;
+	b->in = b->buf + used;
+    }
+
+    /* write the "string" */
+    va_start(ap, fmt);
+    len = vsnprintf(b->in, _buf_length_post(b), fmt, ap);
+    va_end(ap);
+    if (len == -1 || len > _buf_length_post(b))
+	return FALSE;
+    b->in += len;		/* does not include NULL byte */
+    return TRUE;
 }
 
 /*
  * Write out any data in buffer.  Return the number of bytes written or 
  * -1 on error (e.g. EWOULDBLOCK).
  */
-int
-write_Buffer(Buffer b)
+int write_Buffer(Buffer b)
 {
-	int nbytes;
+    int nbytes;
 
-	_buf_check(b);
-	nbytes = Write(b->fd, b->out, _buf_length(b));
-	if (nbytes > 0) 
-	{
-		if (b->logfun != NULL)
-			b->logfun(b->out, nbytes, b->logfunarg);
-		b->out += nbytes;
-	}
-	_buf_check(b);
-	return nbytes;
+    _buf_check(b);
+    nbytes = Write(b->fd, b->out, _buf_length(b));
+    if (nbytes > 0) {
+	if (b->logfun != NULL)
+	    b->logfun(b->out, nbytes, b->logfunarg);
+	b->out += nbytes;
+    }
+    _buf_check(b);
+    return nbytes;
 }
 
 /*
  * Read in any available to buffer.  Return the number of bytes read or 
  * -1 on error (e.g. EAGAIN).
  */
-int
-read_Buffer(Buffer b)
+int read_Buffer(Buffer b)
 {
-	int nbytes;
+    int nbytes;
 
-	_buf_check(b);
-	nbytes = Read(b->fd, b->in, _buf_length_post(b));
-	if (nbytes > 0)
-	{
-		if (b->logfun != NULL)
-			b->logfun(b->in, nbytes, b->logfunarg);
-		b->in += nbytes;
-	}
-	_buf_check(b);
-	return nbytes;
+    _buf_check(b);
+    nbytes = Read(b->fd, b->in, _buf_length_post(b));
+    if (nbytes > 0) {
+	if (b->logfun != NULL)
+	    b->logfun(b->in, nbytes, b->logfunarg);
+	b->in += nbytes;
+    }
+    _buf_check(b);
+    return nbytes;
 }
 
 /*
  * Return TRUE if buffer is empty.
  */
-bool
-is_empty_Buffer(Buffer b)
+bool is_empty_Buffer(Buffer b)
 {
-	_buf_check(b);
-	return (_buf_length(b) == 0);
+    _buf_check(b);
+    return (_buf_length(b) == 0);
 }
 
 /* 
@@ -188,41 +180,39 @@ is_empty_Buffer(Buffer b)
  * Optionally Call eat_Buffer with the returned length to "consume" this.
  * Note: converts embedded \0 bytes to \377.
  */
-int
-peek_line_Buffer(Buffer b, unsigned char *str, int len)
+int peek_line_Buffer(Buffer b, unsigned char *str, int len)
 {
-	unsigned char *p;
-	int cpy_len;
-	int i, j;
+    unsigned char *p;
+    int cpy_len;
+    int i, j;
 
-	_buf_check(b);
-	if (is_empty_Buffer(b))
-		return 0;
-	p = memchr(b->out, '\n', _buf_length(b));
-	if (p == NULL)
-		return 0;
-	cpy_len = p - b->out + 1;
-	assert(cpy_len < len);
-	/* Was: memcpy(str, b->out, cpy_len) */
-	for (j = i = 0; i < cpy_len; i++)
-		str[j++] = b->out[i] == 0 ? 0377 : b->out[i];
-	str[j] = '\0';
+    _buf_check(b);
+    if (is_empty_Buffer(b))
+	return 0;
+    p = memchr(b->out, '\n', _buf_length(b));
+    if (p == NULL)
+	return 0;
+    cpy_len = p - b->out + 1;
+    assert(cpy_len < len);
+    /* Was: memcpy(str, b->out, cpy_len) */
+    for (j = i = 0; i < cpy_len; i++)
+	str[j++] = b->out[i] == 0 ? 0377 : b->out[i];
+    str[j] = '\0';
 
-	return cpy_len;
+    return cpy_len;
 }
 
 /* 
  * Get a line from the buffer.
  * A line is terminated with a '\n' character.
  */
-int
-get_line_Buffer(Buffer b, unsigned char *str, int len)
+int get_line_Buffer(Buffer b, unsigned char *str, int len)
 {
-	int cpy_len;
+    int cpy_len;
 
-	cpy_len = peek_line_Buffer(b, str, len);
-	eat_Buffer(b, cpy_len);
-	return cpy_len;
+    cpy_len = peek_line_Buffer(b, str, len);
+    eat_Buffer(b, cpy_len);
+    return cpy_len;
 }
 
 /*
@@ -230,61 +220,56 @@ get_line_Buffer(Buffer b, unsigned char *str, int len)
  * Optionally Call eat_Buffer with the returned length to "consume" this.
  * Note: converts embedded \0 bytes to \377.
  */
-int
-peek_string_Buffer(Buffer b, unsigned char *str, int len)
+int peek_string_Buffer(Buffer b, unsigned char *str, int len)
 {
-	int cpy_len;
-	int i, j;
+    int cpy_len;
+    int i, j;
 
-	_buf_check(b);
-	cpy_len = _buf_length(b);
-	if (cpy_len == 0)
-		return 0;
-	assert(cpy_len < len);
-	/* Was: memcpy(str, b->out, cpy_len) */
-	for (j = i = 0; i < cpy_len; i++)
-		str[j++] = b->out[i] == 0 ? 0377 : b->out[i];
-	str[j] = '\0';
-	return cpy_len;
+    _buf_check(b);
+    cpy_len = _buf_length(b);
+    if (cpy_len == 0)
+	return 0;
+    assert(cpy_len < len);
+    /* Was: memcpy(str, b->out, cpy_len) */
+    for (j = i = 0; i < cpy_len; i++)
+	str[j++] = b->out[i] == 0 ? 0377 : b->out[i];
+    str[j] = '\0';
+    return cpy_len;
 }
 
 /*
  * Get the contents of the buffer in string form.
  */
-int
-get_string_Buffer(Buffer b, unsigned char *str, int len)
+int get_string_Buffer(Buffer b, unsigned char *str, int len)
 {
-	int cpy_len;
+    int cpy_len;
 
-	cpy_len = peek_string_Buffer(b, str, len);
-	eat_Buffer(b, cpy_len);
-	return cpy_len;
+    cpy_len = peek_string_Buffer(b, str, len);
+    eat_Buffer(b, cpy_len);
+    return cpy_len;
 }
 
 /* 
  * Call after peek_string_Buffer or peek_line_Buffer to remove the peeked 
  * data from Buffer 
  */
-void
-eat_Buffer(Buffer b, int len)
+void eat_Buffer(Buffer b, int len)
 {
-	_buf_check(b);
-	assert(len <= _buf_length(b));
-	b->out += len;
+    _buf_check(b);
+    assert(len <= _buf_length(b));
+    b->out += len;
 }
 
-void
-clear_Buffer(Buffer b)
+void clear_Buffer(Buffer b)
 {
-	_buf_check(b);
-	b->in = b->out = b->buf;
+    _buf_check(b);
+    b->in = b->out = b->buf;
 }
 
 
 #ifndef NDEBUG
-void
-dump_Buffer(Buffer b)
+void dump_Buffer(Buffer b)
 {
-	fprintf(stderr, "dump_Buffer not implemented\n");
+    fprintf(stderr, "dump_Buffer not implemented\n");
 }
-#endif /* !NDEBUG */
+#endif				/* !NDEBUG */

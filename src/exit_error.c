@@ -48,69 +48,65 @@ static bool syslog_on = FALSE;	/* use stderr until told otherwise */
 /*
  * Initialize this module with the name of the program.
  */
-void
-init_error(char *prog)
+void init_error(char *prog)
 {
-	char *p = strrchr(prog, '/'); /* store only the basename */
+    char *p = strrchr(prog, '/');	/* store only the basename */
 
-	program = p ? p + 1 : prog;
+    program = p ? p + 1 : prog;
 }
 
 /*
  * Accessor function for syslog_enable.
  */
-void
-syslog_on_error(bool syslog_enable)
+void syslog_on_error(bool syslog_enable)
 {
-	syslog_on = syslog_enable;
+    syslog_on = syslog_enable;
 }
 
 /*
  * Report message on either stderr or syslog, then exit.
  */
-void
-exit_msg(const char *fmt, ...)
+void exit_msg(const char *fmt, ...)
 {
-	va_list ap;
-	char buf[ERROR_BUFLEN];
+    va_list ap;
+    char buf[ERROR_BUFLEN];
 
-	assert(program != NULL);
+    assert(program != NULL);
 
-	va_start(ap, fmt);
-	vsnprintf(buf, ERROR_BUFLEN, fmt, ap);
-	/* overflow ignored on purpose */
-	va_end(ap);
+    va_start(ap, fmt);
+    vsnprintf(buf, ERROR_BUFLEN, fmt, ap);
+    /* overflow ignored on purpose */
+    va_end(ap);
 
-	if ( syslog_on == TRUE )  
-		syslog(LOG_ERR, "%s", buf);
-	else
-		fprintf(stderr, "%s: %s\n", program, buf);
+    if (syslog_on == TRUE)
+	syslog(LOG_ERR, "%s", buf);
+    else
+	fprintf(stderr, "%s: %s\n", program, buf);
 
-	exit(1);
+    exit(1);
 }
 
 /*
  * Report error message on either stderr or syslog, then exit.
  * This should only be called in situations where errno is known to be valid.
  */
-void
-exit_error(const char *fmt, ...)
+void exit_error(const char *fmt, ...)
 {
-	va_list ap;
-	char buf[ERROR_BUFLEN];
-	int er = errno;
+    va_list ap;
+    char buf[ERROR_BUFLEN];
+    int er = errno;
 
-	assert(program != NULL);
+    assert(program != NULL);
 
-	va_start(ap, fmt);
-	vsnprintf(buf, ERROR_BUFLEN, fmt, ap);
-	/* overflow ignored on purpose */
-	va_end(ap);
+    va_start(ap, fmt);
+    vsnprintf(buf, ERROR_BUFLEN, fmt, ap);
+    /* overflow ignored on purpose */
+    va_end(ap);
 
-	if ( syslog_on == TRUE )  
-		syslog(LOG_ERR, "%s: %s", buf, strerror(er));
-	else
-		fprintf(stderr, "%s: %s: %s\n", program, buf, strerror(er));
+    if (syslog_on == TRUE)
+	syslog(LOG_ERR, "%s: %s", buf, strerror(er));
+    else
+	fprintf(stderr, "%s: %s: %s\n", program, buf, strerror(er));
 
-	exit(1);
+    exit(1);
 }

@@ -65,35 +65,35 @@
  * and "DELAY" objects that have a single struct timeval and cause 
  * that much time to be wasted at that point in the script.
  */
-typedef enum {SND_EXP_UNKNOWN, SEND, EXPECT, DELAY} Script_El_T;
+typedef enum { SND_EXP_UNKNOWN, SEND, EXPECT, DELAY } Script_El_T;
 
 typedef struct {
-	String fmt;
+    String fmt;
 } Send_T;
 
 /* Review: noodle on necessity of completion regex */
 /* the map is a list of Interpretation structures */
 typedef struct {
-	regex_t completion;
-	regex_t exp;
-	List map; 
+    regex_t completion;
+    regex_t exp;
+    List map;
 } Expect_T;
 
 typedef struct {
-	struct timeval  tv;
+    struct timeval tv;
 } Delay_T;
 
 typedef union {
-	Send_T   send;
-	Expect_T expect;
-	Delay_T  delay;
+    Send_T send;
+    Expect_T expect;
+    Delay_T delay;
 } S_E_U;
 
 typedef struct {
-	Script_El_T type;
-	S_E_U     s_or_e; /* send => fmt */
-                          /* expect => completion, exp */
-	                  /* delay => tv */
+    Script_El_T type;
+    S_E_U s_or_e;		/* send => fmt */
+    /* expect => completion, exp */
+    /* delay => tv */
 } Script_El;
 
 /*
@@ -105,7 +105,7 @@ typedef struct {
  * from one device to the next, and specifying it in a general
  * way would be burdensome.  
  */
-typedef enum {NO_MODE, REGEX, LITERAL} String_Mode;
+typedef enum { NO_MODE, REGEX, LITERAL } String_Mode;
 
 /*
  *   Each Device gets a Protocol structure and there is on 
@@ -117,9 +117,9 @@ typedef enum {NO_MODE, REGEX, LITERAL} String_Mode;
  */
 /* Review: convert array of lists to 11 individual items */
 typedef struct {
-	int num_scripts;
-	String_Mode mode;
-	List *scripts;   /* description of the send/expect   */
+    int num_scripts;
+    String_Mode mode;
+    List *scripts;		/* description of the send/expect   */
 } Protocol;
 
 /*
@@ -130,11 +130,11 @@ typedef struct {
  */
 /* Review: should be private */
 typedef struct spec_element_struct {
-	Script_El_T type;
-	String string1;
-	String string2;
-	struct timeval tv;
-	List map;
+    Script_El_T type;
+    String string1;
+    String string2;
+    struct timeval tv;
+    List map;
 } Spec_El;
 
 /*
@@ -143,17 +143,17 @@ typedef struct spec_element_struct {
  */
 /* Review: should be private */
 struct spec_struct {
-	String name;
-	Dev_Type type;
-	String off;
-	String on;
-	String all;
-	int size;
-	struct timeval timeout;
-	int num_scripts;
-	String *plugname;
-	String_Mode mode;
-	List *scripts;   /* An array of pointers to lists */
+    String name;
+    Dev_Type type;
+    String off;
+    String on;
+    String all;
+    int size;
+    struct timeval timeout;
+    int num_scripts;
+    String *plugname;
+    String_Mode mode;
+    List *scripts;		/* An array of pointers to lists */
 };
 /* FIXME: data structures are circular here - typedef in powerman.h jg */
 
@@ -163,18 +163,18 @@ struct spec_struct {
  * value there is also a pointer to the device it is connected to
  * and the index in the device.
  */
-typedef enum {ST_UNKNOWN, ST_OFF, ST_ON} State_Val;
+typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } State_Val;
 
 
 typedef struct {
-	String name;      /* This is how the node is known to the cluster  */
-	State_Val p_state; /* p_state is plug state, i.e. hard-power status */
-	Device *p_dev;     /* It is possible for there to be two different  */
-	int p_index;       /*   devices, on for har- and one for soft-power */
-	State_Val n_state; /* n_state is node state, i.e. soft-power status */
-	Device *n_dev;     /* The (Device, index) pair tell where the node  */
-	int n_index;       /* is managed.                                   */
-	MAGIC;
+    String name;		/* This is how the node is known to the cluster  */
+    State_Val p_state;		/* p_state is plug state, i.e. hard-power status */
+    Device *p_dev;		/* It is possible for there to be two different  */
+    int p_index;		/*   devices, on for har- and one for soft-power */
+    State_Val n_state;		/* n_state is node state, i.e. soft-power status */
+    Device *n_dev;		/* The (Device, index) pair tell where the node  */
+    int n_index;		/* is managed.                                   */
+     MAGIC;
 } Node;
 
 /*
@@ -189,53 +189,54 @@ typedef struct {
  * "val" may be updated.  Perfectly clear right?
  */
 typedef struct {
-        String plug_name;
-	int match_pos;
-        char *val;
-	Node *node;
+    String plug_name;
+    int match_pos;
+    char *val;
+    Node *node;
 } Interpretation;
 
 
 typedef struct {
-	int num;          /* node count */
-	List    nodes;    /* list of Node structures */
-	struct timeval time_stamp;  /* last update */
-	struct timeval update_interval;  /* how long before next update */
+    int num;			/* node count */
+    List nodes;			/* list of Node structures */
+    struct timeval time_stamp;	/* last update */
+    struct timeval update_interval;	/* how long before next update */
 } Cluster;
 
 
 /* config.c prototypes */
 Protocol *init_Client_Protocol(void);
-Script_El *make_Script_El(Script_El_T type, String s1, String s2, List map, struct timeval tv);
-void free_Script_El(Script_El *script_el);
-Spec *make_Spec(char * name);
-int  match_Spec(Spec *spec, void *key);
-void free_Spec(Spec *spec);
+Script_El *make_Script_El(Script_El_T type, String s1, String s2, List map,
+			  struct timeval tv);
+void free_Script_El(Script_El * script_el);
+Spec *make_Spec(char *name);
+int match_Spec(Spec * spec, void *key);
+void free_Spec(Spec * spec);
 Spec_El *make_Spec_El(Script_El_T type, char *str1, char *str2, List map);
-void free_Spec_El(Spec_El *specl);
+void free_Spec_El(Spec_El * specl);
 Cluster *make_Cluster(void);
-void free_Cluster(Cluster *cluster);
+void free_Cluster(Cluster * cluster);
 Node *make_Node(const char *name);
-int  match_Node(Node *node, void *key);
-void free_Node(Node *node);
-Interpretation *make_Interp(char * name);
-int match_Interp(Interpretation *interp, void *key);
-void free_Interp(Interpretation *interp);
+int match_Node(Node * node, void *key);
+void free_Node(Node * node);
+Interpretation *make_Interp(char *name);
+int match_Interp(Interpretation * interp, void *key);
+void free_Interp(Interpretation * interp);
 void set_tv(struct timeval *tv, char *s);
 
 
 /* Bison generated code's externs */
-int  parse_config_file (void);
+int parse_config_file(void);
 
 #ifndef NDUMP
-void dump_Spec(Spec *spec);
-void dump_Spec_El(Spec_El *specl);
-void dump_Cluster(Cluster *cluster);
-void dump_Node(Node *node);
-void dump_Interpretation(Interpretation *interp);
+void dump_Spec(Spec * spec);
+void dump_Spec_El(Spec_El * specl);
+void dump_Cluster(Cluster * cluster);
+void dump_Node(Node * node);
+void dump_Interpretation(Interpretation * interp);
 void dump_Script(List script, int num);
-void dump_Expect(Expect_T *expect);
-void dump_Send(Send_T *send);
-#endif /* !NDUMP */
+void dump_Expect(Expect_T * expect);
+void dump_Send(Send_T * send);
+#endif				/* !NDUMP */
 
-#endif /* CONFIG_H */
+#endif				/* CONFIG_H */

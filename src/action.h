@@ -28,10 +28,10 @@
 #define ACTION_H
 
 #define PM_ERROR            0
-#define PM_LOG_IN           1    /* actions: indexes into script arrays */ 
-#define PM_CHECK_LOGIN      2    
-#define PM_LOG_OUT          3    
-#define PM_UPDATE_PLUGS     4    
+#define PM_LOG_IN           1	/* actions: indexes into script arrays */
+#define PM_CHECK_LOGIN      2
+#define PM_LOG_OUT          3
+#define PM_UPDATE_PLUGS     4
 #define PM_UPDATE_NODES     5
 #define PM_POWER_ON         6
 #define PM_POWER_OFF        7
@@ -51,33 +51,33 @@
  *   There is no occasion for iterating on a list of Action structs.
  */
 struct action_struct {
-	Client *client;
-	int seq;        /* sequence number from client */ 
-	int com;        /* one of the PM_* above */
-	ListIterator itr;   /* next place in the script sequence */
-	Script_El    *cur; /* current place in the script sequence */
-	String target;    /* node name, regex, or device plug name */
-	MAGIC;
+    Client *client;
+    int seq;			/* sequence number from client */
+    int com;			/* one of the PM_* above */
+    ListIterator itr;		/* next place in the script sequence */
+    Script_El *cur;		/* current place in the script sequence */
+    String target;		/* node name, regex, or device plug name */
+     MAGIC;
 };
 
-extern char *pm_coms[];      /* string represetnations of the PM_* coms */
+extern char *pm_coms[];		/* string represetnations of the PM_* coms */
 
 /* prototypes */
 
-/* enque requests for hard- and soft-power state */ 
-void update_Action(Cluster *cluster, List acts);
+/* enque requests for hard- and soft-power state */
+void update_Action(Cluster * cluster, List acts);
 
 /* Unused utility for generating "torture" tests */
-void random_Action(Cluster *cluster, List acts);
+void random_Action(Cluster * cluster, List acts);
 
 /* Get and validate the next action in the queue */
 Action *find_Action(List acts, List clients);
 
 /* process Action and (possibly) dispatch to devices */
-void do_Action(Globals *g, Action *act);
+void do_Action(Globals * g, Action * act);
 
 /* clean up and reply to client */
-void finish_Action(Globals *g, Action *act);
+void finish_Action(Globals * g, Action * act);
 
 /* Constructor */
 Action *make_Action(int com);
@@ -88,9 +88,9 @@ void dump_Action(List acts);
 #endif
 
 /* Destructor */
-void free_Action(Action *act);
+void free_Action(Action * act);
 
 /* remove from queue and destroy */
 void del_Action(List acts);
 
-#endif /* ACTION_H */
+#endif				/* ACTION_H */

@@ -48,36 +48,35 @@
  * The header file has corresponding #define values.
  */
 char *pm_coms[] = {
-	"PM_ERROR",
-	"PM_LOG_IN",
-	"PM_CHECK_LOGIN",
-	"PM_LOG_OUT",
-	"PM_UPDATE_PLUGS",
-	"PM_UPDATE_NODES",
-	"PM_POWER_ON",
-	"PM_POWER_OFF",
-	"PM_POWER_CYCLE",
-	"PM_RESET",
-	"PM_NAMES"
+    "PM_ERROR",
+    "PM_LOG_IN",
+    "PM_CHECK_LOGIN",
+    "PM_LOG_OUT",
+    "PM_UPDATE_PLUGS",
+    "PM_UPDATE_NODES",
+    "PM_POWER_ON",
+    "PM_POWER_OFF",
+    "PM_POWER_CYCLE",
+    "PM_RESET",
+    "PM_NAMES"
 };
 
 /*
  *   The main select() loop will generate this function call 
  * periodically.  The frequency can be set in the config file.
  */
-void
-update_Action(Cluster *cluster, List acts)
+void update_Action(Cluster * cluster, List acts)
 {
-	Action *act;
+    Action *act;
 
-	Gettimeofday( &(cluster->time_stamp), NULL);
-	syslog(LOG_INFO, "Updating plugs and nodes");
+    Gettimeofday(&(cluster->time_stamp), NULL);
+    syslog(LOG_INFO, "Updating plugs and nodes");
 
-	act = make_Action(PM_UPDATE_PLUGS);
-	list_append(acts, act);
+    act = make_Action(PM_UPDATE_PLUGS);
+    list_append(acts, act);
 
-	act = make_Action(PM_UPDATE_NODES);
-	list_append(acts, act);
+    act = make_Action(PM_UPDATE_NODES);
+    list_append(acts, act);
 }
 
 /*
@@ -87,66 +86,59 @@ update_Action(Cluster *cluster, List acts)
  * is out of date, but not hard to reconstruct.
  */
 #define ACTION_BUF 1024
-void
-random_Action(Cluster *cluster, List acts)
+void random_Action(Cluster * cluster, List acts)
 {
-	Action *act;
-	char buf[ACTION_BUF];
-	char *bp = buf;
-	int len;
-	bool done = FALSE;
-	int com; 
-	int NUM_NODES = cluster->num;
+    Action *act;
+    char buf[ACTION_BUF];
+    char *bp = buf;
+    int len;
+    bool done = FALSE;
+    int com;
+    int NUM_NODES = cluster->num;
 /* random between 4 (PM_UPDATE_PLUGS) and 9 (PM_RESET), inclusive */
-	int all;
+    int all;
 /* random choice between 0 (not all) and 1 (all nodes targetted) */
-	int node;
+    int node;
 /* random choice between 0 and NUM_NODES - 1, inclusive */
-	int multi;
+    int multi;
 /* random choice between 0 (no more) and 1 (more nodes targetted) */
 
-	com = 4 + (int) (6.0*rand()/(RAND_MAX+1.0));
-	act = make_Action(com);
-	if (act->com >= PM_POWER_ON)/* we have to set a target */
-	{
-		memset(buf, 0, sizeof(buf));
-		all = (int) (2.0*rand()/(RAND_MAX+1.0));
-		if (all) sprintf(bp, ".*");
-		else
-		{
-			node = (int) (1.0*NUM_NODES*rand()/(RAND_MAX+1.0));
-			multi = (int) (2.0*rand()/(RAND_MAX+1.0));
-			if(multi == 0)
-			{
-				sprintf(bp, "%d", node);
-				done = TRUE;
-			}
-			else
-			{
-				sprintf(bp, "(%d", node);
-				len = strlen(bp);
-				bp += len;
-				while ( !done )
-				{
-					node = (int) (1.0*NUM_NODES*rand()/(RAND_MAX+1.0));
-					multi = (int) (2.0*rand()/(RAND_MAX+1.0));
-					if(multi == 0)
-					{
-						sprintf(bp, "|%d)", node);
-						done = TRUE;
-					}
-					else
-					{
-						sprintf(bp, "|%d", node);
-					}
-					len = strlen(bp);
-					bp += len;
-				}
-			}
+    com = 4 + (int) (6.0 * rand() / (RAND_MAX + 1.0));
+    act = make_Action(com);
+    if (act->com >= PM_POWER_ON) {	/* we have to set a target */
+	memset(buf, 0, sizeof(buf));
+	all = (int) (2.0 * rand() / (RAND_MAX + 1.0));
+	if (all)
+	    sprintf(bp, ".*");
+	else {
+	    node = (int) (1.0 * NUM_NODES * rand() / (RAND_MAX + 1.0));
+	    multi = (int) (2.0 * rand() / (RAND_MAX + 1.0));
+	    if (multi == 0) {
+		sprintf(bp, "%d", node);
+		done = TRUE;
+	    } else {
+		sprintf(bp, "(%d", node);
+		len = strlen(bp);
+		bp += len;
+		while (!done) {
+		    node =
+			(int) (1.0 * NUM_NODES * rand() /
+			       (RAND_MAX + 1.0));
+		    multi = (int) (2.0 * rand() / (RAND_MAX + 1.0));
+		    if (multi == 0) {
+			sprintf(bp, "|%d)", node);
+			done = TRUE;
+		    } else {
+			sprintf(bp, "|%d", node);
+		    }
+		    len = strlen(bp);
+		    bp += len;
 		}
-		act->target = make_String(buf);
+	    }
 	}
-	list_append(acts, act);
+	act->target = make_String(buf);
+    }
+    list_append(acts, act);
 }
 
 
@@ -157,29 +149,31 @@ random_Action(Cluster *cluster, List acts)
  * do not have this concern, so they are not checked.  If the
  * client has disconnected the Action is discarded.
  */
-Action *
-find_Action(List acts, List clients)
+Action *find_Action(List acts, List clients)
 {
-	Client *client;
-	Action *act = NULL;
+    Client *client;
+    Action *act = NULL;
 
-	while ( (! list_is_empty(acts)) && (act == NULL) ) 
-	{
-		act = list_peek(acts);
+    while ((!list_is_empty(acts)) && (act == NULL)) {
+	act = list_peek(acts);
 /* act->client == NULL is a special internally generated action */
-		if ( act->client == NULL ) continue;
+	if (act->client == NULL)
+	    continue;
 
 /* What if the client has disappeared since enqueuing the action? */
-		client = list_find_first(clients, (ListFindF) match_Client, act->client );
-		if (client != NULL) continue;
+	client =
+	    list_find_first(clients, (ListFindF) match_Client,
+			    act->client);
+	if (client != NULL)
+	    continue;
 
 /* I could log an event here: "client abort prior to action completion"  */
-		del_Action(acts);
-		act = NULL;
-	}
-	return act;
+	del_Action(acts);
+	act = NULL;
+    }
+    return act;
 }
-	
+
 
 /*
  *   The devices have gone idle and the cluster quiescent.  It's
@@ -192,43 +186,41 @@ find_Action(List acts, List clients)
  * communication the cluster is marked "Occupied" and corresponding
  * Actions are dispatched to each appropriate device.
  */
-void
-do_Action(Globals *g, Action *act)
+void do_Action(Globals * g, Action * act)
 {
-	Device *dev;
-	ListIterator dev_i;
+    Device *dev;
+    ListIterator dev_i;
 
-	assert(g != NULL);
-	CHECK_MAGIC(g);
-	assert(act != NULL);
-	CHECK_MAGIC(act);
+    assert(g != NULL);
+    CHECK_MAGIC(g);
+    assert(act != NULL);
+    CHECK_MAGIC(act);
 
-	switch (act->com)
-	{
-	case PM_ERROR :
-	case PM_LOG_IN :
-	case PM_CHECK_LOGIN :
-	case PM_LOG_OUT :
-	case PM_NAMES :
-		finish_Action(g, act);
-		if ( (act = find_Action(g->acts, g->clients)) != NULL ) 
-			do_Action(g, act);
-		return;
-	case PM_UPDATE_PLUGS :
-	case PM_UPDATE_NODES :
-	case PM_POWER_ON :
-	case PM_POWER_OFF :
-	case PM_POWER_CYCLE :
-	case PM_RESET :
-		break;
-	default :
-		assert(FALSE);
-	}
-	g->status = Occupied;
-	dev_i = list_iterator_create(g->devs);
-	while( (dev = list_next(dev_i)) )
-		map_Action_to_Device(dev, act);
-	list_iterator_destroy(dev_i);
+    switch (act->com) {
+    case PM_ERROR:
+    case PM_LOG_IN:
+    case PM_CHECK_LOGIN:
+    case PM_LOG_OUT:
+    case PM_NAMES:
+	finish_Action(g, act);
+	if ((act = find_Action(g->acts, g->clients)) != NULL)
+	    do_Action(g, act);
+	return;
+    case PM_UPDATE_PLUGS:
+    case PM_UPDATE_NODES:
+    case PM_POWER_ON:
+    case PM_POWER_OFF:
+    case PM_POWER_CYCLE:
+    case PM_RESET:
+	break;
+    default:
+	assert(FALSE);
+    }
+    g->status = Occupied;
+    dev_i = list_iterator_create(g->devs);
+    while ((dev = list_next(dev_i)))
+	map_Action_to_Device(dev, act);
+    list_iterator_destroy(dev_i);
 }
 
 /*
@@ -238,19 +230,18 @@ do_Action(Globals *g, Action *act)
  * strucutre.
  *
  * Destroys:  Action
- */ 
-void
-finish_Action(Globals *g, Action *act)
+ */
+void finish_Action(Globals * g, Action * act)
 {
 /* 
  *   act->client == NULL means that there is no client 
  * expecting a reply.
 */
-	if (act->client != NULL)
-		client_reply(g->cluster, act);
-	Gettimeofday( &(g->cluster->time_stamp), NULL);
-	del_Action(g->acts);
-	g->status = Quiescent;
+    if (act->client != NULL)
+	client_reply(g->cluster, act);
+    Gettimeofday(&(g->cluster->time_stamp), NULL);
+    del_Action(g->acts);
+    g->status = Quiescent;
 }
 
 /*
@@ -258,20 +249,19 @@ finish_Action(Globals *g, Action *act)
  *
  * Produces:  Action
  */
-Action *
-make_Action(int com)
+Action *make_Action(int com)
 {
-	Action *act;
+    Action *act;
 
-	act = (Action *)Malloc(sizeof(Action));
-	INIT_MAGIC(act);
-	act->com = com;
-	act->client = NULL;
-	act->seq = 0;
-	act->itr = NULL;
-	act->cur = NULL;
-	act->target = NULL;
-	return act;
+    act = (Action *) Malloc(sizeof(Action));
+    INIT_MAGIC(act);
+    act->com = com;
+    act->client = NULL;
+    act->seq = 0;
+    act->itr = NULL;
+    act->cur = NULL;
+    act->target = NULL;
+    return act;
 }
 
 #ifndef NDUMP
@@ -279,25 +269,23 @@ make_Action(int com)
 /*
  *    Debug printout of structure contents.
  */
-void
-dump_Action(List acts)
+void dump_Action(List acts)
 {
-	Action *act = list_peek(acts);
+    Action *act = list_peek(acts);
 
-	fprintf(stderr, "\tAction: %x\n", (unsigned int)act);
-	if( act->client == NULL )
-		fprintf(stderr, "\t\tInternal action (no Client)\n");
-	else
-		fprintf(stderr, "\t\tAction for client fd: %d\n", act->client->fd);
-	fprintf(stderr, "\t\tSequence number: %d\n", act->seq);
-	fprintf(stderr, "\t\tcommand: %s\n", pm_coms[act->com]);
-	fprintf(stderr, "\t\t\tcurrent script : %d\n", (int)act->cur);
-	if(act->target == NULL)
-		fprintf(stderr, "\t\tTarget: Null\n");
-	else
-	{
-		fprintf(stderr, "\t\tTarget: %s\n", get_String(act->target));
-	}
+    fprintf(stderr, "\tAction: %x\n", (unsigned int) act);
+    if (act->client == NULL)
+	fprintf(stderr, "\t\tInternal action (no Client)\n");
+    else
+	fprintf(stderr, "\t\tAction for client fd: %d\n", act->client->fd);
+    fprintf(stderr, "\t\tSequence number: %d\n", act->seq);
+    fprintf(stderr, "\t\tcommand: %s\n", pm_coms[act->com]);
+    fprintf(stderr, "\t\t\tcurrent script : %d\n", (int) act->cur);
+    if (act->target == NULL)
+	fprintf(stderr, "\t\tTarget: Null\n");
+    else {
+	fprintf(stderr, "\t\tTarget: %s\n", get_String(act->target));
+    }
 }
 
 #endif
@@ -308,20 +296,19 @@ dump_Action(List acts)
  *
  * Destroys:  Action
  */
-void
-free_Action(Action *act)
+void free_Action(Action * act)
 {
-	CHECK_MAGIC(act);
+    CHECK_MAGIC(act);
 
-	if(act->target != NULL)
-		free_String(act->target);
-	act->target = NULL;
-	if( act->itr != NULL )
-		list_iterator_destroy(act->itr);
-	act->itr = NULL;
-	act->cur = NULL;
-	CLEAR_MAGIC(act);
-	Free(act);
+    if (act->target != NULL)
+	free_String(act->target);
+    act->target = NULL;
+    if (act->itr != NULL)
+	list_iterator_destroy(act->itr);
+    act->itr = NULL;
+    act->cur = NULL;
+    CLEAR_MAGIC(act);
+    Free(act);
 }
 
 
@@ -330,11 +317,10 @@ free_Action(Action *act)
  *
  * Destroys:  Action
  */
-void
-del_Action(List acts)
+void del_Action(List acts)
 {
-	Action *act;
+    Action *act;
 
-	act = list_pop(acts);
-	free_Action(act);
+    act = list_pop(acts);
+    free_Action(act);
 }

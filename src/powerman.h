@@ -30,12 +30,12 @@
 #define PROJECT "powerman"
 #define VERSION "1.0.0"
 
-typedef enum { FALSE=0, TRUE=1 } bool;
+typedef enum { FALSE = 0, TRUE = 1 } bool;
 
 #define NO_FD           (-1)
 #define	MAXFD	         64
 
-#define NDUMP   /* Don't produce global data structure dump routines */
+#define NDUMP			/* Don't produce global data structure dump routines */
 
 /* #define NDEBUG 1 Don't produce debug code */
 #ifndef NDEBUG
@@ -49,18 +49,18 @@ typedef enum { FALSE=0, TRUE=1 } bool;
 #  define MAGIC_VAL          0xdeadbee0
 #else
 /* Don't use debugging macros */
-#  define MAGIC            
-#  define INIT_MAGIC(x, y) 
+#  define MAGIC
+#  define INIT_MAGIC(x, y)
 #  define CHECK_MAGIC(x)
-#  define CLEAR_MAGIC(x)   
+#  define CLEAR_MAGIC(x)
 #endif
 
 #ifndef MAX
 #  define MAX(x, y) (((x) > (y))? (x) : (y))
-#endif /* MAX */
+#endif				/* MAX */
 #ifndef MIN
 #  define MIN(x, y) (((x) < (y))? (x) : (y))
-#endif /* MIN */
+#endif				/* MIN */
 
 #define DAEMON_NAME   		"powermand"
 #define PID_FILE_NAME 		"/var/run/powerman/powerman.pid"
@@ -77,6 +77,7 @@ typedef struct listener_struct Listener;
 typedef struct device_struct Device;
 typedef struct spec_struct Spec;
 
-typedef enum {NO_DEV, TTY_DEV, TCP_DEV, TELNET_DEV, SNMP_DEV, PMD_DEV} Dev_Type;
+typedef enum { NO_DEV, TTY_DEV, TCP_DEV, TELNET_DEV, SNMP_DEV,
+	PMD_DEV } Dev_Type;
 
-#endif /* POWERMAN_H */
+#endif				/* POWERMAN_H */

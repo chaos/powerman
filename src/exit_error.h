@@ -27,11 +27,11 @@
 #ifndef EXIT_ERROR_H
 #define EXIT_ERROR_H
 
-#include "powerman.h" 
+#include "powerman.h"
 
 void init_error(char *prog);
 void syslog_on_error(bool syslog_enable);
 void exit_error(const char *fmt, ...);
 void exit_msg(const char *fmt, ...);
 
-#endif /* EXIT_ERROR_H */
+#endif				/* EXIT_ERROR_H */

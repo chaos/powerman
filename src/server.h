@@ -32,7 +32,7 @@
 #define NO_PORT           (-1)
 
 
-enum client_status_enum {CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE}; 
+enum client_status_enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE };
 
 /*
  *  Each client is represented by one of these.  The read and write
@@ -42,34 +42,34 @@ enum client_status_enum {CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE};
  * client structure is discarded.
  */
 struct client_struct {
-	bool loggedin;              /* has the client logged in? */
-	Client_Status read_status;  
-	Client_Status write_status;
-	int seq;    /* Each command from the client get a sequence number */
-	int fd;     /* file desriptor for  the socket */
-	String ip; /* IP address of the client's host */
-	unsigned short int port;  /* Port of actual client connection */
-	String host;    /* host name of client host */
+    bool loggedin;		/* has the client logged in? */
+    Client_Status read_status;
+    Client_Status write_status;
+    int seq;			/* Each command from the client get a sequence number */
+    int fd;			/* file desriptor for  the socket */
+    String ip;			/* IP address of the client's host */
+    unsigned short int port;	/* Port of actual client connection */
+    String host;		/* host name of client host */
 /* the two buffers for non-blocking I/O as per Stevens */
-	Buffer to;
-	Buffer from;
-	MAGIC;
+    Buffer to;
+    Buffer from;
+     MAGIC;
 };
 
 /* server.c prototypes */
-void handle_Client_read(Protocol *client_prot, Cluster *cluster, 
-			       List acts, Client *c);
-void handle_Client_write(Client *c);
-void client_reply(Cluster *cluster, Action *act);
+void handle_Client_read(Protocol * client_prot, Cluster * cluster,
+			List acts, Client * c);
+void handle_Client_write(Client * c);
+void client_reply(Cluster * cluster, Action * act);
 Client *make_Client();
-int match_Client(Client *client, void *key);
-void free_Client(Client *client);
+int match_Client(Client * client, void *key);
+void free_Client(Client * client);
 #ifndef NDUMP
-void dump_Client(Client *client);
+void dump_Client(Client * client);
 #endif
 
 
 
 
 
-#endif /* SERVER_H */
+#endif				/* SERVER_H */

@@ -32,12 +32,12 @@
 #define PROJECT "powerman"
 #define VERSION "1.0.0"
 
-#define TIMEOUT_SECONDS     1       /* default value for select(,,,tv) */
-#define INTER_DEV_USECONDS 200000   /* default Delay() after device write */
+#define TIMEOUT_SECONDS     1	/* default value for select(,,,tv) */
+#define INTER_DEV_USECONDS 200000	/* default Delay() after device write */
 
 /* Only when all device are devices are idle is the cluster Quiescent */
 /* and only then can a new action be initiated from the queue.        */
-typedef enum {Quiescent, Occupied} Server_Status;
+typedef enum { Quiescent, Occupied } Server_Status;
 
 
 /*
@@ -48,24 +48,24 @@ typedef enum {Quiescent, Occupied} Server_Status;
  * configuration information.
  */
 typedef struct {
-	struct timeval  timeout_interval; /* select(,,,tv) value */
-	struct timeval  interDev;         /* Delay() after a device write */
-	bool            daemonize;        /* Can suppress for debugging */
-	bool            TCP_wrappers;     /* Config: use TCP wrappers? */
-	Listener       *listener;         /* listener module info */
-	List            clients;          /* server module info */
-	Server_Status   status;           /* (Quiescent, Occupied) */
-	Cluster        *cluster;          /* Cluster state info */
-	List            acts;             /* Action queue */
-	Protocol       *client_prot;      /* protocol for server module */
-	List            specs;            /* device specifications */
-	List            devs;             /* device module info */
-	char           *config_file;      
-	FILE           *cf;
-	MAGIC;
+    struct timeval timeout_interval;	/* select(,,,tv) value */
+    struct timeval interDev;	/* Delay() after a device write */
+    bool daemonize;		/* Can suppress for debugging */
+    bool TCP_wrappers;		/* Config: use TCP wrappers? */
+    Listener *listener;		/* listener module info */
+    List clients;		/* server module info */
+    Server_Status status;	/* (Quiescent, Occupied) */
+    Cluster *cluster;		/* Cluster state info */
+    List acts;			/* Action queue */
+    Protocol *client_prot;	/* protocol for server module */
+    List specs;			/* device specifications */
+    List devs;			/* device module info */
+    char *config_file;
+    FILE *cf;
+     MAGIC;
 } Globals;
 
 extern Globals *cheat;
 extern bool debug_telemetry;
 
-#endif /* POWERMAND_H */
+#endif				/* POWERMAND_H */
