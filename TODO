@@ -13,6 +13,10 @@
   queries (should always be one).
 * Bug: need a way to deal with RPC's such as Baytech's which time out idle
   sessions such that first command typed after timeout will fail.
+* Store scripts in a list and search the list for the script name, rather than
+  hard code the list.  Enable ICE box temperature and beacon support by 
+  allowing the client to execute arbitrary scripts.
+* Define the arguments to a script in a flexible manner.
 * PM_LOG_OFF action is not used - remove from the code.
 * Build failure simulator test suite
 * Package with autoconf
