@@ -2,7 +2,6 @@
 #   $Id$
 ####################################################################
 
-PACKAGE=	powerman
 SHELL=		/bin/sh
 CC=		gcc
 MAKE=		/usr/bin/make
@@ -51,7 +50,7 @@ tags: *.[ch]
 	-ctags -e *.[chy] *.lex 2>/dev/null
 
 depend:
-	-makedepend -- $(CFLAGS) $(DEFS) *.[ch] 2>/dev/null
+	-makedepend -- $(CFLAGS) *.[ch] 2>/dev/null
 
 clean:
 	-rm -f *~ *.o .\#* parse_tab.c parse_tab.h parse_lex.c

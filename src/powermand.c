@@ -216,14 +216,6 @@ static void _exit_handler(int signum)
     err_exit(FALSE, "exiting on signal %d", signum);
 }
 
-/* out of memory handler for list.[ch] routines */
-void *out_of_memory(void)
-{
-    err_exit(FALSE, "list routines out of memory");
-    /*NOTREACHED*/ 
-    return NULL;
-}
-
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab
  */
