@@ -1202,12 +1202,16 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 	    if (FD_ISSET(dev->fd, wset))
 		_handle_write(dev);
 	}
-
+#if 0
+	/* FIXME: superficially this seemed to work with the baytech, but it 
+	 * turns out that with this here, power ops hang forever on ice box 
+	 * nodes, but not on other RPC's!  
+	 */
 	/* if this device needs a ping, take care of it */
 	if ((dev->connect_status & DEV_CONNECTED)) {
 	    _process_ping(dev, timeout);
 	}
-
+#endif
 	/* process actions */
 	if (list_peek(dev->acts)) {
 	    _process_action(dev, timeout);
