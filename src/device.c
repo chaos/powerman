@@ -24,6 +24,34 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+/* Primary entry points to this module are:
+ *
+ * parser - at config file parse time, each device is instantiated by
+ * the dev_create() function, which puts the device on the local 'dev_devices' 
+ * list.  
+ *
+ * client - calls dev_enqueue_actions() to cause one type of script to
+ * run across possibly multiple devices.  This function returns an "action
+ * count", and each time an action completes, a callback is made to the client
+ * which decrements its count.  When the count reaches zero, the client knows
+ * this module is all done operating on its behalf and can respond to the 
+ * user.
+ *
+ * select - the select/poll loop calls the dev_pre_poll() and dev_post_poll()
+ * functions, the former to make a list of file descriptors which when ready
+ * should unblock select/poll; the latter to move data between device cbufs
+ * and the device file descriptors, to manage timeouts, and to move
+ * device scripts along when new state develops (e.g. data in cbufs).
+ *
+ * initialization - dev_init() and dev_fini() are called from powermand.
+ * dev_initial_connect(), called one time only after dev_init(), begins
+ * connection establishment to all devices.
+ *
+ * FIXME: the Device type is not externally opaque as it ought to be:
+ * - parser threads plugs on to the device after it is created
+ * - client pulls out plug names & stats for --device response
+ */
+
 #include <errno.h>
 #include <sys/time.h>
 #include <time.h>
@@ -111,8 +139,8 @@ static unsigned char *_findregex(regex_t * re, unsigned char *str,
                                  int len, size_t nm, regmatch_t pm[]);
 static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[]);
 static bool _command_needs_device(Device * dev, hostlist_t hl);
-static void _process_ping(Device * dev, struct timeval *timeout);
-static void _login(Device *dev);
+static void _enqueue_ping(Device * dev, struct timeval *timeout);
+static void _enqueue_login(Device *dev);
 static void _disconnect(Device * dev);
 static bool _connect(Device * dev);
 static bool _reconnect(Device * dev, struct timeval *timeout);
@@ -397,7 +425,7 @@ static bool _connect(Device * dev)
     connected = dev->connect(dev);
 
     if (connected)
-        _login(dev);
+        _enqueue_login(dev);
 
     return connected;
 }
@@ -663,7 +691,9 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
     return count;
 }
 
-static void _login(Device *dev)
+/* Called upon success of connect or finish_connect device methods.
+ */
+static void _enqueue_login(Device *dev)
 {
     _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
 }
@@ -1220,7 +1250,7 @@ void dev_plug_destroy(Plug * plug)
     Free(plug);
 }
 
-static void _process_ping(Device * dev, struct timeval *timeout)
+static void _enqueue_ping(Device * dev, struct timeval *timeout)
 {
     struct timeval timeleft;
 
@@ -1326,7 +1356,7 @@ _handle_ready_device(Device *dev, short flags)
             if (!dev->finish_connect(dev))
                 goto ioerr;
             assert(dev->connect_state == DEV_CONNECTED);
-            _login(dev);            /* enqueue login if connected */
+            _enqueue_login(dev);    /* enqueue login if connected */
             goto success;           /* don't want to test read bit */
         } else {
             assert(dev->connect_state == DEV_CONNECTED);
@@ -1411,7 +1441,7 @@ void dev_post_poll(Pollfd_t pfd, struct timeval *timeout)
          * unblock when it is time to enqueue one.
          */
         if (dev->connect_state == DEV_CONNECTED)
-            _process_ping(dev, timeout);
+            _enqueue_ping(dev, timeout);
 
         /* If any actions are enqueued, process them.  This is state machine 
          * activity and I/O to/from cbufs, not device I/O.  Update timeout so 

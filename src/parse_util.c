@@ -55,6 +55,8 @@ static List         conf_aliases = NULL;    /* list of alias_t's */
 static bool _validate_config(void);
 static void _alias_destroy(alias_t *a);
 
+extern int parse_config_file(char *filename); /* yacc/lex parser */
+
 /* 
  * initialize module
  * parse the named config file - on error, exit with a message to stderr 
@@ -62,7 +64,6 @@ static void _alias_destroy(alias_t *a);
 void conf_init(char *filename)
 {
     struct stat stbuf;
-    int parse_config_file(char *filename);
     bool valid;
 
     conf_listen_port = strtol(DFLT_PORT, NULL, 10);

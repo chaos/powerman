@@ -781,7 +781,7 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
         return;
     }
     hostlist_destroy(nodelist);
-    /* recusion handled - moving on to the non-recursive case... */ 
+    /* recursion handled - moving on to the non-recursive case... */ 
 
     /* if 'plugstr' was omitted, plug name == node name */
     if (plugstr == NULL)

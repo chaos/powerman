@@ -24,6 +24,14 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+/* Args used to be stored in a List, but gprof showed that very large 
+ * configurations spent a lot of time doing linear search of arg list for 
+ * each arg->state update.  The List was traded for a hash, but as we still
+ * want to iterate through args in the client in order, we keep the hostlist 
+ * representation of the nodes in the ArgList, and use it to implement an 
+ * 'iterator' interface.
+ */
+
 #include <errno.h>
 #include <sys/time.h>
 #include <time.h>
@@ -48,8 +56,8 @@ struct arglist_iterator {
 };
 
 struct arglist {
-    hash_t args;                /* hash of Arg structs */
-    hostlist_t hl;              /* list of node name keys (to preserve order) */
+    hash_t args;
+    hostlist_t hl;
     int refcount;               /* free when refcount == 0 */
 };
 
