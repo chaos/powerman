@@ -338,8 +338,8 @@ static void _client_query_reply(Client * c)
     int n;
 
     assert(c->cmd != NULL);
-    n = _argval_ranged_string(arglist, on, CP_LINEMAX, ST_ON);
-    n |= _argval_ranged_string(arglist, off, CP_LINEMAX, ST_OFF);
+    n  = _argval_ranged_string(arglist, on,      CP_LINEMAX, ST_ON);
+    n |= _argval_ranged_string(arglist, off,     CP_LINEMAX, ST_OFF);
     n |= _argval_ranged_string(arglist, unknown, CP_LINEMAX, ST_UNKNOWN);
     if (n != 0)
         _client_printf(c, CP_ERR_INTERNAL);
