@@ -1,0 +1,66 @@
+# 
+# $Id$
+# $Source$
+#
+# Direct H8 control in IBM xSeries nodes (see ibmrsa.dev for background).
+#
+# This device configuration supports direct control of IBM xSeries H8
+# service processors via an RS485-RS232 converter and the 'h8power'
+# utility, which assumes the RSA's are removed from the system.
+#
+specification "ibmh8" {
+	timeout  	10
+
+	script login {
+		expect "h8power> "
+		send "list\r"
+		expect "list\r\n"
+		foreachnode {
+			expect "([^:]*): [^\r]*\r\n"
+			setplugname $1 $1       # <plug> <node>
+		}
+		expect "h8power> "
+	}
+	script logout {
+		send "\004"  			# ^D to log off
+	}
+	script status_all {
+		send "stat\r"
+		expect "stat\r\n"
+		foreachnode {
+			expect "([^:]*): (timed\ out|H8\ is\ down|off|on)\r\n"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "h8power> "
+	}
+	script on {
+		send "on %s\r"
+		expect "h8power> "
+	}
+	script on_all {
+		send "on\r"
+		expect "h8power> "
+	}
+	script off {
+		send "off %s\r"
+		expect "h8power> "
+	}
+	script off_all {
+		send "off\r"
+		expect "h8power> "
+	}
+	script cycle {
+		send "off %s\r"
+		expect "h8power> "
+		delay 2
+		send "on %s\r"
+		expect "h8power> "
+	}
+	script cycle_all {
+		send "off\r"
+		expect "h8power> "
+		delay 2
+		send "on\r"
+		expect "h8power> "
+	}
+}
