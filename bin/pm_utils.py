@@ -182,7 +182,7 @@ def prompt(string):
             timed_out = 1
         signal.alarm(ALARM_OFF)
         trace(response)
-        if (response[0:1] != 'N'):
+        if (not((response[0:1] == 'N') or (response[0:1] == 'E'))):
             # dump the first garbage character, shouldn't be more than one
             response = response[1:]
         if (response[-1:] == '\n'):
