@@ -6,9 +6,10 @@
     * etc/cyclades-pm8.dev: device has a non-configurable inactivity
     timeout so log on and off for each command.
 
-    * etc/baytech-rpc28-nc.dev: add a crlf before each command in case we
-    get logged off due to inactivity timeout.
-
+    * etc/baytech-rpc28-nc.dev: device has a non-configurable inactivity
+    timeout so repeat login sequence before each command (it works whether
+    logged in or not).
+    
     * powerman.spec: add %dir entries for directories that may be inadvertantly
     created with too restrictive permissions like /usr/man/man7.
 
