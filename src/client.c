@@ -63,19 +63,6 @@ const struct option *longopts = long_options;
 
 
 
-typedef struct config_struct {
-	String *host;
-	String *service;
-	int fd;
-	int com;
-	bool regex;
-	bool soft;
-	bool readable;
-	bool verify;
-	List targ;
-	List reply;
-}Config;
-
 static Config *process_command_line(int argc, char ** argv);
 static void usage(char *prog);
 static void read_Targets(Config *conf, char *name);
@@ -779,10 +766,44 @@ Config *
 make_Config()
 {
 	Config *conf;
+	char *env;
+	char *port;
+	int p;
 
 	conf = (Config *)Malloc(sizeof(Config));
-	conf->host = make_String("localhost");
-	conf->service = make_String("10101");
+	conf->host = NULL;
+	conf->service = NULL;
+	if ((env = getenv("POWERMAN_HOST"))) 
+	{
+		if ((port = strchr(env, ':'))) 
+		{
+			*port++ = '\0';
+			if ((p = atoi(port)) > 0)
+			{
+				conf->service = make_String(port);
+				conf->port = p;
+			}
+		}
+		if (*env) 
+		{
+			conf->host = make_String(env);
+		}
+	}
+	if( conf->host == NULL )
+		conf->host = make_String("localhost");
+	if ((port = getenv("CONMAN_PORT")) && (*env)) 
+	{
+		if ((p = atoi(port)) > 0)
+		{
+			conf->service = make_String(port);
+			conf->port = p;
+		}
+	}
+	if(conf->service == NULL )
+	{
+		conf->service = make_String("10101");
+		conf->port = 10101;
+	}
 	conf->com = ERROR;
 	conf->regex = FALSE;
 	conf->readable = FALSE;
