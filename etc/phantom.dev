@@ -3,14 +3,14 @@
 # $Source$
 #
 specification  "phantom" {
-	type 		SERIAL
-	timeout 	5 
+	type 		TELNET
+	timeout 	20.0
 
 	plug name { "1" }
 
 	script login {
-		expect "Choose a command"
-		send "\035"	# enter "shell mode"
+		send "\036\035"	# enter "shell mode"
+		expect "ok\r"
 	}
 	script status {
 		send "P?\r\n"
@@ -56,15 +56,18 @@ specification  "phantom" {
 	script beacon_off {
 		send "L0\r\n"	# LED off
 		expect "ok\r"
+		send "B0\r\n"	# unblink LED
+		expect "ok\r"
 	}
 	script status_beacon {
-		send "L?\r\n"	# get LED status 0=on, 1=off, B=blink
+		send "L?\r\n"	# get LED status 1=on, 0=off, B=blink
 		expect "(0|1|B)" 
-		setplugstate "1" $1 on="(B|0)" off="1"
+		setplugstate "1" $1 on="(B|1)" off="0"
 	}
-	script status_temp {
-		send "T0\r\n"	# get temp probe 0 (there is also a 1- unused)
-		expect "([0-9]+)\r" # value is 8-bit Celcius  
-		setplugstate "1" $1
-	}
+# Ack this crashes powerman right now!
+#	script status_temp {
+#		send "T0\r\n"	# get temp probe 0 (there is also a 1- unused)
+#		expect "([0-9]+)\r" # value is 8-bit Celcius  
+#		setplugstate "1" $1
+#	}
 }
