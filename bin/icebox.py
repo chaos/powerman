@@ -119,8 +119,12 @@ class BoxClass:
     name             = ""
     ports            = {}
     ICEBOX_SIZE      = 10
-    BOX_DELAY        = 3.5
-    REBOOT_DELAY        = 3.5
+    # Setting BOX_DELAY to 3.5 seconds results in always having exactly
+    # one "ERROR" reply before success.
+    BOX_DELAY        = 4.0
+    # negative delay means "return immediately" with status "OK", i.e.
+    # don't wait and don't read().  Thisis only for icebox reboots.
+    REBOOT_DELAY        = -1.0
 
     def __init__(self, name):
         "Box class initialization"
@@ -140,7 +144,7 @@ class BoxClass:
             if (port.node.is_marked()):
                 if (not req): req = port.node.message
                 num_requested = num_requested + 1
-        if ((num_requested == self.ICEBOX_SIZE) or (req == 'hwreset'):
+        if ((num_requested == self.ICEBOX_SIZE) or (req == 'hwreset')):
             # print "Doing whole box command", com
             for port_name in self.ports.keys():
                 self.ports[port_name].node.unmark()
@@ -185,10 +189,7 @@ class BoxClass:
                     continue
                 if (setting):
                     if (string.lower(response) == 'ok'):
-                        good_response = 1
-                        for port_name in self.ports.keys():
-                            port = self.ports[port_name]
-                            port.node.mark("port %s ok" % port.name)
+                        good_response = 10
                     continue
                 try:
                     list = string.split(response)

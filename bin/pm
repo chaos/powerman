@@ -104,7 +104,7 @@ for opt in options:
         verbose = 0
     elif (op == '-r'):
         reverse = 1
-    elif (op == -R):
+    elif (op == '-R'):
         com = "hwreset"
     elif (op == '-t'):
         com = "temp"

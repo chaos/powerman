@@ -112,11 +112,16 @@ def node_cmp(n1, n2):
 def prompt(fd, string, delay):
     log("say:  " + string)
     os.write(fd, string + '\r\n')
-    if (delay): time.sleep(delay)
+    if (delay > 0.0):
+        time.sleep(delay)
+    elif (delay < 0.0):
+        return "OK"
     done = 0
     retry_count = 0
     response = ""
-    while (not done and (retry_count < 10)):
+    # this retry should only be relevant if the read happens to soon
+    # and the reply hadn't arrived yet.  Give up after two failures.
+    while (not done and (retry_count < 1)):
         retry_count = retry_count + 1
         signal.alarm(READ_TIMEOUT)
         try:
