@@ -426,11 +426,23 @@ _binstr(char *str, int len)
 	for (i = j = 0; i < len; i++)
 	{
 		if (isprint(str[i]))
-			cpy[j++] = str[i];
-		else
 		{
-			sprintf(&cpy[j], "\\%.3o", str[i]);
-			j += 4;
+			cpy[j++] = str[i];
+			continue;
+		}
+		switch (str[i])
+		{
+			case '\r':
+				strcpy(&cpy[j], "\\r");
+				j += 2;	
+				break;
+			case '\n':
+				strcpy(&cpy[j], "\\n");
+				j += 2;	
+				break;
+			default:
+				sprintf(&cpy[j], "\\%.3o", str[i]);
+				j += 4;
 		}
 	}
 	cpy[j] = '\0';
@@ -462,7 +474,11 @@ handle_Device_read(Device *dev, int debug)
 		int len = peek_line_Buffer(dev->from, str, MAX_BUF);
 
 		if (len > 0)
-			printf("D: %s", _binstr(str, len));
+		{
+			char *bstr = _binstr(str, len);
+			printf("D: %s\n", bstr);
+			Free(bstr);
+		}
 	}
 }
 
@@ -819,7 +835,11 @@ handle_Device_write(Device *dev, int debug)
 		int len = peek_line_Buffer(dev->to, str, MAX_BUF);
 
 		if (len > 0)
-			printf("S: %s", _binstr(str, len));
+		{
+			char *bstr = _binstr(str, len);
+			printf("S: %s\n", bstr);
+			Free(bstr);
+		}
 	}
 	n = write_Buffer(dev->to);
 	if( n < 0 ) return;
