@@ -35,7 +35,6 @@ get_line_from_Buffer(Buffer b)
 	char str[MAX_BUF];
 	int res = get_line_Buffer(b, str, MAX_BUF);
 
-	fprintf(stderr, "Line: '%s'\n", str);
 	return (res > 0 ? make_String(str) : NULL);
 }
 
@@ -51,7 +50,6 @@ get_String_from_Buffer(Buffer b, regex_t *re)
 		eat_Buffer(b, bytes_peeked);
 		match = TRUE;
 	}
-	fprintf(stderr, "%s: '%s'\n", match ? "Match" : "NoMatch", str);
 	return (match ? make_String(str) : NULL);
 }
 

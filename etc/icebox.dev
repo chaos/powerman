@@ -1,194 +1,20 @@
-####################################################################
-# $Id$
-# by Andrew C. Uselton <uselton2@llnl.gov> 
-####################################################################
-#   Copyright (C) 2001-2002 The Regents of the University of California.
-#   Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
-#   Written by Andrew Uselton (uselton2@llnl.gov>
-#   UCRL-CODE-2002-008.
-#   
-#   This file is part of PowerMan, a remote power management program.
-#   For details, see <http://www.llnl.gov/linux/powerman/>.
-#   
-#   PowerMan is free software; you can redistribute it and/or modify it under
-#   the terms of the GNU General Public License as published by the Free
-#   Software Foundation; either version 2 of the License, or (at your option)
-#   any later version.
-#   
-#   PowerMan is distributed in the hope that it will be useful, but WITHOUT 
-#   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
-#   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
-#   for more details.
-#   
-#   You should have received a copy of the GNU General Public License along
-#   with PowerMan; if not, write to the Free Software Foundation, Inc.,
-#   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
-####################################################################
-#
-# Device Specification for Icebox devices
-#
-#   Refer to the file "powerman.conf" or the powerman.conf(5)
-# man page for general comments.  
-# 
-# Caveat:
-#    Creating a working device specification for a new device type
-# can be tricky and require patience and experimentation.  This goes
-# especially for devices that begin by negotiating telent settings.
-# PowerMan does not speak telnet, but such devices can often be
-# fooled with telnet-ish initial strings in the scripts below.   
-#
-#   A device specification begins and ends with the "protocol 
-# specification" keywords.  One or more such must occur as the first
-# part of a PowerMan configuration file.  Commonly, the specifications
-# do not change from one environment to another, so they are included
-# in the PowerMan configuration file with the "include" directive.
-# This allows for nasty details to be hidden from the more commonly
-# accessed portion of the configuration file.  
-#
-#   There are a few general configuration parameters for a device
-# that are set at the beginning of the specification.  Their details
-# will be discussed wbelow where they occur.  These few parameters are 
-# followed by two lists.  The first list has eleven scripts.  Each is
-# surrounded by a begin/end pair giving the name of the script.  The
-# second list simply states the names of the plugs the device has.
-# commonly the names are counting integers up to the size of the 
-# device (ref. the size field, below), but they could be anything.
-#
-#   Each script has a sequence of micro-actions, which I call script
-# elements, or script-els.  Each script-el is either a send, an expect, 
-# or a delay.  The name of each of the eleven scripts corresponds to 
-# one of the possible macro-actions, just actions from now on, the 
-# PowerMan daemon might take in communicating with a device.  Thus 
-# there are scripts for LOG_IN, POWER_ON, and such.  The script
-# (list of script-els) tells how to accomplish the action.  
-#
-#   delay "<float>"
-# When there is a chance that commands could arrive at a device faster
-# than it could handle them a delay can slow things down.  The float 
-# field is the time in seconds to delay.  See the powerman.conf example
-# for more on the allowed form of a float.
-#
-#   send "<fmt>"
-# As its name implies a send script-el will send a message to the 
-# device.  The fmt field resembles that of a C printf() statement.
-# for commands that take an argument the fmt will have a %s where the
-# argument goes.  Generally, this is for target node names or ranges.
-# In addition to the usual '\n' and '\t' formatting characters, 
-# PowerMan recognizes most of the telnet commands as escape sequences.
-# See telnet.h for the codes and the baytech.dev device file for an
-# example of their use. 
-#
-#   expect "<exp>" "<completion>"
-# An expect script-el induces PowerMan to read from the device and 
-# interpret what is read.  The exp field is a RegEx, possibly with 
-# substrings to match.  Standard RegEx is used except that it is
-# extended with the escape codes '\r' and '\n'.  The completion RegEx
-# tells PowerMan when it has seen enough to attempt interpretting
-# the input stream.  This is redundant and will be removed in the 
-# next version of PowerMan.  For line oriented input, as in the 
-# current device specification, the completion is just "\n".  For
-# other devices the completion might be a prompt like ">".  An
-# awkward detail about the current implementation is that the buffer
-# space available in a compiled RegEx expression is on 256 bytes.
-# A long or complicated RegEx will exceed this space and cause
-# the library call to silently fail.  This is bad.  If your script
-# has to read a full sceen, try breaking it into several expects
-# in a row.  
-#
-#   map "<position>" "<plug>" 
-# An expect that has substrings to match needs some hint about how
-# those substrings correspond to semantic information about the 
-# device.  The "off string" and "on string" fields below tell what
-# off and on look like.  A list of "map" fields after the expect
-# tells how to match up substrings with plugs.  When a RegEx has 
-# been matched its list of substrings are noted beginning at 
-# position 1 and going up to a maximum (in this case) of 20 possible
-# matches.  The plug named corresponds to one of the names given in
-# the list of plugs below.  
-#
 begin protocol specification
-#
-#   specification name "<SpecName>"
-# This field is required and must come first.  There are no special 
-# constraints on the name used, though short and descriptive makes
-# sense.
-# 
 	specification name "icebox"
-#
-# The rest of the fields before the scripts are all required (except
-# see the "size" field) and may be in any order.
-#
-#   specification type "<spec type>"
-# There are only two specification types at present:  TCP and PMD.
-# TELNET is a synonym for TCP, until I implement a full telent 
-# protocol, if ever.  There is some interest in TTY and SNMP types 
-# for future releases.  TCP devices get connected via socket as
-# do PMD devices.  A PMD device is an instance of the PowerMan
-# daemon masquerading as a power control device.  The pupose of
-# such an arrangement is to allow possible distributed control of
-# a large collection of devices.  PMD devices get special handling 
-# in a few places as noted below.  An, as yet unwritten, extension
-# to the README file will detail the use of PMD devices.
-# 
 	specification type "TCP"
-# 
-#   off string "<off-str>"
-# The off string field tells PowerMan how to recognize the value of 
-# "off" in a message from the device.
-#
 	off string "0"
-# 
-#   on string "<on-str>"
-# The on string field tells PowerMan how to recognize the value of 
-# "on" in a message from the device.
-#
 	on string  "1"
-# 
-#   all string "<all-str>"
-# The all string field tells PowerMan how to tell the device that all
-# of its plugs are being targeted in a command. 
-#
 	all string "*"
-#
-#   size "<integer>"
-# The size field tells how many plugs the device has.  There will be
-# this many plug fields below.  PMD devices get their size determined
-# dynamically and must not have a size field.
 	size "10"
-#
-#   device timeout "<float>"
-# The device timeout field limits how long the PowerMan daemon will
-# wait before deciding that a device has become unavailable.  If this 
-# happens all actions destined for the device are cleared and once
-# per "update interval" the daemon tries to reconnect.  Care should be
-# taken with this parameter because a heavily loaded system could
-# cause it to seem that a device is unavailable when you just haven't
-# given it enough time to finish its log in script.  If logging is
-# on then you will see the PowerMan daemon spamming the log.  
-#
 	device timeout "1.0"
-#
-#   string interpretation mode "<mode>"
-# The string interpretation mode field will be LITERAL for all current
-# devices except PMD devices.  The mode REGEX for PMD devices (and 
-# possibly others at some point) can simplify communications, since
-# one may desribe groups of plugs rather than list them.
-#
 	string interpretation mode "LITERAL"
-#
-#   Here are the eleven scripts.  Teir names should be reletively
-# self-explanitory.  The PM_LOG_IN script is a special case in that
-# the daemon will spontaneously initiate it as soon as a connection
-# is established.  PM_CHECK_LOGIN and PM_LOG_OUT do not have any
-# role in the current implementation.  P
 	begin PM_LOG_IN 
-		expect "V2\.2\r\n" "\n"
+		expect "V2\.2\r\n"
 		send "auth icebox\r\n"
-		expect "OK\r\n" "\n"
+		expect "OK\r\n"
 	end PM_LOG_IN
 	begin PM_CHECK_LOGIN
 		send "\r\n"
-		expect "OK\r\n" "\n"
+		expect "OK\r\n"
 	end PM_CHECK_LOGIN
 	begin PM_LOG_OUT
 		send "q\r\n"
@@ -196,7 +22,7 @@ begin protocol specification
 # This is the query for hard power status
 	begin PM_UPDATE_PLUGS 
 		send "ps *\r\n"
-		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n" "\n"
+		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
 			map "1" "1"
 			map "2" "2"
 			map "3" "3"
@@ -211,7 +37,7 @@ begin protocol specification
 # This is the query for soft power status
 	begin PM_UPDATE_NODES 
 		send "ns *\r\n"
-		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n" "\n"
+		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
 			map "1" "1"
 			map "2" "2"
 			map "3" "3"
@@ -225,22 +51,22 @@ begin protocol specification
 	end PM_UPDATE_NODES 
 	begin PM_POWER_ON
 		send "ph %s\r\n"
-		expect "OK\r\n" "\n"
+		expect "OK\r\n"
 	end PM_POWER_ON
 	begin PM_POWER_OFF
 		send "pl %s\r\n"
-		expect "OK\r\n" "\n"
+		expect "OK\r\n"
 	end PM_POWER_OFF
 	begin PM_POWER_CYCLE
 		send "pl %s\r\n"
-		expect "OK\r\n" "\n"
+		expect "OK\r\n"
 		delay "0.3"
 		send "ph %s\r\n"
-		expect "OK\r\n" "\n"
+		expect "OK\r\n"
 	end PM_POWER_CYCLE
 	begin PM_RESET
 		send "rp %s\r\n"
-		expect "OK\r\n" "\n"
+		expect "OK\r\n"
 	end PM_RESET
 	plug name "1"
 	plug name "2"

@@ -34,61 +34,61 @@ begin protocol specification
 	device timeout "1.0"
 	string interpretation mode "LITERAL"
 	begin PM_LOG_IN 
-		expect "\n" "\n"
+		expect "\n"
 		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA\IAC\DONT\TELOPT_TTYPE"
-		expect "word: " ":"
+		expect "word: "
 		send "wti\r\n"
-		expect "NPS> " "> "
+		expect "NPS> "
 	end PM_LOG_IN
 	begin PM_CHECK_LOGIN
 		send "\r\n"
-		expect "NPS> " "> "
+		expect "NPS> "
 	end PM_CHECK_LOGIN
 	begin PM_LOG_OUT
 		send "/x\r\n"
 	end PM_LOG_OUT
 	begin PM_UPDATE_PLUGS 
 		send "/s\r\n"
-		expect "WTI2" "WTI2"
-		expect "Default" "\\|\r\n"
-		expect "\\+\r\n" "\\+\r\n"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n" "\\|\r\n"
+		expect "WTI2"
+		expect "Default"
+		expect "\\+\r\n"
+		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map "1" "1"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n" "\\|\r\n"
+		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map "1" "2"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n" "\\|\r\n"
+		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map "1" "3"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n" "\\|\r\n"
+		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map "1" "4"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n" "\\|\r\n"
+		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map "1" "5"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n" "\\|\r\n"
+		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map "1" "6"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n" "\\|\r\n"
+		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map "1" "7"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n" "\\|\r\n"
+		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map "1" "8"
-		expect "\\+\r\n" "\\+\r\n"
-		expect "NPS> " "> "
+		expect "\\+\r\n"
+		expect "NPS> "
 	end PM_UPDATE_PLUGS 
 	begin PM_POWER_ON
 		send "/on %s\r\n"
-		expect "NPS> " "> "
+		expect "NPS> "
 		delay "0.3"
 	end PM_POWER_ON
 	begin PM_POWER_OFF
 		send "/off %s\r\n"
-		expect "NPS> " "> "
+		expect "NPS> "
 		delay "0.3"
 	end PM_POWER_OFF
 	begin PM_POWER_CYCLE
 		send "/boot %s\r\n"
-		expect "NPS> " "> "
+		expect "NPS> "
 		delay "0.3"
 	end PM_POWER_CYCLE
 	begin PM_RESET
 		send "/boot %s\r\n"
-		expect "NPS> " "> "
+		expect "NPS> "
 		delay "0.3"
 	end PM_RESET
 	plug name "1"

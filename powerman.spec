@@ -102,7 +102,6 @@ fi
 /etc/powerman/baytech.dev
 /etc/powerman/icebox.dev
 /etc/powerman/wti.dev
-/etc/powerman/vicebox.dev
 %config(noreplace) /etc/powerman/powerman.conf
 %config(noreplace) %attr(0755,root,root)/etc/rc.d/init.d/powerman
 /usr/man/man1/powerman.1*

@@ -260,11 +260,11 @@ spec_script : TOK_B_PM_LOG_IN script_list TOK_E_PM_LOG_IN {
 script_list : script_list script_el 
 	    | script_el 
 ;
-script_el : TOK_EXPECT TOK_STRING_VAL TOK_STRING_VAL {
-	$$ = (char *)makeScriptEl(EXPECT, $2, $3, NULL);
+script_el : TOK_EXPECT TOK_STRING_VAL {
+	$$ = (char *)makeScriptEl(EXPECT, $2, $2, NULL);
 }
-	| TOK_EXPECT TOK_STRING_VAL TOK_STRING_VAL map_sec {
-	$$ = (char *)makeScriptEl(EXPECT, $2, $3, (List)$4);
+	| TOK_EXPECT TOK_STRING_VAL map_sec {
+	$$ = (char *)makeScriptEl(EXPECT, $2, $2, (List)$3);
 }
 	| TOK_SEND TOK_STRING_VAL {
 	$$ = (char *)makeScriptEl(SEND, $2, NULL, NULL);

@@ -42,6 +42,7 @@
 
 #define BUF_MAGIC  0x4244052
 
+
 struct buffer_implementation {
 	int magic;		/* magic cookie */
 	int fd;			/* file descriptor */

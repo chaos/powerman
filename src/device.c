@@ -554,7 +554,8 @@ process_expect(Device *dev)
 	assert(act->cur != NULL);
 	assert(act->cur->type == EXPECT);
 	
-	re = &(act->cur->s_or_e.expect.completion);
+	/*re = &(act->cur->s_or_e.expect.completion);*/
+	re = &(act->cur->s_or_e.expect.exp);
 	
 	if ( (expect = get_String_from_Buffer(dev->from, re)) == NULL ) 
 	{
