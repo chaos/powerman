@@ -6,9 +6,8 @@
 #    v3.02
 # Assumes: 
 # 1. password: "wti" (/g general parms, 1 system passwd)
-# 2. command echo: on (/g general parms, 6 command echo)
 # 3. command confirmation: off (/g general parms, 8 command confirmation)
-# 4. disconnect timeout: default of 2 minutes
+# 4. disconnect timeout: set to max (30 min)
 # Note: prompt is not returned until device is ready to accept another command
 #
 begin protocol specification
@@ -33,21 +32,21 @@ begin protocol specification
 		send "/s\r\n"
 		expect "Default"
 		expect "\\+\r\n"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
+		expect " 1[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map $1 "1"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
+		expect " 2[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map $1 "2"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
+		expect " 3[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map $1 "3"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
+		expect " 4[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map $1 "4"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
+		expect " 5[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map $1 "5"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
+		expect " 6[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map $1 "6"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
+		expect " 7[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map $1 "7"
-		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
+		expect " 8[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
 			map $1 "8"
 		expect "\\+\r\n"
 		expect "NPS> "
