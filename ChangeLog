@@ -1,3 +1,7 @@
+2003-08-17 Jim Garlick <garlick@llnl.gov>
+
+    * etc/ibmh8.dev: Added and got working with 'h8power' utility.
+
 2003-08-06 Jim Garlick <garlick@llnl.gov>
 
     * etc/cyclades-pm8.dev: got working with PM8i over serial.
