@@ -1,3 +1,8 @@
+2003-12-17 Jim Garlick <garlick@llnl.gov>
+
+    * etc/device.c: remove _verify_plugassign (hold over from when we had
+    setplugname commands in scripts).
+
 2003-12-08 Jim Garlick <garlick@llnl.gov>
 
     * etc/vpc.dev: implement status_all, on_all, off_all, and cycle_all

@@ -91,6 +91,7 @@ int main(int argc, char **argv)
         case 'f':               /* --foreground */
             daemonize = FALSE;
             break;
+#ifndef NDEBUG
         case 'd':               /* --debug */
             {
                 unsigned long val = strtol(optarg, NULL, 0);
@@ -101,6 +102,7 @@ int main(int argc, char **argv)
                 dbg_setmask(val);
             }
             break;
+#endif
         case 'V':               /* --version */
             _version();
             /*NOTREACHED*/
@@ -178,21 +180,22 @@ static void _select_loop(void)
         int n;
 
         PollfdZero(pfd);
+
         cli_pre_poll(pfd);
         dev_pre_poll(pfd);
 
 #ifndef NDEBUG
         if (timerisset(&tmout))
             t = tmout.tv_sec + (float)tmout.tv_usec/1000000;
-#endif
         dbg(DBG_POLL, "pre-poll timeout %.2fs", t);
-
+#endif
         n = Poll(pfd, timerisset(&tmout) ? &tmout : NULL);
         timerclear(&tmout);
 
+#ifndef NDEBUG
         dbg(DBG_POLL, "post-poll revents [%s]=%d", 
                 PollfdStr(pfd, tmpstr, sizeof(tmpstr)), n);
-
+#endif
         /* 
          * Process activity on client and device fd's.
          * If a device requires a timeout, for example to reconnect or

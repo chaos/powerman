@@ -819,6 +819,11 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
         plug->node = Strdup(nodestr);
         list_append(dev->plugs, plug);
     }
+
+    /* NOTE: every plug has a name at this point, unlike when we ware
+     * playing with the 'setplugname' script command.  We don't need to
+     * handle that error condition elsewhere anymore.
+     */
 }
 
 static void makeClientPort(char *s2)

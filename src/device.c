@@ -669,54 +669,6 @@ static void _login(Device *dev)
     _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
 }
 
-/*
- * Select says device is ready for reading.
- */
-static bool _handle_read(Device * dev)
-{
-    int n;
-    int dropped;
-
-    assert(dev->magic == DEV_MAGIC);
-    n = cbuf_write_from_fd(dev->from, dev->fd, -1, &dropped);
-    if (n < 0) {
-        err(TRUE, "read error on %s", dev->name);
-        goto err;
-    }
-    if (dropped > 0) {
-        err(FALSE, "buffer space for %s exhausted", dev->name);
-        goto err;
-    }
-    if (n == 0) {
-        err(FALSE, "read returned EOF on %s", dev->name);
-        goto err;
-    }
-    return FALSE;
-err:
-    return TRUE;
-}
-
-/*
- * Select says device is ready for writing.
- */
-static bool _handle_write(Device * dev)
-{
-    int n;
-
-    assert(dev->magic == DEV_MAGIC);
-    n = cbuf_read_to_fd(dev->to, dev->fd, -1);
-    if (n < 0) {
-        err(TRUE, "write error on %s", dev->name);
-        goto err;
-    }
-    if (n == 0) {
-        err(FALSE, "write sent no data on %s", dev->name);
-        goto err;
-    }
-    return FALSE;
-err:
-    return TRUE;
-}
 
 static void _disconnect(Device * dev)
 {
@@ -765,21 +717,6 @@ static void _act_completion(Action *act, Device *dev)
     }
 }
 
-static void _verify_plugassign(Device *dev)
-{
-    Plug *plug;
-    ListIterator itr;
-
-    itr = list_iterator_create(dev->plugs);
-    while ((plug = list_next(itr))) {
-        if (plug->name == NULL) {
-            err(FALSE, "_verify_plugassign(%s): node %s: not found\n", 
-                    dev->name, plug->node);
-        }
-    }
-    list_iterator_destroy(itr);
-}
-
 /*
  * Process the script for the current action for this device.
  * Update timeout and return if one of the script elements stalls.
@@ -809,8 +746,6 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 act->errnum = ACT_ECONNECTTIMEOUT;
             else if (!dev->logged_in) {
                 act->errnum = ACT_ELOGINTIMEOUT;
-                /* Need a warning here for any unassigned plug names */
-                _verify_plugassign(dev);
             } else
                 act->errnum = ACT_EEXPFAIL;
 
@@ -864,11 +799,8 @@ static void _process_action(Device * dev, struct timeval *timeout)
 
             /* completed action successfully! */
             if (e == NULL) {
-                if (act->com == PM_LOG_IN) {
+                if (act->com == PM_LOG_IN)
                     dev->logged_in = TRUE;
-                    /* Need a warning here for any unassigned plug names */
-                    _verify_plugassign(dev);
-                }
                 if (act->complete_fun)
                     _act_completion(act, dev);
                 _destroy_action(list_dequeue(dev->acts));
@@ -1002,7 +934,6 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
 
     return finished;
 }
-
 
 /* Make a copy of a device's cached subexpression match, referenced by
  * 'mp' match position, or NULL if no match.  Caller must free the result.
@@ -1266,12 +1197,6 @@ int dev_plug_match_plugname(Plug * plug, void *key)
 {
     return (plug->name == NULL ? 0 : (strcmp(plug->name, (char *) key) == 0));
 }
-#if 0
-int dev_plug_match_noname(Plug * plug, void *key)
-{
-    return ((plug->name == NULL && plug->node == NULL) ? 1 : 0);
-}
-#endif
 
 /* helper for dev_create */
 void dev_plug_destroy(Plug * plug)
@@ -1410,38 +1335,52 @@ void dev_initial_connect(void)
 }
 
 /*
- * Called before poll to ready pfd.
+ * Select says device is ready for reading.
  */
-void dev_pre_poll(Pollfd_t pfd)
+static bool _handle_read(Device * dev)
 {
-    Device *dev;
-    ListIterator itr;
+    int n;
+    int dropped;
 
-    itr = list_iterator_create(dev_devices);
-    while ((dev = list_next(itr))) {
-        short flags = 0;
-
-        if (dev->fd < 0)
-            continue;
-
-        /* always set read set bits so select will unblock if the 
-         * connection is dropped.
-         */
-        flags |= POLLIN;
-
-        /* need to be in the write set if we are sending anything */
-        if (dev->connect_state == DEV_CONNECTED) {
-            if (!cbuf_is_empty(dev->to))
-                flags |= POLLOUT;
-        }
-
-        /* descriptor will become writable after a connect */
-        if (dev->connect_state == DEV_CONNECTING)
-            flags |= POLLOUT;
-
-        PollfdSet(pfd, dev->fd, flags);
+    assert(dev->magic == DEV_MAGIC);
+    n = cbuf_write_from_fd(dev->from, dev->fd, -1, &dropped);
+    if (n < 0) {
+        err(TRUE, "read error on %s", dev->name);
+        goto err;
     }
-    list_iterator_destroy(itr);
+    if (dropped > 0) {
+        err(FALSE, "buffer space for %s exhausted", dev->name);
+        goto err;
+    }
+    if (n == 0) {
+        err(FALSE, "read returned EOF on %s", dev->name);
+        goto err;
+    }
+    return FALSE;
+err:
+    return TRUE;
+}
+
+/*
+ * Select says device is ready for writing.
+ */
+static bool _handle_write(Device * dev)
+{
+    int n;
+
+    assert(dev->magic == DEV_MAGIC);
+    n = cbuf_read_to_fd(dev->to, dev->fd, -1);
+    if (n < 0) {
+        err(TRUE, "write error on %s", dev->name);
+        goto err;
+    }
+    if (n == 0) {
+        err(FALSE, "write sent no data on %s", dev->name);
+        goto err;
+    }
+    return FALSE;
+err:
+    return TRUE;
 }
 
 /* One of the poll bits is set for the device - handle it! */
@@ -1490,6 +1429,41 @@ success:
     return FALSE;
 ioerr:
     return TRUE;
+}
+
+/*
+ * Called before poll to ready pfd.
+ */
+void dev_pre_poll(Pollfd_t pfd)
+{
+    Device *dev;
+    ListIterator itr;
+
+    itr = list_iterator_create(dev_devices);
+    while ((dev = list_next(itr))) {
+        short flags = 0;
+
+        if (dev->fd < 0)
+            continue;
+
+        /* always set read set bits so select will unblock if the 
+         * connection is dropped.
+         */
+        flags |= POLLIN;
+
+        /* need to be in the write set if we are sending anything */
+        if (dev->connect_state == DEV_CONNECTED) {
+            if (!cbuf_is_empty(dev->to))
+                flags |= POLLOUT;
+        }
+
+        /* descriptor will become writable after a connect */
+        if (dev->connect_state == DEV_CONNECTING)
+            flags |= POLLOUT;
+
+        PollfdSet(pfd, dev->fd, flags);
+    }
+    list_iterator_destroy(itr);
 }
 
 /* 
