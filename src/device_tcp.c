@@ -62,7 +62,6 @@ bool tcp_finish_connect(Device * dev, struct timeval *timeout)
     int error = 0;
     int len = sizeof(err);
 
-    assert(dev->type == TCP_DEV || dev->type == TELNET_DEV);
     assert(dev->connect_status == DEV_CONNECTING);
     rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &error, &len);
     /*
@@ -82,8 +81,7 @@ bool tcp_finish_connect(Device * dev, struct timeval *timeout)
         dev->connect_status = DEV_CONNECTED;
         dev->stat_successful_connects++;
         dev->retry_count = 0;
-        if (dev->type == TELNET_DEV)
-            telnet_init(dev);
+        telnet_init(dev);
         dev_login(dev);
     }
 
@@ -102,7 +100,6 @@ bool tcp_reconnect(Device * dev)
     int fd_settings;
 
     assert(dev->magic == DEV_MAGIC);
-    assert(dev->type == TCP_DEV || dev->type == TELNET_DEV);
     assert(dev->connect_status == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
@@ -114,7 +111,7 @@ bool tcp_reconnect(Device * dev)
     hints.ai_flags = AI_CANONNAME;
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    Getaddrinfo(dev->u.tcp.host, dev->u.tcp.service, &hints, &addrinfo);
+    Getaddrinfo(dev->host, dev->port, &hints, &addrinfo);
 
     dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
                      addrinfo->ai_protocol);
@@ -145,7 +142,6 @@ void tcp_disconnect(Device * dev)
 {
     assert(dev->connect_status == DEV_CONNECTING
            || dev->connect_status == DEV_CONNECTED);
-    assert(dev->type == TCP_DEV || dev->type == TELNET_DEV);
 
     dbg(DBG_DEVICE, "tcp_disconnect: %s on fd %d", dev->name, dev->fd);
 

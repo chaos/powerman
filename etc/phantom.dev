@@ -3,7 +3,6 @@
 # $Source$
 #
 specification  "phantom" {
-	type 		TELNET
 	timeout 	20.0
 
 	plug name { "1" }

@@ -3,7 +3,6 @@
 # $Source$
 #
 specification "vpc" {
-	type 		TCP
 	timeout 	5.0
 #	pingperiod 	10.0
 

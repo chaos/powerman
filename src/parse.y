@@ -66,7 +66,6 @@ typedef List PreScript;
  */
 typedef struct {
     char *name;                 /* specification name, e.g. "icebox" */
-    DevType type;               /* device type, e.g. TCP_DEV */
     struct timeval timeout;     /* timeout for this device */
     struct timeval ping_period; /* ping period for this device 0.0 = none */
     List plugs;                 /* list of plug names (e.g. "1" thru "10") */
@@ -127,9 +126,6 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 %token TOK_MAX_PLUG_COUNT TOK_TIMEOUT TOK_DEV_TIMEOUT TOK_PING_PERIOD
 %token TOK_PLUG_NAME TOK_SCRIPT 
 
-/* device types */
-%token TOK_TYPE_TCP TOK_TYPE_TELNET TOK_TYPE_SERIAL
-
 /* powerman.conf stuff */
 %token TOK_DEVICE TOK_NODE TOK_ALIAS TOK_TCP_WRAPPERS TOK_PORT
 
@@ -188,6 +184,8 @@ client_port     : TOK_PORT TOK_NUMERIC_VAL {
 device          : TOK_DEVICE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL 
                   TOK_STRING_VAL {
     makeDevice($2, $3, $4, $5);
+}               | TOK_DEVICE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL {
+    makeDevice($2, $3, $4, NULL);
 }
 ;
 node            : TOK_NODE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL {
@@ -215,19 +213,10 @@ spec            : TOK_SPEC TOK_STRING_VAL TOK_BEGIN
 spec_item_list  : spec_item_list spec_item 
                 | spec_item
 ;
-spec_item       : spec_type
-                | spec_timeout
+spec_item       : spec_timeout
                 | spec_ping_period
                 | spec_plug_list
                 | spec_script_list
-;
-spec_type       : TOK_SPEC_TYPE TOK_TYPE_TCP {
-    current_spec.type = TCP_DEV;
-}               | TOK_SPEC_TYPE TOK_TYPE_TELNET {
-    current_spec.type = TELNET_DEV;
-}               | TOK_SPEC_TYPE TOK_TYPE_SERIAL {
-    current_spec.type = SERIAL_DEV;
-}
 ;
 spec_timeout    : TOK_DEV_TIMEOUT TOK_NUMERIC_VAL {
     _doubletotv(&current_spec.timeout, _strtodouble($2));
@@ -396,12 +385,6 @@ int parse_config_file (char *filename)
     return 0;
 } 
 
-static void _spec_missing(char *msg)
-{
-    err_exit(FALSE, "protocol specification missing %s: %s::%d\n",
-            msg, scanner_file(), scanner_line());
-}
-
 /* makePreStmt(type, str, tv, mp1(plug), mp2(stat/node), prestmts, interps */
 static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr, 
                       char *mp1str, char *mp2str, List prestmts, 
@@ -446,7 +429,6 @@ static void _clear_current_spec(void)
     int i;
 
     current_spec.name = NULL;
-    current_spec.type = NO_DEV;
     current_spec.plugs = NULL;
     timerclear(&current_spec.timeout);
     timerclear(&current_spec.ping_period);
@@ -471,8 +453,6 @@ static Spec *makeSpec(char *name)
     Spec *spec;
 
     current_spec.name = Strdup(name);
-    if (current_spec.type == NO_DEV)
-        _spec_missing("type");
 
     /* FIXME: check for manditory scripts here?  what are they? */
 
@@ -543,10 +523,9 @@ static List copyInterpList(List il)
     reg_syntax_t cflags = REG_EXTENDED | REG_NOSUB;
     ListIterator itr;
     Interp *ip, *icpy;
-    List new = NULL;
+    List new = list_create((ListDelF) destroyInterp);
 
     if (il != NULL) {
-        new = list_create((ListDelF) destroyInterp);
 
         itr = list_iterator_create(il);
         while((ip = list_next(itr))) {
@@ -654,12 +633,13 @@ static Stmt *makeStmt(PreStmt *p)
 }
 
 static void makeDevice(char *devstr, char *specstr, char *hoststr, 
-                        char *portstr)
+                        char *flagstr)
 {
     ListIterator itr;
     Device *dev;
     Spec *spec;
     char *plugname;
+    char *port;
     int i;
 
     /* find that spec */
@@ -668,25 +648,24 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
         _errormsg("device specification not found");
 
     /* make the Device */
-    dev = dev_create(devstr, spec->type);
+    dev = dev_create(devstr);
     dev->specname = Strdup(specstr);
     dev->timeout = spec->timeout;
     dev->ping_period = spec->ping_period;
 
     /* set up the host name and port */
-    switch(dev->type) {
-    case TCP_DEV :
-    case TELNET_DEV :
-        dev->u.tcp.host = Strdup(hoststr);
-        dev->u.tcp.service = Strdup(portstr);
-        break;
-    case SERIAL_DEV :
-        dev->u.serial.special = Strdup(hoststr);
-        dev->u.serial.flags = Strdup(portstr);
-        break;
-    default :
-        _errormsg("unimplemented device type");
+    /* hoststr may contain host[:port] */
+    /* XXX: or for backwards compat, port may be in flags position */
+    dev->host = Strdup(hoststr);
+    if ((port = strchr(dev->host, ':')))  {
+        *port++ = '\0';
+        dev->port = Strdup(port);
+    } else if (hoststr[0] != '/' && flagstr != NULL) {
+        dev->port = Strdup(flagstr);
+        _warnmsg("port number in flags is deprecated");
     }
+    if (flagstr != NULL)
+        dev->flags = Strdup(flagstr);
 
     /* create plugs */
     if (spec->plugs) {

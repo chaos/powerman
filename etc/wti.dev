@@ -11,7 +11,6 @@
 # Note: prompt is not returned until device is ready to accept another command
 #
 specification "wti" {
-	type 		TELNET
 	timeout 	30  # "/boot *" command takes about 20 sec
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }

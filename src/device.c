@@ -387,22 +387,9 @@ bool dev_time_to_reconnect(Device * dev, struct timeval *timeout)
 
 bool dev_reconnect(Device * dev)
 {
-    bool res = FALSE;
-
-    switch (dev->type) {
-    case TCP_DEV:
-        /*FALLTHROUGH*/
-    case TELNET_DEV:
-        res = tcp_reconnect(dev);
-        break;
-    case SERIAL_DEV:
-        res = serial_reconnect(dev);
-        break;
-    case NO_DEV:
-        assert(0);
-        break; /* can't happen */
-    }
-    return res;
+    if (dev->host[0] == '/')
+        return serial_reconnect(dev);
+    return tcp_reconnect(dev);
 }
 
 /* helper for dev_check_actions/dev_enqueue_actions */
@@ -714,19 +701,10 @@ void dev_disconnect(Device * dev)
 {
     Action *act;
 
-    switch (dev->type) {
-    case TELNET_DEV:
-        /*FALLTHROUGH*/
-    case TCP_DEV:
-        tcp_disconnect(dev);
-        break;
-    case SERIAL_DEV:
+    if (dev->host[0] == '/')
         serial_disconnect(dev);
-        break;
-    case NO_DEV:
-        assert(0);
-        break; /* can't happen */
-    }
+    else
+        tcp_disconnect(dev);
 
     /* flush buffers */
     cbuf_flush(dev->from);
@@ -1236,7 +1214,7 @@ static bool _process_delay(Device *dev, Action *act, ExecCtx *e,
     return finished;
 }
 
-Device *dev_create(const char *name, DevType type)
+Device *dev_create(const char *name)
 {
     Device *dev;
     int i;
@@ -1244,12 +1222,14 @@ Device *dev_create(const char *name, DevType type)
     dev = (Device *) Malloc(sizeof(Device));
     dev->magic = DEV_MAGIC;
     dev->name = Strdup(name);
-    dev->type = type;
     dev->connect_status = DEV_NOT_CONNECTED;
     dev->script_status = 0;
     dev->fd = NO_FD;
     dev->acts = list_create((ListDelF) _destroy_action);
     dev->matchstr = NULL;
+    dev->host = NULL;
+    dev->port = NULL;
+    dev->flags = NULL;
 
     timerclear(&dev->timeout);
     timerclear(&dev->last_retry);
@@ -1262,10 +1242,8 @@ Device *dev_create(const char *name, DevType type)
     dev->from = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
     cbuf_opt_set(dev->from, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
 
-    if (dev->type == TELNET_DEV) {
-        dev->u.tcp.tstate = TELNET_NONE;
-        dev->u.tcp.tcmd = 0;
-    }
+    dev->tstate = TELNET_NONE;
+    dev->tcmd = 0;
 
     for (i = 0; i < NUM_SCRIPTS; i++)
         dev->scripts[i] = NULL;
@@ -1297,23 +1275,14 @@ void dev_destroy(Device * dev)
 
     Free(dev->name);
     Free(dev->specname);
-    switch (dev->type) {
-    case TELNET_DEV:
-    case TCP_DEV:
-        Free(dev->u.tcp.host);
-        Free(dev->u.tcp.service);
-        break;
-    case SERIAL_DEV:
-        Free(dev->u.serial.special);
-        Free(dev->u.serial.flags);
-        break;
-    case NO_DEV:
-        assert(0); /* can't happen */
-        break;
-    }
+    if (dev->host)
+        Free(dev->host);
+    if (dev->port)
+        Free(dev->port);
+    if (dev->flags)
+        Free(dev->flags);
     list_destroy(dev->acts);
     list_destroy(dev->plugs);
-
     for (i = 0; i < NUM_SCRIPTS; i++)
         if (dev->scripts[i] != NULL)
             list_destroy(dev->scripts[i]);
@@ -1458,8 +1427,7 @@ static void _process_ping(Device * dev, struct timeval *timeout)
 {
     struct timeval timeleft;
 
-    if (dev->scripts[PM_PING] != NULL
-        && timerisset(&dev->ping_period)) {
+    if (dev->scripts[PM_PING] != NULL && timerisset(&dev->ping_period)) {
         if (_timeout(&dev->last_ping, &dev->ping_period, &timeleft)) {
             _enqueue_actions(dev, PM_PING, NULL, NULL, NULL, 0, NULL);
             Gettimeofday(&dev->last_ping, NULL);
@@ -1570,9 +1538,8 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
                 _handle_write(dev);
         }
 
-        /* If telnet device, process telnet escapes */
-        if (dev->type == TELNET_DEV)
-            telnet_process(dev);
+        /* process any telnet escapes */
+        telnet_process(dev);
 
         /* process actions */
         if (list_peek(dev->acts)) {

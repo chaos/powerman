@@ -157,14 +157,13 @@ bool serial_reconnect(Device * dev)
     int fd_settings;
 
     assert(dev->magic == DEV_MAGIC);
-    assert(dev->type == SERIAL_DEV);
     assert(dev->connect_status == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
-    dev->fd = open(dev->u.serial.special, O_RDWR | O_NONBLOCK | O_NOCTTY);
+    dev->fd = open(dev->host, O_RDWR | O_NONBLOCK | O_NOCTTY);
     if (dev->fd < 0) {
         dbg(DBG_DEVICE, "_serial_reconnect: %s open %s failed", 
-                dev->name, dev->u.serial.special);
+                dev->name, dev->host);
         goto out;
     }
     if (!isatty(dev->fd)) {
@@ -184,8 +183,7 @@ bool serial_reconnect(Device * dev)
     /* FIXME: take an flock F_WRLOCK to coexist with conman */
 
     /* parse the serial flags and set up port accordingly */
-    sscanf(dev->u.serial.flags, "%d,%d%c%d", 
-            &baud, &databits, &parity, &stopbits);
+    sscanf(dev->flags, "%d,%d%c%d", &baud, &databits, &parity, &stopbits);
     res = _serial_setup(dev->name, dev->fd, baud, databits, parity, stopbits);
     if (res < 0)
         goto out;
@@ -207,7 +205,6 @@ out:
 void serial_disconnect(Device * dev)
 {
     assert(dev->connect_status == DEV_CONNECTED);
-    assert(dev->type == SERIAL_DEV);
     dbg(DBG_DEVICE, "_serial_disconnect: %s on fd %d", dev->name, dev->fd);
 
     /* close device if open */

@@ -49,9 +49,9 @@ tcpwrappers yes                      # enable TCP wrappers
 alias "pengra_service" "pengra[0-1]"
 alias "pengra_compute" "pengra[2-15]"
 
-# Power controller: device <name> <type> <hostname> <port>
-device "pow0" "baytech" "pow0" "23"  # instantiate pow0
-device "pow1" "baytech" "pow1" "23"  # instantiate pow1
+# Power controller: device <name> <type> <hostname:port> [<flags>]
+device "pow0" "baytech" "pow0:23"  # instantiate pow0
+device "pow1" "baytech" "pow1:23"  # instantiate pow1
 
 # Plugs: node <name> <device> [<plug>]
 node "pengra0" "pow0" "1"    # map pengra0 to pow0 plug 1

@@ -143,19 +143,13 @@ typedef struct {
     char *name;                 /* name of device */
 
     char *specname;             /* name of specification, e.g. "icebox3" */
-    DevType type;               /* type of device e.g. TCP_DEV */
-    union {                     /* type-specific device information */
-        struct {                /* TCP_DEV | TELNET_DEV */
-            char *host;
-            char *service;
-            TelnetState tstate; /* state of telnet processing */
-            unsigned char tcmd; /* buffered command */
-        } tcp;
-        struct {                /* SERIAL_DEV */
-            char *special;
-            char *flags;
-        } serial;
-    } u;
+
+    char *host;                 /* hostname or special file */
+    char *port;                 /* port number */
+    char *flags;                /* flags (e.g. baud) */
+
+    TelnetState tstate;         /* state of telnet processing */
+    unsigned char tcmd;         /* buffered telnet command */
 
     ConnectStat connect_status;
     int script_status;          /* DEV_* bits reprepsenting script state */
@@ -200,7 +194,7 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
 bool dev_check_actions(int com, hostlist_t hl);
 void dev_initial_connect(void);
 
-Device *dev_create(const char *name, DevType type);
+Device *dev_create(const char *name);
 void dev_destroy(Device * dev);
 Device *dev_findbyname(char *name);
 List dev_getdevices(void);

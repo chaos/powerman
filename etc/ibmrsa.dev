@@ -17,7 +17,6 @@
 # GEET117A (x345) and T2ET116- (x335).
 #
 specification "ibmrsa" {
-	type 		TELNET
 	timeout  	20
 
 	script login {

@@ -1,4 +1,18 @@
 2003-05-01 Jim Garlick <garlick@llnl.gov>
+
+    * src/parse.y: destroyStmt was trying to destroy NULL setplugstate.interps
+    list.
+
+    * src/*: Eliminate device types.  Deduce whether TCP or serial from
+    presence of leading '/' in hostname.  Change powerman.conf syntax to
+    want hostname:port in the hostname field, reserving last position for
+    flags (future use).  Enable telnet option processing always.
+
+    * etc/powerman.conf.vicebox: Removed.
+
+    * etc/powerman.conf.vpc : Removed.
+
+2003-05-01 Jim Garlick <garlick@llnl.gov>
    
     * etc/phantom.dev: got working with the actual hardware (all but temp)
 

@@ -12,7 +12,6 @@
 # Note: prompt is not returned until device is ready to accept another commmand
 #
 specification "baytech" {
-	type 		TELNET
 	timeout 	10   # about 5 sec for cycle command
 	pingperiod 	90
 

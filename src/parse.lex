@@ -109,9 +109,6 @@ end[ \t]+global                   {   return TOK_E_GLOBAL;      /* old */ }
 begin[ \t]+nodes                  {   return TOK_B_NODES;       /* old */ }
 end[ \t]+nodes                    {   return TOK_E_NODES;       /* old */ }
 
-(TCP|tcp)                         {   return TOK_TYPE_TCP; }
-(SERIAL|serial)                   {   return TOK_TYPE_SERIAL; }
-(TELNET|telnet)                   {   return TOK_TYPE_TELNET; }
 port                              {   return TOK_PORT ; }
 tcpwrappers                       {   return TOK_TCP_WRAPPERS; }
 timeout                           {   return TOK_DEV_TIMEOUT; }

@@ -12,8 +12,7 @@
   line.  Perhaps spawn the conman client on a pipe for each power operation 
   or have conman create a unix domain socket that could be accessed by 
   powerman using existing capabilities.
-* Support HTTP_DEV for devices such as the IBM RSA adapter that are most 
-  efficiently managed that way.
 * Take an flock F_WRLCK on serial devices to peacefully coexist with conman.
-* Any serial-controlled device could be placed behind a terminal server and
-  accessed via telnet.  Make this selectable via powerman.conf.
+* Support IPMI 1.5 using a built-in device called "impi1.5".  Device 
+  instantiations would be per network interface.  Plug names would be 
+  ethernet addresses.

@@ -38,13 +38,13 @@ o In addition to the new constructs described above, the device script syntax
   - The name line is no longer necessary; device names are specified between
     "specification" and the open brace for the device specification.
   - Device types are no longer quoted strings.
-  - The "map" command was renamed to "setstatus" and there can now be
-    intervening statements between an "expect" and "setstatus" lines.  
+  - The "map" command was renamed to "setplugstate" and there can now be
+    intervening statements between an "expect" and "setplugstate" lines.  
     Subexpression match lines persist until the next "expect" in the script.
-  - The "setstatus" command can now take a subexpression offset for the plug
+  - The "setplugstate" command can now take a subexpression offset for the plug
     name parameter in lieu of the literal plug name (quoted string).
   - The "onstring" and "offstring" constructs are replaced with off="regex"/
-    on="regex" arguments to "setstatus".
+    on="regex" arguments to "setplugstate".
   
 +------------+
 | Bugs fixed |

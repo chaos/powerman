@@ -113,8 +113,8 @@ static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
  */
 void telnet_init(Device * dev)
 {
-    dev->u.tcp.tstate = TELNET_NONE;
-    dev->u.tcp.tcmd = 0;
+    dev->tstate = TELNET_NONE;
+    dev->tcmd = 0;
 #if 0
     _telnet_sendopt(dev, DONT, TELOPT_NAWS);
     _telnet_sendopt(dev, DONT, TELOPT_TTYPE);
@@ -134,14 +134,12 @@ void telnet_process(Device * dev)
     unsigned char device[MAX_DEV_BUF];
     int len, i, k;
 
-    assert(dev->type == TELNET_DEV);
-
     len = cbuf_peek(dev->from, peek, MAX_DEV_BUF);
     for (i = 0, k = 0; i < len; i++) {
-        switch (dev->u.tcp.tstate) {
+        switch (dev->tstate) {
         case TELNET_NONE:
             if (peek[i] == IAC)
-                dev->u.tcp.tstate = TELNET_CMD;
+                dev->tstate = TELNET_CMD;
             else
                 device[k++] = peek[i];
             break;
@@ -149,24 +147,24 @@ void telnet_process(Device * dev)
             switch (peek[i]) {
             case IAC:           /* escaped IAC */
                 device[k++] = peek[i];
-                dev->u.tcp.tstate = TELNET_NONE;
+                dev->tstate = TELNET_NONE;
                 break;
             case DONT:          /* option commands - one more byte coming */
             case DO:
             case WILL:
             case WONT:
-                dev->u.tcp.tcmd = peek[i];
-                dev->u.tcp.tstate = TELNET_OPT;
+                dev->tcmd = peek[i];
+                dev->tstate = TELNET_OPT;
                 break;
             default:            /* single char commands - process immediately */
                 _telnet_recvcmd(dev, peek[i]);
-                dev->u.tcp.tstate = TELNET_NONE;
+                dev->tstate = TELNET_NONE;
                 break;
             }
             break;
         case TELNET_OPT:        /* option char - process stored command */
-            _telnet_recvopt(dev, dev->u.tcp.tcmd, peek[i]);
-            dev->u.tcp.tstate = TELNET_NONE;
+            _telnet_recvopt(dev, dev->tcmd, peek[i]);
+            dev->tstate = TELNET_NONE;
             break;
         }
     }
