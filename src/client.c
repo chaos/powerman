@@ -630,7 +630,6 @@ static void _create_client(void)
     /* Got the new client, now look at TCP wrappers */
     /* get client->ip */
     if (inet_ntop(AF_INET, &saddr.sin_addr, buf, MAX_BUF) == NULL) {
-        Close(client->fd);
         _destroy_client(client);
         err(TRUE, "_create_client: inet_ntop");
         return;
@@ -665,8 +664,7 @@ static void _create_client(void)
     if (conf_get_use_tcp_wrappers() == TRUE) {
         accepted_client = hosts_ctl(DAEMON_NAME, host, ip, STRING_UNKNOWN);
 
-        if (accepted_client == FALSE) {
-            Close(client->fd);
+        if (!accepted_client) {
             _destroy_client(client);
             err(FALSE, "_create_client: tcp wrappers denies <%s, %d>", 
 			    fqdn, client->port); /* XXX duplicate log? */

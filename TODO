@@ -9,22 +9,17 @@ Short Term:
 * Attempt to initiate a command to devices that are delaying between
   reconnects should cause an immediate connect attempt.
 * Verify that 0 <= match_pos < MAX_MATCH in parser (now we assert in device.c)
-* Replace bogus buffer.c which with Chris's generic circular buffer module.
+* Replace bogus buffer.c with Chris's generic circular buffer module.
 
 Long term:
 * Build failure simulator test suite
 * Package with autoconf
-* Powerman client needs to implement option for expanding hostranges
 * Power sequencing.  Provide a way of expressing the max number of outlets
   or power control devices which can be powered on in parallel.
 * Support power control devices that are accessed via serial port.
 * Move telnet protocol from device configuration into powermand.
-* Consider supporting ice v3 ability to sequence >1 plug (e.g. ph 1,2,3) in 
-  a single command.
-* Consider supporting additional ICE commands such as querying temperature and 
-  beacon status in ice box, toggling beacon, extracting firmware version, 
-  updating firmware, etc.  
-* Make "soft" power status query possible again in server
+* Client should have option for expanding hostranges and printing results
+  one per line (support Kimberlite scripts).
 * Client should have option for verifying soft power status (expand hostranges
   and issue warnings where plug is on but node is off).  Needs to be optional
   since would double cluster query latency.  

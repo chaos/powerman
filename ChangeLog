@@ -1,6 +1,8 @@
 2002-10-21 garlick
 	* Added "devices" query to get mapping of devices to nodes and
 	  per-device statistics (reconnects, successful actions).
+	* Renamed "TCP wrappers" to "tcpwrappers" and added to default
+	  powerman.conf.
 
 2002-10-21 grondo
 	* hostlist.c : fixed bug where test matches testN

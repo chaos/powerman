@@ -167,7 +167,7 @@ static List line_ptrs;
 	}
 }
 begin[ \t]+global                 {   return TOK_B_GLOBAL; }
-TCP[ \t]+wrappers                 {   return TOK_TCP_WRAPPERS; }
+tcpwrappers                 	  {   return TOK_TCP_WRAPPERS; }
 device[ \t]+timeout               {   return TOK_DEV_TIMEOUT; }
 ping[ \t]+period                  {   return TOK_PING_PERIOD; }
 client[ \t]+listener[ \t]+port    {   return TOK_CLIENT_PORT; }
