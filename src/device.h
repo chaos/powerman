@@ -197,8 +197,8 @@ int dev_plug_match_plugname(Plug * plug, void *key);
 int dev_plug_match_noname(Plug * plug, void *key);
 void dev_plug_destroy(Plug * plug);
 
-void dev_pre_select(fd_set * rset, fd_set * wset, int *maxfd);
-void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *tv);
+void dev_pre_poll(Pollfd_t pfd);
+void dev_post_poll(Pollfd_t pfd, struct timeval *tv);
 
 ArgList *dev_create_arglist(hostlist_t hl);
 ArgList *dev_link_arglist(ArgList * arglist);

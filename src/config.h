@@ -16,4 +16,6 @@
 /* for hostlist.c */
 #define HAVE_STRING_H	1
 
+#define HAVE_POLL	0
+
 #endif

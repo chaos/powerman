@@ -23,6 +23,8 @@
 #include <signal.h>
 #include <errno.h>
 
+#define MIN_THREADS 1
+#define MAX_THREADS PTHREAD_THREADS_MAX - 2  /* parent + control thread */
 #define NUM_THREADS 8       /* default, can be overridden on command line */
 #define BASE_PORT   8080
 #define NUM_PLUGS   16
@@ -299,7 +301,7 @@ static void *_vpc_thread(void *arg)
 
 static void _start_threads(void)
 {
-    int i;
+    int i, n;
 
     for (i = 0; i < num_threads; i++) {
         if (opt_off_rpc && i == 0) {
@@ -308,7 +310,11 @@ static void _start_threads(void)
         }
         pthread_attr_init(&dev[i].attr);
         pthread_attr_setdetachstate(&dev[i].attr, PTHREAD_CREATE_DETACHED);
-        pthread_create(&dev[i].thd, &dev[i].attr, _vpc_thread, (void *) i);
+        n = pthread_create(&dev[i].thd, &dev[i].attr, _vpc_thread, (void *) i);
+        if (n != 0) {
+            fprintf(stderr, "pthread_create error: %s\n", strerror(n));
+            exit(1);
+        }
     }
     if (pause() < 0) {
         perror("pause");
@@ -385,8 +391,9 @@ int main(int argc, char *argv[])
             break;
         case 'n':              /* --num_threads n */
             num_threads = strtol(optarg, NULL, 0);
-            if (num_threads == LONG_MIN || num_threads == LONG_MAX) {
-                fprintf(stderr, "num_threads value out of range\n");
+            if (num_threads < MIN_THREADS || num_threads > MAX_THREADS) {
+                fprintf(stderr, "num_threads value out of range (%d-%d)\n",
+                        MIN_THREADS, MAX_THREADS);
                 exit(1);
             }
             break;

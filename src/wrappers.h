@@ -28,10 +28,17 @@
 #ifndef WRAPPERS_H
 #define WRAPPERS_H
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <sys/time.h>
 #include <time.h>
 #include <regex.h>
 #include <netdb.h>
+#if HAVE_POLL
+#include <sys/poll.h>
+#endif
 
 /*
  * If WITH_LSD_FATAL_ERROR_FUNC is defined, the linker will expect to
@@ -48,6 +55,8 @@
  * Credit: borrowed from cbuf.c (Chris Dunlap)
  */
 
+typedef struct Pollfd *Pollfd_t;
+
 /* Wrapper functions (in wrappers.c) */
 int Socket(int family, int type, int protocol);
 int Setsockopt(int fd, int level, int optname, const void *opt_val,
@@ -57,9 +66,23 @@ int Getsockopt(int fd, int level, int optname, void *opt_val,
                socklen_t * optlen);
 int Listen(int fd, int backlog);
 int Fcntl(int fd, int cmd, int arg);
-int Select(int maxfd, fd_set * rset, fd_set * wset, fd_set * eset,
-           struct timeval *tv);
-void Delay(struct timeval *tv);
+
+int Poll(Pollfd_t pfd, struct timeval *timeout);
+Pollfd_t PollfdCreate(void);
+void PollfdDestroy(Pollfd_t pfd);
+void PollfdZero(Pollfd_t pfd);
+void PollfdSet(Pollfd_t pfd, int fd, short events);
+short PollfdRevents(Pollfd_t pfd, int fd);
+
+#if !HAVE_POLL /* need these for poll emulation with select */
+#ifndef POLLIN
+#define POLLIN      1
+#define POLLOUT     2
+#define POLLHUP     4
+#define POLLERR     8
+#define POLLNVAL    16
+#endif
+#endif
 
 #define Malloc(size)          wrap_malloc(__FILE__, __LINE__, size)
 #define Realloc(item,newsize) wrap_realloc(__FILE__, __LINE__, item, newsize)
@@ -86,7 +109,6 @@ int Memory(void);
 void Gettimeofday(struct timeval *tv, struct timezone *tz);
 time_t Time(time_t * t);
 char *Strncpy(char *s1, const char *s2, int len);
-void Usleep(unsigned long usec);
 void Pipe(int filedes[2]);
 void Dup2(int oldfd, int newfd);
 void Execv(const char *path, char *const argv[]);

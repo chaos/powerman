@@ -41,13 +41,13 @@
 #include "powerman.h"
 #include "list.h"
 #include "parse_util.h"
+#include "wrappers.h"
 #include "device.h"
 #include "device_serial.h"
 #include "device_pipe.h"
 #include "device_tcp.h"
 #include "error.h"
 #include "string.h"
-#include "wrappers.h"
 
 /*
  * A PreScript is a list of PreStmts.

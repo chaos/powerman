@@ -1,7 +1,7 @@
 CFLAGS= -g -Wall -I../src
 VICEOBJS = vicebox.o wrappers.o error.o debug.o
 
-all: vpcd vicebox svicebox
+all: vpcd
 
 vpcd: vpcd.o
 	$(CC) -o $@ $< -lpthread
@@ -35,7 +35,7 @@ run4096t: test4096t.conf
 test8192t.conf: mkconf_thd.pl	# 512 threads x 16 plugs each 
 	./mkconf_thd.pl 8192 >$@
 run8192t: test8192t.conf
-	ulimit -n 4096
+	#ulimit -n 4096
 	../src/powermand -c $<	# XXX will leave powermand running (kill it!)
 	./vpcd -n 512
 
@@ -43,7 +43,7 @@ run8192t: test8192t.conf
 test16384t.conf: mkconf_thd.pl	# 1024 threads x 16 plugs each 
 	./mkconf_thd.pl 16384 >$@
 run16384t: test16384t.conf
-	ulimit -n 4096
+	#ulimit -n 4096
 	../src/powermand -c $<	# XXX will leave powermand running (kill it!)
 	./vpcd -n 1024
 

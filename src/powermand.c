@@ -39,11 +39,11 @@
 #include "powerman.h"
 #include "list.h"
 #include "parse_util.h"
+#include "wrappers.h"
 #include "device.h"
 #include "daemon.h"
 #include "client.h"
 #include "error.h"
-#include "wrappers.h"
 #include "debug.h"
 
 /* prototypes */
@@ -172,52 +172,32 @@ static void _version(void)
  */
 static void _select_loop(void)
 {
-    int maxfd;
     struct timeval tmout;
-    fd_set rset;
-    fd_set wset;
-#ifndef NDEBUG
-    char rsetstr[1024], wsetstr[1024], tmoutstr[32];
-#endif
+    Pollfd_t pfd = PollfdCreate();
+
+    timerclear(&tmout);
 
     /* start non-blocking connections to all the devices */
     dev_initial_connect();
 
-    timerclear(&tmout);
-
     while (1) {
-        dbg(DBG_SELECT, "---------------------");
-        /* set maxfd and read/write fd sets for select call */
-        FD_ZERO(&rset);
-        FD_ZERO(&wset);
-        maxfd = 0;
-        cli_pre_select(&rset, &wset, &maxfd);
-        dev_pre_select(&rset, &wset, &maxfd);
+        PollfdZero(pfd);
+        cli_pre_poll(pfd);
+        dev_pre_poll(pfd);
 
-        dbg(DBG_SELECT, "select rset=[%s] wset=[%s] tmout=%s",
-            dbg_fdsetstr(&rset, maxfd + 1, rsetstr, sizeof(rsetstr)),
-            dbg_fdsetstr(&wset, maxfd + 1, wsetstr, sizeof(wsetstr)),
-            timerisset(&tmout)
-            ? dbg_tvstr(&tmout, tmoutstr, sizeof(tmoutstr)) : "NULL");
-
-        /* Note: some selects modify timeval arg */
-        Select(maxfd + 1, &rset, &wset, NULL,
-               timerisset(&tmout) ? &tmout : NULL);
+        Poll(pfd, timerisset(&tmout) ? &tmout : NULL);
         timerclear(&tmout);
-
-        dbg(DBG_SELECT, "ready rset=[%s] wset=[%s]",
-            dbg_fdsetstr(&rset, maxfd + 1, rsetstr, sizeof(rsetstr)),
-            dbg_fdsetstr(&wset, maxfd + 1, wsetstr, sizeof(wsetstr)));
 
         /* 
          * Process activity on client and device fd's.
          * If a device requires a timeout, for example to reconnect or
          * to process a scripted delay, tmout is updated.
          */
-        cli_post_select(&rset, &wset);
-        dev_post_select(&rset, &wset, &tmout);
+        cli_post_poll(pfd);
+        dev_post_poll(pfd, &tmout);
     }
     /*NOTREACHED*/
+    PollfdDestroy(pfd);
 }
 
 static void _noop_handler(int signum)

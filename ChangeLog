@@ -1,5 +1,12 @@
 2003-11-30 Jim Garlick <garlick@llnl.gov>
 
+    * src/wrappers.[ch], src/device.[ch], src/client.[ch], powermand.c:
+    Add logic to use poll() if available, or select() if not.  This gets
+    around the fixed 1024 bit size of FD_SETS used with select under Linux,
+    which effectively limited the maximum number of devices to under 1024.
+
+2003-11-30 Jim Garlick <garlick@llnl.gov>
+
     * src/powerman.c: handle partial reads on powermand socket.
     Fixes the very occasional 'unexpected response from server' errors.
 
@@ -19,6 +26,8 @@
     * test/testing.txt: added.
 
     * src/Makefile, src/debug.h: make dbg() macro a noop out if NDEBUG defined.
+
+    * : tag powerman-1-0-18-prepoll
 
 2003-11-28 Jim Garlick <garlick@llnl.gov>
 

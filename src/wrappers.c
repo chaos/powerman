@@ -24,6 +24,10 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
@@ -35,8 +39,10 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#if HAVE_POLL
+#include <sys/poll.h>
+#endif
 
-#include "config.h"
 #include "wrappers.h"
 #include "cbuf.h"
 #include "error.h"
@@ -177,76 +183,161 @@ void Gettimeofday(struct timeval *tv, struct timezone *tz)
         lsd_fatal_error(__FILE__, __LINE__, "gettimeofday");
 }
 
-static void _clear_sets(fd_set * rset, fd_set * wset, fd_set * eset)
-{
-    if (rset != NULL)
-        FD_ZERO(rset);
-    if (wset != NULL)
-        FD_ZERO(wset);
-    if (eset != NULL)
-        FD_ZERO(eset);
-}
+#define POLLFD_ALLOC_CHUNK  16
+#define POLLFD_MAGIC    0x56452334
+struct Pollfd {
+    int magic;
+#if HAVE_POLL
+    unsigned int nfds;
+    unsigned int ufds_size;
+    struct pollfd *ufds;
+#else /* select */
+    int maxfd;
+    fd_set rset;
+    fd_set wset;
+#endif
+};
 
-/*
- * Select wrapper that retries select on EINTR with appropriate timeout
- * adjustments, and Err on any other failures.
- * Can return 0 indicating timeout or a value > 0.
- * NOTE: fd_sets are cleared on timeout.
- */
+/* a null tv means no timeout (could block forever) */
 int
-Select(int maxfd, fd_set * rset, fd_set * wset, fd_set * eset,
-       struct timeval *tv)
+Poll(Pollfd_t pfd, struct timeval *tv)
 {
+    struct timeval tv_cpy, start, end, delta;
     int n;
-    struct timeval tv_orig;
-    struct timeval start, end, delta;
 
-    /* prep for EINTR handling */
     if (tv) {
-        tv_orig = *tv;
+        tv_cpy = *tv;
         Gettimeofday(&start, NULL);
     }
-    /* repeat select if interrupted */
+
+    /* repeat poll if interrupted */
     do {
-        n = select(maxfd, rset, wset, eset, tv);
-        if (n < 0 && errno != EINTR)    /* unrecov error */
+#if HAVE_POLL
+        int tv_msec = tv ? tv_cpy->tv_sec * 1000 + tv_cpy->tv_usec / 1000 : -1;
+
+        n = poll(pfd->ufds, pfd->nfds, tv_msec);
+#else
+        n = select(pfd->maxfd + 1, &pfd->rset, &pfd->wset, NULL, 
+                tv ? &tv_cpy : NULL);
+#endif
+        if (n < 0 && errno != EINTR)
             lsd_fatal_error(__FILE__, __LINE__, "select");
-        if (n < 0 && tv != NULL) {      /* EINTR - adjust tv */
+        if (n < 0 && tv != NULL) {
             Gettimeofday(&end, NULL);
             timersub(&end, &start, &delta);     /* delta = end-start */
-            timersub(&tv_orig, &delta, tv);     /* tv = tvsave-delta */
+            timersub(tv, &delta, &tv_cpy);      /* tv_cpy = tv-delta */
         }
-        /*if (n < 0)
-            fprintf(stderr, "retrying interrupted select\n");*/
     } while (n < 0);
-    /* XXX main select loop needs this fd_sets cleared on timeout */
-    if (n == 0)
-        _clear_sets(rset, wset, eset);
     return n;
 }
 
-/* select-based usleep(3) */
-void 
-Usleep(unsigned long usec)
+#if HAVE_POLL
+static void
+_PollfdGrow(Pollfd_t pfd, int n)
 {
-    fd_set rset, wset, eset;
-    struct timeval tv;
+    assert(pfd->magic == POLLFD_MAGIC);
+    while (pfd->ufds_size < n) {
+        pfd->ufds_size += POLLFD_ALLOC_CHUNK;
+        pfd->ufds = (struct pollfd *)Realloc((char *)pfd->ufds, sizeof(struct pollfd) * pfd->ufds_size);
+    }
+}
+#endif
 
-    tv.tv_usec = usec % 1000000;
-    tv.tv_sec  = usec / 1000000;
+Pollfd_t
+PollfdCreate(void)
+{
+    Pollfd_t pfd = (Pollfd_t)Malloc(sizeof(struct Pollfd));
+  
+    pfd->magic = POLLFD_MAGIC;
+#if HAVE_POLL
+    pfd->ufds_size += POLLFD_ALLOC_CHUNK;
+    pfd->ufds = (struct pollfd *)Malloc(sizeof(struct pollfd) * pfd->ufds_size);
+    pfd->nfds = 0;
+#else
+    pfd->maxfd = 0;
+    FD_ZERO(&pfd->rset);
+    FD_ZERO(&pfd->wset);
+#endif
 
-    FD_ZERO(&rset);
-    FD_ZERO(&wset);
-    FD_ZERO(&eset);
-    Select(0, &rset, &wset, &eset, &tv);
+    return pfd;
 }
 
-void Delay(struct timeval *tv)
+void
+PollfdDestroy(Pollfd_t pfd)
 {
-    int res;
-    res = Select(0, NULL, NULL, NULL, tv);
-    assert(res == 0);
+    assert(pfd->magic == POLLFD_MAGIC);
+    pfd->magic = 0;
+#if HAVE_POLL
+    if (pfd->ufds != NULL)
+        Free(pfd->ufds);
+#endif
+    Free(pfd);
 }
+
+void
+PollfdZero(Pollfd_t pfd)
+{
+    assert(pfd->magic == POLLFD_MAGIC);
+#if HAVE_POLL
+    pfd->nfds = 0;
+#else
+    FD_ZERO(&pfd->rset);
+    FD_ZERO(&pfd->wset);
+    pfd->maxfd = 0;
+#endif
+}
+
+void
+PollfdSet(Pollfd_t pfd, int fd, short events)
+{
+#if HAVE_POLL
+    int i;
+
+    assert(pfd->magic == POLLFD_MAGIC);
+    for (i = 0; i < pfd->nfds; i++) {
+        if (pfd->ufds[i].fd == fd) {
+            pfd->ufds[i].events |= events;
+            break;
+        }
+    }
+    if (i == pfd->nfds) { /* not found */
+        _PollfdGrow(pfd, ++pfd->nfds);
+        pfd->ufds[i].fd = fd;
+        pfd->ufds[i].events = events;
+    }
+#else
+    assert(pfd->magic == POLLFD_MAGIC);
+    if (events & POLLIN)
+        FD_SET(fd, &pfd->rset);
+    if (events & POLLOUT)
+        FD_SET(fd, &pfd->wset);
+    pfd->maxfd = MAX(pfd->maxfd, fd);
+#endif
+}
+
+short
+PollfdRevents(Pollfd_t pfd, int fd)
+{
+    short flags = 0;
+#if HAVE_POLL
+    int i;
+
+    assert(pfd->magic == POLLFD_MAGIC);
+    for (i = 0; i < pfd->nfds; i++) {
+        if (pfd->ufds[i].fd == fd) {
+            flags = pfd->ufds[i].revents;
+            break;
+        }
+    }
+#else
+    assert(pfd->magic == POLLFD_MAGIC);
+    if (FD_ISSET(fd, &pfd->rset))
+        flags |= POLLIN;
+    if (FD_ISSET(fd, &pfd->wset))
+        flags |= POLLOUT;
+#endif
+    return flags;
+} 
 
 /* Review: look into dmalloc */
 #define MALLOC_MAGIC 0xf00fbaab

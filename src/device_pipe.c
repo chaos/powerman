@@ -41,10 +41,10 @@
 
 #include "powerman.h"
 #include "parse_util.h"
+#include "wrappers.h"
 #include "device.h"
 #include "device_pipe.h"
 #include "error.h"
-#include "wrappers.h"
 #include "debug.h"
 #include "pty.h"
 #include "argv.h"

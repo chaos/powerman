@@ -38,9 +38,9 @@
 #include "powerman.h"
 #include "list.h"
 #include "parse_util.h"
+#include "wrappers.h"
 #include "device.h"
 #include "error.h"
-#include "wrappers.h"
 #include "cbuf.h"
 #include "hostlist.h"
 #include "debug.h"
@@ -1413,63 +1413,51 @@ void dev_initial_connect(void)
 }
 
 /*
- * Called before select to ready fd_sets and maxfd.
+ * Called before poll to ready pfd.
  */
-void dev_pre_select(fd_set * rset, fd_set * wset, int *maxfd)
+void dev_pre_poll(Pollfd_t pfd)
 {
     Device *dev;
     ListIterator itr;
-    fd_set dev_fdset;
-#ifndef NDEBUG
-    char fdsetstr[1024];
-#endif
-    FD_ZERO(&dev_fdset);
 
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
+        short flags = 0;
+
         if (dev->fd < 0)
             continue;
-
-        FD_SET(dev->fd, &dev_fdset);
 
         /* always set read set bits so select will unblock if the 
          * connection is dropped.
          */
-        FD_SET(dev->fd, rset);
-        *maxfd = MAX(*maxfd, dev->fd);
+        flags |= POLLIN;
 
         /* need to be in the write set if we are sending anything */
         if (dev->connect_state == DEV_CONNECTED) {
-            if (!cbuf_is_empty(dev->to)) {
-                FD_SET(dev->fd, wset);
-                *maxfd = MAX(*maxfd, dev->fd);
-            }
+            if (!cbuf_is_empty(dev->to))
+                flags |= POLLOUT;
         }
 
         /* descriptor will become writable after a connect */
-        if (dev->connect_state == DEV_CONNECTING) {
-            FD_SET(dev->fd, wset);
-            *maxfd = MAX(*maxfd, dev->fd);
-        }
+        if (dev->connect_state == DEV_CONNECTING)
+            flags |= POLLOUT;
 
+        PollfdSet(pfd, dev->fd, flags);
     }
     list_iterator_destroy(itr);
-
-    dbg(DBG_DEVICE, "fds are [%s]", dbg_fdsetstr(&dev_fdset, *maxfd + 1,
-                                                 fdsetstr,
-                                                 sizeof(fdsetstr)));
 }
 
 /* 
  * Called after select to process ready file descriptors, timeouts, etc.
  */
-void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
+void dev_post_poll(Pollfd_t pfd, struct timeval *timeout)
 {
     Device *dev;
     ListIterator itr;
 
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
+        short flags = dev->fd != NO_FD ? PollfdRevents(pfd, dev->fd) : 0;
 
         /* reconnect if necessary */
         if (dev->connect_state == DEV_NOT_CONNECTED) {
@@ -1477,15 +1465,15 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
         /* complete non-blocking connect if ready */
         } else if ((dev->connect_state == DEV_CONNECTING)) {
             assert(dev->fd != NO_FD);
-            if (FD_ISSET(dev->fd, wset)) {
+
+            if (flags & POLLOUT) {
                 assert(dev->finish_connect != NULL);
                 if (dev->finish_connect(dev)) {
                     _login(dev);
                 } else {
                     _reconnect(dev, timeout);
                 } 
-                if (dev->fd != NO_FD)
-                    FD_CLR(dev->fd, wset);      /* avoid _handle_write error */
+                flags &= ~POLLOUT; /* avoid _handle_write error */
             }
         }
 
@@ -1495,13 +1483,25 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
         }
 
         /* read/write from/to buffer */
-        if (dev->connect_state == DEV_CONNECTED) {
-            if (dev->fd != NO_FD && FD_ISSET(dev->fd, rset))
-                _handle_read(dev, timeout); /* also handles ECONNRESET */
+        if (dev->connect_state == DEV_CONNECTED && dev->fd != NO_FD) {
+            if (flags & POLLIN)
+                _handle_read(dev, timeout);
+            if (flags & POLLHUP) {
+                err(FALSE, "%s: poll: hangup", dev->name);
+                _reconnect(dev, timeout);
+            }
+            if (flags & POLLERR) {
+                err(FALSE, "%s: poll: error", dev->name);
+                _reconnect(dev, timeout);
+            }
+            if (flags & POLLNVAL) {
+                err(FALSE, "%s: poll: fd not open", dev->name);
+                _reconnect(dev, timeout);
+            }
         }
-        /* could have disconnected in _handle_read */
+        /* could have disconnected in _handle_read - check for NO_FD! */
         if (dev->connect_state == DEV_CONNECTED) {
-            if (dev->fd != NO_FD && FD_ISSET(dev->fd, wset))
+            if (dev->fd != NO_FD && flags & POLLOUT)
                 _handle_write(dev, timeout);
         }
 

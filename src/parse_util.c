@@ -38,8 +38,8 @@
 #include "error.h"
 #include "list.h"
 #include "parse_util.h"
-#include "device.h"
 #include "wrappers.h"
+#include "device.h"
 #include "client.h"
 
 typedef struct {

@@ -893,22 +893,16 @@ static void _handle_input(Client *c)
 }
 
 /*
- * Prep rset/wset/maxfd for the main select call.
+ * Prep rset/wset/maxfd for the main poll call.
  */
-void cli_pre_select(fd_set * rset, fd_set * wset, int *maxfd)
+void cli_pre_poll(Pollfd_t pfd)
 {
     ListIterator itr;
     Client *client;
-    fd_set cli_fdset;
-#ifndef NDEBUG
-    char fdsetstr[1024];
-#endif
-    FD_ZERO(&cli_fdset);
 
     if (listen_fd != NO_FD) {
         assert(listen_fd >= 0);
-        FD_SET(listen_fd, rset);
-        *maxfd = MAX(*maxfd, listen_fd);
+        PollfdSet(pfd, listen_fd, POLLIN);
     }
 
     itr = list_iterator_create(cli_clients);
@@ -916,44 +910,48 @@ void cli_pre_select(fd_set * rset, fd_set * wset, int *maxfd)
         if (client->fd < 0)
             continue;
 
-        FD_SET(client->fd, &cli_fdset);
-
         /* always set read set bits so select will unblock if the
          * connection is dropped.
          */
-        FD_SET(client->fd, rset);
-        *maxfd = MAX(*maxfd, client->fd);
+        PollfdSet(pfd, client->fd, POLLIN);
 
         /* need to be in the write set if we are sending anything */
-        if (!cbuf_is_empty(client->to)) {
-            FD_SET(client->fd, wset);
-            *maxfd = MAX(*maxfd, client->fd);
-        }
+        if (!cbuf_is_empty(client->to))
+            PollfdSet(pfd, client->fd, POLLOUT);
     }
     list_iterator_destroy(itr);
-
-    dbg(DBG_CLIENT, "fds are [%s] listen fd %d",
-        dbg_fdsetstr(&cli_fdset, *maxfd + 1,
-                     fdsetstr, sizeof(fdsetstr)), listen_fd);
 }
 
 /* 
  * Handle any client activity (new connection or read/write).
  */
-void cli_post_select(fd_set * rset, fd_set * wset)
+void cli_post_poll(Pollfd_t pfd)
 {
     ListIterator itr;
     Client *c;
 
-    if (FD_ISSET(listen_fd, rset))
+    if (PollfdRevents(pfd, listen_fd) & POLLIN)
         _create_client();
 
     itr = list_iterator_create(cli_clients);
     while ((c = list_next(itr))) {
-        if (c->fd != NO_FD && FD_ISSET(c->fd, rset))
+        short flags = c->fd != NO_FD ? PollfdRevents(pfd, c->fd) : 0;
+
+        if (flags & POLLERR)
+            err(FALSE, "client poll: error");
+        if (flags & POLLHUP)
+            err(FALSE, "client poll: hangup");
+        if (flags & POLLNVAL)
+            err(FALSE, "client poll: fd not open");
+        if (flags & (POLLERR | POLLHUP | POLLNVAL)) {
+            Close(c->fd);
+            c->fd = NO_FD;
+        }
+
+        if (c->fd != NO_FD && (flags & POLLIN))
             _handle_read(c);
 
-        if (c->fd != NO_FD && FD_ISSET(c->fd, wset))
+        if (c->fd != NO_FD && (flags & POLLOUT))
             _handle_write(c);
 
         if (c->fd != NO_FD)

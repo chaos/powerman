@@ -47,9 +47,9 @@
 #include "powerman.h"
 #include "list.h"
 #include "parse_util.h"
+#include "wrappers.h"
 #include "device.h"
 #include "error.h"
-#include "wrappers.h"
 #include "debug.h"
 #include "device_tcp.h"
 
