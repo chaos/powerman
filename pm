@@ -196,7 +196,8 @@ class ClusterClass:
                 except ValueError:
                     pass
             if(c_sep_list):
-                command = c_str + " -w " + c_sep_list + " " + com
+                command = c_str + " -w " + c_sep_list + " " + opts + com
+                print command
                 stat, message = commands.getstatusoutput(command)
                 if (stat == 0):
                     # this is confirming that something
@@ -218,7 +219,7 @@ class ClusterClass:
 
 def usage(msg):
     "Tha usage message"
-    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-q] [-r] [-t] [-V] [-w node,...] [on | off | reset]"
+    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-L] [-q] [-r] [-t] [-V] [-w node,...] [on | off | reset]"
     print "-a       = on/off/reset all nodes"
     print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
     print "-f fan   = fanout for parallelism (default: 256 where implemented)"

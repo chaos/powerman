@@ -182,7 +182,7 @@ all         = 0
 fanout      = 256
 setting     = 0
 ICEBOX_SIZE = 10
-PORT_DELAY  = 5.0
+PORT_DELAY  = 0.5
 BOX_DELAY   = 4.0
 
 # Check for level of permision and exit for non-root users
@@ -282,7 +282,7 @@ else:
     
 if(logging):
     try:
-        log_file = open(powermandir + "log/log_file", 'a')
+        log_file = open("/tmp/powerman." + str(os.getpid), 'a')
     except IOError :
         exit_error(8, log_file)
 
@@ -405,9 +405,9 @@ for tty_name in sorted_tty_list:
                     f.write(target + '\n')
                     time.sleep(PORT_DELAY)
                     response = f.readline()
-                    f.readline()
                     while ((response[-1:] == '\n') or (response[-1:] == '\r')):
                         response = response[:-1]
+                    f.readline()
                     retry_count = retry_count + 1
                     log("hear:  " + response)
                     if(response != ''):

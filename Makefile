@@ -74,7 +74,6 @@ install:
 	$(INSTALL) -m 644 man/icebox.conf.5 $(DESTDIR)$(mandir)/man5
 	$(INSTALL) -m 644 man/powerman.conf.5  $(DESTDIR)$(mandir)/man5
 	$(INSTALL) -m 644 man/wti.conf.5       $(DESTDIR)$(mandir)/man5
-	$(mkinstalldirs) $(DESTDIR)$(packagedir)/log
 
 clean:
 	rm -f *~ *.o
