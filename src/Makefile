@@ -89,6 +89,7 @@ MODULE_HEADERS = action.h \
 all :  powermand powerman tags
 
 powermand : $(SERVER_OBJS)
+	$(mkinstalldirs)	${srcbin}
 	$(CC) $(COPTS) -o ${srcbin}/powermand $(SERVER_OBJS) $(INC) $(LIB)
 
 powerman.h : $(COMMON_HEADERS)
@@ -149,6 +150,7 @@ wrappers.o : wrappers.c powerman.h
 	$(CC) $(COPTS) -c -o $@ $< $(INC)
 
 powerman : $(CLIENT_OBJS)
+	$(mkinstalldirs)	${srcbin}
 	$(CC) $(COPTS) -o ${srcbin}/powerman $(CLIENT_OBJS) $(INC) $(LIB)
 
 client.o : client.c powerman.h client.h
