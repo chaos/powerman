@@ -45,6 +45,8 @@
 struct buffer_implementation {
 	int magic;		/* magic cookie */
 	int fd;			/* file descriptor */
+	BufferLogFun *logfun;	/* log function (NULL OK) */
+	void *logfunarg;	/* argument to log function */
 	int len;		/* size allocated to buffer */
 	unsigned char *buf;	/* buffer */
 	unsigned char *in;	/* incoming goes here (points into buffer) */
@@ -68,7 +70,7 @@ struct buffer_implementation {
  * Construct a Buffer of specified length.
  */
 Buffer
-make_Buffer(int fd, int length)
+make_Buffer(int fd, int length, BufferLogFun *logfun, void *logfunarg)
 {
 	Buffer b;
 
@@ -76,6 +78,8 @@ make_Buffer(int fd, int length)
 	b = (Buffer)Malloc(sizeof(struct buffer_implementation));
 	b->magic = BUF_MAGIC;
 	b->fd = fd;
+	b->logfun = logfun;
+	b->logfunarg = logfunarg;
 	b->len = length;
 	b->in = b->out = b->buf = Malloc(b->len);
 	return b;
@@ -140,7 +144,11 @@ write_Buffer(Buffer b)
 	_buf_check(b);
 	nbytes = Write(b->fd, b->out, _buf_length(b));
 	if (nbytes > 0) 
+	{
+		if (b->logfun != NULL)
+			b->logfun(b->out, nbytes, b->logfunarg);
 		b->out += nbytes;
+	}
 	_buf_check(b);
 	return nbytes;
 }
@@ -157,7 +165,11 @@ read_Buffer(Buffer b)
 	_buf_check(b);
 	nbytes = Read(b->fd, b->in, _buf_length_post(b));
 	if (nbytes > 0)
+	{
+		if (b->logfun != NULL)
+			b->logfun(b->in, nbytes, b->logfunarg);
 		b->in += nbytes;
+	}
 	_buf_check(b);
 	return nbytes;
 }
@@ -176,12 +188,14 @@ is_empty_Buffer(Buffer b)
  * Get a copy of a line from the buffer.
  * A line is terminated with a '\n' character.
  * Optionally Call eat_Buffer with the returned length to "consume" this.
+ * Note: Drops embedded NULLs.
  */
 int
 peek_line_Buffer(Buffer b, unsigned char *str, int len)
 {
 	unsigned char *p;
 	int cpy_len;
+	int i, j;
 
 	_buf_check(b);
 	if (is_empty_Buffer(b))
@@ -191,8 +205,11 @@ peek_line_Buffer(Buffer b, unsigned char *str, int len)
 		return 0;
 	cpy_len = p - b->out + 1;
 	assert(cpy_len < len);
-	memcpy(str, b->out, cpy_len);
-	str[cpy_len] = '\0';
+	/* Was: memcpy(str, b->out, cpy_len) */
+	for (j = i = 0; i < cpy_len; i++)
+		if (b->out[i] != 0)	/* drop embedded NULLS ! */
+			str[j++] = b->out[i];
+	str[j] = '\0';
 
 	return cpy_len;
 }
@@ -214,19 +231,24 @@ get_line_Buffer(Buffer b, unsigned char *str, int len)
 /*
  * Get a copy of the contents of the buffer in string form.
  * Optionally Call eat_Buffer with the returned length to "consume" this.
+ * Note: Drops embedded NULLs.
  */
 int
 peek_string_Buffer(Buffer b, unsigned char *str, int len)
 {
 	int cpy_len;
+	int i, j;
 
 	_buf_check(b);
 	cpy_len = _buf_length(b);
 	if (cpy_len == 0)
 		return 0;
 	assert(cpy_len < len);
-	memcpy(str, b->out, cpy_len);
-	str[cpy_len] = '\0';
+	/* Was: memcpy(str, b->out, cpy_len) */
+	for (j = i = 0; i < cpy_len; i++)
+		if (b->out[i] != 0)	/* drop embedded NULLS ! */
+			str[j++] = b->out[i];
+	str[j] = '\0';
 	return cpy_len;
 }
 
@@ -253,10 +275,15 @@ eat_Buffer(Buffer b, int len)
 	_buf_check(b);
 	assert(len <= _buf_length(b));
 	b->out += len;
-#if 0
-	_zap_leading_whitespace_buf(b);
-#endif
 }
+
+void
+clear_Buffer(Buffer b)
+{
+	_buf_check(b);
+	b->in = b->out = b->buf;
+}
+
 
 #ifndef NDEBUG
 void

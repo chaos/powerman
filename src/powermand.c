@@ -140,7 +140,7 @@ main(int argc, char **argv)
 
 	dev_i = list_iterator_create(g->devs);
 	while( (dev = (Device *)list_next(dev_i)) )
-		init_Device(dev);
+		init_Device(dev, debug_telemetry);
 	list_iterator_destroy(dev_i);
 
 	init_Listener(g->listener);
@@ -323,12 +323,12 @@ do_select_loop(Globals *g)
 			  }
 			if(FD_ISSET(dev->fd, &rset) )
 			  {
-				handle_Device_read(dev, debug_telemetry);
+				handle_Device_read(dev);
 				activity = TRUE;
 			  }
 			if(FD_ISSET(dev->fd, &wset))
 			  {
-				handle_Device_write(dev, debug_telemetry);
+				handle_Device_write(dev);
 				/* We may want to pace the commands */
 				/* sent to the cluster.  interDev   */
 				/* may be set in the config file.   */

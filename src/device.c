@@ -70,8 +70,9 @@ static bool match_RegEx(Device *dev, String expect);
  * production soon, so I'm not worried about it.
  */
 void 
-init_Device(Device *dev)
+init_Device(Device *dev, bool logit)
 {
+	dev->logit = logit;
 	switch (dev->type)
 	{
 	case TCP_DEV :
@@ -87,6 +88,32 @@ init_Device(Device *dev)
 	default :
 		exit_msg("no such powerman device");
 	}
+}
+
+/*
+ * Telemetry logging callback for Buffer outgoing to device.
+ */
+static void
+_buflogfun_to(unsigned char *mem, int len, void *arg)
+{
+	Device *dev = (Device *)arg;
+	char *str = memstr(mem, len);
+
+	printf("S(%s): %s\n", get_String(dev->name), str);
+	Free(str);
+}
+
+/*
+ * Telemetry logging callback for Buffer incoming from device.
+ */
+static void
+_buflogfun_from(unsigned char *mem, int len, void *arg)
+{
+	Device *dev = (Device *)arg;
+	char *str = memstr(mem, len);
+
+	printf("D(%s): %s\n", get_String(dev->name), str);
+	Free(str);
 }
 
 /*
@@ -108,24 +135,38 @@ initiate_nonblocking_connect(Device *dev)
 	assert( (dev->type == TCP_DEV) || (dev->type == PMD_DEV) || 
 		(dev->type == TELNET_DEV) );
 
+	assert(dev->fd == -1);
+	assert(dev->to == NULL);
+	assert(dev->from == NULL);
+
 	memset(&hints, 0, sizeof(struct addrinfo));
 	addrinfo = &hints;
 	hints.ai_flags = AI_CANONNAME;
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	if (dev->type == TCP_DEV)
-		Getaddrinfo(get_String(dev->devu.tcpd.host), get_String(dev->devu.tcpd.service), 
-			    &hints, &addrinfo);
-	else if (dev->type == PMD_DEV)
-		Getaddrinfo(get_String(dev->devu.pmd.host), get_String(dev->devu.pmd.service), 
-			    &hints, &addrinfo);
-	else
-		exit_msg("That device type is not implemented yet");
+	switch (dev->type)
+	{
+		case TCP_DEV:
+			Getaddrinfo(get_String(dev->devu.tcpd.host), 
+					get_String(dev->devu.tcpd.service), 
+					&hints, &addrinfo);
+			break;
+		case PMD_DEV:
+			Getaddrinfo(get_String(dev->devu.pmd.host), 
+					get_String(dev->devu.pmd.service), 
+					&hints, &addrinfo);
+			break;
+		default:
+			exit_msg("unknown device type %d", dev->type);
+	}
 
 	dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
 			      addrinfo->ai_protocol);
-	dev->to = make_Buffer(dev->fd, MAX_BUF);
-	dev->from = make_Buffer(dev->fd, MAX_BUF);
+
+	dev->to = make_Buffer(dev->fd, MAX_BUF, 
+			dev->logit ? _buflogfun_to : NULL, dev);
+	dev->from = make_Buffer(dev->fd, MAX_BUF, 
+			dev->logit ? _buflogfun_from : NULL, dev);
 
 /* set up and initiate a non-blocking connect */
 
@@ -135,6 +176,7 @@ initiate_nonblocking_connect(Device *dev)
 	fd_settings = Fcntl(dev->fd, F_GETFL, 0);
 	Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
 
+	/* 0 = connected; -1 implies EINPROGRESS */
 	n = Connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
 	if ( n >= 0 ) 
 	{
@@ -418,7 +460,7 @@ do_Device_connect(Device *dev)
  * that is handled in process_script().
  */ 
 void
-handle_Device_read(Device *dev, int debug)
+handle_Device_read(Device *dev)
 {
 	int n;
 
@@ -427,20 +469,13 @@ handle_Device_read(Device *dev, int debug)
 	if ( (n < 0) && (errno == EWOULDBLOCK) ) return;
 	if ( (n == 0) || ((n < 0) && (errno == ECONNRESET)) ) 
 	{
+		syslog(LOG_ERR, "Device read problem, reconnecting to %s", 
+				get_String(dev->name));
+		if (dev->logit)
+			printf("Device read problem, reconnecting to: %s\n", 
+					get_String(dev->name));
 		do_Device_reconnect(dev);
 		return;
-	}
-	if (debug)
-	{
-		unsigned char str[MAX_BUF];
-		int len = peek_line_Buffer(dev->from, str, MAX_BUF);
-
-		if (len > 0)
-		{
-			unsigned char *bstr = memstr(str, len);
-			printf("D(%s): %s\n", get_String(dev->name), bstr);
-			Free(bstr);
-		}
 	}
 }
 
@@ -459,8 +494,18 @@ do_Device_reconnect(Device *dev)
  */
 	Action *act;
 
-	Close(dev->fd);
-	syslog(LOG_ERR, "Lost connection to device");
+
+	Close(dev->fd); 
+	dev->fd = -1;
+
+	assert(dev->from != NULL);
+	free_Buffer(dev->from); 
+	dev->from = NULL;
+
+	assert(dev->to != NULL);
+	free_Buffer(dev->to); 
+	dev->to = NULL;
+
 	dev->status   = DEV_NOT_CONNECTED;
 	dev->loggedin = FALSE;
 	if ( ((act = (Action *)list_peek(dev->acts)) != NULL) && 
@@ -569,17 +614,25 @@ process_expect(Device *dev)
 	assert(act != NULL);
 	assert(act->cur != NULL);
 	assert(act->cur->type == EXPECT);
-	
+
 	re = &(act->cur->s_or_e.expect.exp);
 	
 	if ( (expect = get_String_from_Buffer(dev->from, re)) == NULL ) 
+	{
+		if (dev->logit)
+			printf("process_expect(%s): no match\n", 
+					get_String(dev->name));
 		return TRUE;
+	}
 
 	dev->status &= ~DEV_EXPECTING;
 	if( ! match_RegEx(dev, expect) )
 	{
 		del_Action(dev->acts);
 		free_String((void *)expect);
+		if (dev->logit)
+			printf("process_expect(%s): no match (but I ate it)\n",
+					get_String(dev->name));
 		return FALSE;
 	}
 	if(act->cur->s_or_e.expect.map != NULL) 
@@ -591,6 +644,9 @@ process_expect(Device *dev)
 	}
 	free_String((void *)expect);
 
+	if (dev->logit)
+		printf("process_expect(%s): match\n", 
+				get_String(dev->name));
 	return FALSE;
 }
 
@@ -636,12 +692,17 @@ bool
 process_delay(Device *dev)
 {
 	Action *act = (Action *)list_peek(dev->acts);
+	struct timeval tv = act->cur->s_or_e.delay.tv;
 	
 	assert (act != NULL);
 	assert (act->cur != NULL);
 	assert(act->cur->type == DELAY);
+
+	if (dev->logit)
+		printf("process_delay(%s): %ld.%-6.6ld \n", 
+				get_String(dev->name), tv.tv_sec, tv.tv_usec);
 	
-	Delay( &(act->cur->s_or_e.delay.tv) );
+	Delay( &tv );
 
 	return TRUE;
 }
@@ -785,24 +846,12 @@ do_Device_semantics(Device *dev, List map)
  * device state.
  */ 
 void
-handle_Device_write(Device *dev, int debug)
+handle_Device_write(Device *dev)
 {
 	int n;
 
 	CHECK_MAGIC(dev);
 
-	if (debug)
-	{
-		unsigned char str[MAX_BUF];
-		int len = peek_string_Buffer(dev->to, str, MAX_BUF);
-
-		if (len > 0)
-		{
-			unsigned char *bstr = memstr(str, len);
-			printf("S(%s): %s\n", get_String(dev->name), bstr);
-			Free(bstr);
-		}
-	}
 	n = write_Buffer(dev->to);
 	if( n < 0 ) return;
 	if( is_empty_Buffer(dev->to) ) dev->status &= ~DEV_SENDING;
@@ -830,6 +879,12 @@ recover_Device(Device *dev)
 
 
 	assert( dev != NULL );
+
+	syslog(LOG_ERR, "Expect timed out, reconnecting to %s", 
+			get_String(dev->name));
+	if (dev->logit)
+		printf("Expect timed out, reconnecting to %s\n", 
+				get_String(dev->name));
 	while( !list_is_empty(dev->acts) )
 		del_Action(dev->acts);
 	plug_i = list_iterator_create(dev->plugs);
@@ -871,6 +926,7 @@ make_Device(const char *name)
 	dev->prot = NULL;
 	dev->num_plugs = 0;
 	dev->plugs = list_create(free_Plug);
+	dev->logit = FALSE;
 	return dev;
 }
 
@@ -1101,8 +1157,8 @@ match_RegEx(Device *dev, String expect)
 	assert(act->cur->type == EXPECT);
 
 	re     = &(act->cur->s_or_e.expect.exp);
-	re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
 	n = Regexec(re, str, nmatch, pmatch, eflags);
+
 	if (n != REG_NOERROR) return FALSE;
 	if ((pmatch[0].rm_so < 0) || (pmatch[0].rm_so > len))
 		return FALSE;

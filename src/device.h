@@ -100,19 +100,20 @@ struct device_struct {
 	int num_plugs;
         List plugs; /* The names by which the plugs are known to the dev */
 	Protocol *prot;
+	bool logit;
 	MAGIC;
 }; 
 /* FIXME: data structures are circular here - typedef in powerman.h jg */
 
 
 /* device.c extern prototypes */
-void init_Device(Device *dev);
+void init_Device(Device *dev, bool logit);
 void initiate_nonblocking_connect(Device *dev);
 void map_Action_to_Device(Device *dev, Action *act);
-void handle_Device_read(Device *dev, int debug);
+void handle_Device_read(Device *dev);
 void do_Device_connect(Device *dev);
 void process_script(Device *dev);
-void handle_Device_write(Device *dev, int debug);
+void handle_Device_write(Device *dev);
 bool stalled_Device(Device *dev);
 void recover_Device(Device *dev);
 Device *make_Device();

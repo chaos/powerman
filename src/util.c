@@ -57,8 +57,8 @@ get_String_from_Buffer(Buffer b, regex_t *re)
 }
 
 /*
- * Convert memory to string, turning non-printable character into "C" representation.
- * Call Free() on the result to free its storage.
+ * Convert memory to string, turning non-printable character into "C" 
+ * representation.  Call Free() on the result to free its storage.
  */
 unsigned char *
 memstr(unsigned char *mem, int len)
@@ -77,6 +77,10 @@ memstr(unsigned char *mem, int len)
 				break;
 			case '\n':
 				strcpy(&str[j], "\\n");
+				j += 2;	
+				break;
+			case '\t':
+				strcpy(&str[j], "\\t");
 				j += 2;	
 				break;
 			default:

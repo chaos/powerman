@@ -33,12 +33,15 @@
 
 typedef struct buffer_implementation *Buffer;
 
-Buffer make_Buffer(int fd, int length);
+typedef void (BufferLogFun)(unsigned char *mem, int len, void *arg);
+Buffer make_Buffer(int fd, int length, BufferLogFun logfun, void *logfunarg);
 void free_Buffer(void *vb);
 bool send_Buffer(Buffer b, const char *fmt, ...);
 int write_Buffer(Buffer b);
 int read_Buffer(Buffer b);
 bool is_empty_Buffer(Buffer b);
+void clear_Buffer(Buffer b);
+
 
 int get_line_Buffer(Buffer b, unsigned char *str, int len);
 int peek_line_Buffer(Buffer b, unsigned char *str, int len);

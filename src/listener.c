@@ -149,8 +149,8 @@ handle_Listener(Globals *g)
 		syslog(LOG_ERR, "Unable to convert network address into string");
 		return;
 	}
-	client->to = make_Buffer(client->fd, MAX_BUF);
-	client->from = make_Buffer(client->fd, MAX_BUF);
+	client->to = make_Buffer(client->fd, MAX_BUF, NULL, NULL);
+	client->from = make_Buffer(client->fd, MAX_BUF, NULL, NULL);
 	client->port = ntohs(saddr.sin_port);
 	p = buf;
 	while( (p - buf < MAX_BUF) && (*p != '/') ) p++;

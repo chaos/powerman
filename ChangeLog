@@ -109,8 +109,16 @@
 	* Added --telemetry option to server.
 
 2002-08-07 garlick
-	* Did away with Log - just use syslog.  Removed log from configuration syntax.
+	* Did away with Log - just use syslog.  Removed log from configuration 
+	  syntax.
 	* Added delay back into default powerman.conf.
-	* Added "\nnn" (octal byte) support to config file for expect/send sequences.
+	* Added "\nnn" (octal byte) support to config file for expect/send 
+	  sequences.
+
+2002-08-08 garlick
 	* Make some char *'s into unsigned char *'s that are carrying
 	  non-printable values such as \376 (baytech telnet telnet handshake)).
+	* Redo telemetry logging to support callback at the Buffer level.
+	* Telemetry logging on servern now shows when expect or delay
+	  commands are being processed.
+	* Updated baytech config.  This version logs in on the testbed baytech.
