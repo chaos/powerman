@@ -60,8 +60,7 @@
 #define CP_QUERY_STATUS	"query-status"
 
 /* 
- * Structured responses
- * Response codes from 100-199 are successes, 200-299 are failures.
+ * Responses - response codes from 100-199 are success, 200-299 are failure.
  */
 #define CP_IS_SUCCESS(i)	((i) >= 100 && (i) < 200)
 #define CP_IS_FAILURE(i)	((i) >= 200 && (i) < 300)

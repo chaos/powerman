@@ -181,7 +181,7 @@ static void _client_query_nodes_reply(Client *c)
     if (hostlist_ranged_string(hl, sizeof(hosts), hosts) == -1) 
 	_client_msg(c, CP_ERR_INTERNAL);
     else
-	_client_msg(c, CP_RSP_NODES);
+	_client_msg(c, CP_RSP_NODES, hosts);
 
     hostlist_destroy(hl);
     list_iterator_destroy(itr);
@@ -437,6 +437,7 @@ void cli_reply(Action * act)
         case PM_POWER_CYCLE:	/* cycle */
         case PM_RESET:		/* reset */
 	    /* FIXME: need to return status to the client here ! */
+	    _client_msg(c, CP_RSP_SUCCESS);
             break;
         default:
             assert(FALSE);
