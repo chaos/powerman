@@ -18,7 +18,7 @@ begin protocol specification
 	on string  "On"
 	all string "0"
 	plug count 8
-	device timeout 20  # "reboot all" command takes about 13 seconds 
+	device timeout 10   # about 5 sec for cycle command
 	ping period 90
 	begin PING_SCRIPT
 		send "\r\n"
