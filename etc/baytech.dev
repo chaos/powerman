@@ -30,7 +30,8 @@
 #    Revision F 5.01, (C) 2001
 # Assumes:
 # 1. command confirmation : disabled (3/configuration, 6/outlets, 2/...)
-# 2. Net: prompt for password : enabled (3/configuration, 5/access, 2/...)
+# 2. admin account password : "baytech" (2/manage users, 2/admin, 1/...)
+# 3. net: prompt for password : enabled (3/configuration, 5/access, 2/...)
 #
 begin protocol specification
 	specification name "baytech"
