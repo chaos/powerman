@@ -85,7 +85,6 @@ static void _verr(bool errno_valid, const char *fmt, va_list ap)
         else
 	    syslog(LOG_ERR, "%s", buf);
     }
-
 }
 
 /*
@@ -98,7 +97,9 @@ void err_exit(bool errno_valid, const char *fmt, ...)
     va_start(ap, fmt);
     _verr(errno_valid, fmt, ap);
     va_end(ap);
+#ifndef NDEBUG
     dbg(DBG_MEMORY, "err_exit: memory not reclaimed: %d\n", Memory());
+#endif
     exit(1);
 }
 

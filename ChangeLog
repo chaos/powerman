@@ -1,3 +1,7 @@
+2002-10-04 garlick
+	* Now properly handles the case of one ice box hanging.
+	  (tested with vpcd --bad_response)
+
 2002-10-02 garlick
 	* Created Command data structure to represent what was called
 	  a "server action" and moved device action functions to device.c 
@@ -5,7 +9,6 @@
 	* Device actions now execute a callback to the client code rather
 	  than call exported functions.
 	* Made the status command's hostlist argument optional.
-	* Still seeing SIGSEGV when running "on v1,v2" with vpcd --bad_response
 
 2002-10-02 behlendo
   	* Fixed memory leak in config parsing.  Memory was being malloc'ed

@@ -20,6 +20,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <string.h>
+#include <signal.h>
 
 #define NUM_THREADS	8
 #define BASE_PORT	8080
@@ -28,11 +29,17 @@
 static struct {
 	int plug[NUM_PLUGS];
 } dev[NUM_THREADS];
+static int logged_in = 0;
 
 static int opt_drop_command = 0;
 static int opt_bad_response = 0;
 
 static int errcount = 0;
+
+static void _noop_handler(int signum)
+{
+    printf("vpcd: received signal %d\n", signum);
+}
 
 /* 
  * Get a line from file descriptor (minus \r or \n).  Result will always
@@ -95,13 +102,19 @@ static void _prompt_loop(int num, int fd)
 	if (strcmp(buf, "logoff") == 0) {	/* logoff */
 	    printf("%d: logoff\n", num);
 	    dprintf(fd, "%d OK\n", seq);
+	    logged_in = 0;
 	    break;
 	}
 	if (strcmp(buf, "login") == 0) {	/* logon */
 	    printf("%d: logon\n", num);
+	    logged_in = 1;
 	    goto ok;
-	    break;
 	}
+	if (!logged_in) {
+	    dprintf(fd, "%d Please login\n", seq);
+	    goto noresp;
+	}
+
 	if (strcmp(buf, "stat") == 0) {		/* stat */
 	    for (i = 0; i < NUM_PLUGS; i++)
 		dprintf(fd, "plug %d: %s\n", i, dev[num].plug[i] ? "ON":"OFF");
@@ -281,6 +294,11 @@ main(int argc, char *argv[])
     if (optcount > 1)
 	_usage();
 
+    if (signal(SIGPIPE, _noop_handler) == SIG_ERR) {
+	perror("signal");
+	exit(1);
+    }
+
     memset(dev, 0, sizeof(dev));
 
     for (i = 0; i < NUM_THREADS; i++) {
@@ -292,6 +310,7 @@ main(int argc, char *argv[])
 	perror("pause");
 	exit(1);
     }
+    printf("exiting \n");
     exit(0);
 }
 

@@ -1,5 +1,5 @@
 CFLAGS= -g -Wall -I../src
-VICEOBJS = vicebox.o wrappers.o error.o
+VICEOBJS = vicebox.o wrappers.o error.o debug.o
 
 all: vpcd vicebox svicebox
 
@@ -11,6 +11,8 @@ vicebox : $(VICEOBJS)
 wrappers.o : ../src/wrappers.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 error.o : ../src/error.c
+	$(CC) $(CFLAGS) -c -o $@ $<
+debug.o : ../src/debug.c
 	$(CC) $(CFLAGS) -c -o $@ $<
 
 svicebox : svicebox.c

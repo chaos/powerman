@@ -33,12 +33,8 @@
  * 2. server sends protocol version string
  * 3. server sends prompt
  * 4. client sends command
- * 5. server sends one structured response line consisting of a numerical
- * response code and a string whose format is command-dependent.
- * 6. server may send additional unstructured response lines which client
- * should forward to stdout/stderr of the user
- * 7. server sends prompt
- * <repeat>
+ * 5. server sends response
+ * If not quit, goto 3
  */
 
 #define CP_LINEMAX	256		/* max request/response line length */
@@ -98,7 +94,7 @@
 #define CP_ERR_NOSUCHNODES "208 No such nodes: %s"	CP_EOL
 #define CP_ERR_COMPLETE	"209 Command completed with errors" CP_EOL
 #define CP_ERR_TIMEOUT	"210 Command timed out" 	CP_EOL
-#define CP_ERR_CLIBUSY	"211 Command in progress, shuddup please" CP_EOL
-#define CP_ERR_NOACTION	"213 Command resulted in no device actions" CP_EOL
+#define CP_ERR_CLIBUSY	"211 Command in progress" 	CP_EOL
+#define CP_ERR_NOACTION	"213 Command causes no action" 	CP_EOL
 
 #endif /* CLIENT_PROTO_H */

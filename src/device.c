@@ -51,7 +51,7 @@ static bool _finish_connect(Device * dev, struct timeval *timeout);
 static bool _time_to_reconnect(Device *dev, struct timeval *timeout);
 static void _disconnect(Device * dev);
 static bool _process_expect(Device * dev, struct timeval *timeout);
-static void _process_send(Device * dev);
+static bool _process_send(Device * dev);
 static bool _process_delay(Device * dev, struct timeval *timeout);
 static void _do_device_semantics(Device * dev, List map);
 static bool _match_regex(Device * dev, char *expect);
@@ -74,6 +74,22 @@ static List dev_devices = NULL;
 
 
 #define MAX_MATCH 20 
+
+
+static void _dbg_actions(Device *dev)
+{
+    char tmpstr[1024];
+    Action *act;
+    ListIterator itr = list_iterator_create(dev->acts);
+
+    tmpstr[0] = '\0';
+    while ((act = list_next(itr))) {
+	snprintf(tmpstr + strlen(tmpstr), sizeof(tmpstr) - strlen(tmpstr),
+			"%d,", act->com);
+    }
+    tmpstr[strlen(tmpstr) - 1] = '\0'; /* zap trailing comma */
+    dbg(DBG_ACTION, "%s: %s", dev->name, tmpstr);
+}
 
 /* 
  * Find regular expression in string.
@@ -133,6 +149,7 @@ static Action *_create_action(Device *dev, int com, char *target,
 {
     Action *act;
 
+    dbg(DBG_ACTION, "_create_action: %d", com);
     act = (Action *) Malloc(sizeof(Action));
     INIT_MAGIC(act);
     act->com = com;
@@ -150,6 +167,7 @@ static void _destroy_action(Action * act)
 {
     CHECK_MAGIC(act);
 
+    dbg(DBG_ACTION, "_destroy_action: %d", act->com);
     if (act->target != NULL)
         Free(act->target);
     act->target = NULL;
@@ -309,11 +327,9 @@ static bool _reconnect(Device * dev)
     dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
 		     addrinfo->ai_protocol);
 
-    if (dev->to)
-	buf_destroy(dev->to);
+    assert(dev->to == NULL);
     dev->to = buf_create(dev->fd, MAX_BUF, _buflogfun_to, dev);
-    if (dev->from)
-	buf_destroy(dev->from);
+    assert(dev->from == NULL);
     dev->from = buf_create(dev->fd, MAX_BUF, _buflogfun_from, dev);
 
     dbg(DBG_DEVICE, "_reconnect: %s on fd %d", dev->name, dev->fd);
@@ -331,6 +347,14 @@ static bool _reconnect(Device * dev)
     if (Connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen) >= 0)
 	_finish_connect(dev, NULL);
     freeaddrinfo(addrinfo);
+
+    {
+	Action *act = list_peek(dev->acts);
+	if (act)
+	    dbg(DBG_ACTION, "_reconnect: next action on queue: %d", act->com);
+	else
+	    dbg(DBG_ACTION, "_reconnect: no action on queue");
+    }
 
     return (dev->connect_status == DEV_CONNECTED);
 }
@@ -351,8 +375,11 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, void *arg)
 	/* not logged in to device */
 	if (!(dev->script_status & DEV_LOGGED_IN) && com != PM_LOG_IN) {
 	    if (fun)
-		fun(arg, TRUE); /* FIXME: timeout message inappropriate */
+		fun(arg, TRUE);
 	    continue;
+	    /* FIXME: just enqueue a login in front of this one
+	     * (if there isn't already one in the queue) instead of error.
+	     */
 	}
 	/* command not implemented on this device */
 	if (dev->prot->scripts[com] == NULL) {
@@ -380,9 +407,10 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
             if (!list_is_empty(dev->acts)) {
                 act = list_peek(dev->acts);
                 list_iterator_reset(act->itr);
-            }
+		dbg(DBG_ACTION, "resetting iterator for non-login action");
+            } 
             act = _create_action(dev, com, NULL, fun, arg);
-            list_push(dev->acts, act);
+            list_prepend(dev->acts, act);
 	    count++;
             break;
         case PM_LOG_OUT:
@@ -463,7 +491,7 @@ static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
  * reconnect, log that fact.  When all is well initiate the
  * logon script.
  */
-static bool _finish_connect(Device *dev, struct timeval *tv)
+static bool _finish_connect(Device *dev, struct timeval *timeout)
 {
     int rc;
     int error = 0;
@@ -481,10 +509,10 @@ static bool _finish_connect(Device *dev, struct timeval *tv)
     if (error) {
 	err(FALSE, "_finish_connect %s: %s", dev->name, strerror(error));
 	_disconnect(dev);
-	if (_time_to_reconnect(dev, tv))
+	if (_time_to_reconnect(dev, timeout))
 	    _reconnect(dev);
     } else {
-	err(FALSE, "_finish_connect: %s connected\n", dev->name);
+	err(FALSE, "_finish_connect: %s connected", dev->name);
 	dev->connect_status = DEV_CONNECTED;
         _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL);
     }
@@ -511,7 +539,7 @@ static void _handle_read(Device * dev)
     if (n == 0 || (n < 0 && errno == ECONNRESET)) {
 	err(n < 0, "read error on %s", dev->name);
 	_disconnect(dev);
-	dev->reconnect_count = 0;
+	/*dev->reconnect_count = 0;*/
 	_reconnect(dev);
 	return;
     }
@@ -532,11 +560,11 @@ static void _disconnect(Device *dev)
 	dev->fd = NO_FD;
     }
 
-    /* clear buffers */
-    if (dev->from != NULL)
-	buf_clear(dev->from);
-    if (dev->to != NULL)
-	buf_clear(dev->to);
+    /* destroy buffers */
+    buf_destroy(dev->from);
+    dev->from = NULL;
+    buf_destroy(dev->to);
+    dev->to = NULL;
 
     /* update state */
     dev->connect_status = DEV_NOT_CONNECTED;
@@ -544,7 +572,7 @@ static void _disconnect(Device *dev)
 
     /* delete PM_LOG_IN action queued for this device, if any */
     if (((act = list_peek(dev->acts)) != NULL) && act->com == PM_LOG_IN)
-	_destroy_action(list_pop(dev->acts));
+	_destroy_action(list_dequeue(dev->acts));
 }
 
 /*
@@ -560,10 +588,14 @@ static void _process_script(Device * dev, struct timeval *timeout)
 
 	if (act == NULL)		/* no actions in queue */
 	    break;
+	dbg(DBG_ACTION, "_process_script: processing action %d", act->com);
+	_dbg_actions(dev);
+
 	assert(act->itr != NULL);
 	if (act->cur == NULL)		/* point at first script element */
 	    act->cur = list_next(act->itr);
-	assert(act->cur != NULL);	/* there must be a first ... */
+	assert(act->cur != NULL);
+	assert(act->error == FALSE);
 
 	switch (act->cur->type) {
 	    case EL_EXPECT:
@@ -580,19 +612,27 @@ static void _process_script(Device * dev, struct timeval *timeout)
 	}
 
 	if (!stalled) {
-	    /*
-	     * If next script element is a null, the action is completed.
-	     */
+	    bool error = act->error;
+
 	    assert(act->itr != NULL);
+	    /* completed action - notify client and dequeue action */
 	    if (act->error || (act->cur = list_next(act->itr)) == NULL) {
-		if (act->com == PM_LOG_IN) {	/* completed login action... */
+		if (act->com == PM_LOG_IN) {
 		    if (!act->error)
 			dev->script_status |= DEV_LOGGED_IN;
-		} else {
-		    if (act->cb_fun)		/* notify client */
-			act->cb_fun(act->cb_arg, act->error);
-		}
-		_destroy_action(list_pop(dev->acts)); /* delete completed act */
+		} 
+		if (act->cb_fun)			/* notify client */
+		    act->cb_fun(act->cb_arg, act->error);
+		_destroy_action(list_dequeue(dev->acts));
+	    }
+
+	    /* reconnect/login if expect timed out */
+	    if (error && (dev->connect_status & DEV_CONNECTED)) {
+		dbg(DBG_DEVICE, "_process_script: disconnecting due to error");
+		_disconnect(dev);
+		/*dev->reconnect_count = 0;*/
+		_reconnect(dev);
+		break;
 	    }
 	}
     }
@@ -641,9 +681,6 @@ bool _process_expect(Device * dev, struct timeval *timeout)
     } else if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
 							/* timeout? */
 	dbg(DBG_SCRIPT, "_process_expect(%s): timeout - aborting", dev->name);
-	_disconnect(dev);
-	dev->reconnect_count = 0;
-	_reconnect(dev);
 	act->error = TRUE;
 	finished = TRUE;
     } else {						/* keep trying */
@@ -672,8 +709,9 @@ bool _process_expect(Device * dev, struct timeval *timeout)
  * with the target as its last argument.  Otherwise just send the
  * string and update the device's status.  
  */
-void _process_send(Device * dev)
+bool _process_send(Device * dev)
 {
+    bool finished = TRUE;
     Action *act;
     char *fmt;
 
@@ -693,6 +731,8 @@ void _process_send(Device * dev)
 	buf_printf(dev->to, fmt, act->target);
 
     dev->script_status |= DEV_SENDING;
+
+    return finished;
 }
 
 /* return TRUE if delay is finished */
@@ -1071,7 +1111,8 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 	    _handle_write(dev);
 
 	/* in case of I/O or timeout, process scripts (expect/send/delay) */
-	_process_script(dev, timeout);
+	if ((dev->connect_status & DEV_CONNECTED) && list_peek(dev->acts))
+	    _process_script(dev, timeout);
     }
     list_iterator_destroy(itr);
 }

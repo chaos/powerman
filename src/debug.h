@@ -22,6 +22,7 @@
 	{ DBG_CLI_TELEMETRY,	"cli_telemetry" }, \
 	{ DBG_SCRIPT, 		"script" },	\
 	{ DBG_MEMORY, 		"memory" },	\
+	{ DBG_ACTION, 		"action" },	\
 	{ 0, 			NULL }		\
 }
 
