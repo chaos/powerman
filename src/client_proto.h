@@ -109,6 +109,7 @@
  "306 %s: reconnects=%-3.3d actions=%-3.3d type=%s hosts=%s"        CP_EOL
 #define CP_RSP_QUERY_COMPLETE "106 Query complete"                  CP_EOL
 #define CP_RSP_VERBOSE      "107 Server verbosity %s"               CP_EOL
+#define CP_RSP_VERBMSG      "306 %s"                                CP_EOL
 
 /* failure */
 #define CP_ERR_FAILURE      "200 Failure"                           CP_EOL

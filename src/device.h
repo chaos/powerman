@@ -106,12 +106,13 @@ typedef struct {
 } Device;
 
 typedef void (*ActionCB) (int client_id, char *errfmt, char *errarg);
+typedef void (*VerbosePrintf) (int client_id, const char *fmt, ...);
 
 void dev_init(void);
 void dev_fini(void);
 void dev_add(Device * dev);
-int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun,
-                        int client_id, ArgList * arglist);
+int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun, 
+        VerbosePrintf vpf_fun, int client_id, ArgList * arglist);
 bool dev_check_actions(int com, hostlist_t hl);
 void dev_initial_connect(void);
 

@@ -58,7 +58,8 @@ typedef struct {
     ListIterator itr;           /* next place in the script sequence */
     Stmt *cur;                  /* current place in the script sequence */
     char *target;               /* native device represenation of target plug(s) */
-    ActionCB cb_fun;            /* callback for action completion */
+    ActionCB complete_fun;      /* callback for action completion */
+    VerbosePrintf vpf_fun;      /* callback for device telemetry */
     int client_id;              /* client id so completion can find client */
     bool error;                 /* error flag for action */
     struct timeval time_stamp;  /* time stamp for timeouts */
@@ -90,14 +91,15 @@ static void _process_action(Device * dev, struct timeval *timeout);
 static bool _timeout(struct timeval *timestamp, struct timeval *timeout,
                      struct timeval *timeleft);
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
-                            ActionCB fun, int client_id,
-                            ArgList * arglist);
+                            ActionCB complete_fun, VerbosePrintf vpf_fun,
+                            int client_id, ArgList * arglist);
 static Action *_create_action(Device * dev, int com, char *target,
-                              ActionCB fun, int client_id,
-                              ArgList * arglist);
+                              ActionCB complete_fun, VerbosePrintf vpf_fun,
+                              int client_id, ArgList * arglist);
 static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
-                                      ActionCB fun, int client_id,
-                                      ArgList * arglist);
+                                      ActionCB complete_fun, 
+                                      VerbosePrintf vpf_fun,
+                                      int client_id, ArgList * arglist);
 static unsigned char *_findregex(regex_t * re, unsigned char *str,
                                  int len);
 static char *_getregex_buf(cbuf_t b, regex_t * re);
@@ -195,8 +197,8 @@ static char *_getregex_buf(cbuf_t b, regex_t * re)
 }
 
 static Action *_create_action(Device * dev, int com, char *target,
-                              ActionCB fun, int client_id,
-                              ArgList * arglist)
+                              ActionCB complete_fun, VerbosePrintf vpf_fun,
+                              int client_id, ArgList * arglist)
 {
     Action *act;
 
@@ -204,7 +206,8 @@ static Action *_create_action(Device * dev, int com, char *target,
     act = (Action *) Malloc(sizeof(Action));
     INIT_MAGIC(act);
     act->com = com;
-    act->cb_fun = fun;
+    act->complete_fun = complete_fun;
+    act->vpf_fun = vpf_fun;
     act->client_id = client_id;
     act->itr = list_iterator_create(dev->scripts[act->com]);
     act->cur = NULL;
@@ -212,6 +215,10 @@ static Action *_create_action(Device * dev, int com, char *target,
     act->error = FALSE;
     act->arglist = arglist ? dev_link_arglist(arglist) : NULL;
     timerclear(&act->time_stamp);
+
+    /* XXX */
+    if (vpf_fun)
+        vpf_fun(act->client_id, "%s: action created", dev->name);
     return act;
 }
 
@@ -437,8 +444,8 @@ bool dev_check_actions(int com, hostlist_t hl)
  * Return an action count so the client be notified when all the
  * actions "check in".
  */
-int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun,
-                        int client_id, ArgList * arglist)
+int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun, 
+        VerbosePrintf vpf_fun, int client_id, ArgList * arglist)
 {
     Device *dev;
     ListIterator itr;
@@ -452,7 +459,8 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun,
             continue;
         if (hl && !_command_needs_device(dev, hl))  /* uninvolved device */
             continue;
-        count = _enqueue_actions(dev, com, hl, fun, client_id, arglist);
+        count = _enqueue_actions(dev, com, hl, complete_fun, vpf_fun, 
+                client_id, arglist);
         if (count > 0 && !(dev->connect_status & DEV_CONNECTED))
             dev->retry_count = 0;   /* expedite retries on this device */
         total += count;
@@ -463,7 +471,8 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun,
 }
 
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
-                            ActionCB fun, int client_id, ArgList * arglist)
+                            ActionCB complete_fun, VerbosePrintf vpf_fun,
+                            int client_id, ArgList * arglist)
 {
     Action *act;
     int count = 0;
@@ -476,7 +485,8 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
             list_iterator_reset(act->itr);
             dbg(DBG_ACTION, "resetting iterator for non-login action");
         }
-        act = _create_action(dev, com, NULL, fun, client_id, arglist);
+        act = _create_action(dev, com, NULL, complete_fun, vpf_fun,
+                client_id, arglist);
         list_prepend(dev->acts, act);
         count++;
         break;
@@ -487,8 +497,8 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
     case PM_POWER_CYCLE:
     case PM_RESET:
         if (hl) {
-            count += _enqueue_targetted_actions(dev, com, hl, fun,
-                                                client_id, arglist);
+            count += _enqueue_targetted_actions(dev, com, hl, complete_fun,
+                                                vpf_fun, client_id, arglist);
             break;
         }
     /*FALLTHROUGH*/ case PM_STATUS_PLUGS:
@@ -497,7 +507,8 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
     case PM_STATUS_BEACON:
     case PM_LOG_OUT:
     case PM_PING:
-        act = _create_action(dev, com, NULL, fun, client_id, arglist);
+        act = _create_action(dev, com, NULL, complete_fun, vpf_fun, client_id, 
+                arglist);
         list_append(dev->acts, act);
         count++;
         break;
@@ -538,8 +549,9 @@ static int _get_all_script(Device * dev, int com)
 
 
 static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
-                                      ActionCB fun, int client_id,
-                                      ArgList * arglist)
+                                      ActionCB complete_fun, 
+                                      VerbosePrintf vpf_fun, 
+                                      int client_id, ArgList * arglist)
 {
     List new_acts = list_create((ListDelF) _destroy_action);
     bool all = TRUE;
@@ -562,7 +574,8 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
         }
         /* match! */
         act =
-            _create_action(dev, com, plug->name, fun, client_id, arglist);
+            _create_action(dev, com, plug->name, complete_fun, vpf_fun,
+                    client_id, arglist);
         list_append(new_acts, act);
     }
 
@@ -570,13 +583,14 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
         int ncom;
         /* _ALL script available - use that */
         if ((ncom = _get_all_script(dev, com)) != -1) {
-            act = _create_action(dev, ncom, NULL, fun, client_id, arglist);
+            act = _create_action(dev, ncom, NULL, complete_fun, vpf_fun,
+                    client_id, arglist);
             list_append(dev->acts, act);
             count++;
         } else if (dev->all != NULL) {  /* normal script, "*" plug */
             act =
-                _create_action(dev, com, dev->all, fun, client_id,
-                               arglist);
+                _create_action(dev, com, dev->all, complete_fun, vpf_fun,
+                        client_id, arglist);
             list_append(dev->acts, act);
             count++;
         }
@@ -628,7 +642,7 @@ static bool _finish_connect(Device * dev, struct timeval *timeout)
         dev->connect_status = DEV_CONNECTED;
         dev->stat_successful_connects++;
         dev->retry_count = 0;
-        _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, 0, NULL);
+        _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
     }
 
     return (dev->connect_status == DEV_CONNECTED);
@@ -774,8 +788,8 @@ static void _process_action(Device * dev, struct timeval *timeout)
                     if (!act->error)
                         dev->script_status |= DEV_LOGGED_IN;
                 }
-                if (act->cb_fun)        /* notify client */
-                    act->cb_fun(act->client_id,
+                if (act->complete_fun)        /* notify client */
+                    act->complete_fun(act->client_id,
                                 act->error ? CP_ERR_TIMEOUT : NULL,
                                 dev->name);
                 if (!act->error)
@@ -788,9 +802,10 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 Action *act;
 
                 while ((act = list_dequeue(dev->acts)) != NULL) { 
-                    if (act->cb_fun) {
+                    if (act->complete_fun) {
                         act->error = TRUE;
-                        act->cb_fun(act->client_id, CP_ERR_TIMEOUT, dev->name);
+                        act->complete_fun(act->client_id, CP_ERR_TIMEOUT, 
+                                dev->name);
                     }
                     _destroy_action(act);
                 }
@@ -1195,7 +1210,7 @@ static void _process_ping(Device * dev, struct timeval *timeout)
     if (dev->scripts[PM_PING] != NULL
         && timerisset(&dev->ping_period)) {
         if (_timeout(&dev->last_ping, &dev->ping_period, &timeleft)) {
-            _enqueue_actions(dev, PM_PING, NULL, NULL, 0, NULL);
+            _enqueue_actions(dev, PM_PING, NULL, NULL, NULL, 0, NULL);
             Gettimeofday(&dev->last_ping, NULL);
             dbg(DBG_ACTION, "%s: enqeuuing ping", dev->name);
         } else

@@ -69,6 +69,7 @@ static void _parse_input(Client * c, char *input);
 static void _destroy_client(Client * client);
 static void _create_client(void);
 static void _act_finish(int client_id, char *errfmt, char *errarg);
+static void _verbose_printf(int client_id, const char *fmt, ...);
 
 #define MIN_CLIENT_BUF     1024
 #define MAX_CLIENT_BUF     1024*1024
@@ -513,8 +514,9 @@ static void _parse_input(Client * c, char *input)
     /* Note: cmd->hl may be NULL */
     if (cmd) {
         dbg(DBG_CLIENT, "_parse_input: enqueuing actions");
-        cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish,
-                                           c->client_id, cmd->arglist);
+        cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish, 
+                c->verbose ? _verbose_printf : NULL, 
+                c->client_id, cmd->arglist);
         if (cmd->pending == 0) {
             _client_printf(c, CP_ERR_UNIMPL);
             _destroy_command(cmd);
@@ -527,6 +529,25 @@ static void _parse_input(Client * c, char *input)
     /* reissue prompt if we didn't queue up any device actions */
     if (cmd == NULL)
         _client_printf(c, CP_PROMPT);
+}
+
+/*
+ * Callback for device debugging printfs (sent to client if --verbose)
+ */
+static void _verbose_printf(int client_id, const char *fmt, ...)
+{
+    va_list ap;
+    Client *c;
+
+    if ((c = _find_client(client_id))) {
+        char buf[CP_LINEMAX];
+
+        va_start(ap, fmt);
+        vsnprintf(buf, CP_LINEMAX, fmt, ap); /* ignore truncation */
+        va_end(ap);
+
+        _client_printf(c, CP_RSP_VERBMSG, buf);
+    }
 }
 
 /*
