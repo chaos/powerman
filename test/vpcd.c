@@ -51,6 +51,10 @@ static int _dgets(char *buf, int size, int fd)
     return strlen(buf);
 }
 
+/*
+ * Lptest-like spewage to test buffering/select stuff.
+ * This seems to wedge telnet if more than a few hundred lines are sent.
+ */
 #define SPEW \
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]"
 static void _spew(int fd, int linenum)
@@ -62,6 +66,9 @@ static void _spew(int fd, int linenum)
     dprintf(fd, "%s\n", buf);
 }
 
+/*
+ * Prompt for a command, parse it, execute it, <repeat>
+ */
 static void _prompt_loop(int num, int fd)
 {
     int seq;
@@ -71,25 +78,25 @@ static void _prompt_loop(int num, int fd)
     for (seq = 0; ; seq++) {
 	char buf[128];
 
-	dprintf(fd, "%d vpc> ", seq);
+	dprintf(fd, "%d vpc> ", seq);		/* prompt */
 	if (_dgets(buf, sizeof(buf), fd) < 0) {
 	    printf("%d: lost connection\n", num);
 	    break;
 	}
-	if (strlen(buf) == 0)
+	if (strlen(buf) == 0)			/* empty command */
 	    continue;
-	if (strcmp(buf, "logoff") == 0) {
+	if (strcmp(buf, "logoff") == 0) {	/* logoff */
 	    printf("%d: logoff\n", num);
 	    dprintf(fd, "%d OK\n", seq);
 	    break;
 	}
-	if (strcmp(buf, "stat") == 0) {
+	if (strcmp(buf, "stat") == 0) {		/* stat */
 	    for (i = 0; i < NUM_PLUGS; i++)
 		dprintf(fd, "plug %d: %s\n", i, dev[num].plug[i] ? "ON":"OFF");
 	    printf("%d: stat\n", num);
 	    goto ok;
 	}
-	if (sscanf(buf, "spew %d", &n1) == 1) {
+	if (sscanf(buf, "spew %d", &n1) == 1) {	/* spew <linecount> */
 	    if (n1 <= 0) {
 		dprintf(fd, "%d BADVAL: %d\n", seq, n1);
 		continue;
@@ -99,7 +106,7 @@ static void _prompt_loop(int num, int fd)
 	    printf("%d: spew\n", num);
 	    goto ok;
 	}
-	if (sscanf(buf, "on %d", &n1) == 1) {
+	if (sscanf(buf, "on %d", &n1) == 1) {	/* on <plugnum> */
 	    if (n1 < 0 || n1 >= NUM_PLUGS) {
 		dprintf(fd, "%d BADVAL: %d\n", seq, n1);
 		continue;
@@ -108,7 +115,7 @@ static void _prompt_loop(int num, int fd)
 	    printf("%d: on %d\n", num, n1);
 	    goto ok;
 	}
-	if (sscanf(buf, "off %d", &n1) == 1) {
+	if (sscanf(buf, "off %d", &n1) == 1) {	/* off <plugnum> */
 	    if (n1 < 0 || n1 >= NUM_PLUGS) {
 		dprintf(fd, "%d BADVAL: %d\n", seq, n1);
 		continue;
@@ -117,13 +124,13 @@ static void _prompt_loop(int num, int fd)
 	    printf("%d: off %d\n", num, n1);
 	    goto ok;
 	}
-	if (strcmp(buf, "on *") == 0) {
+	if (strcmp(buf, "on *") == 0) {		/* on * */
 	    for (i = 0; i < NUM_PLUGS; i++)
 		dev[num].plug[i] = 1;
 	    printf("%d: on *\n", num);
 	    goto ok;
 	}
-	if (strcmp(buf, "off *") == 0) {
+	if (strcmp(buf, "off *") == 0) {	/* off * */
 	    for (i = 0; i < NUM_PLUGS; i++)
 		dev[num].plug[i] = 0;
 	    printf("%d: off *\n", num);
@@ -136,6 +143,9 @@ ok:
     }
 }
 
+/*
+ * Begin listening on the specified port.
+ */
 static int _vpc_listen(int port)
 {
     struct sockaddr_in saddr;
@@ -166,6 +176,10 @@ static int _vpc_listen(int port)
     return fd;
 }
 
+/*
+ * A virtual power controller thread.
+ * Accept one connection, process it to completion, repeat...
+ */
 static void *_vpc_thread(void *arg)
 {
     int my_threadnum = (int)arg;
@@ -175,7 +189,6 @@ static void *_vpc_thread(void *arg)
     printf("%d: starting on port %d\n", my_threadnum, my_port);
     listen_fd = _vpc_listen(my_port);
 
-    /* accept one connection, process it to completion, repeat... */
     while (1) {
 	    char tmpstr[128];
 	    struct sockaddr_in saddr;
@@ -197,6 +210,11 @@ static void *_vpc_thread(void *arg)
     return NULL;
 }
 
+/*
+ * Start NUM_THREADS power controllers on consecutive ports starting at
+ * BASE_PORT.  Pause waiting for a signal.  Does not daemonize and logs to
+ * stdout.
+ */
 int
 main(int argc, char *argv[])
 {
