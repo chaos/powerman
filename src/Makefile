@@ -195,8 +195,8 @@ daemon_init.o: /usr/include/sys/stat.h /usr/include/bits/stat.h
 daemon_init.o: /usr/include/stdio.h /usr/include/libio.h
 daemon_init.o: /usr/include/_G_config.h /usr/include/wchar.h
 daemon_init.o: /usr/include/bits/wchar.h /usr/include/gconv.h
-daemon_init.o: /usr/include/bits/stdio_lim.h powerman.h wrappers.h
-daemon_init.o: /usr/include/sys/time.h /usr/include/bits/time.h
+daemon_init.o: /usr/include/bits/stdio_lim.h /usr/include/assert.h powerman.h
+daemon_init.o: wrappers.h /usr/include/sys/time.h /usr/include/bits/time.h
 daemon_init.o: /usr/include/sys/select.h /usr/include/bits/select.h
 daemon_init.o: /usr/include/regex.h /usr/include/netdb.h
 daemon_init.o: /usr/include/netinet/in.h /usr/include/stdint.h

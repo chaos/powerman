@@ -91,7 +91,7 @@ exit_msg(const char *fmt, ...)
 
 	va_start(ap, fmt);
 	vsnprintf(buf, ERROR_BUFLEN, fmt, ap);
-	buf[sizeof(buf) - 1] = '\0'; /* ensure termination after overflow */
+	/* overflow ignored on purpose */
 	va_end(ap);
 
 	if ( syslog_on == TRUE )  
@@ -118,7 +118,7 @@ exit_error(const char *fmt, ...)
 
 	va_start(ap, fmt);
 	vsnprintf(buf, ERROR_BUFLEN, fmt, ap);
-	buf[sizeof(buf) - 1] = '\0'; /* ensure termination after overflow */
+	/* overflow ignored on purpose */
 	va_end(ap);
 
 	if ( syslog_on == TRUE )  

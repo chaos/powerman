@@ -417,7 +417,7 @@ makeLogFile(char *s2, char *s3)
 	n = sscanf(s3, "%d", &level);
 	if ( n != 1)
 		level = 0;
-	init_log(s2, level); /* exits if already initialized */
+	make_Log(s2, level); /* exits if already initialized */
 	return s2;
 }
 

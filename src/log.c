@@ -41,147 +41,200 @@
 #define LOG_MAGIC 0xabc123
 
 typedef struct {
-	int magic;
-	String name;
-	int fd;
-	bool write_pending;
-	Buffer to;
-	int level;
+	int magic;		/* magic cookie */
+	char *filename;		/* name of log file */
+	int fd;			/* file descriptor for log file */
+	Buffer buffer;		/* buffer associated with log */
+	int level;		/* log level: 0=no logging,1,2,...,N */
 } Log;
 
 static Log *log = NULL;
 
 /*
- *   Constructor
- *
- * Produces:  Log
+ * Allocate Log structure, and set up everything so start_Log() can
+ * start logging.  The reason for a separate start_Log() call is that
+ * make_Log() is called during config file parsing before daemonization,
+ * and daemonization aggressively closes open file descriptors.
  */
 void
-make_log(void)
+make_Log(const char *filename, int level)
 {
-	log = (Log *)Malloc(sizeof(Log));
+	if (log != NULL) /* config file error? */
+		exit_msg("log can only be initialized once");
+	log = (Log *)Malloc(sizeof(Log)); 
 	log->magic = LOG_MAGIC;
-	log->name = NULL;
+	log->filename = filename ? Strdup(filename) : NULL;
+	log->level = level;
+
+	/* these will be initialized by start_Log() */
 	log->fd = NO_FD;
-	log->to = NULL;
-	log->level = -1;
+	log->buffer = NULL;
+
+	/* verify that log fille can be opened */
+	if (log->filename)
+		Close(Open(log->filename, O_WRONLY | O_CREAT | O_APPEND, 
+					S_IRUSR | S_IWUSR));
 }
 
 /*
- *   It's imprtant to avoid openning this until after daemonization
- * is complete.  The log uses the buffer.c interface, and since that
- * interface can log errors, we have to dance a little carefully
- * there or we end up in infinite recursion.
- */ 
+ * Start the logging subsystem.
+ */
 void
-init_log(const char *name, int level)
+start_Log(void)
 {
-	int flags, fd;
-
 	assert(log != NULL);
 	assert(log->magic == LOG_MAGIC);
-	if (log->name != NULL) /* config file error? */
-		exit_msg("log can only be initialized once");
-	log->level = level;
-	log->name = make_String( name );
-	/* just a test open while we have tty - start_log does the real open */
-	flags = O_WRONLY | O_CREAT | O_APPEND;
-	fd = Open(get_String(log->name), flags, S_IRUSR | S_IWUSR);
-	Close(fd);
-}
-
-void
-start_log(void)
-{
-	time_t t;
-	int flags;
-
-	assert(log != NULL);
-	assert(log->magic == LOG_MAGIC);
-	if (log->name != NULL)
+	if (log->filename != NULL)
 	{	
-		flags = O_WRONLY | O_CREAT | O_APPEND | O_NONBLOCK;
-		log->fd = Open(get_String(log->name), flags, S_IRUSR | S_IWUSR);
-		log->to = make_Buffer(log->fd);
-		t = Time(NULL);
-		log_it(0, "Log started fd %d %s", log->fd, ctime(&t));
+		int flags = O_WRONLY | O_CREAT | O_APPEND | O_NONBLOCK;
+
+		log->fd = Open(log->filename, flags, S_IRUSR | S_IWUSR);
+		log->buffer = make_Buffer(log->fd);
+		send_Log(0, "Log started fd %d", log->fd);
 	}
 }
 
+/* Return a time string of the form "Wed Jun 30 21:49:08: " */
+static char *
+_get_timestr(void)
+{
+	time_t t = Time(NULL);
+	char *timestr = ctime(&t);
+       
+	if (timestr)
+	{
+		char *p = strrchr(timestr, ' '); /* ends in " 2002\n" */
+
+		assert(p);
+		strcpy(p, ": ");		/* overwrite year with ": " */
+	}
+	return timestr;
+}
+
+/* 
+ * Copy timestamp into beginning of string pointer.
+ * Advance string pointer and subtract string length from len.
+ */
+static void
+_copy_timestamp(char *str, int len)
+{
+	char *timestr = _get_timestr();
+
+	if (timestr)
+	{
+		strncpy(str, timestr, len);
+		str[len - 1] = '\0';	/* ensure NULL-termination */
+	}
+}
+
+/* Add newline to end of 'str' */
+static void
+_append_newline(char *str, int len)
+{
+	strncat(str, "\n", len);
+	str[len - 1] = '\0';			/* ensure NULL termination */
+}
+
+/* Write truncation message on end of string */
+#define TRUNC_MSG "[truncated]\n"
+static void
+_insert_trunc_msg(char *str, int len)
+{
+	int pos = len - strlen(TRUNC_MSG) - 2;
+
+	assert(pos >= 0);
+	strcpy(&str[pos], TRUNC_MSG);
+	str[len - 1] = '\0';
+}
 
 /*
- *   Send message to log.  It has a nice vararg sturcture, but
- * just passes things along to the send_Buffer() routine.
+ * Log a message to the log file if level of message is <= current level.
  */ 
 void
-log_it(int level, const char *fmt, ...)
+send_Log(int level, const char *fmt, ...)
 {
 	va_list ap;
 	char str[MAX_BUF];
+	const int len = sizeof(str);
 
-	assert(log != NULL);
+	assert(log);
 	assert(log->magic == LOG_MAGIC);
-	if (log->name != NULL && level <= log->level)  
+	if (log->filename && level <= log->level)  
 	{
-		va_start(ap, fmt);
-		vsnprintf(str, MAX_BUF, fmt, ap);
-		va_end(ap);
-		strncat(str, "\n", MAX_BUF);
-		str[MAX_BUF - 1] = '\0';
+		int res;
 
-		send_Buffer(log->to, str);
+		_copy_timestamp(str, len);
+		va_start(ap, fmt);
+		res = vsnprintf(str + strlen(str), len - strlen(str), fmt, ap);
+		if (res == -1 || res > len - strlen(str)) 
+			_insert_trunc_msg(str, len);
+		va_end(ap);
+		_append_newline(str, len);
+
+		/* XXX this can block if the buffer fills up! */
+		send_Buffer(log->buffer, str);
 	}
 }
 
 /*
- *   When the select indicates that some data may be written
- * do the writing here.  Just call the write_Buffer routine.
- */
-void
-handle_log(void)
-{
-	int n;
-
-	assert(log != NULL);
-	assert(log->magic == LOG_MAGIC);
-	n = write_Buffer(log->to);
-}
-/*
- *   Destructor
- *
- * Destroys:  Log
+ * Free storage associated with the log and close the file.
  */
 void
 free_Log(void)
 {
-	assert(log != NULL);
+	assert(log);
 	assert(log->magic == LOG_MAGIC);
+	if (log->filename) 
+	{
+		Free(log->filename);
+		free_Buffer(log->buffer);
+		Close(log->fd);
+	}
 	Free(log);
 	log = NULL;
 }
 
-/* Needed to detect recursion in buffer package */
+/* 
+ * Kludge to detect recursion when buffer routines, which log functions
+ * happen to use, themselves call send_Log().
+ */
 bool
-is_log_buffer(Buffer b)
+is_buffer_Log(Buffer b)
 {
-	if (log != NULL && log->to == b)
+	if (log != NULL && log->buffer == b)
 		return TRUE;
 	return FALSE;
 }
 
-/* Needed to test file descriptor in main select loop */
+/* 
+ * Main select loop calls this to decide whether to watch the log fd.
+ */
+bool
+write_pending_Log(void)
+{
+	assert(log != NULL);
+	assert(log->magic == LOG_MAGIC);
+	return (log->filename != NULL && !is_empty_Buffer(log->buffer));
+}
+
+/* 
+ * Main select loop gets log fd from here if it is going to watch log fd.
+ */
 int
-fd_log(void)
+fd_Log(void)
 {
 	assert(log != NULL);
 	assert(log->magic == LOG_MAGIC);
 	return log->fd;
 }
 
-bool
-write_pending_log(void)
+/*
+ * Main select loop calls this if log fd is ready.
+ */
+void
+handle_Log(void)
 {
 	assert(log != NULL);
 	assert(log->magic == LOG_MAGIC);
-	return (log->name != NULL && !is_empty_Buffer(log->to));
+	write_Buffer(log->buffer);
 }

@@ -289,9 +289,9 @@ client_reply(Cluster *cluster, Action *act)
 		case PM_UPDATE_PLUGS :
 			while( (node = (Node *)list_next(node_i)) )
 			{
-				if (node->p_state == ON)
+				if (node->p_state == ST_ON)
 					send_Buffer(client->to, "1");
-				else if (node->p_state == OFF)
+				else if (node->p_state == ST_OFF)
 					send_Buffer(client->to, "0");
 				else 
 					send_Buffer(client->to, "?");
@@ -301,9 +301,9 @@ client_reply(Cluster *cluster, Action *act)
 		case PM_UPDATE_NODES :
 			while( (node = (Node *)list_next(node_i)) )
 			{
-				if (node->n_state == ON)
+				if (node->n_state == ST_ON)
 					send_Buffer(client->to, "1");
-				else if (node->n_state == OFF)
+				else if (node->n_state == ST_OFF)
 					send_Buffer(client->to, "0");
 				else 
 					send_Buffer(client->to, "?");
@@ -425,7 +425,7 @@ free_Client(void *vclient)
 	if( client->fd != NO_FD ) 
 	{
 		Close(client->fd);
-		log_it(0, "client on descriptor %d signs off", ((Client *)client)->fd);
+		send_Log(0, "client on descriptor %d signs off", ((Client *)client)->fd);
 	}
 	if( client->to != NULL ) free_Buffer(client->to);
 	if( client->from != NULL ) free_Buffer(client->from);

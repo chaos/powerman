@@ -126,8 +126,6 @@ main(int argc, char **argv)
 #else
 	init_error(argv[0], dump_Globals);
 #endif
-	make_log();
-
 	cheat = g = make_Globals();
 	
 	process_command_line(g, argc, argv);
@@ -143,7 +141,7 @@ main(int argc, char **argv)
 		daemon_init(); 	/* closes all open fd's, opens syslog */
 				/*   and tells exit_error to use syslog */
 
-	start_log();		/* opens log file (if any) */
+	start_Log();		/* opens log file (if any) */
 
 	dev_i = list_iterator_create(g->devs);
 	while( (dev = (Device *)list_next(dev_i)) )
@@ -285,13 +283,13 @@ do_select_loop(Globals *g)
 		     (now.tv_sec != hourly.tv_sec) )
 		{
 			hourly = now;
-			log_it(0, "Hourly time stamp %s: ", 
+			send_Log(0, "Hourly time stamp %s: ", 
 			       ctime(&(hourly.tv_sec)));
 		}
 
                 /* Log write?  */
-		if ( write_pending_log() && FD_ISSET(fd_log(), &wset) )
-			handle_log();
+		if ( write_pending_Log() && FD_ISSET(fd_Log(), &wset) )
+			handle_Log();
 
                 /* New connection? */
 		if ( FD_ISSET(g->listener->fd, &rset) )
@@ -409,9 +407,9 @@ find_max_fd(Globals *g, fd_set *rs, fd_set *ws)
 	 */
 	FD_ZERO(rs);
 	FD_ZERO(ws);
-	if (write_pending_log()) {
-		FD_SET(fd_log(), ws);
-		maxfd = MAX(maxfd, fd_log());
+	if (write_pending_Log()) {
+		FD_SET(fd_Log(), ws);
+		maxfd = MAX(maxfd, fd_Log());
 	}
 	if (g->listener->read)  {
 		FD_SET(g->listener->fd, rs);

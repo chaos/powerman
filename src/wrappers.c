@@ -73,7 +73,7 @@ Setsockopt( int fd, int level, int optname, const void *opt_val,
 	return ret_code;
 }
 
-/* XXX socklen_t may not be defined - autoconf this later */
+/* Review: socklen_t may not be defined - autoconf this later */
 int
 Bind( int fd, struct sockaddr_in *saddr, socklen_t len )
 {
@@ -188,7 +188,7 @@ clear_sets(fd_set *rset, fd_set *wset, fd_set *eset)
 
 static int allocated_memory = 0;
 
-/* XXX look into dmalloc */
+/* Review: look into dmalloc */
 #define MALLOC_MAGIC 0xf00fbaab
 char *
 Malloc(int size)
@@ -334,7 +334,6 @@ Getaddrinfo(char *host, char *service, struct addrinfo *hints,
 	return n;
 }
 
-/* XXX overflow of buf is possible */
 void
 Regcomp(regex_t *preg, const char *regex, int cflags)
 {
@@ -347,6 +346,7 @@ Regcomp(regex_t *preg, const char *regex, int cflags)
 	assert(strlen(regex) < sizeof(buf));
 
 /* My lame hack because regcomp won't interpret '\r' and '\n' */
+	/* Review: overflow of buf is possible */
 	while ( (i < MAX_REG_BUF) && (regex[j] != '\0') )
 	{
 		if ( (regex[j] == '\\') && (regex[j+1] == 'r') )
@@ -366,7 +366,7 @@ Regcomp(regex_t *preg, const char *regex, int cflags)
 		}
 	}
 	buf[i] = '\0';
-	/* XXX document limitation of library regcomp */
+	/* Review: document limitation of library regcomp */
 	n = regcomp(preg, buf, cflags);
 	if (n != REG_NOERROR) exit_msg("regcomp failed");
 }
@@ -378,7 +378,7 @@ Regexec(const regex_t *preg, const char *string,
 	int n;
 	char buf[MAX_REG_BUF];
 
-	/* XXX is this needed? */	
+	/* Review: undocumented, is it needed? */	
 	re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
 	strncpy(buf, string, MAX_REG_BUF);
 	buf[MAX_REG_BUF - 1] = '\0'; /* be safe */

@@ -24,6 +24,10 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+/* Review: note: clash with autoconf */
+/* Review: consider moving private data structs to .c file */
+
+
 #ifndef CONFIG_H
 #define CONFIG_H
 
@@ -67,6 +71,7 @@ typedef struct {
 	String fmt;
 } Send_T;
 
+/* Review: noodle on necessity of completion regex */
 /* the map is a list of Interpretation structures */
 typedef struct {
 	regex_t completion;
@@ -110,6 +115,7 @@ typedef enum {NO_MODE, REGEX, LITERAL} String_Mode;
  * strings instead of lieteral strings.  The eleven lists
  * in "scripts" are all of Script_El structures.
  */
+/* Review: convert array of lists to 11 individual items */
 typedef struct {
 	int num_scripts;
 	String_Mode mode;
@@ -122,6 +128,7 @@ typedef struct {
  * are kept uncompiled here, or the Send's string is in the 
  * string1 field (and string2 is unsed).
  */
+/* Review: should be private */
 typedef struct spec_element_struct {
 	Script_El_T type;
 	String string1;
@@ -134,6 +141,7 @@ typedef struct spec_element_struct {
  *  A structure of type Spec holds the abstract embodiment of
  * what will end up in each of (potentially) many Protocol structs.
  */
+/* Review: should be private */
 struct spec_struct {
 	String name;
 	Dev_Type type;
@@ -155,7 +163,7 @@ struct spec_struct {
  * value there is also a pointer to the device it is connected to
  * and the index in the device.
  */
-typedef enum {ST_UNKNOWN, OFF, ON} State_Val;
+typedef enum {ST_UNKNOWN, ST_OFF, ST_ON} State_Val;
 
 
 typedef struct {
@@ -229,7 +237,6 @@ void dump_Interpretation(Interpretation *interp);
 void dump_Script(List script, int num);
 void dump_Expect(Expect_T *expect);
 void dump_Send(Send_T *send);
-
-#endif
+#endif /* !NDUMP */
 
 #endif /* CONFIG_H */

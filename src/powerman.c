@@ -24,6 +24,11 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+/* Review: link poweron and poweroffto invoke powerman -1/-0 (check argv[0]) */
+/* Review: support -F - to read targets from stdin */
+/* Review: issue warning if reset attempted on node that is powered off. */
+/* Review: does --verify make any sense with --reset? */
+
 #include <string.h>
 #define _GNU_SOURCE
 #include <getopt.h>
@@ -159,9 +164,9 @@ main(int argc, char **argv)
 
 		/* what do we do with nodes in the ST_UNKNOWN state ? */
 		if (conf->com == CMD_QUERY_ON)
-			print_list(conf, cluster, ON);
+			print_list(conf, cluster, ST_ON);
 		else if (conf->com == CMD_QUERY_OFF)
-			print_list(conf, cluster, OFF);
+			print_list(conf, cluster, ST_OFF);
 		else if (conf->com == CMD_QUERY_ALL)
 			print_readable(conf, cluster);
 
@@ -370,6 +375,7 @@ dump_Conf(Config *conf)
 	exit(0);
 }
 
+/* Review:  add comment here on format of file */
 /* 
  *   This should be changed to allow for a '-' in place of the 
  * file name, which would then cause it to read from stdin.
@@ -388,6 +394,7 @@ read_Targets(Config *conf, char *name)
 	}
 	while( (c = getc(fp)) != EOF )
 	{
+		/* Review: use isspace() */
 		if ( (c != ' ') && (c != '\r') && (c != '\n') && (c != '\t') )
 		{
 			buf[i] = c;
@@ -404,6 +411,7 @@ read_Targets(Config *conf, char *name)
 			i = 0;
 		}
 	}
+	/* Review: check for error on fclose() */
 	fclose(fp);
 }
 
@@ -414,7 +422,6 @@ static void
 connect_to_server(Config *conf)
 {
 	struct addrinfo hints, *addrinfo;
-	int sock_opt;
 	int n;
 	List reply;
 
@@ -422,21 +429,22 @@ connect_to_server(Config *conf)
 	hints.ai_flags = AI_CANONNAME;
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
+
+	assert(conf->host != NULL);
+	assert(conf->service != NULL);
 	Getaddrinfo(get_String(conf->host), get_String(conf->service), 
 			    &hints, &addrinfo);
 
 	conf->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
 			      addrinfo->ai_protocol);
-	sock_opt = 1;
-	Setsockopt(conf->fd, SOL_SOCKET, SO_REUSEADDR,
-		   &(sock_opt), sizeof(sock_opt));
 
 	n = Connect(conf->fd, addrinfo->ai_addr, addrinfo->ai_addrlen);
 	freeaddrinfo(addrinfo);
 
-	/* Connected, now "log in" */
-	reply = dialog(conf->fd, NULL);
+	/* send nothing (hence NULL arg), read 'password> ' */
+	reply = dialog(conf->fd, NULL); 
 	list_destroy(reply);
+	/* send password, read '0 PowerMan> ' */
 	reply = dialog(conf->fd, AUTHENTICATE_FMT);
 	list_destroy(reply);
 
@@ -458,20 +466,25 @@ request_State(Config *conf)
 }
 
 /*
- * Request list of nodes known to the server.
+ * Request list of Nodes known to the server.
  * Results are returned as a list-o-Nodes thatmust be freed by the caller.
  */
 static List
 get_Names(int fd)
 {
-	List cluster;
-	List reply;
-	char buf[MAX_BUF];
+	List cluster;	/* list-o-nodes */
+	List reply;	/* list-o-strings */
+	char buf[80];
+	int res;
 
 	cluster = list_create(xfree_Node);
-/* get the names */
-	sprintf(buf, GET_NAMES_FMT, ".*");
+	res = snprintf(buf, sizeof(buf), GET_NAMES_FMT, ".*");
+	assert(res != -1 && res <= sizeof(buf));
 	reply = dialog(fd, buf);
+	/* 
+	 * Build Nodes list from list of hostnames
+	 * Nodes have additional properties like p_state, n_state 
+	 */
 	append_Nodes(cluster, reply); 
 	list_destroy(reply);
 
@@ -498,6 +511,7 @@ get_State(int fd, List cluster)
 	list_destroy(reply);
 }
 
+/* Review: revisit this documentation */
 /*
  * dialog() returns a circular list without a dummy header record
  * and will exit with an error if it failed to read after "limit"
@@ -514,9 +528,11 @@ dialog(int fd, const char *str)
 	int i;
 	int j;
 	int len;
+	/* Review: should be moved to a #define at top of module with comment */
 	int limit = 100;
 	bool found = FALSE;
 	List reply = list_create(free_String);
+	/* Review: check for NULL reply or use out_of_memory() */
 	String targ;
 
 	if (debug_telemetry)
@@ -532,17 +548,24 @@ dialog(int fd, const char *str)
 		if( n != len )
 			exit_msg("Incomplete write of %s", str);
 	}
+	/* Review: redundant to have found initialized here and above. */
 	found = FALSE;
+        /* Review: comment purpose of this block */
+        /* Review: localize scope of some vars used only in these loops  */
 	while( !found && (limit > 0) )
 	{
 		n = Read(fd, buf + in, MAX_BUF);
 		for( i = in; i < in + n; i++)
 		{
+			 /* Review: break after found = TRUE */
 			if ( buf[i] == PROMPT ) found = TRUE;
 		}
 		in += n;
 		limit--;
 	}
+	/* Review: bail out here if !found  
+	 * (then can remove if(found) block below) */
+	/* Review: comment purpose of this block */
 	if( found )
 	{
 		len = in;
@@ -623,6 +646,10 @@ glob2regex(String glob)
 	String regex;
 	unsigned char *g = get_String(glob);
 
+	/* Review: check that glob really is a legal glob here. 
+	 * look into fnmatch() */
+	/* Review: check for overruns of buf */
+	/* Review: check for escape of . or * etc.  ("\." "\*" "\?") */
 	while(*g != '\0')
 	{
 		if( isalnum(*g) || (*g == '-') || (*g == '_') )
@@ -654,27 +681,30 @@ send_server(Config *conf, String str)
 {
 	List reply;
 	char buf[MAX_BUF];
+	int len = sizeof(buf);
+	int res;
 
 	switch(conf->com)
 	{
 	case CMD_LISTTARG:
-		sprintf(buf, GET_NAMES_FMT, get_String(str));
+		res = snprintf(buf, len, GET_NAMES_FMT, get_String(str));
 		break;
 	case CMD_POWER_ON:
-		sprintf(buf, DO_POWER_ON_FMT, get_String(str));
+		res = snprintf(buf, len, DO_POWER_ON_FMT, get_String(str));
 		break;
 	case CMD_POWER_OFF:
-		sprintf(buf, DO_POWER_OFF_FMT, get_String(str));
+		res = snprintf(buf, len, DO_POWER_OFF_FMT, get_String(str));
 		break;
 	case CMD_POWER_CYCLE:
-		sprintf(buf, DO_POWER_CYCLE_FMT, get_String(str));
+		res = snprintf(buf, len, DO_POWER_CYCLE_FMT, get_String(str));
 		break;
 	case CMD_RESET:
-		sprintf(buf, DO_RESET_FMT, get_String(str));
+		res = snprintf(buf, len, DO_RESET_FMT, get_String(str));
 		break;
 	default :
 		assert(FALSE);
 	}
+	assert(res != -1 && res <= len);
 	reply = dialog(conf->fd, buf) ;
 	return reply;
 }
@@ -726,12 +756,12 @@ print_readable(Config *conf, List cluster)
 	{
 		switch (node->p_state) 
 		{
-			case ON:
+			case ST_ON:
 				hostlist_push_host(on, get_String(node->name));
-				if (node->n_state != ON)
+				if (node->n_state != ST_ON)
 					warn_softstate(get_String(node->name));
 				break;
-			case OFF:
+			case ST_OFF:
 				hostlist_push_host(off, get_String(node->name));
 				break;
 			case ST_UNKNOWN:
@@ -760,6 +790,7 @@ print_readable(Config *conf, List cluster)
 	hostlist_destroy(unk);
 }
 
+/* Review: consider more descriptive name and add comment */
 static void
 print_list(Config *conf, List cluster, State_Val state)
 {
@@ -771,7 +802,7 @@ print_list(Config *conf, List cluster, State_Val state)
 	{
 		if( node->p_state == state ) 
 			printf("%s\n", get_String(node->name));
-		if (node->p_state == ON && node->n_state == OFF)
+		if (node->p_state == ST_ON && node->n_state == ST_OFF)
 			warn_softstate(get_String(node->name));
 	}
 	list_iterator_destroy(itr);
@@ -826,7 +857,7 @@ make_Config(void)
 	}
 	if( conf->host == NULL )
 		conf->host = make_String("localhost");
-	if ((port = getenv("CONMAN_PORT")) && (*env)) 
+	if ((port = getenv("POWERMAN_PORT")) && (*env)) 
 	{
 		if ((p = atoi(port)) > 0)
 		{
@@ -905,10 +936,10 @@ update_Nodes_soft_state(List cluster, List reply)
 		switch(byte_String(targ, i))
 		{
 		case '0' :
-			node->n_state = OFF;
+			node->n_state = ST_OFF;
 			break;
 		case '1' :
-			node->n_state = ON;
+			node->n_state = ST_ON;
 			break;
 		case '?' :
 			node->n_state = ST_UNKNOWN;
@@ -948,10 +979,10 @@ update_Nodes_hard_state(List cluster, List reply)
 		switch(byte_String(targ, i))
 		{
 		case '0' :
-			node->p_state = OFF;
+			node->p_state = ST_OFF;
 			break;
 		case '1' :
-			node->p_state = ON;
+			node->p_state = ST_ON;
 			break;
 		case '?' :
 			node->p_state = ST_UNKNOWN;

@@ -70,7 +70,7 @@ update_Action(Cluster *cluster, List acts)
 	Action *act;
 
 	Gettimeofday( &(cluster->time_stamp), NULL);
-	log_it(0, "Updating %s", ctime(&(cluster->time_stamp.tv_sec)));
+	send_Log(0, "Updating %s", ctime(&(cluster->time_stamp.tv_sec)));
 
 	act = make_Action(PM_UPDATE_PLUGS);
 	list_append(acts, (void *)act);

@@ -89,3 +89,8 @@
 
 2002-08-02 garlick
 	* A bit more cleanup in pm_string.c.
+	* ON, OFF changed to ST_ON, ST_OFF
+	* Transferred all remaining inline review comments.
+	* Reworked log.c.
+	* Fixed all [v]snprintf's to check for both result == -1 
+  	  (glibc <= 2.0.6) and result > len (glibc >= 2.1, C99 standard).

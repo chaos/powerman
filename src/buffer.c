@@ -47,6 +47,7 @@
  * Network Programming," (ch 15) where he discusses non-blocking reads 
  * and writes.
  */ 
+/* Review: add comments to structure members documenting purpose */
 struct buffer_implementation {
 	int magic;		/* magic cookie */
 	int fd;
@@ -58,6 +59,7 @@ struct buffer_implementation {
 	char *high;
 	char *low;
 #ifndef NDEBUG
+	/* Review: document high water mark purpose */
 	char *hwm;   		/* High Water Mark */
 #endif
 };
@@ -107,6 +109,7 @@ send_Buffer(Buffer b, const char *fmt, ...)
 	fd_set rset, wset;
 	struct timeval tv;
 	int maxfd;
+	int res;
       
       	assert(b != NULL);	
       	assert(b->magic == BUF_MAGIC);
@@ -115,7 +118,8 @@ send_Buffer(Buffer b, const char *fmt, ...)
 /* get at most MAX_BUF of what the caller wanted to send */
 	memset( str, 0, MAX_BUF + 1 );
 	va_start(ap, fmt);
-	vsnprintf(str, MAX_BUF, fmt, ap);
+	res = vsnprintf(str, MAX_BUF, fmt, ap);
+	assert(res != -1 && res <= MAX_BUF);
 	va_end(ap);
 	len = strlen(str);
 
@@ -130,6 +134,9 @@ send_Buffer(Buffer b, const char *fmt, ...)
  * writes do back up then the program will hang in this loop 
  * indefinitely.  
  */
+
+	/* Review: add loop control varaile to ensure loop will complete */
+	/* Review: consider adding check_Buffer() to beginning of loop   */
 	while( b->in + len > b->end )
 	{
 		FD_ZERO(&rset);
@@ -137,16 +144,17 @@ send_Buffer(Buffer b, const char *fmt, ...)
 		FD_SET(b->fd, &wset);
 		tv.tv_sec = 1;
 		tv.tv_usec = 0;
-		
-		select(maxfd, &rset, &wset, NULL, &tv);
+
+		Select(maxfd, &rset, &wset, NULL, &tv);
 		if ( FD_ISSET(b->fd, &wset) )
 			write_Buffer(b);
 	}
+	/* Review: consider assert(have space in buffer) */
 
 /* We have space (the usual case from the start) */
 	strncpy(b->in, str, len + 1);
-	if( ! is_log_buffer(b) ) /* avoid recursion, log uses buffer */
-		log_it(0, "send \"%s\" to descriptor %d", b->in, b->fd);
+	if( ! is_buffer_Log(b) ) /* avoid recursion, log uses buffer */
+		send_Log(0, "send \"%s\" to descriptor %d", b->in, b->fd);
 	b->in += len;
 	*(b->in) = '\0';
 }
@@ -173,11 +181,13 @@ check_Buffer(Buffer b, int len)
 	del = b->out - b->start;
 	num = b->in - b->out;
 
+	assert(b->in >= b->out);
 	if( (b->in + len >  b->high) &&
 	    (b->out > b->low) )
 	{
-		if( ! is_log_buffer(b) ) /* avoid recursion, log uses buffer  */
-			log_it(0, "Buffer shift required on descriptr %d", b->fd);
+		if( ! is_buffer_Log(b) ) /* avoid recursion, log uses buffer  */
+			send_Log(0, "Buffer shift required on descriptr %d", b->fd);
+		/* Review: try memmove */
 		for (i = 0; i <  num; i++)
 			b->buf[i] = b->buf[i + del];
 		b->out -= del;
@@ -230,6 +240,8 @@ read_Buffer(Buffer b)
       	assert(b != NULL);	
       	assert(b->magic == BUF_MAGIC);
 
+	/* Review: try to read directly into Buffer buf */
+
         /* initial check of buffer, can we reset ->in and ->out? */
 	assert(b->out <= b->in);
 	if (b->out == b->in)
@@ -239,6 +251,7 @@ read_Buffer(Buffer b)
 	}
 
 	/* get new bytes if there are any */
+	/* Review: explicitly terminate string instead of zeroing memory? maybe? */
 	memset( str, 0, MAX_BUF + 1 );
 	n = Read(b->fd, str, MAX_BUF);
 	if ( n <= 0) return n;
@@ -249,6 +262,7 @@ read_Buffer(Buffer b)
 	 * (all bits zero) character."
 	 * http://www.scit.wlv.ac.uk/~jphb/comms/telnet.html
 	 */
+	/* Review: consider moving this check for NULL up */
 	for (i = 0; i < n - 1; i++)
 	  if(b->in[i] == '\0') b->in[i] = '\n';
 
@@ -288,7 +302,6 @@ is_empty_Buffer(Buffer b)
  * an empty line (just "\n" or "\r\n") is not returned to 
  * the caller as a line of input.
  */
-/* XXX overflow possible */
 int
 get_str_from_Buffer(Buffer b, regex_t *re, char *str, int length)
 {
@@ -301,11 +314,14 @@ get_str_from_Buffer(Buffer b, regex_t *re, char *str, int length)
 	len = b->in - b->out;
 
 	memset(str, 0, length);
+	/* Review: len+1 should be less than MAX_BUF -- add assertion  */
 	assert(len + 1 < length);
 	strncpy(str, b->out, len + 1);
 	if( re == NULL )
 		/* get a line */
 		pos = (char *)memchr(str, '\n', len);
+	   	/* Review: consider advancing pos here to match 
+	    	 * pos semantics of find_RegEx */
 	else
 		/* get a region - multiple lines or fraction there of */
 		pos = find_RegEx(re, str, len);
@@ -316,6 +332,7 @@ get_str_from_Buffer(Buffer b, regex_t *re, char *str, int length)
  * something was found, mark it as consumed from the buffer and possibly
  * strip trialing '\r' and/or '\n' from the end of a line.
 */
+	/* Review: refactor following code */
 	if( re == NULL )
 	{
 		/* memchr points at the '\n' */
@@ -330,7 +347,7 @@ get_str_from_Buffer(Buffer b, regex_t *re, char *str, int length)
 		b->out += pos - str;
 	}
 	*pos = '\0';
-	log_it(0, "Received \"%s\" from descriptor %d", str, b->fd);
+	send_Log(0, "Received \"%s\" from descriptor %d", str, b->fd);
 	return strlen(str);
 }
 
@@ -345,6 +362,8 @@ dump_Buffer(Buffer b)
  * buffer separated by NUL characters all get printed.
  */
 
+/* Review: consider making this more robust if printing buffer 
+ * with binary data */
 	int i;
 	int top;
 	char *str;
@@ -381,6 +400,9 @@ free_Buffer(void *b)
 
 
 
+/* Review: in general, don't name function in function comment */
+/* Review: function comment is wrong */
+
 /* 
  *   char *find_Reg_Ex(regex_t *re, char *str, in len) looks for "re" in 
  * the first "len" bytes of "str" and returns it's position if found 
@@ -394,7 +416,8 @@ find_RegEx(regex_t *re, char *str, int len)
 	regmatch_t pmatch[MAX_MATCH];
 	int eflags = 0;
 
-	log_it(1, "find_RegEx of %s", str);
+	send_Log(1, "find_RegEx of %s", str);
+	/* Review: re_syntax options also set in Regexec() */
 	n = Regexec(re, str, nmatch, pmatch, eflags);
 	if (n != REG_NOERROR) return NULL;
 	if ((pmatch[0].rm_so < 0) || (pmatch[0].rm_eo > len))

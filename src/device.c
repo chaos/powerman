@@ -142,7 +142,7 @@ initiate_nonblocking_connect(Device *dev)
 		Action *act;
 
 		dev->status = DEV_CONNECTED;
-		log_it(0, "Early device connect");
+		send_Log(0, "Early device connect");
 		act = make_Action(PM_LOG_IN);
 		map_Action_to_Device(dev, act);
 	}
@@ -171,7 +171,7 @@ map_Action_to_Device(Device *dev, Action *sact)
 
 	if ( !dev->loggedin && (sact->com != PM_LOG_IN) )
 	{
-		log_it(0, "Attempt to initiate Action %s while not logged in", 
+		send_Log(0, "Attempt to initiate Action %s while not logged in", 
 		       pm_coms[sact->com]);
 		return;
 	}
@@ -199,7 +199,7 @@ map_Action_to_Device(Device *dev, Action *sact)
 		switch ( act->cur->type )
 		{
 		case SEND :
-			log_it(0, "start script:");
+			send_Log(0, "start script:");
 			dev->status |= DEV_SENDING;
 			process_send(dev);
 			break;
@@ -449,7 +449,7 @@ do_Device_reconnect(Device *dev)
 	Action *act;
 
 	Close(dev->fd);
-	log_it(0, "Lost connection to device");
+	send_Log(0, "Lost connection to device");
 	dev->status   = DEV_NOT_CONNECTED;
 	dev->loggedin = FALSE;
 	if ( ((act = (Action *)list_peek(dev->acts)) != NULL) && 
@@ -660,9 +660,9 @@ do_PMD_semantics(Device *dev, List map)
 		{
 			plug->node->p_state = ST_UNKNOWN;
 			if( *(ch) == '1' )
-				plug->node->p_state = ON;
+				plug->node->p_state = ST_ON;
 			if( *(ch) == '0' )
-				plug->node->p_state = OFF;
+				plug->node->p_state = ST_OFF;
 			ch++;
 		}
 		break;
@@ -671,9 +671,9 @@ do_PMD_semantics(Device *dev, List map)
 		{
 			plug->node->n_state = ST_UNKNOWN;
 			if( *(ch) == '1' )
-				plug->node->n_state = ON;
+				plug->node->n_state = ST_ON;
 			if( *(ch) == '0' )
-				plug->node->n_state = OFF;
+				plug->node->n_state = ST_OFF;
 			ch++;
 		}
 		break;
@@ -725,10 +725,10 @@ do_Device_semantics(Device *dev, List map)
 			len = end - str;
 			*end = '\0';
 			if ((pos = find_RegEx(re, str, len)) != NULL)
-				interp->node->p_state = ON;
+				interp->node->p_state = ST_ON;
 			re = &(dev->off_re);
 			if ((pos = find_RegEx(re, str, len)) != NULL)
-				interp->node->p_state = OFF;
+				interp->node->p_state = ST_OFF;
 			*end = tmp;
 		}
 		break;
@@ -747,10 +747,10 @@ do_Device_semantics(Device *dev, List map)
 			len = end - str;
 			*end = '\0';
 			if ((pos = find_RegEx(re, str, len)) != NULL)
-				interp->node->n_state = ON;
+				interp->node->n_state = ST_ON;
 			re = &(dev->off_re);
 			if ((pos = find_RegEx(re, str, len)) != NULL)
-				interp->node->n_state = OFF;
+				interp->node->n_state = ST_OFF;
 			*end = tmp;
 		}
 		break;

@@ -30,14 +30,13 @@
 
 #include "buffer.h"
 
-void make_log(void);
-void init_log(const char *name, int level);
-void start_log(void);
-void log_it(int level, const char *fmt, ...);
-void handle_log(void);
+void make_Log(const char *name, int level);
+void start_Log(void);
+void send_Log(int level, const char *fmt, ...);
+void handle_Log(void);
 void free_Log(void);
-bool is_log_buffer(Buffer b);
-int fd_log(void);
-bool write_pending_log(void);
+bool is_buffer_Log(Buffer b);
+int fd_Log(void);
+bool write_pending_Log(void);
 
 #endif /* LOG_H */

@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <sys/stat.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "powerman.h"
 
@@ -40,19 +41,22 @@
 #include "exit_error.h"
 #include "daemon_init.h"
 
-#define TMPSTR_LEN 32
+#define TMPSTR_LEN 80
 
+/* Review: if NDEBUG turn off core generation */
 void
 daemon_init(void)
 {
 	int i;
 	char buf[TMPSTR_LEN];
 	time_t t = time(NULL);
+	int res;
 
 	if ( Fork() != 0 )
 		exit(0);			/* parent terminates */
 
 	/* 1st child continues */
+	/* Review: setsid may fail with -1, EPERM */
 	if (setsid() < 0)			/* become session leader */
 		exit_error("setsid");
 
@@ -75,8 +79,11 @@ daemon_init(void)
 		close(i); /* ignore errors */
 
 	/* Init syslog */
-	sprintf(buf, "Started %s", ctime(&t));
+	/* Review: check for truncation */
+	res = snprintf(buf, sizeof(buf), "Started %s", ctime(&t));
+	assert(res != -1 && res <= sizeof(buf));
 	openlog(DAEMON_NAME, LOG_NDELAY |  LOG_PID, LOG_DAEMON);
 	syslog_on_error(TRUE); /* tell exit_error that stderr is no good */
+	/* Review: check for error from syslog */
 	syslog(LOG_NOTICE, buf);
 }
