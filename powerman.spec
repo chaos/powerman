@@ -96,6 +96,8 @@ fi
 %attr(0755,root,root)/usr/bin/on
 %attr(0755,root,root)/usr/sbin/powermand
 /etc/powerman/baytech.dev
+/etc/powerman/baytech-rpc28.dev
+/etc/powerman/baytech-rpc3.dev
 /etc/powerman/icebox.dev
 /etc/powerman/icebox3.dev
 /etc/powerman/wti.dev
