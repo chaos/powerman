@@ -1,3 +1,8 @@
+2003-12-22 Albert Chu <chu11@llnl.gov>
+
+    * etc/ipmipower.dev: Removed "not discovered" as acceptable message to 
+    indicate power is off.  Power status should be unknown.
+	
 2003-12-22 Jim Garlick <garlick@llnl.gov>
 
     * src/arglist.[ch]: Fixed thinko in arglist_get prototype.
@@ -53,6 +58,7 @@
 
     * : tag powerman-1-0-19
 
+>>>>>>> 1.249
 2003-12-04 Jim Garlick <garlick@llnl.gov>
 
     * etc/cyclades-pm8.dev: fixed status script to not fail intermittently

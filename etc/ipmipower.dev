@@ -19,7 +19,7 @@ specification "ipmipower" {
                 expect "stat\r\n"
 		foreachnode {
 			expect "([^:]*): (on|off|not\ discovered)\r\n"
-			setplugstate $1 $2 off="off|not\ discovered" on="on"
+			setplugstate $1 $2 off="off" on="on"
 		}
 		expect "ipmipower> "
 	}
