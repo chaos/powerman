@@ -1,21 +1,30 @@
-2002-09-18 behlendorf
-  * Removed string.[ch] and replaced all String structures and functions
-    with equivilant char * replacements.  
-  * Parsed hostlists now stored in the action structure and free'd
-    when the action is completed.
-  * Badly formated hostlists no longer crash the daemon.
-  * Fixed segfault related to quit command, client connections are
-    now properly cleaned up on the daemon side.
+2002-09-18 garlick
+	* Client protocol now in client_proto.h
+	* Numbered response codes
+	* Cleanup of control flow in client.c
+	* Bad nodes in on/off/reset.. etc cause the whole command to abort
+	* query-status command response is three hostlists rather than bitmap
+	* soft power status deprecated in protocl (consider generating 
+	  warnings when nodes are accessed which have soft != hard) 
 
 2002-09-18 behlendorf
-  * Fixed coalescing of actions to the devices.
+	* Removed string.[ch] and replaced all String structures and functions
+	  with equivilant char * replacements.  
+	* Parsed hostlists now stored in the action structure and free'd
+	  when the action is completed.
+	* Badly formated hostlists no longer crash the daemon.
+	* Fixed segfault related to quit command, client connections are
+	  now properly cleaned up on the daemon side.
+
+2002-09-18 behlendorf
+	* Fixed coalescing of actions to the devices.
 
 2002-09-17 behlendorf
-  * Reworked the powerman client/server protocol (highlights follow)
-  * Removed send/expect parsing, replaced with a simple switch.
-  * Host lists have replaced regexs in the protocol.
-  * Powerman authentication step removed.
-  * Check login command removed.
+	* Reworked the powerman client/server protocol (highlights follow)
+	* Removed send/expect parsing, replaced with a simple switch.
+	* Host lists have replaced regexs in the protocol.
+	* Powerman authentication step removed.
+	* Check login command removed.
 
 2002-09-17 garlick
 	* Reformatting, cleanup, doc of data structures
