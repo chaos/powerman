@@ -35,6 +35,7 @@
 #include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
+#include <termios.h>
 
 #include "powerman.h"
 #include "list.h"
@@ -386,28 +387,122 @@ static bool _tcp_reconnect(Device * dev)
     return (dev->connect_status == DEV_CONNECTED);
 }
 
+typedef struct {
+    int baud;
+    speed_t bconst;
+} baudmap_t;
+static baudmap_t baudmap[] = {
+    {300, B300},   {1200, B1200},   {2400, B2400},   {4800, B4800}, 
+    {9600, B9600}, {19200, B19200}, {38400, B38400},
+};
+
+static void _serial_setup(char *devname, int fd, int baud, int databits, 
+        char parity, int stopbits)
+{
+    int res;
+    struct termios tio;
+    int i;
+
+    res = tcgetattr(fd, &tio);
+    if (res < 0)
+        err_exit(TRUE, "%s: error getting serial attributes\n", devname);
+
+    res = -1;
+    for (i = 0; i < sizeof(baudmap)/sizeof(baudmap_t); i++) {
+        if (baudmap[i].baud == baud) {
+            if ((res = cfsetispeed(&tio, baudmap[i].bconst)) == 0)
+                 res = cfsetospeed(&tio, baudmap[i].bconst);
+            break;
+        }
+    }
+    if (res < 0)
+        err_exit(FALSE, "%s: error setting baud rate to %d\n", 
+                devname, baud);
+
+    switch (databits) {
+        case 7:
+            tio.c_cflag &= ~CSIZE;
+            tio.c_cflag |= CS7;
+            break;
+        case 8:
+            tio.c_cflag &= ~CSIZE;
+            tio.c_cflag |= CS8;
+            break;
+        default:
+            err_exit(FALSE, "%s: error setting data bits to %d\n", 
+                    devname, databits);
+    }
+
+    switch (stopbits) {
+        case 1:
+            tio.c_cflag &= ~CSTOPB;
+            break;
+        case 2:
+            tio.c_cflag |= CSTOPB;
+            break;
+        default:
+            err_exit(FALSE, "%s: error setting stop bits to %d\n", 
+                    devname, stopbits);
+    }
+
+    switch (parity) {
+        case 'n':
+        case 'N':
+            tio.c_cflag &= ~PARENB;
+            break;
+        case 'e':
+        case 'E':
+            tio.c_cflag |= PARENB;
+            tio.c_cflag &= ~PARODD;
+            break;
+        case 'o':
+        case 'O':
+            tio.c_cflag |= PARENB;
+            tio.c_cflag |= PARODD;
+            break;
+        default:
+            err_exit(FALSE, "%s: error setting parity to %c\n", 
+                    devname, parity);
+    }
+
+    if (tcsetattr(fd, TCSANOW, &tio) < 0)
+        err_exit(TRUE, "%s: error setting serial attributes\n", devname);
+}
+
 /*
  * Open the special file associated with this device.
  */
 static bool _serial_reconnect(Device * dev)
 {
+    int baud = 9600, databits = 8, stopbits = 1; 
+    char parity = 'N';
+
     assert(dev->magic == DEV_MAGIC);
     assert(dev->type == SERIAL_DEV);
     assert(dev->connect_status == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
     dev->fd = open(dev->u.serial.special, O_RDWR);
-    if (dev->fd >= 0) {
-        dev->connect_status = DEV_CONNECTED;
-        dev->stat_successful_connects++;
-        dev->retry_count = 0;
-        _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
+    if (dev->fd < 0) {
+        dbg(DBG_DEVICE, "_serial_reconnect: %s open %s failed", 
+                dev->name, dev->u.serial.special);
+        goto out;
     }
-    
-    /* FIXME: handle serial.flags */
+
+    /* parse the serial flags */
+    sscanf(dev->u.serial.flags, "%d,%d%c%d", 
+            &baud, &databits, &parity, &stopbits);
+    /* exits on failure */
+    _serial_setup(dev->name, dev->fd, baud, databits, parity, stopbits);
+
+    dev->connect_status = DEV_CONNECTED;
+    dev->stat_successful_connects++;
+    dev->retry_count = 0;
+    _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
 
     dbg(DBG_DEVICE, "_serial_reconnect: %s on fd %d", dev->name, dev->fd);
-
+   
+out: 
     return (dev->connect_status == DEV_CONNECTED);
 }
 

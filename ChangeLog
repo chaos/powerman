@@ -1,8 +1,7 @@
 2002-01-17 garlick
     * Map plug names to node names on the fly at each subexpression
       interpretation instead of caching mappings in the Interp struct.
-    * Changes to device specifications (old style no longer supported)
-      including
+    * Major Changes to device specifications (old style no longer supported)
       - "all string" deprecated (use _ALL script variant)
       - various strings shortened
       - begin/end changed to C-style braces
@@ -10,12 +9,13 @@
         previously assumed).
       - new, single-plug (non "all") query scripts added
       - second argument of 'map' can be "%s" to support single-plug query
-    * Changes to config file (old style causes warnings but still parsed)
+    * Minor changes to config file (old style causes warnings but still parsed)
       - "tcpwrappers" takes an on|off argument
       - "client listener port" shortened to "port"
       - "begin_nodes", "end_nodes", "begin global", "end_global" statements
         deprecated
     * Support wti-rps10.
+    * Added support for setting serial parameters, e.g. "9600,8n1"
 
 2002-01-16 garlick
     * Add SERIAL_DEV device type

@@ -1,7 +1,3 @@
-Need to fix before 1.0.0.16 release:
-* Support serial flags - we currently accept them but ignore them
-
-Other:
 * Store scripts in a list and search the list for the script name, rather than
   hard code the list.  
 * Build failure simulator test suite
@@ -12,8 +8,7 @@ Other:
 * Client should have option for verifying soft power status (expand hostranges
   and issue warnings where plug is on but node is off).  Needs to be optional
   since would double cluster query latency.  
-* Support redundant power supplies where one node has multiple, independently
-  controllable plugs (requested by Dave Fox)
+* Support ganged plugs.  Individual plugs should also be queryable/controllable.
 * Make it possible to access a power control device via conman to support 
   in-band "service processor" arrangements e.g. Compaq RMC on AlphaServcer 
   line.  Perhaps spawn the conman client on a pipe for each power operation 
