@@ -20,6 +20,7 @@ if [ -f README -a \
      -d lib -a \
      -f lib/powerlib.tcl -a \
      -f lib/alpha.exp -a \
+     -f lib/console.gif -a \
      -f lib/cs20_off.gif -a \
      -f lib/cs20_on.gif -a \
      -f lib/es40_off.gif -a \
@@ -28,7 +29,7 @@ if [ -f README -a \
      -f lib/tux_on.gif -a \
      -f lib/up2000_off.gif -a \
      -f lib/up2000_on.gif -a \
-     -d $ETC \
+     -d $ETC -a \
      -d $BIN \
 ]
 then
@@ -39,6 +40,7 @@ else
 fi
 if [ ! -d $DOC ]
 then
+  echo "Creating directory $DOC"
   mkdir $DOC
   if [ ! -d $DOC ]
   then
@@ -50,6 +52,7 @@ then
 fi
 if [ ! -d $LIB ]
 then
+  echo "Creating directory $LIB"
   mkdir $LIB
   if [ ! -d $LIB ]
   then
@@ -62,25 +65,44 @@ then
     exit
   fi
 fi
+echo "copy README to $DOC"
 cp README $DOC
 
-cp check       $BIN
-cp clustermon  $BIN
+echo "copy check to $BIN"
+cp check $BIN
+echo "copy clustermon to $BIN"
+cp clustermon $BIN
+echo "copy clusterview to $BIN"
 cp clusterview $BIN
-cp ether-wake  $BIN
-cp powerman    $BIN
+echo "copy powerman to $BIN"
+cp powerman $BIN
 
+echo "copy etc/powerman.conf to $ETC"
 cp etc/powerman.conf $ETC
 
-cp lib/powerlib.tcl   $LIB
-cp lib/alpha.exp      $LIB
-cp lib/cs20_off.gif   $LIB
-cp lib/cs20_on.gif    $LIB
-cp lib/es40_off.gif   $LIB
-cp lib/es40_on.gif    $LIB
-cp lib/tux_off.gif    $LIB
-cp lib/tux_on.gif     $LIB
+echo "copy lib/powerlib.tcl to $LIB"
+cp lib/powerlib.tcl $LIB
+echo "copy lib/alpha.exp to $LIB"
+cp lib/alpha.exp $LIB
+echo "copy lib/console.gif to $LIB"
+cp lib/console.gif $LIB
+echo "copy ether-wake to $LIB"
+cp ether-wake $LIB
+echo "copy lib/cs20_off.gif to $LIB"
+cp lib/cs20_off.gif $LIB
+echo "copy lib/cs20_on.gif to $LIB"
+cp lib/cs20_on.gif $LIB
+echo "copy lib/es40_off.gif to $LIB"
+cp lib/es40_off.gif $LIB
+echo "copy lib/es40_on.gif to $LIB"
+cp lib/es40_on.gif $LIB
+echo "copy lib/tux_off.gif to $LIB"
+cp lib/tux_off.gif $LIB
+echo "copy lib/tux_on.gif to $LIB"
+cp lib/tux_on.gif $LIB
+echo "copy lib/up2000_off.gif to $LIB"
 cp lib/up2000_off.gif $LIB
-cp lib/up2000_on.gif  $LIB
+echo "copy lib/up2000_on.gif to $LIB"
+cp lib/up2000_on.gif $LIB
 
 

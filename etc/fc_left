@@ -18,7 +18,7 @@ set cluster {
   {fc3 etherwake digi cs20_on.gif cs20_off.gif}
   {fc4 etherwake digi cs20_on.gif cs20_off.gif}
   {fc5 etherwake digi cs20_on.gif cs20_off.gif}
-
+  {fc6 etherwake digi cs20_on.gif cs20_off.gif}
   {fc7 etherwake digi cs20_on.gif cs20_off.gif}
   {fc8 etherwake digi cs20_on.gif cs20_off.gif}
   {fc9 etherwake digi cs20_on.gif cs20_off.gif}
@@ -52,6 +52,7 @@ set etherwake {
 	{fc3 	00:02:56:00:06:75}
 	{fc4 	00:02:56:00:04:D6}
 	{fc5 	00:02:56:00:04:A1}
+	{fc6 	00:00:00:00:00:00}
 	{fc7 	00:02:56:00:05:FA}
 	{fc8 	00:02:56:00:04:EE}
 	{fc9 	00:02:56:00:06:6D}
@@ -86,7 +87,7 @@ set digi {
 	{fc3 3}
 	{fc4 4}
 	{fc5 5}
-
+	{fc6 6}
 	{fc7 7}
 	{fc8 8}
 	{fc9 9}

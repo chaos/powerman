@@ -76,6 +76,7 @@ set verbose 0
 set nodes   {}
 set on      0
 set off     0
+set tkdanger 0
 for {set i 0} {$i < $argc} {incr i} {
   switch -- [lindex $argv $i] {
       "-c" { 

@@ -27,6 +27,7 @@ if {[info exists env(POWERMANLIBDIR)]} {
 set configed 0
 set debug 0
 set verbose 0
+set tkdanger 1
 if {$argc > 0} {
     set config_file [lindex $argv 0]
 }
@@ -73,7 +74,9 @@ foreach node_struct $cluster {
     frame .$node 
     label .$node.label -text "$node"
     button .$node.button  -text "$node" -image $image -command "toggle_node $node"
-    pack .$node.label .$node.button -side left
+    set console_image [image create photo -format gif -file $lib_dir/console.gif]
+    button .$node.console -text "Console" -image $console_image -command "make_console $node"
+    pack .$node.label .$node.button .$node.console -side left
     pack .$node
 }
 
@@ -116,10 +119,17 @@ proc toggle_node a_node {
         set response [check $nodes on]
         if {[lsearch -exact $response $a_node] < 0} {
             power $a_node on
+#            puts "power $a_node on"
         } else {
             power $a_node off
+#            puts "power $a_node off"
         }
     }
+#  after 10000 check_all 
+}
+
+proc make_console a_node {
+    exec xterm -T $a_node -n $a_node -e conman -j $a_node &
 }
 
 proc check_all {} {

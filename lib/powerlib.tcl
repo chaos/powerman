@@ -343,22 +343,51 @@ proc ether_wake_toggle {nodes dir} {
 ####################################################################
 
 proc rmc_power_on nodes {
-    rmc_power $nodes "power on"
+    global tkdanger
+
+    if {$tkdanger} {
+      safe_rmc_power $nodes "on"
+    } else {
+      orig_rmc_power $nodes "power on"
+    }
 }
 
 proc rmc_power_off nodes {
-    rmc_power $nodes "power off"
+    global tkdanger
+
+    if {$tkdanger} {
+      safe_rmc_power $nodes "off"
+    } else {
+      orig_rmc_power $nodes "power off"
+    }
 }
 
 proc rmc_power_reset nodes {
-    rmc_power $nodes "reset"
+    global tkdanger
+
+    if {$tkdanger} {
+      safe_rmc_power $nodes "r"
+    } else {
+      orig_rmc_power $nodes "reset"
+    }
 }
 
 ########################
 #  rmc support functions
 ########################
 
-proc rmc_power {structured_nodes cmd} {
+proc safe_rmc_power {structured_nodes cmd} {
+    global lib_dir
+    global verbose
+
+    set nodes {}
+    foreach node $structured_nodes {
+	set nodes [lappend nodes [lindex $node 0]]
+    }
+    exec powerman -$cmd $nodes
+}
+
+proc orig_rmc_power {structured_nodes cmd} {
     global lib_dir
     global verbose
 
