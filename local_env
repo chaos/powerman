@@ -1,2 +1,0 @@
-export POWERMANCONF="etc/powerman.conf"
-export POWERMANLIBDIR="lib"
