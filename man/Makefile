@@ -38,17 +38,17 @@ all:
 	$(CC) $(COPTS) $< -o $@ $(INC) $(LIB)
 
 install: 
-	$(mkinstalldirs)              $(DESTDIR)$(packagedir)/man/man1
-	$(INSTALL) -m 644 digi.1      $(DESTDIR)$(packagedir)/man/man1
-	$(INSTALL) -m 644 etherwake.1 $(DESTDIR)$(packagedir)/man/man1
-	$(INSTALL) -m 644 pm.1        $(DESTDIR)$(packagedir)/man/man1
-	$(INSTALL) -m 644 rmc.1       $(DESTDIR)$(packagedir)/man/man1
-	$(INSTALL) -m 644 wti.1       $(DESTDIR)$(packagedir)/man/man1
-	$(mkinstalldirs)                   $(DESTDIR)$(packagedir)/man/man5
-	$(INSTALL) -m 644 digi.conf.5      $(DESTDIR)$(packagedir)/man/man5
-	$(INSTALL) -m 644 etherwake.conf.5 $(DESTDIR)$(packagedir)/man/man5
-	$(INSTALL) -m 644 powerman.conf.5  $(DESTDIR)$(packagedir)/man/man5
-	$(INSTALL) -m 644 wti.conf.5       $(DESTDIR)$(packagedir)/man/man5
+	$(mkinstalldirs)              $(DESTDIR)$(mandir)/man1
+	$(INSTALL) -m 644 digi.1      $(DESTDIR)$(mandir)/man1
+	$(INSTALL) -m 644 etherwake.1 $(DESTDIR)$(mandir)/man1
+	$(INSTALL) -m 644 pm.1        $(DESTDIR)$(mandir)/man1
+	$(INSTALL) -m 644 rmc.1       $(DESTDIR)$(mandir)/man1
+	$(INSTALL) -m 644 wti.1       $(DESTDIR)$(mandir)/man1
+	$(mkinstalldirs)                   $(DESTDIR)$(mandir)/man5
+	$(INSTALL) -m 644 digi.conf.5      $(DESTDIR)$(mandir)/man5
+	$(INSTALL) -m 644 etherwake.conf.5 $(DESTDIR)$(mandir)/man5
+	$(INSTALL) -m 644 powerman.conf.5  $(DESTDIR)$(mandir)/man5
+	$(INSTALL) -m 644 wti.conf.5       $(DESTDIR)$(mandir)/man5
 
 
 clean:

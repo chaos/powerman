@@ -1,5 +1,14 @@
 # $Id$
-
+#
+# In the binary RPM build step we're still getting some lines like:
+#  shell-init: could not get current directory
+#  job-working-directory: could not get current directory
+# This may be the result of the rm -rf in the clean section
+#
+# I may want to return to this preamble and define some more of the 
+# standard tags.
+#
+ 
 %define name    powerman
 %define version 0.1.1
 %define release 1
@@ -9,7 +18,7 @@ Version: %version
 Release: %release
 Summary: PowerMan - Cluster Power Management
 #URL: FOO
-Group: Applications/SystemUtilities
+Group: Applications/System
 Copyright: LLNL/Internal-Use-Only
 BuildRoot: %{_tmppath}/%{name}-%{version}
 
@@ -23,7 +32,6 @@ An unrestricted GPL release of PowerMan is pending Review & Release.
 %setup
 
 %build
-CFLAGS="$RPM_OPT_FLAGS" LDFLAGS="-s" ./configure --prefix=/usr
 make
 
 %install
@@ -37,36 +45,29 @@ rm -rf "$RPM_BUILD_ROOT"
 %pre
 
 %post
+# Once I have a good powerman configuration script I'll probably want to
+# run it here.
 
 %preun
+# If there'e anything in post that needs to be undone, or a backup of
+# a config file to be made, I can perhaps do it here.
 
 %files
 %defattr(-,root,root,0755)
 %config(noreplace) /etc/powerman.conf
-/usr/bin/powerman
-/usr/doc/powerman-0.1.1/DISCLAIMER
-/usr/doc/powerman-0.1.1/README
-/usr/doc/powerman-0.1.1/TOUR.SH
-/usr/lib/powerman/bin/bogus_check
-/usr/lib/powerman/bin/bogus_set
-/usr/lib/powerman/bin/digi
-/usr/lib/powerman/bin/etherwake
-/usr/lib/powerman/bin/rmc
-/usr/lib/powerman/bin/wti
-/usr/lib/powerman/etc/bogus.conf
-/usr/lib/powerman/etc/digi.conf
-/usr/lib/powerman/etc/etherwake.conf
-/usr/lib/powerman/etc/powerman.conf
-/usr/lib/powerman/etc/wti.conf
-/usr/lib/powerman/lib/ether-wake
-/usr/lib/powerman/man/man1/digi.1
-/usr/lib/powerman/man/man1/etherwake.1
-/usr/lib/powerman/man/man1/pm.1
-/usr/lib/powerman/man/man1/rmc.1
-/usr/lib/powerman/man/man1/wti.1
-/usr/lib/powerman/man/man5/digi.conf.5
-/usr/lib/powerman/man/man5/etherwake.conf.5
-/usr/lib/powerman/man/man5/powerman.conf.5
-/usr/lib/powerman/man/man5/wti.conf.5
+/usr/bin/pm
+%doc DISCLAIMER
+%doc README
+%doc TOUR.SH
+/usr/lib/powerman/
+/usr/man/man1/digi.1.gz
+/usr/man/man1/etherwake.1.gz
+/usr/man/man1/pm.1.gz
+/usr/man/man1/rmc.1.gz
+/usr/man/man1/wti.1.gz
+/usr/man/man5/digi.conf.5.gz
+/usr/man/man5/etherwake.conf.5.gz
+/usr/man/man5/powerman.conf.5.gz
+/usr/man/man5/wti.conf.5.gz
 
 

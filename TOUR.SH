@@ -51,6 +51,7 @@ pm -b -l /home/auselton/poop -v
 pm -b -l /home/auselton/poopy -v
 pm -a -r -v
 pm -w 3,8,9,10,14 -v
+pm -w foo,bar
 pm -r -w 3,8,9,10,14 -v
 for i in 3 8 9 10 14 
 do

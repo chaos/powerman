@@ -30,8 +30,9 @@ bindir=         ${exec_prefix}/bin
 sbindir=        ${exec_prefix}/sbin
 libdir=         ${exec_prefix}/lib
 packagedir=     ${libdir}/${PACKAGE}
-docdir=         ${prefix}/doc
-packagedoc=     ${docdir}/${PACKAGE}-${VERSION}
+# I've removed the doc and packagedoc variables and their install commands.
+# I'm pretty sure the the %doc directive in the rpm spec file does that for 
+# me.
 
 all: 
 	@if test `id -u` != 0 ; then \
@@ -50,10 +51,6 @@ install:
 	echo "You must be root to do this" ; exit 1 ; fi ; \
 	$(mkinstalldirs) $(DESTDIR)$(bindir)
 	$(INSTALL) pm    $(DESTDIR)$(bindir)/
-	$(mkinstalldirs)             $(DESTDIR)$(packagedoc)
-	$(INSTALL) -m 644 DISCLAIMER $(DESTDIR)$(packagedoc)/
-	$(INSTALL) -m 644 README     $(DESTDIR)$(packagedoc)/
-	$(INSTALL) -m 644 TOUR.SH    $(DESTDIR)$(packagedoc)/
 	cd bin; make install; cd ..
 	cd etc; make install; cd ..
 	cd lib; make install; cd ..

@@ -16,6 +16,7 @@
 ####################################################################
 
 import sys
+import regex
 import commands
 import string
 import getopt
@@ -40,6 +41,7 @@ class ClusterClass:
     # set the state of a node of that type
     name = "cluster"
     names   = []
+    index   = {}
     q_types = {}
     q_com   = {}
     c_types = {}
@@ -60,6 +62,7 @@ class ClusterClass:
         # tokens but do not start with the word node are ignored.
         # Case is ignored in the keywords cluster and node.
         line = cfg.readline()
+        i = 0
         while (line):
             tokens = string.split(line)
             if(tokens):
@@ -71,6 +74,8 @@ class ClusterClass:
                 elif (string.lower(tokens[0]) == 'node'):
                     if (len(tokens) >= 4):
                         self.names.append(tokens[1])
+                        self.index[tokens[1]] = i
+                        i = i + 1
                         # powermandir is a reference to a global variable
                         self.q_com[tokens[2]] = powermandir + 'bin/' + tokens[2]
                         if ( not os.path.isfile(self.q_com[tokens[2]])):
@@ -96,39 +101,20 @@ class ClusterClass:
 
     def node_cmp(self, x1, x2):
         "Return -1, 0, or 1 as x1 is before, the same, or after x2"
-        # based on integer comparison of the number part of the name
-        # Note that this will fail if it gets passed a string with no
-        # number at its end, which could happen if an error message
-        # slips past and ends up in the output string to be sorted, so
-        # check those error conditions and exit with a 1 if there's a
-        # problem.  
-        pos = 0
-        done = 0
-        while ( not done ):
-            done = 1
-            try:
-                y1 = int(x1[pos:])
-            except ValueError:
-                pos = pos + 1
-                if(pos < len(x1)):
-                    done = 0
-                else:
-                    if(verbose):
-                        sys.stderr.write("pm: Node name must end in integer " + x1 + "\n")
-                    sys.exit(1)
-        done = 0
-        while ( not done ):
-            done = 1
-            try:
-                y2 = int(x2[pos:])
-            except ValueError:
-                pos = pos + 1
-                if(pos < len(x2)):
-                    done = 0
-                else:
-                    if(verbose):
-                        sys.stderr.write("pm: Node name must end in integer " + x2 + "\n")
-                    sys.exit(1)
+        # based on integer comparison of the self.index value, which
+        # is the order in which the config file listed the nodes.
+        try:
+            y1 = self.index[x1]
+        except KeyError:
+            if(verbose):
+                sys.stderr.write("pm: " + x1 + " not found\n")
+            sys.exit(1)
+        try:
+            y2 = self.index[x2]
+        except KeyError:
+            if(verbose):
+                sys.stderr.write("pm: " + x2 + " not found\n")
+            sys.exit(1)
         return cmp(y1, y2)
 
     def check(self, opts, n_list):
@@ -505,9 +491,9 @@ for name in names:
     try:
         theCluster.names.index(name)
         names_list.append(name)
-    except IndexError:
+    except ValueError:
         if(verbose):
-            sys.stderr.write("pm: " + name + " is not in the " + theCluster.cluster + " cluster\n")
+            sys.stderr.write("pm: " + name + " is not in the " + theCluster.name + " cluster\n")
         sys.exit(1)
 
 if(names_list == []):
