@@ -25,6 +25,10 @@
 \*****************************************************************************/
 
 #include <assert.h>
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 #include "powerman.h"
 #include "wrappers.h"

@@ -27,7 +27,7 @@
 #ifndef POWERMAND_H
 #define POWERMAND_H
 
-
+#include <stdio.h>
 
 #define PROJECT "powerman"
 #define VERSION "1.0.0"

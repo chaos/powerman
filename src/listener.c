@@ -28,6 +28,7 @@
 #include <arpa/inet.h>
 #include <syslog.h>
 #include <tcpd.h>
+#include <fcntl.h>
 
 #include "powerman.h"
 #include "wrappers.h"
@@ -145,7 +146,7 @@ handle_Listener(Globals *g)
 	/* get client->ip */
 	if ( inet_ntop(AF_INET, &saddr.sin_addr, buf, MAX_BUF) == NULL )
 	{
-		close(client->fd);
+		Close(client->fd);
 		free_Client(client);
 		log_it(0, "Unable to convert network address into string");
 		return;
@@ -179,7 +180,7 @@ handle_Listener(Globals *g)
 					    STRING_UNKNOWN);
 		if( accepted_client == FALSE )
 		{
-			close(client->fd);
+			Close(client->fd);
 			free_Client(client);
 			log_it(0, "Client rejected: <%s, %d>", fqdn, client->port);
 			return;

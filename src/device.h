@@ -27,6 +27,7 @@
 #ifndef DEVICE_H
 #define DEVICE_H
 
+#include <regex.h>
 #include "buffer.h"
 
 #define DEV_NOT_CONNECTED 0

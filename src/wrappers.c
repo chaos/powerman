@@ -24,7 +24,15 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#include <string.h>
+#include <errno.h>
 #include <assert.h>
+#include <unistd.h>
+#include <signal.h>
+#include <fcntl.h>
+#include <stdlib.h>
+#include <sys/socket.h>
+
 #include "powerman.h"
 #include "exit_error.h"
 #include "wrappers.h"
@@ -181,6 +189,17 @@ Malloc(int size)
 	return new;
 }
 
+char *
+Strdup(char *str)
+{
+	char *cpy;
+       
+	cpy = Malloc(strlen(str) + 1);
+
+	strcpy(cpy, str);
+	return cpy;
+}
+
 void 
 Free(void *ptr, int size)
 {
@@ -263,6 +282,17 @@ Open(char *str, int flags, int mode)
 	if (fd < 0)
 		exit_error("open %s", str);
 	return fd;
+}
+
+int
+Close(int fd)
+{
+	int n;
+
+	n = close(fd);
+	if (n < 0)
+		exit_error("close");
+	return n;
 }
 
 int

@@ -28,6 +28,11 @@
 #ifndef WRAPPERS_H
 #define WRAPPERS_H
 
+#include <sys/time.h>
+#include <time.h>
+#include <regex.h>
+#include <netdb.h>
+
 /* Wrapper functions (in wrappers.c) */
 int Socket(int family, int type, int protocol);
 int Setsockopt( int fd, int level, int optname, const void *opt_val, 
@@ -41,12 +46,14 @@ int Select(int maxfd, fd_set *rset, fd_set *wset, fd_set *eset, struct timeval *
 void Delay(struct timeval *tv);
 char * Malloc(int size);
 void Free(void *ptr, int size);
+char * Strdup(char *str);
 void Report_Memory();
 int Accept(int fd, struct sockaddr_in *addr, socklen_t *addrlen);
 int Connect(int fd, struct sockaddr *addr, socklen_t addrlen);
 int Read(int fd, char *p, int max);
 int Write(int fd, char *p, int max);
 int Open(char *str, int flags, int mode);
+int Close(int fd);
 int Getaddrinfo(char *host, char *service, struct addrinfo *hints, 
 			struct addrinfo **addrinfo);
 void Regcomp(regex_t *preg, const char *regex, int cflags);

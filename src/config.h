@@ -27,6 +27,9 @@
 #ifndef CONFIG_H
 #define CONFIG_H
 
+#include <regex.h>
+#include <sys/types.h>
+
 #include "list.h"
 #include "pm_string.h"
 

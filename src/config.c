@@ -24,7 +24,10 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-/* all the declarations */
+#include <sys/time.h>
+#include <time.h>
+#include <string.h>
+
 #include "powerman.h"
 #include "exit_error.h"
 #include "list.h"

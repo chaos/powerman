@@ -25,6 +25,14 @@
 \*****************************************************************************/
 #include <syslog.h>
 #include <limits.h>
+#include <errno.h>
+#include <signal.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <stdio.h>
 
 #include "powerman.h"
 
@@ -73,13 +81,13 @@ daemon_init(void)
 	len = strlen(pidstr);
 	n = write(fd, pidstr, len);
 	if( n != len ) exit_msg("Failed to write out pid value");
-	close(fd);
+	Close(fd);
 
 	/* clear our file mode creation mask */
 	umask(0);
 
 	for (i = 0; i < MAXFD; i++)
-		close(i);
+		Close(i);
 
 	sprintf(buf, "Started %s", ctime(&t));
 	openlog(DAEMON_NAME, LOG_NDELAY |  LOG_PID, LOG_DAEMON);

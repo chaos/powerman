@@ -24,6 +24,9 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#include <string.h>
+#include <errno.h>
+
 #include "powerman.h"
 #include "list.h"
 #include "config.h"
@@ -412,18 +415,19 @@ dump_Client_Status(Client_Status status)
  * Destroys:  Client
  */
 void
-free_Client(void *client)
+free_Client(void *vclient)
 {
-	CHECK_MAGIC((Client *)client);
+	Client *client = (Client *)vclient;
 
-	CLEAR_MAGIC((Client *)client);
-	if( ((Client *)client)->fd != NO_FD ) 
+	CHECK_MAGIC(client);
+
+	if( client->fd != NO_FD ) 
 	{
-		close(((Client *)client)->fd);
+		Close(client->fd);
 		log_it(0, "client on descriptor %d signs off", ((Client *)client)->fd);
 	}
-	if( ((Client *)client)->to != NULL ) free_Buffer(((Client *)client)->to);
-	if( ((Client *)client)->from != NULL ) free_Buffer(((Client *)client)->from);
-	Free(client, sizeof(*((Client *)client)));
+	if( client->to != NULL ) free_Buffer(client->to);
+	if( client->from != NULL ) free_Buffer(client->from);
+	Free(client, sizeof(*client));
 }
 

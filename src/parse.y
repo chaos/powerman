@@ -29,6 +29,10 @@
 	extern int yyline; /* For parse error reporting */
 #define YYSTYPE char *  /*  The generic type returned by all parse matches */
 #undef YYDEBUG          /* no debug code plese */
+#include <errno.h>
+#include <string.h>
+#include <stdlib.h>
+
 #include "powerman.h"
 #include "list.h"
 #include "config.h"

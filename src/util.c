@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 #include "powerman.h"
 
 #include "buffer.h"

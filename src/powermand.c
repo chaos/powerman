@@ -31,7 +31,19 @@
  * icebox	1010/tcp		# icebox raw TCP protocol 
  */
 
-/* all the declarations */
+#include <errno.h>
+#include <sys/time.h>
+#include <time.h>
+#define _GNU_SOURCE
+#include <getopt.h>
+#include <unistd.h>
+#include <signal.h>
+#include <string.h>
+#include <stdlib.h>
+#include <sys/stat.h>
+#include <syslog.h>
+#include <stdio.h>
+
 #include "powerman.h"
 #include "list.h"
 #include "config.h"
@@ -75,14 +87,18 @@ const char *powerman_license = \
     "under the terms of the GNU General Public License as published by\n"     \
     "the Free Software Foundation.\n";
 
+#define OPT_STRING "c:fhkLrV"
+#define HAVE_RECONFIGURE_OPTION 0 /* XXX not yet */
 const struct option long_options[] =
-{                             /* c:dhkLrV */
+{
 		{"config_file",    required_argument, 0, 'c'},
-		{"dont_daemonize", no_argument,       0, 'd'},
+		{"foreground",     no_argument,       0, 'f'},
 		{"help",           no_argument,       0, 'h'},
 		{"kill",           no_argument,       0, 'k'},
 		{"license",        no_argument,       0, 'L'},
-		{"reread_config",  no_argument,       0, 'r'},
+#if HAVE_RECONFIGURE_OPTION
+		{"reconfigure",    no_argument,       0, 'r'},
+#endif
 		{"version",        no_argument,       0, 'V'},
 		{0, 0, 0, 0}
 };
@@ -125,10 +141,10 @@ main(int argc, char **argv)
 	Signal(SIGHUP, sig_hup_handler);
 	Signal(SIGTERM, exit_handler);
 
+	read_Config_file(g);
+
 	if( g->daemonize )
 		daemon_init();
-
-	read_Config_file(g);
 
 	dev_i = list_iterator_create(g->devs);
 	while( (dev = (Device *)list_next(dev_i)) )
@@ -155,44 +171,45 @@ process_command_line(Globals *g, int argc, char **argv)
 {
 	int c;
 	int signum = 0;
-	int len;
 	int longindex;
 
 	opterr = 0;
-	while ((c = getopt_long(argc, argv, "c:dhkLrV", longopts, &longindex)) != -1) {
+	while ((c = getopt_long(argc, argv, OPT_STRING, longopts, &longindex)) != -1) {
 		switch(c) {
-		case 'c':
+		case 'c':	/* --config_file */
 			if( g->config_file != NULL ) 
-				Free(g->config_file, strlen(g->config_file));
-			len = strlen(optarg);
-			g->config_file = Malloc(len + 1);
-			strncpy(g->config_file, optarg, len);
-			g->config_file[len] = '\0';
+				usage(argv[0]);
+			g->config_file = Strdup(optarg);
 			break;
-		case 'd':
+		case 'f':	/* --foreground */
 			g->daemonize = FALSE;
 			break;
-		case 'h':
+		case 'h':	/* --help */
 			usage(argv[0]);
 			exit(0);
-		case 'k':
+		case 'k':	/* --kill */
 			signum = SIGTERM;
 			break;
-		case 'L':
+		case 'L':	/* --license */
 			printf("%s", powerman_license);
 			exit(0);
-		case 'r':
+#if HAVE_RECONFIGURE_OPTION
+		case 'r':	/* --reconfig */
 			signum = SIGHUP;
 			break;
+#endif
 		case 'V':
 			printf("%s-%s\n", PROJECT, VERSION);
 			exit(0);
 		default:
-			printf("Unrecognized command line option (try -h).\n");
+			exit_msg("Unrecognized command line option (try -h).");
 			exit(0);
 			break;
 		}
 	}
+
+	if (! g->config_file)
+		g->config_file = Strdup(DFLT_CONFIG_FILE);	
 	
 	if (signum) 
 	{
@@ -228,13 +245,15 @@ signal_daemon(int signum)
 	int n;
 
 	fp = fopen(PID_FILE_NAME, "r");
-	if( fp == NULL ) exit_error("Failed to open %s", PID_FILE_NAME);
+	if( fp == NULL ) 
+		exit_error("%s", PID_FILE_NAME);
 	n = fscanf(fp, "%d", &pid);
-	unlink(PID_FILE_NAME);
-	if( n != 1 ) exit_msg("Failed to find a pid in %s", PID_FILE_NAME); 
+	if( n != 1 ) 
+		exit_msg("failed to find a pid in %s", PID_FILE_NAME); 
 	n = kill(pid, signum);
-	if( n < 0 ) exit_error("kill -%d %d", signum, pid);
-	errno = 0;
+	if( n < 0 ) 
+		exit_error("kill -%d %d", signum, pid);
+	unlink(PID_FILE_NAME);
 	return;
 }
 
@@ -242,13 +261,16 @@ void usage(char *prog)
 {
     printf("Usage: %s [OPTIONS]\n", prog);
     printf("\n");
-    printf("  -c FILE --config_file FILE\tSpecify configuration [/etc/powerman.conf].\n");
-    printf("  -d --dont_daemonize\t\tDon't daemonize (debug).\n");
-    printf("  -h --help\t\t\tDisplay this help.\n");
-    printf("  -k --kill\t\t\tKill daemon.\n");
-    printf("  -L --license\t\t\tDisplay license information.\n");
-    printf("  -r --reread_config\t\tReread configuration.\n");
-    printf("  -V --version\t\t\tDisplay version information.\n");
+    printf("  -c --config_file FILE\tSpecify configuration [%s]\n", 
+		    DFLT_CONFIG_FILE);
+    printf("  -f --foreground\tDon't daemonize (debug)\n");
+    printf("  -h --help\t\tDisplay this help\n");
+    printf("  -k --kill\t\tKill running daemon and exit\n");
+    printf("  -L --license\t\tDisplay license information\n");
+#if HAVE_RECONFIGURE_OPTION
+    printf("  -r --reconfigure\tReread configuration\n");
+#endif
+    printf("  -V --version\t\tDisplay version information\n");
     printf("\n");
     return;
 }
@@ -516,19 +538,21 @@ read_Config_file(Globals *g)
 	CHECK_MAGIC(g);
 
 /* Did we really get a config file? */
-	stat(g->config_file, &stbuf);
+	if (g->config_file == NULL)
+		exit_msg("no config file specified");
+	if (stat(g->config_file, &stbuf) < 0)
+		exit_error("%s", g->config_file);
 	if( (stbuf.st_mode & S_IFMT) != S_IFREG )
-		exit_error("Config file must be a regular file, \"%s\" is not\n", g->config_file);
+		exit_msg("%s is not a regular file\n", g->config_file);
 	g->cf = fopen(g->config_file, "r");
 	if( g->cf == NULL ) 
-		exit_error("Failed to find config file %s", g->config_file); 
+		exit_error("fopen %s", g->config_file); 
 
 	g->client_prot = init_Client_Protocol();
 
 	parse_config_file();
 	
 	fclose(g->cf);
-	
 }
 
 /*

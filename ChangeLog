@@ -50,3 +50,7 @@
 	* Have Free() wrapper clear memory to zero magic cookies, etc..
 	* Made Buffer an opaque type with magic cookie.
 	* Made String an opaque type with magic cookie.
+	* Give appropriate errors when powermand config file is not set or 
+	  set improperly, and start with a default config file.
+	* Powermand options changed per code review.
+	* Moved system includes out of powerman.h.

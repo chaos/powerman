@@ -40,6 +40,8 @@ extern int yyline;
 #define YYSTYPE char *
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
+
 #include "parse_tab.h"
 #include "powerman.h"
 #include "buffer.h"

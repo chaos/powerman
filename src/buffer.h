@@ -27,6 +27,8 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
+#include <regex.h>
+
 #define MAX_BUF    64000          /* 2560 nodes with 16 chars per name   */
 #define HIGH_WATER 200            /* wti and baytech have some sreen     */
 #define LOW_WATER  200            /*            oriented display modes   */

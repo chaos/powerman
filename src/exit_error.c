@@ -30,6 +30,11 @@
 
 #include <string.h>
 #include <assert.h>
+#include <errno.h>
+#include <stdlib.h>
+#include <syslog.h>
+#include <stdarg.h>
+#include <stdio.h>
 
 #include "powerman.h"
 #include "list.h"

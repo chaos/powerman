@@ -24,6 +24,15 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#include <errno.h>
+#include <sys/time.h>
+#include <time.h>
+#include <fcntl.h>
+#include <ctype.h>
+#include <string.h>
+#include <sys/socket.h>
+#include <syslog.h>
+
 #include "powerman.h"
 #include "list.h"
 #include "config.h"
@@ -47,7 +56,7 @@ static bool process_send(Device *dev);
 static bool process_delay(Device *dev);
 static void do_Device_semantics(Device *dev, List map);
 static void do_PMD_semantics(Device *dev, List map);
-static int match_RegEx(Device *dev, String expect);
+static bool match_RegEx(Device *dev, String expect);
 
 
 /*
@@ -438,7 +447,7 @@ do_Device_reconnect(Device *dev)
  */
 	Action *act;
 
-	close(dev->fd);
+	Close(dev->fd);
 	log_it(0, "Lost connection to device");
 	dev->status   = DEV_NOT_CONNECTED;
 	dev->loggedin = FALSE;

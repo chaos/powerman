@@ -27,34 +27,7 @@
 #ifndef POWERMAN_H
 #define POWERMAN_H
 
-#define _GNU_SOURCE
-
-#include <stdio.h>
-#include <stdarg.h>
-#include <syslog.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <netdb.h>
-#include <stdlib.h>
-#include <regex.h>
-#include <string.h>
-#include <ctype.h>
-#include <fcntl.h>
-#include <signal.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <getopt.h>
-#include <sys/time.h>
-#include <time.h>
-#include <errno.h>
-#include <arpa/telnet.h>
-
-
-typedef int bool;
-#define TRUE  1 /* bool values */
-#define FALSE 0
+typedef enum { FALSE=0, TRUE=1 } bool;
 
 #define NO_FD           (-1)
 #define	MAXFD	         64
@@ -93,6 +66,7 @@ typedef int bool;
 #define PID_FILE_NAME "/var/run/powerman/powerman.pid"
 #define PID_DIR       "/var/run/powerman"
 #define ROOT_DIR      "/etc/powerman"
+#define DFLT_CONFIG_FILE "/etc/powerman/powerman.conf"
 
 typedef enum client_status_enum Client_Status;
 typedef struct client_struct Client;
