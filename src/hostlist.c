@@ -53,10 +53,7 @@
 /* printf-style error function -- redefine to your project's error 
  * reporting facility. Should take args like _err(char *, ...)
  */
-#ifndef _err
-#include "err.h"
-#define _err(fmt, args...) 	err(fmt, ## args)
-#endif
+#define _err(fmt, args...)	do { } while(0)
 
 /* number of elements to allocate when extending the hostlist array */
 #define HOSTLIST_CHUNK	16
@@ -1234,7 +1231,7 @@ static int _parse_single_range(const char *str, struct _range *range)
 		goto error;
 
 	if (range->hi - range->lo + 1 > MAX_RANGE ) {
-		_err("Too many hosts in range `%s'\n", orig);
+		_err("Too many hosts in range `%s'", orig);
 		free(orig);
 		seterrno_ret(ERANGE, 0);
 	}
@@ -1244,7 +1241,7 @@ static int _parse_single_range(const char *str, struct _range *range)
 	return 1;
 
   error:
-	_err("Invalid range: `%s'\n", orig);
+	_err("Invalid range: `%s'", orig);
 	free(orig);
 	seterrno_ret(EINVAL, 0);
 }

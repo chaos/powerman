@@ -53,7 +53,9 @@
 /*
  * Actions are appended to a per device list in dev->acts
  */
+#define ACT_MAGIC 0xb00bb000
 typedef struct {
+    int magic;
     int com;                    /* one of the PM_* above */
     ListIterator itr;           /* next place in the script sequence */
     Stmt *cur;                  /* current place in the script sequence */
@@ -61,15 +63,13 @@ typedef struct {
     ActionCB complete_fun;      /* callback for action completion */
     VerbosePrintf vpf_fun;      /* callback for device telemetry */
     int client_id;              /* client id so completion can find client */
-    bool error;                 /* error flag for action */
+    ActError errnum;            /* errno for action */
     struct timeval time_stamp;  /* time stamp for timeouts */
     struct timeval delay_start; /* time stamp for delay completion */
     ArgList *arglist;           /* argument for query actions (list of Arg's) */
-     MAGIC;
 } Action;
 
 #define _act_started(act)   ((act)->cur != NULL)
-
 
 
 static bool _reconnect(Device * dev);
@@ -204,7 +204,7 @@ static Action *_create_action(Device * dev, int com, char *target,
 
     dbg(DBG_ACTION, "_create_action: %d", com);
     act = (Action *) Malloc(sizeof(Action));
-    INIT_MAGIC(act);
+    act->magic = ACT_MAGIC;
     act->com = com;
     act->complete_fun = complete_fun;
     act->vpf_fun = vpf_fun;
@@ -212,7 +212,7 @@ static Action *_create_action(Device * dev, int com, char *target,
     act->itr = list_iterator_create(dev->scripts[act->com]);
     act->cur = NULL;
     act->target = target ? Strdup(target) : NULL;
-    act->error = FALSE;
+    act->errnum = ACT_ESUCCESS;
     act->arglist = arglist ? dev_link_arglist(arglist) : NULL;
     timerclear(&act->time_stamp);
 
@@ -221,8 +221,8 @@ static Action *_create_action(Device * dev, int com, char *target,
 
 static void _destroy_action(Action * act)
 {
-    CHECK_MAGIC(act);
-
+    assert(act->magic == ACT_MAGIC);
+    act->magic = 0;
     dbg(DBG_ACTION, "_destroy_action: %d", act->com);
     if (act->target != NULL)
         Free(act->target);
@@ -233,7 +233,6 @@ static void _destroy_action(Action * act)
     act->cur = NULL;
     if (act->arglist)
         dev_unlink_arglist(act->arglist);
-    CLEAR_MAGIC(act);
     Free(act);
 }
 
@@ -340,7 +339,7 @@ static bool _reconnect(Device * dev)
     int sock_opt;
     int fd_settings;
 
-    CHECK_MAGIC(dev);
+    assert(dev->magic == DEV_MAGIC);
     assert(dev->type == TCP_DEV);
     assert(dev->connect_status == DEV_NOT_CONNECTED);
     assert(dev->fd == -1);
@@ -652,7 +651,7 @@ static void _handle_read(Device * dev)
     int n;
     int dropped;
 
-    CHECK_MAGIC(dev);
+    assert(dev->magic == DEV_MAGIC);
     n = cbuf_write_from_fd(dev->from, dev->fd, -1, &dropped);
     if (n < 0) {
         err(TRUE, "read error on %s", dev->name);
@@ -681,8 +680,7 @@ static void _handle_write(Device * dev)
 {
     int n;
 
-    CHECK_MAGIC(dev);
-
+    assert(dev->magic == DEV_MAGIC);
     n = cbuf_read_to_fd(dev->to, dev->fd, -1);
     if (n < 0) {
         err(TRUE, "write error on %s", dev->name);
@@ -760,7 +758,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
             dbg(DBG_SCRIPT, "_process_action(%s): %s timeout - aborting",
                 dev->name, act->cur->type == STMT_EXPECT ? "expect"
                 : act->cur->type == STMT_SEND ? "send" : "delay");
-            act->error = TRUE;  /* timed out */
+            act->errnum = ACT_ETIMEOUT;  /* timed out */
             if (act->vpf_fun) {
                 unsigned char mem[MAX_DEV_BUF];
                 int len = cbuf_peek(dev->from, mem, MAX_DEV_BUF);
@@ -771,11 +769,11 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 Free(memstr);
             }
         } else if (!(dev->connect_status & DEV_CONNECTED)) {
-            stalled = TRUE;     /* not connnected */
+            stalled = TRUE;                             /* not connnected */
         } else if (act->cur->type == STMT_EXPECT) {
-            stalled = !_process_expect(dev);    /* do expect */
+            stalled = !_process_expect(dev);            /* do expect */
         } else if (act->cur->type == STMT_SEND) {
-            stalled = !_process_send(dev);      /* do send */
+            stalled = !_process_send(dev);              /* do send */
         } else {
             assert(act->cur->type == STMT_DELAY);
             stalled = !_process_delay(dev, timeout);    /* do delay */
@@ -784,33 +782,43 @@ static void _process_action(Device * dev, struct timeval *timeout)
         if (stalled) {          /* if stalled, set timeout for select */
             _update_timeout(timeout, &timeleft);
         } else {
-            bool error = act->error;
+            bool error = (act->errnum != ACT_ESUCCESS);
 
             assert(act->itr != NULL);
             /* completed action - notify client and dequeue action */
-            if (act->error || (act->cur = list_next(act->itr)) == NULL) {
+            if (error || (act->cur = list_next(act->itr)) == NULL) {
                 if (act->com == PM_LOG_IN) {
-                    if (!act->error)
+                    if (!error)
                         dev->script_status |= DEV_LOGGED_IN;
                 }
                 if (act->complete_fun)        /* notify client */
-                    act->complete_fun(act->client_id,
-                                act->error ? CP_ERR_TIMEOUT : NULL,
-                                dev->name);
-                if (!act->error)
+                    switch (act->errnum) {
+                    case ACT_ESUCCESS:
+                        act->complete_fun(act->client_id, act->errnum, NULL);
+                        break;
+                    case ACT_ETIMEOUT:
+                        act->complete_fun(act->client_id, act->errnum, 
+                            "action for device %s timed out", dev->name);
+                        break;
+                    default:
+                        act->complete_fun(act->client_id, act->errnum, 
+                            "action for device %s failed with error %d", 
+                            dev->name, act->errnum);
+                        break;
+                    }
+                if (error)
                     dev->stat_successful_actions++;
                 _destroy_action(list_dequeue(dev->acts));
             }
 
-            /* if one action timed out, time out the rest in the device queue */
+            /* if one action failed, abort the rest in the device queue */
             if (error) {
                 Action *act;
 
                 while ((act = list_dequeue(dev->acts)) != NULL) { 
                     if (act->complete_fun) {
-                        act->error = TRUE;
-                        act->complete_fun(act->client_id, CP_ERR_TIMEOUT, 
-                                dev->name);
+                        act->complete_fun(act->client_id, ACT_EABORT, 
+                                "action for device %s aborted", dev->name);
                     }
                     _destroy_action(act);
                 }
@@ -874,7 +882,7 @@ static bool _process_expect(Device * dev)
  * Result must be destroyed with Free().
  */
 #define CHUNKSIZE 80
-static char *_malloc_printf(const char *fmt, ...)
+static char *_malloc_sprintf(const char *fmt, ...)
 {
     va_list ap;
     char *str = NULL;
@@ -898,14 +906,14 @@ static bool _process_send(Device * dev)
     bool finished = FALSE;
 
     assert(act != NULL);
-    CHECK_MAGIC(act);
+    assert(act->magic == ACT_MAGIC);
     assert(act->cur != NULL);
     assert(act->cur->type == STMT_SEND);
 
     /* first time through? */
     if (!(dev->script_status & DEV_SENDING)) {
         int dropped = 0;
-        char *str = _malloc_printf(act->cur->u.send.fmt, act->target);
+        char *str = _malloc_sprintf(act->cur->u.send.fmt, act->target);
         int written = cbuf_write(dev->to, str, strlen(str), &dropped);
 
         if (written < 0)
@@ -930,11 +938,11 @@ static bool _process_send(Device * dev)
         Free(str);
     }
 
-    if (cbuf_is_empty(dev->to)) { /* finished! */
+    if (cbuf_is_empty(dev->to)) {           /* finished! */
         dbg(DBG_SCRIPT, "_process_send(%s): send complete", dev->name);
         dev->script_status &= ~DEV_SENDING;
         finished = TRUE;
-    } else                      /* more to write */
+    } else                                  /* more to write */
         dbg(DBG_SCRIPT, "_process_send(%s): incomplete send", dev->name);
 
     return finished;
@@ -1039,7 +1047,7 @@ Device *dev_create(const char *name)
     int i;
 
     dev = (Device *) Malloc(sizeof(Device));
-    INIT_MAGIC(dev);
+    dev->magic = DEV_MAGIC;
     dev->name = Strdup(name);
     dev->type = NO_DEV;
     dev->connect_status = DEV_NOT_CONNECTED;
@@ -1077,7 +1085,9 @@ Device *dev_findbyname(char *name)
 void dev_destroy(Device * dev)
 {
     int i;
-    CHECK_MAGIC(dev);
+
+    assert(dev->magic == DEV_MAGIC);
+    dev->magic = 0;
 
     Free(dev->name);
     Free(dev->specname);
@@ -1096,7 +1106,6 @@ void dev_destroy(Device * dev)
         if (dev->scripts[i] != NULL)
             list_destroy(dev->scripts[i]);
 
-    CLEAR_MAGIC(dev);
     cbuf_destroy(dev->to);
     cbuf_destroy(dev->from);
     Free(dev);

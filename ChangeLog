@@ -1,3 +1,8 @@
+2002-12-27 garlick
+    * Clean up passing of errors to client action completion callback.
+    * Make all informational message names CP_INFO_*.  Delete some unused
+      protocol responses.
+
 2002-12-26 garlick
     * Beginnings of redundant power supply support.
     * Increase CP_LINEMAX to accomodate longer lines returned by --telemetry

@@ -182,15 +182,18 @@ int main(int argc, char **argv)
     /* remaining arguments used to build a single hostlist argument */
     while (optind < argc) {
         if (!have_targets) {
-            targets = hostlist_create(NULL);
+            if ((targets = hostlist_create(NULL)) == NULL)
+                err_exit(FALSE, "hostlist error");
             have_targets = TRUE;
         }
-        hostlist_push(targets, argv[optind]);
+        if (hostlist_push(targets, argv[optind]) == 0)
+            err_exit(FALSE, "hostlist error");
         optind++;
     }
     if (have_targets) {
         hostlist_sort(targets);
-        hostlist_ranged_string(targets, sizeof(targstr), targstr);
+        if (hostlist_ranged_string(targets, sizeof(targstr), targstr) == -1)
+            err_exit(FALSE, "hostlist error");
     }
 
     _connect_to_server(host ? host : SERVER_HOSTNAME, 
@@ -397,7 +400,7 @@ static void _disconnect_from_server(void)
  */
 static bool _supress(int num)
 {
-    char *ignoreme[] = { CP_RSP_QUERY_COMPLETE, CP_RSP_TELEMETRY, 
+    char *ignoreme[] = { CP_RSP_QRY_COMPLETE, CP_RSP_TELEMETRY, 
         CP_RSP_EXPRANGE };
     bool res = FALSE;
     int i;

@@ -56,14 +56,16 @@ typedef struct {
 /*
  * Device
  */
-typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING,
-        DEV_CONNECTED } ConnectStat;
+typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectStat;
 /* bitwise values for dev->script_status */
 #define DEV_LOGGED_IN   1
 #define DEV_SENDING     2
 #define DEV_EXPECTING   4
 #define DEV_DELAYING    8
+
+#define DEV_MAGIC       0xbeefb111
 typedef struct {
+    int magic;
     char *name;                 /* name of device */
 
     char *all;                  /* string to select all plugs */
@@ -101,11 +103,10 @@ typedef struct {
 
     int stat_successful_connects;
     int stat_successful_actions;
-
-     MAGIC;
 } Device;
 
-typedef void (*ActionCB) (int client_id, char *errfmt, char *errarg);
+typedef enum {ACT_ESUCCESS, ACT_ETIMEOUT, ACT_EABORT} ActError;
+typedef void (*ActionCB) (int client_id, ActError acterr, const char *fmt, ...);
 typedef void (*VerbosePrintf) (int client_id, const char *fmt, ...);
 
 void dev_init(void);

@@ -53,14 +53,13 @@
 /* prototypes for internal functions */
 static Command *_create_command(Client * c, int com, char *arg1);
 static void _destroy_command(Command * cmd);
-static void _hostlist_error(Client * c);
 static int _match_client(Client * client, void *key);
 static Client *_find_client(int client_id);
 static hostlist_t _hostlist_create_validated(Client * c, char *str);
 static void _client_query_nodes_reply(Client * c);
 static void _client_query_device_reply(Client * c, char *arg);
-static void _client_query_reply(Client * c);
-static void _client_query_raw_reply(Client * c);
+static void _client_query_status_reply(Client * c, bool error);
+static void _client_query_status_reply_nointerp(Client * c, bool error);
 static void _handle_read(Client * c);
 static void _handle_write(Client * c);
 static void _handle_input(Client *c);
@@ -68,7 +67,7 @@ static char *_strip_whitespace(char *str);
 static void _parse_input(Client * c, char *input);
 static void _destroy_client(Client * client);
 static void _create_client(void);
-static void _act_finish(int client_id, char *errfmt, char *errarg);
+static void _act_finish(int client_id, ActError acterr, const char *fmt, ...);
 static void _telemetry_printf(int client_id, const char *fmt, ...);
 
 #define MIN_CLIENT_BUF     1024
@@ -86,6 +85,9 @@ static List cli_clients = NULL; /* list of clients */
 static int cli_id_seq = 1;      /* range 1...INT_MAX */
 #define _next_cli_id() \
     (cli_id_seq < INT_MAX ? cli_id_seq++ : (cli_id_seq = 1, INT_MAX))
+
+#define _internal_error_response(c) \
+    _client_printf(c, CP_ERR_INTERNAL, __FILE__, __LINE__)
 
 /*
  * Allocate a string and sprintf to it, resizing until sprintf succedes.
@@ -141,27 +143,9 @@ void cli_fini(void)
 }
 
 /* 
- * Issue appropriate error message to client given a hostlist-generated errno.
- */
-static void _hostlist_error(Client * c)
-{
-    switch (errno) {
-    case ERANGE:
-        _client_printf(c, CP_ERR_HLRANGE);
-        break;
-    case EINVAL:
-        _client_printf(c, CP_ERR_HLINVAL);
-        break;
-    default:
-        _client_printf(c, CP_ERR_HLUNK);
-        break;
-    }
-}
-
-/* 
  * Build a hostlist_t from a string, validating each node name against 
  * powerman configuration.  If any bogus nodes are found, issue error 
- * message to client and return NULL.
+ * response to client and return NULL.
  */
 static hostlist_t _hostlist_create_validated(Client * c, char *str)
 {
@@ -172,15 +156,20 @@ static hostlist_t _hostlist_create_validated(Client * c, char *str)
     bool valid = TRUE;
 
     if ((hl = hostlist_create(str)) == NULL) {
-        _hostlist_error(c);
+        /* Note: report detailed error since 'str' comes from the user */
+        if (errno == ERANGE || errno == EINVAL)
+            _client_printf(c, CP_ERR_HOSTLIST, "invalid range");
+        else
+            _internal_error_response(c);
         return NULL;
     }
     if ((badhl = hostlist_create(NULL)) == NULL) {
-        _client_printf(c, CP_ERR_INTERNAL);
+        /* Note: other hostlist failures not user-induced so OK to be vague */
+        _internal_error_response(c);
         return NULL;
     }
     if ((itr = hostlist_iterator_create(hl)) == NULL) {
-        _client_printf(c, CP_ERR_INTERNAL);
+        _internal_error_response(c);
         hostlist_destroy(hl);
         return NULL;
     }
@@ -218,23 +207,26 @@ static void _client_query_nodes_reply(Client * c)
         hostlist_iterator_t itr;
         char *node;
     
-        if ((itr = hostlist_iterator_create(nodes))) {
-            while ((node = hostlist_next(itr))) {
-                _client_printf(c, CP_RSP_RAW_NODES, node);
-            }
-        } else {
-            _client_printf(c, CP_ERR_INTERNAL);
+        if ((itr = hostlist_iterator_create(nodes)) == NULL) {
+            _internal_error_response(c);
+            return;
         }
-        _client_printf(c, CP_RSP_QUERY_COMPLETE);
+        while ((node = hostlist_next(itr))) {
+            _client_printf(c, CP_INFO_XNODES, node);
+        }
+        hostlist_iterator_destroy(itr);
         
     } else {
         char hosts[CP_LINEMAX];
 
-        if (hostlist_ranged_string(nodes, sizeof(hosts), hosts) == -1)
-            _client_printf(c, CP_ERR_INTERNAL);
-        else
-            _client_printf(c, CP_RSP_NODES, hosts);
+        if (hostlist_ranged_string(nodes, sizeof(hosts), hosts) == -1) {
+            _internal_error_response(c);
+            return;
+        }
+        _client_printf(c, CP_INFO_NODES, hosts);
     }
+
+    _client_printf(c, CP_RSP_QRY_COMPLETE);
 }
 
 /* 
@@ -307,7 +299,7 @@ static void _client_query_device_reply(Client * c, char *arg)
                 continue;
 
             if (_make_pluglist(dev, nodelist, sizeof(nodelist))) {
-                _client_printf(c, CP_RSP_DEVICE, 
+                _client_printf(c, CP_INFO_DEVICE, 
                         dev->name,
                         con > 0 ? con - 1 : 0, 
                         dev->stat_successful_actions,
@@ -317,11 +309,11 @@ static void _client_query_device_reply(Client * c, char *arg)
         }
         list_iterator_destroy(itr);
     }
-    _client_printf(c, CP_RSP_QUERY_COMPLETE);
+    _client_printf(c, CP_RSP_QRY_COMPLETE);
 
 }
 
-/* helper for _client_query_reply */
+/* helper for _client_query_status_reply */
 static int _argval_ranged_string(ArgList * arglist, char *str, int len,
                                  ArgState state)
 {
@@ -348,7 +340,7 @@ static int _argval_ranged_string(ArgList * arglist, char *str, int len,
 /* 
  * Reply to client request for plug/soft status.
  */
-static void _client_query_reply(Client * c)
+static void _client_query_status_reply(Client * c, bool error)
 {
     ArgList *arglist = c->cmd->arglist;
 
@@ -360,12 +352,11 @@ static void _client_query_reply(Client * c)
 
         itr = list_iterator_create(arglist->argv);
         while ((arg = list_next(itr))) {
-            _client_printf(c, CP_RSP_RAW, arg->node, 
+            _client_printf(c, CP_INFO_XSTATUS, arg->node, 
                     arg->state == ST_ON ? "on" : 
                     arg->state == ST_OFF ? "off" : "unknown");
         }
         list_iterator_destroy(itr);
-        _client_printf(c, CP_RSP_QUERY_COMPLETE);
 
     } else {
         char on[CP_LINEMAX], off[CP_LINEMAX], unknown[CP_LINEMAX];
@@ -374,43 +365,54 @@ static void _client_query_reply(Client * c)
         n  = _argval_ranged_string(arglist, on,      CP_LINEMAX, ST_ON);
         n |= _argval_ranged_string(arglist, off,     CP_LINEMAX, ST_OFF);
         n |= _argval_ranged_string(arglist, unknown, CP_LINEMAX, ST_UNKNOWN);
-        if (n != 0)
-            _client_printf(c, CP_ERR_INTERNAL);
-        else
-            _client_printf(c, CP_RSP_STATUS, on, off, unknown);
+        if (n != 0) {
+            _internal_error_response(c);
+            return;
+        }
+        _client_printf(c, CP_INFO_STATUS, on, off, unknown);
     }
+
+    if (error)
+        _client_printf(c, CP_ERR_QRY_COMPLETE);
+    else
+        _client_printf(c, CP_RSP_QRY_COMPLETE);
 }
 
 /* 
  * Reply to client request for temperature/beacon status.
  */
-static void _client_query_raw_reply(Client * c)
+static void _client_query_status_reply_nointerp(Client * c, bool error)
 {
     ListIterator itr;
     Arg *arg;
     hostlist_t hl = hostlist_create(NULL);
-    char str[1024];
+    char tmpstr[CP_LINEMAX];
 
     assert(c->cmd != NULL);
     itr = list_iterator_create(c->cmd->arglist->argv);
     while ((arg = list_next(itr))) {
         if (arg->val)
-            _client_printf(c, CP_RSP_RAW, arg->node, arg->val);
+            _client_printf(c, CP_INFO_XSTATUS, arg->node, arg->val);
         else
             hostlist_push(hl, arg->node);
     }
     list_iterator_destroy(itr);
     if (!hostlist_is_empty(hl)) {
-        if (hostlist_ranged_string(hl, sizeof(str), str) == -1)
-            _client_printf(c, CP_ERR_INTERNAL);
-        else
-            _client_printf(c, CP_RSP_RAW, str, "unknown");
+        if (hostlist_ranged_string(hl, sizeof(tmpstr), tmpstr) == -1) {
+            _internal_error_response(c);
+            return;
+        }
+        _client_printf(c, CP_INFO_XSTATUS, tmpstr, "unknown");
     }
-    _client_printf(c, CP_RSP_QUERY_COMPLETE);
+    if (error)
+        _client_printf(c, CP_ERR_QRY_COMPLETE);
+    else
+        _client_printf(c, CP_RSP_QRY_COMPLETE);
 }
 
 /*
  * Create Command.
+ * On error, return an error to the client and NULL to the caller.
  */
 static Command *_create_command(Client * c, int com, char *arg1)
 {
@@ -423,6 +425,7 @@ static Command *_create_command(Client * c, int com, char *arg1)
     cmd->arglist = NULL;
 
     if (arg1) {
+        /* Note: this can send CP_ERR_HOSTLIST to client */
         cmd->hl = _hostlist_create_validated(c, arg1);
         if (cmd->hl == NULL) {
             _destroy_command(cmd);
@@ -430,8 +433,8 @@ static Command *_create_command(Client * c, int com, char *arg1)
         }
     }
     if (cmd && !dev_check_actions(cmd->com, cmd->hl)) {
-        _client_printf(c, CP_ERR_UNIMPL);
         _destroy_command(cmd);
+        _client_printf(c, CP_ERR_UNIMPL);
         cmd = NULL;
     }
     /* NOTE: cmd->arglist has a reference count and can persist after we 
@@ -446,6 +449,11 @@ static Command *_create_command(Client * c, int com, char *arg1)
             cmd->arglist = dev_create_arglist(cmd->hl);
         else
             cmd->arglist = dev_create_arglist(conf_getnodes());
+        if (cmd->arglist == NULL) {
+            _destroy_command(cmd);
+            _internal_error_response(c);
+            cmd = NULL;
+        }
     }
     return cmd;
 }
@@ -495,7 +503,8 @@ static void _parse_input(Client * c, char *input)
         _client_printf(c, CP_ERR_CLIBUSY);              /* error: busy */
         return;                                         /* no prompt */
     } else if (!strncasecmp(str, CP_HELP, strlen(CP_HELP))) {
-        _client_printf(c, CP_RSP_HELP);                 /* help */
+        _client_printf(c, CP_INFO_HELP);                /* help */
+        _client_printf(c, CP_RSP_QRY_COMPLETE);
     } else if (!strncasecmp(str, CP_NODES, strlen(CP_NODES))) {
         _client_query_nodes_reply(c);                   /* nodes */
     } else if (!strncasecmp(str, CP_TELEMETRY, strlen(CP_TELEMETRY))) {
@@ -582,15 +591,16 @@ static void _telemetry_printf(int client_id, const char *fmt, ...)
         vsnprintf(buf, CP_LINEMAX, fmt, ap); /* ignore truncation */
         va_end(ap);
 
-        _client_printf(c, CP_RSP_TELEMETRYMSG, buf);
+        _client_printf(c, CP_INFO_TELEMETRY, buf);
     }
 }
 
 /*
  * Callback for device action completion.
  */
-static void _act_finish(int client_id, char *errfmt, char *errarg)
+static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
 {
+    va_list ap;
     Client *c;
 
     /* if client has gone away do nothing */
@@ -599,47 +609,51 @@ static void _act_finish(int client_id, char *errfmt, char *errarg)
     CHECK_MAGIC(c);
     assert(c->cmd != NULL);
 
-    if (errfmt) {               /* flag any errors for the final report */
-        c->cmd->error = TRUE;
-        _client_printf(c, errfmt, errarg);
+    /* handle errors immediately */
+    if (acterr != ACT_ESUCCESS) {
+        char tmpstr[CP_LINEMAX];
+
+        va_start(ap, fmt);
+        vsnprintf(tmpstr, CP_LINEMAX, fmt, ap);     /* ignore truncation */
+        va_end(ap);
+        _client_printf(c, CP_INFO_ACTERROR, tmpstr);
+
+        c->cmd->error = TRUE;       /* when done say "completed with errors" */
     }
 
-    if (--c->cmd->pending > 0)  /* command is not complete */
-        return;
+    /* all actions have called back - return response to client */
+    if (--c->cmd->pending == 0) {
+        switch (c->cmd->com) {
+        case PM_STATUS_PLUGS:      /* status */
+        case PM_STATUS_NODES:      /* soft */
+        case PM_STATUS_BEACON:     /* beacon */
+            _client_query_status_reply(c, c->cmd->error);
+            break;
+        case PM_STATUS_TEMP:       /* temp */
+            _client_query_status_reply_nointerp(c, c->cmd->error);
+            break;
+        case PM_POWER_ON:          /* on */
+        case PM_POWER_OFF:         /* off */
+        case PM_BEACON_ON:         /* flash */
+        case PM_BEACON_OFF:        /* unflash */
+        case PM_POWER_CYCLE:       /* cycle */
+        case PM_RESET:             /* reset */
+            if (c->cmd->error)
+                _client_printf(c, CP_ERR_COM_COMPLETE);
+            else
+                _client_printf(c, CP_RSP_COM_COMPLETE);
+            break;
+        default:
+            assert(FALSE);
+            _internal_error_response(c);
+            break;
+        }
 
-    /*
-     * All actions completed - return final status to the client.
-     */
-    switch (c->cmd->com) {
-    case PM_STATUS_PLUGS:      /* status */
-    case PM_STATUS_NODES:      /* soft */
-    case PM_STATUS_BEACON:     /* beacon */
-        _client_query_reply(c);
-        break;
-    case PM_STATUS_TEMP:       /* temp */
-        _client_query_raw_reply(c);     /* FIXME: cmd->error  handled? */
-        break;
-    case PM_POWER_ON:          /* on */
-    case PM_POWER_OFF:         /* off */
-    case PM_BEACON_ON:         /* flash */
-    case PM_BEACON_OFF:        /* unflash */
-    case PM_POWER_CYCLE:       /* cycle */
-    case PM_RESET:             /* reset */
-        if (c->cmd->error)
-            _client_printf(c, CP_ERR_COMPLETE);
-        else
-            _client_printf(c, CP_RSP_COMPLETE);
-        break;
-    default:
-        assert(FALSE);
-        _client_printf(c, CP_ERR_INTERNAL);
-        break;
+        /* clean up and re-prompt */
+        _destroy_command(c->cmd);
+        c->cmd = NULL;
+        _client_printf(c, CP_PROMPT);
     }
-
-    /* clean up and re-prompt */
-    _destroy_command(c->cmd);
-    c->cmd = NULL;
-    _client_printf(c, CP_PROMPT);
 }
 
 /* 

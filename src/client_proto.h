@@ -69,9 +69,9 @@
 
 /* 
  * Responses - 
- * 1XX's are successful (indicates end of response)
- * 2XX's are failure (indicates end of response)
- * 3XX's are informational
+ * 1XX's are successes (indicates end of response)
+ * 2XX's are failures (indicates end of response)
+ * 3XX's are informational messages (more data coming)
  * Responses can be multi-line.  Client knows response is complete when
  * it reads a 1XX or 2XX line.
  */
@@ -80,55 +80,53 @@
 #define CP_IS_ALLDONE(i) ((i) >= 100 && (i) < 300)
 
 /* success */
-#define CP_RSP_SUCCESS     "100 Success"                            CP_EOL
-#define CP_RSP_NODES       "101 %s"                                 CP_EOL
-#define CP_RSP_STATUS \
- "302 on:      %s"                                                  CP_EOL \
- "302 off:     %s"                                                  CP_EOL \
- "102 unknown: %s"                                                  CP_EOL
-#define CP_RSP_QUIT         "103 Goodbye"                           CP_EOL
-#define CP_RSP_HELP  \
- "304 nodes              - query node list"                         CP_EOL \
- "304 device [<nodes>]   - query power control device status"       CP_EOL \
- "304 status [<nodes>]   - query power status"                      CP_EOL \
- "304 on <nodes>         - power on"                                CP_EOL \
- "304 off <nodes>        - power off"                               CP_EOL \
- "304 cycle <nodes>      - power cycle"                             CP_EOL \
- "304 reset <nodes>      - hardware reset (if available)"           CP_EOL \
- "304 soft [<nodes>]     - query soft power status (if available)"  CP_EOL \
- "304 temp [<nodes>]     - query temperature (if available)"        CP_EOL \
- "304 beacon [<nodes>]   - query beacon status (if available)"      CP_EOL \
- "304 flash <nodes>      - set beacon to ON (if available)"         CP_EOL \
- "304 unflash <nodes>    - set beacon to OFF (if available)"        CP_EOL \
- "304 telemetry          - toggle telemetry display"                CP_EOL \
- "304 exprange           - toggle host range expansion"             CP_EOL \
- "304 help               - display help"                            CP_EOL \
- "104 quit               - logout"                                  CP_EOL
-#define CP_RSP_COMPLETE     "105 Command completed successfully"    CP_EOL
-#define CP_RSP_RAW          "305 %s: %s"                            CP_EOL
-#define CP_RSP_DEVICE  \
- "306 %s: reconnects=%-3.3d actions=%-3.3d type=%s hosts=%s"        CP_EOL
-#define CP_RSP_QUERY_COMPLETE "106 Query complete"                  CP_EOL
-#define CP_RSP_TELEMETRY    "107 Telemetry %s"                      CP_EOL
-#define CP_RSP_TELEMETRYMSG "306 %s"                                CP_EOL
-#define CP_RSP_EXPRANGE     "108 Hostrange expansion %s"            CP_EOL
-#define CP_RSP_RAW_NODES    "307 %s"                                CP_EOL
+#define CP_RSP_QUIT         "101 Goodbye"                           CP_EOL
+#define CP_RSP_COM_COMPLETE "102 Command completed successfully"    CP_EOL
+#define CP_RSP_QRY_COMPLETE "103 Query complete"                    CP_EOL
+#define CP_RSP_TELEMETRY    "104 Telemetry %s"                      CP_EOL
+#define CP_RSP_EXPRANGE     "105 Hostrange expansion %s"            CP_EOL
 
 /* failure */
-#define CP_ERR_FAILURE      "200 Failure"                           CP_EOL
 #define CP_ERR_UNKNOWN      "201 Unknown command"                   CP_EOL
 #define CP_ERR_PARSE        "202 Parse error"                       CP_EOL
 #define CP_ERR_TOOLONG      "203 Command too long"                  CP_EOL
-#define CP_ERR_INTERNAL     "204 Internal error"                    CP_EOL
-#define CP_ERR_HLRANGE      "205 Too many hosts in range"           CP_EOL
-#define CP_ERR_HLINVAL      "206 Invalid hostlist range"            CP_EOL
-#define CP_ERR_HLUNK        "207 Hostlist error"                    CP_EOL
-#define CP_ERR_NOSUCHNODES  "208 No such nodes: %s"                 CP_EOL
-#define CP_ERR_COMPLETE     "209 Command completed with errors"     CP_EOL
-#define CP_ERR_TIMEOUT      "310 Device %s timed out"               CP_EOL
-#define CP_ERR_CLIBUSY      "211 Command in progress"               CP_EOL
-#define CP_ERR_NOACTION     "213 Command causes no action"          CP_EOL
-#define CP_ERR_UNIMPL       "214 Command cannot be handled by power control device(s)" CP_EOL
+#define CP_ERR_INTERNAL     "204 Internal powermand error: %s::%d"  CP_EOL
+#define CP_ERR_HOSTLIST     "309 Hostlist error: %s"                CP_EOL
+#define CP_ERR_CLIBUSY      "208 Command in progress"               CP_EOL
+#define CP_ERR_NOSUCHNODES  "209 No such nodes: %s"                 CP_EOL
+#define CP_ERR_COM_COMPLETE "210 Command completed with errors"     CP_EOL
+#define CP_ERR_QRY_COMPLETE "211 Query completed with errors"       CP_EOL
+#define CP_ERR_UNIMPL       "213 Command cannot be handled by power control device(s)" CP_EOL
+
+/* informational */
+#define CP_INFO_HELP  \
+ "301 nodes              - query node list"                         CP_EOL \
+ "301 device [<nodes>]   - query power control device status"       CP_EOL \
+ "301 status [<nodes>]   - query power status"                      CP_EOL \
+ "301 on <nodes>         - power on"                                CP_EOL \
+ "301 off <nodes>        - power off"                               CP_EOL \
+ "301 cycle <nodes>      - power cycle"                             CP_EOL \
+ "301 reset <nodes>      - hardware reset (if available)"           CP_EOL \
+ "301 soft [<nodes>]     - query soft power status (if available)"  CP_EOL \
+ "301 temp [<nodes>]     - query temperature (if available)"        CP_EOL \
+ "301 beacon [<nodes>]   - query beacon status (if available)"      CP_EOL \
+ "301 flash <nodes>      - set beacon to ON (if available)"         CP_EOL \
+ "301 unflash <nodes>    - set beacon to OFF (if available)"        CP_EOL \
+ "301 telemetry          - toggle telemetry display"                CP_EOL \
+ "301 exprange           - toggle host range expansion"             CP_EOL \
+ "301 help               - display help"                            CP_EOL \
+ "301 quit               - logout"                                  CP_EOL
+#define CP_INFO_STATUS \
+ "302 on:      %s"                                                  CP_EOL \
+ "302 off:     %s"                                                  CP_EOL \
+ "302 unknown: %s"                                                  CP_EOL
+#define CP_INFO_XSTATUS     "303 %s: %s"                            CP_EOL
+#define CP_INFO_DEVICE  \
+ "304 %s: reconnects=%-3.3d actions=%-3.3d type=%s hosts=%s"        CP_EOL
+#define CP_INFO_TELEMETRY   "305 %s"                                CP_EOL
+#define CP_INFO_NODES       "306 %s"                                CP_EOL
+#define CP_INFO_XNODES      "307 %s"                                CP_EOL
+#define CP_INFO_ACTERROR    "308 %s"                                CP_EOL
 
 #endif                          /* CLIENT_PROTO_H */
 

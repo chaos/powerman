@@ -1,6 +1,4 @@
-+----------------------------------------------------------+
-| Announcing PowerMan version 1.0.16      26 December 2002 |
-+----------------------------------------------------------+
+PowerMan version 1.0.16                                     26 December 2002
 
 +--------------+
 | New Features |
@@ -8,7 +6,7 @@
 
 o --device client option dumps server statistics for each RPC.
   This option can also be used by firmware update scripts to create a list
-  of RPC's of a particular type.  The output is one line as follows per RPC:
+  of RPC's  The output is one line as follows per RPC:
 
      rpc_name: reconnects=N actions=M type=device_type hosts=host_range
 
@@ -18,7 +16,7 @@ o --telemetry client option facilitates debugging of device scripts by
   RPC (since PowerMan cannot distinguish between "no response" and 
   "unexpected response" - it simply times out and reconnects in either case -
   it is useful to know what an RPC is saying to powermand when timeouts are
-  occurring)
+  occurring).
 
 o --exprange client option displays query results in one-node-per-line
   format, rather than the compressed summary format that is the default.
@@ -56,7 +54,7 @@ o WTI NPS (v3.02)
 
 o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4)
 
-Devices marked with an asterisk (*) are deployed on production clusters
+Devices marked with an asterisk (*) are deployed on LLNL production clusters 
 of substantial size.
 
 +-------------+
