@@ -85,7 +85,8 @@ static char usage_msg[] =
 #include <sys/ioctl.h>
 #include <linux/if.h>
 
-#ifdef UIO_MAXIOV
+/*#ifdef UIO_MAXIOV */
+#if 0 /* jg - to get it to build under RH 7.1 on i386 */
 extern int setsockopt __P ((int __fd, int __level, int __optname,
 							__ptr_t __optval, int __optlen));
 #else				/* New, correct head files.  */
