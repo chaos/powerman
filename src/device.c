@@ -533,11 +533,8 @@ process_script(Device *dev)
 /*
  *   The next Script_El is an EXPECT.  Indeed we know exactly what to
  * be expecting, so we go to the buffer and look to see if there's a
- * pssible new input.  The expect.completion RegEx identifies if/when
- * there's enough in the buffer to try processing it.  If not just 
- * give up.  If there is extract the expect string, see if it matches
- * what we really wanted (throwing away bad matches), and if there
- * is an Interpretation map for the expect then send that info to
+ * possible new input.  If the regex matches, extract the expect string.
+ * If there is an Interpretation map for the expect then send that info to
  * the semantic processors.  There are two because PMD_DEV devices
  * are handled differently (a PMD_DEV is an instance of powermand
  * acting as intermediary for another powermand in a distributed 
@@ -554,13 +551,10 @@ process_expect(Device *dev)
 	assert(act->cur != NULL);
 	assert(act->cur->type == EXPECT);
 	
-	/*re = &(act->cur->s_or_e.expect.completion);*/
 	re = &(act->cur->s_or_e.expect.exp);
 	
 	if ( (expect = get_String_from_Buffer(dev->from, re)) == NULL ) 
-	{
 		return TRUE;
-	}
 
 	dev->status &= ~DEV_EXPECTING;
 	if( ! match_RegEx(dev, expect) )

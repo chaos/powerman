@@ -51,7 +51,6 @@
 /* prototypes for parse handler routines */
 static char *makeNode(char *s1, char *s2, char *s4, char *s5, char *s7);
 static char *makeDevice(char *s2, char *s3, char *s4, char *s5);
-static char *makeClusterName(char *s2);
 static char *makePlugNameLine(char *s2);
 static char *makeResetSec(char *s2);
 static char *makePowerCycleSec(char *s2);
@@ -135,7 +134,6 @@ extern void yyerror();
 %token TOK_B_PM_RESET
 %token TOK_E_PM_RESET
 %token TOK_E_SPEC
-%token TOK_CLUSTER_NAME
 %right TOK_DEVICE
 %token TOK_E_GLOBAL
 %token TOK_B_NODES
@@ -300,17 +298,12 @@ global_sec : TOK_B_GLOBAL global_item_list TOK_E_GLOBAL {
 global_item_list : global_item_list global_item 
                  | global_item
 ;
-global_item : cluster_name 
-            | TCP_wrappers
+global_item : TCP_wrappers
 	    | log_file 
 	    | client_port 
             | timeout          /* select() loop pace */
             | interdev         /* delay batween device commands */
             | update           /* cluster update interval */
-;
-cluster_name : TOK_CLUSTER_NAME TOK_STRING_VAL {
-	$$ = (char *)makeClusterName($2);
-}
 ;
 TCP_wrappers : TOK_TCP_WRAPPERS {
 	$$ = (char *)makeTCPWrappers();
@@ -385,16 +378,6 @@ makeGlobalSec(char *s2)
 	if( cheat->listener->port == NO_PORT )
 		exit_msg("Missing Listener port");
 	return NULL;
-}
-
-char *
-makeClusterName(char *s2)
-{
-	if( cheat->cluster != NULL )
-		exit_msg("Cluster name %s already encountered", 
-			get_String(cheat->cluster->name));
-	cheat->cluster = make_Cluster(s2);
-	return s2;
 }
 
 char *

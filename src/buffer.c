@@ -173,6 +173,7 @@ is_empty_Buffer(Buffer b)
 	return (_buf_length(b) == 0);
 }
 
+#if 0
 static void
 _zap_trailing_whitespace_str(char *str)
 {
@@ -187,6 +188,7 @@ _zap_leading_whitespace_buf(Buffer b)
 	while (_buf_length(b) > 0 && isspace(*b->out))
 		b->out++;
 }
+#endif
 
 /* 
  * Get a line from the buffer.
@@ -211,10 +213,10 @@ get_line_Buffer(Buffer b, char *str, int len)
 	str[cpy_len] = '\0';
 
 	b->out += cpy_len;
-
-	/*_zap_trailing_whitespace_str(str);
-	_zap_leading_whitespace_buf(b);*/
-
+#if 0
+	_zap_trailing_whitespace_str(str);
+	_zap_leading_whitespace_buf(b);
+#endif
 	return cpy_len;
 }
 
@@ -234,8 +236,9 @@ peek_string_Buffer(Buffer b, char *str, int len)
 	assert(cpy_len < len);
 	memcpy(str, b->out, cpy_len);
 	str[cpy_len] = '\0';
-	/*_zap_trailing_whitespace_str(str);*/
-
+#if 0
+	_zap_trailing_whitespace_str(str);
+#endif
 	return cpy_len;
 }
 
@@ -246,7 +249,9 @@ eat_Buffer(Buffer b, int len)
 	_buf_check(b);
 	assert(len <= _buf_length(b));
 	b->out += len;
-	/*_zap_leading_whitespace_buf(b);*/
+#if 0
+	_zap_leading_whitespace_buf(b);
+#endif
 }
 
 #ifndef NDEBUG

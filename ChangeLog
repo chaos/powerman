@@ -94,8 +94,11 @@
 	* Reworked log.c.
 	* Fixed all [v]snprintf's to check for both result == -1 
   	  (glibc <= 2.0.6) and result > len (glibc >= 2.1, C99 standard).
+
+2002-08-05 garlick
 	* Moved string stuff out of buffer.c into util.c and refactored.
 	* Found problem with short reads, process_script() would delete
 	  actions if they didn't match the partial buffer.
-	* Got rid of redundant 'completion' expect regex.
+	* Config file cleanup (removed second expect "completion" regex,
+	  cluster name).
 	* Took vicebox.dev out of spec file install.

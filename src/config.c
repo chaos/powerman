@@ -519,12 +519,11 @@ free_Spec_El(void *specl)
  * Produces:  Cluster
  */
 Cluster *
-make_Cluster(const char *name)
+make_Cluster(void)
 {
 	Cluster *cluster;
 
 	cluster = (Cluster *)Malloc(sizeof(Cluster));
-	cluster->name = make_String( name );
 	cluster->update_interval.tv_sec  = UPDATE_SECONDS;
 	cluster->update_interval.tv_usec = 0;
 	cluster->num = 0;

@@ -198,7 +198,6 @@ typedef struct {
 
 typedef struct {
 	int num;          /* node count */
-	String name;     /* cluster name from the config file */
 	List    nodes;    /* list of Node structures */
 	struct timeval time_stamp;  /* last update */
 	struct timeval update_interval;  /* how long before next update */
@@ -214,7 +213,7 @@ int  match_Spec(void *spec, void *key);
 void free_Spec(void *spec);
 Spec_El *make_Spec_El(Script_El_T type, char *str1, char *str2, List map);
 void free_Spec_El(void *specl);
-Cluster *make_Cluster(const char *name);
+Cluster *make_Cluster(void);
 void free_Cluster(void *cluster);
 Node *make_Node(const char *name);
 int  match_Node(void *node, void *key);

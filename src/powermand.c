@@ -521,12 +521,12 @@ make_Globals()
 	g->status                   = Quiescent;
 	g->cluster                  = NULL;
 	g->acts                     = list_create(free_Action);
-	g->cluster                  = NULL;
 	g->client_prot              = NULL;
 	g->specs                    = list_create(free_Spec);
 	g->devs                     = list_create(free_Device);
 	g->config_file              = NULL;
 	g->cf                       = NULL;
+	g->cluster = make_Cluster();
 	return g;
 }
 

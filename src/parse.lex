@@ -217,7 +217,6 @@ end[ \t]+PM_POWER_CYCLE           {   return TOK_E_PM_POWER_CYCLE; }
 begin[ \t]+PM_RESET               {   return TOK_B_PM_RESET; }
 end[ \t]+PM_RESET                 {   return TOK_E_PM_RESET; }
 end[ \t]+protocol[ \t]+specification   {   return TOK_E_SPEC; }
-cluster[ \t]+name                 {   return TOK_CLUSTER_NAME; }
 device                            {   return TOK_DEVICE; }
 end[ \t]+global                   {   return TOK_E_GLOBAL; }
 begin[ \t]+nodes                  {   return TOK_B_NODES; }
