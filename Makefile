@@ -100,6 +100,7 @@ allclean: clean
 distclean: allclean
 	cd bin; rm -f powerman powermand vicebox svicebox; cd ..
 	cd doc; rm -f *.ps; cd ..
+	cd vicebox; rm -f svicebox vicebox; cd ..
 
 # DEVELOPER TARGETS
 # These need to be replaced with Chris's latest.
