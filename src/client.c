@@ -258,10 +258,13 @@ static void _client_query_nodes_reply(Client * c)
 
 /* 
  * Helper for _client_query_device_reply() .
- * Create a hostlist string for the plugs attached to the specified device.
+ * Create a hostlist string for the nodes attached to the specified device.
+ * If 'all' is true, add node names unconditionally, otherwise only add
+ * them if they have corresponding plug names (useful when plugs are
+ * assigned dynamically).
  * Return TRUE if str contains a valid hostlist string.
  */
-static bool _make_pluglist(Device * dev, char *str, int len)
+static bool _make_pluglist(Device * dev, char *str, int len, bool all)
 {
     hostlist_t hl = hostlist_create(NULL);
     ListIterator itr;
@@ -270,8 +273,10 @@ static bool _make_pluglist(Device * dev, char *str, int len)
 
     if (hl != NULL) {
         itr = list_iterator_create(dev->plugs);
-        while ((plug = list_next(itr)))
-            hostlist_push(hl, plug->node);
+        while ((plug = list_next(itr))) {
+            if (plug->name || all)
+                hostlist_push(hl, plug->node);
+        }
         list_iterator_destroy(itr);
 
         hostlist_sort(hl);
@@ -326,7 +331,7 @@ static void _client_query_device_reply(Client * c, char *arg)
             if (arg && !_device_matches_targets(dev, arg))
                 continue;
 
-            if (_make_pluglist(dev, nodelist, sizeof(nodelist))) {
+            if (_make_pluglist(dev, nodelist, sizeof(nodelist), FALSE)) {
                 _client_printf(c, CP_INFO_DEVICE, 
                         dev->name,
                         con > 0 ? con - 1 : 0, 

@@ -3,6 +3,9 @@
     * src/device.c: print useful error message in process_setplugname if
     node does not exist.
 
+    * src/client.c: device query output now lists nodes only if they
+    have been mapped to plug names.
+
 2003-08-01 Jim Garlick <garlick@llnl.gov>
 
     * src/device.h: decrease max buffer size from 1M to 8K.
