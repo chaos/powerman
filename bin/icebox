@@ -15,6 +15,12 @@
 #            Also note that we no longer support bitmap mode
 #            Use -q for quiet mode rather than -v for verbose
 # v. 0-1-7:  2001-09-17
+#            Change the behavior of unfull iceboxes such that the
+#            collective operation is not called, thus only a request
+#            for ten of ten ports will invoke the collective
+#            command.
+#            Fixed a bug in which more than one readline() is
+#            necessary before a query's response arrives.
 ####################################################################
 
 import sys
@@ -23,6 +29,7 @@ import string
 import getopt
 import os
 import fcntl, FCNTL
+
 
 class NodeClass:
     "Class definition for icebox attached nodes"
@@ -330,7 +337,7 @@ for tty_name in ttys.keys():
     for box_name in tty.boxes.keys():
         box = tty.boxes[box_name]
         if (box.num_requested == ICEBOX_SIZE):
-            target = 'c' + box.name + com + '\n'
+            target = 'c' + box.name + com + '\r\n'
             response = ''
             f.write(target)
             response = f.readline()
@@ -378,12 +385,15 @@ for tty_name in ttys.keys():
                 port = box.ports[port_name]
                 if (port.requested == 0):
                     continue
-                target = 'c' + box.name + com + port.name + '\n'
+                target = 'c' + box.name + com + port.name + '\r\n'
                 response = ''
                 f.write(target)
-                response = f.readline()
-                while ((response[-1:] == '\n') or (response[-1:] == '\r')):
-                    response = response[:-1]
+                retry_count = 0
+                while ((response == '') and (retry_count < 10)):
+                    response = f.readline()
+                    while ((response[-1:] == '\n') or (response[-1:] == '\r')):
+                        response = response[:-1]
+                    retry_count = retry_count + 1
                 if ((com == 'on') or (com == 'off') or (com == 'reset')):
                     if (string.lower(response) != 'ok'):
                         if (verbose):
@@ -395,6 +405,7 @@ for tty_name in ttys.keys():
                     except ValueError:
                         if (verbose):
                             sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from port " + port.name + " after command \"" + target + "\"\n")
+                            print "retry count is ", retry_count
                         sys.exit(1)
                     if (((state == '0') and reverse) or ((state == '1') and not reverse)):
                         print port.node.name
