@@ -382,7 +382,7 @@ for tty_name in sorted_tty_list:
                                     good_response = 1
                                 except KeyError:
                                     continue
-                                if (com = 'ns'):
+                                if (com == 'ns'):
                                     state = val
                                     if (((state == '0') and reverse) or ((state == '1') and not reverse)):
                                         print nm
