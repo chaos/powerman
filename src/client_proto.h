@@ -43,9 +43,9 @@
 
 #define CP_LINEMAX	256		/* max request/response line length */
 
-#define CP_VERSION 	"protocol version 2.0" 	/* protocol version */
-#define CP_PROMPT 	"powerman> "
 #define CP_EOL		"\r\n"		/* line terminator */
+#define CP_PROMPT 	"powerman> "	/* prompt */
+#define CP_VERSION 	"001 powerman protocol version 2.0" CP_EOL
 
 /* 
  * Requests
@@ -94,7 +94,6 @@
 #define CP_ERR_HLRANGE	"205 Too many hosts in range"	CP_EOL
 #define CP_ERR_HLINVAL	"206 Invalid hostlist range"	CP_EOL
 #define CP_ERR_HLUNK	"207 hostlist error"		CP_EOL
-#define CP_ERR_NOSUCHNODE "208 no such node: %s"	CP_EOL
-
+#define CP_ERR_NOSUCHNODES "208 no such nodes: %s"	CP_EOL
 
 #endif /* CLIENT_PROTO_H */

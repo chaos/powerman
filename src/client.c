@@ -119,12 +119,17 @@ static bool _node_exists(char *name)
 static hostlist_t _hostlist_create_validated(Client *c, char *str)
 {
     hostlist_t hl = NULL;
+    hostlist_t badhl = NULL;
     hostlist_iterator_t itr = NULL;
     char *host;
     bool valid = TRUE;
 
     if ((hl = hostlist_create(str)) == NULL) {
 	_hostlist_error(c);
+	return NULL;
+    }
+    if ((badhl = hostlist_create(NULL)) == NULL) {
+	_client_msg(c, CP_ERR_INTERNAL);
 	return NULL;
     }
     if ((itr = hostlist_iterator_create(hl)) == NULL) {
@@ -134,16 +139,24 @@ static hostlist_t _hostlist_create_validated(Client *c, char *str)
     }
     while ((host = hostlist_next(itr)) != NULL) {
 	if (!_node_exists(host)) {
-	    _client_msg(c, CP_ERR_NOSUCHNODE, host);
 	    valid = FALSE;
+	    hostlist_push_host(badhl, host);
 	}
     }
     if (!valid) {
+	char hosts[CP_LINEMAX];
+
+	if (hostlist_ranged_string(badhl, sizeof(hosts), hosts) == -1)
+	    _client_msg(c, CP_ERR_NOSUCHNODES, str);
+	else
+	    _client_msg(c, CP_ERR_NOSUCHNODES, hosts);
 	hostlist_iterator_destroy(itr);
 	hostlist_destroy(hl);
+	hostlist_destroy(badhl);
 	return NULL;
     }
     hostlist_iterator_destroy(itr);
+    hostlist_destroy(badhl);
     return hl;
 }
 
@@ -603,8 +616,8 @@ static void _create_client(void)
 
     syslog(LOG_DEBUG, "New connection: <%s, %d> on descriptor %d",
         fqdn, client->port, client->fd);
-    client->write_status = CLI_WRITING;
-    buf_printf(client->to, "PowerMan v" VERSION "\r\n" CP_PROMPT);
+    _client_msg(client, CP_VERSION);
+    _client_prompt(client);
 }
 
 
