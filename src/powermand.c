@@ -119,6 +119,7 @@ int main(int argc, char **argv)
     Signal(SIGHUP, _noop_handler);
     Signal(SIGTERM, _exit_handler);
     Signal(SIGINT, _exit_handler);
+    Signal(SIGPIPE, SIG_IGN);
 
     /* parses config file */
     conf_init(config_filename ? config_filename : DFLT_CONFIG_FILE);
