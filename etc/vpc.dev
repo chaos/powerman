@@ -2,14 +2,15 @@
 # $Id$
 # $Source$
 #
-specification {
-	name 		"vpc"
-	type 		"TCP"
+specification "vpc" {
+	type 		TCP
 	offstring 	"OFF"
 	onstring  	"ON"
-	maxplugcount 	8
 	timeout 	5.0
 #	pingperiod 	10.0
+
+	plug name { "0" "1" "2" "3" "4" "5" "6" "7" }
+
 	script ping {
 		send "\r\n"
 		expect "vpc> "
@@ -105,12 +106,4 @@ specification {
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
 	}
-	plug name "0"
-	plug name "1"
-	plug name "2"
-	plug name "3"
-	plug name "4"
-	plug name "5"
-	plug name "6"
-	plug name "7"
 }

@@ -92,61 +92,15 @@ typedef struct {
         struct {                /* DELAY */
             struct timeval tv;  /* delay at this point in the script */
         } delay;
-        struct {                /* FOREACHPLUG */
-            List Stmts;
-        } foreachplug;
-        struct {                /* FOREACHNODE */
-            List Stmts;
-        } foreachnode;
+        struct {                /* FOREACHPLUG | FOREACHNODE */
+            List stmts;
+        } foreach;
     } u;
 } Stmt;
 typedef List Script;
 
-/*
- * A PreScript is a list of PreStmts.
- */
-typedef struct {
-    StmtType type;              /* delay/expect/send */
-    char *str;                  /* expect string, send fmt, setstatus plug */
-    struct timeval tv;          /* delay value */
-    int mp1;                    /* setstatus plug, setplugname plug match pos */
-    int mp2;                    /* settatus stat, setplugname node match pos */
-} PreStmt;
-typedef List PreScript;
-
-/*
- * Unprocessed Protocol (used during parsing).
- * This data will be copied for each instantiation of a device.
- */
-typedef struct {
-    char *name;                 /* specification name, e.g. "icebox" */
-    DevType type;               /* device type, e.g. TCP_DEV */
-    char *off;                  /* off string, e.g. "OFF" */
-    char *on;                   /* on string, e.g. "ON" */
-    int size;                   /* number of plugs per device */
-    struct timeval timeout;     /* timeout for this device */
-    struct timeval ping_period; /* ping period for this device 0.0 = none */
-    char **plugname;            /* list of plug names (e.g. "1" thru "10") */
-    PreScript prescripts[NUM_SCRIPTS];  /* array of PreScripts */
-} Spec;                                 /*   script may be NULL if undefined */
-
-Stmt *conf_stmt_create(StmtType type, char *str, struct timeval tv, 
-        int plug_mp, int stat_or_node_mp);
-void conf_stmt_destroy(Stmt * stmt);
-
-Spec *conf_spec_create(char *name);
-int conf_spec_match(Spec * spec, void *key);
-void conf_spec_destroy(Spec * spec);
-
-PreStmt *conf_prestmt_create(StmtType type, char *str, struct timeval tv,
-                int mp1, int mp2);
-void conf_prestmt_destroy(PreStmt * specl);
-
 void conf_init(char *filename);
 void conf_fini(void);
-
-void conf_add_spec(Spec * spec);
-Spec *conf_find_spec(char *name);
 
 bool conf_addnode(char *node);
 bool conf_node_exists(char *node);

@@ -11,13 +11,13 @@
 # N.B. The 0.5 sec delays mentioned in the documentation don't seem to be 
 # needed on my setup...
 #
-specification  {
-	name 		"wti-rps10"
-	type 		"serial"
+specification  "wti-rps10" {
+	type 		SERIAL
 	offstring 	"Off"
 	onstring  	"On"
-	maxplugcount	10
 	timeout 	5 
+
+	plug name { "0" "1" "2" "3" "4" "5" "6" "7" "8" "9" }
 
 	script login {
 		delay 2
@@ -55,14 +55,4 @@ specification  {
 		expect "Complete"
 		#delay 0.5
 	}
-	plug name "0"
-	plug name "1"
-	plug name "2"
-	plug name "3"
-	plug name "4"
-	plug name "5"
-	plug name "6"
-	plug name "7"
-	plug name "8"
-	plug name "9"
 }

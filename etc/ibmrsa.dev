@@ -16,12 +16,10 @@
 # The 'power' command in debug mode was added in April 2003 in f/w versions:
 # GEET117A (x345) and T2ET116- (x335).
 #
-specification {
-	name 		"ibmrsa"
-	type 		"telnet"
+specification "ibmrsa" {
+	type 		TELNET
 	offstring 	"off"
 	onstring  	"on"
-	maxplugcount 	24
 	timeout  	20
 
 	script login {

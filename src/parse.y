@@ -44,38 +44,67 @@
 #include "string.h"
 #include "wrappers.h"
 
-/* prototypes for parse handler routines */
+/*
+ * A PreScript is a list of PreStmts.
+ */
+typedef struct {
+    StmtType type;              /* delay/expect/send */
+    char *str;                  /* expect string, send fmt, setstatus plug */
+    struct timeval tv;          /* delay value */
+    int mp1;                    /* setstatus plug, setplugname plug match pos */
+    int mp2;                    /* settatus stat, setplugname node match pos */
+    List stmts;                 /* subblock */
+} PreStmt;
+typedef List PreScript;
+
+/*
+ * Unprocessed Protocol (used during parsing).
+ * This data will be copied for each instantiation of a device.
+ */
+typedef struct {
+    char *name;                 /* specification name, e.g. "icebox" */
+    DevType type;               /* device type, e.g. TCP_DEV */
+    char *off;                  /* off string, e.g. "OFF" */
+    char *on;                   /* on string, e.g. "ON" */
+    struct timeval timeout;     /* timeout for this device */
+    struct timeval ping_period; /* ping period for this device 0.0 = none */
+    List plugs;                 /* list of plug names (e.g. "1" thru "10") */
+    PreScript prescripts[NUM_SCRIPTS];  /* array of PreScripts */
+} Spec;                                 /*   script may be NULL if undefined */
+
+/* powerman.conf */
 static void makeNode(char *nodestr, char *devstr, char *plugstr);
 static void makeAlias(char *namestr, char *hostsstr);
+static Stmt *makeStmt(PreStmt *p);
+static void destroyStmt(Stmt *stmt);
 static void makeDevice(char *devstr, char *specstr, char *hoststr, 
                         char *portstr);
-static char *makePlugNameLine(char *plugstr);
-
-static char *makeScript(int com, List prestmts);
-
-static PreStmt *makeStmt(StmtType type, char *str, char *tvstr, 
-                      char *mp1str, char *mp2str);
-
-static char *makeSpecSize(char *sizestr);
-static char *makeSpecOn(char *s2);
-static char *makeSpecOff(char *s2);
-static char *makeSpecType(char *s2);
-static char *makeSpecName(char *s2);
-static void makeSpec();
 static void makeClientPort(char *s2);
-static char *makeDevTimeout(char *s2);
-static char *makePingPeriod(char *s2);
 
-extern int yylex();
-void yyerror();
+/* device config */
+static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr, 
+                      char *mp1str, char *mp2str, List prestmts);
+static void destroyPreStmt(PreStmt *p);
+static Spec *makeSpec(char *name);
+static Spec *findSpec(char *name);
+static int matchSpec(Spec * spec, void *key);
+static void destroySpec(Spec * spec);
+static void _clear_current_spec(void);
+static void makeScript(int com, List stmts);
 
+/* utility functions */
 static void _errormsg(char *msg);
 static void _warnmsg(char *msg);
 static long _strtolong(char *str);
 static double _strtodouble(char *str);
 static void _doubletotv(struct timeval *tv, double val);
 
- Spec *current_spec = NULL;  /* Holds a Spec as it is built */
+extern int yylex();
+void yyerror();
+
+
+static List device_specs = NULL;      /* list of Spec's */
+static Spec current_spec;             /* Holds a Spec as it is built */
 %}
 
 /* script names */
@@ -87,24 +116,22 @@ static void _doubletotv(struct timeval *tv, double val);
 
 /* script statements */
 %token TOK_EXPECT TOK_SETSTATUS TOK_SETPLUGNAME TOK_SEND TOK_DELAY
+%token TOK_FOREACHPLUG TOK_FOREACHNODE
 
 /* other device configuration stuff */
 %token TOK_SPEC_NAME TOK_SPEC_TYPE TOK_OFF_STRING TOK_ON_STRING
 %token TOK_MAX_PLUG_COUNT TOK_TIMEOUT TOK_DEV_TIMEOUT TOK_PING_PERIOD
 %token TOK_PLUG_NAME TOK_SCRIPT 
 
+/* device types */
+%token TOK_TYPE_TCP TOK_TYPE_TELNET TOK_TYPE_SERIAL
+
 /* powerman.conf stuff */
 %token TOK_DEVICE TOK_NODE TOK_ALIAS TOK_TCP_WRAPPERS TOK_PORT
 
 /* general */
-%token TOK_MATCHPOS 
-%token TOK_STRING_VAL
-%token TOK_NUMERIC_VAL
-%token TOK_YES
-%token TOK_NO
-%token TOK_BEGIN
-%token TOK_END
-%token TOK_UNRECOGNIZED
+%token TOK_MATCHPOS TOK_STRING_VAL TOK_NUMERIC_VAL TOK_YES TOK_NO
+%token TOK_BEGIN TOK_END TOK_UNRECOGNIZED
 
 /* deprecated in 1.0.16 */
 %token TOK_B_NODES TOK_E_NODES TOK_B_GLOBAL TOK_E_GLOBAL TOK_OLD_PORT
@@ -175,117 +202,110 @@ alias           : TOK_ALIAS TOK_STRING_VAL TOK_STRING_VAL {
 spec_list       : spec_list spec
                 | spec
 ;
-spec            : TOK_SPEC TOK_BEGIN 
-                  spec_name_line 
+spec            : TOK_SPEC TOK_STRING_VAL TOK_BEGIN 
                   spec_item_list 
-                  spec_stmt_list 
-                  plug_name_sec 
                   TOK_END {
-    makeSpec();
-}
-;
-spec_name_line  : TOK_SPEC_NAME TOK_STRING_VAL {
-    $$ = (char *)makeSpecName($2);
+    makeSpec($2);
 }
 ;
 spec_item_list  : spec_item_list spec_item 
                 | spec_item
 ;
-spec_item       : spec_type_line 
-                | off_string_line 
-                | on_string_line 
-                | spec_size_line 
-                | dev_timeout
+spec_item       : spec_type
+                | spec_off_regex
+                | spec_on_regex
+                | spec_timeout
+                | spec_ping_period
+                | spec_plug_list
+                | spec_script_list
 ;
-spec_type_line  : TOK_SPEC_TYPE TOK_STRING_VAL {
-    $$ = (char *)makeSpecType($2);
+spec_type       : TOK_SPEC_TYPE TOK_TYPE_TCP {
+    current_spec.type = TCP_DEV;
+}               | TOK_SPEC_TYPE TOK_TYPE_TELNET {
+    current_spec.type = TELNET_DEV;
+}               | TOK_SPEC_TYPE TOK_TYPE_SERIAL {
+    current_spec.type = SERIAL_DEV;
 }
 ;
-off_string_line : TOK_OFF_STRING TOK_STRING_VAL {
-    $$ = (char *)makeSpecOff($2);
+spec_off_regex  : TOK_OFF_STRING TOK_STRING_VAL {
+    if (current_spec.off != NULL)
+        _errormsg("duplicate off string");
+    current_spec.off = Strdup($2);
 }
 ;
-on_string_line  : TOK_ON_STRING TOK_STRING_VAL {
-    $$ = (char *)makeSpecOn($2);
+spec_on_regex   : TOK_ON_STRING TOK_STRING_VAL {
+    if (current_spec.on != NULL)
+        _errormsg("duplicate on string");
+    current_spec.on = Strdup($2);
 }
 ;
-spec_size_line  : TOK_MAX_PLUG_COUNT TOK_NUMERIC_VAL {
-    $$ = (char *)makeSpecSize($2);
+spec_timeout    : TOK_DEV_TIMEOUT TOK_NUMERIC_VAL {
+    _doubletotv(&current_spec.timeout, _strtodouble($2));
 }
 ;
-dev_timeout     : TOK_DEV_TIMEOUT TOK_NUMERIC_VAL {
-    $$ = (char *)makeDevTimeout($2);
+spec_ping_period: TOK_PING_PERIOD TOK_NUMERIC_VAL {
+    _doubletotv(&current_spec.ping_period, _strtodouble($2));
 }
 ;
-dev_timeout     : TOK_PING_PERIOD TOK_NUMERIC_VAL {
-    $$ = (char *)makePingPeriod($2);
+string_list     : string_list TOK_STRING_VAL {
+    list_append((List)$1, Strdup($2)); 
+    $$ = $1; 
+}               | TOK_STRING_VAL {
+    $$ = (char *)list_create((ListDelF)Free);
+    list_append((List)$$, Strdup($1)); 
 }
 ;
-spec_stmt_list : spec_stmt_list spec_script 
+spec_plug_list  : TOK_PLUG_NAME TOK_BEGIN string_list TOK_END {
+    if (current_spec.plugs != NULL)
+        _errormsg("duplicate plug list");
+    current_spec.plugs = (List)$3;
+}
+;
+spec_script_list  : spec_script_list spec_script 
                 | spec_script 
 ;
 spec_script     : TOK_SCRIPT TOK_LOGIN stmt_block {
-    $$ = (char *)makeScript(PM_LOG_IN, (List)$3);
-}
-                | TOK_SCRIPT TOK_LOGOUT stmt_block {
-    $$ = (char *)makeScript(PM_LOG_OUT, (List)$3);
-}
-                | TOK_SCRIPT TOK_STATUS stmt_block {
-    $$ = (char *)makeScript(PM_STATUS_PLUGS, (List)$3);
-} 
-                | TOK_SCRIPT TOK_STATUS_ALL stmt_block {
-    $$ = (char *)makeScript(PM_STATUS_PLUGS_ALL, (List)$3);
-} 
-                | TOK_SCRIPT TOK_STATUS_SOFT stmt_block {
-    $$ = (char *)makeScript(PM_STATUS_NODES, (List)$3);
-}
-                | TOK_SCRIPT TOK_STATUS_SOFT_ALL stmt_block {
-    $$ = (char *)makeScript(PM_STATUS_NODES_ALL, (List)$3);
-}
-                | TOK_SCRIPT TOK_STATUS_TEMP stmt_block {
-    $$ = (char *)makeScript(PM_STATUS_TEMP, (List)$3);
-}
-                | TOK_SCRIPT TOK_STATUS_TEMP_ALL stmt_block {
-    $$ = (char *)makeScript(PM_STATUS_TEMP_ALL, (List)$3);
-}
-                | TOK_SCRIPT TOK_STATUS_BEACON stmt_block {
-    $$ = (char *)makeScript(PM_STATUS_BEACON, (List)$3);
-}
-                | TOK_SCRIPT TOK_STATUS_BEACON_ALL stmt_block {
-    $$ = (char *)makeScript(PM_STATUS_BEACON, (List)$3);
-}
-                | TOK_SCRIPT TOK_BEACON_ON stmt_block {
-    $$ = (char *)makeScript(PM_BEACON_ON, (List)$3);
-}
-                | TOK_SCRIPT TOK_BEACON_OFF stmt_block {
-    $$ = (char *)makeScript(PM_BEACON_OFF, (List)$3);
-}
-                | TOK_SCRIPT TOK_ON stmt_block {
-    $$ = (char *)makeScript(PM_POWER_ON, (List)$3);
-}
-                | TOK_SCRIPT TOK_ON_ALL stmt_block {
-    $$ = (char *)makeScript(PM_POWER_ON_ALL, (List)$3);
-}
-                | TOK_SCRIPT TOK_OFF stmt_block {
-    $$ = (char *)makeScript(PM_POWER_OFF, (List)$3);
-}
-                | TOK_SCRIPT TOK_OFF_ALL stmt_block {
-    $$ = (char *)makeScript(PM_POWER_OFF_ALL, (List)$3);
-}
-                | TOK_SCRIPT TOK_CYCLE stmt_block {
-    $$ = (char *)makeScript(PM_POWER_CYCLE, (List)$3);
-}
-                | TOK_SCRIPT TOK_CYCLE_ALL stmt_block {
-    $$ = (char *)makeScript(PM_POWER_CYCLE_ALL, (List)$3);
-}
-                | TOK_SCRIPT TOK_RESET stmt_block {
-    $$ = (char *)makeScript(PM_RESET, (List)$3);
-}
-                | TOK_SCRIPT TOK_RESET_ALL stmt_block {
-    $$ = (char *)makeScript(PM_RESET_ALL, (List)$3);
-}
-                | TOK_SCRIPT TOK_PING stmt_block {
-    $$ = (char *)makeScript(PM_PING, (List)$3);
+    makeScript(PM_LOG_IN, (List)$3);
+}               | TOK_SCRIPT TOK_LOGOUT stmt_block {
+    makeScript(PM_LOG_OUT, (List)$3);
+}               | TOK_SCRIPT TOK_STATUS stmt_block {
+    makeScript(PM_STATUS_PLUGS, (List)$3);
+}               | TOK_SCRIPT TOK_STATUS_ALL stmt_block {
+    makeScript(PM_STATUS_PLUGS_ALL, (List)$3);
+}               | TOK_SCRIPT TOK_STATUS_SOFT stmt_block {
+    makeScript(PM_STATUS_NODES, (List)$3);
+}               | TOK_SCRIPT TOK_STATUS_SOFT_ALL stmt_block {
+    makeScript(PM_STATUS_NODES_ALL, (List)$3);
+}               | TOK_SCRIPT TOK_STATUS_TEMP stmt_block {
+    makeScript(PM_STATUS_TEMP, (List)$3);
+}               | TOK_SCRIPT TOK_STATUS_TEMP_ALL stmt_block {
+    makeScript(PM_STATUS_TEMP_ALL, (List)$3);
+}               | TOK_SCRIPT TOK_STATUS_BEACON stmt_block {
+    makeScript(PM_STATUS_BEACON, (List)$3);
+}               | TOK_SCRIPT TOK_STATUS_BEACON_ALL stmt_block {
+    makeScript(PM_STATUS_BEACON_ALL, (List)$3);
+}               | TOK_SCRIPT TOK_BEACON_ON stmt_block {
+    makeScript(PM_BEACON_ON, (List)$3);
+}               | TOK_SCRIPT TOK_BEACON_OFF stmt_block {
+    makeScript(PM_BEACON_OFF, (List)$3);
+}               | TOK_SCRIPT TOK_ON stmt_block {
+    makeScript(PM_POWER_ON, (List)$3);
+}               | TOK_SCRIPT TOK_ON_ALL stmt_block {
+    makeScript(PM_POWER_ON_ALL, (List)$3);
+}               | TOK_SCRIPT TOK_OFF stmt_block {
+    makeScript(PM_POWER_OFF, (List)$3);
+}               | TOK_SCRIPT TOK_OFF_ALL stmt_block {
+    makeScript(PM_POWER_OFF_ALL, (List)$3);
+}               | TOK_SCRIPT TOK_CYCLE stmt_block {
+    makeScript(PM_POWER_CYCLE, (List)$3);
+}               | TOK_SCRIPT TOK_CYCLE_ALL stmt_block {
+    makeScript(PM_POWER_CYCLE_ALL, (List)$3);
+}               | TOK_SCRIPT TOK_RESET stmt_block {
+    makeScript(PM_RESET, (List)$3);
+}               | TOK_SCRIPT TOK_RESET_ALL stmt_block {
+    makeScript(PM_RESET_ALL, (List)$3);
+}               | TOK_SCRIPT TOK_PING stmt_block {
+    makeScript(PM_PING, (List)$3);
 }
 ;
 stmt_block      : TOK_BEGIN stmt_list TOK_END {
@@ -295,39 +315,31 @@ stmt_block      : TOK_BEGIN stmt_list TOK_END {
 stmt_list       : stmt_list stmt { 
     list_append((List)$1, $2); 
     $$ = $1; 
-}               
-                | stmt { 
-    $$ = (char *)list_create((ListDelF)conf_prestmt_destroy);
+}               | stmt { 
+    $$ = (char *)list_create((ListDelF)destroyPreStmt);
     list_append((List)$$, $1); 
 }
 ;
 stmt            : TOK_EXPECT TOK_STRING_VAL {
-    $$ = (char *)makeStmt(STMT_EXPECT, $2, NULL, NULL, NULL);
-}
-                | TOK_SEND TOK_STRING_VAL {
-    $$ = (char *)makeStmt(STMT_SEND, $2, NULL, NULL, NULL);
-}
-                | TOK_DELAY TOK_NUMERIC_VAL {
-    $$ = (char *)makeStmt(STMT_DELAY, NULL, $2, NULL, NULL);
-}
-                | TOK_SETPLUGNAME TOK_MATCHPOS TOK_NUMERIC_VAL TOK_MATCHPOS TOK_NUMERIC_VAL {
-    $$ = (char *)makeStmt(STMT_SETPLUGNAME, NULL, NULL, $5, $3);
-}
-                | TOK_SETSTATUS TOK_STRING_VAL TOK_MATCHPOS TOK_NUMERIC_VAL {
-    $$ = (char *)makeStmt(STMT_SETSTATUS, $2, NULL, NULL, $4);
-}
-                | TOK_SETSTATUS TOK_MATCHPOS TOK_NUMERIC_VAL TOK_MATCHPOS TOK_NUMERIC_VAL {
-    $$ = (char *)makeStmt(STMT_SETSTATUS, NULL, NULL, $3, $5);
-}
-                | TOK_SETSTATUS TOK_MATCHPOS TOK_NUMERIC_VAL {
-    $$ = (char *)makeStmt(STMT_SETSTATUS, NULL, NULL, NULL, $3);
-}
-;
-plug_name_sec   : plug_name_sec plug_name_line 
-        | /* empty */
-;
-plug_name_line  : TOK_PLUG_NAME TOK_STRING_VAL {
-    $$ = (char *)makePlugNameLine($2);
+    $$ = (char *)makePreStmt(STMT_EXPECT, $2, NULL, NULL, NULL, NULL);
+}               | TOK_SEND TOK_STRING_VAL {
+    $$ = (char *)makePreStmt(STMT_SEND, $2, NULL, NULL, NULL, NULL);
+}               | TOK_DELAY TOK_NUMERIC_VAL {
+    $$ = (char *)makePreStmt(STMT_DELAY, NULL, $2, NULL, NULL, NULL);
+}               | TOK_SETPLUGNAME TOK_MATCHPOS TOK_NUMERIC_VAL TOK_MATCHPOS 
+                  TOK_NUMERIC_VAL {
+    $$ = (char *)makePreStmt(STMT_SETPLUGNAME, NULL, NULL, $5, $3, NULL);
+}               | TOK_SETSTATUS TOK_STRING_VAL TOK_MATCHPOS TOK_NUMERIC_VAL {
+    $$ = (char *)makePreStmt(STMT_SETSTATUS, $2, NULL, NULL, $4, NULL);
+}               | TOK_SETSTATUS TOK_MATCHPOS TOK_NUMERIC_VAL TOK_MATCHPOS 
+                  TOK_NUMERIC_VAL {
+    $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, $3, $5, NULL);
+}               | TOK_SETSTATUS TOK_MATCHPOS TOK_NUMERIC_VAL {
+    $$ = (char *)makePreStmt(STMT_SETSTATUS, NULL, NULL, NULL, $3, NULL);
+}               | TOK_FOREACHNODE stmt_block {
+    $$ = (char *)makePreStmt(STMT_FOREACHNODE, NULL, NULL, NULL, NULL, (List)$2);
+}               | TOK_FOREACHPLUG stmt_block {
+    $$ = (char *)makePreStmt(STMT_FOREACHPLUG, NULL, NULL, NULL, NULL, (List)$2);
 }
 ;
 
@@ -350,21 +362,19 @@ int parse_config_file (char *filename)
     yyin = fopen(filename, "r");
     if (!yyin)
         err_exit(TRUE, "%s", filename);
+
+    device_specs = list_create((ListDelF) destroySpec);
+    _clear_current_spec();
+
     yyparse();
     fclose(yyin);
 
     scanner_fini();
+
+    list_destroy(device_specs);
+
     return 0;
 } 
-
-static void makeClientPort(char *s2)
-{
-    int port = _strtolong(s2);
-
-    if (port < 1024)
-        _errormsg("bogus client listener port");
-    conf_set_listen_port(port); 
-}
 
 static void _spec_missing(char *msg)
 {
@@ -372,151 +382,198 @@ static void _spec_missing(char *msg)
             msg, scanner_file(), scanner_line());
 }
 
-/*
- * We've got a whole Spec now so do some sanity checks.
- */
-static void makeSpec(void)
+/* makePreStmt(type, str, tv, mp1(plug), mp2(stat/node) */
+static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr, 
+                      char *mp1str, char *mp2str, List prestmts)
 {
-    Spec *this_spec;
-    char *name;
+    PreStmt *new;
 
-    name = current_spec->name;
-    if( current_spec->type == NO_DEV )
-        _spec_missing("type");
-    if( current_spec->off == NULL )
-        _spec_missing("off string");
-    if( current_spec->on == NULL )
-        _spec_missing("on string");
-    if( (current_spec->size == 0) )
-        _spec_missing("size");
-    /* Store the spec in list internal to config.c */
-    conf_add_spec(current_spec);
-    this_spec = current_spec;
-    current_spec = NULL;
-}
+    new = (PreStmt *) Malloc(sizeof(PreStmt));
+    memset(new, 0, sizeof(PreStmt));
 
-static char *makeSpecName(char *s2)
-{
-    if( current_spec != NULL )
-        _errormsg("name must be first");
-    current_spec = conf_spec_create(s2);
-    return s2;
-}
-
-static char *makeSpecType(char *s2)
-{
-    int n;
-
-    if( current_spec->type != NO_DEV )
-        _errormsg("duplicate type");
-    if( (n = strncmp(s2, "TCP", 3)) == 0)
-        current_spec->type = TCP_DEV;
-    else if ( (n = strncmp(s2, "serial", 6)) == 0)
-        current_spec->type = SERIAL_DEV;
-    else if ( (n = strncmp(s2, "telnet", 6)) == 0)
-        current_spec->type = TELNET_DEV;
-    return s2;
-}
-
-static char *makeSpecOff(char *s2)
-{
-    if( current_spec->off != NULL )
-        _errormsg("duplicate off string");
-    current_spec->off = Strdup(s2);
-    return s2;
-}
-
-static char *makeSpecOn(char *s2)
-{
-    if( current_spec->on != NULL )
-        _errormsg("duplicate on string");
-    current_spec->on = Strdup(s2);
-    return s2;
-}
-
-static char *makeSpecSize(char *sizestr)
-{
-    int size = _strtolong(sizestr);
-    int i;
-
-    if( current_spec->size != 0 )
-        _errormsg("duplicate plug count");
-    if (size < 1)
-        _errormsg("invalid plug count");
-    current_spec->size = size;
-    current_spec->plugname = (char **)Malloc(size * sizeof(char *));
-    for (i = 0; i < size; i++)
-        current_spec->plugname[i] = NULL;
-    return sizestr;
-}
-
-static char *makeDevTimeout(char *s2)
-{
-    _doubletotv(&current_spec->timeout, _strtodouble(s2));
-    return s2;
-}
-
-static char *makePingPeriod(char *s2)
-{
-    _doubletotv(&current_spec->ping_period, _strtodouble(s2));
-    return s2;
-}
-
-/* makeStmt(type, str, tv, mp1(plug), mp2(stat/node) */
-static PreStmt *makeStmt(StmtType type, char *str, char *tvstr, 
-                      char *mp1str, char *mp2str)
-{
-    int mp1 = mp1str ? _strtolong(mp1str) : -1;
-    int mp2 = mp2str ? _strtolong(mp2str) : -1;
-    struct timeval tv;
-
+    new->type = type;
+    new->mp1 = mp1str ? _strtolong(mp1str) : -1;
+    new->mp2 = mp2str ? _strtolong(mp2str) : -1;
+    if (str)
+        new->str = Strdup(str);
     if (tvstr)
-        _doubletotv(&tv, _strtodouble(tvstr));
+        _doubletotv(&new->tv, _strtodouble(tvstr));
 
-    return conf_prestmt_create(type, str, tv, mp1, mp2);
+    return new;
 }
 
-static char *makeScript(int com, List prestmts)
+static void destroyPreStmt(PreStmt *p)
 {
-    if( current_spec->prescripts[com] != NULL )
-        _errormsg("duplicate script");
-    current_spec->prescripts[com] = prestmts;
-    return NULL;
+    if (p->str)
+        Free(p->str);
+    p->str = NULL;
+    Free(p);
 }
-    
-static char *makePlugNameLine(char *plugstr)
+
+static void _clear_current_spec(void)
 {
     int i;
 
-    if( current_spec == NULL ) 
-        _errormsg("plug name outside of specification");
-    if( current_spec->plugname == NULL ) 
-        _errormsg("plug name line not preceded by plugcount line");
-    if( current_spec->size <= 0 ) 
-        _errormsg("invalid size");
-    for (i = 0; i < current_spec->size; i++)
-        if (current_spec->plugname[i] == NULL)
-            break;
-    if(i == current_spec->size)
-        _errormsg("too many plug names lines");
-    current_spec->plugname[i] = Strdup(plugstr);
-    return plugstr;
+    current_spec.name = NULL;
+    current_spec.type = NO_DEV;
+    current_spec.off = NULL;
+    current_spec.on = NULL;
+    current_spec.plugs = NULL;
+    timerclear(&current_spec.timeout);
+    timerclear(&current_spec.ping_period);
+    for (i = 0; i < NUM_SCRIPTS; i++)
+        current_spec.prescripts[i] = NULL;
 }
 
-/*
- * We've hit a Device line - build complete Device structure.
- */   
+static Spec *_copy_current_spec(void)
+{
+    Spec *new = (Spec *) Malloc(sizeof(Spec));
+    int i;
+
+    *new = current_spec;
+    for (i = 0; i < NUM_SCRIPTS; i++)
+        new->prescripts[i] = current_spec.prescripts[i];
+    _clear_current_spec();
+    return new;
+}
+
+static Spec *makeSpec(char *name)
+{
+    Spec *spec;
+
+    current_spec.name = Strdup(name);
+    if (current_spec.type == NO_DEV)
+        _spec_missing("type");
+    if(current_spec.off == NULL)
+        _spec_missing("offstring");
+    if(current_spec.on == NULL)
+        _spec_missing("onstring");
+
+    /* FIXME: check for manditory scripts here?  what are they? */
+
+    spec = _copy_current_spec();
+    assert(device_specs != NULL);
+    list_append(device_specs, spec);
+
+    return spec;
+}
+
+static void destroySpec(Spec * spec)
+{
+    int i;
+
+    if (spec->name)
+        Free(spec->name);
+    if (spec->off)
+        Free(spec->off);
+    if (spec->on)
+        Free(spec->on);
+    if (spec->plugs)
+        list_destroy(spec->plugs);
+    for (i = 0; i < NUM_SCRIPTS; i++)
+        if (spec->prescripts[i])
+            list_destroy(spec->prescripts[i]);
+    Free(spec);
+}
+
+static int matchSpec(Spec * spec, void *key)
+{
+    return (strcmp(spec->name, (char *) key) == 0);
+}
+
+static Spec *findSpec(char *name)
+{
+    return list_find_first(device_specs, (ListFindF) matchSpec, name);
+}
+
+static void makeScript(int com, List stmts)
+{
+    if (current_spec.prescripts[com] != NULL)
+        _errormsg("duplicate script");
+    current_spec.prescripts[com] = stmts;
+}
+
+/**
+ ** Powerman.conf stuff.
+ **/
+
+static void destroyStmt(Stmt *stmt)
+{
+    assert(stmt != NULL);
+
+    switch (stmt->type) {
+    case STMT_SEND:
+        Free(stmt->u.send.fmt);
+        break;
+    case STMT_EXPECT:
+        break;
+    case STMT_DELAY:
+        break;
+    case STMT_FOREACHNODE:
+    case STMT_FOREACHPLUG:
+        list_destroy(stmt->u.foreach.stmts);
+        break;
+    default:
+    }
+    Free(stmt);
+}
+
+static Stmt *makeStmt(PreStmt *p)
+{
+    Stmt *stmt;
+    PreStmt *subp;
+    reg_syntax_t cflags = REG_EXTENDED;
+    ListIterator itr;
+
+    stmt = (Stmt *) Malloc(sizeof(Stmt));
+    stmt->type = p->type;
+    switch (p->type) {
+    case STMT_SEND:
+        stmt->u.send.fmt = Strdup(p->str);
+        break;
+    case STMT_EXPECT:
+        Regcomp(&(stmt->u.expect.exp), p->str, cflags);
+        break;
+    case STMT_SETSTATUS:
+        stmt->u.setstatus.stat_mp = p->mp2;
+        if (p->str)
+            stmt->u.setstatus.plug_name = Strdup(p->str);
+        else
+            stmt->u.setstatus.plug_mp = p->mp1;
+        break;
+    case STMT_SETPLUGNAME:
+        stmt->u.setplugname.plug_mp = p->mp1;
+        stmt->u.setplugname.node_mp = p->mp2;
+        break;
+    case STMT_DELAY:
+        stmt->u.delay.tv = p->tv;
+        break;
+    case STMT_FOREACHNODE:
+    case STMT_FOREACHPLUG:
+        stmt->u.foreach.stmts = list_create((ListDelF) destroyStmt);
+        itr = list_iterator_create(p->stmts);
+        while((subp = list_next(itr))) {
+            list_append(stmt->u.foreach.stmts, makeStmt(subp));
+        }
+        list_iterator_destroy(itr);
+        break;
+    default:
+    }
+    return stmt;
+}
+
 static void makeDevice(char *devstr, char *specstr, char *hoststr, 
                         char *portstr)
 {
+    ListIterator itr;
     Device *dev;
     Spec *spec;
+    char *plugname;
     reg_syntax_t cflags = REG_EXTENDED;
     int i;
-    Plug *plug;
 
     /* find that spec */
-    spec = conf_find_spec(specstr);
+    spec = findSpec(specstr);
     if ( spec == NULL ) 
     _errormsg("device specification not found");
 
@@ -540,32 +597,34 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
     default :
         _errormsg("unimplemented device type");
     }
-    for (i = 0; i < spec->size; i++) {
-        plug = dev_plug_create(spec->plugname[i]);
+
+    /* create plugs */
+    itr = list_iterator_create(spec->plugs);
+    while((plugname = list_next(itr))) {
+        Plug *plug = dev_plug_create(plugname);
+
         list_append(dev->plugs, plug);
     }
+    list_iterator_destroy(itr);
 
     /* transfer remaining info from the spec to the device */
     re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
     Regcomp( &(dev->on_re), spec->on, cflags | REG_NOSUB);
     Regcomp( &(dev->off_re), spec->off, cflags | REG_NOSUB);
     for (i = 0; i < NUM_SCRIPTS; i++) {
-        ListIterator itr;
         PreStmt *p;
-        Stmt *stmt;
 
         if (spec->prescripts[i] == NULL) {
             dev->scripts[i] = NULL;
             continue; /* unimplemented script */
         }
 
-        dev->scripts[i] = list_create((ListDelF) conf_stmt_destroy);
+        dev->scripts[i] = list_create((ListDelF) destroyStmt);
 
         /* copy the list of statements in each script */
         itr = list_iterator_create(spec->prescripts[i]);
         while((p = list_next(itr))) {
-            stmt = conf_stmt_create(p->type, p->str, p->tv, p->mp1, p->mp2);
-            list_append(dev->scripts[i], stmt);
+            list_append(dev->scripts[i], makeStmt(p));
         }
         list_iterator_destroy(itr);
     }
@@ -619,6 +678,19 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
         plug->node = Strdup(nodestr);
     }
 }
+
+static void makeClientPort(char *s2)
+{
+    int port = _strtolong(s2);
+
+    if (port < 1024)
+        _errormsg("bogus client listener port");
+    conf_set_listen_port(port); 
+}
+
+/**
+ ** Utility functions
+ **/
 
 static double _strtodouble(char *str)
 {

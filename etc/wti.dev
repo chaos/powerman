@@ -10,13 +10,14 @@
 # 4. disconnect timeout: set to max (30 min)
 # Note: prompt is not returned until device is ready to accept another command
 #
-specification {
-	name 		"wti"
-	type 		"telnet"
+specification "wti" {
+	type 		TELNET
 	offstring 	"OFF"
 	onstring  	"ON"
-	maxplugcount 	8
 	timeout 	30  # "/boot *" command takes about 20 sec
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
+
 	script login {
 		expect "\n"
 		expect "word: "
@@ -74,12 +75,4 @@ specification {
 		send "/boot *\r\n"
 		expect "NPS> "
 	}
-	plug name "1"
-	plug name "2"
-	plug name "3"
-	plug name "4"
-	plug name "5"
-	plug name "6"
-	plug name "7"
-	plug name "8"
 }

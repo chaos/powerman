@@ -4,13 +4,14 @@
 #
 # Linux Networx ICE box firmware version 2.x
 #
-specification {
-	name 		"icebox"
-	type 		"TCP"
+specification "icebox" {
+	type 		TCP
 	offstring 	"0"
 	onstring  	"1"
-	maxplugcount 	10
 	timeout 	20 # accomodate 14 sec plus "cycle *" time */
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+
 	script login {
 		expect "V2[^\n]*\r\n"
 		send "auth icebox\r\n"
@@ -107,14 +108,4 @@ specification {
 		expect "OK\r\n"
 		delay 7
 	}
-	plug name "1"
-	plug name "2"
-	plug name "3"
-	plug name "4"
-	plug name "5"
-	plug name "6"
-	plug name "7"
-	plug name "8"
-	plug name "9"
-	plug name "10"
 }

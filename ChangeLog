@@ -1,5 +1,16 @@
+2003-04-16 garlick
+    * Further cleanup of parse.y.  Remove ordering dependency of device
+      config directives.  Specify device name in front of spec open brace
+      instead of "name" line.  Plug names are now handled as single directive
+      with a list of strings rather than individual plug name directives.
+      Make device types known to the scanner and remove quotes around them.
+      Move all "spec" handling to parse.y.  Do away with maxplugcount directive.
+
 2003-04-15 garlick
     * Cleanup of parse.y to prepare for nested blocks of script code.
+    * Add 'foreachplug' and 'foreachnode' script constructs to allow repeated
+      execution of a subblock of statements.  The number of iterations is
+      the number of plugs configured or the number of nodes. (not yet tested)
 
 2003-04-14 garlick
     * Renamed "plugcount" to "maxplugcount" in device configurations.

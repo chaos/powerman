@@ -5,13 +5,13 @@
 # Tested with APC MasterSwitch plus 
 # APP v2.0.0 / AOS v2.5.4
 #
-specification {
-	name 		"apc"
-	type 		"telnet"
+specification "apc" {
+	type 		TELNET
 	offstring 	"OFF"
 	onstring  	"ON"
-	maxplugcount 	8
 	timeout 	10  
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
 
 	script login {
 		expect "\n"
@@ -219,12 +219,4 @@ specification {
 		send "\033"
 		expect "> "
 	}
-	plug name "1"
-	plug name "2"
-	plug name "3"
-	plug name "4"
-	plug name "5"
-	plug name "6"
-	plug name "7"
-	plug name "8"
 }

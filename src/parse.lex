@@ -109,6 +109,9 @@ end[ \t]+global                   {   return TOK_E_GLOBAL;      /* old */ }
 begin[ \t]+nodes                  {   return TOK_B_NODES;       /* old */ }
 end[ \t]+nodes                    {   return TOK_E_NODES;       /* old */ }
 
+(TCP|tcp)                         {   return TOK_TYPE_TCP; }
+(SERIAL|serial)                   {   return TOK_TYPE_SERIAL; }
+(TELNET|telnet)                   {   return TOK_TYPE_TELNET; }
 port                              {   return TOK_PORT ; }
 tcpwrappers                       {   return TOK_TCP_WRAPPERS; }
 timeout                           {   return TOK_DEV_TIMEOUT; }
@@ -122,6 +125,8 @@ maxplugcount                      {   return TOK_MAX_PLUG_COUNT; }
 expect                            {   return TOK_EXPECT; }
 setstatus                         {   return TOK_SETSTATUS; }
 setplugname                       {   return TOK_SETPLUGNAME; }
+foreachnode                       {   return TOK_FOREACHNODE; }
+foreachplug                       {   return TOK_FOREACHPLUG; }
 send                              {   return TOK_SEND; }
 delay                             {   return TOK_DELAY; }
 login                             {   return TOK_LOGIN; }

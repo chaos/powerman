@@ -51,15 +51,7 @@ static bool         conf_use_tcp_wrap = FALSE;
 static int          conf_listen_port;
 static hostlist_t   conf_nodes = NULL;
 static List         conf_aliases = NULL;    /* list of alias_t's */
-/* 
- * N.B. Device specifications only exist during parsing.
- * After that their contents are copied for each instantiation of the 
- * device and the original specification is not used.
- */
-static List         conf_specs = NULL;      /* list of Spec's */
 
-static int _spec_match(Spec * spec, void *key);
-static void _spec_destroy(Spec * spec);
 static bool _validate_config(void);
 static void _alias_destroy(alias_t *a);
 
@@ -76,8 +68,6 @@ void conf_init(char *filename)
     conf_listen_port = strtol(DFLT_PORT, NULL, 10);
 
     conf_nodes = hostlist_create(NULL);
-
-    conf_specs = list_create((ListDelF) _spec_destroy);
 
     conf_aliases = list_create((ListDelF) _alias_destroy);
 
@@ -96,9 +86,6 @@ void conf_init(char *filename)
     parse_config_file(filename);
 
     valid = _validate_config();
-
-    list_destroy(conf_specs);
-    conf_specs = NULL;
 
     if (!valid)
         exit(1);
@@ -141,175 +128,6 @@ static bool _validate_config(void)
     list_iterator_destroy(itr);
 
     return valid;
-}
-
-
-/*
- * Create/destroy Stmt structs, which are element in a script.
- */
-
-Stmt *conf_stmt_create(StmtType type, char *str, struct timeval tv, 
-        int plug_mp, int stat_or_node_mp)
-{
-    Stmt *stmt;
-    reg_syntax_t cflags = REG_EXTENDED;
-
-    stmt = (Stmt *) Malloc(sizeof(Stmt));
-    stmt->type = type;
-    switch (type) {
-    case STMT_SEND:
-        stmt->u.send.fmt = Strdup(str);
-        break;
-    case STMT_EXPECT:
-        Regcomp(&(stmt->u.expect.exp), str, cflags);
-        break;
-    case STMT_SETSTATUS:
-        stmt->u.setstatus.stat_mp = stat_or_node_mp;
-        if (str)
-            stmt->u.setstatus.plug_name = Strdup(str);
-        else
-            stmt->u.setstatus.plug_mp = plug_mp;
-        break;
-    case STMT_SETPLUGNAME:
-        stmt->u.setplugname.plug_mp = plug_mp;
-        stmt->u.setplugname.node_mp = stat_or_node_mp;
-        break;
-    case STMT_DELAY:
-        stmt->u.delay.tv = tv;
-        break;
-    default:
-    }
-    return stmt;
-}
-
-void conf_stmt_destroy(Stmt * stmt)
-{
-    assert(stmt != NULL);
-
-    switch (stmt->type) {
-    case STMT_SEND:
-        Free(stmt->u.send.fmt);
-        break;
-    case STMT_EXPECT:
-        break;
-    case STMT_DELAY:
-        break;
-    default:
-    }
-    Free(stmt);
-}
- 
-/*
- * Manage tmp_spec list of Spec structs.
- *    A Spec struct holds all the information about a device type
- * while the config file is being parsed.  Device lines refer to 
- * entries in the Spec list to get their detailed construction
- * and configuration information.  The Spec is not used after the
- * config file is closed.
- */
-
-Spec *conf_spec_create(char *name)
-{
-    Spec *spec;
-    int i;
-
-    spec = (Spec *) Malloc(sizeof(Spec));
-    spec->name = Strdup(name);
-    spec->type = NO_DEV;
-    spec->size = 0;
-    timerclear(&spec->timeout);
-    timerclear(&spec->ping_period);
-    for (i = 0; i < NUM_SCRIPTS; i++)
-        spec->prescripts[i] = NULL;
-    return spec;
-}
-
-/* list 'match' function for conf_find_spec() */
-static int _spec_match(Spec * spec, void *key)
-{
-    return (strcmp(spec->name, (char *) key) == 0);
-}
-
-/* list destructor for conf_specs */
-static void _spec_destroy(Spec * spec)
-{
-    int i;
-
-    Free(spec->name);
-    Free(spec->off);
-    Free(spec->on);
-
-    for (i = 0; i < spec->size; i++)
-        if (spec->plugname[i])
-            Free(spec->plugname[i]);
-    Free(spec->plugname);
-    for (i = 0; i < NUM_SCRIPTS; i++)
-        if (spec->prescripts[i])
-            list_destroy(spec->prescripts[i]);
-    Free(spec);
-}
-
-/* add a Spec to the internal list */
-void conf_add_spec(Spec * spec)
-{
-    assert(conf_specs != NULL);
-    list_append(conf_specs, spec);
-}
-
-/* find and return a Spec from the internal list */
-Spec *conf_find_spec(char *name)
-{
-    return list_find_first(conf_specs, (ListFindF) _spec_match, name);
-}
-
-/*
- * Create/destroy PreStmt structs.
- * A PreStmt that holds information for a Stmt.  The Stmt itself
- * cannot be constructed unitl it is added to the device's
- * protocol.  All the infromation the Stmt needs at that time
- * is present in the PreStmt. 
- */
-
-PreStmt *conf_prestmt_create(StmtType type, char *str, struct timeval tv,
-        int mp1, int mp2)
-{
-    PreStmt *specl;
-
-    specl = (PreStmt *) Malloc(sizeof(PreStmt));
-    memset(specl, 0, sizeof(PreStmt));
-    specl->type = type;
-    switch (type) {
-    case STMT_SEND:
-    case STMT_EXPECT:
-        assert(str != NULL);
-        specl->str = Strdup(str);
-        break;
-    case STMT_SETSTATUS:
-        specl->mp1 = mp1;
-        specl->mp2 = mp2;
-        if (str)
-            specl->str = Strdup(str);
-        break;
-    case STMT_SETPLUGNAME:
-        specl->mp1 = mp1;
-        specl->mp2 = mp2;
-        break;
-    case STMT_DELAY:
-        assert(str == NULL);
-        specl->tv = tv;
-        break;
-    default:
-        assert(FALSE);
-    }
-    return specl;
-}
-
-void conf_prestmt_destroy(PreStmt * specl)
-{
-    if (specl->str != NULL)
-        Free(specl->str);
-    specl->str = NULL;
-    Free(specl);
 }
 
 /*

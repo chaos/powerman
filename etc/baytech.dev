@@ -11,14 +11,14 @@
 # 3. net: prompt for password : enabled (3/configuration, 5/access, 2/...)
 # Note: prompt is not returned until device is ready to accept another commmand
 #
-specification {
-	name 		"baytech"
-	type 		"telnet"
+specification "baytech" {
+	type 		TELNET
 	offstring 	"Off"
 	onstring  	"On"
-	maxplugcount 	8
 	timeout 	10   # about 5 sec for cycle command
 	pingperiod 	90
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
 
 	script ping {
 		send "\r\n"
@@ -91,12 +91,4 @@ specification {
 		send "on 0\r\n"
 		expect "RPC-3>"
 	}
-	plug name "1"
-	plug name "2"
-	plug name "3"
-	plug name "4"
-	plug name "5"
-	plug name "6"
-	plug name "7"
-	plug name "8"
 }
