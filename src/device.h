@@ -78,8 +78,6 @@ struct device_struct {
     List	    plugs;	    /* list of Plugs */
     Protocol	    *prot;	    /* list of expect/send scripts */
 
-    bool	    logit;	    /* if true, call log function in buffer.c */
-
     struct timeval  last_reconnect; /* time of last reconnect attempt */
     int		    reconnect_count;/* number of reconnects attempted */
     MAGIC;
@@ -91,7 +89,7 @@ void dev_init(void);
 void dev_fini(void);
 void dev_add(Device *dev);
 void dev_apply_action(Action *act);
-void dev_initial_connect(bool logit);
+void dev_initial_connect(void);
 
 Device *dev_create();
 void dev_destroy(Device * dev);

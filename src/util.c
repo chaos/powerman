@@ -33,47 +33,6 @@ unsigned char *util_findregex(regex_t * re, unsigned char *str, int len)
     return (str + pmatch[0].rm_eo);
 }
 
-/*
- * Convert memory to string, turning non-printable character into "C" 
- * representation.  
- *  mem (IN)	target memory
- *  len (IN)	number of characters to convert
- *  RETURN	string (caller must free)
- */
-unsigned char *util_memstr(unsigned char *mem, int len)
-{
-    int i, j;
-    int strsize = len * 4;	/* worst case */
-    unsigned char *str = Malloc(strsize + 1);
-
-    for (i = j = 0; i < len; i++) {
-	switch (mem[i]) {
-	case '\r':
-	    strcpy(&str[j], "\\r");
-	    j += 2;
-	    break;
-	case '\n':
-	    strcpy(&str[j], "\\n");
-	    j += 2;
-	    break;
-	case '\t':
-	    strcpy(&str[j], "\\t");
-	    j += 2;
-	    break;
-	default:
-	    if (isprint(mem[i]))
-		str[j++] = mem[i];
-	    else {
-		sprintf(&str[j], "\\%.3o", mem[i]);
-		j += 4;
-	    }
-	    break;
-	}
-	assert(j <= strsize || i == len);
-    }
-    str[j] = '\0';
-    return str;
-}
 
 /*
  * vi:softtabstop=4

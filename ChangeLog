@@ -1,3 +1,8 @@
+2002-09-30 garlick
+	* Added debug.[ch] and changed --telemetry to --debug mask
+	* Fixed bug where _reconnect did not update the file descriptor
+	  in the underlying buffer.
+
 2002-09-29 garlick
 	* Tagged powerman-1-0-6.
 

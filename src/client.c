@@ -45,6 +45,7 @@
 #include "action.h"
 #include "hostlist.h"
 #include "client_proto.h"
+#include "debug.h"
 
 #define LISTEN_BACKLOG    5
 
@@ -489,6 +490,8 @@ void cli_listen(void)
     Bind(listen_fd, &saddr, saddr_size);
 
     Listen(listen_fd, LISTEN_BACKLOG);
+
+    dbg(DBG_CLIENT, "listening");
 }
 
 
@@ -584,8 +587,7 @@ static void _create_client(void)
     /* append to the list of clients */
     list_append(cli_clients, client);
 
-    syslog(LOG_DEBUG, "New connection: <%s, %d> on descriptor %d",
-        fqdn, client->port, client->fd);
+    dbg(DBG_CLIENT, "connect <%s, %d> fd %d", fqdn, client->port, client->fd);
     _client_msg(client, CP_VERSION);
     _client_prompt(client);
 }
@@ -627,6 +629,10 @@ void cli_pre_select(fd_set *rset, fd_set *wset, int *maxfd)
 {
     ListIterator itr;
     Client *client;
+    fd_set cli_fdset;
+    char fdsetstr[1024];
+
+    FD_ZERO(&cli_fdset);
 
     if (listen_fd != NO_FD) {
         assert(listen_fd >= 0);
@@ -638,6 +644,8 @@ void cli_pre_select(fd_set *rset, fd_set *wset, int *maxfd)
     while ((client = list_next(itr))) {
         if (client->fd < 0)
             continue;
+
+	FD_SET(client->fd, &cli_fdset);
 
         if (client->read_status == CLI_READING) {
             FD_SET(client->fd, rset);
@@ -651,6 +659,11 @@ void cli_pre_select(fd_set *rset, fd_set *wset, int *maxfd)
     }
 
     list_iterator_destroy(itr);
+
+    dbg(DBG_CLIENT, "fds are [%s] listen fd %d", 
+		    dbg_fdsetstr(&cli_fdset, *maxfd + 1, 
+			    fdsetstr, sizeof(fdsetstr)), listen_fd);
+		    
 }
 
 /*

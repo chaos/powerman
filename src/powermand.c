@@ -54,12 +54,13 @@
 #include "error.h"
 #include "wrappers.h"
 #include "util.h"
+#include "debug.h"
 
 /* prototypes */
 static void _usage(char *prog);
 static void _noop_handler(int signum);
 static void _exit_handler(int signum);
-static void _select_loop(bool debug);
+static void _select_loop(void);
 
 static const char *powerman_license =
     "Copyright (C) 2001-2002 The Regents of the University of California.\n"
@@ -71,14 +72,14 @@ static const char *powerman_license =
     "under the terms of the GNU General Public License as published by\n"
     "the Free Software Foundation.\n";
 
-#define OPT_STRING "c:fhLVt"
+#define OPT_STRING "c:fhLVd:"
 static const struct option long_options[] = {
     {"config_file", required_argument, 0, 'c'},
     {"foreground", no_argument, 0, 'f'},
     {"help", no_argument, 0, 'h'},
     {"license", no_argument, 0, 'L'},
     {"version", no_argument, 0, 'V'},
-    {"telemetry", no_argument, 0, 't'},
+    {"debug", required_argument, 0, 'd'},
     {0, 0, 0, 0}
 };
 
@@ -89,7 +90,6 @@ int main(int argc, char **argv)
     int c;
     int lindex;
     char *config_filename = NULL;
-    bool debug = FALSE;
     bool daemonize = TRUE;
 
     /* initialize various modules */
@@ -116,8 +116,14 @@ int main(int argc, char **argv)
 	case 'L':		/* --license */
 	    printf("%s", powerman_license);
 	    exit(0);
-	case 't':		/* --telemetry */
-	    debug = TRUE;
+	case 'd':		/* --debug */
+	    {
+		unsigned long val = strtol(optarg, NULL, 0);
+
+		if ((val == LONG_MAX || val == LONG_MIN) && errno == ERANGE)
+		    err_exit(TRUE, "strtol on debug mask");
+		dbg_setmask(val);
+	    }
 	    break;
 #if 0
 	case 'V':
@@ -130,9 +136,6 @@ int main(int argc, char **argv)
 	    break;
 	}
     }
-
-    if (debug && daemonize == TRUE)
-	err_exit(FALSE, "--telemetry cannot be used in daemon mode");
 
     if (geteuid() != 0)
 	err_exit(FALSE, "must be root");
@@ -155,7 +158,7 @@ int main(int argc, char **argv)
 
     /* We now have a socket at listener fd running in listen mode */
     /* and a file descriptor for communicating with each device */
-    _select_loop(debug);
+    _select_loop();
     /*NOTREACHED*/
     return 0;
 }
@@ -188,19 +191,21 @@ static bool _tvzero(struct timeval *tv)
  * "quiecent" and a new action may be initiated from the list 
  * queued up by the clients.  
  */
-static void _select_loop(bool debug)
+static void _select_loop(void)
 {
     int maxfd;
     struct timeval tmout;
     fd_set rset;
     fd_set wset;
+    char rsetstr[1024], wsetstr[1024], tmoutstr[32];
 
     /* start non-blocking connections to all the devices */
-    dev_initial_connect(debug);
+    dev_initial_connect();
 
     timerclear(&tmout);
 
     while (1) {
+	dbg(DBG_SELECT, "---------------------");
 	/* set maxfd and read/write fd sets for select call */
 	FD_ZERO(&rset);
 	FD_ZERO(&wset);
@@ -208,18 +213,19 @@ static void _select_loop(bool debug)
 	cli_pre_select(&rset, &wset, &maxfd);
 	dev_pre_select(&rset, &wset, &maxfd);
 
-	/* XXX */
-	if (debug) {
-	    if (_tvzero(&tmout))
-		printf("select - no timeout\n");
-	    else
-		printf("select - timeout %ld.%-6.6ld sec\n", 
-			    tmout.tv_sec, tmout.tv_usec);
-	}
+	dbg(DBG_SELECT, "select rset=[%s] wset=[%s] tmout=%s",
+		    dbg_fdsetstr(&rset, maxfd+1, rsetstr, sizeof(rsetstr)),
+		    dbg_fdsetstr(&wset, maxfd+1, wsetstr, sizeof(wsetstr)),
+		    _tvzero(&tmout) ? "NULL" : dbg_tvstr(&tmout, tmoutstr, 
+						sizeof(tmoutstr)));
 
         /* Note: some selects modify timeval arg */
 	Select(maxfd + 1, &rset, &wset, NULL, _tvzero(&tmout) ? NULL : &tmout);
 	timerclear(&tmout);
+
+	dbg(DBG_SELECT, "ready rset=[%s] wset=[%s]", 
+			dbg_fdsetstr(&rset, maxfd+1, rsetstr, sizeof(rsetstr)),
+		    dbg_fdsetstr(&wset, maxfd+1, wsetstr, sizeof(wsetstr)));
 
 	/* 
 	 * Process activity on client and device fd's.

@@ -31,6 +31,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <ctype.h>
+#include <errno.h>
 
 #include "powerman.h"
 
@@ -38,6 +39,7 @@
 #include "wrappers.h"
 #include "util.h"
 #include "buffer.h"
+#include "debug.h"
 
 
 #define BUF_MAGIC  0x4244052
@@ -64,8 +66,9 @@ struct buffer_implementation {
 	assert(b); \
 	assert((b)->magic == BUF_MAGIC); \
 	assert((b)->in >= (b)->out); \
-	assert((b)->fd >= 0); \
 } while(0)
+
+#define _buf_isopen(b)	do { assert((b)->fd >= 0); } while(0)
 
 /*
  * Construct a Buffer of specified length.
@@ -79,7 +82,6 @@ Buffer buf_create(int fd, int length, BufferLogFun * logfun, void *logfunarg)
 {
     Buffer b;
 
-    assert(fd >= 0);
     b = (Buffer) Malloc(sizeof(struct buffer_implementation));
     b->magic = BUF_MAGIC;
     b->fd = fd;
@@ -146,13 +148,18 @@ int buf_write(Buffer b)
     int nbytes;
 
     _buf_check(b);
+    _buf_isopen(b);
     nbytes = Write(b->fd, b->out, _buf_length(b));
     if (nbytes > 0) {
 	if (b->logfun != NULL)
 	    b->logfun(b->out, nbytes, b->logfunarg);
 	b->out += nbytes;
+	_buf_check(b);
+	dbg(DBG_BUFFER, "wrote %d bytes to fd %d", nbytes, b->fd);
+    } else {
+	dbg(DBG_BUFFER, "write error on fd %d", b->fd);
     }
-    _buf_check(b);
+	
     return nbytes;
 }
 
@@ -166,13 +173,17 @@ int buf_read(Buffer b)
     int nbytes;
 
     _buf_check(b);
+    _buf_isopen(b);
     nbytes = Read(b->fd, b->in, _buf_length_post(b));
     if (nbytes > 0) {
 	if (b->logfun != NULL)
 	    b->logfun(b->in, nbytes, b->logfunarg);
 	b->in += nbytes;
+	_buf_check(b);
+	dbg(DBG_BUFFER, "read %d bytes from fd %d", nbytes, b->fd);
+    } else {
+	dbg(DBG_BUFFER, "read error on fd %d: %s", b->fd, strerror(errno));
     }
-    _buf_check(b);
     return nbytes;
 }
 

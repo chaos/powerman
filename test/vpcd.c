@@ -12,6 +12,8 @@
 #define _GNU_SOURCE  /* for dprintf */
 #include <stdio.h>
 #include <pthread.h>
+#define _GNU_SOURCE
+#include <getopt.h>
 #include <unistd.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -26,6 +28,11 @@
 static struct {
 	int plug[NUM_PLUGS];
 } dev[NUM_THREADS];
+
+static int opt_drop_command = 0;
+static int opt_bad_response = 0;
+
+static int errcount = 0;
 
 /* 
  * Get a line from file descriptor (minus \r or \n).  Result will always
@@ -116,17 +123,19 @@ static void _prompt_loop(int num, int fd)
 		dprintf(fd, "%d BADVAL: %d\n", seq, n1);
 		continue;
 	    }
-	    dev[num].plug[n1] = 1;
 	    printf("%d: on %d\n", num, n1);
-#if 0
-	    printf("XXX: delaying response to on command 10 seconds\n");
-	    sleep(10); /* try to trigger expect timeout */
-#endif
-#if 1
-	    printf("XXX: generating UNKONWN response to on command\n");
-#else
+	    if (errcount == 0 && opt_drop_command) {
+		printf("XXX: dropping OK response to 'on' command\n");
+		errcount++;
+		goto noresp;
+	    }
+	    if (errcount == 0 && opt_bad_response) {
+		printf("XXX: responding to 'on' with UNKONWN instead of OK\n");
+		errcount++;
+		goto unknown;
+	    }
+	    dev[num].plug[n1] = 1;
 	    goto ok;
-#endif
 	}
 	if (sscanf(buf, "off %d", &n1) == 1) {	/* off <plugnum> */
 	    if (n1 < 0 || n1 >= NUM_PLUGS) {
@@ -149,10 +158,12 @@ static void _prompt_loop(int num, int fd)
 	    printf("%d: off *\n", num);
 	    goto ok;
 	}
+unknown:
 	dprintf(fd, "%d UNKNOWN: %s\n", seq, buf);
 	continue;
 ok:
 	dprintf(fd, "%d OK\n", seq);
+noresp:
     }
 }
 
@@ -223,6 +234,22 @@ static void *_vpc_thread(void *arg)
     return NULL;
 }
 
+#define OPT_STR "db"
+static const struct option long_options[] = {
+    {"drop_command", no_argument, 0, 'd'},
+    {"bad_response", no_argument, 0, 'b'},
+    {0, 0, 0, 0}
+};
+static const struct option *longopts = long_options;
+
+static void _usage(void)
+{
+    fprintf(stderr, "Usage: vpcd [one option]\n"
+"--drop_command       drop response to first \"on\" command\n"
+"--bad_response	      respond to first \"on\" command with UNKNOWN\n");
+    exit(1);	    
+}
+
 /*
  * Start NUM_THREADS power controllers on consecutive ports starting at
  * BASE_PORT.  Pause waiting for a signal.  Does not daemonize and logs to
@@ -231,9 +258,30 @@ static void *_vpc_thread(void *arg)
 int
 main(int argc, char *argv[])
 {
+    int c;
+    int longindex;
     pthread_attr_t vpc_attr[NUM_THREADS];
     pthread_t vpc_thd[NUM_THREADS];
     int i;
+    int optcount = 0;
+
+    opterr = 0;
+    while ((c = getopt_long(argc, argv, OPT_STR, longopts, &longindex)) != -1) {
+	switch (c) {
+	    case 'd':	/* --drop_command */
+		opt_drop_command++;
+		optcount++;
+		break;
+	    case 'b':	/* --bad_response */
+		opt_bad_response++;
+		optcount++;
+		break;
+	    default:
+		_usage();
+	}
+    }
+    if (optcount > 1)
+	_usage();
 
     memset(dev, 0, sizeof(dev));
 

@@ -40,6 +40,7 @@
 #include "wrappers.h"
 #include "error.h"
 #include "daemon.h"
+#include "debug.h"
 
 #define TMPSTR_LEN 80
 
@@ -83,6 +84,7 @@ void daemon_init(void)
     assert(res != -1 && res <= sizeof(buf));
     openlog(DAEMON_NAME, LOG_NDELAY | LOG_PID, LOG_DAEMON);
     err_notty();	/* tell err_exit that stderr is no good */
+    dbg_notty();	/* tell dbg that stderr is no good */
     syslog(LOG_NOTICE, buf);
 }
 
