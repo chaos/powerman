@@ -82,6 +82,7 @@ install: all
 	$(INSTALL) etc/icebox.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/icebox3.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/wti.dev			$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/wti-rps10.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/vicebox.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/vpc.dev			$(DESTDIR)$(packagedir)
 	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man1
