@@ -1084,10 +1084,10 @@ static bool _process_setplugname(Device* dev, Action *act, ExecCtx *e)
                 if (plug->name)                 /* free old plug name */
                     Free(plug->name);
                 plug->name = Strdup(plug_name); /* store new plug name */
-                printf("XXX setplugname %s: setting to %s\n", 
-                    plug->node, plug->name);
+                /*printf("XXX setplugname %s: setting to %s\n", 
+                    plug->node, plug->name);*/
             } else {
-                printf("XXX setplugname %s: not found\n", node_name);
+                /*printf("XXX setplugname %s: not found\n", node_name);*/
             }
             Free(plug_name);
         }
