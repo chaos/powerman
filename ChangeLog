@@ -1,6 +1,10 @@
+2003-12-02 Jim Garlick <garlick@llnl.gov>
+
+    * man/powerman-devices.7: Added.
+
 2003-12-02 Albert Chu <chu11@llnl.gov>
 
-    * /etc/ipmipower.dev: Replaced "failed to connect" with "timed out" 
+    * etc/ipmipower.dev: Replaced "failed to connect" with "timed out" 
     and "not discovered".
 
 2003-11-30 Jim Garlick <garlick@llnl.gov>

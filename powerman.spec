@@ -93,4 +93,5 @@ fi
 /etc/powerman/*
 /usr/man/man1/*
 /usr/man/man5/*
+/usr/man/man7/*
 %config(noreplace) %attr(0755,root,root)/etc/rc.d/init.d/powerman

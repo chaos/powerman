@@ -1,0 +1,132 @@
+.TH PowerMan 1 "Release 1.0" "LLNL" "PowerMan"
+.SH NAME
+PowerMan Device Configuration Notes
+.SH DESCRIPTION
+Following are notes on configuring various remote power controllers
+and related equipment supported by PowerMan.
+.SH CYCLADES TS-1000
+A cyclades TS-1000 configured so that PowerMan can connect to
+serial-port-based remote power control devices using telnet is set up
+as follows:
+.P
+Attach console cable between laptop running minicom
+and console port at 9600,n81 and authenticate with 
+default account: root/tslinux.
+.P
+Edit the following files (assumes no off-subnet routing or name service
+required):
+.TP
+.I "/etc/portslave/portslave.conf"
+.nf
+conf.eth_ip      192.168.54.151
+conf.eth_mask    255.255.255.0 
+conf.dhcp_client 0
+#
+all.speed        9600
+all.datasize     8
+all.stopbits     1
+all.parity       none
+all.flow         none
+all.dcd          0
+all.DTR_reset    1
+all.protocol     socket_server
+all.authtype     none
+#all.ipno
+all.socket_port  7001+
+#
+s1.tty           ttyS1
+s2.tty           ttyS2
+s3.tty           ttyS3
+s4.tty           ttyS4
+s5.tty           ttyS5
+s6.tty           ttyS6
+s7.tty           ttyS7
+s8.tty           ttyS8
+s9.tty           ttyS9
+s10.tty          ttyS10
+s11.tty          ttyS11
+s12.tty          ttyS12
+s13.tty          ttyS13
+s14.tty          ttyS14
+s15.tty          ttyS15
+s16.tty          ttyS16
+.fi
+.TP
+.I "/etc/hostname"
+cyclades-ts-test
+.TP
+.I "/etc/hosts"
+.nf
+127.0.0.1        localhost
+192.168.54.151   cycaldes-ts-test
+.fi
+.P
+Next, run 
+.B "signal_ras hup"
+and
+.B saveconf
+and finally, power cycle the unit.  It should be possible to configure
+PowerMan to connect to hostname:7001 for port 1, hostname:7002 for port 2,
+etc..
+.SH "BAYTECH RPC-3 (non-NC models)"
+Attach console cable between laptop running minicom
+and console port at 9600,n81.  Main menu should display.
+.P
+From main menu, select 3)...Configuration, then set IP parameters.
+.P
+From Configuration menu, select 5)...Access, then disable command
+confirmation, set admin password to baytech, and enable prompt for 
+password.  Exit Access menu by typing return.
+.P
+From Configuration menu, select 6)...Outlets.  Ensure that
+1)...Outlet Status display is disabled, and 2)...Command Confirmation
+is disabled.
+.P
+Exit back to main menu by typing return twice, then answer Y to the
+Accept changes? prompt.
+.SH "BAYTECH RPC-28-NC"
+Attach console cable between laptop running minicom
+and console port at 9600,n81.  Type return to get RPC-28> prompt.
+Type Help for a list of commands.
+.P
+Select config.  Select 3)...Enable/Disable Confirmation and disable
+confirmation.  Select 4)...Enable/Disable Status Menu and disable
+status menu
+.SH "LNXI ICEBOX V2"
+Attach console cable between laptop running minicom
+and console port at 9600,n81.  Enter default password of icebox.
+.TP
+.I "net ip 192.168.54.153"
+Sets IP address.
+.TP
+.I "net mask 255.255.255.0"
+Sets network mask
+.TP
+.I "net gw 192.168.54.254"
+Set default gateway.  Note: this may need to be set to an address in 
+the same subnet as the ice box regardless of whether it is to be used or not.
+.TP
+.I "reboot"
+Reboots the icebox.
+.P
+PowerMan talks to the ice box on port 1010.
+.SH "LNXI ICEBOX V3"
+Attach console cable between laptop running minicom
+and console port at 9600,n81.  Authenticate with default account admin/icebox.
+Configuration is the same as the V2 ICE BOX.
+.P
+PowerMan talks to the ice box on port 1010.
+.SH "APC MASTERSWITCH"
+[to be added]
+.SH "WTI RPS10"
+[to be added]
+.SH "WTI NPS"
+[to be added]
+.SH "CYCLADES PM8"
+[to be added]
+.SH "IBM XSERIES"
+[to be added]
+.SH "IPMI"
+[to be added]
+.SH "SEE ALSO"
+powerman(1) powermand(1) powerman.conf(5)
