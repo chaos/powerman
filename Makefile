@@ -57,8 +57,7 @@ install: all
 	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man5
 	$(INSTALL) -m 644 man/powerman.conf.5  	$(DESTDIR)$(mandir)/man5
 	$(mkinstalldirs) 			$(DESTDIR)/etc/rc.d/init.d
-	$(INSTALL) -m 755 scripts/powerman.ini  $(DESTDIR)/etc/rc.d/init.d/powerman; \
-	fi
+	$(INSTALL) -m 755 scripts/powerman.ini  $(DESTDIR)/etc/rc.d/init.d/powerman
 
 clean:
 	make -C src clean
