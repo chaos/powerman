@@ -77,10 +77,9 @@ install: all
 	$(mkinstalldirs)			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/baytech.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/icebox.dev		$(DESTDIR)$(packagedir)
-	$(INSTALL) etc/pmd.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/wti.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/vicebox.dev		$(DESTDIR)$(packagedir)
-	$(INSTALL) etc/vpc.dev		$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/vpc.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) -m 644 etc/powerman.conf	$(DESTDIR)$(packagedir)
 	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/powerman.1	$(DESTDIR)$(mandir)/man1
