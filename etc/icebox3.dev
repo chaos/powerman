@@ -3,8 +3,9 @@
 # /chaos/cvs/powerman/etc/icebox3.dev,v
 #
 # Linux Networx ICE Box firmware version 3.x
-# Beacon scripts assume 3.0 B70 or greater (uncomment delays in beacon_on/
-# beacon_off commands if earlier version).
+#
+# For 3.0 B70 or better, 2 sec delays in beacon_on/beacon_off can be 
+# commented out.
 #
 specification {
 	name 		"icebox3"
@@ -127,12 +128,12 @@ specification {
 	script beacon_on {
 		send "be %s on\r\n"
 		expect "OK\r\n"
-		#delay 2
+		delay 2
 	}
 	script beacon_off {
 		send "be %s off\r\n"
 		expect "OK\r\n"
-		#delay 2
+		delay 2
 	}
 	plug name "1"
 	plug name "2"
