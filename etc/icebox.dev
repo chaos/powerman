@@ -5,7 +5,7 @@ begin protocol specification
 	on string  "1"
 	all string "*"
 	size "10"
-	device timeout "1.0"
+	device timeout "10.0"
 	string interpretation mode "LITERAL"
 	begin PM_LOG_IN 
 		expect "V2\.2\r\n"

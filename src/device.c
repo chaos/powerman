@@ -610,6 +610,7 @@ process_expect(Device *dev)
 	regex_t *re;
 	Action *act = (Action *)list_peek(dev->acts);
 	String expect;
+	bool res;
 
 	assert(act != NULL);
 	assert(act->cur != NULL);
@@ -620,21 +621,27 @@ process_expect(Device *dev)
 	if ( (expect = get_String_from_Buffer(dev->from, re)) == NULL ) 
 	{
 		if (dev->logit)
-			printf("process_expect(%s): no match\n", 
-					get_String(dev->name));
+		{
+			unsigned char mem[MAX_BUF];
+			int len = peek_string_Buffer(dev->from, mem, MAX_BUF);
+			char *str = memstr(mem, len);
+
+			printf("process_expect(%s): no match: '%s'\n", 
+					get_String(dev->name), str);
+
+			Free(str);
+		}
 		return TRUE;
 	}
 
+	/*
+	 * We already matched the regular expression in get_String_from_Buffer
+	 * but now we need to process values of parenthesized subexpressions.
+	 */
 	dev->status &= ~DEV_EXPECTING;
-	if( ! match_RegEx(dev, expect) )
-	{
-		del_Action(dev->acts);
-		free_String((void *)expect);
-		if (dev->logit)
-			printf("process_expect(%s): no match (but I ate it)\n",
-					get_String(dev->name));
-		return FALSE;
-	}
+	res = match_RegEx(dev, expect);
+	assert(res == TRUE); /* the first regexec worked, this one should too */
+
 	if(act->cur->s_or_e.expect.map != NULL) 
 	{
 		if( dev->type == PMD_DEV )
@@ -1159,9 +1166,11 @@ match_RegEx(Device *dev, String expect)
 	re     = &(act->cur->s_or_e.expect.exp);
 	n = Regexec(re, str, nmatch, pmatch, eflags);
 
-	if (n != REG_NOERROR) return FALSE;
-	if ((pmatch[0].rm_so < 0) || (pmatch[0].rm_so > len))
+	if (n != REG_NOERROR) 
 		return FALSE;
+	if (pmatch[0].rm_so == -1 || pmatch[0].rm_so == -1)
+		return FALSE;
+	assert(pmatch[0].rm_so <= len);
 	
 /* 
  *  The "foreach" construct assumes that the initializer is never NULL

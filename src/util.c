@@ -13,8 +13,9 @@
 #include "wrappers.h"
 
 /* 
- * Look for 're' in the first 'len' bytes of 'str' and return it's 
- * position if found or NULL if not found.
+ * Look for 're' in the first 'len' bytes of 'str' and return a pointer
+ * to the character following the last character of the match,
+ * or NULL if no match.
  */
 unsigned char *
 find_RegEx(regex_t *re, unsigned char *str, int len)
@@ -25,13 +26,18 @@ find_RegEx(regex_t *re, unsigned char *str, int len)
 	int eflags = 0;
 
 	n = Regexec(re, str, nmatch, pmatch, eflags);
-	if (n != REG_NOERROR) return NULL;
-	if ((pmatch[0].rm_so < 0) || (pmatch[0].rm_eo > len))
+	if (n != REG_NOERROR) 
 		return NULL;
-	else
-		return str + pmatch[0].rm_eo;
+	if (pmatch[0].rm_so == -1 || pmatch[0].rm_eo == -1)
+		return NULL;
+	assert(pmatch[0].rm_eo <= len);
+	return (str + pmatch[0].rm_eo);
 }
 
+/*
+ * A wrapper for get_line_Buffer that returns a String type
+ * that athe caller must free.
+ */
 String
 get_line_from_Buffer(Buffer b)
 {
@@ -41,19 +47,31 @@ get_line_from_Buffer(Buffer b)
 	return (res > 0 ? make_String(str) : NULL);
 }
 
+/*
+ * Apply regular expression to the contents of a Buffer.
+ * If there is a match, return (and consume) from the beginning
+ * of the buffer to the last character of the match.
+ * NOTE: embedded \0 chars are converted to \377 by get_*_Buffer() and
+ * peek_*_Buffer9() because libc regex functions would treat these as string 
+ * terminators.  As a result, \0 chars cannot be matched explicitly.
+ */
 String
 get_String_from_Buffer(Buffer b, regex_t *re)
 {
 	unsigned char str[MAX_BUF];
 	int bytes_peeked = peek_string_Buffer(b, str, MAX_BUF);
-	bool match = FALSE;
+	unsigned char *match_end;
 
-	if (bytes_peeked > 0 && find_RegEx(re, str, bytes_peeked) != NULL)
-	{
-		eat_Buffer(b, bytes_peeked);
-		match = TRUE;
-	}
-	return (match ? make_String(str) : NULL);
+	if (bytes_peeked == 0)
+		return NULL;
+	match_end = find_RegEx(re, str, bytes_peeked);
+	if (match_end == NULL)
+		return NULL;
+	assert(match_end - str <= strlen(str));
+	*match_end = '\0';
+	eat_Buffer(b, match_end - str); /* only consume up to what matched */
+
+	return make_String(str);
 }
 
 /*

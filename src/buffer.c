@@ -188,7 +188,7 @@ is_empty_Buffer(Buffer b)
  * Get a copy of a line from the buffer.
  * A line is terminated with a '\n' character.
  * Optionally Call eat_Buffer with the returned length to "consume" this.
- * Note: Drops embedded NULLs.
+ * Note: converts embedded \0 bytes to \377.
  */
 int
 peek_line_Buffer(Buffer b, unsigned char *str, int len)
@@ -207,8 +207,7 @@ peek_line_Buffer(Buffer b, unsigned char *str, int len)
 	assert(cpy_len < len);
 	/* Was: memcpy(str, b->out, cpy_len) */
 	for (j = i = 0; i < cpy_len; i++)
-		if (b->out[i] != 0)	/* drop embedded NULLS ! */
-			str[j++] = b->out[i];
+		str[j++] = b->out[i] == 0 ? 0377 : b->out[i];
 	str[j] = '\0';
 
 	return cpy_len;
@@ -231,7 +230,7 @@ get_line_Buffer(Buffer b, unsigned char *str, int len)
 /*
  * Get a copy of the contents of the buffer in string form.
  * Optionally Call eat_Buffer with the returned length to "consume" this.
- * Note: Drops embedded NULLs.
+ * Note: converts embedded \0 bytes to \377.
  */
 int
 peek_string_Buffer(Buffer b, unsigned char *str, int len)
@@ -246,8 +245,7 @@ peek_string_Buffer(Buffer b, unsigned char *str, int len)
 	assert(cpy_len < len);
 	/* Was: memcpy(str, b->out, cpy_len) */
 	for (j = i = 0; i < cpy_len; i++)
-		if (b->out[i] != 0)	/* drop embedded NULLS ! */
-			str[j++] = b->out[i];
+		str[j++] = b->out[i] == 0 ? 0377 : b->out[i];
 	str[j] = '\0';
 	return cpy_len;
 }
