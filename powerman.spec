@@ -46,7 +46,7 @@ Expect-like configurability simplifies the addition of new devices.
 %setup
 
 %build
-make VERSION=%{version} RELEASE=%{release} 
+make VERSION=%{version} RELEASE=%{release}
 
 %install
 rm -rf "$RPM_BUILD_ROOT"

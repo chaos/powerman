@@ -72,7 +72,7 @@ static char *_channel_name(unsigned long channel)
 /*
  * Report message on stdout/syslog if dbg_channel_mask permits.
  */
-void dbg(unsigned long channel, const char *fmt, ...)
+void _dbg(unsigned long channel, const char *fmt, ...)
 {
     va_list ap;
 

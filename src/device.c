@@ -1420,8 +1420,9 @@ void dev_pre_select(fd_set * rset, fd_set * wset, int *maxfd)
     Device *dev;
     ListIterator itr;
     fd_set dev_fdset;
+#ifndef NDEBUG
     char fdsetstr[1024];
-
+#endif
     FD_ZERO(&dev_fdset);
 
     itr = list_iterator_create(dev_devices);

@@ -253,6 +253,7 @@ void Delay(struct timeval *tv)
 #define MALLOC_PAD_SIZE   16
 #define MALLOC_PAD_FILL 0x55
 
+#ifndef NDEBUG
 static int _checkfill(unsigned char *buf, unsigned char fill, int size)
 {
     while (size-- > 0)
@@ -260,6 +261,7 @@ static int _checkfill(unsigned char *buf, unsigned char fill, int size)
             return 0;
     return 1;
 }
+#endif
 
 char *wrap_malloc(char *file, int line, int size)
 {

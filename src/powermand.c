@@ -176,7 +176,9 @@ static void _select_loop(void)
     struct timeval tmout;
     fd_set rset;
     fd_set wset;
+#ifndef NDEBUG
     char rsetstr[1024], wsetstr[1024], tmoutstr[32];
+#endif
 
     /* start non-blocking connections to all the devices */
     dev_initial_connect();

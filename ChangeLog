@@ -14,9 +14,11 @@
 
     * src/pty.c: fixed _ptym_open to work beyond 176 ptys on Linux (up to 256).
 
-    * test/Makefile: targets for testing 4000 plugs (250 vpcd devices)
+    * test/Makefile: targets for testing scalability
 
-    * test/testing.txt: added
+    * test/testing.txt: added.
+
+    * src/Makefile, src/debug.h: make dbg() macro a noop out if NDEBUG defined.
 
 2003-11-28 Jim Garlick <garlick@llnl.gov>
 

@@ -84,7 +84,7 @@ _pty_fork(int *ptrfdm, char *slave_name,
     char pts_name[20];
 
     if ((fdm = _ptym_open(pts_name)) < 0) {
-        err(TRUE, "can't open master pty: %s", pts_name);
+        err(FALSE, "can't open master pty: %s", pts_name);
         return (-1);
     }
 

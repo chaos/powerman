@@ -3,7 +3,7 @@
  * $Source$
  *
  * Virtual power controller daemon - configuration defined in "vpc.dev".
- * This daemon spawns multiple threads to implement NUM_THREADS devices
+ * This daemon spawns multiple threads to implement 'num_threads' devices
  * listening on consecutive ports starting at BASE_PORT.  Activity
  * is logged to stderr.  This is a vehicle for testing powerman against
  * multiple power control devices. 
@@ -23,16 +23,20 @@
 #include <signal.h>
 #include <errno.h>
 
-#define NUM_THREADS 8
+#define NUM_THREADS 8       /* default, can be overridden on command line */
 #define BASE_PORT   8080
 #define NUM_PLUGS   16
 
-static struct {
+typedef struct {
     int plug[NUM_PLUGS];
     pthread_attr_t attr;
     pthread_t thd;
     int logged_in;
-} dev[NUM_THREADS];
+} vpcdev_t;
+
+static int num_threads = NUM_THREADS;
+
+static vpcdev_t *dev;
 
 static int opt_foreground = 0;
 static int opt_drop_command = 0;
@@ -297,7 +301,7 @@ static void _start_threads(void)
 {
     int i;
 
-    for (i = 0; i < NUM_THREADS; i++) {
+    for (i = 0; i < num_threads; i++) {
         if (opt_off_rpc && i == 0) {
             fprintf(stderr, "vpcd: not starting vpcd%d\n", i);
             continue;
@@ -317,7 +321,7 @@ static void _start_foreground(void)
     _prompt_loop(0, 0, 1);
 }
 
-#define OPT_STR "dbhosf"
+#define OPT_STR "dbhosfn:"
 static const struct option long_options[] = {
     {"foreground", no_argument, 0, 'f'},
     {"drop_command", no_argument, 0, 'd'},
@@ -325,6 +329,7 @@ static const struct option long_options[] = {
     {"hung_rpc", no_argument, 0, 'h'},
     {"off_rpc", no_argument, 0, 'o'},
     {"soft_off", no_argument, 0, 's'},
+    {"num_threads", required_argument, 0, 'n'},
     {0, 0, 0, 0}
 };
 static const struct option *longopts = long_options;
@@ -332,6 +337,7 @@ static const struct option *longopts = long_options;
 static void _usage(void)
 {
     fprintf(stderr, "Usage: vpcd [one option]\n"
+            "--num_threads        number of devices to simulate\n"
             "--drop_command       drop response to first \"on\" command\n"
             "--bad_response       respond to first \"on\" command with UNKNOWN\n"
             "--hung_rpc           vpc0 is unresponsive after connect\n"
@@ -341,7 +347,7 @@ static void _usage(void)
 }
 
 /*
- * Start NUM_THREADS power controllers on consecutive ports starting at
+ * Start 'num_threads' power controllers on consecutive ports starting at
  * BASE_PORT.  Pause waiting for a signal.  Does not daemonize and logs to
  * stdout.
  */
@@ -352,9 +358,7 @@ int main(int argc, char *argv[])
     int optcount = 0;
 
     opterr = 0;
-    while ((c =
-            getopt_long(argc, argv, OPT_STR, longopts,
-                        &longindex)) != -1) {
+    while ((c = getopt_long(argc, argv, OPT_STR, longopts, &longindex)) != -1) {
         switch (c) {
         case 'f':              /* --foreground (run one instance on stdin/out */
             opt_foreground++;
@@ -379,6 +383,13 @@ int main(int argc, char *argv[])
             opt_soft_off++;
             optcount++;
             break;
+        case 'n':              /* --num_threads n */
+            num_threads = strtol(optarg, NULL, 0);
+            if (num_threads == LONG_MIN || num_threads == LONG_MAX) {
+                fprintf(stderr, "num_threads value out of range\n");
+                exit(1);
+            }
+            break;
         default:
             _usage();
         }
@@ -391,7 +402,12 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    memset(dev, 0, sizeof(dev));
+    dev = malloc(sizeof(vpcdev_t) * num_threads);
+    if (dev == NULL) {
+        fprintf(stderr, "out of memory\n");
+        exit(1);
+    }
+    memset(dev, 0, sizeof(vpcdev_t) * num_threads);
 
     if (opt_foreground)
         _start_foreground();

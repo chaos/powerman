@@ -18,7 +18,7 @@ VERSTR=		$(shell if test -n "$(VERSION)"; then \
 
 DEFS=		-DHAVE_CONFIG_H -DPOWERMAN_VERSION=\"$(VERSTR)\"
 #DEFS+=		-DNDEBUG
-CFLAGS= 	-g -Wall $(DEFS)
+CFLAGS= 	-g -Wall $(DEFS) 
 
 LIBS=		-lfl -lwrap -lnsl
 

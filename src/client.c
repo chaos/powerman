@@ -900,8 +900,9 @@ void cli_pre_select(fd_set * rset, fd_set * wset, int *maxfd)
     ListIterator itr;
     Client *client;
     fd_set cli_fdset;
+#ifndef NDEBUG
     char fdsetstr[1024];
-
+#endif
     FD_ZERO(&cli_fdset);
 
     if (listen_fd != NO_FD) {
