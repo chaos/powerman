@@ -233,7 +233,7 @@ Poll(Pollfd_t pfd, struct timeval *tv)
 
 #if HAVE_POLL
 static void
-_PollfdGrow(Pollfd_t pfd, int n)
+_grow_pollfd(Pollfd_t pfd, int n)
 {
     assert(pfd->magic == POLLFD_MAGIC);
     while (pfd->ufds_size < n) {
@@ -280,6 +280,7 @@ PollfdZero(Pollfd_t pfd)
     assert(pfd->magic == POLLFD_MAGIC);
 #if HAVE_POLL
     pfd->nfds = 0;
+    /*memset(pfd->ufds, 0, sizeof(struct pollfd) * pfd->ufds_size);*/
 #else
     FD_ZERO(&pfd->rset);
     FD_ZERO(&pfd->wset);
@@ -301,7 +302,7 @@ PollfdSet(Pollfd_t pfd, int fd, short events)
         }
     }
     if (i == pfd->nfds) { /* not found */
-        _PollfdGrow(pfd, ++pfd->nfds);
+        _grow_pollfd(pfd, ++pfd->nfds);
         pfd->ufds[i].fd = fd;
         pfd->ufds[i].events = events;
     }
@@ -313,6 +314,50 @@ PollfdSet(Pollfd_t pfd, int fd, short events)
         FD_SET(fd, &pfd->wset);
     pfd->maxfd = MAX(pfd->maxfd, fd);
 #endif
+}
+
+char *
+PollfdStr(Pollfd_t pfd, char *str, int len)
+{
+    int i;
+    int maxfd = -1;
+
+    assert(pfd->magic == POLLFD_MAGIC);
+#if HAVE_POLL
+    memset(str, '.', len);
+    for (i = 0; i < pfd->nfds; i++) {
+        int fd = pfd->ufds[i].fd;
+        short events = pfd->ufds[i].events;
+        short revents = pfd->ufds[i].revents;
+
+        if (fd < len - 1) {
+            if (revents) {
+                if (revents & (POLLNVAL | POLLERR | POLLHUP))
+                    str[fd] = 'E';
+                else if (revents & POLLIN)
+                    str[fd] = 'I';
+                else if (revents & POLLOUT)
+                    str[fd] = 'O';
+            } 
+            if (fd > maxfd)
+                maxfd = fd;
+        }
+    }
+    assert(maxfd + 1 < len);
+    str[maxfd + 1] = '\0';
+#else
+    for (i = 0; i <= pfd->maxfd; i++) {
+        if (FD_ISSET(i, &pfd->rset))
+            str[i] = 'I';
+        else if (FD_ISSET(i, &pfd->wset))
+            str[i] = 'O';
+        else
+            str[i] = '.';
+    }
+    assert(i < len);
+    str[i] = '\0';
+#endif
+    return str;
 }
 
 short

@@ -31,7 +31,6 @@
 #include <syslog.h>
 #include <stdarg.h>
 #include <stdio.h>
-#include <sys/select.h>
 #include <ctype.h>
 
 #include "powerman.h"           /* for bool type */
@@ -69,6 +68,17 @@ static char *_channel_name(unsigned long channel)
     return (tab[i].chan == 0 ? "<unknown>" : tab[i].desc);
 }
 
+static char *_time(void)
+{
+    time_t now = time(NULL);
+    char *str = ctime(&now);
+
+    str[strlen(str) - 1] = '\0'; /* lose trailing \n */
+
+    return str;
+}
+
+
 /*
  * Report message on stdout/syslog if dbg_channel_mask permits.
  */
@@ -84,31 +94,12 @@ void _dbg(unsigned long channel, const char *fmt, ...)
         va_end(ap);
 
         if (dbg_ttyvalid)
-            fprintf(stderr, "%s: %s\n", _channel_name(channel), buf);
+            fprintf(stderr, "%s %s: %s\n", 
+                    _time(), _channel_name(channel), buf);
         else
-            syslog(LOG_DEBUG, "%s: %s", _channel_name(channel), buf);
+            syslog(LOG_DEBUG, "%s: %s", 
+                    _channel_name(channel), buf);
     }
-}
-
-/* 
- * Utility function to turn an fs_set into a string.
- */
-char *dbg_fdsetstr(fd_set * fdset, int n, char *str, int len)
-{
-    int i;
-    char *p;
-
-    assert(len > 0);
-    assert(n >= 0 && n < FD_SETSIZE);
-
-    *str = '\0';
-    for (i = 0; i <= n; i++) {
-        if (FD_ISSET(i, fdset))
-            snprintf(str + strlen(str), len - strlen(str), "%d,", i);
-    }
-    if ((p = strrchr(str, ',')))        /* delete trailing comma */
-        *p = '\0';
-    return str;
 }
 
 /*

@@ -1459,33 +1459,9 @@ void dev_post_poll(Pollfd_t pfd, struct timeval *timeout)
     while ((dev = list_next(itr))) {
         short flags = dev->fd != NO_FD ? PollfdRevents(pfd, dev->fd) : 0;
 
-        /* reconnect if necessary */
-        if (dev->connect_state == DEV_NOT_CONNECTED) {
-            _reconnect(dev, timeout);
-        /* complete non-blocking connect if ready */
-        } else if ((dev->connect_state == DEV_CONNECTING)) {
-            assert(dev->fd != NO_FD);
-
-            if (flags & POLLOUT) {
-                assert(dev->finish_connect != NULL);
-                if (dev->finish_connect(dev)) {
-                    _login(dev);
-                } else {
-                    _reconnect(dev, timeout);
-                } 
-                flags &= ~POLLOUT; /* avoid _handle_write error */
-            }
-        }
-
-        /* if this device needs a ping, put it in the qeuue */
-        if ((dev->connect_state == DEV_CONNECTED)) {
-            _process_ping(dev, timeout);
-        }
-
-        /* read/write from/to buffer */
-        if (dev->connect_state == DEV_CONNECTED && dev->fd != NO_FD) {
-            if (flags & POLLIN)
-                _handle_read(dev, timeout);
+        /* handle poll errors */
+        /* NOTE: this won't happen if emulating poll with select */
+        if (dev->connect_state != DEV_NOT_CONNECTED) {
             if (flags & POLLHUP) {
                 err(FALSE, "%s: poll: hangup", dev->name);
                 _reconnect(dev, timeout);
@@ -1499,15 +1475,50 @@ void dev_post_poll(Pollfd_t pfd, struct timeval *timeout)
                 _reconnect(dev, timeout);
             }
         }
-        /* could have disconnected in _handle_read - check for NO_FD! */
+
+        /* reconnect if necessary */
+        if (dev->connect_state == DEV_NOT_CONNECTED) {
+            _reconnect(dev, timeout);
+        /* complete non-blocking connect if ready */
+        } else if ((dev->connect_state == DEV_CONNECTING)) {
+            assert(dev->fd != NO_FD);
+            if (flags & POLLOUT) {
+                assert(dev->finish_connect != NULL);
+                if (dev->finish_connect(dev)) {
+                    _login(dev);
+                } else {
+                    _reconnect(dev, timeout);
+                } 
+                flags &= ~POLLOUT; /* avoid _handle_write error */
+            }
+        }
+
+        /* if this device needs a ping, put it in the qeuue */
+        if ((dev->connect_state == DEV_CONNECTED)) {
+            assert(dev->fd != NO_FD);
+            _process_ping(dev, timeout);
+        }
+
+        /* 
+         * read/write from/to buffer
+         * NOTE: _handle_{read,write} can initiate reconnect on error.
+         */
         if (dev->connect_state == DEV_CONNECTED) {
-            if (dev->fd != NO_FD && flags & POLLOUT)
+            assert(dev->fd != NO_FD);
+            if (flags & POLLIN)
+                _handle_read(dev, timeout);
+        }
+        if (dev->connect_state == DEV_CONNECTED) {
+            assert(dev->fd != NO_FD);
+            if (flags & POLLOUT)
                 _handle_write(dev, timeout);
         }
 
         /* handle device-specific preprocessing such as telnet escapes */
-        if (dev->connect_state == DEV_CONNECTED && dev->preprocess != NULL)
+        if (dev->connect_state == DEV_CONNECTED && dev->preprocess != NULL) {
+            assert(dev->fd != NO_FD);
             dev->preprocess(dev);
+        }
 
         /* process actions */
         if (list_peek(dev->acts)) {

@@ -39,45 +39,26 @@ specification "vpc" {
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
 	}
-#	script on {
-#		send "on %s\r\n"
-#		expect "[0-9]* OK"
-#		expect "[0-9]* vpc> "
-#	}
 	script on {
-		send "stat\r\n"
-		foreachplug {
-			expect "plug ([0-9]+): (ON|OFF)"
-			setplugstate $1 $2 on="ON" off="OFF"
-		}
-		ifoff {	
-			send "toggle %s\r\n"
-			expect "[0-9]* OK"
-			expect "[0-9]* vpc> "
-		}
+		send "on %s\r\n"
+		expect "[0-9]* OK"
+		expect "[0-9]* vpc> "
 	}
-#	script on_all {
-#		send "on *\r\n"
-#		expect "[0-9]* OK"
-#		expect "[0-9]* vpc> "
-#	}
+	script on_all {
+		send "on *\r\n"
+		expect "[0-9]* OK"
+		expect "[0-9]* vpc> "
+	}
 	script off {
-		send "stat\r\n"
-		foreachplug {
-			expect "plug ([0-9]+): (ON|OFF)"
-			setplugstate $1 $2 on="ON" off="OFF"
-		}
-		ifon {
-			send "toggle %s\r\n"
-			expect "[0-9]* OK"
-			expect "[0-9]* vpc> "
-		}
+		send "off %s\r\n"
+		expect "[0-9]* OK"
+		expect "[0-9]* vpc> "
 	}
-#	script off_all {
-#		send "off *\r\n"
-#		expect "[0-9]* OK"
-#		expect "[0-9]* vpc> "
-#	}
+	script off_all {
+		send "off *\r\n"
+		expect "[0-9]* OK"
+		expect "[0-9]* vpc> "
+	}
 	script cycle {
 		send "off %s\r\n"
 		expect "[0-9]* OK"

@@ -73,6 +73,8 @@ void PollfdDestroy(Pollfd_t pfd);
 void PollfdZero(Pollfd_t pfd);
 void PollfdSet(Pollfd_t pfd, int fd, short events);
 short PollfdRevents(Pollfd_t pfd, int fd);
+char *PollfdStr(Pollfd_t pfd, char *str, int len);
+
 
 #if !HAVE_POLL /* need these for poll emulation with select */
 #ifndef POLLIN

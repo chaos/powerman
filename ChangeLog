@@ -1,3 +1,11 @@
+2003-12-08 Jim Garlick <garlick@llnl.gov>
+
+    * etc/vpc.dev: allow device to be queried in a more efficient manner
+
+    * src/device.c, src/powermand.c, src/wrappers.c: introduce poll debugging
+    code and fix bugs related to poll changes.  Now we don't spin when
+    reconnecting to devices.
+
 2003-12-04 Jim Garlick <garlick@llnl.gov>
 
     * etc/cyclades-pm8.dev: fixed status script to not fail intermittently

@@ -181,12 +181,27 @@ static void _select_loop(void)
     dev_initial_connect();
 
     while (1) {
+#ifndef NDEBUG
+        static char tmpstr[8192];
+        float t = 0.0;
+#endif
+        int n;
+
         PollfdZero(pfd);
         cli_pre_poll(pfd);
         dev_pre_poll(pfd);
 
-        Poll(pfd, timerisset(&tmout) ? &tmout : NULL);
+#ifndef NDEBUG
+        if (timerisset(&tmout))
+            t = tmout.tv_sec + (float)tmout.tv_usec/1000000;
+#endif
+        dbg(DBG_POLL, "pre-poll timeout %.2fs", t);
+
+        n = Poll(pfd, timerisset(&tmout) ? &tmout : NULL);
         timerclear(&tmout);
+
+        dbg(DBG_POLL, "post-pool revents [%s]=%d", 
+                PollfdStr(pfd, tmpstr, sizeof(tmpstr)), n);
 
         /* 
          * Process activity on client and device fd's.
