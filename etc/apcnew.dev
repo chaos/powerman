@@ -4,7 +4,7 @@
 #
 # APC MasterSwitch Plus 
 #
-# Firmware: APP v2.0.0 / AOS v2.5.4
+# Firmware: APP v2.2.0 / AOS v3.0.3
 #
 specification "apc" {
 	timeout 	10  
@@ -20,11 +20,9 @@ specification "apc" {
 		expect "> "
 		send "1\r\n"  # device manager menu
 		expect "> "
-		send "1\r\n"  # select master switch plus 1 
-		expect "> "
 	}
 	script logout {
-		send "4\r\n"
+		send "\033\r\n"
 	}
 	script status_all {
 		send "\r\n"  # refresh
@@ -40,17 +38,10 @@ specification "apc" {
 		send "1\r\n" # select outlet control
 		expect "> "
 
-		send "8\r\n" # cancel any pending delays
-		expect "Enter 'YES' to continue or <ENTER> to cancel : "
-		send "YES\r\n"
-		expect "Success\r\n"
-		send "\r\n"
-		expect "> "
-
 		send "1\r\n" # immediate on
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
 		send "YES\r\n"
-		expect "Success\r\n"
+		expect "Command successfully issued.\r\n"
 		send "\r\n"
 		expect "> "
 
@@ -65,17 +56,10 @@ specification "apc" {
 		send "1\r\n" # select outlet control
 		expect "> "
 
-		send "8\r\n" # cancel any pending delays
-		expect "Enter 'YES' to continue or <ENTER> to cancel : "
-		send "YES\r\n"
-		expect "Success\r\n"
-		send "\r\n"
-		expect "> "
-
 		send "1\r\n" # immediate on
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
 		send "YES\r\n"
-		expect "Success\r\n"
+		expect "Command successfully issued.\r\n"
 		send "\r\n"
 		expect "> "
 
@@ -90,17 +74,10 @@ specification "apc" {
 		send "1\r\n" # select outlet control
 		expect "> "
 
-		send "8\r\n" # cancel any pending delays
+		send "2\r\n" # immediate off
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
 		send "YES\r\n"
-		expect "Success\r\n"
-		send "\r\n"
-		expect "> "
-
-		send "3\r\n" # immediate off
-		expect "Enter 'YES' to continue or <ENTER> to cancel : "
-		send "YES\r\n"
-		expect "Success\r\n"
+		expect "Command successfully issued.\r\n"
 		send "\r\n"
 		expect "> "
 
@@ -115,17 +92,10 @@ specification "apc" {
 		send "1\r\n" # select outlet control
 		expect "> "
 
-		send "8\r\n" # cancel any pending delays
+		send "2\r\n" # immediate off
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
 		send "YES\r\n"
-		expect "Success\r\n"
-		send "\r\n"
-		expect "> "
-
-		send "3\r\n" # immediate off
-		expect "Enter 'YES' to continue or <ENTER> to cancel : "
-		send "YES\r\n"
-		expect "Success\r\n"
+		expect "Command successfully issued.\r\n"
 		send "\r\n"
 		expect "> "
 
@@ -143,17 +113,10 @@ specification "apc" {
 		send "1\r\n" # select outlet control
 		expect "> "
 
-		send "8\r\n" # cancel any pending delays
+		send "2\r\n" # immediate off
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
 		send "YES\r\n"
-		expect "Success\r\n"
-		send "\r\n"
-		expect "> "
-
-		send "3\r\n" # immediate off
-		expect "Enter 'YES' to continue or <ENTER> to cancel : "
-		send "YES\r\n"
-		expect "Success\r\n"
+		expect "Command successfully issued.\r\n"
 		send "\r\n"
 		expect "> "
 
@@ -162,7 +125,7 @@ specification "apc" {
 		send "1\r\n" # immediate on
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
 		send "YES\r\n"
-		expect "Success\r\n"
+		expect "Command successfully issued.\r\n"
 		send "\r\n"
 		expect "> "
 
@@ -180,14 +143,14 @@ specification "apc" {
 		send "8\r\n" # cancel any pending delays
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
 		send "YES\r\n"
-		expect "Success\r\n"
+		expect "Command successfully issued.\r\n"
 		send "\r\n"
 		expect "> "
 
-		send "3\r\n" # immediate off
+		send "2\r\n" # immediate off
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
 		send "YES\r\n"
-		expect "Success\r\n"
+		expect "Command successfully issued.\r\n"
 		send "\r\n"
 		expect "> "
 
@@ -196,7 +159,7 @@ specification "apc" {
 		send "1\r\n" # immediate on
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
 		send "YES\r\n"
-		expect "Success\r\n"
+		expect "Command successfully issued.\r\n"
 		send "\r\n"
 		expect "> "
 

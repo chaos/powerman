@@ -84,6 +84,7 @@ install: all
 	$(INSTALL) etc/wti.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/wti-rps10.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/apc.dev			$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/apcnew.dev		$(DESTDIR)$(packagedir)
 #	$(INSTALL) etc/vicebox.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/vpc.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/ibmrsa.dev		$(DESTDIR)$(packagedir)

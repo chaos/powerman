@@ -1,11 +1,18 @@
+2003-06-04 Jim Garlick <garlick@llnl.gov>
+
+    * etc/apcnew.sh: New.
+
 2003-05-20 Jim Garlick <garlick@llnl.gov>
+
     * etc/baytech-rpc28.dev: New
 
 2003-05-06 Jim Garlick <garlick@llnl.gov>
+
     * src/{device*,parse.y}: abstract tcp- or serial-specific data in
     device_serial.c and device_tcp.c.
 
 2003-05-05 Jim Garlick <garlick@llnl.gov>
+
     * src/{device.[ch],device_tcp.c,device_serial.c}: renamed 
     dev->connect_status to dev->connect_state and fixed a couple of places 
     where it was being treated as a bitmask instead of an enum.

@@ -103,6 +103,7 @@ fi
 /etc/powerman/ibmrsa.dev
 /etc/powerman/phantom.dev
 /etc/powerman/apc.dev
+/etc/powerman/apcnew.dev
 /etc/powerman/vpc.dev
 %config(noreplace) %attr(0755,root,root)/etc/rc.d/init.d/powerman
 /usr/man/man1/powerman.1*

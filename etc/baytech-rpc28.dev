@@ -3,6 +3,7 @@
 # $Source$
 # 
 # Baytech RPC28-30NC 
+#
 # Default config, then disable confirmation, and disable status menu.
 #
 # Firmware version: F3.01 (C) 2000
