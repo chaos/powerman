@@ -246,10 +246,12 @@ static void _client_query_raw_reply(Client *c)
 	    hostlist_push(hl, arg->node);
     }
     list_iterator_destroy(itr);
-    if (hostlist_ranged_string(hl, sizeof(str), str) == -1) 
-	_client_msg(c, CP_ERR_INTERNAL);
-    else
-	_client_msg(c, CP_RSP_RAW, str, "unknown");
+    if (!hostlist_is_empty(hl)) {
+	if (hostlist_ranged_string(hl, sizeof(str), str) == -1) 
+	    _client_msg(c, CP_ERR_INTERNAL);
+	else
+	    _client_msg(c, CP_RSP_RAW, str, "unknown");
+    }
     _client_msg(c, CP_RSP_RAW_DONE);
 }
 
@@ -356,6 +358,10 @@ static void _parse_input(Client *c, char *input)
 	cmd = _create_command(c, PM_POWER_CYCLE, arg1);
     } else if (sscanf(str, CP_RESET, arg1) == 1) {	/* reset hostlist */
 	cmd = _create_command(c, PM_RESET, arg1);
+    } else if (sscanf(str, CP_BEACON_ON, arg1) == 1) {	/* beacon_on hostlist */
+	cmd = _create_command(c, PM_BEACON_ON, arg1);
+    } else if (sscanf(str, CP_BEACON_OFF, arg1) == 1) {	/* beacon_off hostlist*/
+	cmd = _create_command(c, PM_BEACON_OFF, arg1);
     } else if (sscanf(str, CP_STATUS, arg1) == 1) {	/* status [hostlist] */
 	cmd = _create_command(c, PM_STATUS_PLUGS, arg1);
     } else if (!strncasecmp(str, CP_STATUS_ALL, strlen(CP_STATUS_ALL))) {
@@ -431,10 +437,13 @@ static void _act_finish(int client_id, char *errfmt, char *errarg)
 	    _client_query_raw_reply(c);
 	    break;
 	case PM_STATUS_BEACON:
-	    _client_query_raw_reply(c);
+	    /*_client_query_raw_reply(c);*/
+	    _client_query_reply(c);
 	    break;
         case PM_POWER_ON:	/* on */
         case PM_POWER_OFF:	/* off */
+        case PM_BEACON_ON:	/* beacon_on */
+        case PM_BEACON_OFF:	/* beacon_off */
         case PM_POWER_CYCLE:	/* cycle */
         case PM_RESET:		/* reset */
 	    if (c->cmd->error)

@@ -61,6 +61,8 @@
 #define CP_TEMP_ALL	"temp"
 #define CP_BEACON	"beacon %s"
 #define CP_BEACON_ALL	"beacon"
+#define CP_BEACON_ON	"beacon_on %s"
+#define CP_BEACON_OFF	"beacon_off %s"
 
 /* 
  * Responses - 

@@ -213,6 +213,8 @@ end[ \t]+STATUS_TEMP_SCRIPT       {   return TOK_E_STATUS_TEMP; }
 begin[ \t]+STATUS_BEACON_SCRIPT   {   return TOK_B_STATUS_BEACON; }
 end[ \t]+STATUS_BEACON_SCRIPT     {   return TOK_E_STATUS_BEACON; }
 begin[ \t]+BEACON_ON_SCRIPT       {   return TOK_B_BEACON_ON; }
+end[ \t]+BEACON_ON_SCRIPT         {   return TOK_E_BEACON_ON; }
+begin[ \t]+BEACON_OFF_SCRIPT      {   return TOK_B_BEACON_OFF; }
 end[ \t]+BEACON_OFF_SCRIPT        {   return TOK_E_BEACON_OFF; }
 end[ \t]+protocol[ \t]+specification   {   return TOK_E_SPEC; }
 device                            {   return TOK_DEVICE; }

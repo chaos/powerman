@@ -477,6 +477,8 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
             break;
         case PM_POWER_ON:
         case PM_POWER_OFF:
+        case PM_BEACON_ON:
+        case PM_BEACON_OFF:
         case PM_POWER_CYCLE:
         case PM_RESET:
 	    if (hl) {

@@ -7,8 +7,9 @@
 begin protocol specification
 	specification name "icebox3"
 	specification type "TCP"
-	off string "0"
-	on string  "1"
+	off string "0|OFF"
+	on string  "1|ON"
+	all string "*"
 	plug count 10
 	device timeout 20
 	begin LOGIN_SCRIPT
