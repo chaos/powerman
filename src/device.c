@@ -846,18 +846,18 @@ static bool _process_expect(Device * dev)
         _match_subexpressions(dev, act, expect);
         Free(expect);
         finished = TRUE;
-    } 
-#if 0
-    else {                    /* no match */
+    } else {                    /* no match */
         unsigned char mem[MAX_DEV_BUF];
-        int len = buf_peekstr(dev->from, mem, MAX_DEV_BUF);
-        char *str = dbg_memstr(mem, len);
-
-        dbg(DBG_SCRIPT, "_process_expect(%s): no match: '%s'",
-            dev->name, str);
-        Free(str);
+        int len = cbuf_peek(dev->from, mem, MAX_DEV_BUF);
+        char *str;
+      
+        if (len > 0) { 
+            str = dbg_memstr(mem, len);
+            dbg(DBG_SCRIPT, "_process_expect(%s): no match: '%s'", 
+                    dev->name, str);
+            Free(str);
+        }
     }
-#endif
     return finished;
 }
 
