@@ -53,9 +53,6 @@ proc read_nodes node_list {
   return $return_nodes
 }
 
-# Global initializations can only take place at the root context.  
-# Procs can access globals but can not create or pass them up.
-
 if {$argc < 1} { usage "need arguments" }
 
 set config_file "/etc/powerman.conf"
@@ -73,7 +70,7 @@ set force 0
 set query 0
 set reset 0
 set verbose 0
-set nodes   {}
+set node_list   {}
 set on      0
 set off     0
 set tkdanger 0
@@ -103,9 +100,16 @@ for {set i 0} {$i < $argc} {incr i} {
 		  usage "Can't find config file"
 	      }
 	  }
-	  set nodes [ concat $nodes [read_nodes [lindex $argv $i]]]
+	  set node_list [ concat $node_list [read_nodes [lindex $argv $i]]]
       }
   } 
+}
+
+set powerlib [format "%s/powerlib.tcl" $lib_dir]
+if {[file exists $powerlib]} {
+    source $powerlib
+} else {
+    usage "Can't find $powerlib library"
 }
 
 if {$reset && $query}         {usage "Can't have both reset and query"} 
@@ -126,14 +130,7 @@ if {$verbose} {
     if {$reset} {
 	puts "Resetting these guys"
     }
-    puts $nodes
-}
-
-set powerlib [format "%s/powerlib.tcl" $lib_dir]
-if {[file exists $powerlib]} {
-    source $powerlib
-} else {
-    usage "Can't find $powerlib library"
+    puts $node_list
 }
 
 # At this point all the globals should be in place.  Next the command 
@@ -141,7 +138,7 @@ if {[file exists $powerlib]} {
 
 if {$on} {
     if {$query} {
-	set response [check $nodes on]
+	set response [check $node_list on]
 	set num_resp [llength $response]
 	if {$num_resp == 0} {puts "None are on"} else {
 	    if {$num_resp == 1} {puts "$response is on"} else {
@@ -149,12 +146,12 @@ if {$on} {
 	    }
 	}
     } else {
-	power $nodes on
+	power $node_list on
     }
 }
 if {$off} {
     if {$query} {
-	set response [check $nodes off]
+	set response [check $node_list off]
 	set num_resp [llength $response]
 	if {$num_resp == 0} {puts "None are off"} else {
 	    if {$num_resp == 1} {puts "$response is off"} else {
@@ -162,11 +159,11 @@ if {$off} {
 	    }
 	}
     } else {
-	power $nodes off
+	power $node_list off
     }
 }
 if {$reset} {
-    power $nodes reset
+    power $node_list reset
 }
 
 

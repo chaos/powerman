@@ -20,6 +20,7 @@ if [ -f README -a \
      -d lib -a \
      -f lib/powerlib.tcl -a \
      -f lib/alpha.exp -a \
+     -f lib/ditty_check -a \
      -f lib/console.gif -a \
      -f lib/cs20_off.gif -a \
      -f lib/cs20_on.gif -a \
@@ -84,6 +85,8 @@ echo "copy lib/powerlib.tcl to $LIB"
 cp lib/powerlib.tcl $LIB
 echo "copy lib/alpha.exp to $LIB"
 cp lib/alpha.exp $LIB
+echo "copy lib/ditty_check to $LIB"
+cp lib/ditty_check $LIB
 echo "copy lib/console.gif to $LIB"
 cp lib/console.gif $LIB
 echo "copy ether-wake to $LIB"

@@ -21,7 +21,7 @@
 #
 ####################################################################
 
-proc check {nodes onoff} {
+proc check {node_list onoff} {
 #
 #   "nodes" is a list of cluster node names (i.e. just a list, no 
 # structure).  "onoff" is either "on" or "off".  "check" returns 
@@ -39,20 +39,26 @@ proc check {nodes onoff} {
 # list gives a list of objects with the structure {node value ...}
 # giving the node name and its hardware dependent values.
 #
+    global check_types
+    global check
     set return_val {}
 
-# the power monitoring type is field 2 of the $cluster structure for a node
-    foreach type [type_list 2 $nodes] {
-	set check_nodes [curry $type $nodes]
+    foreach type $check_types {
+        set check_nodes {}
+	foreach node $node_list {
+	    if {[lindex $check($node) 0] == $type} {lappend check_nodes $node}
+	}
 	set typed_check [format "%s_check_%s" $type $onoff]
-	set return_val [concat $return_val [$typed_check $check_nodes]]
+	if {[llength $check_nodes] > 0} {
+            set return_val [concat $return_val [$typed_check $check_nodes]]
+	}
     }
     return $return_val
 }
 
-proc power {nodes onoffreset} {
+proc power {node_list onoffreset} {
 #
-#   "nodes" is a list of cluster node names (i.e. just a list, no 
+#   "node_list" is a list of cluster node names (i.e. just a list, no 
 # structure).  "onoffreset" is either "on", "off", or "reset".  
 # "power" does not return a value.  It carries out the desired 
 # action on the specified list, if possible.
@@ -64,23 +70,19 @@ proc power {nodes onoffreset} {
 # comments for "check" for a discussion of the structure of the
 # list $do_nodes passed to $typed_power.
 # 
+    global control_types
+    global control
 
-# the power control type is field 1 of the node struct 
-    foreach type [type_list 1 $nodes] {
-	set do_nodes [curry $type $nodes]
+    foreach type $control_types {
+	set do_nodes {}
+        foreach node $node_list {
+	    if {[lindex $control($node) 0] == $type} {lappend do_nodes $node}
+        }
 	set typed_power [format "%s_power_%s" $type $onoffreset]
-	$typed_power $do_nodes
+	if {[llength $do_nodes] > 0} {
+	    $typed_power $do_nodes
+	}
     }
-}
-
-proc list_nodes {} {
-    global cluster
-    
-    set nodes {}
-    foreach node_struct $cluster {
-	set nodes [lappend nodes [lindex $node_struct 0]]
-    }
-    return $nodes
 }
 ####################################################################
 #   Support functions for the API.  This function rearranges the 
@@ -90,50 +92,19 @@ proc list_nodes {} {
 #
 ####################################################################
 
-proc type_list {field nodes} {
-#
-# look at the list of nodes and get a list of the distinct types
-# represented in the list (at position $field in the $cluster list).
-#
-
-    global cluster
-    set types {}
-
-    foreach node_struct $cluster {
-	set name [lindex $node_struct 0]
-	if {[lsearch -exact $nodes $name] >= 0} {
-	    set types [lappend types [lindex $node_struct $field]]
-	}
-    }
-    return [lunique $types]
-}
-
-
 proc lunique list {
 #
 # remove duplicates from a list
 #
     set return_list {}
-
     foreach element $list {
 	if { [ lsearch -exact $return_list $element] < 0 } {
-	    set return_list [lappend retur_list $element]
+	    lappend return_list $element
 	}
     }
     return $return_list
 }
 
-proc curry {type nodes} {
-    global $type
-    set return_list {}
-
-    foreach element $[set $type] {
-	if {[lsearch -exact $nodes [lindex $element 0]] >= 0} {
-	    set return_list [lappend return_list $element]
-	}
-    }
-    return $return_list
-}
 
 ####################################################################
 #
@@ -162,28 +133,30 @@ proc curry {type nodes} {
 ####################################################################
 
 
-proc digi_check_on nodes {
+proc digi_check_on node_list {
 #  DSR+ means "on"
-  return [digi_check_dir $nodes "DSR+"]
+  return [digi_check_dir $node_list "DSR+"]
 }
 
-proc digi_check_off nodes {
+proc digi_check_off node_list {
 #  DSR- means "off"
-  return [digi_check_dir $nodes "DSR-"]
+  return [digi_check_dir $node_list "DSR-"]
 }
 
 #########################
 #  digi support functions
 #########################
 
-proc digi_check_dir {nodes dir} {
+proc digi_check_dir {node_list dir} {
+    global check
+    global lib_dir
 
     set return_val {}
-    foreach node $nodes {
-	set digi_port [lindex $node 1]
-	set digi_info [exec /usr/bin/ditty /dev/ttyD$digi_port | grep "DSR"]
+    foreach node $node_list {
+	set digi_port [lindex $check($node) 1]
+	set digi_info [exec $lib_dir/ditty_check $digi_port]
 	if {[string first $dir $digi_info] >= 0} {
-	    set return_val [lappend return_val [lindex $node 0]]
+	    lappend return_val $node
 	}
     }
     return $return_val
@@ -195,19 +168,19 @@ proc digi_check_dir {nodes dir} {
 ####################################################################
 
 
-proc tux_check_check_on nodes {
-  return [tux_check_dir $nodes "on"]
+proc tux_check_check_on node_list {
+  return [tux_check_dir $node_list "on"]
 }
 
-proc tux_check_check_off nodes {
-  return [tux_check_dir $nodes "off"]
+proc tux_check_check_off node_list {
+  return [tux_check_dir $node_list "off"]
 }
 
 #########################
 #  tux support functions
 #########################
 
-proc tux_check_dir {nodes dir} {
+proc tux_check_dir {node_list dir} {
     global config_file
     set config_file_base_name [file tail $config_file]
     set state_file_name [format "/tmp/%s.state" $config_file_base_name]
@@ -215,14 +188,24 @@ proc tux_check_dir {nodes dir} {
     if { ! [file exists $state_file_name] } {
 	make_state_file $state_file_name
     }
+    set file_fid [open $state_file_name r]
     set return_val {}
-    foreach node $nodes {
-	set file_line [format "%s " [lindex $node 0]]
-	set file_info [exec grep $file_line $state_file_name]
-	if {[string first $dir $file_info] >= 0} {
-	    set return_val [lappend return_val [lindex $node 0]]
+    while { ! [eof $file_fid]} {
+	set line [gets $file_fid]
+        set mark [string first " " $line]
+        incr mark -1
+        if {$mark > 0} {
+            set node [string range $line 0 $mark]
+            foreach n $node_list {
+                if {$node == $n} {
+                    if {[string first $dir $line] >= 0} {
+	                lappend return_val $node
+		    }
+		}
+	    }
 	}
     }
+    close $file_fid
     return $return_val
 }
 
@@ -264,31 +247,32 @@ proc make_state_file name {
 ####################################################################
 
 
-proc wti_power_on nodes {
+proc wti_power_on node_list {
 # on command is "1"
-    wti_power $nodes "1"
+    wti_power $node_list "1"
 }
 
-proc wti_power_off nodes {
+proc wti_power_off node_list {
 # off command is "0"
-    wti_power $nodes "0"
+    wti_power $node_list "0"
 }
 
-proc wti_power_reset nodes {
+proc wti_power_reset node_list {
 # reset command is "T"
-    wti_power $nodes "T"
+    wti_power $node_list "T"
 }
 
 #########################
 #  wti support functions
 #########################
 
-proc wti_power {nodes command} {
+proc wti_power {node_list command} {
+    global control
 
-    foreach node $nodes {
-	set wti_dev [lindex $node 1]
-	set wti_passwd [lindex $node 2]
-	set wti_port [lindex $node 3]
+    foreach node $node_list {
+	set wti_dev [lindex $control($node) 1]
+	set wti_passwd [lindex $control($node) 2]
+	set wti_port [lindex $control($node) 3]
 	set wti_fid [open $wti_dev r+]
 # There should be a check here for a failed open
 # alternatively, this could become an expect script
@@ -303,34 +287,35 @@ proc wti_power {nodes command} {
 # etherwake
 ####################################################################
 
-proc etherwake_power_on nodes {
+proc etherwake_power_on node_list {
 #only turn on nodes that are off 
-    ether_wake_toggle $nodes off
+    ether_wake_toggle $node_list off
 }
 
-proc etherwake_power_off nodes {
+proc etherwake_power_off node_list {
 #only turn off nodes that are on
-    ether_wake_toggle $nodes on
+    ether_wake_toggle $node_list on
 }
 
-proc etherwake_power_reset nodes {
+proc etherwake_power_reset node_list {
 #turn off nodes that are on then turn on any that are off after
 # a short wait
-    ether_wake_toggle $nodes on
+    ether_wake_toggle $node_list on
     exec sleep 3
-    ether_wake_toggle $nodes off
+    ether_wake_toggle $node_list off
 }
 
 ##############################
 #  etherwake support functions
 ##############################
 
-proc ether_wake_toggle {nodes dir} {
+proc ether_wake_toggle {node_list dir} {
     global lib_dir
+    global control
 
-    foreach node $nodes {
-	if {[llength [check [lindex $node 0] $dir]] > 0} {	
-	    set mac_addr [lindex $node 1]
+    foreach node $node_list {
+	if {[llength [check $node $dir]] > 0} {	
+	    set mac_addr [lindex $control($node) 1]
 	    set ether_wake_command [format "exec %s/ether-wake %s" $lib_dir $mac_addr]
 	    eval $ether_wake_command
 	}
@@ -342,33 +327,33 @@ proc ether_wake_toggle {nodes dir} {
 # rmc
 ####################################################################
 
-proc rmc_power_on nodes {
+proc rmc_power_on node_list {
     global tkdanger
 
     if {$tkdanger} {
-      safe_rmc_power $nodes "on"
+      safe_rmc_power $node_list "on"
     } else {
-      orig_rmc_power $nodes "power on"
+      orig_rmc_power $node_list "power on"
     }
 }
 
-proc rmc_power_off nodes {
+proc rmc_power_off node_list {
     global tkdanger
 
     if {$tkdanger} {
-      safe_rmc_power $nodes "off"
+      safe_rmc_power $node_list "off"
     } else {
-      orig_rmc_power $nodes "power off"
+      orig_rmc_power $node_list "power off"
     }
 }
 
-proc rmc_power_reset nodes {
+proc rmc_power_reset node_list {
     global tkdanger
 
     if {$tkdanger} {
-      safe_rmc_power $nodes "r"
+      safe_rmc_power $node_list "r"
     } else {
-      orig_rmc_power $nodes "reset"
+      orig_rmc_power $node_list "reset"
     }
 }
 
@@ -376,31 +361,23 @@ proc rmc_power_reset nodes {
 #  rmc support functions
 ########################
 
-proc safe_rmc_power {structured_nodes cmd} {
+proc safe_rmc_power {node_list cmd} {
     global lib_dir
     global verbose
 
-    set nodes {}
-    foreach node $structured_nodes {
-	set nodes [lappend nodes [lindex $node 0]]
-    }
-    exec powerman -$cmd $nodes
+    exec powerman -$cmd $node_list
 }
 
-proc orig_rmc_power {structured_nodes cmd} {
+proc orig_rmc_power {node_list cmd} {
     global lib_dir
     global verbose
 
-    set nodes {}
-    foreach node $structured_nodes {
-	set nodes [lappend nodes [lindex $node 0]]
-    }
     source /usr/lib/conman/conman.exp
     set alpha_expect [format "%s/alpha.exp" $lib_dir]
     source $alpha_expect
     log_user 0
 
-    conman_run 256 $nodes alpha_do_rmc_cmd $verbose $cmd
+    conman_run 256 $node_list alpha_do_rmc_cmd $verbose $cmd
 }
 
 ####################################################################
@@ -409,26 +386,31 @@ proc orig_rmc_power {structured_nodes cmd} {
 ####################################################################
 
 
-proc tux_power_power_on nodes {
-    tux_power $nodes "on"
+proc tux_power_power_on node_list {
+    tux_power $node_list "on"
 }
 
-proc tux_power_power_off nodes {
-    tux_power $nodes "off"
+proc tux_power_power_off node_list {
+    tux_power $node_list "off"
 }
 
-proc tux_power_power_reset nodes {
-    tux_power $nodes "off"
+set delay_list {}
+
+proc tux_power_power_reset node_list {
+    global delay_list
+
+    tux_power $node_list "off"
+    set delay_list $node_list
     after 3000 {
-      tux_power $nodes "on"
-    }   
+      tux_power $delay_list "on"
+    }
 }
 
 #########################
 #  tux support functions
 #########################
 
-proc tux_power {nodes dir} {
+proc tux_power {node_list dir} {
     global cluster
     global config_file
     set config_file_base_name [file tail $config_file]
@@ -459,8 +441,8 @@ proc tux_power {nodes dir} {
     while { ! [eof $file_bak]} {
 	set line [gets $file_bak]
 	set found 0
-	foreach node $nodes {
-	    set name [format "%s " [lindex $node 0]]
+	foreach node $node_list {
+	    set name [format "%s " $node]
 	    if {[string first $name $line] >= 0} {
 		puts $file_fid [format "%s %s" $name $dir]
 		set found 1
@@ -475,3 +457,27 @@ proc tux_power {nodes dir} {
     close $file_bak
     close $file_fid
 }
+
+
+####################################################################
+# Global initializations for the library
+# 
+####################################################################
+
+foreach node_struct $cluster {
+    set node [lindex $node_struct 0]
+    lappend nodes $node
+    set location($node) [lindex $node_struct 1]
+    lappend locations $location($node)
+    set control($node) [lindex $node_struct 2]
+    lappend control_types [lindex $control($node) 0]
+    set check($node) [lindex $node_struct 3]
+    lappend check_types [lindex $check($node) 0]
+    set gifs($node) [lindex $node_struct 4]
+}
+if {[llength $nodes] < 1} {usage "I don't see any nodes"}
+
+set locations [lunique $locations]
+set control_types [lunique $control_types]
+set check_types [lunique $check_types]
+

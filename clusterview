@@ -5,21 +5,15 @@
 #     off "gif" files, if any, and the code should allow that 
 #     they don't exist
 
-# Global initializations can only take place at the root context.  
-# Procs can access globals but can not create and pass them up.
+# This is a flag to tell the library to avoid sourcing the expect
+# libraries, since "fork" interacts badly between expect and tk.
+set tkdanger 1
 
 set config_file "/etc/powerman.conf"
 if {[info exists env(POWERMANCONF)]} {
     set config_file $env(POWERMANCONF)
 }
-set lib_dir "/usr/lib/powerman"
-if {[info exists env(POWERMANLIBDIR)]} {
-    set lib_dir $env(POWERMANLIBDIR)
-}
 set configed 0
-set debug 0
-set verbose 0
-set tkdanger 1
 if {$argc > 0} {
     set config_file [lindex $argv 0]
 }
@@ -31,6 +25,13 @@ if {!$configed} {
 	usage "Can't find config file $config_file"
     }
 }
+
+set lib_dir "/usr/lib/powerman"
+if {[info exists env(POWERMANLIBDIR)]} {
+    set lib_dir $env(POWERMANLIBDIR)
+}
+set debug 0
+set verbose 0
 set powerlib [format "%s/powerlib.tcl" $lib_dir]
 if {[file exists $powerlib]} {
     source $powerlib
@@ -38,10 +39,6 @@ if {[file exists $powerlib]} {
     usage "Can't find $powerlib library"
 }
 
-# Assemble the list of nodes in the cluster
-
-set nodes [list_nodes]
-if {[llength $nodes] < 1} {usage "I don't see any nodes"}
 set response [check $nodes on]
 set lockout_val 1
 
@@ -52,15 +49,20 @@ button .top.all_reset -text "All Reset" -command all_reset
 pack .top.all_on .top.all_off .top.all_reset -side left
 pack .top
 
+frame .middle
+foreach rack $locations {
+  frame .middle.$rack
+}
+
 foreach node_struct $cluster {
     set node [lindex $node_struct 0]
-    set use_gif [lindex $node_struct 4]
+    set use_gif [lindex $gifs($node) 1]
     if {[file exists $lib_dir/$use_gif]} {
       set image_off($node) [image create photo -format gif -file $lib_dir/$use_gif]
     } else {
       set image_off($node) ""
     }
-    set use_gif [lindex $node_struct 3]
+    set use_gif [lindex $gifs($node) 0]
     if {[file exists $lib_dir/$use_gif]} {
       set image_on($node) [image create photo -format gif -file $lib_dir/$use_gif]
     } else {
@@ -78,14 +80,20 @@ foreach node_struct $cluster {
       set console_image ""
     }
 
-    frame .nf($node)
-    label .nf($node).name -text "$node"
-    button .nf($node).control  -text "$node" -image $image -command "toggle_node $node"
-    button .nf($node).console -text "Console" -image $console_image -command "make_console $node"
-    pack .nf($node).name -side left -expand 1 -anchor w
-    pack .nf($node).control .nf($node).console -side left
-    pack .nf($node) -fill x
+    set rack $location($node)
+    frame .middle.$rack.nf($node)
+    label .middle.$rack.nf($node).name -text "$node"
+    button .middle.$rack.nf($node).control  -text "$node" -image $image -command "toggle_node $node"
+    button .middle.$rack.nf($node).console -text "Console" -image $console_image -command "make_console $node"
+    pack .middle.$rack.nf($node).name -side left -expand 1 -anchor w
+    pack .middle.$rack.nf($node).control .middle.$rack.nf($node).console -side left
+    pack .middle.$rack.nf($node) -fill x
 }
+
+foreach rack $locations {
+  pack .middle.$rack -side left
+}
+pack .middle
 
 frame .bottom
 button .bottom.lockout -text "unlocked" -command toggle_lockout
@@ -152,19 +160,22 @@ proc check_all {} {
     global lib_dir
     global image_off
     global image_on
+    global location
 
     set response [check $nodes on]
     foreach node_struct $cluster {
         set node [lindex $node_struct 0]
+        set rack $location($node)
 	if {[lsearch -exact $response $node] < 0} {
-            .nf($node).control configure -image $image_off($node)
-	    .nf($node).name configure -foreground red
+            .middle.$rack.nf($node).control configure -image $image_off($node)
+	    .middle.$rack.nf($node).name configure -foreground red
 	} else {
-            .nf($node).control configure -image $image_on($node)
-	    .nf($node).name configure -foreground black
+            .middle.$rack.nf($node).control configure -image $image_on($node)
+	    .middle.$rack.nf($node).name configure -foreground black
 	}
-	pack .nf($node).control .nf($node).name .nf($node)
+	pack .middle.$rack.nf($node).control .middle.$rack.nf($node).name .middle.$rack.nf($node) .middle.$rack
     }
+    pack .middle
     after 1000 check_all
 }
 

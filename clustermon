@@ -68,7 +68,7 @@ if {[file exists $powerlib]} {
 
 set nodes {}
 foreach node_struct $cluster {
-    set nodes [lappend nodes [lindex $node_struct 0]]
+    lappend nodes [lindex $node_struct 0]
 }
 if {[llength $nodes] < 1} {usage "I don't see any nodes"}
 
