@@ -1,6 +1,5 @@
 /*****************************************************************************
- *  $LSDId: list.c,v 1.25 2002/11/07 19:51:06 dun Exp $
- *  $Id$ 
+ *  $Id$
  *****************************************************************************
  *  Copyright (C) 2001-2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -368,6 +367,28 @@ list_delete_all (List l, ListFindF f, void *key)
         }
         else {
             pp = &(*pp)->next;
+        }
+    }
+    list_mutex_unlock(&l->mutex);
+    return(n);
+}
+
+
+int
+list_for_each (List l, ListForF f, void *arg)
+{
+    ListNode p;
+    int n = 0;
+
+    assert(l != NULL);
+    assert(f != NULL);
+    list_mutex_lock(&l->mutex);
+    assert(l->magic == LIST_MAGIC);
+    for (p=l->head; p; p=p->next) {
+        n++;
+        if (f(p->data, arg) < 0) {
+            n = -n;
+            break;
         }
     }
     list_mutex_unlock(&l->mutex);
@@ -762,7 +783,7 @@ list_alloc_aux (int size, void *pfreelist)
     if (!*pfree) {
         if ((*pfree = malloc(LIST_ALLOC * size))) {
             px = *pfree;
-            plast = *pfree + ((LIST_ALLOC - 1) * size);
+            plast = (void **) ((char *) *pfree + ((LIST_ALLOC - 1) * size));
             while (px < plast)
                 *px = (char *) px + size, px = *px;
             *plast = NULL;

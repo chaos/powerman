@@ -1,5 +1,4 @@
 /*****************************************************************************
- *  $LSDId: list.h,v 1.12 2002/11/07 19:51:06 dun Exp $
  *  $Id$
  *****************************************************************************
  *  Copyright (C) 2001-2002 The Regents of the University of California.
@@ -24,8 +23,8 @@
  *****************************************************************************/
 
 
-#ifndef _LSD_LIST_H
-#define _LSD_LIST_H
+#ifndef LSD_LIST_H
+#define LSD_LIST_H
 
 
 /***********
@@ -82,6 +81,12 @@ typedef int (*ListFindF) (void *x, void *key);
 /*
  *  Function prototype for matching items in a list.
  *  Returns non-zero if (x==key); o/w returns zero.
+ */
+
+typedef int (*ListForF) (void *x, void *arg);
+/*
+ *  Function prototype for operating on each item in a list.
+ *  Returns less-than-zero on error.
  */
 
 
@@ -150,6 +155,14 @@ int list_delete_all (List l, ListFindF f, void *key);
  *    non-zero; if a deletion function was specified when the list was
  *    created, it will be called to deallocate each item being removed.
  *  Returns a count of the number of items removed from the list.
+ */
+
+int list_for_each (List l, ListForF f, void *arg);
+/*
+ *  For each item in list [l], invokes the function [f] with [arg].
+ *  Returns a count of the number of items on which [f] was invoked.
+ *  If [f] returns <0 for a given item, the iteration is aborted and the
+ *    function returns the negative of that item's position in the list.
  */
 
 void list_sort (List l, ListCmpF f);
@@ -265,4 +278,4 @@ int list_delete (ListIterator i);
  */
 
 
-#endif /* !_LSD_LIST_H */
+#endif /* !LSD_LIST_H */

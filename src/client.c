@@ -752,10 +752,10 @@ static void _handle_input(Client *c)
     char buf[MAX_CLIENT_BUF];
     int len;
 
-    while ((len = cbuf_get_line(c->from, buf, sizeof(buf))) > 0)
+    while ((len = cbuf_read_line(c->from, buf, sizeof(buf), 1)) > 0)
         _parse_input(c, buf);
     if (len < 0)
-        err(TRUE, "client cbuf_get_line returned %d", len);
+        err(TRUE, "client cbuf_read_line returned %d", len);
 }
 
 /*

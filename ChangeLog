@@ -1,3 +1,6 @@
+2002-12-22 garlick
+    * Updated list.[ch] and cbuf.[ch] to latest lsd-tools versions.
+
 2002-12-20 garlick
     * Added powerman --version and powermand --version options.
 
