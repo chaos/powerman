@@ -1,0 +1,71 @@
+#
+# $Id$
+# $Source$
+#
+# Baytech RPC3-20NC
+#
+# Tested the following firmware versions:
+#   RPC3-NC Series (C) 2002 by BayTech F4.00
+# 
+# Note:
+#   Type ";;;;;" to access "network interface module".
+#   Prompt is not returned until device is ready to accept another commmand.
+#
+# Assumes:
+#   Command confirmation : disabled
+#   No access control
+#
+specification "baytech" {
+	timeout 	10   # about 5 sec for cycle command
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
+
+	script login {
+		expect "RPC3-NC>"
+	}
+	script logout {
+		send "exit\r\n"
+	}
+	script status_all {
+		send "status\r\n"
+		expect "Circuit Breaker:[^\n]*\r\n"	
+		foreachplug {
+			expect "([0-9]+)[ ]+: (On|Off)"
+			setplugstate $1 $2 on="On" off="Off"
+		}
+		expect "RPC3-NC>"
+	}
+	script on {
+		send "on %s\r\n"
+		expect "RPC3-NC>"
+	}
+	script on_all {
+		send "on 0\r\n"
+		expect "RPC3-NC>"
+	}
+	script off {
+		send "off %s\r\n"
+		expect "RPC3-NC>"
+	}
+	script off_all {
+		send "off 0\r\n"
+		expect "RPC3-NC>"
+	}
+# If outlet is initially off, "reboot" will leave it off.
+# This doesn't match PowerMan's semantics for cycle, so explicitly power
+# off then on.
+	script cycle {
+		send "off %s\r\n"
+		expect "RPC3-NC>"
+		delay 2
+		send "on %s\r\n"
+		expect "RPC3-NC>"
+	}
+	script cycle_all {
+		send "off 0\r\n"
+		expect "RPC3-NC>"
+		delay 2
+		send "on 0\r\n"
+		expect "RPC3-NC>"
+	}
+}
