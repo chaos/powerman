@@ -1,3 +1,9 @@
+2003-10-16 Jim Garlick <garlick@llnl.gov>
+
+    * src/device_pipe.c: after closing one side of the pty, send a SIGTERM to 
+    child processes before attempting to reap them.  This solves a powerman 
+    deadlock observed with h8power on ALC.
+
 2003-10-03 Jim Garlick <garlick@llnl.gov>
 
     * src/hostlist.[ch], src/config.h: updated to latest hostlist package

@@ -138,6 +138,7 @@ void pipe_disconnect(Device * dev)
     if (pd->cpid > 0) {
         int wstat;
 
+        kill(pd->cpid, SIGTERM); /* ignore errors */
         Waitpid(pd->cpid, &wstat, 0);
         if (WIFEXITED(wstat)) {
             err(FALSE, "_pipe_disconnect(%s): %s exited with status %d", 
