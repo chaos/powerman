@@ -2,9 +2,10 @@
 # $Id$
 # $Source$
 #
-# Phantom 3.0.2
+# Phantom 3.0.4b
+# This version includes an LLNL-requested enhancement for P0 and P1 commands.
 #
-specification  "phantom" {
+specification  "phantom-llnl" {
 	timeout 	20.0
 
 	plug name { "1" }
@@ -19,33 +20,18 @@ specification  "phantom" {
 		setplugstate "1" $1 on="1" off="0"
 	}
 	script on {
-		send "P?\r\n"
-		expect "(0|1)\r"
-		setplugstate "1" $1 on="1" off="0"
-		ifoff {
-			send "PT\r\n"
-			expect "ok\r"
-		}
+		send "P1\r\n"
+		expect "ok\r"
 	}		
 	script off {
-		send "P?\r\n"
-		expect "(0|1)\r"
-		setplugstate "1" $1 on="1" off="0"
-		ifon {
-			send "PT\r\n"
-			expect "ok\r"
-		}
+		send "P0\r\n"
+		expect "ok\r"
 	}		
 	script cycle {
-		send "P?\r\n"
-		expect "(0|1)\r"
-		setplugstate "1" $1 on="1" off="0"
-		ifon {
-			send "PT\r\n"
-			expect "ok\r"
-		}
+		send "P0\r\n"
+		expect "ok\r"
 		delay 2
-		send "PT\r\n"
+		send "P1\r\n"
 		expect "ok\r"
 	}
 	script beacon_on {

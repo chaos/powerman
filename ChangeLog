@@ -5,9 +5,11 @@
     time out after a while and the first command issued after a timeout
     doesn't go through.
 
-    * src/device_pipe.[ch]: New.
+    * src/device_pipe.[ch], src/pty.[ch]: New.
 
     * src/parse.y: Support for "pipe device".
+
+    * etc/phantom-llnl.dev: New - phantom firmware with llnl mods.
 
 2003-07-09 Jim Garlick <garlick@llnl.gov>
 
