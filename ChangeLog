@@ -1,3 +1,6 @@
+2002-01-20 garlick
+    * Make serial connections non-blocking.
+
 2002-01-20 garlick  
     * Back out beacon change that requires B70 of ice box v3 firmware.
       Now we will work with all versions.

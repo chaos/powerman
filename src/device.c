@@ -490,18 +490,34 @@ static bool _serial_reconnect(Device * dev)
     int baud = 9600, databits = 8, stopbits = 1; 
     char parity = 'N';
     int res;
+    int fd_settings;
 
     assert(dev->magic == DEV_MAGIC);
     assert(dev->type == SERIAL_DEV);
     assert(dev->connect_status == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
-    dev->fd = open(dev->u.serial.special, O_RDWR);
+    dev->fd = open(dev->u.serial.special, O_RDWR | O_NONBLOCK | O_NOCTTY);
     if (dev->fd < 0) {
         dbg(DBG_DEVICE, "_serial_reconnect: %s open %s failed", 
                 dev->name, dev->u.serial.special);
         goto out;
     }
+    if (!isatty(dev->fd)) {
+        err(FALSE, "_serial_reconnect: %s is not a tty\n", dev->name);
+        goto out;
+    }
+    /*  [lifted from conman] According to the UNIX Programming FAQ v1.37
+     *    <http://www.faqs.org/faqs/unix-faq/programmer/faq/>
+     *    (Section 3.6: How to Handle a Serial Port or Modem),
+     *    systems seem to differ as to whether a nonblocking
+     *    open on a tty will affect subsequent read()s.
+     *    Play it safe and be explicit!
+     */
+    fd_settings = Fcntl(dev->fd, F_GETFL, 0);
+    Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
+
+    /* FIXME: take an flock F_WRLOCK to coexist with conman */
 
     /* parse the serial flags and set up port accordingly */
     sscanf(dev->u.serial.flags, "%d,%d%c%d", 
@@ -515,8 +531,7 @@ static bool _serial_reconnect(Device * dev)
     dev->retry_count = 0;
     _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
 
-    dbg(DBG_DEVICE, "_serial_reconnect: %s on fd %d", dev->name, dev->fd);
-   
+    err(FALSE, "_serial_reconnect: %s opened", dev->name);
 out: 
     return (dev->connect_status == DEV_CONNECTED);
 }
