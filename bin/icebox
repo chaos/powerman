@@ -299,6 +299,16 @@ if (powermandir):
 else:
     exit_error(6, powermandir)
     
+log_file = powermandir + "log/log_file"
+try:
+    # I could put in a shared lock here, but it doesn't seem highly necessary
+    log = open(log_file, 'a')
+except IOError :
+    exit_error(8, log_file)
+stat, datestring = commands.getstatusoutput('date')
+log.write("\n" + datestring + "\n")
+log.flush()
+
 try:
     # I could put in a shared lock here, but it doesn't seem highly necessary
     f = open(config_file, 'r')
@@ -307,17 +317,6 @@ try:
 except IOError :
     exit_error(7, config_file)
     
-log_file = powermandir + "log/log_file"
-try:
-    # I could put in a shared lock here, but it doesn't seem highly necessary
-    log = open(log_file, 'w')
-except IOError :
-    exit_error(8, log_file)
-stat, datestring = commands.getstatusoutput('date')
-log.write("\n" + datestring + "\n")
-log.flush()
-
-
 if (com == "ice"):
     # This only happens for directly invoking icebox on the command line
     # pm will never call it, and is never called from pm
