@@ -62,7 +62,7 @@ class PortClass:
         good_response = 0
         while (not good_response and (retry_count < 10)):
             retry_count = retry_count + 1
-            response = pm_utils.prompt(target)
+            response = pm_utils.prompt(target, 0)
             if (string.lower(response) == 'ok'):
                 good_response = 1
         if (not good_response):
@@ -95,6 +95,7 @@ class BoxClass:
         req = ""
         for port_name in self.ports.keys():
             port = self.ports[port_name]
+            port.reply = ""
             if (port.node.is_marked()):
                 if (not req): req = port.node.message
                 num_requested = num_requested + 1
@@ -137,14 +138,14 @@ class BoxClass:
         target = 'c' + self.name + com
         retry_count = 0
         good_response = 0
-        while (not (good_response == 10) and (retry_count < 10)):
+        while (not (good_response == num_requested) and (retry_count < 10)):
             retry_count = retry_count + 1
             response = pm_utils.prompt(target, return_immediately)
             if(response == ''):
                 continue
             if (setting or return_immediately):
                 if (string.lower(response) == 'ok'):
-                    good_response = 10
+                    good_response = num_requested
                     for port_name in self.ports.keys():
                         port = self.ports[port_name]
                         port.com = ""
@@ -169,26 +170,20 @@ class BoxClass:
                 except KeyError:
                     continue
                 node = port.node
-                if(port.reply == ""):
-                    # If a reply is already present then this is a second or
-                    # later try to get all ten responses from the
-                    # box, i.e. some of the response was garbled.
-                    good_response = good_response + 1
+                if(node.is_marked()):
                     if (com == 'ns'):
-                        node.state = val
-                        if (((node.state == '0') and reverse) or ((node.state == '1') and not reverse)):
-                            if (node.is_marked()):
-                                port.reply = node.name
-                                node.unmark()
-                            else:
-                                port.reply = ""
-                        else:
-                            port.reply = ""
+                        if ((val == '0') or (val == '1')):
+                            node.unmark()
+                            node.state = val
+                            good_response = good_response + 1
+                        if (((val == '0') and reverse) or ((val == '1') and not reverse)):
+                            port.reply = node.name
                     elif((com == 'ts') or (com == 'tsf')):
+                        node.unmark()
+                        good_response = good_response + 1
                         temps = val
                         port.reply = "%s:%s" % (node.name,temps)
-                        node.unmark()
-        if (good_response == 10):
+        if (good_response == num_requested):
             for port_name in self.ports.keys():
                 port = self.ports[port_name]
                 port.node.mark(port.reply)

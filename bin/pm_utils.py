@@ -158,7 +158,7 @@ def fini_tty(tty_struct):
     os.close(tty_struct.device)
     
 
-def prompt(string):
+def prompt(string, return_immediately):
     global tty
     
     log("say:  " + string)
@@ -166,7 +166,7 @@ def prompt(string):
         os.write(tty, string + '\r\n')
     except IOError:
         log("IOError in write")
-    if (string[-2:] == "rb"):
+    if (return_immediately):
         return "OK"
     done = 0
     timed_out = 0
