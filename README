@@ -1,0 +1,353 @@
+####################################################################
+# $Id$
+# by Andrew C. Uselton <uselton2@llnl.gov> 
+# Copyright (C) 2000 Regents of the University of California
+# See ../DISCLAIMER
+# v. 0-1-0:  2001-08-28
+#            $POWERMANDIR/README
+####################################################################
+
+Abstract
+  PowerMan is a tool for monitoring and controlling the power status
+of a cluster.  The program "pm" provides a uniform interface for
+checking power status as well as turning nodes on or off or resetting
+them.  There is a man page for "pm" that should give most of its
+operational details.  This file goes into more depth in order to
+explain how "pm" works, how power monitoring and control work, and how
+to extend "pm" with new modules for new hardware.  
+ 
+Table of Contents
+0.  Introduction
+1.  Packing list
+2.  Licensing: GPL
+3.  Disclaimer
+4.  Architecture
+5.  pm command line parameters
+6.  Interface to low-level utilites
+7.  Low-level utilites in the present package
+8.  The theory of power monitoring
+9.  The theory of power control
+
+0.  Introduction
+  The PowerMan utility seeks to assist a system administrator for a
+(potentially) large collection of computers with managing the power
+status of those computers.  PowerMan is intended to run entirely on a
+single management workstation, which, in turn, has access to power
+monitoring and power control facilities.  During devopment PowerMan
+was integrated with a Linux Cluster management package.  On other
+platforms some localization may be called for.  The code is written
+primarily in Python, but the low level utility for the DigiPort serial
+port concentrator and the Ether-Wake function of the API CS20s are
+both written in C, and the low level utility for Alpha-based computers
+with the RMC service processor interface is written in Expect/TCL.  
+  One goal of the project is to support easy customization to
+alternative hardware environments.  This is accomplished via
+hardware-specific utility functions that conform to a simple
+inteface.  One such function is need for each variety of power control
+hardware, and one is need for each variety of power monitoring
+hardware.  Powerman is configured with a file that names each node and
+gives the name of the power control function and of the power
+monitoring function.  PowerMan then execs the appropriate function
+when the action is requested.  
+
+1.  Packing list
+  In a typical installation $powermandir is "/usr/lib/powerman", and
+$powermanconf is "/etc/powerman.conf".  The current version of
+powerman is 0.1.0, so the files installed by the "binary" RPM would
+be:
+/usr/bin/pm				The command line interface
+/usr/man/man1/digi.1			man pages for executables
+/usr/man/man1/etherwake.1		""
+/usr/man/man1/pm.1			""
+/usr/man/man1/rmc.1			""
+/usr/man/man1/wti.1			""
+/usr/man/man5/digi.conf.5		man pages for configuration files
+/usr/man/man5/etherwake.conf.5		""
+/usr/man/man5/powerman.conf.5		""
+/usr/man/man5/wti.conf.5		""
+/etc/powerman.conf			primary configuration file
+/usr/doc/powerman-0.1.0/DISCLAIMER	same disclaimer as below
+/usr/doc/powerman-0.1.0/README		this file
+/usr/doc/powerman-0.1.0/TOUR.SH		a short tour of the operations
+/usr/lib/powerman/bin/bogus_check	Fake cluster management for
+/usr/lib/powerman/bin/bogus_set		  testing purposes
+/usr/lib/powerman/bin/digi		power monitoring function
+/usr/lib/powerman/bin/etherwake		power management function
+/usr/lib/powerman/bin/rmc		power management function
+/usr/lib/powerman/bin/wti		power management function
+/usr/lib/powerman/etc/bogus.conf	Configuration files for low
+/usr/lib/powerman/etc/digi.conf		  level management functions
+/usr/lib/powerman/etc/etherwake.conf	  (not all need be present)
+/usr/lib/powerman/etc/wti.conf		""
+/usr/lib/powerman/lib/ether-wake	""
+
+The "source" RPM contails essentially all the same files (with a few
+extras) but gathered in a single development directory tree rooted at
+$powermanroot:
+$powermanroot/DISCLAIMER
+$powermanroot/Makefile
+$powermanroot/README
+$powermanroot/TOUR.SH
+$powermanroot/bin/Makefile
+$powermanroot/bin/bogus_check
+$powermanroot/bin/bogus_set
+$powermanroot/bin/digi
+$powermanroot/bin/etherwake
+$powermanroot/bin/rmc
+$powermanroot/bin/wti
+$powermanroot/etc/Makefile
+$powermanroot/etc/bogus.conf
+$powermanroot/etc/digi.conf
+$powermanroot/etc/etherwake.conf
+$powermanroot/etc/fc.digi.conf
+$powermanroot/etc/fc.etherwake.conf
+$powermanroot/etc/fc.powerman.conf
+$powermanroot/etc/powerman.conf
+$powermanroot/etc/slc.digi.conf
+$powermanroot/etc/slc.etherwake.conf
+$powermanroot/etc/slc.powerman.conf
+$powermanroot/etc/slc.wti.conf
+$powermanroot/etc/tux.bogus.conf
+$powermanroot/etc/tux.powerman.conf
+$powermanroot/etc/wti.conf
+$powermanroot/lib/Makefile
+$powermanroot/local_env
+$powermanroot/man/Makefile
+$powermanroot/man/digi.1
+$powermanroot/man/digi.conf.5
+$powermanroot/man/etherwake.1
+$powermanroot/man/etherwake.conf.5
+$powermanroot/man/pm.1
+$powermanroot/man/powerman.conf.5
+$powermanroot/man/rmc.1
+$powermanroot/man/wti.1
+$powermanroot/man/wti.conf.5
+$powermanroot/pm
+$powermanroot/src/Makefile
+$powermanroot/src/digi.c
+$powermanroot/src/ether-wake.c
+
+Note that the $powermanroot/etc directory has alternative
+configuration files for clusters named "fc", "slc", and "tux".  There
+are Makefiles everywhere to manage creation and installation.  There
+is no lib/ether-wake, but there is a src/ether-wake.c, as well as a
+digi.c.  These two programs need to be compiled, which will happen
+automatically with a "make install".  The digi function also needs to
+be owned by root and setuid root if regualr users are to be able to
+monitor power status.  The file local_env is just a convenience to set
+the two PowerMan environment variables when testing the code in the
+development directory rather than fully installed.  
+
+2.  Licensing: GPL
+
+
+3.  Disclaimer
+The following disclaimer also appears in the PowerMan source
+directory, the doc directory, and is included by reference in each
+source file: 
+
+This work was produced at the University of California, Lawrence Livermore 
+National Laboratory (UC LLNL) under contract no. W-7405-ENG-48 (Contract 48) 
+between the U.S. Department of Energy (DOE) and The Regents of the 
+University of California (University) for the operation of UC LLNL.  
+The rights of the Federal Government are reserved under Contract 48 subject 
+to the restrictions agreed upon by the DOE and University.
+
+                             DISCLAIMER
+
+This software was prepared as an account of work sponsored by an agency of 
+the United States Government.  Neither the United States Government nor the 
+University of California nor any of their employees, makes any warranty, 
+express or implied, or assumes any liability or responsibility for the 
+accuracy, completeness, or usefulness of any information, apparatus, 
+product, or process disclosed, or represents that its specific commercial 
+products, process, or service by trade name, trademark, manufacturer, or 
+otherwise, does not necessarily constitute or imply its endorsement, 
+recommendation, or favoring by the United States Government or the 
+University of California.  The views and opinions of the authors expressed 
+herein do not necessarily state or reflect those of the United States 
+Government or the University of California, and shall not be used for 
+advertising or product endorsement purposes.
+
+                   NOTIFICATION OF COMMERCIAL USE
+
+Commercialization of this product is prohibited without notifying the 
+Department of Energy (DOE) or Lawrence Livermore National Laboratory (LLNL).
+----------
+Code Release Number xxxxxx
+
+N.B. At the time of this writing PowerMan had not finished the "Review
+and Release" process.  Until such time as it has completed and a Code
+Release Number appears above, this software is for internal LLNL use
+only.
+
+
+4.  Architecture
+  The pm program provides a uniform interface to a cluster of nodes
+even if power monitoring and control is performed differently on
+varius nodes.  The powerman configuration file specifies a monitoring
+and a control function for each node in the cluster.  The named
+functions are then used to dispatch a monitoring or control request to
+the underlying hardware.  Each low level function responds to the same
+interface, thus hiding the hardware differences from the user.  If a
+new variety of hardware is introduced to the cluster it is relatively
+easy to provide a new function for accessing that hardware in
+conformance with the interface.  Then the powerman configuration file
+can be amended and the new hardware will be integrated into the pm
+program.  
+
+5.  pm command line parameters
+  The pm man page documents "target node list" options and "other"
+options.  The target node list options are:
+                     "-w host,host,..."
+which will target the specified nodes.  No spaces are allowed in the
+comma-separated list.  Substituting the "-" character for the list
+causes the target nodes to be read from stdin, one per line.
+                          "-a"
+will target "all" nodes in the cluster.  
+  The other options are:
+                          "-b"
+bitmap mode.  Rather than poviding names of nodes that are on (resp. off 
+for -r) bitmap mode prints a string of 1's and 0's, with 1 for on and 0 
+for off.  All nodes are represented in the bitmap in the numerical order 
+of their node name (implies -a). 
+                       "-c configfile"
+Provide an alternate name or location for the configuration file.
+                         "-f number"
+Set the maximum concurrency for underlying utilities.  The default is
+256.  Concurrency is poorly supported in the current version.  Many
+low level utilities ignore the -f option.
+                      "-l powermandir"
+Provide an alternate location for the PowerMan libraries.
+                            "-r"
+reverse, i.e. print nodes that are off rather than on
+                            "-v"
+be verbose, i.e. print error messages rather than dying quietly.  
+  It may be usefull to browse the man page for pm to learn about the 
+environment variables as well.  
+
+6.  Interface to low-level utilites
+  A low level program for power monitoring should provide the same
+command line processing that pm does for checking power status.  See
+the -b, -f, -l, -r, -v, and -w parameters in the last section.  Support
+for -a, and -c is optional, pm won't ever rely on them.  It is
+acceptable to do nothing with the -f option.  The -w option should
+accept a comma separated list.  It's optional to provide "-w -" support
+for reading from stdin, and similarly optional to support the W_COL
+working collective environment variable - pm won't use them in a call
+to the low level utility.  
+  A low level program for power control should provide the same
+command line processing that pm does for setting power status.  See
+the -f, -l, -v, and -w parameters and implement the "on", "off", and
+"reset" commands.  It is acceptable for the low level program to act
+without regard to the prior state of a target node.  pm will not turn
+on a node that is already on or turn off or reset a node that is
+already off.  Support for -a and -c is optional - pm won't use them.
+It is acceptable to do nothing with the -f option.   The -w option should
+accept a comma separated list.  It's optional to provide "-w -" support
+for reading from stdin, and similarly optional to support the W_COL
+working collective environment variable - pm won't use them in a call
+to the low level utility.
+
+7.  Low-level utilites in the present package
+  The following utilities for checking power status exist in the
+current release:
+	bogus_check - is a simple compliant implemetation that does
+not work on any hardware.  Rather it takes its state information from a
+character string in its configuration file.  It is included so that
+one may create a virtual cluster (a bogus cluster) and experiment with
+the interfaces to PowerMan and the low level utilites without
+disrupting a running cluster, or similaraly if you are trying to
+develop a low level utility for a cluster that lacks one.
+	digi - is the only working example of a cluster monitoring low
+level function.  Its operation will be discussed at length in the
+"theory of power monitoring" section.  The digi program sends an ioctl
+to a tty that its configuration file tels it corresponds to the target
+node.  That ioctl provides information (the state of the tty's DSR
+handshake line) that can be used to infer its power status.  
+  The following utilities for setting power status exist in the
+current release: 
+	bogus_set - is the companion to bogus_check.  bogus_set uses
+nodes names that are just integers, and the integer is used as an
+offset into the "bogus.conf" file.  The character at that offset is
+set to 1 for on and 0 for off.   The PowerMan configuration file
+"tux.powerman.conf" gives an example of a bogus cluster configured to
+use the bogus_check and bogus_set low level functions.  
+	etherwake - is a python program that wraps a compliant
+interface around the "ether-wake" C-based function that just sends a
+"magic" packet to a given MAC address.  The etherwake configuration
+file associates the MAC addresses with the corresponding nodes.  As
+implemented in the hardware here at Livermore Lab the ethernet
+wake-on-LAN magic packet is a TOGGLE.  It will power a node off as
+well as on.  This could be a very bad thing in a production
+environment.  As implemented, etherwake makes no provision for
+protecting you from this possible catastrophy, so proceed with
+caution.  pm will not try to turn on a node that is already on, or
+turn off or reset a node that is already off.  For that reason pm is a
+much safer interface to use.  
+	rmc - is a TCL/Expect script wrapping a call to the conman
+utility for console management.  In that call (wich can be carried out
+with a high degree of concurrency via the -f option) a console session
+opens and shifts the serial port console into the RMC service
+processor mode (on nodes so equiped, of course).  From the RMC prompt
+the expect script can generate power on, power off, and reset actions.
+	wti - is a brand of remote power controller or RPC.  A
+collection of RPCs are controlled from a management workstation via a
+daisy-chained set of serial lines.  wti issues a coded command to the
+tty for the RPCs giving the command, a "password", and the port
+corresponding to the target node.  The association between nodes and
+ports is provided by the wti configuration file.
+
+8.  The theory of power monitoring
+  In a cluster of computers it is desirable to montior and control
+them all remotely.  It is also desirable to dispense with the
+keyboard, mouse , and monitor at each node.  Thus a good cluster
+design relies on serial based consoles communicating back to a
+management workstation via some sort of serial concentrator.  With
+proper cabling and a reasonable serial concentrator it is possible to
+infer the power state of a node via the state of one of the incoming
+signal control lines, DSR is a good target.  
+  One fly crawls into the ointment when the serial concentrator does
+not distinguish all three states of the serial signal +10 volts
+(RS232 logical off) -10 volts (RS232 logical on) and 0 volts (power
+off).  Our digi serial concentrator interprts these three signals as
+follows:
++10 volts --> DSR+
+  0 volts --> DSR-
+-10 volts --> DSR-
+The confusion between DSR+ and RS232 logical on may safely be
+ignored, but there is a problem with assinging the same interpretation
+to both -10 volts and 0 volts.  Twice during firmware initialization
+and once during kernel boot the DSR hadshake line is driven to -10
+volts, thus it looks briefly, to the serial conetrator,  as though the
+node is off.  In an environment with automated monitoring and control
+functions this could lead to potentially disasterous results (cf. the
+wake-on-LAN implementation that toggles the power state, if you are
+mistaken about a node being off you might end up shutting down a node
+when you thought you were starting it).  Our solution to this
+difficulty was to assemble a special cable that draws the status line
+for the parallel port interface (TTL signal levels that accurately
+track the power status) and feeds it to the DSR line on the serial
+conetrator.  The digi serial concentrator seemed to have no difficulty
+reading the lower ttl signal levels, so we ended up with accurate
+power status.  It is likely that most serial concentrators will have
+this problem, so keep it in mind when you plan your cluster.
+
+9.  The theory of power control
+  We have seen power control take three distinct forms.  A wake-on-LAN
+enabled ethernet interface can be signalled from a secure management
+workstation over a private management network.  In the case of our
+cluster of API CS20s the "ether-wake" packet toggled the power status,
+so some care (and accurate power monitoring) was required in building
+a power control user interface.  
+  Remote power controllers (RPCs) are controlled from a management
+workstation via a direct connection.  One sends the appropriate command
+to the correct tty and it's as though you'd unplugged the target node
+(which is plugged into the RPC, of course).    
+  Some of the nodes we've dealt with had built in "service processors."
+RMC on the Compaq DS10, DS20, and ES40 is an example of this.  One may
+communicate with the RMC interface via a special escape sequence on
+the serial console.  We use the conman console management package,
+which is equiped with an "expect" interface for running arbitrary
+scripts on managed nodes.  With it we could contact RMC on the target
+node and issue "power on", "power off", and "reset" commands.  
