@@ -4,9 +4,9 @@ PowerMan version 1.0.17                                        26 April 2003
 | New Features |
 +--------------+
 
-o There is now a TELNET device type which filters telnet escapes out of
+o There is now a telnet option processor which filters telnet escapes out of
   the device control stream and manages some trivial option negotiation.
-  Telnet escape sequences have been removed from device configurations.
+  Literal telnet escape sequences have been removed from device configurations.
 
 o For devices which dynamically assign "plug names" it is now possible to 
   omit the plug name from the node lines in powerman.conf, and leave off 
@@ -37,7 +37,6 @@ o In addition to the new constructs described above, the device script syntax
   - The plugcount line is no longer necessary (or allowed).
   - The name line is no longer necessary; device names are specified between
     "specification" and the open brace for the device specification.
-  - Device types are no longer quoted strings.
   - The "map" command was renamed to "setplugstate" and there can now be
     intervening statements between an "expect" and "setplugstate" lines.  
     Subexpression match lines persist until the next "expect" in the script.
@@ -45,7 +44,16 @@ o In addition to the new constructs described above, the device script syntax
     name parameter in lieu of the literal plug name (quoted string).
   - The "onstring" and "offstring" constructs are replaced with off="regex"/
     on="regex" arguments to "setplugstate".
-  
+  - Devices no longer have a "type".  This is deduced from the "hostname"
+    field for the device in the powerman.conf.  If it starts with a slash
+    it is treated as a special file.
+
+o Devices specified in powerman.conf now should combine the host and port
+  in the hostname field, e.g. "hostname:port".  What was the port field is
+  now "flags" reserved for future use.  If a ":port" is not found in the
+  hostname field, the port is taken from the flags field and a warning about
+  deprecated usage is emitted to stdout.
+
 +------------+
 | Bugs fixed |
 +------------+
