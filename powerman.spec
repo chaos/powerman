@@ -99,7 +99,8 @@ fi
 %defattr(0644,root,root)
 %attr(0755,root,root)/usr/bin/powerman
 %attr(0755,root,root)/usr/sbin/powermand
-/etc/powerman/baytech.dev
+/etc/powerman/baytechF500.dev
+/etc/powerman/baytechF501.dev
 /etc/powerman/icebox.dev
 /etc/powerman/wti.dev
 %config(noreplace) /etc/powerman/powerman.conf
