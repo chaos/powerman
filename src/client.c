@@ -274,6 +274,7 @@ static bool _make_pluglist(Device * dev, char *str, int len)
             hostlist_push(hl, plug->node);
         list_iterator_destroy(itr);
 
+        hostlist_sort(hl);
         if (hostlist_ranged_string(hl, len, str) != -1)
             res = TRUE;
         hostlist_destroy(hl);
