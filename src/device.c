@@ -80,7 +80,8 @@ static void _disconnect(Device * dev);
 static bool _process_expect(Device * dev);
 static bool _process_send(Device * dev);
 static bool _process_delay(Device * dev, struct timeval *timeout);
-static void _set_argval_onoff(ArgList *arglist, char *node, ArgState state);
+static void _set_argval_onoff(ArgList *arglist, char *node, char *val,
+		ArgState state);
 static void _match_subexpressions(Device *dev, Action *act, char *expect);
 static int _match_name(Device * dev, void *key);
 static void _handle_read(Device * dev);
@@ -880,10 +881,10 @@ static void _match_subexpressions(Device *dev, Action *act, char *expect)
 
 	str = _copy_pmatch(expect, pmatch[interp->match_pos]);
 
-	if ((pos = _findregex(&dev->on_re, str, strlen(str))) != NULL)
-	    _set_argval_onoff(act->arglist, interp->node, ST_ON);
-	if ((pos = _findregex(&dev->off_re, str, strlen(str))) != NULL)
-	    _set_argval_onoff(act->arglist, interp->node, ST_OFF);
+	if (_findregex(&dev->on_re, str, strlen(str)))
+	    _set_argval_onoff(act->arglist, interp->node, str, ST_ON);
+	if (_findregex(&dev->off_re, str, strlen(str)))
+	    _set_argval_onoff(act->arglist, interp->node, str, ST_OFF);
 
 	Free(str);
     }
@@ -982,6 +983,8 @@ static void _destroy_arg(Arg *arg)
     assert(arg != NULL);
     assert(arg->node != NULL);
     Free(arg->node);
+    if (arg->val)
+	Free(arg->val);
     Free(arg);
 }
 
@@ -1006,6 +1009,7 @@ ArgList *dev_create_arglist(hostlist_t hl)
 	arg = (Arg *)Malloc(sizeof(Arg));
 	arg->node = Strdup(node);
 	arg->state = ST_UNKNOWN;
+	arg->val = NULL;
 	list_append(new->argv, arg);
     }
     hostlist_iterator_destroy(itr);
@@ -1042,12 +1046,15 @@ static int _arg_match(Arg *arg, void *key)
 /*
  * Set the value of the argument with key = node.
  */
-static void _set_argval_onoff(ArgList *arglist, char *node, ArgState state)
+static void _set_argval_onoff(ArgList *arglist, char *node, char *val, 
+		ArgState state)
 {
     Arg *arg;
 
-    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node)))
+    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node))) {
 	arg->state = state;
+	arg->val = Strdup(val);
+    }
 }
 
 

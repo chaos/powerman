@@ -37,7 +37,7 @@
 typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } ArgState;
 typedef struct {
     char         *node;   /* key */
-    char	 *value;  /* value as returned by the device */
+    char	 *val;  /* value as returned by the device */
     ArgState     state;   /* interpreted value, if appropriate */
 } Arg;
 typedef struct {
