@@ -9,7 +9,35 @@ New stuff:
 	  every ice box)  "update plugs" and "update nodes" take no args.
 	* Remove cruft associated with "completion" regex, e.g. makeScriptEl()
 	  third argument should go away and everything beneath it.
-	  
+	* Fix this (on pengra)
+	(gdb) run -ft
+	Starting program: /g/g1/garlick/projects/powerman/src/powermand -ft
+	D(pow0): \377\377\030\377\377\003\377\377\001\377\377\001\014\r\n
+	S(pow0): \377\377\001\377\377\003
+	D(pow0): \r\n
+	D(pow0): \377\377\030\377\377\003\377\377\001\377\377\001\014\r\n
+	S(pow0): \377\377\001\377\377\003
+	D(pow0): \r\n
+	D(pow0): \377\377\030\377\377\003\377\377\001\377\377\001\014\r\n
+	S(pow0): \377\377\001\377\377\003
+	D(pow0): \r\n
+	D(pow0): \377\377\030\377\377\003\377\377\001\377\377\001\014\r\n
+	S(pow0): \377\377\001\377\377\003
+	D(pow0): \r\n
+
+	Program received signal SIGSEGV, Segmentation fault.
+	0x4207af66 in chunk_free () from /lib/i686/libc.so.6
+	(gdb) bt
+	#0  0x4207af66 in chunk_free () from /lib/i686/libc.so.6
+	#1  0x4207ad14 in free () from /lib/i686/libc.so.6
+	#2  0x0804beb5 in Free (ptr=0x80a2918) at wrappers.c:237
+	#3  0x08051d07 in free_Action (act=0x80a2918) at action.c:325
+	#4  0x08051d2e in del_Action (acts=0x807fad8) at action.c:340
+	#5  0x0805428e in recover_Device (dev=0x8079eb0) at device.c:834
+	#6  0x08055588 in do_select_loop (g=0x8073a18) at powermand.c:343
+	#7  0x08054fc2 in main (argc=2, argv=0xbffff7f4) at powermand.c:150
+	#8  0x42017589 in __libc_start_main () from /lib/i686/libc.so.6
+		  
 Andrew's old list:
 	* telnet based query and control for icebox
 	* introduce configuration generator (2 days)
