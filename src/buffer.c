@@ -193,7 +193,6 @@ _zap_leading_whitespace_buf(Buffer b)
 /* 
  * Get a line from the buffer.
  * A line is terminated with a '\n' character.
- * This function presumes that concepts like "whitespace" apply to the buffer.
  */
 int
 get_line_Buffer(Buffer b, char *str, int len)

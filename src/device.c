@@ -496,7 +496,15 @@ process_script(Device *dev)
 		{
 		case EXPECT :
 			done = process_expect(dev);
-			if (done) /* jg */
+			/* 
+			 * XXX Band-aid (jg)
+			 * Without this return, a short read causes the test 
+			 * for act->cur != NULL at the top of this function
+			 * to fail next time the fd is ready and we go here
+			 * (e.g. when more of the buffer is filled).
+			 * This needs to be revisited and fixed better...
+			 */
+			if (done)
 				return;
 			break;
 		case SEND :
