@@ -257,32 +257,6 @@ List dev_getdevices(void)
     return dev_devices;
 }
 
-#if 0
-/*
- * Telemetry logging callback for cbuf_t outgoing to device.
- */
-static void _buflogfun_to(unsigned char *mem, int len, void *arg)
-{
-    Device *dev = (Device *) arg;
-    char *str = dbg_memstr(mem, len);
-
-    dbg(DBG_DEV_TELEMETRY, "S(%s): %s", dev->name, str);
-    Free(str);
-}
-
-/*
- * Telemetry logging callback for cbuf_t incoming from device.
- */
-static void _buflogfun_from(unsigned char *mem, int len, void *arg)
-{
-    Device *dev = (Device *) arg;
-    char *str = dbg_memstr(mem, len);
-
-    dbg(DBG_DEV_TELEMETRY, "D(%s): %s", dev->name, str);
-    Free(str);
-}
-#endif
-
 /*
  * Test whether timeout has occurred
  *  time_stamp (IN) 
@@ -840,7 +814,10 @@ static bool _process_expect(Device * dev)
     re = &act->cur->u.expect.exp;
 
     if ((expect = _getregex_buf(dev->from, re))) {      /* match */
-        dbg(DBG_SCRIPT, "_process_expect(%s): match", dev->name);
+        char *memstr = dbg_memstr(expect, strlen(expect));
+
+        dbg(DBG_SCRIPT, "_process_expect(%s): match: '%s'", dev->name, memstr);
+        Free(memstr);
 
         /* process values of parenthesized subexpressions, if any */
         _match_subexpressions(dev, act, expect);
@@ -849,13 +826,13 @@ static bool _process_expect(Device * dev)
     } else {                    /* no match */
         unsigned char mem[MAX_DEV_BUF];
         int len = cbuf_peek(dev->from, mem, MAX_DEV_BUF);
-        char *str;
       
         if (len > 0) { 
-            str = dbg_memstr(mem, len);
+            char *memstr = dbg_memstr(mem, len);
+
             dbg(DBG_SCRIPT, "_process_expect(%s): no match: '%s'", 
-                    dev->name, str);
-            Free(str);
+                    dev->name, memstr);
+            Free(memstr);
         }
     }
     return finished;
@@ -908,8 +885,16 @@ static bool _process_send(Device * dev)
         else if (written != strlen(str))
             err(FALSE, "_process_send(%s): buffer overrun, %d dropped", 
                     dev->name, dropped);
+        else {
+            char *memstr = dbg_memstr(str, strlen(str));
+
+            dbg(DBG_SCRIPT, "_process_send(%s): sending: '%s'", 
+                    dev->name, str);
+            Free(memstr);
+        }
         assert(written < 0 || (dropped == strlen(str) - written));
         dev->script_status |= DEV_SENDING;
+      
         Free(str);
     }
 
