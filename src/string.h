@@ -24,14 +24,18 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#ifndef EXIT_ERROR_H
-#define EXIT_ERROR_H
+#ifndef PM_STRING_H
+#define PM_STRING_H
 
-#include "powerman.h"
+typedef struct string_implementation *String;
 
-void init_error(char *prog);
-void syslog_on_error(bool syslog_enable);
-void exit_error(const char *fmt, ...);
-void exit_msg(const char *fmt, ...);
+String str_create(const unsigned char *cs);
+void str_destroy(String s);
+String str_copy(String s);
+unsigned char *str_get(String s);
+unsigned char str_byte(String s, int offset);
+int str_length(String s);
+bool str_isempty(String s);
+bool str_match(String s, unsigned char *cs);
 
-#endif				/* EXIT_ERROR_H */
+#endif				/* PM_STRING_H */

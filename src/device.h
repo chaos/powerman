@@ -108,23 +108,26 @@ struct device_struct {
 
 
 /* device.c extern prototypes */
-void init_Device(Device * dev, bool logit);
-void initiate_nonblocking_connect(Device * dev);
-void map_Action_to_Device(Device * dev, Action * act);
-void handle_Device_read(Device * dev);
-void do_Device_connect(Device * dev);
-void process_script(Device * dev);
-void handle_Device_write(Device * dev);
-bool stalled_Device(Device * dev);
-void recover_Device(Device * dev);
-Device *make_Device();
-int match_Device(Device * dev, void *key);
-void free_Device(Device * dev);
-Plug *make_Plug(const char *name);
-int match_Plug(Plug * plug, void *key);
-void free_Plug(Plug * plug);
+void dev_init(Device * dev, bool logit);
+void dev_nb_connect(Device * dev);
+void dev_acttodev(Device * dev, Action * act);
+void dev_handle_read(Device * dev);
+void dev_connect(Device * dev);
+void dev_process_script(Device * dev);
+void dev_handle_write(Device * dev);
+bool dev_stalled(Device * dev);
+void dev_recover(Device * dev);
+
+Device *dev_create();
+int dev_match(Device * dev, void *key);
+void dev_destroy(Device * dev);
+
+Plug *dev_plug_create(const char *name);
+int dev_plug_match(Plug * plug, void *key);
+void dev_plug_destroy(Plug * plug);
+
 /* calculate if time_stamp + timeout > now */
-bool overdue(struct timeval *time_stamp, struct timeval *timeout);
+bool dev_overdue(struct timeval *time_stamp, struct timeval *timeout);
 
 
 #endif				/* DEVICE_H */

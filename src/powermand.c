@@ -51,10 +51,10 @@
 #include "device.h"
 #include "powermand.h"
 #include "action.h"
-#include "daemon_init.h"
+#include "daemon.h"
 #include "listener.h"
-#include "server.h"
-#include "exit_error.h"
+#include "client.h"
+#include "error.h"
 #include "wrappers.h"
 
 /* prototypes */
@@ -69,7 +69,7 @@ static void read_Config_file(Globals * g);
 
 /* This is synonymous with the Globals *g declared in main().
  * I call attention to global access as "cheat".  This only
- * happens in exit_error() and in the parser.
+ * happens in the parser.
  */
 Globals *cheat;
 
@@ -105,25 +105,25 @@ static bool debug_telemetry = FALSE;
  *         select loop it stays there until you call the "kill"
  *         option.
  */
-int main(int argc, char **argv)
-{
 /* 
  *   Globals has the the timeout intervals, a structure for the 
  * client protocol, and pointers for the listener, the list of 
  * devices, the list of clients, the list of pending actions, 
  * and the cluster state info.
  */
+int main(int argc, char **argv)
+{
     Globals *g;
     Device *dev;
     ListIterator dev_i;
 
-    init_error(argv[0]);
+    err_init(argv[0]);
     cheat = g = make_Globals();
 
     process_command_line(g, argc, argv);
 
     if (geteuid() != 0)
-	exit_msg("Must be root");
+	err_exit(FALSE, "must be root");
 
     Signal(SIGHUP, sig_hup_handler);
     Signal(SIGTERM, exit_handler);
@@ -132,17 +132,16 @@ int main(int argc, char **argv)
 
     if (g->daemonize)
 	daemon_init();		/* closes all open fd's, opens syslog */
-    /*   and tells exit_error to use syslog */
 
     dev_i = list_iterator_create(g->devs);
     while ((dev = list_next(dev_i)))
-	init_Device(dev, debug_telemetry);
+	dev_init(dev, debug_telemetry);
     list_iterator_destroy(dev_i);
 
-    init_Listener(g->listener);
+    listen_init(g->listener);
 
-/* We now have a socket at g->listener->fd running in listen mode */
-/* and a file descriptor for communicating with each device */
+    /* We now have a socket at g->listener->fd running in listen mode */
+    /* and a file descriptor for communicating with each device */
     do_select_loop(g);
     return 0;
 }
@@ -185,14 +184,14 @@ static void process_command_line(Globals * g, int argc, char **argv)
 	    printf("%s-%s\n", PROJECT, VERSION);
 	    exit(0);
 	default:
-	    exit_msg("Unrecognized cmd line option (see --help).");
+	    err_exit(FALSE, "unrecognized cmd line option (see --help).");
 	    exit(0);
 	    break;
 	}
     }
 
     if (debug_telemetry && g->daemonize == TRUE)
-	exit_msg("--telemetry cannot be used in daemon mode");
+	err_exit(FALSE, "--telemetry cannot be used in daemon mode");
 
     if (!g->config_file)
 	g->config_file = Strdup(DFLT_CONFIG_FILE);
@@ -253,24 +252,24 @@ static void do_select_loop(Globals * g)
 	over_time = FALSE;
 	active_devs = FALSE;
 
-/* 
- * set up for and call select
- * find_max_fd() has a side effect of setting wset and rset based on
- * "status" values in the devices, and the "read" and "write" values
- * in the clients, log, and listener.
- */
+	/* 
+	 * set up for and call select
+	 * find_max_fd() has a side effect of setting wset and rset based on
+	 * "status" values in the devices, and the "read" and "write" values
+	 * in the clients, log, and listener.
+	 */
 	maxfd = find_max_fd(g, &rset, &wset);
-/* 
- * some "select" implementations are reputed to alter tv so set it
- * anew with each iteration.  timeout_interval may be set in the
- * config file.
- */
+        /* 
+         * some "select" implementations are reputed to alter tv so set it
+         * anew with each iteration.  timeout_interval may be set in the
+         * config file.
+         */
 	tv = g->timeout_interval;
 	n = Select(maxfd + 1, &rset, &wset, NULL, &tv);
 
 	/* New connection? */
 	if (FD_ISSET(g->listener->fd, &rset))
-	    handle_Listener(g);
+	    listen_handler(g);
 
 	/* Client reading and writing?  */
 	list_iterator_reset(cli_i);
@@ -279,10 +278,10 @@ static void do_select_loop(Globals * g)
 		continue;
 
 	    if (FD_ISSET(client->fd, &rset))
-		handle_Client_read(g->client_prot, g->cluster,
+		cli_handle_read(g->client_prot, g->cluster,
 				   g->acts, client);
 	    if (FD_ISSET(client->fd, &wset))
-		handle_Client_write(client);
+		cli_handle_write(client);
 	    /* Is this connection done? */
 	    if ((client->read_status == CLI_DONE) &&
 		(client->write_status == CLI_IDLE))
@@ -293,7 +292,7 @@ static void do_select_loop(Globals * g)
 	 * Any activity will suppress updates for that
 	 * period, not just other updates.
 	 */
-	over_time = overdue(&(g->cluster->time_stamp),
+	over_time = dev_overdue(&(g->cluster->time_stamp),
 			    &(g->cluster->update_interval));
 
 	/* Device reading and writing? */
@@ -304,7 +303,7 @@ static void do_select_loop(Globals * g)
 	     * swamped with reconnect messages.
 	     */
 	    if (over_time && (dev->status == DEV_NOT_CONNECTED))
-		initiate_nonblocking_connect(dev);
+		dev_nb_connect(dev);
 
 	    if (dev->fd < 0)
 		continue;
@@ -324,15 +323,15 @@ static void do_select_loop(Globals * g)
 	     */
 	    if ((dev->status == DEV_CONNECTING)) {
 		if (FD_ISSET(dev->fd, &rset) || FD_ISSET(dev->fd, &wset))
-		    do_Device_connect(dev);
+		    dev_connect(dev);
 		continue;
 	    }
 	    if (FD_ISSET(dev->fd, &rset)) {
-		handle_Device_read(dev);
+		dev_handle_read(dev);
 		activity = TRUE;
 	    }
 	    if (FD_ISSET(dev->fd, &wset)) {
-		handle_Device_write(dev);
+		dev_handle_write(dev);
 		/*
 		 * We may want to pace the commands
 		 * sent to the cluster.  interDev
@@ -346,30 +345,30 @@ static void do_select_loop(Globals * g)
 	     * if the scripts need to be nudged along
 	     */
 	    if (activity)
-		process_script(dev);
+		dev_process_script(dev);
 	    /*
 	     * dev->timeout may be set in the config file.
 	     */
-	    if (stalled_Device(dev))
-		recover_Device(dev);
+	    if (dev_stalled(dev))
+		dev_recover(dev);
 	}
 	/* queue up an update action */
 	if (over_time)
-	    update_Action(g->cluster, g->acts);
+	    act_update(g->cluster, g->acts);
 	/* launch the nexxt action in the queue */
 	if ((!active_devs) &
-	    ((act = find_Action(g->acts, g->clients)) != NULL)) {
+	    ((act = act_find(g->acts, g->clients)) != NULL)) {
 	    /* A previous action may need a reply sent
 	     * back to a client.
 	     */
 	    if (g->status == Occupied)
-		finish_Action(g, act);
+		act_finish(g, act);
 	    /*
 	     * Double check.  If there really was an
 	     * action in the queue, launch it.
 	     */
-	    if ((act = find_Action(g->acts, g->clients)) != NULL)
-		do_Action(g, act);
+	    if ((act = act_find(g->acts, g->clients)) != NULL)
+		act_initiate(g, act);
 	}
     }
 }
@@ -448,18 +447,11 @@ static void sig_hup_handler(int signum)
 }
 
 /*
- *   Send a death poem on the way out.  I used to have this send
- * and exit_error(0), but there must have been some sort of hidden
- * race condition, because it would fail to find the syslog_on
- * bool telling it to send the stuff to the syslog.  It would try 
- * to go to the stderr instead, which didn't exist, or worse, was
- * some client or device connection.  The message would disapear 
- * without a trace.  
+ *   Send a death poem on the way out.
  */
 static void exit_handler(int signum)
 {
-    syslog(LOG_NOTICE, "exiting on signal %d", signum);
-    exit(0);
+    err_exit(FALSE, "exiting on signal %d", signum);
 }
 
 
@@ -474,29 +466,24 @@ static void read_Config_file(Globals * g)
 
     CHECK_MAGIC(g);
 
-/* Did we really get a config file? */
+    /* Did we really get a config file? */
     if (g->config_file == NULL)
-	exit_msg("no config file specified");
+	err_exit(FALSE, "no config file specified");
     if (stat(g->config_file, &stbuf) < 0)
-	exit_error("%s", g->config_file);
+	err_exit(TRUE, "%s", g->config_file);
     if ((stbuf.st_mode & S_IFMT) != S_IFREG)
-	exit_msg("%s is not a regular file\n", g->config_file);
+	err_exit(FALSE, "%s is not a regular file\n", g->config_file);
     g->cf = fopen(g->config_file, "r");
     if (g->cf == NULL)
-	exit_error("fopen %s", g->config_file);
+	err_exit(TRUE, "%s", g->config_file);
 
-    g->client_prot = init_Client_Protocol();
+    g->client_prot = conf_init_client_protocol();
 
     parse_config_file();
 
     fclose(g->cf);
 }
 
-/*
- * constructor 
- *
- * produces:  Globals 
- */
 static Globals *make_Globals()
 {
     Globals *g;
@@ -510,35 +497,30 @@ static Globals *make_Globals()
     g->interDev.tv_usec = INTER_DEV_USECONDS;
     g->daemonize = TRUE;
     g->TCP_wrappers = FALSE;
-    g->listener = make_Listener();
-    g->clients = list_create((ListDelF) free_Client);
+    g->listener = listen_create();
+    g->clients = list_create((ListDelF) cli_destroy);
     g->status = Quiescent;
     g->cluster = NULL;
-    g->acts = list_create((ListDelF) free_Action);
+    g->acts = list_create((ListDelF) act_destroy);
     g->client_prot = NULL;
-    g->specs = list_create((ListDelF) free_Spec);
-    g->devs = list_create((ListDelF) free_Device);
+    g->specs = list_create((ListDelF) conf_spec_destroy);
+    g->devs = list_create((ListDelF) dev_destroy);
     g->config_file = NULL;
     g->cf = NULL;
-    g->cluster = make_Cluster();
+    g->cluster = conf_cluster_create();
     return g;
 }
 
 #if 0
-/*
- *  destructor
- *
- * destroys:  Globals
- */
 static void free_Globals(Globals * g)
 {
     int i;
 
     Free(g->config_file);
     list_destroy(g->specs);
-    free_Cluster(g->cluster);
+    conf_cluster_destroy(g->cluster);
     list_destroy(g->acts);
-    free_Listener(g->listener);
+    listen_destroy(g->listener);
     list_iterator_create(g->clients);
     list_destroy(g->clients);
     for (i = 0; i < g->client_prot->num_scripts; i++)

@@ -38,8 +38,8 @@
 #include "powerman.h"
 
 #include "wrappers.h"
-#include "exit_error.h"
-#include "daemon_init.h"
+#include "error.h"
+#include "daemon.h"
 
 #define TMPSTR_LEN 80
 
@@ -57,7 +57,7 @@ void daemon_init(void)
     /* 1st child continues */
     /* Review: setsid may fail with -1, EPERM */
     if (setsid() < 0)		/* become session leader */
-	exit_error("setsid");
+	err_exit(TRUE, "setsid");
 
     Signal(SIGHUP, SIG_IGN);
 
@@ -68,7 +68,7 @@ void daemon_init(void)
 
     /* change working directory */
     if (chdir(ROOT_DIR) < 0)
-	exit_error("chdir %s", ROOT_DIR);
+	err_exit(TRUE, "chdir %s", ROOT_DIR);
 
     /* clear our file mode creation mask */
     umask(0);
@@ -82,8 +82,7 @@ void daemon_init(void)
     res = snprintf(buf, sizeof(buf), "Started %s", ctime(&t));
     assert(res != -1 && res <= sizeof(buf));
     openlog(DAEMON_NAME, LOG_NDELAY | LOG_PID, LOG_DAEMON);
-    syslog_on_error(TRUE);	/* tell exit_error that stderr is no good */
-    /* Review: check for error from syslog */
+    err_notty();	/* tell err_exit that stderr is no good */
     syslog(LOG_NOTICE, buf);
 }
 

@@ -32,15 +32,15 @@
 
 #include "powerman.h"
 
-#include "pm_string.h"
+#include "string.h"
 #include "wrappers.h"
-#include "exit_error.h"
+#include "error.h"
 #include "buffer.h"
 #include "config.h"
 #include "device.h"
 #include "powermand.h"
 #include "action.h"
-#include "server.h"
+#include "client.h"
 
 /* Each of these represents a script that must be completed.
  * An error message and two of the debug "dump" routines rely on
@@ -65,110 +65,48 @@ char *pm_coms[] = {
  *   The main select() loop will generate this function call 
  * periodically.  The frequency can be set in the config file.
  */
-void update_Action(Cluster * cluster, List acts)
+void act_update(Cluster * cluster, List acts)
 {
     Action *act;
 
     Gettimeofday(&(cluster->time_stamp), NULL);
-    syslog(LOG_INFO, "Updating plugs and nodes");
+    syslog(LOG_INFO, "updating plugs and nodes");
 
-    act = make_Action(PM_UPDATE_PLUGS);
+    act = act_create(PM_UPDATE_PLUGS);
     list_append(acts, act);
 
-    act = make_Action(PM_UPDATE_NODES);
-    list_append(acts, act);
-}
-
-/*
- *   This function doesn't get called in powermand, but is usefull
- * in generating a "torture" client that will interact with the 
- * daemon at extremely high loads.  The patch for this modification
- * is out of date, but not hard to reconstruct.
- */
-#define ACTION_BUF 1024
-void random_Action(Cluster * cluster, List acts)
-{
-    Action *act;
-    char buf[ACTION_BUF];
-    char *bp = buf;
-    int len;
-    bool done = FALSE;
-    int com;
-    int NUM_NODES = cluster->num;
-/* random between 4 (PM_UPDATE_PLUGS) and 9 (PM_RESET), inclusive */
-    int all;
-/* random choice between 0 (not all) and 1 (all nodes targetted) */
-    int node;
-/* random choice between 0 and NUM_NODES - 1, inclusive */
-    int multi;
-/* random choice between 0 (no more) and 1 (more nodes targetted) */
-
-    com = 4 + (int) (6.0 * rand() / (RAND_MAX + 1.0));
-    act = make_Action(com);
-    if (act->com >= PM_POWER_ON) {	/* we have to set a target */
-	memset(buf, 0, sizeof(buf));
-	all = (int) (2.0 * rand() / (RAND_MAX + 1.0));
-	if (all)
-	    sprintf(bp, ".*");
-	else {
-	    node = (int) (1.0 * NUM_NODES * rand() / (RAND_MAX + 1.0));
-	    multi = (int) (2.0 * rand() / (RAND_MAX + 1.0));
-	    if (multi == 0) {
-		sprintf(bp, "%d", node);
-		done = TRUE;
-	    } else {
-		sprintf(bp, "(%d", node);
-		len = strlen(bp);
-		bp += len;
-		while (!done) {
-		    node =
-			(int) (1.0 * NUM_NODES * rand() /
-			       (RAND_MAX + 1.0));
-		    multi = (int) (2.0 * rand() / (RAND_MAX + 1.0));
-		    if (multi == 0) {
-			sprintf(bp, "|%d)", node);
-			done = TRUE;
-		    } else {
-			sprintf(bp, "|%d", node);
-		    }
-		    len = strlen(bp);
-		    bp += len;
-		}
-	    }
-	}
-	act->target = make_String(buf);
-    }
+    act = act_create(PM_UPDATE_NODES);
     list_append(acts, act);
 }
-
 
 /*
  *   This function retrieves the Action at the head of the queue.
  * It must verify that the retrieved action is for a client who 
- * still exists.  Internally generated Actions (from udate_Action())
+ * still exists.  Internally generated Actions (from act_update())
  * do not have this concern, so they are not checked.  If the
  * client has disconnected the Action is discarded.
  */
-Action *find_Action(List acts, List clients)
+Action *act_find(List acts, List clients)
 {
     Client *client;
     Action *act = NULL;
 
     while ((!list_is_empty(acts)) && (act == NULL)) {
 	act = list_peek(acts);
-/* act->client == NULL is a special internally generated action */
+	/* act->client == NULL is a special internally generated action */
 	if (act->client == NULL)
 	    continue;
 
-/* What if the client has disappeared since enqueuing the action? */
+	/* What if the client has disappeared since enqueuing the action? */
 	client =
-	    list_find_first(clients, (ListFindF) match_Client,
-			    act->client);
+	    list_find_first(clients, (ListFindF) cli_match, act->client);
 	if (client != NULL)
 	    continue;
 
-/* I could log an event here: "client abort prior to action completion"  */
-	del_Action(acts);
+	/* I could log an event here: "client abort prior to action 
+	 * completion"  
+	 */
+	act_del_queuehead(acts);
 	act = NULL;
     }
     return act;
@@ -179,14 +117,14 @@ Action *find_Action(List acts, List clients)
  *   The devices have gone idle and the cluster quiescent.  It's
  * time to start a new action.  The first five ACTION types 
  * may be handled immediately, and yet another action pulled 
- * from the queue.  do_Action is called recursively until 
+ * from the queue.  act_initiate() is called recursively until 
  * some Action comes to the head of the list that requires device
  * communication (or the list runs out and the function returns).
  *   When an Action is encountered thatrequires device 
  * communication the cluster is marked "Occupied" and corresponding
  * Actions are dispatched to each appropriate device.
  */
-void do_Action(Globals * g, Action * act)
+void act_initiate(Globals * g, Action * act)
 {
     Device *dev;
     ListIterator dev_i;
@@ -202,9 +140,9 @@ void do_Action(Globals * g, Action * act)
     case PM_CHECK_LOGIN:
     case PM_LOG_OUT:
     case PM_NAMES:
-	finish_Action(g, act);
-	if ((act = find_Action(g->acts, g->clients)) != NULL)
-	    do_Action(g, act);
+	act_finish(g, act);
+	if ((act = act_find(g->acts, g->clients)) != NULL)
+	    act_initiate(g, act);
 	return;
     case PM_UPDATE_PLUGS:
     case PM_UPDATE_NODES:
@@ -219,37 +157,29 @@ void do_Action(Globals * g, Action * act)
     g->status = Occupied;
     dev_i = list_iterator_create(g->devs);
     while ((dev = list_next(dev_i)))
-	map_Action_to_Device(dev, act);
+	dev_acttodev(dev, act);
     list_iterator_destroy(dev_i);
 }
 
 /*
- *    From either do_Action or the main select() loop this function
+ *    From either act_initiate() or the main select() loop this function
  * replies to a client if appropriate, marks the timestamp (suppressing
- * an update_Action() for update_interval), and destroys the Action
+ * an act_update() for update_interval), and destroys the Action
  * strucutre.
  *
  * Destroys:  Action
  */
-void finish_Action(Globals * g, Action * act)
+void act_finish(Globals * g, Action * act)
 {
-/* 
- *   act->client == NULL means that there is no client 
- * expecting a reply.
-*/
+    /* act->client == NULL means that there is no client expecting a reply. */
     if (act->client != NULL)
-	client_reply(g->cluster, act);
+	cli_reply(g->cluster, act);
     Gettimeofday(&(g->cluster->time_stamp), NULL);
-    del_Action(g->acts);
+    act_del_queuehead(g->acts);
     g->status = Quiescent;
 }
 
-/*
- *   Constructor
- *
- * Produces:  Action
- */
-Action *make_Action(int com)
+Action *act_create(int com)
 {
     Action *act;
 
@@ -264,17 +194,12 @@ Action *make_Action(int com)
     return act;
 }
 
-/*
- *   Destructor
- *
- * Destroys:  Action
- */
-void free_Action(Action * act)
+void act_destroy(Action * act)
 {
     CHECK_MAGIC(act);
 
     if (act->target != NULL)
-	free_String(act->target);
+	str_destroy(act->target);
     act->target = NULL;
     if (act->itr != NULL)
 	list_iterator_destroy(act->itr);
@@ -290,12 +215,12 @@ void free_Action(Action * act)
  *
  * Destroys:  Action
  */
-void del_Action(List acts)
+void act_del_queuehead(List acts)
 {
     Action *act;
 
     act = list_pop(acts);
-    free_Action(act);
+    act_destroy(act);
 }
 
 /*

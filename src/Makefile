@@ -31,12 +31,12 @@ sbindir=        ${exec_prefix}/sbin
 libdir=         ${exec_prefix}/lib
 packagedir=     ${etcdir}/${PACKAGE}
 
-COMMON_OBJS = list.o pm_string.o wrappers.o exit_error.o hostlist.o
+COMMON_OBJS = list.o string.o wrappers.o error.o hostlist.o
 
-SERVER_UTIL = $(COMMON_OBJS) daemon_init.o util.o buffer.o
+SERVER_UTIL = $(COMMON_OBJS) daemon.o util.o buffer.o
 
 SERVER_OBJS = $(SERVER_UTIL) action.o config.o device.o listener.o  \
-	      powermand.o server.o parse_lex.o parse_tab.o
+	      powermand.o client.o parse_lex.o parse_tab.o
 
 CLIENT_OBJS = $(COMMON_OBJS) powerman.o
 
@@ -75,9 +75,9 @@ depend:
 
 clean:
 	-rm -f *~ *.o .\#* parse_*
+	-rm -f powerman powermand
 
 realclean: clean
 	-rm -f cscope*.out tags TAGS
-	-rm -f powerman powermand
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

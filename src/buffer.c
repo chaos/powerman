@@ -34,7 +34,7 @@
 
 #include "powerman.h"
 
-#include "exit_error.h"
+#include "error.h"
 #include "wrappers.h"
 #include "buffer.h"
 
@@ -68,9 +68,13 @@ struct buffer_implementation {
 
 /*
  * Construct a Buffer of specified length.
+ *  fd (IN)	file descriptor associated with buffer
+ *  logfun (IN) if non-null, logfun(b->out, nbytes, b->logfunarg)
+ *		will be called on every read/write to file descriptor
+ *  logfunarg (IN)  see above
+ *  RETURN	new Buffer object (malloc failure terminates program)
  */
-Buffer
-make_Buffer(int fd, int length, BufferLogFun * logfun, void *logfunarg)
+Buffer buf_create(int fd, int length, BufferLogFun * logfun, void *logfunarg)
 {
     Buffer b;
 
@@ -87,8 +91,9 @@ make_Buffer(int fd, int length, BufferLogFun * logfun, void *logfunarg)
 
 /*
  * Free a Buffer.
+ *  b (IN)	Buffer object to free.
  */
-void free_Buffer(Buffer b)
+void buf_destroy(Buffer b)
 {
     _buf_check(b);
     Free(b->buf);
@@ -96,12 +101,15 @@ void free_Buffer(Buffer b)
 }
 
 /*
- * Drop data specified in printf style into Buffer.
- * Compact Buffer if space is low and data could then be appended.
- * If there is still insufficient space, block up to 1 second until 
- * there is space.  Return TRUE if data was successfully added to buffer.
+ * Printf into buffer.  Do a memmove to get rid of unused space at
+ * beginning of buffer.  
+ *  b (IN)	Buffer that is written to
+ *  fmt (IN)	Printf style format string
+ *  args... (IN) Printf style Variable args
+ *  RETURN	TRUE if data was s uccessfully written, FALSE if insufficient
+ *		room in buffer.
  */
-bool send_Buffer(Buffer b, const char *fmt, ...)
+bool buf_printf(Buffer b, const char *fmt, ...)
 {
     va_list ap;
     int len;
@@ -128,10 +136,11 @@ bool send_Buffer(Buffer b, const char *fmt, ...)
 }
 
 /*
- * Write out any data in buffer.  Return the number of bytes written or 
- * -1 on error (e.g. EWOULDBLOCK).
+ * Write out any data in buffer.  
+ *  b (IN)	Buffer to flush.
+ *  RETURN	number of bytes written or -1 on error (e.g. EWOULDBLOCK)
  */
-int write_Buffer(Buffer b)
+int buf_write(Buffer b)
 {
     int nbytes;
 
@@ -147,10 +156,11 @@ int write_Buffer(Buffer b)
 }
 
 /*
- * Read in any available to buffer.  Return the number of bytes read or 
- * -1 on error (e.g. EAGAIN).
+ * Read in any available to buffer.  
+ *  b (IN)	Buffer to append 
+ *  RETURN	number of bytes read or * -1 on error (e.g. EAGAIN).
  */
-int read_Buffer(Buffer b)
+int buf_read(Buffer b)
 {
     int nbytes;
 
@@ -166,9 +176,11 @@ int read_Buffer(Buffer b)
 }
 
 /*
- * Return TRUE if buffer is empty.
+ * Is buffer empty?
+ *  b (IN)	Buffer to check
+ *  RETURN	TRUE if buffer is empty.
  */
-bool is_empty_Buffer(Buffer b)
+bool buf_isempty(Buffer b)
 {
     _buf_check(b);
     return (_buf_length(b) == 0);
@@ -176,18 +188,22 @@ bool is_empty_Buffer(Buffer b)
 
 /* 
  * Get a copy of a line from the buffer.
- * A line is terminated with a '\n' character.
- * Optionally Call eat_Buffer with the returned length to "consume" this.
+ * A line is terminated with a \n character
+ * Optionally Call buf_eat with the returned length to "consume" this.
  * Note: converts embedded \0 bytes to \377.
+ *  b (IN)	Buffer to get a line from
+ *  str (OUT)	where the line will be stored (will be \0 terminated)
+ *  len (IN)	size of str.
+ *  RETURN	number of bytes copied NOT including terminating \0.
  */
-int peek_line_Buffer(Buffer b, unsigned char *str, int len)
+int buf_peekline(Buffer b, unsigned char *str, int len)
 {
     unsigned char *p;
     int cpy_len;
     int i, j;
 
     _buf_check(b);
-    if (is_empty_Buffer(b))
+    if (buf_isempty(b))
 	return 0;
     p = memchr(b->out, '\n', _buf_length(b));
     if (p == NULL)
@@ -204,23 +220,32 @@ int peek_line_Buffer(Buffer b, unsigned char *str, int len)
 
 /* 
  * Get a line from the buffer.
- * A line is terminated with a '\n' character.
+ * A line is terminated with a \n character
+ * Note: converts embedded \0 bytes to \377.
+ *  b (IN)	Buffer to get a line from
+ *  str (OUT)	where the line will be stored (will be \0 terminated)
+ *  len (IN)	size of str.
+ *  RETURN	number of bytes copied NOT including terminating \0.
  */
-int get_line_Buffer(Buffer b, unsigned char *str, int len)
+int buf_getline(Buffer b, unsigned char *str, int len)
 {
     int cpy_len;
 
-    cpy_len = peek_line_Buffer(b, str, len);
-    eat_Buffer(b, cpy_len);
+    cpy_len = buf_peekline(b, str, len);
+    buf_eat(b, cpy_len);
     return cpy_len;
 }
 
 /*
- * Get a copy of the contents of the buffer in string form.
- * Optionally Call eat_Buffer with the returned length to "consume" this.
+ * Get a copy of the ENTIRE contents of the buffer in string form.
+ * Optionally Call buf_eat with the returned length to "consume" this.
  * Note: converts embedded \0 bytes to \377.
+ *  b (IN)	Buffer to get a str from
+ *  str (OUT)	where the str will be stored (will be \0 terminated)
+ *  len (IN)	size of str.
+ *  RETURN	number of bytes copied NOT including terminating \0.
  */
-int peek_string_Buffer(Buffer b, unsigned char *str, int len)
+int buf_peekstr(Buffer b, unsigned char *str, int len)
 {
     int cpy_len;
     int i, j;
@@ -238,29 +263,40 @@ int peek_string_Buffer(Buffer b, unsigned char *str, int len)
 }
 
 /*
- * Get the contents of the buffer in string form.
+ * Get a copy of the ENTIRE contents of the buffer in string form.
+ * Note: converts embedded \0 bytes to \377.
+ *  b (IN)	Buffer to get a str from
+ *  str (OUT)	where the str will be stored (will be \0 terminated)
+ *  len (IN)	size of str.
+ *  RETURN	number of bytes copied NOT including terminating \0.
  */
-int get_string_Buffer(Buffer b, unsigned char *str, int len)
+int buf_getstr(Buffer b, unsigned char *str, int len)
 {
     int cpy_len;
 
-    cpy_len = peek_string_Buffer(b, str, len);
-    eat_Buffer(b, cpy_len);
+    cpy_len = buf_peekstr(b, str, len);
+    buf_eat(b, cpy_len);
     return cpy_len;
 }
 
 /* 
- * Call after peek_string_Buffer or peek_line_Buffer to remove the peeked 
+ * Call after buf_peekstr or buf_peekline to remove the peeked 
  * data from Buffer 
+ *  b (IN)	buffer to consume
+ *  len (IN)	number of bytes to consume
  */
-void eat_Buffer(Buffer b, int len)
+void buf_eat(Buffer b, int len)
 {
     _buf_check(b);
     assert(len <= _buf_length(b));
     b->out += len;
 }
 
-void clear_Buffer(Buffer b)
+/* 
+ * Emtpy the Buffer.
+ *  b (IN)	buffer to consume
+ */
+void buf_clear(Buffer b)
 {
     _buf_check(b);
     b->in = b->out = b->buf;

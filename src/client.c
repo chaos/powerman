@@ -34,19 +34,19 @@
 #include "config.h"
 #include "powermand.h"
 #include "action.h"
-#include "exit_error.h"
+#include "error.h"
 #include "wrappers.h"
-#include "pm_string.h"
+#include "string.h"
 #include "buffer.h"
-#include "server.h"
+#include "client.h"
 #include "util.h"
 
 /* prototypes */
-static Action *process_input(Protocol * client_prot, Cluster * cluster,
+static Action *_process_input(Protocol * client_prot, Cluster * cluster,
 			     Client * c);
-static Action *find_Client_script(Protocol * p, Cluster * cluster,
+static Action *_find_cli_script(Protocol * p, Cluster * cluster,
 				  String expect);
-static bool match_Client_template(Cluster * cluster, Action * act,
+static bool _match_cli_template(Cluster * cluster, Action * act,
 				  regex_t * re, String expect);
 /*
  *   Select has indicated that there is material read to
@@ -62,8 +62,7 @@ static bool match_Client_template(Cluster * cluster, Action * act,
  * If there was nothing to read then it may be time to 
  * close the connection to the client.   
  */
-void
-handle_Client_read(Protocol * client_prot, Cluster * cluster,
+void cli_handle_read(Protocol * client_prot, Cluster * cluster,
 		   List acts, Client * c)
 {
     int n;
@@ -71,7 +70,7 @@ handle_Client_read(Protocol * client_prot, Cluster * cluster,
 
     CHECK_MAGIC(c);
 
-    n = read_Buffer(c->from);
+    n = buf_read(c->from);
     if ((n < 0) && (errno == EWOULDBLOCK))
 	return;
     if (n <= 0) {
@@ -81,14 +80,14 @@ handle_Client_read(Protocol * client_prot, Cluster * cluster,
     }
 
     do {
-/* 
- *   If there isn't a full command left in the from buffer then this 
- * returns NULL. Otherwise it will return a newly created Action
- * act, extract the next command from the buffer, set the
- * Action fields client, seq, com, num and target for later
- * processing, and enqueue the Action.  
- */
-	act = process_input(client_prot, cluster, c);
+	/* 
+         *   If there isn't a full command left in the from buffer then this 
+         * returns NULL. Otherwise it will return a newly created Action
+         * act, extract the next command from the buffer, set the
+         * Action fields client, seq, com, num and target for later
+         * processing, and enqueue the Action.  
+         */
+	act = _process_input(client_prot, cluster, c);
 	if (act != NULL)
 	    list_append(acts, act);
     }
@@ -107,20 +106,20 @@ handle_Client_read(Protocol * client_prot, Cluster * cluster,
  * others require sending the Server Action to the devices 
  * first.
  */
-Action *process_input(Protocol * client_prot, Cluster * cluster,
-		      Client * c)
+static Action *_process_input(Protocol * client_prot, 
+		Cluster * cluster, Client * c)
 {
     Action *act;
     String expect;
 
-/* Using NULL means I'll just get the next '\n' terminated string */
-/* but with any '\r' or '\n' stripped off */
-    expect = get_line_from_Buffer(c->from);
+    /* Using NULL means I'll just get the next '\n' terminated string */
+    /* but with any '\r' or '\n' stripped off */
+    expect = util_bufgetline(c->from);
     if (expect == NULL)
 	return NULL;
 
-    act = find_Client_script(client_prot, cluster, expect);
-    free_String(expect);
+    act = _find_cli_script(client_prot, cluster, expect);
+    str_destroy(expect);
     if (act != NULL) {
 	act->client = c;
 	act->seq = c->seq++;
@@ -135,17 +134,17 @@ Action *process_input(Protocol * client_prot, Cluster * cluster,
  * and the write buffer is clear then close the 
  * connection.
  */
-void handle_Client_write(Client * c)
+void cli_handle_write(Client * c)
 {
     int n;
 
     CHECK_MAGIC(c);
 
-    n = write_Buffer(c->to);
+    n = buf_write(c->to);
     if (n < 0)
 	return;			/* EWOULDBLOCK */
 
-    if (is_empty_Buffer(c->to))
+    if (buf_isempty(c->to))
 	c->write_status = CLI_IDLE;
 }
 
@@ -155,13 +154,13 @@ void handle_Client_write(Client * c)
  * A complete command would be indicated by a '\n'.  There
  * could be more than one.
  */
-Action *find_Client_script(Protocol * p, Cluster * cluster, String expect)
+static Action *_find_cli_script(Protocol * p, Cluster * cluster, String expect)
 {
     Action *act;
     bool found_it = FALSE;
     regex_t *re;
 
-    act = make_Action(PM_ERROR);
+    act = act_create(PM_ERROR);
     /* look through the array for a match */
     while ((!found_it) && (act->com < (NUM_SCRIPTS - 1))) {
 	act->com++;
@@ -170,7 +169,7 @@ Action *find_Client_script(Protocol * p, Cluster * cluster, String expect)
 	act->cur = list_next(act->itr);
 	assert(act->cur->type == EXPECT);
 	re = &(act->cur->s_or_e.expect.exp);
-	found_it = match_Client_template(cluster, act, re, expect);
+	found_it = _match_cli_template(cluster, act, re, expect);
 	list_iterator_destroy(act->itr);
 	act->itr = NULL;
     }
@@ -186,9 +185,8 @@ Action *find_Client_script(Protocol * p, Cluster * cluster, String expect)
  * Client sent in.  Finding one, it puts it in tthe Action's "target"
  * field.
  */
-bool
-match_Client_template(Cluster * cluster, Action * act, regex_t * re,
-		      String expect)
+static bool _match_cli_template(Cluster * cluster, Action * act, 
+		regex_t * re, String expect)
 {
     int n;
     int l;
@@ -196,7 +194,7 @@ match_Client_template(Cluster * cluster, Action * act, regex_t * re,
     regmatch_t pmatch[MAX_MATCH];
     int eflags = 0;
     char buf[MAX_BUF];
-    char *str = get_String(expect);
+    char *str = str_get(expect);
 
     CHECK_MAGIC(act);
 
@@ -215,8 +213,7 @@ match_Client_template(Cluster * cluster, Action * act, regex_t * re,
     case PM_LOG_OUT:
     case PM_UPDATE_PLUGS:
     case PM_UPDATE_NODES:
-/* don't need target data */
-	return TRUE;
+	return TRUE; /* don't need target data */
     case PM_POWER_ON:
     case PM_POWER_OFF:
     case PM_POWER_CYCLE:
@@ -230,12 +227,13 @@ match_Client_template(Cluster * cluster, Action * act, regex_t * re,
 	assert((l > 0) && (l < MAX_BUF));
 	strncpy(buf, str + pmatch[1].rm_so, l);
 	buf[l] = '\0';
-	act->target = make_String(buf);
+	act->target = str_create(buf);
 	return TRUE;
     default:
 	assert(FALSE);
     }
-    return FALSE;		/* shouldn't ever reach this */
+    /*NOTREACHED*/
+    return FALSE;
 }
 
 
@@ -245,7 +243,7 @@ match_Client_template(Cluster * cluster, Action * act, regex_t * re,
  * first sequences through the nodes send out the'r status as a
  * '0', '1', or '?'.
  */
-void client_reply(Cluster * cluster, Action * act)
+void cli_reply(Cluster * cluster, Action * act)
 {
     Client *client = act->client;
     int seq = act->seq;
@@ -264,59 +262,59 @@ void client_reply(Cluster * cluster, Action * act)
 
     client->write_status = CLI_WRITING;
     if ((act->client->loggedin == FALSE) && (act->com != PM_LOG_IN)) {
-	send_Buffer(client->to, "LOGIN FAILED\r\n%d Password> ", seq);
+	buf_printf(client->to, "LOGIN FAILED\r\n%d Password> ", seq);
     } else {
 	node_i = list_iterator_create(cluster->nodes);
 	switch (act->com) {
 	case PM_ERROR:
-	    send_Buffer(client->to, "ERROR\r\n%d PowerMan> ", seq);
+	    buf_printf(client->to, "ERROR\r\n%d PowerMan> ", seq);
 	    break;
 	case PM_LOG_IN:
 	    act->client->loggedin = TRUE;
 	case PM_CHECK_LOGIN:
-	    send_Buffer(client->to, "%d PowerMan> ", seq);
+	    buf_printf(client->to, "%d PowerMan> ", seq);
 	    break;
 	case PM_LOG_OUT:
 	    break;
 	case PM_UPDATE_PLUGS:
 	    while ((node = list_next(node_i))) {
 		if (node->p_state == ST_ON)
-		    send_Buffer(client->to, "1");
+		    buf_printf(client->to, "1");
 		else if (node->p_state == ST_OFF)
-		    send_Buffer(client->to, "0");
+		    buf_printf(client->to, "0");
 		else
-		    send_Buffer(client->to, "?");
+		    buf_printf(client->to, "?");
 	    }
-	    send_Buffer(client->to, "\r\n%d PowerMan> ", seq);
+	    buf_printf(client->to, "\r\n%d PowerMan> ", seq);
 	    break;
 	case PM_UPDATE_NODES:
 	    while ((node = list_next(node_i))) {
 		if (node->n_state == ST_ON)
-		    send_Buffer(client->to, "1");
+		    buf_printf(client->to, "1");
 		else if (node->n_state == ST_OFF)
-		    send_Buffer(client->to, "0");
+		    buf_printf(client->to, "0");
 		else
-		    send_Buffer(client->to, "?");
+		    buf_printf(client->to, "?");
 	    }
-	    send_Buffer(client->to, "\r\n%d PowerMan> ", seq);
+	    buf_printf(client->to, "\r\n%d PowerMan> ", seq);
 	    break;
 	case PM_POWER_ON:
 	case PM_POWER_OFF:
 	case PM_POWER_CYCLE:
 	case PM_RESET:
-	    send_Buffer(client->to, "%d PowerMan> ", seq);
+	    buf_printf(client->to, "%d PowerMan> ", seq);
 	    break;
 	case PM_NAMES:
-	    Regcomp(&nre, get_String(act->target), cflags);
+	    Regcomp(&nre, str_get(act->target), cflags);
 	    while ((node = list_next(node_i))) {
-		n = Regexec(&nre, get_String(node->name), nm, pm, eflags);
+		n = Regexec(&nre, str_get(node->name), nm, pm, eflags);
 		if ((n != REG_NOMATCH)
 		    && ((pm[0].rm_eo - pm[0].rm_so) ==
-			length_String(node->name)))
-		    send_Buffer(client->to, "%s\r\n",
-				get_String(node->name));
+			str_length(node->name)))
+		    buf_printf(client->to, "%s\r\n",
+				str_get(node->name));
 	    }
-	    send_Buffer(client->to, "%d PowerMan> ", seq);
+	    buf_printf(client->to, "%d PowerMan> ", seq);
 	    break;
 	default:
 	    assert(FALSE);
@@ -326,12 +324,7 @@ void client_reply(Cluster * cluster, Action * act)
 }
 
 
-/*
- *   Constructor 
- *
- * Produces:  Client
- */
-Client *make_Client()
+Client *cli_create()
 {
     Client *client;
 
@@ -354,20 +347,15 @@ Client *make_Client()
  *   This match utility is compatible with the list API's ListFindF
  * prototype for searching a list of Client * structs.  The match
  * criterion is an identity match on their addresses.  This comes 
- * into use in the find_Action() when there is a chance an Action 
+ * into use in the act_find() when there is a chance an Action 
  * no longer has a client associated with it.
  */
-int match_Client(Client * client, void *key)
+int cli_match(Client * client, void *key)
 {
     return (client == key);
 }
 
-/*
- *   Destructor
- *
- * Destroys:  Client
- */
-void free_Client(Client * client)
+void cli_destroy(Client * client)
 {
     CHECK_MAGIC(client);
 
@@ -377,9 +365,9 @@ void free_Client(Client * client)
 	       ((Client *) client)->fd);
     }
     if (client->to != NULL)
-	free_Buffer(client->to);
+	buf_destroy(client->to);
     if (client->from != NULL)
-	free_Buffer(client->from);
+	buf_destroy(client->from);
     Free(client);
 }
 

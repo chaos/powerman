@@ -44,14 +44,9 @@ struct listener_struct {
 };
 
 /* listener.c extern prototypes */
-Listener *make_Listener(void);
-void init_Listener(Listener *listener);
-void handle_Listener(Globals *g);
-void free_Listener(Listener *listener);
-
-
-/* TCP-wrappers support */
-int hosts_ctl(char *daemon, char *client_name, char *client_addr, 
-		char *client_user);
+Listener *listen_create(void);
+void listen_init(Listener *listener);
+void listen_handler(Globals *g);
+void listen_free(Listener *listener);
 
 #endif /* LISTENER_H */

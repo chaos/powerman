@@ -65,27 +65,24 @@ extern char *pm_coms[];		/* string represetnations of the PM_* coms */
 /* prototypes */
 
 /* enque requests for hard- and soft-power state */
-void update_Action(Cluster * cluster, List acts);
-
-/* Unused utility for generating "torture" tests */
-void random_Action(Cluster * cluster, List acts);
+void act_update(Cluster * cluster, List acts);
 
 /* Get and validate the next action in the queue */
-Action *find_Action(List acts, List clients);
+Action *act_find(List acts, List clients);
 
 /* process Action and (possibly) dispatch to devices */
-void do_Action(Globals * g, Action * act);
+void act_initiate(Globals * g, Action * act);
 
 /* clean up and reply to client */
-void finish_Action(Globals * g, Action * act);
+void act_finish(Globals * g, Action * act);
 
 /* Constructor */
-Action *make_Action(int com);
+Action *act_create(int com);
 
 /* Destructor */
-void free_Action(Action * act);
+void act_destroy(Action * act);
 
 /* remove from queue and destroy */
-void del_Action(List acts);
+void act_del_queuehead(List acts);
 
 #endif				/* ACTION_H */

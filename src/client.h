@@ -24,15 +24,16 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#ifndef SERVER_H
-#define SERVER_H
+#ifndef CLIENT_H
+#define CLIENT_H
 
 #include "buffer.h"
 
 #define NO_PORT           (-1)
 
 
-enum client_status_enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE };
+typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE } Client_Status;
+
 
 /*
  *  Each client is represented by one of these.  The read and write
@@ -56,17 +57,13 @@ struct client_struct {
      MAGIC;
 };
 
-/* server.c prototypes */
-void handle_Client_read(Protocol * client_prot, Cluster * cluster,
+void cli_handle_read(Protocol * client_prot, Cluster * cluster,
 			List acts, Client * c);
-void handle_Client_write(Client * c);
-void client_reply(Cluster * cluster, Action * act);
-Client *make_Client();
-int match_Client(Client * client, void *key);
-void free_Client(Client * client);
+void cli_handle_write(Client * c);
+void cli_reply(Cluster * cluster, Action * act);
 
+Client *cli_create();
+int cli_match(Client * client, void *key);
+void cli_destroy(Client * client);
 
-
-
-
-#endif				/* SERVER_H */
+#endif				/* CLIENT_H */

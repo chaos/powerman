@@ -36,21 +36,21 @@
 #include "list.h"
 #include "config.h"
 #include "powermand.h"
-#include "server.h"
+#include "client.h"
 #include "buffer.h"
-#include "exit_error.h"
-#include "pm_string.h"
+#include "error.h"
+#include "string.h"
 #include "listener.h"
 
-int allow_severity = LOG_INFO;	/* logging level for accepted reqs */
+
+/* tcp wrappers support */
+extern int hosts_ctl(char *daemon, char *client_name, char *client_addr, 
+		char *client_user);
+
+int allow_severity = LOG_INFO;		/* logging level for accepted reqs */
 int deny_severity = LOG_WARNING;	/* logging level for rejected reqs */
 
-/*
- *   Constructor
- *
- * Produces:  Listener
- */
-Listener *make_Listener()
+Listener *listen_create()
 {
     Listener *listener;
 
@@ -68,7 +68,7 @@ Listener *make_Listener()
  * The Listener already exists and on entry and on completion the
  * descriptor is waiting on new connections.
  */
-void init_Listener(Listener * listener)
+void listen_init(Listener * listener)
 {
     struct sockaddr_in saddr;
     int saddr_size = sizeof(struct sockaddr_in);
@@ -76,21 +76,21 @@ void init_Listener(Listener * listener)
     int fd_settings;
 
     CHECK_MAGIC(listener);
-/* 
- * "All TCP servers should specify [the SO_REUSEADDR] socket option ..."
- *                                                  - Stevens, UNP p194 
- */
+    /* 
+     * "All TCP servers should specify [the SO_REUSEADDR] socket option ..."
+     *                                                  - Stevens, UNP p194 
+     */
     listener->fd = Socket(PF_INET, SOCK_STREAM, 0);
     listener->read = TRUE;
 
     sock_opt = 1;
     Setsockopt(listener->fd, SOL_SOCKET, SO_REUSEADDR,
 	       &(sock_opt), sizeof(sock_opt));
-/* 
- *   A client could abort before a ready connection is accepted.  "The fix
- * for this problem is to:  1.  Always set a listening socket nonblocking
- * if we use select ..."                            - Stevens, UNP p424
- */
+    /* 
+     *   A client could abort before a ready connection is accepted.  "The fix
+     * for this problem is to:  1.  Always set a listening socket nonblocking
+     * if we use select ..."                            - Stevens, UNP p424
+     */
     fd_settings = Fcntl(listener->fd, F_GETFL, 0);
     Fcntl(listener->fd, F_SETFL, fd_settings | O_NONBLOCK);
 
@@ -108,7 +108,7 @@ void init_Listener(Listener * listener)
  * Client data structure, it gets buffers for sending and receiving, 
  * and is vetted through TCP wrappers.
  */
-void handle_Listener(Globals * g)
+void listen_handler(Globals * g)
 {
     Listener *listener = g->listener;
     Client *client;
@@ -125,13 +125,13 @@ void handle_Listener(Globals * g)
 
     CHECK_MAGIC(listener);
 
-    client = make_Client();
+    client = cli_create();
 
     client->fd = Accept(listener->fd, &saddr, &saddr_size);
     if (client->fd < 0)
-/* client died after it initiated connect and before we could accept */
+    /* client died after it initiated connect and before we could accept */
     {
-	free_Client(client);
+	cli_destroy(client);
 	syslog(LOG_ERR, "Client aborted connection attempt");
 	return;
     }
@@ -140,20 +140,20 @@ void handle_Listener(Globals * g)
     /* get client->ip */
     if (inet_ntop(AF_INET, &saddr.sin_addr, buf, MAX_BUF) == NULL) {
 	Close(client->fd);
-	free_Client(client);
+	cli_destroy(client);
 	syslog(LOG_ERR, "Unable to convert network address into string");
 	return;
     }
-    client->to = make_Buffer(client->fd, MAX_BUF, NULL, NULL);
-    client->from = make_Buffer(client->fd, MAX_BUF, NULL, NULL);
+    client->to = buf_create(client->fd, MAX_BUF, NULL, NULL);
+    client->from = buf_create(client->fd, MAX_BUF, NULL, NULL);
     client->port = ntohs(saddr.sin_port);
     p = buf;
     while ((p - buf < MAX_BUF) && (*p != '/'))
 	p++;
     if (*p == '/')
 	*p = '\0';
-    client->ip = make_String(buf);
-    ip = get_String(client->ip);
+    client->ip = str_create(buf);
+    ip = str_get(client->ip);
     fqdn = ip;
     host = STRING_UNKNOWN;
 
@@ -163,8 +163,8 @@ void handle_Listener(Globals * g)
 		       sizeof(struct in_addr), AF_INET)) == NULL) {
 	syslog(LOG_ERR, "Unable to get host name from network address");
     } else {
-	client->host = make_String(hent->h_name);
-	host = get_String(client->host);
+	client->host = str_create(hent->h_name);
+	host = str_get(client->host);
 	fqdn = host;
     }
 
@@ -172,43 +172,33 @@ void handle_Listener(Globals * g)
 	accepted_client = hosts_ctl(DAEMON_NAME, host, ip, STRING_UNKNOWN);
 	if (accepted_client == FALSE) {
 	    Close(client->fd);
-	    free_Client(client);
+	    cli_destroy(client);
 	    syslog(LOG_ERR, "Client rejected: <%s, %d>", fqdn,
 		   client->port);
 	    return;
 	}
     }
 
-/*
- * We'll need to add the new fd to the list, mark it non-blocking,
- * and initiate the PM_LOG_IN sequence.
- */
+    /*
+     * We'll need to add the new fd to the list, mark it non-blocking,
+     * and initiate the PM_LOG_IN sequence.
+     */
     fd_settings = Fcntl(client->fd, F_GETFL, 0);
     Fcntl(client->fd, F_SETFL, fd_settings | O_NONBLOCK);
     list_append(g->clients, client);
     syslog(LOG_DEBUG, "New connection: <%s, %d> on descriptor %d",
 	   fqdn, client->port, client->fd);
     client->write_status = CLI_WRITING;
-    send_Buffer(client->to, "PowerMan V1.0.0\r\npassword> ");
+    buf_printf(client->to, "PowerMan V1.0.0\r\npassword> ");
 }
 
-
-
-
-/*
- *   Destructor
- * 
- * Destroys:  Listener
- */
-void free_Listener(Listener * listener)
+void listen_destroy(Listener * listener)
 {
     CHECK_MAGIC(listener);
 
     CLEAR_MAGIC(listener);
     Free(listener);
 }
-
-
 
 /*
  * vi:softtabstop=4

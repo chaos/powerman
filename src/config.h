@@ -36,7 +36,7 @@
 #include <sys/types.h>
 
 #include "list.h"
-#include "pm_string.h"
+#include "string.h"
 
 #define NUM_SCRIPTS	11
 #define UPDATE_SECONDS	300
@@ -204,26 +204,31 @@ typedef struct {
 } Cluster;
 
 
-/* config.c prototypes */
-Protocol *init_Client_Protocol(void);
-Script_El *make_Script_El(Script_El_T type, String s1, String s2, List map,
-			  struct timeval tv);
-void free_Script_El(Script_El * script_el);
-Spec *make_Spec(char *name);
-int match_Spec(Spec * spec, void *key);
-void free_Spec(Spec * spec);
-Spec_El *make_Spec_El(Script_El_T type, char *str1, char *str2, List map);
-void free_Spec_El(Spec_El * specl);
-Cluster *make_Cluster(void);
-void free_Cluster(Cluster * cluster);
-Node *make_Node(const char *name);
-int match_Node(Node * node, void *key);
-void free_Node(Node * node);
-Interpretation *make_Interp(char *name);
-int match_Interp(Interpretation * interp, void *key);
-void free_Interp(Interpretation * interp);
-void set_tv(struct timeval *tv, char *s);
+Protocol *conf_init_client_protocol(void);
 
+Script_El *conf_script_el_create(Script_El_T type, String s1, String s2, 
+		List map, struct timeval tv);
+void conf_script_el_destroy(Script_El * script_el);
+
+Spec *conf_spec_create(char *name);
+int conf_spec_match(Spec * spec, void *key);
+void conf_spec_destroy(Spec * spec);
+
+Spec_El *conf_spec_el_create(Script_El_T type, char *str1, 
+		char *str2, List map);
+void conf_spec_el_destroy(Spec_El * specl);
+
+Cluster *conf_cluster_create(void);
+void conf_cluster_destroy(Cluster * cluster);
+
+Node *conf_node_create(const char *name);
+int conf_node_match(Node * node, void *key);
+void conf_node_destroy(Node * node);
+
+Interpretation *conf_interp_create(char *name);
+int conf_interp_match(Interpretation * interp, void *key);
+void conf_interp_destroy(Interpretation * interp);
+void conf_strtotv(struct timeval *tv, char *s);
 
 /* Bison generated code's externs */
 int parse_config_file(void);

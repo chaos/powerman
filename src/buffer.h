@@ -34,24 +34,18 @@
 typedef struct buffer_implementation *Buffer;
 
 typedef void (BufferLogFun) (unsigned char *mem, int len, void *arg);
-Buffer make_Buffer(int fd, int length, BufferLogFun logfun,
-		   void *logfunarg);
-void free_Buffer(Buffer b);
-bool send_Buffer(Buffer b, const char *fmt, ...);
-int write_Buffer(Buffer b);
-int read_Buffer(Buffer b);
-bool is_empty_Buffer(Buffer b);
-void clear_Buffer(Buffer b);
+Buffer buf_create(int fd, int length, BufferLogFun logfun, void *logfunarg);
+void buf_destroy(Buffer b);
+bool buf_printf(Buffer b, const char *fmt, ...);
+int buf_write(Buffer b);
+int buf_read(Buffer b);
+bool buf_isempty(Buffer b);
+void buf_clear(Buffer b);
 
-
-int get_line_Buffer(Buffer b, unsigned char *str, int len);
-int peek_line_Buffer(Buffer b, unsigned char *str, int len);
-int get_string_Buffer(Buffer b, unsigned char *str, int len);
-int peek_string_Buffer(Buffer b, unsigned char *str, int len);
-void eat_Buffer(Buffer b, int len);
-
-#ifndef NDEBUG
-void dump_Buffer(Buffer b);
-#endif
+int buf_getline(Buffer b, unsigned char *str, int len);
+int buf_peekline(Buffer b, unsigned char *str, int len);
+int buf_getstr(Buffer b, unsigned char *str, int len);
+int buf_peekstr(Buffer b, unsigned char *str, int len);
+void buf_eat(Buffer b, int len);
 
 #endif				/* BUFFER_H */

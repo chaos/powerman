@@ -30,9 +30,9 @@
 #include <assert.h>
 
 #include "powerman.h"
-#include "pm_string.h"
+#include "string.h"
 #include "wrappers.h"
-#include "exit_error.h"
+#include "error.h"
 
 #define STRING_MAGIC 0xabbaabba
 
@@ -44,9 +44,9 @@ struct string_implementation {
 
 /* 
  * Create a String object from character string 'cs'. 
- * Result must be freed with free_String().
+ * Result must be freed with str_destroy().
  */
-String make_String(const unsigned char *cs)
+String str_create(const unsigned char *cs)
 {
     String s;
 
@@ -59,7 +59,7 @@ String make_String(const unsigned char *cs)
 /*
  * Free a String object.
  */
-void free_String(String s)
+void str_destroy(String s)
 {
     assert(s);
     assert(s->magic == STRING_MAGIC);
@@ -69,19 +69,19 @@ void free_String(String s)
 }
 
 /* 
- * Copy a String object.  Result must be freed with free_String().
+ * Copy a String object.  Result must be freed with str_destroy().
  */
-String copy_String(String s)
+String str_copy(String s)
 {
     assert(s);
     assert(s->magic == STRING_MAGIC);
-    return make_String(s->string);
+    return str_create(s->string);
 }
 
 /*
  * Return a pointer to the string portion of the String.  Result may be NULL.
  */
-unsigned char *get_String(String s)
+unsigned char *str_get(String s)
 {
     assert(s);
     assert(s->magic == STRING_MAGIC);
@@ -91,7 +91,7 @@ unsigned char *get_String(String s)
 /*
  * Return the nth byte of String.
  */
-unsigned char byte_String(String s, int n)
+unsigned char str_byte(String s, int n)
 {
     assert(s);
     assert(s->magic == STRING_MAGIC);
@@ -103,7 +103,7 @@ unsigned char byte_String(String s, int n)
 /*
  * Return the length of String (not including NULL).
  */
-int length_String(String s)
+int str_length(String s)
 {
     assert(s);
     assert(s->magic == STRING_MAGIC);
@@ -113,17 +113,17 @@ int length_String(String s)
 /*
  * Return TRUE if string is empty.
  */
-bool empty_String(String s)
+bool str_isempty(String s)
 {
     assert(s);
     assert(s->magic == STRING_MAGIC);
-    return (length_String(s) == 0) ? TRUE : FALSE;
+    return (str_length(s) == 0) ? TRUE : FALSE;
 }
 
 /*
  * Return TRUE if String 's' is equal to character string 'cs'.
  */
-bool match_String(String s, unsigned char *cs)
+bool str_match(String s, unsigned char *cs)
 {
     assert(s);
     assert(s->magic == STRING_MAGIC);

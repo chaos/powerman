@@ -8,16 +8,19 @@
 #include "powerman.h"
 
 #include "buffer.h"
-#include "pm_string.h"
+#include "string.h"
 #include "util.h"
 #include "wrappers.h"
 
 /* 
- * Look for 're' in the first 'len' bytes of 'str' and return a pointer
- * to the character following the last character of the match,
- * or NULL if no match.
+ * Find regular expression in string.
+ *  re (IN)	regular expression
+ *  str (IN)	where to look for regular expression
+ *  len (IN)	number of chars in str to search
+ *  RETURN	pointer to char following the last char of the match,
+ *		or NULL if no match
  */
-unsigned char *find_RegEx(regex_t * re, unsigned char *str, int len)
+unsigned char *util_findregex(regex_t * re, unsigned char *str, int len)
 {
     int n;
     size_t nmatch = MAX_MATCH;
@@ -34,48 +37,55 @@ unsigned char *find_RegEx(regex_t * re, unsigned char *str, int len)
 }
 
 /*
- * A wrapper for get_line_Buffer that returns a String type
- * that athe caller must free.
+ * A wrapper for buf_getline that returns a String type.
+ *  b (IN)	target Buffer
+ *  RETURN	line from buffer (caller must free)
  */
-String get_line_from_Buffer(Buffer b)
+String util_bufgetline(Buffer b)
 {
     unsigned char str[MAX_BUF];
-    int res = get_line_Buffer(b, str, MAX_BUF);
+    int res = buf_getline(b, str, MAX_BUF);
 
-    return (res > 0 ? make_String(str) : NULL);
+    return (res > 0 ? str_create(str) : NULL);
 }
 
 /*
  * Apply regular expression to the contents of a Buffer.
  * If there is a match, return (and consume) from the beginning
  * of the buffer to the last character of the match.
- * NOTE: embedded \0 chars are converted to \377 by get_*_Buffer() and
- * peek_*_Buffer9() because libc regex functions would treat these as string 
- * terminators.  As a result, \0 chars cannot be matched explicitly.
+ * NOTE: embedded \0 chars are converted to \377 by buf_getstr/buf_getline and
+ * buf_peekstr/buf_getstr because libc regex functions would treat these as 
+ * string terminators.  As a result, \0 chars cannot be matched explicitly.
+ *  b (IN)	buffer to apply regex to
+ *  re (IN)	regular expression
+ *  RETURN	String match (caller must free) or NULL if no match
  */
-String get_String_from_Buffer(Buffer b, regex_t * re)
+String util_bufgetregex(Buffer b, regex_t * re)
 {
     unsigned char str[MAX_BUF];
-    int bytes_peeked = peek_string_Buffer(b, str, MAX_BUF);
+    int bytes_peeked = buf_peekstr(b, str, MAX_BUF);
     unsigned char *match_end;
 
     if (bytes_peeked == 0)
 	return NULL;
-    match_end = find_RegEx(re, str, bytes_peeked);
+    match_end = util_findregex(re, str, bytes_peeked);
     if (match_end == NULL)
 	return NULL;
     assert(match_end - str <= strlen(str));
     *match_end = '\0';
-    eat_Buffer(b, match_end - str);	/* only consume up to what matched */
+    buf_eat(b, match_end - str);	/* only consume up to what matched */
 
-    return make_String(str);
+    return str_create(str);
 }
 
 /*
  * Convert memory to string, turning non-printable character into "C" 
- * representation.  Call Free() on the result to free its storage.
+ * representation.  
+ *  mem (IN)	target memory
+ *  len (IN)	number of characters to convert
+ *  RETURN	string (caller must free)
  */
-unsigned char *memstr(unsigned char *mem, int len)
+unsigned char *util_memstr(unsigned char *mem, int len)
 {
     int i, j;
     int strsize = len * 4;	/* worst case */

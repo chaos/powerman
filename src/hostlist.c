@@ -48,12 +48,12 @@
 #include <unistd.h>
 
 #include "hostlist.h"
-#include "exit_error.h"
+#include "error.h"
 
 /* printf-style error function -- redefine to your project's error 
  * reporting facility. Should take args like _err(char *, ...)
  */
-#define _err(fmt, args...) 	exit_msg(fmt, ## args)
+#define _err(fmt, args...) 	err_exit(FALSE, fmt, ## args)
 
 /* number of elements to allocate when extending the hostlist array */
 #define HOSTLIST_CHUNK	16

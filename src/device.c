@@ -41,23 +41,23 @@
 #include "device.h"
 #include "powermand.h"
 #include "action.h"
-#include "exit_error.h"
+#include "error.h"
 #include "wrappers.h"
-#include "pm_string.h"
+#include "string.h"
 #include "buffer.h"
 #include "util.h"
 
 /* prototypes */
-static void set_targets(Device * dev, Action * sact);
-static Action *do_target_copy(Device * dev, Action * sact, String target);
-static void do_target_some(Device * dev, Action * sact);
-static void do_Device_reconnect(Device * dev);
-static bool process_expect(Device * dev);
-static bool process_send(Device * dev);
-static bool process_delay(Device * dev);
-static void do_Device_semantics(Device * dev, List map);
-static void do_PMD_semantics(Device * dev, List map);
-static bool match_RegEx(Device * dev, String expect);
+static void _set_targets(Device * dev, Action * sact);
+static Action *_do_target_copy(Device * dev, Action * sact, String target);
+static void _do_target_some(Device * dev, Action * sact);
+static void _do_reconnect(Device * dev);
+static bool _process_expect(Device * dev);
+static bool _process_send(Device * dev);
+static bool _process_delay(Device * dev);
+static void _do_device_semantics(Device * dev, List map);
+static void _do_pmd_semantics(Device * dev, List map);
+static bool _match_regex(Device * dev, String expect);
 
 
 /*
@@ -70,22 +70,20 @@ static bool match_RegEx(Device * dev, String expect);
  * this, and we don't plan on putting any such equipment into 
  * production soon, so I'm not worried about it.
  */
-void init_Device(Device * dev, bool logit)
+void dev_init(Device * dev, bool logit)
 {
     dev->logit = logit;
     switch (dev->type) {
     case TCP_DEV:
     case PMD_DEV:
     case TELNET_DEV:
-	initiate_nonblocking_connect(dev);
+	dev_nb_connect(dev);
 	break;
     case TTY_DEV:
     case SNMP_DEV:
-	exit_msg("powerman device not yet implemented");
-	break;
     case NO_DEV:
     default:
-	exit_msg("no such powerman device");
+	err_exit(FALSE, "no such powerman device");
     }
 }
 
@@ -95,9 +93,9 @@ void init_Device(Device * dev, bool logit)
 static void _buflogfun_to(unsigned char *mem, int len, void *arg)
 {
     Device *dev = (Device *) arg;
-    char *str = memstr(mem, len);
+    char *str = util_memstr(mem, len);
 
-    printf("S(%s): %s\n", get_String(dev->name), str);
+    printf("S(%s): %s\n", str_get(dev->name), str);
     Free(str);
 }
 
@@ -107,9 +105,9 @@ static void _buflogfun_to(unsigned char *mem, int len, void *arg)
 static void _buflogfun_from(unsigned char *mem, int len, void *arg)
 {
     Device *dev = (Device *) arg;
-    char *str = memstr(mem, len);
+    char *str = util_memstr(mem, len);
 
-    printf("D(%s): %s\n", get_String(dev->name), str);
+    printf("D(%s): %s\n", str_get(dev->name), str);
     Free(str);
 }
 
@@ -120,7 +118,7 @@ static void _buflogfun_from(unsigned char *mem, int len, void *arg)
  * receiving.  At the bottom, in the unlikely event the the 
  * connect completes immediately we launch the log in script.
  */
-void initiate_nonblocking_connect(Device * dev)
+void dev_nb_connect(Device * dev)
 {
     int n;
     struct addrinfo hints, *addrinfo;
@@ -140,30 +138,30 @@ void initiate_nonblocking_connect(Device * dev)
     hints.ai_socktype = SOCK_STREAM;
     switch (dev->type) {
     case TCP_DEV:
-	Getaddrinfo(get_String(dev->devu.tcpd.host),
-		    get_String(dev->devu.tcpd.service), &hints, &addrinfo);
+	Getaddrinfo(str_get(dev->devu.tcpd.host),
+		    str_get(dev->devu.tcpd.service), &hints, &addrinfo);
 	break;
     case PMD_DEV:
-	Getaddrinfo(get_String(dev->devu.pmd.host),
-		    get_String(dev->devu.pmd.service), &hints, &addrinfo);
+	Getaddrinfo(str_get(dev->devu.pmd.host),
+		    str_get(dev->devu.pmd.service), &hints, &addrinfo);
 	break;
     default:
-	exit_msg("unknown device type %d", dev->type);
+	err_exit(FALSE, "unknown device type %d", dev->type);
     }
 
     dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
 		     addrinfo->ai_protocol);
 
     if (!dev->to) {
-	dev->to = make_Buffer(dev->fd, MAX_BUF,
+	dev->to = buf_create(dev->fd, MAX_BUF,
 			      dev->logit ? _buflogfun_to : NULL, dev);
     }
     if (!dev->from) {
-	dev->from = make_Buffer(dev->fd, MAX_BUF,
+	dev->from = buf_create(dev->fd, MAX_BUF,
 				dev->logit ? _buflogfun_from : NULL, dev);
     }
 
-/* set up and initiate a non-blocking connect */
+    /* set up and initiate a non-blocking connect */
 
     sock_opt = 1;
     Setsockopt(dev->fd, SOL_SOCKET, SO_REUSEADDR,
@@ -178,8 +176,8 @@ void initiate_nonblocking_connect(Device * dev)
 
 	dev->error = FALSE;
 	dev->status = DEV_CONNECTED;
-	act = make_Action(PM_LOG_IN);
-	map_Action_to_Device(dev, act);
+	act = act_create(PM_LOG_IN);
+	dev_acttodev(dev, act);
     } else {
 	dev->status = DEV_CONNECTING;
     }
@@ -187,16 +185,16 @@ void initiate_nonblocking_connect(Device * dev)
 }
 
 /*
- * Called from do_Device_connect() (or possibly 
- * initiate_nonblocking_connect()) with a PM_LOG_IN when connection 
- * is first established.  Otherwise, called from  do_Action() for 
+ * Called from dev_connect() (or possibly 
+ * dev_nb_connect()) with a PM_LOG_IN when connection 
+ * is first established.  Otherwise, called from  act_initiate() for 
  * other actions.  
  *   dev arrives here with "targets" filled in to let us know to which 
  * device components to apply the action.  
  *   We need to create the action and initiate the first step in
  * the send/expect script.
  */
-void map_Action_to_Device(Device * dev, Action * sact)
+void dev_acttodev(Device * dev, Action * sact)
 {
     Action *act;
 
@@ -216,7 +214,7 @@ void map_Action_to_Device(Device * dev, Action * sact)
 	return;
 
     /* This actually creates the one or more Actions for hte Device */
-    set_targets(dev, sact);
+    _set_targets(dev, sact);
 
     /* Look at action at the head of the Device's queue */
     /* and start its script */
@@ -224,20 +222,22 @@ void map_Action_to_Device(Device * dev, Action * sact)
     if (act == NULL)
 	return;
     assert(act->itr != NULL);
-    /* act->itr is always pointing at the next unconsumed Script_El */
-    /* act->cur is always the one being worked on */
-    /* We may process one or more, but probably not the whole list */
-    /* before returning to the select() loop. */
-    /* */
-    /* FIXME:  Review this and explain why we can move this */
-    /* startup processing down to process_script() where it */
-    /* belongs. */
+    /* act->itr is always pointing at the next unconsumed Script_El
+     * act->cur is always the one being worked on
+     * We may process one or more, but probably not the whole list
+     * before returning to the select() loop.
+     */
+    /*
+     * FIXME:  Review this and explain why we can move this 
+     * startup processing down to dev_process_script() where it 
+     * belongs. 
+     */
     while ((act->cur = list_next(act->itr))) {
 	switch (act->cur->type) {
 	case SEND:
 	    syslog(LOG_DEBUG, "start script");
 	    dev->status |= DEV_SENDING;
-	    process_send(dev);
+	    _process_send(dev);
 	    break;
 	case EXPECT:
 	    Gettimeofday(&(dev->time_stamp), NULL);
@@ -249,11 +249,12 @@ void map_Action_to_Device(Device * dev, Action * sact)
 	default:
 	}
     }
-/* mostly we'll return from inside the while loop, but if */
-/* we get to the end of the script after a SEND then we can */
-/* free the action now rather than waiting for an expect to */
-/* complete. */
-    del_Action(dev->acts);
+    /* mostly we'll return from inside the while loop, but if
+     * we get to the end of the script after a SEND then we can
+     * free the action now rather than waiting for an expect to
+     * complete. 
+     */
+    act_del_queuehead(dev->acts);
 }
 
 
@@ -271,18 +272,18 @@ void map_Action_to_Device(Device * dev, Action * sact)
  * you can copy the regex right into the target device's 
  * Action and then queu it up.
  */
-void set_targets(Device * dev, Action * sact)
+void _set_targets(Device * dev, Action * sact)
 {
     Action *act;
 
     switch (sact->com) {
     case PM_LOG_IN:
-/* reset script of preempted action so it starts over */
+	/* reset script of preempted action so it starts over */
 	if (!list_is_empty(dev->acts)) {
 	    act = list_peek(dev->acts);
 	    list_iterator_reset(act->itr);
 	}
-	act = do_target_copy(dev, sact, NULL);
+	act = _do_target_copy(dev, sact, NULL);
 	list_push(dev->acts, act);
 	break;
     case PM_ERROR:
@@ -290,7 +291,7 @@ void set_targets(Device * dev, Action * sact)
     case PM_LOG_OUT:
     case PM_UPDATE_PLUGS:
     case PM_UPDATE_NODES:
-	act = do_target_copy(dev, sact, NULL);
+	act = _do_target_copy(dev, sact, NULL);
 	list_append(dev->acts, act);
 	break;
     case PM_POWER_ON:
@@ -300,10 +301,10 @@ void set_targets(Device * dev, Action * sact)
     case PM_NAMES:
 	assert(sact->target != NULL);
 	if (dev->prot->mode == LITERAL) {
-	    do_target_some(dev, sact);
+	    _do_target_some(dev, sact);
 	} else {		/* dev->prot->mode == REGEX */
 
-	    act = do_target_copy(dev, sact, sact->target);
+	    act = _do_target_copy(dev, sact, sact->target);
 	    list_append(dev->acts, act);
 	}
 	break;
@@ -318,25 +319,23 @@ void set_targets(Device * dev, Action * sact)
  *   The new Device Action is going to get its info directly from 
  * the Server Action, except we've stated it's target explicitly in 
  * the parameters list.  A NULL target means leave the Action's
- * target NULL as well (it comes that way from make_Action()).
- *
- * Produces:  Action
+ * target NULL as well (it comes that way from act_create()).
  */
-Action *do_target_copy(Device * dev, Action * sact, String target)
+Action *_do_target_copy(Device * dev, Action * sact, String target)
 {
     Action *act;
 
-    act = make_Action(sact->com);
+    act = act_create(sact->com);
     act->client = sact->client;
     act->seq = sact->seq;
     act->itr = list_iterator_create(dev->prot->scripts[act->com]);
     if (target != NULL)
-	act->target = copy_String(target);
+	act->target = str_copy(target);
     return act;
 }
 
 /* 
- *   This is the tricky case for set_targets().  We have a target in
+ *   This is the tricky case for _set_targets().  We have a target in
  * the Server Action, and it is a RegEx.  We have to sequence through
  * each plug and see if the node connected to the plug has a name
  * that matches that RegEx.  If it does we add it to a tentative list
@@ -345,7 +344,7 @@ Action *do_target_copy(Device * dev, Action * sact, String target)
  * "all" signal (every device has one).  Conversely, no plugs match
  * then no actions are added.  
  */
-void do_target_some(Device * dev, Action * sact)
+void _do_target_some(Device * dev, Action * sact)
 {
     Action *act;
     List new_acts;
@@ -362,8 +361,8 @@ void do_target_some(Device * dev, Action * sact)
 
     all = TRUE;
     any = FALSE;
-    new_acts = list_create((ListDelF) free_Action);
-    Regcomp(&nre, get_String(sact->target), cflags);
+    new_acts = list_create((ListDelF) act_destroy);
+    Regcomp(&nre, str_get(sact->target), cflags);
     plug_i = list_iterator_create(dev->plugs);
     while ((plug = list_next(plug_i))) {
 	/* If plug->node == NULL it means that there is no
@@ -380,15 +379,15 @@ void do_target_some(Device * dev, Action * sact)
 	 * if it does make a new act for it and set any to TRUE.
 	 * if it doesn't, set all to FALSE.
 	 */
-	n = Regexec(&nre, get_String(plug->node->name), nm, pm, eflags);
+	n = Regexec(&nre, str_get(plug->node->name), nm, pm, eflags);
 
 	if ((n == REG_NOMATCH)
 	    || ((pm[0].rm_eo - pm[0].rm_so)
-		!= length_String(plug->node->name))) {
+		!= str_length(plug->node->name))) {
 	    all = FALSE;
 	} else {
 	    any = TRUE;
-	    act = do_target_copy(dev, sact, plug->name);
+	    act = _do_target_copy(dev, sact, plug->name);
 	    list_append(new_acts, act);
 	}
     }
@@ -396,11 +395,11 @@ void do_target_some(Device * dev, Action * sact)
     regfree(&nre);
 
     if (all) {
-/* list of new_acts is destroyed at the end of this function */
-	act = do_target_copy(dev, sact, dev->all);
+	/* list of new_acts is destroyed at the end of this function */
+	act = _do_target_copy(dev, sact, dev->all);
 	list_append(dev->acts, act);
     } else if (any) {
-/* we have some but not all so we need to stick them all on the queue */
+	/* we have some but not all so we need to stick them all on the queue */
 	while ((act = list_pop(new_acts))) {
 	    list_append(dev->acts, act);
 	}
@@ -415,7 +414,7 @@ void do_target_some(Device * dev, Action * sact)
  * reconnect, log that fact.  When all is well initiate the
  * logon script.
  */
-void do_Device_connect(Device * dev)
+void dev_connect(Device * dev)
 {
     int rc;
     int err = 0;
@@ -435,47 +434,47 @@ void do_Device_connect(Device * dev)
 	dev->fd = -1;
 	dev->error = TRUE;
 	dev->status = DEV_NOT_CONNECTED;
-	clear_Buffer(dev->to);
-	clear_Buffer(dev->from);
+	buf_clear(dev->to);
+	buf_clear(dev->from);
 	syslog(LOG_INFO,
 	       "Failure attempting to connect to %s: %m\n",
-	       get_String(dev->name));
+	       str_get(dev->name));
 	/*
 	 *  Back in the main loop after the update interval has passed,
-	 *  device will attempt another initiate_nonblocking_connect().
+	 *  device will attempt another dev_nb_connect().
 	 */
 	return;
     } else if (dev->error) {
 	syslog(LOG_INFO, "Connection to %s re-established\n",
-	       get_String(dev->name));
+	       str_get(dev->name));
     }
     dev->error = FALSE;
     dev->status = DEV_CONNECTED;
-    act = make_Action(PM_LOG_IN);
-    map_Action_to_Device(dev, act);
+    act = act_create(PM_LOG_IN);
+    dev_acttodev(dev, act);
 }
 
 /*
  *   The Read gets the string.  If it is EOF then we've lost 
  * our connection with the device and need to reconnect.  
- * Read_Buffer() does the real work.  If something arrives,
- * that is handled in process_script().
+ * buf_read() does the real work.  If something arrives,
+ * that is handled in dev_process_script().
  */
-void handle_Device_read(Device * dev)
+void dev_handle_read(Device * dev)
 {
     int n;
 
     CHECK_MAGIC(dev);
-    n = read_Buffer(dev->from);
+    n = buf_read(dev->from);
     if ((n < 0) && (errno == EWOULDBLOCK))
 	return;
     if ((n == 0) || ((n < 0) && (errno == ECONNRESET))) {
 	syslog(LOG_ERR, "Device read problem, reconnecting to %s",
-	       get_String(dev->name));
+	       str_get(dev->name));
 	if (dev->logit)
 	    printf("Device read problem, reconnecting to: %s\n",
-		   get_String(dev->name));
-	do_Device_reconnect(dev);
+		   str_get(dev->name));
+	_do_reconnect(dev);
 	return;
     }
 }
@@ -483,15 +482,13 @@ void handle_Device_read(Device * dev)
 /*
  *   Reset the Device's state and restart the whole nonblocking
  * connect interction.
- */
-void do_Device_reconnect(Device * dev)
-{
-/* 
  * If EOF on a device connection means we lost the connection then I 
  * need to reconnect.  Once reconnected a LOG_IN will automatically
  * be generated.  If the current action was a LOG_IN then just delete
  * it, otherwise leave it for completion after we're reconnected.
  */
+void _do_reconnect(Device * dev)
+{
     Action *act;
 
 
@@ -499,19 +496,19 @@ void do_Device_reconnect(Device * dev)
     dev->fd = -1;
 
     assert(dev->from != NULL);
-    free_Buffer(dev->from);
+    buf_destroy(dev->from);
     dev->from = NULL;
 
     assert(dev->to != NULL);
-    free_Buffer(dev->to);
+    buf_destroy(dev->to);
     dev->to = NULL;
 
     dev->status = DEV_NOT_CONNECTED;
     dev->loggedin = FALSE;
     if (((act = list_peek(dev->acts)) != NULL) && (act->com == PM_LOG_IN)) {
-	del_Action(dev->acts);
+	act_del_queuehead(dev->acts);
     }
-    initiate_nonblocking_connect(dev);
+    dev_nb_connect(dev);
     return;
 }
 
@@ -523,7 +520,7 @@ void do_Device_reconnect(Device * dev)
  * processing is done if we're stuck at an EXPECT with no 
  * matching stuff in the input buffer.
  */
-void process_script(Device * dev)
+void dev_process_script(Device * dev)
 {
     Action *act = list_peek(dev->acts);
     bool done = FALSE;
@@ -531,13 +528,13 @@ void process_script(Device * dev)
     if (act == NULL)
 	return;
     assert(act->cur != NULL);
-    if ((act->cur->type == EXPECT) && is_empty_Buffer(dev->from))
+    if ((act->cur->type == EXPECT) && buf_isempty(dev->from))
 	return;
 
     /* 
      * The condition for "done" is:
      * 1) There is nothing I can interpret in dev->from
-     *   a) is_empty_Buffer(dev->from), or
+     *   a) buf_isempty(dev->from), or
      *   b) find_Reg_Ex() fails
      * and
      * 2) There's no sends to process
@@ -547,7 +544,7 @@ void process_script(Device * dev)
     while (!done) {
 	switch (act->cur->type) {
 	case EXPECT:
-	    done = process_expect(dev);
+	    done = _process_expect(dev);
 	    /* 
 	     * XXX Band-aid (jg)
 	     * Without this return, a short read causes the test 
@@ -560,18 +557,18 @@ void process_script(Device * dev)
 		return;
 	    break;
 	case SEND:
-	    done = process_send(dev);
+	    done = _process_send(dev);
 	    break;
 	case DELAY:
-	    done = process_delay(dev);
+	    done = _process_delay(dev);
 	    break;
 	default:
-	    exit_msg("unrecognized Script_El type %d", act->cur->type);
+	    err_exit(FALSE, "unrecognized Script_El type %d", act->cur->type);
 	}
 	if ((act->cur = list_next(act->itr)) == NULL) {
 	    if (act->com == PM_LOG_IN)
 		dev->loggedin = TRUE;
-	    del_Action(dev->acts);
+	    act_del_queuehead(dev->acts);
 	} else {
 	    if (act->cur->type == EXPECT) {
 		gettimeofday(&(dev->time_stamp), NULL);
@@ -596,7 +593,7 @@ void process_script(Device * dev)
  * acting as intermediary for another powermand in a distributed 
  * control arrangement).   
  */
-bool process_expect(Device * dev)
+bool _process_expect(Device * dev)
 {
     regex_t *re;
     Action *act = list_peek(dev->acts);
@@ -609,14 +606,14 @@ bool process_expect(Device * dev)
 
     re = &(act->cur->s_or_e.expect.exp);
 
-    if ((expect = get_String_from_Buffer(dev->from, re)) == NULL) {
+    if ((expect = util_bufgetregex(dev->from, re)) == NULL) {
 	if (dev->logit) {
 	    unsigned char mem[MAX_BUF];
-	    int len = peek_string_Buffer(dev->from, mem, MAX_BUF);
-	    char *str = memstr(mem, len);
+	    int len = buf_peekstr(dev->from, mem, MAX_BUF);
+	    char *str = util_memstr(mem, len);
 
-	    printf("process_expect(%s): no match: '%s'\n",
-		   get_String(dev->name), str);
+	    printf("_process_expect(%s): no match: '%s'\n",
+		   str_get(dev->name), str);
 
 	    Free(str);
 	}
@@ -624,34 +621,34 @@ bool process_expect(Device * dev)
     }
 
     /*
-     * We already matched the regular expression in get_String_from_Buffer
+     * We already matched the regular expression in util_bufgetregex
      * but now we need to process values of parenthesized subexpressions.
      */
     dev->status &= ~DEV_EXPECTING;
-    res = match_RegEx(dev, expect);
-    assert(res == TRUE);	/* the first regexec worked, this one should too */
+    res = _match_regex(dev, expect);
+    assert(res == TRUE); /* the first regexec worked, this one should too */
 
     if (act->cur->s_or_e.expect.map != NULL) {
 	if (dev->type == PMD_DEV)
-	    do_PMD_semantics(dev, act->cur->s_or_e.expect.map);
+	    _do_pmd_semantics(dev, act->cur->s_or_e.expect.map);
 	else
-	    do_Device_semantics(dev, act->cur->s_or_e.expect.map);
+	    _do_device_semantics(dev, act->cur->s_or_e.expect.map);
     }
-    free_String(expect);
+    str_destroy(expect);
 
     if (dev->logit)
-	printf("process_expect(%s): match\n", get_String(dev->name));
+	printf("_process_expect(%s): match\n", str_get(dev->name));
     return FALSE;
 }
 
 /*
- *   send_Buffer() does al the real work.  send.fmt has a string
- * printf(fmt, ...) style.  If it has a "%s" then call send_Buffer
+ *   buf_printf() does al the real work.  send.fmt has a string
+ * printf(fmt, ...) style.  If it has a "%s" then call buf_printf
  * with the target as its last argument.  Otherwise just send the
  * string and update the device's status.  The TRUE return value
- * is for the while( ! done ) loop in process_scripts().
+ * is for the while( ! done ) loop in dev_process_script().
  */
-bool process_send(Device * dev)
+bool _process_send(Device * dev)
 {
     Action *act;
     char *fmt;
@@ -664,12 +661,12 @@ bool process_send(Device * dev)
     assert(act->cur != NULL);
     assert(act->cur->type == SEND);
 
-    fmt = get_String(act->cur->s_or_e.send.fmt);
+    fmt = str_get(act->cur->s_or_e.send.fmt);
 
     if (act->target == NULL)
-	send_Buffer(dev->to, fmt);
+	buf_printf(dev->to, fmt);
     else
-	send_Buffer(dev->to, fmt, get_String(act->target));
+	buf_printf(dev->to, fmt, str_get(act->target));
 
     dev->status |= DEV_SENDING;
 
@@ -681,7 +678,7 @@ bool process_send(Device * dev)
  *   This just mediates a call to Delay() which uses and empty
  * Select() to cause struct timeval tv worth of delay.
  */
-bool process_delay(Device * dev)
+bool _process_delay(Device * dev)
 {
     Action *act = list_peek(dev->acts);
     struct timeval tv = act->cur->s_or_e.delay.tv;
@@ -691,8 +688,8 @@ bool process_delay(Device * dev)
     assert(act->cur->type == DELAY);
 
     if (dev->logit)
-	printf("process_delay(%s): %ld.%-6.6ld \n",
-	       get_String(dev->name), tv.tv_sec, tv.tv_usec);
+	printf("_process_delay(%s): %ld.%-6.6ld \n",
+	       str_get(dev->name), tv.tv_sec, tv.tv_usec);
 
     Delay(&tv);
 
@@ -711,7 +708,7 @@ bool process_delay(Device * dev)
  * The data is just arranged differently.  For PMD it's always
  * vector of 1's and 0's withas many as the PMD device has nodes.
  */
-void do_PMD_semantics(Device * dev, List map)
+void _do_pmd_semantics(Device * dev, List map)
 {
     Action *act;
     char *ch;
@@ -762,7 +759,7 @@ void do_PMD_semantics(Device * dev, List map)
  * through all the Interpretations for this EXPECT and sets the
  * plug or node states for whatever plugs it finds.
  */
-void do_Device_semantics(Device * dev, List map)
+void _do_device_semantics(Device * dev, List map)
 {
     Action *act;
     Interpretation *interp;
@@ -796,10 +793,10 @@ void do_Device_semantics(Device * dev, List map)
 	    tmp = *end;
 	    len = end - str;
 	    *end = '\0';
-	    if ((pos = find_RegEx(re, str, len)) != NULL)
+	    if ((pos = util_findregex(re, str, len)) != NULL)
 		interp->node->p_state = ST_ON;
 	    re = &(dev->off_re);
-	    if ((pos = find_RegEx(re, str, len)) != NULL)
+	    if ((pos = util_findregex(re, str, len)) != NULL)
 		interp->node->p_state = ST_OFF;
 	    *end = tmp;
 	}
@@ -818,10 +815,10 @@ void do_Device_semantics(Device * dev, List map)
 	    tmp = *end;
 	    len = end - str;
 	    *end = '\0';
-	    if ((pos = find_RegEx(re, str, len)) != NULL)
+	    if ((pos = util_findregex(re, str, len)) != NULL)
 		interp->node->n_state = ST_ON;
 	    re = &(dev->off_re);
-	    if ((pos = find_RegEx(re, str, len)) != NULL)
+	    if ((pos = util_findregex(re, str, len)) != NULL)
 		interp->node->n_state = ST_OFF;
 	    *end = tmp;
 	}
@@ -832,19 +829,19 @@ void do_Device_semantics(Device * dev, List map)
 }
 
 /*
- *   write_Buffer(0 does all the work here except for changing the 
+ *   buf_write does all the work here except for changing the 
  * device state.
  */
-void handle_Device_write(Device * dev)
+void dev_handle_write(Device * dev)
 {
     int n;
 
     CHECK_MAGIC(dev);
 
-    n = write_Buffer(dev->to);
+    n = buf_write(dev->to);
     if (n < 0)
 	return;
-    if (is_empty_Buffer(dev->to))
+    if (buf_isempty(dev->to))
 	dev->status &= ~DEV_SENDING;
 }
 
@@ -852,17 +849,17 @@ void handle_Device_write(Device * dev)
  *   A device can only be stalled while it's inthe  EXPECTING 
  * state.  The dev->timeout value can be set in the config file.
  */
-bool stalled_Device(Device * dev)
+bool dev_stalled(Device * dev)
 {
     return ((dev->status & DEV_EXPECTING) &&
-	    overdue(&(dev->time_stamp), &(dev->timeout)));
+	    dev_overdue(&(dev->time_stamp), &(dev->timeout)));
 }
 
 /*
  *   When a Device drops its connection you have to clear out its
  * Actions, and set its nodes and plugs to an UNKNOWN state.
  */
-void recover_Device(Device * dev)
+void dev_recover(Device * dev)
 {
     Plug *plug;
     ListIterator plug_i;
@@ -870,12 +867,12 @@ void recover_Device(Device * dev)
     assert(dev != NULL);
 
     syslog(LOG_ERR, "Expect timed out, reconnecting to %s",
-	   get_String(dev->name));
+	   str_get(dev->name));
     if (dev->logit)
 	printf("Expect timed out, reconnecting to %s\n",
-	       get_String(dev->name));
+	       str_get(dev->name));
     while (!list_is_empty(dev->acts))
-	del_Action(dev->acts);
+	act_del_queuehead(dev->acts);
     plug_i = list_iterator_create(dev->plugs);
     while ((plug = list_next(plug_i))) {
 	if (plug->node != NULL) {
@@ -883,27 +880,22 @@ void recover_Device(Device * dev)
 	    plug->node->n_state = ST_UNKNOWN;
 	}
     }
-    do_Device_reconnect(dev);
+    _do_reconnect(dev);
 }
 
-/*
- *   Constructor
- *
- * Produces:  Device
- */
-Device *make_Device(const char *name)
+Device *dev_create(const char *name)
 {
     Device *dev;
 
     dev = (Device *) Malloc(sizeof(Device));
     INIT_MAGIC(dev);
-    dev->name = make_String(name);
+    dev->name = str_create(name);
     dev->type = NO_DEV;
     dev->loggedin = FALSE;
     dev->error = FALSE;
     dev->status = DEV_NOT_CONNECTED;
     dev->fd = NO_FD;
-    dev->acts = list_create((ListDelF) free_Action);
+    dev->acts = list_create((ListDelF) act_destroy);
     gettimeofday(&(dev->time_stamp), NULL);
     dev->timeout.tv_sec = 0;
     dev->timeout.tv_usec = 0;
@@ -911,7 +903,7 @@ Device *make_Device(const char *name)
     dev->from = NULL;
     dev->prot = NULL;
     dev->num_plugs = 0;
-    dev->plugs = list_create((ListDelF) free_Plug);
+    dev->plugs = list_create((ListDelF) dev_plug_destroy);
     dev->logit = FALSE;
     return dev;
 }
@@ -923,50 +915,45 @@ Device *make_Device(const char *name)
  * in the parser when the devices have been parsed into a list and 
  * a node line referes to a device by its name.  
  */
-int match_Device(Device * dev, void *key)
+int dev_match(Device * dev, void *key)
 {
-    return (match_String(dev->name, (char *) key));
+    return (str_match(dev->name, (char *) key));
 }
 
 /*
  *  Should I free protocol elements and targets here?
  */
-void free_Device(Device * dev)
+void dev_destroy(Device * dev)
 {
     CHECK_MAGIC(dev);
 
-    free_String(dev->name);
-    free_String(dev->all);
+    str_destroy(dev->name);
+    str_destroy(dev->all);
     if (dev->type == TCP_DEV) {
-	free_String(dev->devu.tcpd.host);
-	free_String(dev->devu.tcpd.service);
+	str_destroy(dev->devu.tcpd.host);
+	str_destroy(dev->devu.tcpd.service);
     } else if (dev->type == PMD_DEV) {
-	free_String(dev->devu.pmd.host);
-	free_String(dev->devu.pmd.service);
+	str_destroy(dev->devu.pmd.host);
+	str_destroy(dev->devu.pmd.service);
     }
     list_destroy(dev->acts);
     list_destroy(dev->plugs);
     CLEAR_MAGIC(dev);
     if (dev->to != NULL)
-	free_Buffer(dev->to);
+	buf_destroy(dev->to);
     if (dev->from != NULL)
-	free_Buffer(dev->from);
+	buf_destroy(dev->from);
     Free(dev);
 }
 
 
-/*
- *   Constructor
- *
- * Produces:  Plug
- */
-Plug *make_Plug(const char *name)
+Plug *dev_plug_create(const char *name)
 {
     Plug *plug;
     reg_syntax_t cflags = REG_EXTENDED;
 
     plug = (Plug *) Malloc(sizeof(Plug));
-    plug->name = make_String(name);
+    plug->name = str_create(name);
     re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
     Regcomp(&(plug->name_re), name, cflags);
     plug->node = NULL;
@@ -977,25 +964,20 @@ Plug *make_Plug(const char *name)
  *   This comes into use in the parser when the devices have been 
  * parsed into a list and a node line referes to a plug by its name.   
  */
-int match_Plug(Plug * plug, void *key)
+int dev_plug_match(Plug * plug, void *key)
 {
-    if (match_String(((Plug *) plug)->name, (char *) key))
+    if (str_match(((Plug *) plug)->name, (char *) key))
 	return TRUE;
     return FALSE;
 }
 
 
-void free_Plug(Plug * plug)
+void dev_plug_destroy(Plug * plug)
 {
     regfree(&(plug->name_re));
-    free_String(plug->name);
+    str_destroy(plug->name);
     Free(plug);
 }
-
-
-
-
-#define OK            0
 
 /*
  *   This is the function that actually matches an EXPECT against
@@ -1004,7 +986,7 @@ void free_Plug(Plug * plug)
  * goes through and sets all the Interpretation "val" fields, for
  * the semantics functions to later find.
  */
-bool match_RegEx(Device * dev, String expect)
+static bool _match_regex(Device * dev, String expect)
 {
     Action *act;
     regex_t *re;
@@ -1014,8 +996,8 @@ bool match_RegEx(Device * dev, String expect)
     int eflags = 0;
     Interpretation *interp;
     ListIterator map_i;
-    char *str = get_String(expect);
-    int len = length_String(expect);
+    char *str = str_get(expect);
+    int len = str_length(expect);
 
     CHECK_MAGIC(dev);
     act = list_peek(dev->acts);
@@ -1033,29 +1015,29 @@ bool match_RegEx(Device * dev, String expect)
 	return FALSE;
     assert(pmatch[0].rm_so <= len);
 
-/* 
- *  The "foreach" construct assumes that the initializer is never NULL
- * but instead points to a header record to be skipped.  In this case
- * the initializer can be NULL, though.  That is how we signal there
- * is no subexpression to be interpreted.  If it is non-NULL then it
- * is the header record to an interpretation for the device.
- */
+    /* 
+     *  The "foreach" construct assumes that the initializer is never NULL
+     * but instead points to a header record to be skipped.  In this case
+     * the initializer can be NULL, though.  That is how we signal there
+     * is no subexpression to be interpreted.  If it is non-NULL then it
+     * is the header record to an interpretation for the device.
+     */
     if (act->cur->s_or_e.expect.map == NULL)
 	return TRUE;
 
-/*
- *   Here is where we have a problem with the powermand to pmd 
- * protocol.  PMD_DEV devices do not all have the exact same
- * number of nodes.  Thus we can't write an explicite regex
- * with a substring for each node.  We do, however, know just
- * how many nodes there are, and we know that a pmd replies 
- * with a list of ones and zeros.  So interpret PMD_DEV replies
- * directly, and without recourse to regex recognition.  The
- * rest of the structure should work.  The config file lists
- * exactly one "map" structure for the expects for UPDATE_*. 
- * Just set "val" to point to its corresponding vector of
- * ones and zeros.  Let do_PMD_semantics() pull it apart.
- */
+    /*
+     *   Here is where we have a problem with the powermand to pmd 
+     * protocol.  PMD_DEV devices do not all have the exact same
+     * number of nodes.  Thus we can't write an explicite regex
+     * with a substring for each node.  We do, however, know just
+     * how many nodes there are, and we know that a pmd replies 
+     * with a list of ones and zeros.  So interpret PMD_DEV replies
+     * directly, and without recourse to regex recognition.  The
+     * rest of the structure should work.  The config file lists
+     * exactly one "map" structure for the expects for UPDATE_*. 
+     * Just set "val" to point to its corresponding vector of
+     * ones and zeros.  Let _do_pmd_semantics() pull it apart.
+     */
 
     if (dev->type == PMD_DEV) {
 	interp = list_peek(act->cur->s_or_e.expect.map);
@@ -1078,7 +1060,7 @@ bool match_RegEx(Device * dev, String expect)
 /*
  * This is just time_stamp + timeout > now?
  */
-bool overdue(struct timeval * time_stamp, struct timeval * timeout)
+bool dev_overdue(struct timeval * time_stamp, struct timeval * timeout)
 {
     struct timeval now;
     struct timeval limit;

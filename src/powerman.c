@@ -40,11 +40,11 @@
 
 #include "powerman.h"
 #include "list.h"
-#include "pm_string.h"
+#include "string.h"
 #include "buffer.h"
 #include "config.h"
 #include "device.h"
-#include "exit_error.h"
+#include "error.h"
 #include "powermand.h"
 #include "wrappers.h"
 #include "hostlist.h"
@@ -148,10 +148,10 @@ int main(int argc, char **argv)
 {
     Config *conf;
 
-    init_error(argv[0]);
+    err_init(argv[0]);
     conf = process_command_line(argc, argv);
 
-    /*if( geteuid() != 0 ) exit_msg("Must be root"); */
+    /*if( geteuid() != 0 ) err_exit(FALSE, "Must be root"); */
 
     connect_to_server(conf);
 
@@ -216,49 +216,49 @@ static Config *process_command_line(int argc, char **argv)
 	     */
 	case 'c':		/* --cycle */
 	    if (conf->com != CMD_ERROR)
-		exit_msg(EXACTLY_ONE_MSG);
+		err_exit(FALSE, EXACTLY_ONE_MSG);
 	    conf->com = CMD_POWER_CYCLE;
 	    targs_req = REQ_TARGS;
 	    break;
 	case '1':		/* --on */
 	    if (conf->com != CMD_ERROR)
-		exit_msg(EXACTLY_ONE_MSG);
+		err_exit(FALSE, EXACTLY_ONE_MSG);
 	    conf->com = CMD_POWER_ON;
 	    targs_req = REQ_TARGS;
 	    break;
 	case '0':		/* --off */
 	    if (conf->com != CMD_ERROR)
-		exit_msg(EXACTLY_ONE_MSG);
+		err_exit(FALSE, EXACTLY_ONE_MSG);
 	    conf->com = CMD_POWER_OFF;
 	    targs_req = REQ_TARGS;
 	    break;
 	case 'r':		/* --reset */
 	    if (conf->com != CMD_ERROR)
-		exit_msg(EXACTLY_ONE_MSG);
+		err_exit(FALSE, EXACTLY_ONE_MSG);
 	    conf->com = CMD_RESET;
 	    targs_req = REQ_TARGS;
 	    break;
 	case 'q':		/* --queryon */
 	    if (conf->com != CMD_ERROR)
-		exit_msg(EXACTLY_ONE_MSG);
+		err_exit(FALSE, EXACTLY_ONE_MSG);
 	    conf->com = CMD_QUERY_ON;
 	    targs_req = NO_TARGS;
 	    break;
 	case 'Q':		/* --queryoff */
 	    if (conf->com != CMD_ERROR)
-		exit_msg(EXACTLY_ONE_MSG);
+		err_exit(FALSE, EXACTLY_ONE_MSG);
 	    conf->com = CMD_QUERY_OFF;
 	    targs_req = NO_TARGS;
 	    break;
 	case 'l':		/* --list */
 	    if (conf->com != CMD_ERROR)
-		exit_msg(EXACTLY_ONE_MSG);
+		err_exit(FALSE, EXACTLY_ONE_MSG);
 	    conf->com = CMD_LISTTARG;
 	    targs_req = OPT_TARGS;
 	    break;
 	case 'z':		/* --report */
 	    if (conf->com != CMD_ERROR)
-		exit_msg(EXACTLY_ONE_MSG);
+		err_exit(FALSE, EXACTLY_ONE_MSG);
 	    conf->com = CMD_QUERY_ALL;
 	    targs_req = NO_TARGS;
 	    break;
@@ -270,8 +270,8 @@ static Config *process_command_line(int argc, char **argv)
 	    break;
 	case 'd':		/* --host */
 	    if (conf->host != NULL)
-		free_String(conf->host);
-	    conf->host = make_String(optarg);
+		str_destroy(conf->host);
+	    conf->host = str_create(optarg);
 	    break;
 	case 'F':		/* --file */
 	    read_Targets(conf, optarg);
@@ -279,10 +279,10 @@ static Config *process_command_line(int argc, char **argv)
 	case 'p':		/* --port */
 	    /* Is optarg a legal service value integer? */
 	    /* If not, can you find the named service?  */
-	    /* If not, exit_error()                     */
+	    /* If not, err_exit()                     */
 	    if (conf->service != NULL)
-		free_String(conf->service);
-	    conf->service = make_String(optarg);
+		str_destroy(conf->service);
+	    conf->service = str_create(optarg);
 	    break;
 	case 'n':		/* --noexec */
 	    conf->noexec = TRUE;
@@ -294,11 +294,11 @@ static Config *process_command_line(int argc, char **argv)
 	    conf->regex = TRUE;
 	    break;
 	default:
-	    exit_msg("Unrecognized command line option (see --help)");
+	    err_exit(FALSE, "unrecognized command line option (see --help)");
 	 /*NOTREACHED*/}
     }
     if (conf->com == CMD_ERROR)
-	exit_msg(EXACTLY_ONE_MSG);
+	err_exit(FALSE, EXACTLY_ONE_MSG);
 
     /* build hostlist of targets */
     while (optind < argc) {
@@ -310,9 +310,9 @@ static Config *process_command_line(int argc, char **argv)
     }
 
     if (hostlist_is_empty(conf->targ) && targs_req == REQ_TARGS)
-	exit_msg("command requires target(s)");
+	err_exit(FALSE, "command requires target(s)");
     if (!hostlist_is_empty(conf->targ) && targs_req == NO_TARGS)
-	exit_msg("command may not be specified with targets");
+	err_exit(FALSE, "command may not be specified with targets");
 
     /* missing target list means "all" */
     if (hostlist_is_empty(conf->targ) && targs_req == OPT_TARGS)
@@ -378,7 +378,7 @@ static void read_Targets(Config * conf, char *name)
     unsigned int c;
 
     if ((fp = fopen(name, "r")) == NULL) {
-	exit_msg("Coudn't open %s for target names", name);
+	err_exit(TRUE, "%s", name);
     }
     while ((c = getc(fp)) != EOF) {
 	/* Review: use isspace() */
@@ -415,7 +415,7 @@ static void connect_to_server(Config * conf)
 
     assert(conf->host != NULL);
     assert(conf->service != NULL);
-    Getaddrinfo(get_String(conf->host), get_String(conf->service),
+    Getaddrinfo(str_get(conf->host), str_get(conf->service),
 		&hints, &addrinfo);
 
     conf->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
@@ -510,7 +510,7 @@ static List dialog(int fd, const char *str)
     /* Review: should be moved to a #define at top of module with comment */
     int limit = 100;
     bool found = FALSE;
-    List reply = list_create((ListDelF) free_String);
+    List reply = list_create((ListDelF) str_destroy);
     /* Review: check for NULL reply or use out_of_memory() */
     String targ;
 
@@ -523,7 +523,7 @@ static List dialog(int fd, const char *str)
 	len = strlen(str);
 	n = Write(fd, (char *) str, len);
 	if (n != len)
-	    exit_msg("Incomplete write of %s", str);
+	    err_exit(FALSE, "Rncomplete write of %s", str);
     }
     /* Review: redundant to have found initialized here and above. */
     found = FALSE;
@@ -550,7 +550,7 @@ static List dialog(int fd, const char *str)
 	    if ((buf[i] == '\r') || (buf[i] == '\n') || (buf[i] == '\0')) {
 		buf[i] = '\0';
 		if (j < i) {
-		    targ = make_String(buf + j);
+		    targ = str_create(buf + j);
 		    list_append(reply, targ);
 		}
 		j = i + 1;
@@ -559,14 +559,14 @@ static List dialog(int fd, const char *str)
 	}
     }
     if (list_is_empty(reply))
-	exit_msg("Command \"%s\" failed.", str);
+	err_exit(FALSE, "command \"%s\" failed.", str);
 
     if (debug_telemetry) {
 	String tmpstr;
 
 	ListIterator itr = list_iterator_create(reply);
 	while ((tmpstr = list_next(itr)))
-	    printf("S: '%s'\n", get_String(tmpstr));
+	    printf("S: '%s'\n", str_get(tmpstr));
 	list_iterator_destroy(itr);
     }
 
@@ -584,9 +584,9 @@ static void process_targets(Config * conf)
     hostlist_iterator_t itr;
 
     if ((itr = hostlist_iterator_create(conf->targ)) == NULL)
-	exit_error("hostlist_iterator_create");
+	err_exit(TRUE, "hostlist_iterator_create");
     while ((host = hostlist_next(itr))) {
-	String targ = make_String(host);
+	String targ = str_create(host);
 	String str;
 	List reply;
 
@@ -594,11 +594,11 @@ static void process_targets(Config * conf)
 	    str = targ;
 	else {
 	    str = glob2regex(targ);
-	    free_String(targ);
+	    str_destroy(targ);
 	}
 	reply = send_server(conf, str);
 	publish_reply(conf, reply);
-	free_String(str);
+	str_destroy(str);
 	list_destroy(reply);
     }
     hostlist_iterator_destroy(itr);
@@ -612,7 +612,7 @@ static String glob2regex(String glob)
     unsigned char buf[MAX_BUF];
     int i = 0;
     String regex;
-    unsigned char *g = get_String(glob);
+    unsigned char *g = str_get(glob);
 
     /* Review: check that glob really is a legal glob here. 
      * look into fnmatch() */
@@ -628,11 +628,11 @@ static String glob2regex(String glob)
 	    buf[i] = *g;
 	    i++;
 	} else
-	    exit_msg("%c is not a legal character for a host name", *g);
+	    err_exit(FALSE, "%c is not a legal character for a host name", *g);
 	g++;
     }
     buf[i] = '\0';
-    regex = make_String(buf);
+    regex = str_create(buf);
     return regex;
 }
 
@@ -648,19 +648,19 @@ static List send_server(Config * conf, String str)
 
     switch (conf->com) {
     case CMD_LISTTARG:
-	res = snprintf(buf, len, GET_NAMES_FMT, get_String(str));
+	res = snprintf(buf, len, GET_NAMES_FMT, str_get(str));
 	break;
     case CMD_POWER_ON:
-	res = snprintf(buf, len, DO_POWER_ON_FMT, get_String(str));
+	res = snprintf(buf, len, DO_POWER_ON_FMT, str_get(str));
 	break;
     case CMD_POWER_OFF:
-	res = snprintf(buf, len, DO_POWER_OFF_FMT, get_String(str));
+	res = snprintf(buf, len, DO_POWER_OFF_FMT, str_get(str));
 	break;
     case CMD_POWER_CYCLE:
-	res = snprintf(buf, len, DO_POWER_CYCLE_FMT, get_String(str));
+	res = snprintf(buf, len, DO_POWER_CYCLE_FMT, str_get(str));
 	break;
     case CMD_RESET:
-	res = snprintf(buf, len, DO_RESET_FMT, get_String(str));
+	res = snprintf(buf, len, DO_RESET_FMT, str_get(str));
 	break;
     default:
 	assert(FALSE);
@@ -707,22 +707,22 @@ static void print_readable(Config * conf, List cluster)
     char tmpstr[1024];
 
     if (!on || !off || !unk)
-	exit_error("hostlist_create");
+	err_exit(TRUE, "hostlist_create");
 
     /* Sort nodes into three hostlist bins */
     itr = list_iterator_create(cluster);
     while ((node = list_next(itr))) {
 	switch (node->p_state) {
 	case ST_ON:
-	    hostlist_push_host(on, get_String(node->name));
+	    hostlist_push_host(on, str_get(node->name));
 	    if (node->n_state != ST_ON)
-		warn_softstate(get_String(node->name));
+		warn_softstate(str_get(node->name));
 	    break;
 	case ST_OFF:
-	    hostlist_push_host(off, get_String(node->name));
+	    hostlist_push_host(off, str_get(node->name));
 	    break;
 	case ST_UNKNOWN:
-	    hostlist_push_host(unk, get_String(node->name));
+	    hostlist_push_host(unk, str_get(node->name));
 	    break;
 	}
     }
@@ -759,9 +759,9 @@ static void print_list(Config * conf, List cluster, State_Val state)
     itr = list_iterator_create(cluster);
     while ((node = list_next(itr))) {
 	if (node->p_state == state)
-	    printf("%s\n", get_String(node->name));
+	    printf("%s\n", str_get(node->name));
 	if (node->p_state == ST_ON && node->n_state == ST_OFF)
-	    warn_softstate(get_String(node->name));
+	    warn_softstate(str_get(node->name));
     }
     list_iterator_destroy(itr);
 }
@@ -774,7 +774,7 @@ static void print_Targets(List targ)
     assert(targ != NULL);
     itr = list_iterator_create(targ);
     while ((t = list_next(itr)) && !is_prompt(t)) {
-	printf("%s\n", get_String(t));
+	printf("%s\n", str_get(t));
     }
     list_iterator_destroy(itr);
 }
@@ -798,24 +798,24 @@ static Config *make_Config(void)
 	if ((port = strchr(env, ':'))) {
 	    *port++ = '\0';
 	    if ((p = atoi(port)) > 0) {
-		conf->service = make_String(port);
+		conf->service = str_create(port);
 		conf->port = p;
 	    }
 	}
 	if (*env) {
-	    conf->host = make_String(env);
+	    conf->host = str_create(env);
 	}
     }
     if (conf->host == NULL)
-	conf->host = make_String("localhost");
+	conf->host = str_create("localhost");
     if ((port = getenv("POWERMAN_PORT")) && (*env)) {
 	if ((p = atoi(port)) > 0) {
-	    conf->service = make_String(port);
+	    conf->service = str_create(port);
 	    conf->port = p;
 	}
     }
     if (conf->service == NULL) {
-	conf->service = make_String("10101");
+	conf->service = str_create("10101");
 	conf->port = 10101;
     }
     conf->com = CMD_ERROR;
@@ -831,8 +831,8 @@ static Config *make_Config(void)
  */
 static void free_Config(Config * conf)
 {
-    free_String(conf->host);
-    free_String(conf->service);
+    str_destroy(conf->host);
+    str_destroy(conf->service);
     hostlist_destroy(conf->targ);
     if (conf->reply != NULL)
 	list_destroy(conf->reply);
@@ -848,7 +848,7 @@ static void append_Nodes(List cluster, List reply)
     assert(reply != NULL);
     itr = list_iterator_create(reply);
     while ((targ = list_next(itr)) && !is_prompt(targ)) {
-	node = xmake_Node(get_String(targ));
+	node = xmake_Node(str_get(targ));
 	list_append(cluster, node);
     }
     list_iterator_destroy(itr);
@@ -870,13 +870,13 @@ static void update_Nodes_soft_state(List cluster, List reply)
     assert(reply != NULL);
     targ = list_pop(reply);	/* reply list is always one String */
     assert(targ != NULL);
-    assert(!empty_String(targ));
+    assert(!str_isempty(targ));
 
     node_i = list_iterator_create(cluster);
     node = list_next(node_i);
-    for (i = 0; i < length_String(targ); i++) {
+    for (i = 0; i < str_length(targ); i++) {
 	assert(node != NULL);
-	switch (byte_String(targ, i)) {
+	switch (str_byte(targ, i)) {
 	case '0':
 	    node->n_state = ST_OFF;
 	    break;
@@ -887,7 +887,7 @@ static void update_Nodes_soft_state(List cluster, List reply)
 	    node->n_state = ST_UNKNOWN;
 	    break;
 	default:
-	    exit_msg("Illegal soft state value.");
+	    err_exit(FALSE, "Illegal soft state value.");
 	}
 	node = list_next(node_i);
     }
@@ -910,13 +910,13 @@ static void update_Nodes_hard_state(List cluster, List reply)
     assert(reply != NULL);
     targ = list_pop(reply);	/* reply list is always one String */
     assert(targ != NULL);
-    assert(!empty_String(targ));
+    assert(!str_isempty(targ));
 
     node_i = list_iterator_create(cluster);
     node = list_next(node_i);
-    for (i = 0; i < length_String(targ); i++) {
+    for (i = 0; i < str_length(targ); i++) {
 	assert(node != NULL);
-	switch (byte_String(targ, i)) {
+	switch (str_byte(targ, i)) {
 	case '0':
 	    node->p_state = ST_OFF;
 	    break;
@@ -927,7 +927,7 @@ static void update_Nodes_hard_state(List cluster, List reply)
 	    node->p_state = ST_UNKNOWN;
 	    break;
 	default:
-	    exit_msg("Illegal hard state value.");
+	    err_exit(FALSE, "illegal hard state value.");
 	}
 	node = list_next(node_i);
     }
@@ -942,7 +942,7 @@ static Node *xmake_Node(const char *name)
     Node *node;
 
     node = (Node *) Malloc(sizeof(Node));
-    node->name = make_String(name);
+    node->name = str_create(name);
     node->n_state = ST_UNKNOWN;
     node->p_state = ST_UNKNOWN;
     return node;
@@ -955,12 +955,12 @@ static int cmp_Nodes(Node * node1, Node * node2)
     assert(node2 != NULL);
     assert(node2->name != NULL);
 
-    return strcmp(get_String(node1->name), get_String(node2->name));
+    return strcmp(str_get(node1->name), str_get(node2->name));
 }
 
 static void xfree_Node(Node * node)
 {
-    free_String(node->name);
+    str_destroy(node->name);
     Free(node);
 }
 
@@ -971,8 +971,8 @@ static bool is_prompt(String targ)
 
     assert(targ != NULL);
 
-    for (i = 0; i < length_String(targ); i++) {
-	if (byte_String(targ, i) == PROMPT)
+    for (i = 0; i < str_length(targ); i++) {
+	if (str_byte(targ, i) == PROMPT)
 	    result = TRUE;
 	i++;
     }

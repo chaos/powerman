@@ -35,7 +35,7 @@
 #include <stdio.h>
 
 #include "powerman.h"
-#include "exit_error.h"
+#include "error.h"
 #include "wrappers.h"
 
 #define MAX_REG_BUF 64000
@@ -52,7 +52,7 @@ int Socket(int family, int type, int protocol)
 
     fd = socket(family, type, protocol);
     if (fd < 0)
-	exit_error("socket");
+	err_exit(TRUE, "socket");
     return fd;
 }
 
@@ -64,7 +64,7 @@ Setsockopt(int fd, int level, int optname, const void *opt_val,
 
     ret_code = setsockopt(fd, level, optname, opt_val, optlen);
     if (ret_code < 0)
-	exit_error("setsockopt");
+	err_exit(TRUE, "setsockopt");
     return ret_code;
 }
 
@@ -75,7 +75,7 @@ int Bind(int fd, struct sockaddr_in *saddr, socklen_t len)
 
     ret_code = bind(fd, (struct sockaddr *) saddr, len);
     if (ret_code < 0)
-	exit_error("bind");
+	err_exit(TRUE, "bind");
     return ret_code;
 }
 
@@ -87,7 +87,7 @@ Getsockopt(int fd, int level, int optname, void *opt_val,
 
     ret_code = getsockopt(fd, level, optname, opt_val, optlen);
     if (ret_code < 0)
-	exit_error("getsockopt");
+	err_exit(TRUE, "getsockopt");
     return ret_code;
 }
 
@@ -97,7 +97,7 @@ int Listen(int fd, int backlog)
 
     ret_code = listen(fd, backlog);
     if (ret_code < 0)
-	exit_error("listen");
+	err_exit(TRUE, "listen");
     return ret_code;
 }
 
@@ -107,7 +107,7 @@ int Fcntl(int fd, int cmd, int arg)
 
     ret_code = fcntl(fd, cmd, arg);
     if (ret_code < 0)
-	exit_error("fcntl");
+	err_exit(TRUE, "fcntl");
     return ret_code;
 }
 
@@ -125,14 +125,14 @@ time_t Time(time_t * t)
 
     n = time(t);
     if (n < 0)
-	exit_error("time");
+	err_exit(TRUE, "time");
     return n;
 }
 
 void Gettimeofday(struct timeval *tv, struct timezone *tz)
 {
     if (gettimeofday(tv, tz) < 0)
-	exit_error("gettimeofday");
+	err_exit(TRUE, "gettimeofday");
 }
 
 static void _clear_sets(fd_set * rset, fd_set * wset, fd_set * eset)
@@ -147,7 +147,7 @@ static void _clear_sets(fd_set * rset, fd_set * wset, fd_set * eset)
 
 /*
  * Select wrapper that retries select on EINTR with appropriate timeout
- * adjustments, and exit_errors on any other failures.
+ * adjustments, and err_exit on any other failures.
  * Can return 0 indicating timeout or a value > 0.
  * NOTE: fd_sets are cleared on timeout.
  */
@@ -168,7 +168,7 @@ Select(int maxfd, fd_set * rset, fd_set * wset, fd_set * eset,
     do {
 	n = select(maxfd, rset, wset, eset, tv);
 	if (n < 0 && errno != EINTR)	/* unrecov error */
-	    exit_error("select");
+	    err_exit(TRUE, "select");
 	if (n < 0 && tv != NULL) {	/* EINTR - adjust tv */
 	    Gettimeofday(&end, NULL);
 	    timersub(&end, &start, &delta);	/* delta = end-start */
@@ -201,7 +201,7 @@ char *Malloc(int size)
     assert(size > 0 && size <= INT_MAX);
     p = (int *) malloc(size + 2 * sizeof(int));
     if (p == NULL)
-	exit_msg("Out of memory");
+	err_exit(FALSE, "out of memory");
     p[0] = MALLOC_MAGIC;	/* add "secret" magic cookie */
     p[1] = size;		/* store size in buffer */
 
@@ -240,15 +240,15 @@ int Accept(int fd, struct sockaddr_in *addr, socklen_t * addrlen)
 
     new = accept(fd, (struct sockaddr *) addr, addrlen);
     if (new < 0) {
-/* 
- *   A client could abort before a ready connection is accepted.  "The fix
- * for this problem is to:  ...  2.  "Ignore the following errors ..."
- *                                                     - Stevens, UNP p424
- */
+	/* 
+	 *   A client could abort before a ready connection is accepted.  
+	 *  "The fix for this problem is to:  ...  2.  "Ignore the following 
+	 *  errors ..."  - Stevens, UNP p424
+	 */
 	if (!((errno == EWOULDBLOCK) ||
 	      (errno == ECONNABORTED) ||
 	      (errno == EPROTO) || (errno == EINTR)))
-	    exit_error("accept");
+	    err_exit(TRUE, "accept");
     }
     return new;
 }
@@ -260,7 +260,7 @@ int Connect(int fd, struct sockaddr *addr, socklen_t addrlen)
     n = connect(fd, addr, addrlen);
     if (n < 0) {
 	if (errno != EINPROGRESS)
-	    exit_error("connect");
+	    err_exit(TRUE, "connect");
     }
     return n;
 }
@@ -273,7 +273,7 @@ int Read(int fd, unsigned char *p, int max)
 	n = read(fd, p, max);
     } while (n < 0 && errno == EINTR);
     if (n < 0 && errno != EWOULDBLOCK && errno != ECONNRESET)
-	exit_error("read");
+	err_exit(TRUE, "read");
     return n;
 }
 
@@ -285,7 +285,7 @@ int Write(int fd, unsigned char *p, int max)
 	n = write(fd, p, max);
     } while (n < 0 && errno == EINTR);
     if (n < 0 && errno != EAGAIN && errno != ECONNRESET && errno != EPIPE)
-	exit_error("write");
+	err_exit(TRUE, "write");
     return n;
 }
 
@@ -296,7 +296,7 @@ int Open(char *str, int flags, int mode)
     assert(str != NULL);
     fd = open(str, flags, mode);
     if (fd < 0)
-	exit_error("open %s", str);
+	err_exit(TRUE, "open %s", str);
     return fd;
 }
 
@@ -306,7 +306,7 @@ int Close(int fd)
 
     n = close(fd);
     if (n < 0)
-	exit_error("close");
+	err_exit(TRUE, "close");
     return n;
 }
 
@@ -318,7 +318,7 @@ Getaddrinfo(char *host, char *service, struct addrinfo *hints,
 
     n = getaddrinfo(host, service, hints, addrinfo);
     if (n != 0)
-	exit_msg("getaddrinfo host %s service %s: %s",
+	err_exit(FALSE, "getaddrinfo host %s service %s: %s",
 		 host, service, gai_strerror(n));
     return n;
 }
@@ -364,7 +364,7 @@ void Regcomp(regex_t * preg, const char *regex, int cflags)
      */
     n = regcomp(preg, buf, cflags);
     if (n != REG_NOERROR)
-	exit_msg("regcomp failed");
+	err_exit(FALSE, "regcomp failed");
 }
 
 int
@@ -386,7 +386,7 @@ pid_t Fork(void)
     pid_t pid;
 
     if ((pid = fork()) == -1)
-	exit_error("fork");
+	err_exit(TRUE, "fork");
     return (pid);
 }
 
@@ -409,7 +409,7 @@ Sigfunc *Signal(int signo, Sigfunc * func)
     }
     n = sigaction(signo, &act, &oact);
     if (n < 0)
-	exit_error("sigaction");
+	err_exit(TRUE, "sigaction");
 
     return (oact.sa_handler);
 }
