@@ -1,17 +1,20 @@
 #
-# $Id$
-# $Source$
+# phantom4.dev,v 1.1 2003/09/27 02:51:10 garlick Exp
+# /chaos/cvs/powerman/etc/phantom4.dev,v
 #
 # Phantom 4.0
 #
 specification  "phantom4" {
-	timeout 	5.0
+#	timeout 	5.0
+	timeout 	15.0
 
 	plug name { "1" }
 
 	script login {
 		send "\036\035"	# enter "shell mode"
 		expect "ok\r"
+#		send "I0"	# use reset pin to sense power status
+#		expect "ok\r"
 	}
 	script status {
 		send "P?\r\n"
@@ -20,18 +23,18 @@ specification  "phantom4" {
 	}
 	script on {
 		send "P1\r\n"
-		expect "ok\r"
+		expect "(ok|er)\r"
 	}		
 	script off {
 		send "P0\r\n"
-		expect "ok\r"
+		expect "(ok|er)\r"
 	}		
 	script cycle {
 		send "P0\r\n"
-		expect "ok\r"
+		expect "(ok|er)\r"
 		delay 2
 		send "P1\r\n"
-		expect "ok\r"
+		expect "(ok|er)\r"
 	}
 	script beacon_on {
 		send "L1\r\n"	# LED on

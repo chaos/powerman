@@ -5,7 +5,7 @@
 # Phantom 3.0.2
 #
 specification  "phantom" {
-	timeout 	5.0
+	timeout 	15.0
 
 	plug name { "1" }
 
