@@ -110,14 +110,9 @@ void conf_fini(void)
         hostlist_destroy(conf_nodes);
 }
 
-/*******************************************************************
- *                                                                 *
- * Stmt                                                       *
- *   A Stmt structure is an element in a script.  The script  *
- * is a list of these elemments that implements one of the actions *
- * that clients may request of devices.                            *
- *                                                                 *
- *******************************************************************/
+/*
+ * Create/destroy Stmt structs, which are element in a script.
+ */
 
 Stmt *conf_stmt_create(StmtType type, char *s1,
                                  List map, struct timeval tv)
@@ -160,17 +155,15 @@ void conf_stmt_destroy(Stmt * stmt)
     }
     Free(stmt);
 }
-
-/*******************************************************************
- *                                                                 *
- * Spec                                                            *
- *    A Spec struct holds all the information about a device type  *
- * while the config file is being parsed.  Device lines refer to   *
- * entries in the Spec list to get their detailed construction     *
- * and configuration information.  The Spec is not used after the  *
- * config file is closed.                                          *
- *                                                                 *
- *******************************************************************/
+ 
+/*
+ * Manage tmp_spec list of Spec structs.
+ *    A Spec struct holds all the information about a device type
+ * while the config file is being parsed.  Device lines refer to 
+ * entries in the Spec list to get their detailed construction
+ * and configuration information.  The Spec is not used after the
+ * config file is closed.
+ */
 
 Spec *conf_spec_create(char *name)
 {
@@ -225,16 +218,13 @@ Spec *conf_find_spec(char *name)
     return list_find_first(tmp_specs, (ListFindF) _spec_match, name);
 }
 
-/*******************************************************************
- *                                                                 *
- * PreStmt                                                         *
- *   A PreStmt structure is an object associated with a Spec       *
- * that holds information for a Stmt.  The Stmt itself   *
- * cannot be constructed unitl it is added to the device's         *
- * protocol.  All the infromation the Stmt needs at that time *
- * is present in the PreStmt.                                      *
- *                                                                 *
- *******************************************************************/
+/*
+ * Create/destroy PreStmt structs.
+ * A PreStmt that holds information for a Stmt.  The Stmt itself
+ * cannot be constructed unitl it is added to the device's
+ * protocol.  All the infromation the Stmt needs at that time
+ * is present in the PreStmt. 
+ */
 
 PreStmt *conf_prestmt_create(StmtType type, char *str1,
                              struct timeval * tv, List map)
@@ -272,6 +262,10 @@ void conf_prestmt_destroy(PreStmt * specl)
     Free(specl);
 }
 
+/*
+ * Node conf_nodes list.
+ */
+
 bool conf_node_exists(char *node)
 {
     int res;
@@ -297,14 +291,9 @@ hostlist_t conf_getnodes(void)
     return conf_nodes;
 }
 
-/*******************************************************************
- *                                                                 *
- * Interp                                                  *
- *   An Interp structure is the means by which an EXPECT   *
- * script element identifies the pieces of the RegEx matched in an *
- * may be interpreted to give state information.                   *
- *                                                                 *
- *******************************************************************/
+/*
+ * Create/destroy Interp's (which map regex subexpression matches to plugs)
+ */
 
 Interp *conf_interp_create(char *name)
 {
@@ -336,10 +325,12 @@ void conf_set_use_tcp_wrappers(bool val)
 {
     conf_use_tcp_wrap = val;
 }
+
 void conf_set_listen_port(int val)
 {
     conf_listen_port = val;
 }
+
 int conf_get_listen_port(void)
 {
     return conf_listen_port;
@@ -367,14 +358,14 @@ void conf_exp_aliases(hostlist_t hl)
         err(FALSE, "conf_exp_aliases: error craeting hostlist");
         return;
     }
+
+    /* Put the expansion of any aliases in the hostlist into 'newhosts', 
+     * deleting the original reference from the hostlist.
+     */
     if ((itr = hostlist_iterator_create(hl)) == NULL) {
         err(FALSE, "conf_exp_aliases: error craeting hostlist iterator");
         return;
     }
-
-    /* Put the expansion of any aliases into 'newhosts', deleting the original
-     * reference.
-     */
     while ((host = hostlist_next(itr)) != NULL) {
         alias_t *a;
             
@@ -382,12 +373,13 @@ void conf_exp_aliases(hostlist_t hl)
         if (a) {
             hostlist_delete_host(hl, host); 
             hostlist_push_list(newhosts, a->hl);
-            hostlist_iterator_reset(itr);
+            hostlist_iterator_reset(itr); /* not sure of itr position after
+                                             insertion/deletion so reset */
         }
     }
     hostlist_iterator_destroy(itr);
 
-    /* Add 'newhosts' to the hostlist. */
+    /* dump the contents of 'newhosts' into the hostlist */
     hostlist_push_list(hl, newhosts);
     hostlist_destroy(newhosts);
 }
@@ -417,6 +409,11 @@ static alias_t *_alias_create(char *name, char *hosts)
     return a;
 }
 
+/*
+ * Called from the parser.
+ * FIXME: should check here that aliases contain no recursion, and
+ * that alias names do not collide with node names.
+ */
 bool conf_add_alias(char *name, char *hosts)
 {
     alias_t *a;
