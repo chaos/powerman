@@ -148,6 +148,8 @@ int buf_write(Buffer b)
 
     _buf_check(b);
     _buf_isopen(b);
+    if (_buf_length(b) == 0)
+	dbg(DBG_BUFFER, "attempting to write zero bytes to fd %d", b->fd);
     nbytes = Write(b->fd, b->out, _buf_length(b));
     if (nbytes > 0) {
 	if (b->logfun != NULL)
@@ -155,8 +157,10 @@ int buf_write(Buffer b)
 	b->out += nbytes;
 	_buf_check(b);
 	dbg(DBG_BUFFER, "wrote %d bytes to fd %d", nbytes, b->fd);
-    } else {
-	dbg(DBG_BUFFER, "write error on fd %d", b->fd);
+    } else if (nbytes < 0) {
+	dbg(DBG_BUFFER, "write error on fd %d: %s", b->fd, strerror(errno));
+    } else { /* nbytes == 0 */
+	dbg(DBG_BUFFER, "write returned 0 on fd %d", b->fd);
     }
 	
     return nbytes;
@@ -173,6 +177,8 @@ int buf_read(Buffer b)
 
     _buf_check(b);
     _buf_isopen(b);
+    if (_buf_length_post(b) == 0);
+	dbg(DBG_BUFFER, "attempting to read zero bytes from fd %d", b->fd);
     nbytes = Read(b->fd, b->in, _buf_length_post(b));
     if (nbytes > 0) {
 	if (b->logfun != NULL)
@@ -180,8 +186,10 @@ int buf_read(Buffer b)
 	b->in += nbytes;
 	_buf_check(b);
 	dbg(DBG_BUFFER, "read %d bytes from fd %d", nbytes, b->fd);
-    } else {
+    } else if (nbytes < 0) {
 	dbg(DBG_BUFFER, "read error on fd %d: %s", b->fd, strerror(errno));
+    } else { /* nbytes == 0 */
+	dbg(DBG_BUFFER, "read returned EOF on fd %d", b->fd);
     }
     return nbytes;
 }
@@ -301,6 +309,15 @@ void buf_eat(Buffer b, int len)
     _buf_check(b);
     assert(len <= _buf_length(b));
     b->out += len;
+
+    /* compact buffer */
+    if (b->out > b->buf) {
+	int used = _buf_length(b);
+
+	memmove(b->buf, b->out, used);
+	b->out = b->buf;
+	b->in = b->buf + used;
+    }
 }
 
 /* 

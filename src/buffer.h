@@ -29,7 +29,7 @@
 
 #include <regex.h>
 
-#define MAX_BUF    64000	/* 2560 nodes with 16 chars per name   */
+#define MAX_BUF    1024
 
 typedef struct buffer_implementation *Buffer;
 

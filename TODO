@@ -1,18 +1,4 @@
 Short Term:
-* Bug: read occasionally returns EOF for no apparent reason in vpc and icebox3.
-  Note: seems to affect all vpcd devices in succession.
-  Note: Splain this:
-    Device vpc2 timed out
-    Device vpc3 timed out
-    Device vpc4 timed out
-    Device vpc5 timed out
-    Device vpc6 timed out
-    Device vpc7 timed out
-    on:      v[0-10]
-    off:     v[11-16,24,32,40,48,56]
-    unknown: v[17-23,25-31,33-39,41-47,49-55,57-63]
-  expected on: v[0-10] off v[11-15] unknown [16-63]
-  Bogus: 16,24,32,40,48,56 (first plug in each RPC that timed out)
 * Bug: Deal with baytech login timeouts
 * Store scripts in a list and search the list for the script name, rather than
   hard code the list.  
@@ -20,9 +6,10 @@ Short Term:
 * Reformat code w/out tabs
 * vpcd --hung_rpc can cause client to hang forever.
 * Make sure that tcp_wrappers works.
-* Verify that 0 <= match_pos < MAX_MATCH in parser (now we assert in device.c)
 * Attempt to initiate a command to devices that are delaying between
   reconnects should cause an immediate connect attempt.
+* Verify that 0 <= match_pos < MAX_MATCH in parser (now we assert in device.c)
+* Replace bogus buffer.c with Chris's generic circular buffer module.
 
 Long term:
 * Build failure simulator test suite

@@ -6,8 +6,11 @@
 	  _match_subexpression).
 	* Fixed bug where query for N-1 plugs on an N-plug device resulted
 	  in N-1 separate queries, each acquiring state for the whole device.
+	* Fixed bug where read returned EOF occasionally.  This was a read
+	  attempt on a zero length buffer.  It turns out the read buffer was
+	  huge and never was compacted.  Reduced buffer size from 64K to 1K.
 
-2002-10-14 garlick
+ 2002-10-14 garlick
 	* Remove RESET_SCRIPT definitions in wti and baytech device files.
 	* Got rid of Cluster and Node data structures.
 	* Plug state is no longer global - seperate copy for each client cmd.
