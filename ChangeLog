@@ -102,3 +102,5 @@
 	* Config file cleanup (removed second expect "completion" regex,
 	  cluster name).
 	* Took vicebox.dev out of spec file install.
+	* Made a general helper function for wrapped regcomp special
+	  character expansion.

@@ -731,7 +731,9 @@ publish_reply(Config *conf, List reply)
 static void
 warn_softstate(char *host)
 {
+#if 0 /* shuddup for now */
 	fprintf(stderr, "warning: %s: plug is on but node may not be\n", host);
+#endif
 }
 
 /*

@@ -64,6 +64,7 @@ typedef void Sigfunc(int);
 Sigfunc *Signal(int signo, Sigfunc *func);
 void Gettimeofday(struct timeval *tv, struct timezone *tz);
 time_t Time(time_t *t);
+char *Strncpy(char *s1, const char *s2, int len);
 #ifndef NDUMP
 void Report_Memory(void);
 #endif

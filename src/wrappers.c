@@ -117,6 +117,15 @@ Fcntl( int fd, int cmd, int arg)
 	return ret_code;
 }
 
+char *
+Strncpy(char *s1, const char *s2, int len)
+{
+	char *res = strncpy(s1, s2, len);
+
+	s1[len - 1] = '\0';
+	return res;
+}
+
 time_t
 Time(time_t *t)
 {
@@ -340,41 +349,51 @@ Getaddrinfo(char *host, char *service, struct addrinfo *hints,
 	return n;
 }
 
+/* 
+ * Substitute all occurences of s2 with s3 in s1, 
+ * e.g. _str_subst(str, "\\r", "\r") 
+ */
+static void
+_str_subst(char *s1, int len, const char *s2, const char *s3)
+{
+	int s2len = strlen(s2);
+	int s3len = strlen(s3);
+	char *p;
+
+	while ((p = strstr(s1, s2)) != NULL)
+	{
+		int delta_size = s3len - s2len;
+
+		assert(strlen(s1) + delta_size + 1 <= len);
+		memmove(p + s3len, p + s2len, strlen(p + s2len) + 1);
+		memcpy(p, s3, s3len);
+	}
+}
+
 void
 Regcomp(regex_t *preg, const char *regex, int cflags)
 {
 	char buf[MAX_REG_BUF];
 	int n;
-	int i = 0;
-	int j = 0;
 
 	assert(regex != NULL);
 	assert(strlen(regex) < sizeof(buf));
 
-/* My lame hack because regcomp won't interpret '\r' and '\n' */
-	/* Review: overflow of buf is possible */
-	while ( (i < MAX_REG_BUF) && (regex[j] != '\0') )
-	{
-		if ( (regex[j] == '\\') && (regex[j+1] == 'r') )
-		{
-			buf[i++] = '\r';
-			j += 2;
-		}
-		else if ( (regex[j] == '\\') && (regex[j+1] == 'n') )
-		{
-			buf[i++] = '\n';
-			j += 2;
-		}
-		else
-		{
-			buf[i++] = regex[j];
-			j += 1;
-		}
-	}
-	buf[i] = '\0';
-	/* Review: document limitation of library regcomp */
+	Strncpy(buf, regex, MAX_REG_BUF);
+
+	/* convert backslash-prefixed special characters in regex to value */
+	_str_subst(buf, MAX_REG_BUF, "\\r", "\r");
+	_str_subst(buf, MAX_REG_BUF, "\\n", "\n");
+
+	/*
+	 * N.B.
+	 * The buffer space available in a compiled RegEx expression is only 
+	 * 256 bytes.  A long or complicated RegEx will exceed this space and 
+	 * cause the library call to silently fail.
+	 */
 	n = regcomp(preg, buf, cflags);
-	if (n != REG_NOERROR) exit_msg("regcomp failed");
+	if (n != REG_NOERROR) 
+		exit_msg("regcomp failed");
 }
 
 int
@@ -386,8 +405,7 @@ Regexec(const regex_t *preg, const char *string,
 
 	/* Review: undocumented, is it needed? */	
 	re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
-	strncpy(buf, string, MAX_REG_BUF);
-	buf[MAX_REG_BUF - 1] = '\0'; /* be safe */
+	Strncpy(buf, string, MAX_REG_BUF);
 	n = regexec(preg, buf, nmatch, pmatch, eflags);
 	return n;
 }

@@ -121,10 +121,7 @@ _copy_timestamp(char *str, int len)
 	char *timestr = _get_timestr();
 
 	if (timestr)
-	{
-		strncpy(str, timestr, len);
-		str[len - 1] = '\0';	/* ensure NULL-termination */
-	}
+		Strncpy(str, timestr, len);
 }
 
 /* Add newline to end of 'str' */
