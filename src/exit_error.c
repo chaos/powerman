@@ -23,73 +23,104 @@
  *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
-#include "powerman.h"
-#include "main.h"
-
-
-#ifndef NDUMP
-
-bool Dump = FALSE;
-
-#endif
 
 /*
  * Somewhat like the sys_err() of Stevens, "UNIX Network Programming."
  */
 
+#include <string.h>
+#include <assert.h>
+
+#include "powerman.h"
+#include "list.h"
+#include "exit_error.h"
+
+static char *program = NULL;	/* basename of calling program */
+static bool syslog_on = FALSE;	/* use stderr until told otherwise */
+static ErrCallback error_callback = NULL; /* called just before exit */
+
+#define ERROR_BUFLEN 1024
+
+static void
+_make_error_callback(void)
+{
+	ErrCallback cb = error_callback;
+
+	error_callback = NULL; /* prevent recursion */
+	if (cb)
+		cb();
+}
+
+/*
+ * Initialize this module with the name of the program.
+ */
+void
+init_error(char *prog, ErrCallback cb)
+{
+	char *p = strrchr(prog, '/'); /* store only the basename */
+
+	program = p ? p + 1 : prog;
+
+	error_callback = cb;
+}
+
+/*
+ * Accessor function for syslog_enable.
+ */
+void
+syslog_on_error(bool syslog_enable)
+{
+	syslog_on = syslog_enable;
+}
+
+/*
+ * Report message on either stderr or syslog, then exit.
+ */
+void
+exit_msg(const char *fmt, ...)
+{
+	va_list ap;
+	char buf[ERROR_BUFLEN];
+
+	assert(program != NULL);
+
+	va_start(ap, fmt);
+	vsnprintf(buf, ERROR_BUFLEN, fmt, ap);
+	buf[sizeof(buf) - 1] = '\0'; /* ensure termination after overflow */
+	va_end(ap);
+
+	if ( syslog_on == TRUE )  
+		syslog(LOG_ERR, "%s", buf);
+	else
+		fprintf(stderr, "%s: %s\n", program, buf);
+
+	_make_error_callback();
+	exit(1);
+}
+
+/*
+ * Report error message on either stderr or syslog, then exit.
+ * This should only be called in situations where errno is known to be valid.
+ */
 void
 exit_error(const char *fmt, ...)
 {
 	va_list ap;
-	char buf[MAX_BUF];
+	char buf[ERROR_BUFLEN];
 	int er = errno;
-	int i;
+
+	assert(program != NULL);
 
 	va_start(ap, fmt);
-	vsnprintf(buf, MAX_BUF, fmt, ap);
+	vsnprintf(buf, ERROR_BUFLEN, fmt, ap);
+	buf[sizeof(buf) - 1] = '\0'; /* ensure termination after overflow */
 	va_end(ap);
-	if( syslog_on == FALSE )  
-	{
-		if( er )
-			fprintf(stderr, "PowerManD: %s: %s\n", buf, strerror(er));
-		else
-			fprintf(stderr, "PowerManD: %s\n", buf);
-	}
+
+	if ( syslog_on == TRUE )  
+		syslog(LOG_ERR, "%s: %s", buf, strerror(er));
 	else
-	{
-		if( er )
-			syslog(LOG_ERR, "%s: %m", buf);
-		else
-			syslog(LOG_ERR, "%s", buf);
-	}
-#ifndef NDUMP
-	if ( !Dump )
-	  {
-	    Dump = TRUE;
-	    dump_Globals(cheat);
-	  }
-	if( syslog_on == FALSE )  
-		fflush(stderr);
-#endif
-	for (i = 0; i < MAXFD; i++)
-		close(i);
-	if( syslog_on == TRUE )
-		closelog();
+		fprintf(stderr, "%s: %s: %s\n", program, buf, strerror(er));
+
+	_make_error_callback();
 	exit(1);
 }
-
-
-
-#ifndef NDUMP
-
-void
-Report_Memory()
-{
-	fprintf(stderr, "Remaining allocated memory is: %d\n", 
-		allocated_memory);
-}
-
-
-
-#endif
-

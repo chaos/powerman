@@ -25,43 +25,59 @@
 \*****************************************************************************/
 
 #include "powerman.h"
+#include "list.h"
 #include "config.h"
+#include "device.h"
+#include "exit_error.h"
+#include "pm_string.h"
+#include "buffer.h"
+#include "wrappers.h"
+#include "main.h"
 #include "client.h"
 
-#define ERROR     (-1)
-#define WHOSON      0
-#define WHOSOFF     1
-#define POWER_ON    2
-#define POWER_OFF   3
-#define POWER_CYCLE 4
-#define RESET       5
-#define NAMES       6
-
-const struct option long_options[] =
-{                             /* cd:F:hHlLnp:qrsvVwxz */
+#define OPT_STRING "cd:F:h10Lnp:qrsvVQxz"
+static const struct option long_options[] =
+{
+		{"on",      no_argument,       0, '1'},
+		{"off",     no_argument,       0, '0'},
 		{"cycle",   no_argument,       0, 'c'},
-		{"host",    required_argument, 0, 'd'},
+		{"reset",   no_argument,       0, 'r'},
 		{"file",    required_argument, 0, 'F'},
 		{"help",    no_argument,       0, 'h'},
-		{"on",      no_argument,       0, 'H'},
-		{"off",     no_argument,       0, 'l'},
-		{"license", no_argument,       0, 'L'},
 		{"list",    no_argument,       0, 'n'},
-		{"port",    required_argument, 0, 'p'},
-		{"query",   no_argument,       0, 'q'},
-		{"reset",   no_argument,       0, 'r'},
+		{"queryon", no_argument,       0, 'q'},
+		{"queryoff",no_argument,       0, 'Q'},
 		{"soft",    no_argument,       0, 's'},
 		{"verify",  no_argument,       0, 'v'},
 		{"version", no_argument,       0, 'V'},
-		{"whosoff", no_argument,       0, 'w'},
 		{"regex",   no_argument,       0, 'x'},
 		{"report",  no_argument,       0, 'z'},
+		{"host",    required_argument, 0, 'd'},
+		{"port",    required_argument, 0, 'p'},
+		{"license", no_argument,       0, 'L'},
 		{0, 0, 0, 0}
 };
 
-const struct option *longopts = long_options;
+static const struct option *longopts = long_options;
 
+typedef enum {
+	CMD_ERROR, CMD_WHOSON, CMD_WHOSOFF, CMD_POWER_ON, 
+	CMD_POWER_OFF, CMD_POWER_CYCLE, CMD_RESET, CMD_NAMES,
+} _command_t;
 
+typedef struct config_struct {
+	String *host;
+	String *service;
+	int port;
+	int fd;
+	_command_t com;
+	bool regex;
+	bool soft;
+	bool readable;
+	bool verify;
+	List targ;
+	List reply;
+}Config;
 
 static Config *process_command_line(int argc, char ** argv);
 static void usage(char *prog);
@@ -86,12 +102,11 @@ static List transfer_Nodes(List cluster);
 static void join_Nodes(List list1, List list2);
 static void update_Nodes_soft_state(List cluster, List reply);
 static void update_Nodes_hard_state(List cluster, List reply);
-extern Node *make_Node(const char *name);
-extern int cmp_Nodes(void *node1, void *node2);
-extern int match_Node(void *node, void *key);
-extern void free_Node(void *node);
+static Node *xmake_Node(const char *name);
+static int cmp_Nodes(void *node1, void *node2);
+static int xmatch_Node(void *node, void *key);
+static void xfree_Node(void *node);
 static bool is_prompt(String *targ);
-extern void exit_error(const char *fmt, ...);
 
 const char *powerman_license = \
     "Copyright (C) 2001-2002 The Regents of the University of California.\n"  \
@@ -105,27 +120,14 @@ const char *powerman_license = \
 
 #define PROMPT '>'
 
-const char *com_strings[] =
-{
-	"powerman\r\n",
-	"names %s\r\n",
-	"update plugs\r\n",
-	"update nodes\r\n",
-	"on %s\r\n",
-	"off %s\r\n",
-	"cycle %s\r\n",
-	"reset %s\r\n",
-	"error\r\n"
-};
-
-#define AUTHENTICATE    com_strings[0]
-#define GET_NAMES       com_strings[1]
-#define GET_HARD_UPDATE com_strings[2]
-#define GET_SOFT_UPDATE com_strings[3]
-#define DO_POWER_ON     com_strings[4]
-#define DO_POWER_OFF    com_strings[5]
-#define DO_POWER_CYCLE  com_strings[6]
-#define DO_RESET        com_strings[7]
+#define AUTHENTICATE_FMT 	"powerman\r\n"
+#define GET_NAMES_FMT 		"names %s\r\n"
+#define GET_HARD_UPDATE_FMT 	"update plugs\r\n"
+#define GET_SOFT_UPDATE_FMT 	"update nodes\r\n"
+#define DO_POWER_ON_FMT 	"on %s\r\n"
+#define DO_POWER_OFF_FMT 	"off %s\r\n"
+#define DO_POWER_CYCLE_FMT 	"cycle %s\r\n"
+#define DO_RESET_FMT 		"reset %s\r\n"
 
 int 
 main(int argc, char **argv)
@@ -133,13 +135,14 @@ main(int argc, char **argv)
 	Config *conf;
 	List cluster;
 
-	if( geteuid() != 0 ) exit_error("Must be root\n");
-
+	init_error(argv[0], NULL);
 	conf = process_command_line(argc, argv);
+
+	if( geteuid() != 0 ) exit_msg("Must be root");
+
 	cluster = connect_to_server(conf);
-	errno = 0;
 	if( list_is_empty(cluster) ) 
-		exit_error("No cluster members found");
+		exit_msg("No cluster members found");
 	process_targets(conf, cluster);
 	free_Config(conf);
 	list_destroy(cluster);
@@ -149,7 +152,8 @@ main(int argc, char **argv)
 /*
  * Config struct source
  */
-Config *
+#define EXACTLY_ONE_MSG "Use exactly one command argument (see --help)"
+static Config *
 process_command_line(int argc, char **argv)
 {
 	int c;
@@ -160,45 +164,44 @@ process_command_line(int argc, char **argv)
 
 	conf = make_Config();
 	opterr = 0;
-	while ((c = getopt_long(argc, argv, "cd:F:hHlLnp:qrsvVwxz", longopts, &longindex)) != -1) 
+	while ((c = getopt_long(argc, argv, OPT_STRING, longopts, &longindex)) != -1) 
 	{
-		errno = 0;
 		switch(c) {
-		case 'c':
-			if (conf->com != ERROR)
-				exit_error("Use exactly one of -c, -H, -l, -n, -q, -r, and -w");
-			conf->com = POWER_CYCLE;
+		case 'c':	/* --cycle */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_POWER_CYCLE;
 			break;
-		case 'd':
+		case 'd':	/* --host */
 			if (conf->host != NULL)
 				free_String( (void *)conf->host );
 			conf->host = make_String(optarg);
 			break;
-		case 'F':
+		case 'F':	/* --file */
 			read_Targets(conf, optarg);
 			break;
-		case 'h':
+		case 'h':	/* --help */
 			usage(argv[0]);
 			exit(0);
-		case 'H':
-			if (conf->com != ERROR)
-				exit_error("Use exactly one of -c, -H, -l, -n, -q, -r, and -w");
-			conf->com = POWER_ON;
+		case '1':	/* --on */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_POWER_ON;
 			break;
-		case 'l':
-			if (conf->com != ERROR)
-				exit_error("Use exactly one of -c, -H, -l, -n, -q, -r, and -w");
-			conf->com = POWER_OFF;
+		case '0':	/* --off */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_POWER_OFF;
 			break;
-		case 'L':
+		case 'L':	/* --license */
 			printf("%s", powerman_license);
 			exit(0);
-		case 'n':
-			if (conf->com != ERROR)
-				exit_error("Use exactly one of -c, -H, -l, -n, -q, -r, and -w");
-			conf->com = NAMES;
+		case 'n':	/* --list */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_NAMES;
 			break;
-		case 'p':
+		case 'p':	/* --port */
 			/* Is optarg a legal service value integer? */
 			/* If not, can you find the named service?  */
 			/* If not, exit_error()                     */
@@ -206,44 +209,43 @@ process_command_line(int argc, char **argv)
 				free_String( (void *)conf->service );
 			conf->service = make_String(optarg);
 			break;
-		case 'q':
-			if (conf->com != ERROR)
-				exit_error("Use exactly one of -c, -H, -l, -n, -q, -r, and -w");
-			conf->com = WHOSON;
+		case 'q':	/* --queryon */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_WHOSON;
 			break;
-		case 'r':
-			if (conf->com != ERROR)
-				exit_error("Use exactly one of -c, -H, -l, -n, -q, -r, and -w");
-			conf->com = RESET;
+		case 'Q':	/* --queryoff */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_WHOSOFF;
 			break;
-		case 's':
+		case 'r':	/* --reset */
+			if (conf->com != CMD_ERROR)
+				exit_msg(EXACTLY_ONE_MSG);
+			conf->com = CMD_RESET;
+			break;
+		case 's':	/* --soft */
 			conf->soft = TRUE;
 			break;
-		case 'v':
+		case 'v':	/* --verify */
 			conf->verify = TRUE;
 			break;
-		case 'V':
+		case 'V':	/* --version */
 			printf("%s-%s\n", PROJECT, VERSION);
 			exit(0);
-		case 'w':
-			if (conf->com != ERROR)
-				exit_error("Use exactly one of -c, -H, -l, -n, -q, -r, and -w");
-			conf->com = WHOSOFF;
-			break;
-		case 'x':
+		case 'x':	/* --regex */
 			conf->regex = TRUE;
 			break;
-		case 'z':
+		case 'z':	/* --report */
 			conf->readable = TRUE;
 			break;
 		default:
-			printf("Unrecognized command line option (try -h).\n");
-			exit(0);
-			break;
+			exit_msg("Unrecognized command line option (see --help)");
+			/*NOTREACHED*/
 		}
 	}
-	if (conf->com == ERROR)
-		exit_error("Use exactly one of -c, -H, -l, -n, -q, -r, and -w");
+	if (conf->com == CMD_ERROR)
+		exit_msg(EXACTLY_ONE_MSG);
 	i = optind;
 	while (i < argc)
 	{
@@ -254,44 +256,33 @@ process_command_line(int argc, char **argv)
 	return conf;
 }
 
-void usage(char * prog)
+/*
+ * Display powerman usage and exit.
+ */
+static void 
+usage(char * prog)
 {
-    printf("\nUsage: %s [OPTIONS] [TARGETS]\n", prog);
-    printf("OPTIONS:\n");
-    printf("  -c --cycle     Power cycle the targets.\n");
-    printf("  -d --host HOST Specify server host name [localhost].\n");
-    printf("  -F --file FILE Get targets from FILE.\n");
-    printf("  -h --help      Display this help.\n");
-    printf("  -H --on        Power on the targets.\n");
-    printf("  -l --off       Power off the targets.\n");
-    printf("  -L --license   Display license information.\n");
-    printf("  -n --list      List nodes that would be targets (but don't do anything).\n");
-    printf("  -p --port PORT Specify serverport or service name [10101].\n");
-    printf("  -q --query     Query which amongst targets is on.\n");
-    printf("  -r --reset     Reset the targets.\n");
-    printf("  -s --soft      Use soft power status.\n");
-    printf("  -v --verify    Verify command (esp. after power control command).\n");
-    printf("  -V --version   Display version information.\n");
-    printf("  -w --whosoff   Query which amongst targets is off.\n");
-    printf("  -x --regex     Interpret targets as RegEx expressions.\n");
-    printf("  -z --report    Make human readable report of nodes states.\n");
-    printf("Use exactly one of -c, -H, -l, -n, -q, -r, and -w.\n");
-    printf("TARGETS:\n");
-    printf("            After the last option you may list any number of\n");
-    printf("            targets.  A target is a white-space-delimitted\n");
-    printf("            string that is interpretted as a GLOB (default)\n");
-    printf("            or a RegEx.  Any host whose name matches under\n");
-    printf("            the corresponding rules will receive the given\n");
-    printf("            action (query, on, off, ...).\n");
-    printf("\n");
-    return;
+    printf("Usage: %s [COMMAND OPTS] [MODIFIER OPTS] [TARGETS]\n", prog);
+    printf("COMMAND OPTIONS:\n\
+  -c --cycle     Power cycle targets   -r --reset    Reset targets\n\
+  -1 --on        Power on targets      -0 --off      Power off targets\n\
+  -q --queryon   List on targets       -Q --queryoff List off targets\n\
+  -z --report    List on/off/unknown   -n --list     List targets (no action)\n\
+  -h --help      Display this help\n");
+    printf("MODIFIER OPTIONS:\n\
+  -s --soft      Use soft power status   -v --verify    Verify state change\n\
+  -x --regex     Use regex not glob      -F --file FILE Get targets from file\n\
+  -d --host HOST Server name [localhost] -p --port PORT Server port\n\
+  -V --version   Display version info    -L --license   Display license\n");
+    printf("TARGETS:\n\
+  Target hostname arguments - may be a glob [default] or regex [-x]\n");
 }
 
 /* 
  *   This should be changed to allow for a '-' in place of the 
  * file name, which would then cause it to read from stdin.
  */
-void
+static void
 read_Targets(Config *conf, char *name)
 {
 	FILE *fp;
@@ -300,10 +291,9 @@ read_Targets(Config *conf, char *name)
 	unsigned int c;
 	String *targ;
 
-	errno = 0;
 	if( (fp = fopen(name, "r")) == NULL)
 	{
-		exit_error("Coudn't open %s for target names", name);
+		exit_msg("Coudn't open %s for target names", name);
 	}
 	while( (c = getc(fp)) != EOF )
 	{
@@ -330,7 +320,7 @@ read_Targets(Config *conf, char *name)
 /*
  * List source
  */
-List
+static List
 connect_to_server(Config *conf)
 {
 	struct addrinfo hints, *addrinfo;
@@ -339,7 +329,7 @@ connect_to_server(Config *conf)
 	List cluster;
 	List reply;
 
-	bzero(&hints, sizeof(struct addrinfo));
+	memset(&hints, 0, sizeof(struct addrinfo));
 	hints.ai_flags = AI_CANONNAME;
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
@@ -357,7 +347,7 @@ connect_to_server(Config *conf)
 
 	reply = dialog(conf->fd, NULL);
 	list_destroy(reply);
-	reply = dialog(conf->fd, AUTHENTICATE);
+	reply = dialog(conf->fd, AUTHENTICATE_FMT);
 	list_destroy(reply);
 
 	cluster = get_Names(conf->fd);
@@ -369,16 +359,16 @@ connect_to_server(Config *conf)
 /*
  * List source
  */
-List
+static List
 get_Names(int fd)
 {
 	List cluster;
 	List reply;
 	char buf[MAX_BUF];
 
-	cluster = list_create(free_Node);
+	cluster = list_create(xfree_Node);
 /* get the names */
-	sprintf(buf, GET_NAMES, ".*");
+	sprintf(buf, GET_NAMES_FMT, ".*");
 	reply = dialog(fd, buf);
 	append_Nodes(cluster, reply); 
 	list_destroy(reply);
@@ -386,17 +376,17 @@ get_Names(int fd)
 	return cluster;
 }
 
-void
+static void
 get_State(int fd, List cluster)
 {
 /* update the status */
 	List reply;
 
-	reply = dialog(fd, GET_SOFT_UPDATE);
+	reply = dialog(fd, GET_SOFT_UPDATE_FMT);
 	update_Nodes_soft_state(cluster, reply); 
 	list_destroy(reply);
 
-	reply = dialog(fd, GET_HARD_UPDATE);
+	reply = dialog(fd, GET_HARD_UPDATE_FMT);
 	update_Nodes_hard_state(cluster, reply); 
 	list_destroy(reply);
 }
@@ -408,7 +398,7 @@ get_State(int fd, List cluster)
  *
  * List source
  */
-List
+static List
 dialog(int fd, const char *str)
 {
 	unsigned char buf[MAX_BUF];
@@ -422,14 +412,13 @@ dialog(int fd, const char *str)
 	List reply = list_create(free_String);
 	String *targ;
 
-	bzero(buf, MAX_BUF);
+	memset(buf, 0, MAX_BUF);
 	if( str != NULL )
 	{
 		len = strlen(str);
-		errno = 0;
 		n = Write(fd, (char *)str, len);
 		if( n != len )
-			exit_error("Incomplete write of %s.", str);
+			exit_msg("Incomplete write of %s", str);
 	}
 	found = FALSE;
 	while( !found && (limit > 0) )
@@ -462,13 +451,12 @@ dialog(int fd, const char *str)
 			i++;
 		}
 	}
-	errno = 0;
 	if( list_is_empty(reply) )
-		exit_error("Command \"%s\" failed.", str);
+		exit_msg("Command \"%s\" failed.", str);
 	return reply;
 }
 
-void
+static void
 process_targets(Config *conf, List cluster)
 {
 	String *targ;
@@ -491,7 +479,7 @@ process_targets(Config *conf, List cluster)
 /*
  * String source
  */
-String *
+static String *
 glob2regex(String *glob)
 {
 	unsigned char buf[MAX_BUF];
@@ -499,7 +487,6 @@ glob2regex(String *glob)
 	String *regex;
 	unsigned char *g = get_String(glob);
 
-	errno = 0;
 	while(*g != '\0')
 	{
 		if( isalnum(*g) || (*g == '-') || (*g == '_') )
@@ -515,7 +502,7 @@ glob2regex(String *glob)
 			i++;
 		}
 		else
-			exit_error("%c is not a legal character for a host name", *g);
+			exit_msg("%c is not a legal character for a host name", *g);
 		g++;
 	}
 	buf[i] = '\0';
@@ -526,7 +513,7 @@ glob2regex(String *glob)
 /* 
  * List source
  */
-List
+static List
 send_server(Config *conf, String *str)
 {
 	List reply;
@@ -534,22 +521,22 @@ send_server(Config *conf, String *str)
 
 	switch(conf->com)
 	{
-	case WHOSON      :
-	case WHOSOFF     :
-	case NAMES       :
-		sprintf(buf, GET_NAMES, get_String(str));
+	case CMD_WHOSON      :
+	case CMD_WHOSOFF     :
+	case CMD_NAMES       :
+		sprintf(buf, GET_NAMES_FMT, get_String(str));
 		break;
-	case POWER_ON    :
-		sprintf(buf, DO_POWER_ON, get_String(str));
+	case CMD_POWER_ON    :
+		sprintf(buf, DO_POWER_ON_FMT, get_String(str));
 		break;
-	case POWER_OFF   :
-		sprintf(buf, DO_POWER_OFF, get_String(str));
+	case CMD_POWER_OFF   :
+		sprintf(buf, DO_POWER_OFF_FMT, get_String(str));
 		break;
-	case POWER_CYCLE :
-		sprintf(buf, DO_POWER_CYCLE, get_String(str));
+	case CMD_POWER_CYCLE :
+		sprintf(buf, DO_POWER_CYCLE_FMT, get_String(str));
 		break;
-	case RESET       :
-		sprintf(buf, DO_RESET, get_String(str));
+	case CMD_RESET       :
+		sprintf(buf, DO_RESET_FMT, get_String(str));
 		break;
 	default :
 		ASSERT(FALSE);
@@ -558,32 +545,32 @@ send_server(Config *conf, String *str)
 	return reply;
 }
 
-void 
+static void 
 publish_reply(Config *conf, List cluster, List reply)
 {
 	State_Val state = OFF;
 
 	switch(conf->com)
 	{
-	case WHOSON      :
+	case CMD_WHOSON      :
 		state = ON;
-	case WHOSOFF     :
+	case CMD_WHOSOFF     :
 		if( conf->readable == TRUE ) 
 			print_readable(conf, cluster);
 		else
 			print_list(conf, cluster, reply, state);
 		break;
-	case POWER_ON    :
-	case POWER_OFF   :
-	case POWER_CYCLE :
-	case RESET       :
+	case CMD_POWER_ON    :
+	case CMD_POWER_OFF   :
+	case CMD_POWER_CYCLE :
+	case CMD_RESET       :
 		if( conf->verify == TRUE )
 		{
 			get_State(conf->fd, cluster);
 			print_readable(conf, cluster);
 		}
 		break;
-	case NAMES       :
+	case CMD_NAMES       :
 		print_Targets(reply);
 		break;
 	default :
@@ -592,7 +579,7 @@ publish_reply(Config *conf, List cluster, List reply)
 	}
 }
 
-void
+static void
 print_readable(Config *conf, List cluster)
 {
 /*
@@ -616,7 +603,7 @@ print_readable(Config *conf, List cluster)
 /*
  * List source
  */
-List
+static List
 get_next_subrange(List nodes)
 {
 	List list;
@@ -628,7 +615,7 @@ get_next_subrange(List nodes)
 	first_node = (Node *)list_pop(nodes);
 	ASSERT(first_node != NULL);
 
-	list = list_create(free_Node);
+	list = list_create(xfree_Node);
 	list_append(list, (void *)first_node);
 	node = (Node *)list_peek(nodes);
 	while( node != NULL && prefix_match(first_node->name, node->name) )
@@ -640,7 +627,7 @@ get_next_subrange(List nodes)
 	return list;
 }
 
-void
+static void
 subrange_report(List nodes, bool soft, State_Val state, char *state_string)
 {
 	Node *node;
@@ -689,7 +676,7 @@ subrange_report(List nodes, bool soft, State_Val state, char *state_string)
 
 	/* there are at least two, so use tux[...] notation */
 
-	bzero(buf, MAX_BUF);
+	memset(buf, 0, MAX_BUF);
 	strncpy(buf, get_String(node->name), prefix_String(node->name));
 	printf("%s\t\t%s[%d", state_string, buf, index_String(node->name));
 	first = TRUE;
@@ -724,7 +711,7 @@ subrange_report(List nodes, bool soft, State_Val state, char *state_string)
 	printf("]\n");
 }
 
-void
+static void
 print_list(Config *conf, List cluster, List targ, State_Val state)
 {
 	Node *node;
@@ -735,9 +722,8 @@ print_list(Config *conf, List cluster, List targ, State_Val state)
 	itr = list_iterator_create(targ);
 	while( (t = (String *)list_next(itr)) && !is_prompt(t) )
 	{
-		errno = 0;
-		node = list_find_first(cluster, match_Node, get_String(t));
-		if( node == NULL ) exit_error("No such node as \"%s\".", get_String(t));
+		node = list_find_first(cluster, xmatch_Node, get_String(t));
+		if( node == NULL ) exit_msg("No such node as \"%s\".", get_String(t));
 		if( conf->soft == TRUE )
 		{
 			if( node->n_state == state ) printf("%s\n", get_String(node->name));
@@ -749,7 +735,7 @@ print_list(Config *conf, List cluster, List targ, State_Val state)
 	}
 }
 
-void
+static void
 print_Targets(List targ)
 {
 	String *t;
@@ -766,7 +752,7 @@ print_Targets(List targ)
 /*
  * Config source
  */
-Config *
+static Config *
 make_Config()
 {
 	Config *conf;
@@ -808,7 +794,7 @@ make_Config()
 		conf->service = make_String("10101");
 		conf->port = 10101;
 	}
-	conf->com = ERROR;
+	conf->com = CMD_ERROR;
 	conf->regex = FALSE;
 	conf->readable = FALSE;
 	conf->verify = FALSE;
@@ -820,7 +806,7 @@ make_Config()
 /*
  * Config sink
  */
-void
+static void
 free_Config(Config *conf)
 {
 	free_String((void *)conf->host);
@@ -831,7 +817,7 @@ free_Config(Config *conf)
 	Free(conf, sizeof(Config));
 }
 
-void 
+static void 
 append_Nodes(List cluster, List reply)
 {
 	Node *node;
@@ -842,7 +828,7 @@ append_Nodes(List cluster, List reply)
 	itr = list_iterator_create(reply);
 	while( (targ = (String *)list_next(itr)) && !is_prompt(targ) )
 	{
-		node = make_Node(get_String(targ));
+		node = xmake_Node(get_String(targ));
 		list_append(cluster, node);
 	}
 }
@@ -850,11 +836,11 @@ append_Nodes(List cluster, List reply)
 /*
  * List source
  */
-List
+static List
 transfer_Nodes(List cluster)
 {
 	Node *node;
-	List nodes = list_create(free_Node);
+	List nodes = list_create(xfree_Node);
 
 	while( (node = (Node *)list_pop(cluster)) )
 		list_append(nodes, (void *)node);
@@ -862,7 +848,7 @@ transfer_Nodes(List cluster)
 }
 
 
-void
+static void
 join_Nodes(List list1, List list2)
 {
 	Node *node;
@@ -876,7 +862,7 @@ join_Nodes(List list1, List list2)
 	list_destroy(list2);	
 }
 
-void 
+static void 
 update_Nodes_soft_state(List cluster, List reply)
 {
 	Node *node;
@@ -891,7 +877,6 @@ update_Nodes_soft_state(List cluster, List reply)
 
 	node_i = list_iterator_create(cluster);
 	node = (Node *)list_next(node_i);
-	errno = 0;
 	forcount(i, length_String(targ))
 	{
 		ASSERT( node != NULL );
@@ -907,14 +892,14 @@ update_Nodes_soft_state(List cluster, List reply)
 			node->n_state = ST_UNKNOWN;
 			break;
 		default :
-			exit_error("Illegal soft state value.");
+			exit_msg("Illegal soft state value.");
 		}
 		node = (Node *)list_next(node_i);
 	}
 	list_iterator_destroy(node_i);
 }
 
-void 
+static void 
 update_Nodes_hard_state(List cluster, List reply)
 {
 	Node *node;
@@ -929,7 +914,6 @@ update_Nodes_hard_state(List cluster, List reply)
 
 	node_i = list_iterator_create(cluster);
 	node = (Node *)list_next(node_i);
-	errno = 0;
 	forcount(i, length_String(targ))
 	{
 		ASSERT( node != NULL );
@@ -945,7 +929,7 @@ update_Nodes_hard_state(List cluster, List reply)
 			node->p_state = ST_UNKNOWN;
 			break;
 		default :
-			exit_error("Illegal hard state value.");
+			exit_msg("Illegal hard state value.");
 		}
 		node = (Node *)list_next(node_i);
 	}
@@ -955,8 +939,8 @@ update_Nodes_hard_state(List cluster, List reply)
 /*
  * Node source
  */
-Node *
-make_Node(const char *name)
+static Node *
+xmake_Node(const char *name)
 {
 	Node *node;
 
@@ -967,7 +951,7 @@ make_Node(const char *name)
 	return node;
 }
 
-int
+static int
 cmp_Nodes(void *node1, void *node2)
 {
 	ASSERT(((Node *)node1) != NULL);
@@ -979,22 +963,22 @@ cmp_Nodes(void *node1, void *node2)
 			  ((Node *)node2)->name);
 }
 
-int
-match_Node(void *node, void *key)
+static int
+xmatch_Node(void *node, void *key)
 {
 	if( match_String(((Node *)node)->name, (char *)key) )
 		return TRUE;
 	return FALSE;	
 }
 
-void
-free_Node(void *node)
+static void
+xfree_Node(void *node)
 {
 	free_String( (void *)((Node *)node)->name);
 	Free(node, sizeof(Node));
 }
 
-bool
+static bool
 is_prompt(String *targ)
 {
 	int i = 0;
@@ -1009,26 +993,3 @@ is_prompt(String *targ)
 	}
 	return result;
 }
-
-void
-exit_error(const char *fmt, ...)
-{
-	va_list ap;
-	char buf[MAX_BUF];
-	int er;
-	int len;
-
-	er = errno;
-	snprintf(buf, MAX_BUF, "PowerMan: ");
-	len = strlen(buf);
-	va_start(ap, fmt);
-	vsnprintf(buf + len, MAX_BUF - len, fmt, ap);
-	len = strlen(buf);
-	snprintf(buf + len, MAX_BUF - len, ": %s\n", strerror(er));
-	fflush(stdout);
-	fputs(buf, stderr);
-	fflush(stderr);
-	va_end(ap);
-	exit(1);
-}
-

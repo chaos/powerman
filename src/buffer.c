@@ -27,6 +27,10 @@
  */
 
 #include "powerman.h"
+#include "exit_error.h"
+#include "wrappers.h"
+#include "log.h"
+#include "pm_string.h"
 #include "buffer.h"
 
 static void check_Buffer(Buffer *b, int len);
@@ -74,7 +78,7 @@ send_Buffer(Buffer *b, const char *fmt, ...)
 	int maxfd = b->fd + 1;
 
 /* get at most MAX_BUF of what the caller wanted to send */
-	bzero( str, MAX_BUF + 1 );
+	memset( str, 0, MAX_BUF + 1 );
 	va_start(ap, fmt);
 	vsnprintf(str, MAX_BUF, fmt, ap);
 	va_end(ap);
@@ -94,7 +98,7 @@ send_Buffer(Buffer *b, const char *fmt, ...)
  */
 	while( b->in + len > b->end )
 	{
-		if( b != log->to ) /* bogus, but the log uses this code, too */
+		if( ! is_log_buffer(b) ) /* bogus, but the log uses this code, too */
 			log_it(0, "Blocking for (up to) 1 second waiting for buffer space for descriptor %d", b->fd);
 		FD_ZERO(&rset);
 		FD_ZERO(&wset);
@@ -109,7 +113,7 @@ send_Buffer(Buffer *b, const char *fmt, ...)
 
 /* We have space (the usual case from the start) */
 	snprintf(b->in, len + 1, str);
-	if( b != log->to ) /* bogus */
+	if( ! is_log_buffer(b) ) /* bogus */
 		log_it(0, "send \"%s\" to descriptor %d", b->in, b->fd);
 	b->in += len;
 	*(b->in) = '\0';
@@ -134,13 +138,13 @@ check_Buffer(Buffer *b, int len)
 	if( (b->in + len >  b->high) &&
 	    (b->out > b->low) )
 	{
-		if( b != log->to ) /* bogus */
+		if( ! is_log_buffer(b) ) /* bogus */
 			log_it(0, "Buffer shift required on descriptr %d", b->fd);
 		forcount (i, num)
 			b->buf[i] = b->buf[i + del];
 		b->out -= del;
 		b->in  -= del;
-		bzero(b->in, del);
+		memset(b->in, 0, del);
 	}
 }
 
@@ -159,7 +163,7 @@ write_Buffer(Buffer *b)
 	n = Write(b->fd, b->out, (int) (b->in - b->out));
 	if ( n < 0 ) return n; /* EWOULDBLOCK */
 
-	bzero(b->out, n);
+	memset(b->out, 0, n);
 	b->out += n;
 	ASSERT(b->out <= b->in);
 	if ( b->out == b->in )
@@ -186,12 +190,12 @@ read_Buffer(Buffer *b)
 	ASSERT(b->out <= b->in);
 	if (b->out == b->in)
 	{
-		bzero(b->start, b->in - b->start);
+		memset(b->start, 0, b->in - b->start);
 		b->out = b->in = b->start;
 	}
 
 	/* get new bytes if there are any */
-	bzero( str, MAX_BUF + 1 );
+	memset( str, 0, MAX_BUF + 1 );
 	n = Read(b->fd, str, MAX_BUF);
 	if ( n <= 0) return n;
 
@@ -247,7 +251,7 @@ get_String_from_Buffer(Buffer *b, regex_t *re)
 	int len = b->in - b->out;
 	char str[MAX_BUF];
 
-	bzero(str, MAX_BUF);
+	memset(str, 0, MAX_BUF);
 	snprintf(str, len + 1, b->out);
 	if( re == NULL )
 		/* get a line */

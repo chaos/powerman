@@ -24,6 +24,9 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#ifndef POWERMAN_H
+#define POWERMAN_H
+
 #define _GNU_SOURCE
 
 #include <stdio.h>
@@ -65,7 +68,7 @@ typedef int bool;
         if(f)        \
         {}           \
         else         \
-        exit_error("Assertion failed: %s, line %u", __FILE__, __LINE__)
+        exit_msg("Assertion failed: %s, line %u", __FILE__, __LINE__)
 #define MAGIC            int magic
 #define INIT_MAGIC(x)    (x)->magic = (MAGIC_VAL)
 #define CHECK_MAGIC(x)   ASSERT((x)->magic == MAGIC_VAL)
@@ -87,50 +90,16 @@ typedef int bool;
 #define forcount(x, y) for (x = 0; x < y; (x)++)
 
 
-typedef void Sigfunc(int);
-
-
 typedef struct string_struct String;
 typedef struct buffer_struct Buffer;
 typedef enum client_status_enum Client_Status;
 typedef struct client_struct Client;
 typedef struct action_struct Action;
-typedef enum snd_exp_enum Script_El_T;
-typedef struct send_struct Send_T;
-typedef struct expect_struct Expect_T;
-typedef struct delay_struct Delay_T;
-typedef union s_e_type_union S_E_U;
-typedef struct snd_exp_struct Script_El;
-typedef struct spec_element_struct Spec_El;
-typedef struct specification_struct Spec;
-typedef enum stateval_enum State_Val;
-typedef struct interpretation_struct Interpretation;
-typedef struct node_struct Node;
-typedef struct cluster_struct Cluster;
-typedef enum string_mode_enum String_Mode;
-typedef enum device_enum Dev_Type;
-typedef struct protocol_struct Protocol;
 typedef struct listener_struct Listener;
-typedef struct plug_struct Plug;
-typedef struct tty_dev_struct TTY_Dev;
-typedef struct tcp_dev_struct TCP_Dev;
-typedef struct snmp_dev_struct SNMP_Dev;
-typedef struct telnet_dev_struct telnet_Dev;
-typedef struct pmd_dev_struct PMD_Dev;
-typedef union dev_type_union Dev_U;
-typedef struct dev_struct Device;
-typedef enum server_status_enum Server_Status;
-typedef struct log_struct Log;
-typedef struct globals_struct Globals;
 
-#include "list.h"
-#include "exit_error.h"
-#include "pm_string.h"
-#include "buffer.h"
-#include "log.h"
-#include "wrappers.h"
+typedef struct device_struct Device;
+typedef struct spec_struct Spec;
 
+typedef enum {NO_DEV, TTY_DEV, TCP_DEV, TELNET_DEV, SNMP_DEV, PMD_DEV} Dev_Type;
 
- 
-
-
+#endif /* POWERMAN_H */

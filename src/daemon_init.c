@@ -29,9 +29,11 @@
    #include	<syslog.h>
 */
 #include "powerman.h"
+#include "wrappers.h"
+#include "exit_error.h"
 #include "daemon_init.h"
 
-bool syslog_on = FALSE;
+#define TMPSTR_LEN 32
 
 void
 daemon_init()
@@ -41,8 +43,8 @@ daemon_init()
 	int len;
 	int fd;
 	pid_t pid;
-	char pidstr[MAX_BUF];
-	char buf[MAX_BUF];
+	char pidstr[TMPSTR_LEN];
+	char buf[TMPSTR_LEN];
 	time_t t;
 	
 
@@ -63,18 +65,15 @@ daemon_init()
 	/* change working directory */
 	n = chdir(ROOT_DIR);
 	if( n == -1 ) exit_error("Requires access to root directory");
-	errno = 0;
 	n = mkdir(PID_DIR, S_IRWXU);
 	if( (n == -1) && (errno != EEXIST) )
 		exit_error("Couldn't create dirsctory /var/run/powerman");
 	fd = open(PID_FILE_NAME, O_WRONLY | O_CREAT | O_TRUNC | O_SYNC, S_IRWXU);
-	if( fd == -1 ) exit_error("Failed to open pid file");
-	errno = 0;
+	if( fd == -1 ) exit_error("Failed to open %s", PID_FILE_NAME);
 	sprintf(pidstr, "%d\n", pid = getpid());
 	len = strlen(pidstr);
 	n = write(fd, pidstr, len);
-	if( n != len ) exit_error("Failed to write out pid value");
-	errno = 0;
+	if( n != len ) exit_msg("Failed to write out pid value");
 	close(fd);
 
 	/* clear our file mode creation mask */
@@ -84,10 +83,9 @@ daemon_init()
 		close(i);
 
 
-	errno = 0;
 	sprintf(buf, "Started %s", ctime(&t));
 	openlog("PowerManD", LOG_NDELAY |  LOG_PID, LOG_DAEMON);
-	syslog_on = TRUE;
+	syslog_on_error(TRUE);
 	syslog(LOG_NOTICE, buf);
 /*
 #ifndef NDEBUG

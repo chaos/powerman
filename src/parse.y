@@ -30,12 +30,18 @@
 #define YYSTYPE char *  /*  The generic type returned by all parse matches */
 #undef YYDEBUG          /* no debug code plese */
 #include "powerman.h"
-#include "action.h"
+#include "list.h"
 #include "config.h"
 #include "device.h"
+#include "main.h"
+#include "action.h"
 #include "server.h"
 #include "listener.h"
-#include "main.h"
+#include "exit_error.h"
+#include "log.h"
+#include "pm_string.h"
+#include "buffer.h"
+#include "wrappers.h"
 
 /* prototypes for parse handler routines */
 static char *makeNode(char *s1, char *s2, char *s4, char *s5, char *s7);
@@ -71,7 +77,6 @@ static char *makeInterDev(char *s2);
 static char *makeTimeOut(char *s2);
 static char *makeTCPWrappers();
 static char *makeGlobalSec(char *s2);
-extern int  parse_config_file (Globals *g);
 extern void yyerror();
 extern void set_tv(struct timeval *tv, char *s);
 
@@ -361,11 +366,8 @@ node_line : TOK_NODE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL
  * only function the outside world needs to see.
  */
 int 
-parse_config_file (Globals *g)
+parse_config_file (void)
 {
-
-	cheat = g;
-
 	yyparse();
 
 	return 0;
@@ -405,15 +407,12 @@ makeLogFile(char *s2, char *s3)
 
 	ASSERT( s2 != NULL );
 
-	if( log->name != NULL )
-		exit_error("Log name %s already encountered", log->name->string);
-
 /* gets the "log" fd, prints a timestamp */
 /* log level 0 is the most restrictive */
 	n = sscanf(s3, "%d", &level);
 	if ( n != 1)
 		level = 0;
-	init_log(s2, level); 
+	init_log(s2, level); /* exits if already initialized */
 	return s2;
 }
 

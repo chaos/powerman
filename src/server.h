@@ -30,8 +30,7 @@
 #define NO_PORT           (-1)
 
 
-enum client_status_enum {CLI_IDLE, CLI_READING, CLI_WRITING, 
-				 CLI_DONE}; 
+enum client_status_enum {CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE}; 
 
 /*
  *  Each client is represented by one of these.  The read and write
@@ -55,16 +54,20 @@ struct client_struct {
 	MAGIC;
 };
 
-/* server.c extern prototypes */
-extern void handle_Client_read(Protocol *client_prot, Cluster *cluster, 
+/* server.c prototypes */
+void handle_Client_read(Protocol *client_prot, Cluster *cluster, 
 			       List acts, Client *c);
-extern void handle_Client_write(Client *c);
-extern void client_reply(Cluster *cluster, Action *act);
-extern Client *make_Client();
-extern int match_Client(void *client, void *key);
-extern void free_Client(void *client);
-
-
-
-
+void handle_Client_write(Client *c);
+void client_reply(Cluster *cluster, Action *act);
+Client *make_Client();
+int match_Client(void *client, void *key);
+void free_Client(void *client);
+#ifndef NDUMP
+void dump_Client(Client *client);
 #endif
+
+
+
+
+
+#endif /* SERVER_H */

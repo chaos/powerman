@@ -81,6 +81,7 @@ rm -rf "$RPM_BUILD_ROOT"
 %defattr(-,root,root,0755)
 /usr/bin/powerman
 /usr/bin/powermand
+%defattr(-,root,root,0644)
 /etc/powerman/baytech.dev
 /etc/powerman/icebox.dev
 /etc/powerman/wti.dev

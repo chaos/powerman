@@ -42,6 +42,11 @@ extern int yyline;
 #include <stdio.h>
 #include "parse_tab.h"
 #include "powerman.h"
+#include "buffer.h"
+#include "list.h"
+#include "wrappers.h"
+#include "exit_error.h"
+#include "config.h"
 #include "main.h"
 extern void yyerror();
 	

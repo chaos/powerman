@@ -28,30 +28,13 @@
 #ifndef LOG_H
 #define LOG_H
 
+void make_log(void);
+void init_log(const char *name, int level);
+void log_it(int level, const char *fmt, ...);
+void handle_log(void);
+void free_Log(void);
+bool is_log_buffer(Buffer *b);
+int fd_log(void);
+bool writeable_log(void);
 
-struct log_struct {
-	String *name;
-	int fd;
-	bool write;
-	Buffer *to;
-	int level;
-}; 
-
-
-extern Log *log;
-
-
-/* log.c prototype */
-extern void make_log();
-extern void init_log(const char *name, int level);
-extern void log_it(int level, const char *fmt, ...);
-extern void handle_log();
-extern void free_Log();
-
-
-
-
-
-
-
-#endif
+#endif /* LOG_H */

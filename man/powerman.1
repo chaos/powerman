@@ -36,7 +36,7 @@ powerman \- issue power monitoring queries and power control commands
 
 .SH DESCRIPTION
 .B powerman
-provides power monitoring and power management on a cluster of nodes.
+provides power management on a cluster of nodes.
 For an option in 
 .I [--on, --off, --reset, --cycle]
 .B powerman
@@ -55,7 +55,7 @@ power status and plug power status is referred to as
 .I hard
 power status.  Hard power status is reported by default.
 .LP
-.B powerman [--query, --whosoff]
+.B powerman [--queryon, --queryoff]
 queries the target nodes for their power status and prints the names of 
 those that are on (resp. off), one per line (but see --report below).
 .LP
@@ -113,7 +113,7 @@ Read the targets from a file instead of from the command line.
 .br
 Print a usage message and exit.
 .LP
-.I "-H"
+.I "-1"
 .br
 .I "--on"
 .br
@@ -121,7 +121,7 @@ Power on the target nodes if their plugs were off, thus initiating a
 boot of the node as well.  No effect on nodes whose plugs are already 
 on.  
 .LP
-.I "-l"
+.I "-0"
 .br
 .I "--off"
 .br
@@ -155,7 +155,7 @@ configuration file.
 .LP
 .I "-q"
 .br
-.I "--query"
+.I "--queryon"
 .br
 Ask the daemon if the target nodes are on.  The client prints the names,
 one per line, of those nodes among the targets whose plugs are on.  
@@ -191,9 +191,9 @@ the result in the report format (see the --report option).
 .br
 Print the version of the program and exit.
 .LP
-.I "-w"
+.I "-Q"
 .br
-.I "--whosoff"
+.I "--queryoff"
 .br
 Ask the daemon if the target nodes are off.  The client prints the names,
 one per line, of those nodes among the targets whose plugs are off.  

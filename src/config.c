@@ -26,49 +26,19 @@
 
 /* all the declarations */
 #include "powerman.h"
-#include "action.h"
+#include "exit_error.h"
+#include "list.h"
 #include "config.h"
 #include "device.h"
 #include "main.h"
+#include "action.h"
+#include "main.h"
+#include "wrappers.h"
+#include "pm_string.h"
+#include "config.h"
 
 /* prototypes */
-extern void read_Config_file(Globals *g);
-static Protocol *init_Client_Protocol();
-extern Script_El *make_Script_El(Script_El_T type, String *s1, String *s2, List map, struct timeval tv);
-#ifndef NDUMP
-extern void dump_Script(List script, int num);
-extern void dump_Expect(Expect_T *expect);
-extern void dump_Send(Send_T *send);
-#endif
-extern void free_Script_El(void *script_el);
-extern Spec *make_Spec(char *name);
-extern int  match_Spec(void *spec, void *key);
-#ifndef NDUMP
-extern void dump_Spec(Spec *spec);
-#endif
-extern void free_Spec(void *spec);
-extern Spec_El *make_Spec_El(Script_El_T type, char *str1, char *str2, List map);
-#ifndef NDUMP
-extern void dump_Spec_El(Spec_El *specl);
-#endif
-extern void free_Spec_El(void *specl);
-extern Cluster *make_Cluster(const char *name);
-#ifndef NDUMP
-extern void dump_Cluster(Cluster *cluster);
-#endif
-extern void free_Cluster(void *cluster);
-extern Node *make_Node(const char *name);
-extern int  match_Node(void *node, void *key);
-#ifndef NDUMP
-extern void dump_Node(Node *node);
-#endif
-extern void free_Node(void *node);
-extern Interpretation *make_Interp(char * name);
-extern int match_Interp(void *interp, void *key);
-#ifndef NDUMP
-extern void dump_Interpretation(Interpretation *interp);
-#endif
-extern void free_Interp(void *interp);
+static Protocol *init_Client_Protocol(void);
 
 
 /*
@@ -77,9 +47,10 @@ extern void free_Interp(void *interp);
  * (parse.lex and parse.y).  
  */ 
 void
-read_Config_file(Globals *g)
+read_Config_file(void)
 {
 	struct stat stbuf;
+	Globals *g = cheat;
 
 	CHECK_MAGIC(g);
 
@@ -93,7 +64,7 @@ read_Config_file(Globals *g)
 
 	g->client_prot = init_Client_Protocol();
 
-	parse_config_file(g);
+	parse_config_file();
 	
 	fclose(g->cf);
 	
@@ -262,7 +233,7 @@ dump_Script(List script, int num)
 	fprintf(stderr, "\t\tScript %s: %0x\n", 
 		pm_coms[num], (unsigned int)script);
 	script_itr = list_iterator_create(script);
-	while( script_el = (Script_El *)list_next(script_itr) )
+	while( (script_el = (Script_El *)list_next(script_itr)) )
 	{
 		fprintf(stderr, "\t\t\ttype: ");
 		switch( script_el->type )
@@ -280,13 +251,14 @@ dump_Script(List script, int num)
 			break;
 		case DELAY :
 			fprintf(stderr, "DEALY\n");
-			fprintf(stderr, "\t\t\t%d.%06d\n", script_el->s_or_e.delay.tv_sec, script_el->s_or_e.delay.tv_usec);
+			/* FIXME: def of s_or_e.delay has changed? */
+			/*fprintf(stderr, "\t\t\t%d.%06d\n", script_el->s_or_e.delay.tv_sec, script_el->s_or_e.delay.tv_usec);*/
 			break;
 		default :
 			fprintf(stderr, "unknown\n");
 		}
 	}
-	list_iterator_delete(script_itr);
+	list_iterator_destroy(script_itr);
 }
 
 /*
@@ -408,7 +380,6 @@ dump_Spec(Spec *spec)
 	ListIterator script;
 	Spec_El *specl;
 	int i;
-	bool done;
 
 	fprintf(stderr, "\tSpec: %0x\n", (unsigned int)spec);
 	if(spec == NULL) return;
@@ -528,7 +499,7 @@ dump_Spec_El(Spec_El *specl)
 	{
 	case SEND:
 		fprintf(stderr, "\t\t\t\ttype:  SEND\n");
-		fprintf(stderr, "\t\t\t\tstring1:  %s\n", get_String(specl->string1);
+		fprintf(stderr, "\t\t\t\tstring1:  %s\n", get_String(specl->string1));
 		break;
 	case  EXPECT : 
 		fprintf(stderr, "\t\t\t\ttype:  EXPECT\n");
@@ -538,6 +509,9 @@ dump_Spec_El(Spec_El *specl)
 	case  DELAY : 
 		fprintf(stderr, "\t\t\t\ttype:  DEALY\n");
 		break;
+	case SND_EXP_UNKNOWN:
+		break;
+	}
 }
 
 #endif

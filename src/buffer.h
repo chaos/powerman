@@ -55,17 +55,17 @@ struct buffer_struct {
 
 
 /* buffer.c extern prototypes */
-extern Buffer *make_Buffer(int fd);
-extern void send_Buffer(Buffer *b, const char *fmt, ...);
-extern int write_Buffer(Buffer *b);
-extern int read_Buffer(Buffer *b);
-extern bool empty_Buffer(Buffer *b);
-extern String *get_String_from_Buffer(Buffer *b, regex_t *re);
+Buffer *make_Buffer(int fd);
+void send_Buffer(Buffer *b, const char *fmt, ...);
+int write_Buffer(Buffer *b);
+int read_Buffer(Buffer *b);
+bool empty_Buffer(Buffer *b);
+String *get_String_from_Buffer(Buffer *b, regex_t *re);
 #ifndef NDEBUG
-extern void dump_Buffer(Buffer *b);
+void dump_Buffer(Buffer *b);
 #endif
-extern void free_Buffer(void *b);
-extern char *find_RegEx(regex_t *re, char *str, int len);
+void free_Buffer(void *b);
+char *find_RegEx(regex_t *re, char *str, int len);
 
 
 #endif

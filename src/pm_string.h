@@ -49,20 +49,20 @@ struct string_struct {
 
 
 /* pm_string.c extern prototypes */
-extern String *make_String(const char *cs);
-extern String *copy_String(String *s);
-extern char *get_String(String *s);
-extern unsigned char byte_String(String *s, int offset);
-extern int length_String(String *s);
-extern int prefix_String(String *s);
-extern int index_String(String *s);
-extern int cmp_String(String *s1, String *s2);
-extern bool prefix_match(String *s1, String *s2);
-extern bool empty_String(String *s);
-extern void free_String(void *s);
-extern bool match_String(String *s, char *cs);
+String *make_String(const char *cs);
+String *copy_String(String *s);
+char *get_String(String *s);
+unsigned char byte_String(String *s, int offset);
+int length_String(String *s);
+int prefix_String(String *s);
+int index_String(String *s);
+int cmp_String(String *s1, String *s2);
+bool prefix_match(String *s1, String *s2);
+bool empty_String(String *s);
+void free_String(void *s);
+bool match_String(String *s, char *cs);
 
 
 
 
-#endif
+#endif /* PM_STRING_H */

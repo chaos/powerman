@@ -25,12 +25,22 @@
 \*****************************************************************************/
 
 
-#include "powerman.h"
 #include <arpa/inet.h>
+#include <syslog.h>
+#include <tcpd.h>
+
+#include "powerman.h"
 #include "daemon_init.h"
-#include "listener.h"
+#include "wrappers.h"
+#include "list.h"
+#include "config.h"
 #include "main.h"
 #include "server.h"
+#include "buffer.h"
+#include "exit_error.h"
+#include "log.h"
+#include "pm_string.h"
+#include "listener.h"
 
 int allow_severity = LOG_INFO;          /* logging level for accepted reqs */
 int deny_severity  = LOG_WARNING;       /* logging level for rejected reqs */

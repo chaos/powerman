@@ -44,22 +44,17 @@ struct listener_struct {
 };
 
 /* listener.c extern prototypes */
-extern Listener *make_Listener();
-extern void init_Listener(Listener *listener);
-extern void handle_Listener(Globals *g);
+Listener *make_Listener(void);
+void init_Listener(Listener *listener);
+void handle_Listener(Globals *g);
 #ifndef NDUMP
-extern void dump_Listener(Listener *listener);
+void dump_Listener(Listener *listener);
 #endif
-extern void free_Listener(Listener *listener);
+void free_Listener(Listener *listener);
 
 
-/*
- *  TCP-Wrappers support.
- */
-#include <syslog.h>
-#include <tcpd.h>
-extern int hosts_ctl(char *daemon, char *client_name, 
-		     char *client_addr, char *client_user);
+/* TCP-wrappers support */
+int hosts_ctl(char *daemon, char *client_name, char *client_addr, 
+		char *client_user);
 
-
-#endif
+#endif /* LISTENER_H */

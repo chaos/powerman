@@ -24,11 +24,25 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#include <assert.h>
+
 #include "powerman.h"
+#include "wrappers.h"
+#include "exit_error.h"
+#include "pm_string.h"
 #include "buffer.h"
+#include "log.h"
 
+struct log_struct {
+	String *name;
+	int fd;
+	bool writeable;
+	Buffer *to;
+	int level;
+};
+typedef struct log_struct Log;
 
-Log *log;
+static Log *log = NULL;
 
 /*
  *   Constructor
@@ -36,12 +50,12 @@ Log *log;
  * Produces:  Log
  */
 void
-make_log()
+make_log(void)
 {
 	log = (Log *)Malloc(sizeof(Log));
 	log->name = NULL;
 	log->fd = NO_FD;
-	log->write = FALSE;
+	log->writeable = FALSE;
 	log->to = NULL;
 	log->level = -1;
 }
@@ -58,6 +72,9 @@ init_log(const char *name, int level)
 	time_t t;
 	int flags;
 
+	assert(log != NULL);
+	if (log->name != NULL)
+		exit_msg("log can only be initialized once");
 	log->name = make_String( name );
 	flags = O_WRONLY | O_CREAT | O_APPEND | O_NONBLOCK;
 	log->fd = Open(get_String(log->name), flags, S_IRUSR | S_IWUSR);
@@ -77,6 +94,7 @@ log_it(int level, const char *fmt, ...)
 	va_list ap;
 	char str[MAX_BUF];
 
+	assert(log != NULL);
 	if (level > log->level) return;
 
 	va_start(ap, fmt);
@@ -85,7 +103,7 @@ log_it(int level, const char *fmt, ...)
 
 	send_Buffer(log->to, "PowerManD:  %s\n", str);
 
-	log->write = TRUE;
+	log->writeable = TRUE;
 }
 
 /*
@@ -93,10 +111,11 @@ log_it(int level, const char *fmt, ...)
  * do the writing here.  Just call the write_Buffer routine.
  */
 void
-handle_log()
+handle_log(void)
 {
 	int n;
 
+	assert(log != NULL);
 	n = write_Buffer(log->to);
 
 }
@@ -106,7 +125,34 @@ handle_log()
  * Destroys:  Log
  */
 void
-free_Log()
+free_Log(void)
 {
+	assert(log != NULL);
 	Free(log, sizeof(Log));
+	log = NULL;
+}
+
+/* Needed to detect recursion in buffer package */
+bool
+is_log_buffer(Buffer *b)
+{
+	if (log != NULL && log->to == b)
+		return TRUE;
+	else
+		return FALSE;
+}
+
+/* Needed to test file descriptor in main select loop */
+int
+fd_log(void)
+{
+	assert(log != NULL);
+	return log->fd;
+}
+
+bool
+writeable_log(void)
+{
+	assert(log != NULL);
+	return log->writeable;
 }

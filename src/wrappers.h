@@ -28,34 +28,35 @@
 #ifndef WRAPPERS_H
 #define WRAPPERS_H
 
-extern int allocated_memory;
-
 /* Wrapper functions (in wrappers.c) */
-extern int Socket(int family, int type, int protocol);
-extern int Setsockopt( int fd, int level, int optname, const void *opt_val, 
+int Socket(int family, int type, int protocol);
+int Setsockopt( int fd, int level, int optname, const void *opt_val, 
 		socklen_t optlen );
-extern int Bind( int fd, struct sockaddr_in *addr, socklen_t len );
-extern int Getsockopt( int fd, int level, int optname, void *opt_val, 
+int Bind( int fd, struct sockaddr_in *addr, socklen_t len );
+int Getsockopt( int fd, int level, int optname, void *opt_val, 
 		socklen_t *optlen ); 
-extern int Listen(int fd, int backlog);
-extern int Fcntl( int fd, int cmd, int arg);
-extern int Select(int maxfd, fd_set *rset, fd_set *wset, fd_set *eset, struct timeval *tv);
-extern void Delay(struct timeval *tv);
-extern char * Malloc(int size);
-extern void Free(void *ptr, int size);
-extern void Report_Memory();
-extern int Accept(int fd, struct sockaddr_in *addr, socklen_t *addrlen);
-extern int Connect(int fd, struct sockaddr *addr, socklen_t addrlen);
-extern int Read(int fd, char *p, int max);
-extern int Write(int fd, char *p, int max);
-extern int Open(char *str, int flags, int mode);
-extern void Getaddrinfo(char *host, char *service, struct addrinfo *hints, 
+int Listen(int fd, int backlog);
+int Fcntl( int fd, int cmd, int arg);
+int Select(int maxfd, fd_set *rset, fd_set *wset, fd_set *eset, struct timeval *tv);
+void Delay(struct timeval *tv);
+char * Malloc(int size);
+void Free(void *ptr, int size);
+void Report_Memory();
+int Accept(int fd, struct sockaddr_in *addr, socklen_t *addrlen);
+int Connect(int fd, struct sockaddr *addr, socklen_t addrlen);
+int Read(int fd, char *p, int max);
+int Write(int fd, char *p, int max);
+int Open(char *str, int flags, int mode);
+int Getaddrinfo(char *host, char *service, struct addrinfo *hints, 
 			struct addrinfo **addrinfo);
-extern void Regcomp(regex_t *preg, const char *regex, int cflags);
-extern int Regexec(const regex_t *preg, const char *string, 
+void Regcomp(regex_t *preg, const char *regex, int cflags);
+int Regexec(const regex_t *preg, const char *string, 
 		   size_t nmatch, regmatch_t pmatch[], int eflags);
-extern pid_t Fork(void);
-extern Sigfunc *Signal(int signo, Sigfunc *func);
-
-
+pid_t Fork(void);
+typedef void Sigfunc(int);
+Sigfunc *Signal(int signo, Sigfunc *func);
+#ifndef NDUMP
+void Report_Memory(void);
 #endif
+
+#endif /* WRAPPERS_H */

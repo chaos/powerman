@@ -25,9 +25,16 @@
 \*****************************************************************************/
 
 #include "powerman.h"
-#include "action.h"
+#include "list.h"
 #include "config.h"
 #include "main.h"
+#include "action.h"
+#include "main.h"
+#include "exit_error.h"
+#include "wrappers.h"
+#include "pm_string.h"
+#include "buffer.h"
+#include "log.h"
 #include "server.h"
 
 /* prototypes */
@@ -37,6 +44,9 @@ static Action *find_Client_script(Protocol *p, Cluster *cluster,
 					    String *expect);
 static bool match_Client_template(Cluster *cluster, Action *act, 
 				  regex_t *re, String *expect);
+#ifndef NDUMP
+static void dump_Client_Status(Client_Status status);
+#endif
 
 /*
  *   Select has indicated that there is material read to
@@ -377,14 +387,14 @@ dump_Client(Client *client)
 	dump_Client_Status(client->write_status);
 	fprintf(stderr, "\t\tsequence number: %d\n", client->seq);
 	fprintf(stderr, "\t\tfd: %d\n", client->fd);
-	dump_Buffer(&(client->to));
-	dump_Buffer(&(client->from));
+	dump_Buffer(client->to);
+	dump_Buffer(client->from);
 }
 
 /*
  *    Debug printout of structure contents.
  */
-void
+static void
 dump_Client_Status(Client_Status status)
 {
 	if(status == CLI_IDLE) fprintf(stderr, "CLI_IDLE\n");

@@ -25,10 +25,16 @@
 \*****************************************************************************/
 
 #include "powerman.h"
-#include "action.h"
+#include "list.h"
 #include "config.h"
 #include "device.h"
 #include "main.h"
+#include "action.h"
+#include "exit_error.h"
+#include "wrappers.h"
+#include "pm_string.h"
+#include "buffer.h"
+#include "log.h"
 
 /* prototypes */
 static void set_targets(Device *dev, Action *sact);
@@ -92,12 +98,11 @@ initiate_nonblocking_connect(Device *dev)
 	ASSERT( (dev->type == TCP_DEV) || (dev->type == PMD_DEV) || 
 		(dev->type == TELNET_DEV) );
 
-	bzero(&hints, sizeof(struct addrinfo));
+	memset(&hints, 0, sizeof(struct addrinfo));
 	addrinfo = &hints;
 	hints.ai_flags = AI_CANONNAME;
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	errno = 0;
 	if (dev->type == TCP_DEV)
 		Getaddrinfo(get_String(dev->devu.tcpd.host), get_String(dev->devu.tcpd.service), 
 			    &hints, &addrinfo);
@@ -105,9 +110,8 @@ initiate_nonblocking_connect(Device *dev)
 		Getaddrinfo(get_String(dev->devu.pmd.host), get_String(dev->devu.pmd.service), 
 			    &hints, &addrinfo);
 	else
-		exit_error("That device type is not implemented yet");
+		exit_msg("That device type is not implemented yet");
 
-	errno = 0;
 	dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
 			      addrinfo->ai_protocol);
 	dev->to = make_Buffer(dev->fd);
@@ -847,7 +851,7 @@ void
 dump_Device(Device *dev)
 {
 	ListIterator    act_iter;
-	Action *act;
+	List act;
 	Plug *plug;
 	ListIterator plug_i;
 	int i;
@@ -905,13 +909,15 @@ dump_Device(Device *dev)
 	fprintf(stderr, "\t\tfd: %d\n", dev->fd);
 	fprintf(stderr, "\t\tActions:\n");
 	act_iter = list_iterator_create(dev->acts);
-	while( (act = (Action *)list_next(act_iter)) )
+	while( (act = list_next(act_iter)) )
 		dump_Action(act);
 	list_iterator_destroy(act_iter);
-	fprintf(stderr, "\t\ttime_stamp: %d\n", 
-		(int)dev->time_stamp);
-	fprintf(stderr, "\t\ttimeout_interval: %d\n", 
-		(int)dev->timeout_interval);
+	/* FIXME: time_stamp type has changed jg */
+	/*fprintf(stderr, "\t\ttime_stamp: %d\n", 
+		(int)dev->time_stamp);*/
+	/* FIXME: timeout_interval does not exist jg */
+	/*fprintf(stderr, "\t\ttimeout_interval: %d\n", 
+		(int)dev->timeout_interval);*/
 	dump_Buffer( dev->to );
 	dump_Buffer( dev->from );
 	fprintf(stderr, "\t\tnumber of nodes: %d\n", dev->num_plugs);

@@ -33,23 +33,26 @@
 
 /* all the declarations */
 #include "powerman.h"
-#include "action.h"
+#include "list.h"
 #include "config.h"
-#include "daemon_init.h"
 #include "device.h"
-#include "listener.h"
 #include "main.h"
+#include "action.h"
+#include "daemon_init.h"
+#include "listener.h"
 #include "server.h"
+#include "exit_error.h"
+#include "wrappers.h"
+#include "log.h"
 
 /* prototypes */
-int main(int argc, char **argv);
 static void process_command_line(Globals *g, int argc, char **argv);
 static void signal_daemon(int signum);
 static void usage(char *prog);
 static void do_select_loop(Globals *g);
 static int find_max_fd(Globals *g, fd_set *rset, fd_set *wset);
 #ifndef NDUMP
-static void dump_Globals(Globals *g);
+static void dump_Globals(void);
 static void dump_Server_Status(Server_Status status);
 #endif
 static Globals *make_Globals();
@@ -105,17 +108,18 @@ main(int argc, char **argv)
 	Device *dev;
 	ListIterator dev_i;
 
-	if( geteuid() != 0 ) 
-	{
-		printf("Must be root\n");
-		exit(0);
-	}
-
+#ifdef NDUMP
+	init_error(argv[0], NULL);
+#else
+	init_error(argv[0], dump_Globals);
+#endif
 	make_log();
 
 	cheat = g = make_Globals();
 	
 	process_command_line(g, argc, argv);
+
+	if( geteuid() != 0 ) exit_msg("Must be root");
 
 	Signal(SIGHUP, sig_hup_handler);
 	Signal(SIGTERM, exit_handler);
@@ -123,7 +127,7 @@ main(int argc, char **argv)
 	if( g->daemonize )
 		daemon_init();
 
-	read_Config_file(g);
+	read_Config_file();
 
 	dev_i = list_iterator_create(g->devs);
 	while( (dev = (Device *)list_next(dev_i)) )
@@ -222,21 +226,20 @@ signal_daemon(int signum)
 	pid_t pid;
 	int n;
 
-	errno = 0;
 	fp = fopen(PID_FILE_NAME, "r");
-	if( fp == NULL ) exit_error("Failed to open pid file");
+	if( fp == NULL ) exit_error("Failed to open %s", PID_FILE_NAME);
 	n = fscanf(fp, "%d", &pid);
 	unlink(PID_FILE_NAME);
-	if( n != 1 ) exit_error("Failed to find pid in pidfile"); 
+	if( n != 1 ) exit_msg("Failed to find a pid in %s", PID_FILE_NAME); 
 	n = kill(pid, signum);
-	if( n < 0 ) exit_error("Failed to send signal %d to pid %d", signum, pid);
+	if( n < 0 ) exit_error("kill -%d %d", signum, pid);
 	errno = 0;
 	return;
 }
 
 void usage(char *prog)
 {
-    printf("\nUsage: %s [OPTIONS]\n", prog);
+    printf("Usage: %s [OPTIONS]\n", prog);
     printf("\n");
     printf("  -c FILE --config_file FILE\tSpecify configuration [/etc/powerman.conf].\n");
     printf("  -d --dont_daemonize\t\tDon't daemonize (debug).\n");
@@ -324,7 +327,7 @@ do_select_loop(Globals *g)
 		}
 
                 /* Log write?  */
-		if ( FD_ISSET(log->fd, &wset) )
+		if ( FD_ISSET(fd_log(), &wset) )
 			handle_log();
 
                 /* New connection? */
@@ -464,9 +467,9 @@ find_max_fd(Globals *g, fd_set *rs, fd_set *ws)
 	FD_ZERO(rs);
 	FD_ZERO(ws);
 
-	if (log->write) FD_SET(log->fd, ws);
+	if (writeable_log()) FD_SET(fd_log(), ws);
 	if (g->listener->read) FD_SET(g->listener->fd, rs);
-	maxfd = MAX(g->listener->fd, log->fd);
+	maxfd = MAX(g->listener->fd, fd_log());
 
 	c_iter = list_iterator_create(g->clients);
 	while( (((Client *)client) = list_next(c_iter)) )
@@ -530,11 +533,12 @@ exit_handler(int signum)
  * improve the thing by allowing a variety of formats: 
  * 10 10.10 0.10 .10 
  */
+#define TMPSTRLEN 32
 void
 set_tv(struct timeval *tv, char *s)
 {
 	int len;
-	char decimal[MAX_BUF];
+	char decimal[TMPSTRLEN];
 	int sec;
 	int usec;
 	int n;
@@ -600,7 +604,7 @@ make_Globals()
  *   Display a debug listing of everything in the Globals struct.
  */
 void
-dump_Globals(Globals *g)
+dump_Globals(void)
 {
 	ListIterator    act_iter;
 	Action         *act;
@@ -609,16 +613,20 @@ dump_Globals(Globals *g)
 	ListIterator    d_iter;
 	Device         *dev;
 	int i;
-	Node *node;
-	Spec *spec;
+	Globals *g = cheat;
 
 	fprintf(stderr, "Config file: %s\n", g->config_file);
+	/* FIXME: doesn't compile and doesn't look like loop advances jg */
+#if 0
 	fprintf(stderr, "Specifications:\n");
 	while(g->specs != g->specs->next)
 	{
+		Spec *spec;
+
 		spec = g->specs->next;
 		dump_Spec(spec);
 	}
+#endif
 	fprintf(stderr, "Globals: %0x\n", (unsigned int)g);
 	fprintf(stderr, "\ttimout interval: %d.%06d sec\n", 
 		(int)g->timeout_interval.tv_sec, 
@@ -627,7 +635,7 @@ dump_Globals(Globals *g)
 	dump_Server_Status(g->status);
 	act_iter = list_iterator_create(g->acts);
 	while( (act = (Action *)list_next(act_iter)) )
-		dump_Action(g->act);
+		dump_Action((List)act);
 	list_iterator_destroy(act_iter);
 	dump_Listener(g->listener);
 	c_iter = list_iterator_create(g->clients);
@@ -638,9 +646,9 @@ dump_Globals(Globals *g)
 	forcount(i, g->client_prot->num_scripts)
 		dump_Script(g->client_prot->scripts[i], i);
 	d_iter = list_iterator_create(g->devs);
-	while( (dev = (Device *)list_next(dev_iter)) )
+	while( (dev = (Device *)list_next(d_iter)) )
 		dump_Device(dev);
-	list_iterator_destroy(dev_iter);
+	list_iterator_destroy(d_iter);
 	Report_Memory();
 	fprintf(stderr, "That's all.\n");
 }
@@ -648,7 +656,7 @@ dump_Globals(Globals *g)
 /*
  * Helper functin for dump_Globals 
  */
-void
+static void
 dump_Server_Status(Server_Status status)
 {
 	fprintf(stderr, "\tServer Status: %d: ", status);

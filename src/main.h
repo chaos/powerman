@@ -37,7 +37,8 @@
 
 /* Only when all device are devices are idle is the cluster Quiescent */
 /* and only then can a new action be initiated from the queue.        */
-enum server_status_enum {Quiescent, Occupied};
+typedef enum {Quiescent, Occupied} Server_Status;
+
 
 /*
  *   Upper level functions in the calling hierarchy need enough of
@@ -63,20 +64,21 @@ struct globals_struct {
 	FILE           *cf;
 	MAGIC;
 };
+typedef struct globals_struct Globals;
 
 extern Globals *cheat;
 
-/* main.c extern prototypes */
+/* main.c prototypes */
 
 /* calculate if time_stamp + timeout > now */
-extern bool overdue(struct timeval *time_stamp, struct timeval *timeout);
+bool overdue(struct timeval *time_stamp, struct timeval *timeout);
 
 /* 
  *   Given a string representation of a decimal number determine the
  * seconds and micro-seconds it represents.
  */
-extern void set_tv(struct timeval *tv, char *s);
+void set_tv(struct timeval *tv, char *s);
 
 
 
-#endif
+#endif /* MAIN_H */

@@ -27,6 +27,10 @@
  */
 
 #include "powerman.h"
+#include "buffer.h"
+#include "wrappers.h"
+#include "exit_error.h"
+#include "pm_string.h"
 
 String *make_String(const char *cs)
 {
@@ -73,17 +77,15 @@ String *make_String(const char *cs)
 		s->width = dash - leftb - 1;
 		strncpy(buf, leftb + 1, s->width);
 		buf[s->width] = '\0';
-		errno = 0;
 		n = sscanf(buf, "%d", &(s->index));
 		if( n != 1 )
-			exit_error("Failure interpreting first index of \"%s\"", cs);
+			exit_msg("Failure interpreting first index of \"%s\"", cs);
 		ASSERT( s->width == rightb - dash - 1 );
 		strncpy(buf, dash + 1, s->width);
 		buf[s->width] = '\0';
-		errno = 0;
 		n = sscanf(buf, "%d", &(index2));
 		if( n != 1 )
-			exit_error("Failure interpreting second index of \"%s\"", cs);
+			exit_msg("Failure interpreting second index of \"%s\"", cs);
 		ASSERT(index2 > s->index);
 		s->count = index2 - s->index;
 	}
@@ -95,10 +97,9 @@ String *make_String(const char *cs)
 		s->width = s->length - s->prefix;
 		if( s->width > 0 )
 		{
-			errno = 0;
 			n = sscanf(s->string + s->prefix, "%d", &(s->index));
 			if( n != 1)
-				exit_error("Failure interpreting %s", cs);
+				exit_msg("Failure interpreting %s", cs);
 		}
 		else
 			s->index = NO_INDEX;

@@ -27,17 +27,10 @@
 #ifndef EXIT_ERROR_H
 #define EXIT_ERROR_H
 
+typedef void (*ErrCallback)(void);
+void init_error(char *prog, ErrCallback callback);
+void syslog_on_error(bool syslog_enable);
+void exit_error(const char *fmt, ...);
+void exit_msg(const char *fmt, ...);
 
-extern bool syslog_on;
-
-/* exit_error.c prototype */
-extern void exit_error(const char *fmt, ...);
-
-#ifndef NDUMP
-
-extern void Report_Memory();
-
-#endif
-
-
-#endif
+#endif /* EXIT_ERROR_H */

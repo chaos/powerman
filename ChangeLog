@@ -1,13 +1,37 @@
-####################################################################
-# $Id$
-# by Andrew C. Uselton <uselton2@llnl.gov> 
-# Copyright (C) 2001 Regents of the University of California
-# See ./DISCLAIMER
-# v. 1.0.0 
-#         Prior ChangeLog entries have been left in the CVS 
-# repository.  With the release of version 1.0.0 the code has been
-# entirely rewritten and, to an extent, retargetted.  The code
-# is entirely in C, and addresses power controll equipment via TCP
-# only.  See the README, the man page, and the documentation in the
-# doc directory for details.
-####################################################################
+2002-07-25 uselton
+	* With the release of version 1.0.0 the code has been
+	  entirely rewritten.  ChangeLog truncated.
+	* Tagged powerman-1-0-0.
+
+2002-07-26 garlick
+	* Reformatted ChangeLog
+	* Added 'make depend' target to address missing dependencies.
+	  Added .c.o production and removed some redundant targets.
+	  Modified powerman, powermand targets to match products to address
+	  extraneous relinks (src/Makefile).
+	* Moved check for root to after process_command_line() so root 
+	  privilege is not required to get --help (src/client.c)
+	* Moved Report_Memory() to wrappers.c and made allocated_memory static
+	  (src/exit_error.c)
+	* Added init_error()  and exit_msg() functions to exit_error.
+	  The exit_error() function now uses strerror() and does not close
+	  file descriptors, flush stderr, or close log before exit.  Added 
+	  syslog_on_error() accessor function for syslog_on (src/exit_error.c)
+	* Client now uses exit_error.c (src/client.c)
+	* Rename some client options per code review.  Reduced verbosity
+	  of usage() output. (src/client.c)
+	* Config->com is now an enum and command format strings are 
+	  individually #defined and end in _FMT (src/client.c)
+	* Made all functions in client static and discovered duplicate 
+	  functions defined in config.[ch].  Prepended 'x' to client versions
+	  for now (factor later) (src/client.h)
+	* Added accessor functions and made 'log' private to log module 
+	  (src/log.[ch])
+	* Made clean target clean up after default target, remove no-op cd
+   	  commands, employ make -C where appropriate, do not build vicebox 
+	  by default (Makefile)
+	* Fixed compilation errors if NDUMP is not defined; added exit callback
+	  to init_error() (null in client, set in server if NDUMP defined).
+	* Updated powerman.1 to match option changes.
+	* bzero->memset
+	* Took local includes out of powerman.h (still need to do sys includes)

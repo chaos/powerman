@@ -25,11 +25,18 @@
 \*****************************************************************************/
 
 #include "powerman.h"
-#include "action.h"
+#include "list.h"
 #include "config.h"
 #include "device.h"
 #include "main.h"
+#include "log.h"
+#include "action.h"
+#include "main.h"
+#include "wrappers.h"
+#include "pm_string.h"
 #include "server.h"
+#include "exit_error.h"
+#include "action.h"
 
 /* Each of these represents a script that must be completed.     */
 /* An error message and two of the debug "dump" routines rely on */
@@ -74,11 +81,12 @@ update_Action(Cluster *cluster, List acts)
  * daemon at extremely high loads.  The patch for this modification
  * is out of date, but not hard to reconstruct.
  */
+#define ACTION_BUF 1024
 void
 random_Action(Cluster *cluster, List acts)
 {
 	Action *act;
-	char buf[MAX_BUF];
+	char buf[ACTION_BUF];
 	char *bp = buf;
 	int len;
 	bool done = FALSE;
@@ -96,7 +104,7 @@ random_Action(Cluster *cluster, List acts)
 	act = make_Action(com);
 	if (act->com >= PM_POWER_ON)/* we have to set a target */
 	{
-		bzero(buf, MAX_BUF);
+		memset(buf, 0, sizeof(buf));
 		all = (int) (2.0*rand()/(RAND_MAX+1.0));
 		if (all) sprintf(bp, ".*");
 		else

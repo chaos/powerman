@@ -58,11 +58,13 @@ docdir		=	${prefix}/share/doc
 all: progs docs
 
 progs : 
-	cd src; $(MAKE); cd ..
-	cd vicebox; $(MAKE); cd ..
+	$(MAKE) -C src
+
+tests : 
+	$(MAKE) -C vicebox
 
 docs : 
-	cd doc; $(MAKE); cd ..
+	$(MAKE) -C doc 
 
 .c.o:
 	$(CC) $(COPTS) $< -o $@ $(INC) $(LIB)
@@ -103,18 +105,18 @@ uninstall: distclean
 
 clean:
 	rm -f *~ *.o .#*
+	make -C src clean
+	make -C doc clean
+	make -C vicebox clean
 
 allclean: clean
-	cd aux; rm -f *~ *.o .#*; cd ..
-	cd bin; rm -f *~ *.o .#*; cd ..
-	cd doc; make clean; cd ..
-	cd etc; rm -f *~ *.o .#*; cd ..
-	cd lib; rm -f *~ *.o .#*; cd ..
-	cd log; rm -f *~ *.o .#*; cd ..
-	cd man; rm -f *~ *.o .#*; cd ..
-	cd scripts; rm -f *~ *.o .#*; cd ..
-	cd src; make clean; cd ..
-	cd vicebox; make clean; cd ..
+	cd aux; rm -f *~ *.o
+	cd bin; rm -f *~ *.o
+	cd etc; rm -f *~ *.o
+	cd lib; rm -f *~ *.o
+	cd log; rm -f *~ *.o
+	cd man; rm -f *~ *.o
+	cd scripts; rm -f *~ *.o
 
 distclean: allclean
 	cd bin; rm -f powerman powermand vicebox svicebox; cd ..

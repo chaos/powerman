@@ -33,6 +33,6 @@
 
 
 
-extern void daemon_init();
+void daemon_init(void);
 
 #endif

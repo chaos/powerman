@@ -35,47 +35,48 @@
 
 
 
-struct plug_struct {
+typedef struct {
 	String *name;       /* this is how the plug is known to the device */
 	regex_t name_re;
-        struct node_struct *node;      /* Reference to port->node only */
+        Node *node;      /* Reference to port->node only */
                  /* happens for power control targetting so port->node */
                  /* points back to the power control plug.  If this    */
                  /* becomes a problem I may need to add soft power     */
                  /* status Port structs to the Device struct           */
-};
+} Plug;
 
-struct tty_dev_struct {
+typedef struct {
 	String *device;
-};
+} TTY_Dev;
 
-struct tcp_dev_struct {
+typedef struct {
 	String *host;
 	String *service;
-};
+} TCP_Dev;
 
-struct snmp_dev_struct {
+typedef struct {
 	String *unimplemented;
-};
+} SNMP_Dev;
 
-struct telnet_dev_struct {
+typedef struct {
 	String *unimplemented;
-};
+} telnet_Dev;
 
-struct pmd_dev_struct {
+typedef struct {
 	String *host;
 	String *service;
-};
+} PMD_Dev;
 
-union dev_type_union {
+
+typedef union {
 	TTY_Dev    ttyd;
 	TCP_Dev    tcpd;
 	SNMP_Dev   snmpd;
 	telnet_Dev telnetd;
 	PMD_Dev    pmd;
-};
+} Dev_U;
 
-struct dev_struct {
+struct device_struct {
 	String *name;  
 	Spec *spec;
 /* I could probably get the next for fields directly from spec */
@@ -98,31 +99,32 @@ struct dev_struct {
 	Protocol *prot;
 	MAGIC;
 }; 
+/* FIXME: data structures are circular here - typedef in powerman.h jg */
 
 
 /* device.c extern prototypes */
-extern void init_Device(Device *dev);
-extern void initiate_nonblocking_connect(Device *dev);
-extern void map_Action_to_Device(Device *dev, Action *act);
-extern void handle_Device_read(Device *dev);
-extern void do_Device_connect(Device *dev);
-extern void process_script(Device *dev);
-extern void handle_Device_write(Device *dev);
-extern bool stalled_Device(Device *dev);
-extern void recover_Device(Device *dev);
-extern Device *make_Device();
-extern int match_Device(void *dev, void *key);
+void init_Device(Device *dev);
+void initiate_nonblocking_connect(Device *dev);
+void map_Action_to_Device(Device *dev, Action *act);
+void handle_Device_read(Device *dev);
+void do_Device_connect(Device *dev);
+void process_script(Device *dev);
+void handle_Device_write(Device *dev);
+bool stalled_Device(Device *dev);
+void recover_Device(Device *dev);
+Device *make_Device();
+int match_Device(void *dev, void *key);
 #ifndef NDUMP
-extern void dump_Device(Device *dev);
+void dump_Device(Device *dev);
 #endif
-extern void free_Device(void *dev);
-extern Plug *make_Plug(const char *name);
-extern int  match_Plug(void *plug, void *key);
+void free_Device(void *dev);
+Plug *make_Plug(const char *name);
+int  match_Plug(void *plug, void *key);
 #ifndef NDUMP
-extern void dump_Plug(Plug *plug);
+void dump_Plug(Plug *plug);
 #endif
-extern void free_Plug(void *plug);
+void free_Plug(void *plug);
 
 
 
-#endif
+#endif /* DEVICE_H */
