@@ -225,7 +225,7 @@ if (com == "ice"):
         sys.exit(1)
     exit(0)
     
-# carry out the reqeusted command on each node
+# carry out the requested command on each node
 for name in names:
     try:
         tty, box, port = ttys[name], boxes[name], ports[name]
@@ -237,15 +237,20 @@ for name in names:
     response = ''
     try:
         f = open(tty, 'r+')
-        fcntl.lockf(f.fileno(), FCNTL.LOCK_EX)
-        f.write(target)
-        response = f.readline()
-        fcntl.lockf(f.fileno(), FCNTL.LOCK_UN)
-        f.close()
     except IOError:
         if(verbose):
             sys.stderr.write ("icebox: Unable to access icebox control device on port " + tty + "\n")
         sys.exit(1)
+    try:
+        fcntl.lockf(f.fileno(), FCNTL.LOCK_EX | FCNTL.LOCK_NB)
+    except IOError:
+        if(verbose):
+            sys.stderr.write ("icebox: Unable to gain exclusive lock on icebox control device on port " + tty + "\n")
+        sys.exit(1)
+    f.write(target)
+    response = f.readline()
+    fcntl.lockf(f.fileno(), FCNTL.LOCK_UN)
+    f.close()
     if (response[-1:] == '\n'):
         response = response[:-1]
     # I'll take this out after verifying opperation
