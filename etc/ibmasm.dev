@@ -1,0 +1,60 @@
+#
+# $Id$
+# $Source$
+#
+begin protocol specification
+	specification name "ibmasm"
+	specification type "TCP"
+	off string "Off"
+	on string  "On"
+	all string "*"
+	plug count 1
+	device timeout 30 
+	begin LOGIN_SCRIPT
+		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA\IAC\DONT\TELOPT_TTYPE"
+		expect "Login ID:"
+		send "USERID\tPASSW0RD\r\n"
+		expect "Tasks"
+	end LOGIN_SCRIPT
+	begin LOGOUT_SCRIPT
+		send "\033\033"			# select main menu, then ESC */
+	end LOGOUT_SCRIPT
+	begin STATUS_SCRIPT
+		send "\t\t\t\t\r\n"          	# select Server Power/Restart
+		expect "System Power Status: (On|Off)"
+		map "$1" "1"	
+	end STATUS_SCRIPT
+	begin ON_SCRIPT
+		send "\t\t\t\t\r\n"          	# select Server Power/Restart
+		expect "Server Power/Restart"
+		send "\r\n"			# select Power on immediately
+		expect "The system will power on.  Do you wish to continue?"
+		send "\r\n"			# select Yes
+		expect "The system is performing a Power on Server Immediately."
+		send "\r\n"			# select Ok
+		delay 0.3
+		send "\033"			# return to main menu
+	end ON_SCRIPT
+	begin OFF_SCRIPT
+		send "\t\t\t\t\r\n"          	# select Server Power/Restart
+		expect "Server Power/Restart"
+		send "\t\t\r\n"			# select Power off immediately
+		expect "Do you wish to continue?"
+		send "\r\n"			# select Yes
+		delay 0.3
+		send "\r\n"			# select Ok
+		delay 0.3
+		send "\033"			# return to main menu
+	end OFF_SCRIPT
+	begin CYCLE_SCRIPT
+		send "\t\t\t\t\r\n"          	# select Server Power/Restart
+		expect "Server Power/Restart"
+		send "\t\t\t\t\t\r\n"		# select Restart immediately
+		expect "Do you wish to continue?"
+		send "\r\n"			# select Yes
+		delay 0.3
+		send "\r\n"			# select Ok
+		delay 0.3
+		send "\033"			# return to main menu
+	end CYCLE_SCRIPT
+end protocol specification
