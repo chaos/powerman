@@ -2,6 +2,7 @@
     * Clean up passing of errors to client action completion callback.
     * Make all informational message names CP_INFO_*.  Delete some unused
       protocol responses.
+    * Disable calling of err() function in hostlist.c.
 
 2002-12-26 garlick
     * Beginnings of redundant power supply support.
