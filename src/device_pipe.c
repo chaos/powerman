@@ -146,8 +146,7 @@ bool pipe_connect(Device * dev)
     char ptyname[20]; /* FIXME */
 
     assert(dev->connect_state == DEV_NOT_CONNECTED);
-    assert(dev->ifd == NO_FD);
-    assert(dev->ofd == NO_FD);
+    assert(dev->fd == NO_FD);
 
     pid = pty_fork(&fd, ptyname);
     if (pid < 0) {
@@ -164,7 +163,7 @@ bool pipe_connect(Device * dev)
         flags = Fcntl(fd, F_GETFL, 0);
         Fcntl(fd, F_SETFL, flags | O_NONBLOCK);
 
-        dev->ifd = dev->ofd = fd;
+        dev->fd = fd;
 
         dev->connect_state = DEV_CONNECTED;
         dev->stat_successful_connects++;
@@ -188,12 +187,11 @@ void pipe_disconnect(Device * dev)
 
     assert(dev->connect_state == DEV_CONNECTED);
 
-    dbg(DBG_DEVICE, "_pipe_disconnect: %s on fds %d/%d", dev->name, 
-            dev->ifd, dev->ofd);
+    dbg(DBG_DEVICE, "_pipe_disconnect: %s on fd %d", dev->name, dev->fd);
 
-    if (dev->ifd >= 0) {
-        Close(dev->ofd);
-        dev->ofd = dev->ifd = NO_FD;
+    if (dev->fd >= 0) {
+        Close(dev->fd);
+        dev->fd = NO_FD;
     }
 
     /* reap child */

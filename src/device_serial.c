@@ -184,18 +184,17 @@ bool serial_connect(Device * dev)
 
     assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_NOT_CONNECTED);
-    assert(dev->ifd == NO_FD);
-    assert(dev->ofd == NO_FD);
+    assert(dev->fd == NO_FD);
 
     ser = (SerialDev *)dev->data;
 
-    dev->ifd = dev->ofd = open(ser->special, O_RDWR | O_NONBLOCK | O_NOCTTY);
-    if (dev->ifd < 0) {
+    dev->fd = open(ser->special, O_RDWR | O_NONBLOCK | O_NOCTTY);
+    if (dev->fd < 0) {
         dbg(DBG_DEVICE, "_serial_connect: %s open %s failed", 
                 dev->name, ser->special);
         goto out;
     }
-    if (!isatty(dev->ifd)) {
+    if (!isatty(dev->fd)) {
         err(FALSE, "_serial_connect: %s is not a tty\n", dev->name);
         goto out;
     }
@@ -206,14 +205,14 @@ bool serial_connect(Device * dev)
      *    open on a tty will affect subsequent read()s.
      *    Play it safe and be explicit!
      */
-    fd_settings = Fcntl(dev->ifd, F_GETFL, 0);
-    Fcntl(dev->ifd, F_SETFL, fd_settings | O_NONBLOCK);
+    fd_settings = Fcntl(dev->fd, F_GETFL, 0);
+    Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
 
     /* FIXME: take an flock F_WRLOCK to coexist with conman */
 
     /* parse the serial flags and set up port accordingly */
     sscanf(ser->flags, "%d,%d%c%d", &baud, &databits, &parity, &stopbits);
-    res = _serial_setup(dev->name, dev->ifd, baud, databits, parity, stopbits);
+    res = _serial_setup(dev->name, dev->fd, baud, databits, parity, stopbits);
     if (res < 0)
         goto out;
 
@@ -233,13 +232,12 @@ out:
 void serial_disconnect(Device * dev)
 {
     assert(dev->connect_state == DEV_CONNECTED);
-    assert(dev->ifd == dev->ofd);
-    dbg(DBG_DEVICE, "_serial_disconnect: %s on fd %d", dev->name, dev->ifd);
+    dbg(DBG_DEVICE, "_serial_disconnect: %s on fd %d", dev->name, dev->fd);
 
     /* close device if open */
-    if (dev->ifd >= 0) {
-        Close(dev->ifd);
-        dev->ifd = dev->ofd = NO_FD;
+    if (dev->fd >= 0) {
+        Close(dev->fd);
+        dev->fd = NO_FD;
     }
 }
 

@@ -661,7 +661,7 @@ static void _handle_read(Device * dev)
     int dropped;
 
     assert(dev->magic == DEV_MAGIC);
-    n = cbuf_write_from_fd(dev->from, dev->ifd, -1, &dropped);
+    n = cbuf_write_from_fd(dev->from, dev->fd, -1, &dropped);
     if (n < 0) {
         err(TRUE, "read error on %s", dev->name);
         _disconnect(dev);
@@ -690,7 +690,7 @@ static void _handle_write(Device * dev)
     int n;
 
     assert(dev->magic == DEV_MAGIC);
-    n = cbuf_read_to_fd(dev->to, dev->ofd, -1);
+    n = cbuf_read_to_fd(dev->to, dev->fd, -1);
     if (n < 0) {
         err(TRUE, "write error on %s", dev->name);
         _disconnect(dev);
@@ -1228,7 +1228,7 @@ Device *dev_create(const char *name)
     dev->magic = DEV_MAGIC;
     dev->name = Strdup(name);
     dev->connect_state = DEV_NOT_CONNECTED;
-    dev->ifd = dev->ofd = NO_FD;
+    dev->fd = NO_FD;
     dev->acts = list_create((ListDelF) _destroy_action);
     dev->matchstr = NULL;
     dev->data = NULL;
@@ -1464,32 +1464,29 @@ void dev_pre_select(fd_set * rset, fd_set * wset, int *maxfd)
 
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
-        if (dev->ifd < 0)
-            continue;
-        if (dev->ofd < 0)
+        if (dev->fd < 0)
             continue;
 
-        FD_SET(dev->ifd, &dev_fdset);
-        FD_SET(dev->ofd, &dev_fdset);
+        FD_SET(dev->fd, &dev_fdset);
 
         /* always set read set bits so select will unblock if the 
          * connection is dropped.
          */
-        FD_SET(dev->ifd, rset);
-        *maxfd = MAX(*maxfd, dev->ifd);
+        FD_SET(dev->fd, rset);
+        *maxfd = MAX(*maxfd, dev->fd);
 
         /* need to be in the write set if we are sending anything */
         if (dev->connect_state == DEV_CONNECTED) {
             if (!cbuf_is_empty(dev->to)) {
-                FD_SET(dev->ofd, wset);
-                *maxfd = MAX(*maxfd, dev->ofd);
+                FD_SET(dev->fd, wset);
+                *maxfd = MAX(*maxfd, dev->fd);
             }
         }
 
         /* descriptor will become writable after a connect */
         if (dev->connect_state == DEV_CONNECTING) {
-            FD_SET(dev->ofd, wset);
-            *maxfd = MAX(*maxfd, dev->ofd);
+            FD_SET(dev->fd, wset);
+            *maxfd = MAX(*maxfd, dev->fd);
         }
 
     }
@@ -1517,8 +1514,8 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
                 _connect(dev);
         /* complete non-blocking connect if ready */
         } else if ((dev->connect_state == DEV_CONNECTING)) {
-            assert(dev->ofd != NO_FD);
-            if (FD_ISSET(dev->ofd, wset)) {
+            assert(dev->fd != NO_FD);
+            if (FD_ISSET(dev->fd, wset)) {
                 assert(dev->finish_connect != NULL);
                 if (dev->finish_connect(dev)) {
                     _login(dev);
@@ -1527,8 +1524,8 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
                     if (_time_to_reconnect(dev, timeout))
                         _connect(dev);
                 } 
-                if (dev->ofd != NO_FD)
-                    FD_CLR(dev->ofd, wset);      /* avoid _handle_write error */
+                if (dev->fd != NO_FD)
+                    FD_CLR(dev->fd, wset);      /* avoid _handle_write error */
             }
         }
 
@@ -1539,9 +1536,9 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
 
         /* read/write from/to buffer */
         if (dev->connect_state == DEV_CONNECTED) {
-            if (dev->ifd != NO_FD && FD_ISSET(dev->ifd, rset))
+            if (dev->fd != NO_FD && FD_ISSET(dev->fd, rset))
                 _handle_read(dev);      /* also handles ECONNRESET */
-            if (dev->ofd != NO_FD && FD_ISSET(dev->ofd, wset))
+            if (dev->fd != NO_FD && FD_ISSET(dev->fd, wset))
                 _handle_write(dev);
         }
 

@@ -100,8 +100,7 @@ bool tcp_finish_connect(Device * dev)
     int len = sizeof(err);
 
     assert(dev->connect_state == DEV_CONNECTING);
-    assert(dev->ifd == dev->ofd);
-    rc = getsockopt(dev->ifd, SOL_SOCKET, SO_ERROR, &error, &len);
+    rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &error, &len);
     /*
      *  If an error occurred, Berkeley-derived implementations
      *    return 0 with the pending error in 'err'.  But Solaris
@@ -135,8 +134,7 @@ bool tcp_connect(Device * dev)
 
     assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_NOT_CONNECTED);
-    assert(dev->ifd == NO_FD);
-    assert(dev->ofd == NO_FD);
+    assert(dev->fd == NO_FD);
 
     tcp = (TcpDev *)dev->data;
 
@@ -150,22 +148,22 @@ bool tcp_connect(Device * dev)
     hints.ai_socktype = SOCK_STREAM;
     Getaddrinfo(tcp->host, tcp->port, &hints, &addrinfo);
 
-    dev->ifd = dev->ofd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
+    dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
                      addrinfo->ai_protocol);
 
-    dbg(DBG_DEVICE, "tcp_connect: %s on fd %d", dev->name, dev->ifd);
+    dbg(DBG_DEVICE, "tcp_connect: %s on fd %d", dev->name, dev->fd);
 
     /* set up and initiate a non-blocking connect */
 
     sock_opt = 1;
-    Setsockopt(dev->ifd, SOL_SOCKET, SO_REUSEADDR,
+    Setsockopt(dev->fd, SOL_SOCKET, SO_REUSEADDR,
                &(sock_opt), sizeof(sock_opt));
-    fd_settings = Fcntl(dev->ifd, F_GETFL, 0);
-    Fcntl(dev->ifd, F_SETFL, fd_settings | O_NONBLOCK);
+    fd_settings = Fcntl(dev->fd, F_GETFL, 0);
+    Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
 
     /* Connect - 0 = connected, -1 implies EINPROGRESS */
     dev->connect_state = DEV_CONNECTING;
-    if (Connect(dev->ifd, addrinfo->ai_addr, addrinfo->ai_addrlen) >= 0)
+    if (Connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen) >= 0)
         tcp_finish_connect(dev);
     freeaddrinfo(addrinfo);
 
@@ -179,15 +177,14 @@ void tcp_disconnect(Device * dev)
 {
     assert(dev->connect_state == DEV_CONNECTING
            || dev->connect_state == DEV_CONNECTED);
-    assert(dev->ifd == dev->ofd);
 
     err(FALSE, "tcp_disconnect: %s: disconnected", dev->name);
-    dbg(DBG_DEVICE, "tcp_disconnect: %s on fd %d", dev->name, dev->ifd);
+    dbg(DBG_DEVICE, "tcp_disconnect: %s on fd %d", dev->name, dev->fd);
 
     /* close socket if open */
-    if (dev->ifd >= 0) {
-        Close(dev->ifd);
-        dev->ifd = dev->ofd = NO_FD;
+    if (dev->fd >= 0) {
+        Close(dev->fd);
+        dev->fd = NO_FD;
     }
 }
 
