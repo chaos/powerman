@@ -182,6 +182,9 @@ def prompt(string):
             timed_out = 1
         signal.alarm(ALARM_OFF)
         trace(response)
+        if (response[0:1] != 'N'):
+            # dump the first garbage character, shouldn't be more than one
+            response = response[1:]
         if (response[-1:] == '\n'):
             done = 1
     if (done and (retry_count > 1)):
