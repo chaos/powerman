@@ -10,7 +10,7 @@ begin protocol specification
 	off string "0"
 	on string  "1"
 	plug count 10
-	device timeout 10
+	device timeout 20 # accomodate 14 sec plus "cycle *" time */
 	begin LOGIN_SCRIPT
 		expect "V2[^\n]*\r\n"
 		send "auth icebox\r\n"

@@ -479,12 +479,9 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
         case PM_POWER_OFF:
         case PM_POWER_CYCLE:
         case PM_RESET:
-	    if (hl) {
-		count += _enqueue_targetted_actions(dev, com, hl, fun, 
-				client_id, arglist);
-		break;
-	    }
-	    /*FALLTHROUGH*/
+	    count += _enqueue_targetted_actions(dev, com, hl, fun, 
+			    client_id, arglist);
+	    break;
         case PM_UPDATE_PLUGS:
         case PM_UPDATE_NODES:
         case PM_LOG_OUT:
@@ -537,18 +534,17 @@ static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
     Plug *plug;
     ListIterator itr;
     int count = 0;
+    Action *act;
 
     itr = list_iterator_create(dev->plugs);
     while ((plug = list_next(itr))) {
-	Action *act;
-
 	/* antisocial to gratuitously turn on/off unused plug */
         if (plug->node == NULL) { 
             all = FALSE;
             continue;
         }
         /* check if node name for plug matches the target */
-        if (hostlist_find(hl, plug->node) == -1) {
+        if (hl && hostlist_find(hl, plug->node) == -1) {
 	    all = FALSE;
 	    continue;
 	}
@@ -558,25 +554,21 @@ static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
     }
 
     if (all) {
-	int new = _get_all_script(dev, com);
-	Action *act = NULL;
-
-	if (new != -1) {
+	int new;
+	                		/* _ALL version of script */
+	if ((new = _get_all_script(dev, com)) == -1) {
 	    act = _create_action(dev, new, NULL, fun, client_id, arglist);
-	} else if (dev->all != NULL)
+	    list_append(dev->acts, act);
+	    count++;
+	} else if (dev->all != NULL) {	/* normal script, "*" plug */
 	    act = _create_action(dev, com, dev->all, fun, client_id, arglist);
-	if (act) {
 	    list_append(dev->acts, act);
 	    count++;
 	}
     } 
 
-    /* "all" wasn't appropriate or wasn't defined so do one action
-     * per plug.
-     */
+    /* "all" wasn't appropriate or wasn't defined so do one action per plug */
     if (count == 0) {
-	Action *act;
-
         while ((act = list_pop(new_acts))) {
 	    list_append(dev->acts, act);
 	    count++;
@@ -978,7 +970,8 @@ void dev_destroy(Device * dev)
     CHECK_MAGIC(dev);
 
     Free(dev->name);
-    Free(dev->all);
+    if (dev->all)
+	Free(dev->all);
     regfree(&(dev->on_re));
     regfree(&(dev->off_re));
     if (dev->type == TCP_DEV) {
