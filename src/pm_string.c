@@ -38,7 +38,7 @@
 
 struct string_implementation {
 	int magic;		/* COOKIE!!! */
-	char *string;		/* string, NULL terminated */
+	unsigned char *string;	/* string, NULL terminated */
 };
 
 
@@ -47,7 +47,7 @@ struct string_implementation {
  * Result must be freed with free_String().
  */
 String
-make_String(const char *cs)
+make_String(const unsigned char *cs)
 {
 	String s;
 
@@ -86,7 +86,7 @@ copy_String(String s)
 /*
  * Return a pointer to the string portion of the String.  Result may be NULL.
  */
-char *
+unsigned char *
 get_String(String s)
 {
 	assert(s);
@@ -133,7 +133,7 @@ empty_String(String s)
  * Return TRUE if String 's' is equal to character string 'cs'.
  */
 bool
-match_String(String s, char *cs)
+match_String(String s, unsigned char *cs)
 {
 	assert(s);
 	assert(s->magic == STRING_MAGIC);

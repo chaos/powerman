@@ -432,12 +432,12 @@ handle_Device_read(Device *dev, int debug)
 	}
 	if (debug)
 	{
-		char str[MAX_BUF];
+		unsigned char str[MAX_BUF];
 		int len = peek_line_Buffer(dev->from, str, MAX_BUF);
 
 		if (len > 0)
 		{
-			char *bstr = memstr(str, len);
+			unsigned char *bstr = memstr(str, len);
 			printf("D(%s): %s\n", get_String(dev->name), bstr);
 			Free(bstr);
 		}
@@ -793,12 +793,12 @@ handle_Device_write(Device *dev, int debug)
 
 	if (debug)
 	{
-		char str[MAX_BUF];
+		unsigned char str[MAX_BUF];
 		int len = peek_string_Buffer(dev->to, str, MAX_BUF);
 
 		if (len > 0)
 		{
-			char *bstr = memstr(str, len);
+			unsigned char *bstr = memstr(str, len);
 			printf("S(%s): %s\n", get_String(dev->name), bstr);
 			Free(bstr);
 		}

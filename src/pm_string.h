@@ -29,13 +29,13 @@
 
 typedef struct string_implementation *String;
 
-String make_String(const char *cs);
+String make_String(const unsigned char *cs);
 String copy_String(String s);
-char *get_String(String s);
+unsigned char *get_String(String s);
 unsigned char byte_String(String s, int offset);
 int length_String(String s);
 bool empty_String(String s);
 void free_String(void *s);
-bool match_String(String s, char *cs);
+bool match_String(String s, unsigned char *cs);
 
 #endif /* PM_STRING_H */

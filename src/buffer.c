@@ -46,9 +46,9 @@ struct buffer_implementation {
 	int magic;		/* magic cookie */
 	int fd;			/* file descriptor */
 	int len;		/* size allocated to buffer */
-	char *buf;		/* buffer */
-	char *in;		/* incoming goes here (points into buffer) */
-	char *out;		/* outgoing starts here (points into buffer)  */
+	unsigned char *buf;	/* buffer */
+	unsigned char *in;	/* incoming goes here (points into buffer) */
+	unsigned char *out;	/* outgoing starts here (points into buffer)  */
 };
 
 /* length of various segments of buffer */
@@ -178,9 +178,9 @@ is_empty_Buffer(Buffer b)
  * Optionally Call eat_Buffer with the returned length to "consume" this.
  */
 int
-peek_line_Buffer(Buffer b, char *str, int len)
+peek_line_Buffer(Buffer b, unsigned char *str, int len)
 {
-	char *p;
+	unsigned char *p;
 	int cpy_len;
 
 	_buf_check(b);
@@ -202,7 +202,7 @@ peek_line_Buffer(Buffer b, char *str, int len)
  * A line is terminated with a '\n' character.
  */
 int
-get_line_Buffer(Buffer b, char *str, int len)
+get_line_Buffer(Buffer b, unsigned char *str, int len)
 {
 	int cpy_len;
 
@@ -216,7 +216,7 @@ get_line_Buffer(Buffer b, char *str, int len)
  * Optionally Call eat_Buffer with the returned length to "consume" this.
  */
 int
-peek_string_Buffer(Buffer b, char *str, int len)
+peek_string_Buffer(Buffer b, unsigned char *str, int len)
 {
 	int cpy_len;
 
@@ -234,7 +234,7 @@ peek_string_Buffer(Buffer b, char *str, int len)
  * Get the contents of the buffer in string form.
  */
 int
-get_string_Buffer(Buffer b, char *str, int len)
+get_string_Buffer(Buffer b, unsigned char *str, int len)
 {
 	int cpy_len;
 

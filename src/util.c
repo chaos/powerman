@@ -16,8 +16,8 @@
  * Look for 're' in the first 'len' bytes of 'str' and return it's 
  * position if found or NULL if not found.
  */
-char *
-find_RegEx(regex_t *re, char *str, int len)
+unsigned char *
+find_RegEx(regex_t *re, unsigned char *str, int len)
 {
 	int n;
 	size_t nmatch = MAX_MATCH;
@@ -35,7 +35,7 @@ find_RegEx(regex_t *re, char *str, int len)
 String
 get_line_from_Buffer(Buffer b)
 {
-	char str[MAX_BUF];
+	unsigned char str[MAX_BUF];
 	int res = get_line_Buffer(b, str, MAX_BUF);
 
 	return (res > 0 ? make_String(str) : NULL);
@@ -44,7 +44,7 @@ get_line_from_Buffer(Buffer b)
 String
 get_String_from_Buffer(Buffer b, regex_t *re)
 {
-	char str[MAX_BUF];
+	unsigned char str[MAX_BUF];
 	int bytes_peeked = peek_string_Buffer(b, str, MAX_BUF);
 	bool match = FALSE;
 
@@ -60,12 +60,12 @@ get_String_from_Buffer(Buffer b, regex_t *re)
  * Convert memory to string, turning non-printable character into "C" representation.
  * Call Free() on the result to free its storage.
  */
-char *
-memstr(char *mem, int len)
+unsigned char *
+memstr(unsigned char *mem, int len)
 {
 	int i, j; 
 	int strsize = len * 4; /* worst case */
-	char *str= Malloc(strsize + 1);
+	unsigned char *str= Malloc(strsize + 1);
 
 	for (i = j = 0; i < len; i++)
 	{

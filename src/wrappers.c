@@ -288,7 +288,7 @@ Connect(int fd, struct sockaddr *addr, socklen_t addrlen)
 }
 
 int
-Read(int fd, char *p, int max)
+Read(int fd, unsigned char *p, int max)
 {
 	int n;
 
@@ -301,7 +301,7 @@ Read(int fd, char *p, int max)
 }
 
 int
-Write(int fd, char *p, int max)
+Write(int fd, unsigned char *p, int max)
 {
 	int n;
 

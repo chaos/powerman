@@ -112,3 +112,5 @@
 	* Did away with Log - just use syslog.  Removed log from configuration syntax.
 	* Added delay back into default powerman.conf.
 	* Added "\nnn" (octal byte) support to config file for expect/send sequences.
+	* Make some char *'s into unsigned char *'s that are carrying
+	  non-printable values such as \376 (baytech telnet telnet handshake)).

@@ -50,8 +50,8 @@ char * Strdup(const char *str);
 void Report_Memory();
 int Accept(int fd, struct sockaddr_in *addr, socklen_t *addrlen);
 int Connect(int fd, struct sockaddr *addr, socklen_t addrlen);
-int Read(int fd, char *p, int max);
-int Write(int fd, char *p, int max);
+int Read(int fd, unsigned char *p, int max);
+int Write(int fd, unsigned char *p, int max);
 int Open(char *str, int flags, int mode);
 int Close(int fd);
 int Getaddrinfo(char *host, char *service, struct addrinfo *hints, 
