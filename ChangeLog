@@ -1,6 +1,12 @@
 2002-10-18 garlick
 	* Added several new script types and factored code for building scripts
 	  in parse.y (now there is one function - makeScriptSec()).
+	* Implemented "ping period N" directive in device scripts which
+	  enables PING_SCRIPT to run every N seconds.  This works around
+	  broken TCP implementations in RPC's (such as Baytech's) which don't
+	  send a FIN when they tear down a connection (which would unblock
+	  powerman's select call and cause a reconnect).  Configured
+	  90 second ping period for Baytech.
 
 2002-10-16 garlick
 	* Make Action struct private to device.c

@@ -170,8 +170,8 @@ Spec *conf_spec_create(char *name)
     spec->name = Strdup(name);
     spec->type = NO_DEV;
     spec->size = 0;
-    spec->timeout.tv_sec = 0;
-    spec->timeout.tv_usec = 0;
+    timerclear(&spec->timeout);
+    timerclear(&spec->ping_period);
     for (i = 0; i < NUM_SCRIPTS; i++)
 	spec->scripts[i] = NULL;
     return spec;

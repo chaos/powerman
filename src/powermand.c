@@ -171,11 +171,6 @@ static void _usage(char *prog)
     printf("  -V --version\t\tDisplay version information\n");
 }
 
-static bool _tvzero(struct timeval *tv)
-{
-    return ((tv->tv_sec == 0 && tv->tv_usec == 0) ? TRUE : FALSE);
-}
-
 /*
  * This loop does not terminate except via the program being killed.  
  * The loop pauses for timeout_interval or until there is activity on 
@@ -213,16 +208,16 @@ static void _select_loop(void)
 	dbg(DBG_SELECT, "select rset=[%s] wset=[%s] tmout=%s",
 		    dbg_fdsetstr(&rset, maxfd+1, rsetstr, sizeof(rsetstr)),
 		    dbg_fdsetstr(&wset, maxfd+1, wsetstr, sizeof(wsetstr)),
-		    _tvzero(&tmout) ? "NULL" : dbg_tvstr(&tmout, tmoutstr, 
-						sizeof(tmoutstr)));
+		    timerisset(&tmout) 
+		    ? dbg_tvstr(&tmout, tmoutstr, sizeof(tmoutstr)) : "NULL");
 
         /* Note: some selects modify timeval arg */
-	Select(maxfd + 1, &rset, &wset, NULL, _tvzero(&tmout) ? NULL : &tmout);
+	Select(maxfd+1, &rset, &wset, NULL, timerisset(&tmout) ? &tmout : NULL);
 	timerclear(&tmout);
 
 	dbg(DBG_SELECT, "ready rset=[%s] wset=[%s]", 
-			dbg_fdsetstr(&rset, maxfd+1, rsetstr, sizeof(rsetstr)),
-		    dbg_fdsetstr(&wset, maxfd+1, wsetstr, sizeof(wsetstr)));
+			dbg_fdsetstr(&rset, maxfd+1, rsetstr, sizeof(rsetstr)), 
+			dbg_fdsetstr(&wset, maxfd+1, wsetstr, sizeof(wsetstr)));
 
 	/* 
 	 * Process activity on client and device fd's.

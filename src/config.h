@@ -105,6 +105,7 @@ typedef struct {
     char        *all;	/* all string, e.g. "*" */
     int		size;	/* number of plugs per device */
     struct timeval  timeout;	/* timeout for this device */
+    struct timeval  ping_period; /* ping period for this device 0.0 = none */
     char        **plugname;	/* list of plug names (e.g. "1" thru "10") */
     List	scripts[NUM_SCRIPTS]; /* array of lists of Spec_El's */
 } Spec;

@@ -42,8 +42,11 @@ begin protocol specification
 	all string "0"
 	plug count 8
 	device timeout 15  # "reboot all" command takes about 13 seconds 
+	ping period 90
 	begin PING_SCRIPT
-		send "\NOP"
+#		send "\NOP"
+		send "\r\n"
+		expect "RPC-3>"
 	end PING_SCRIPT
 	begin LOGIN_SCRIPT
 		expect "\n"

@@ -66,6 +66,7 @@ static char *makeSpecName(char *s2);
 static Spec *check_Spec();
 static char *makeClientPort(char *s2);
 static char *makeDevTimeout(char *s2);
+static char *makePingPeriod(char *s2);
 static char *makeTCPWrappers();
 static char *makeGlobalSec(char *s2);
 
@@ -88,7 +89,7 @@ static void _doubletotv(struct timeval *tv, double val);
 %token TOK_INTERDEV
 %token TOK_UPDATE
 %token TOK_DEV_TIMEOUT
-%token TOK_LOG_FILE
+%token TOK_PING_PERIOD
 %token TOK_CLIENT_PORT
 %token TOK_B_SPEC
 %token TOK_SPEC_NAME
@@ -206,6 +207,10 @@ spec_size_line	: TOK_PLUG_COUNT TOK_NUMERIC_VAL {
 ;
 dev_timeout	: TOK_DEV_TIMEOUT TOK_NUMERIC_VAL {
     $$ = (char *)makeDevTimeout($2);
+}
+;
+dev_timeout	: TOK_PING_PERIOD TOK_NUMERIC_VAL {
+    $$ = (char *)makePingPeriod($2);
 }
 ;
 spec_script_list : spec_script_list spec_script 
@@ -484,6 +489,12 @@ static char *makeDevTimeout(char *s2)
     return s2;
 }
 
+static char *makePingPeriod(char *s2)
+{
+    _doubletotv(&current_spec->ping_period, _strtodouble(s2));
+    return s2;
+}
+
 static char *makeScriptEl(Script_El_Type mode, char *s2, List s3)
 {
     Spec_El *specl;
@@ -588,6 +599,7 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     dev = dev_create(s2);
     dev->type = spec->type;
     dev->timeout = spec->timeout;
+    dev->ping_period = spec->ping_period;
     /* set up the host name and port */
     switch(dev->type) {
 	case TCP_DEV :

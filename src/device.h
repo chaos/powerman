@@ -87,6 +87,9 @@ typedef struct {
 
     struct timeval  last_reconnect; /* time of last reconnect attempt */
     int		    reconnect_count;/* number of reconnects attempted */
+
+    struct timeval  last_ping;	    /* time of last ping (if any) */
+    struct timeval  ping_period;    /* configurable ping period (0.0 = none) */
     MAGIC;
 } Device;
 

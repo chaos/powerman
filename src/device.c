@@ -99,6 +99,7 @@ static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
 static unsigned char *_findregex(regex_t * re, unsigned char *str, int len);
 static char *_getregex_buf(Buffer b, regex_t * re);
 static bool _command_needs_device(Device *dev, hostlist_t hl);
+static void _process_ping(Device *dev, struct timeval *timeout);
 
 static List dev_devices = NULL;
 
@@ -487,6 +488,7 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
         case PM_UPDATE_PLUGS:
         case PM_UPDATE_NODES:
         case PM_LOG_OUT:
+	case PM_PING:
             act = _create_action(dev, com, NULL, fun, client_id, arglist);
             list_append(dev->acts, act);
 	    count++;
@@ -904,6 +906,8 @@ Device *dev_create(const char *name)
     dev->acts = list_create((ListDelF) _destroy_action);
     timerclear(&dev->timeout);
     timerclear(&dev->last_reconnect);
+    timerclear(&dev->last_ping);
+    timerclear(&dev->ping_period);
     dev->to = NULL;
     dev->from = NULL;
     dev->prot = NULL;
@@ -1056,6 +1060,20 @@ static void _set_argval_onoff(ArgList *arglist, char *node, char *val,
     }
 }
 
+static void _process_ping(Device *dev, struct timeval *timeout)
+{
+    struct timeval timeleft;
+
+    if (dev->prot->scripts[PM_PING] != NULL && timerisset(&dev->ping_period)) {
+	if (_timeout(&dev->last_ping, &dev->ping_period, &timeleft)) {
+	    _enqueue_actions(dev, PM_PING, NULL, NULL, 0, NULL);
+	    Gettimeofday(&dev->last_ping, NULL);
+	    printf("enqueuing ping\n"); /* XXX */
+	} else
+	    _update_timeout(timeout, &timeleft);
+    }
+}
+
 
 /*
  * Called prior to the select loop to initiate connects to all devices.
@@ -1152,10 +1170,16 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 		_handle_write(dev);
 	}
 
+	/* if this device needs a ping, take care of it */
+	if ((dev->connect_status & DEV_CONNECTED)) {
+	    _process_ping(dev, timeout);
+	}
+
 	/* process actions */
 	if (list_peek(dev->acts)) {
-		_process_action(dev, timeout);
+	    _process_action(dev, timeout);
 	}
+
     }
     list_iterator_destroy(itr);
 }
