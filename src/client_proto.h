@@ -95,7 +95,7 @@
 	"304 help             - display help"	CP_EOL	\
 	"104 quit             - logout"		CP_EOL
 #define CP_RSP_COMPLETE	"105 Command completed successfully" CP_EOL
-#define CP_RSP_RAW	"305 %s"			CP_EOL
+#define CP_RSP_RAW	"305 %s: %s"			CP_EOL
 #define CP_RSP_RAW_DONE "106 Query complete"		CP_EOL
 
 /* failure */

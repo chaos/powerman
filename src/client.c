@@ -234,13 +234,22 @@ static void _client_query_raw_reply(Client *c)
 {
     ListIterator itr;
     Arg *arg;
+    hostlist_t hl = hostlist_create(NULL);
+    char str[1024];
 
     assert(c->cmd != NULL);
     itr = list_iterator_create(c->cmd->arglist->argv);
     while ((arg = list_next(itr))) {
-	_client_msg(c, CP_RSP_RAW, arg->val);
+	if (arg->val)
+	    _client_msg(c, CP_RSP_RAW, arg->node, arg->val);
+	else
+	    hostlist_push(hl, arg->node);
     }
     list_iterator_destroy(itr);
+    if (hostlist_ranged_string(hl, sizeof(str), str) == -1) 
+	_client_msg(c, CP_ERR_INTERNAL);
+    else
+	_client_msg(c, CP_RSP_RAW, str, "unknown");
     _client_msg(c, CP_RSP_RAW_DONE);
 }
 
