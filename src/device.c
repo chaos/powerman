@@ -51,21 +51,22 @@ static void _set_targets(Device * dev, Action * sact);
 static Action *_do_target_copy(Device * dev, Action * sact, char *target);
 static void _do_target_some(Device * dev, Action * sact);
 static bool _reconnect(Device * dev);
-static bool _finish_connect(Device * dev, struct timeval *tv);
-bool _time_to_reconnect(Device *dev, struct timeval *tv);
+static bool _finish_connect(Device * dev, struct timeval *timeout);
+bool _time_to_reconnect(Device *dev, struct timeval *timeout);
 static void _disconnect(Device * dev);
 static bool _process_expect(Device * dev);
 static bool _process_send(Device * dev);
-static bool _process_delay(Device * dev);
+static bool _process_delay(Device * dev, struct timeval *timeout);
 static void _do_device_semantics(Device * dev, List map);
 static bool _match_regex(Device * dev, char *expect);
 static void _acttodev(Device * dev, Action * sact);
 static int _match_name(Device * dev, void *key);
 static void _handle_read(Device * dev);
 static void _handle_write(Device * dev);
-static void _process_script(Device * dev);
+static void _process_script(Device * dev, struct timeval *timeout);
 static void _recover(Device * dev);
-static bool _overdue(struct timeval * time_stamp, struct timeval * timeout);
+static bool _overdue(Device *dev, struct timeval * timeout,
+		struct timeval *timeleft);
 
 static List dev_devices = NULL;
 
@@ -121,26 +122,30 @@ static void _buflogfun_from(unsigned char *mem, int len, void *arg)
  * Test whether timeout has occurred
  *  time_stamp (IN) 
  *  timeout (IN)
+ *  timeleft (OUT)	if timeout has not occurred, put time left here
  *  RETURN		TRUE if (time_stamp + timeout > now)
  */
-static bool _overdue(struct timeval * time_stamp, struct timeval * timeout)
+static bool _overdue(Device *dev, struct timeval *timeout,
+		struct timeval *timeleft)
 {
     struct timeval now;
     struct timeval limit;
     bool result = FALSE;
+					    /* limit = time_stamp + timeout */
+    timeradd(&dev->time_stamp, timeout, &limit); 
 
-    /* timeradd(time_stamp, timeout, limit) */
-    limit.tv_usec = time_stamp->tv_usec + timeout->tv_usec;
-    limit.tv_sec = time_stamp->tv_sec + timeout->tv_sec;
-    if (limit.tv_usec > 1000000) {
-	limit.tv_sec++;
-	limit.tv_usec -= 1000000;
-    }
-    gettimeofday(&now, NULL);
-    /* timercmp(now, limit, >) */
-    if ((now.tv_sec > limit.tv_sec) ||
-	((now.tv_sec == limit.tv_sec) && (now.tv_usec > limit.tv_usec)))
+    Gettimeofday(&now, NULL);
+
+    if (timercmp(&now, &limit, >))	    /* if now > limit */
 	result = TRUE;
+
+    if (timeleft != NULL) {
+	if (result == FALSE)
+	    timersub(&limit, &now, timeleft);   /* timeleft = limit - now */
+	else
+	    timerclear(timeleft);
+    }
+	
     return result;
 }
 
@@ -161,32 +166,26 @@ bool _time_to_reconnect(Device *dev, struct timeval *timeout)
 {
     static int rtab[] = { 1, 2, 4, 8, 15, 30, 60 };
     int max_rtab_index = sizeof(rtab)/sizeof(int) - 1;
-    bool result = TRUE;
+    int rix = dev->reconnect_count - 1;
+    struct timeval timeleft, retry;
+    bool reconnect = TRUE;
 
     if (dev->reconnect_count > 0) {
-	    int rix = dev->reconnect_count - 1;
-	    struct timeval now, timesince, retry;
 
 	    timerclear(&retry);
 	    retry.tv_sec = rtab[rix > max_rtab_index ? max_rtab_index : rix];
 
-	    /* timesince = now - dev->last_reconnect */
-	    Gettimeofday(&now, NULL);
-	    timersub(&now, &dev->last_reconnect, &timesince);
-
-	    if (timercmp(&timesince, &retry, <)) {  /* timesince < retry */
-		if (timeout) {
-		    struct timeval timeleft;
-
-		    /* timeleft = retry - timesince */
-		    timersub(&retry, &timesince, &timeleft);
-
-		    _update_timeout(timeout, &timeleft);
-		}
-		result = FALSE;
-	    }
+	    if (!_overdue(dev, &retry, &timeleft))
+		reconnect = FALSE;
+	    if (timeout && !reconnect)
+		_update_timeout(timeout, &timeleft);
     }
-    return result;
+#if 0
+    if (dev->logit)
+	printf("_time_to_reconnect(%d): %s\n", dev->reconnect_count,
+			reconnect ? "yes" : "no");
+#endif
+    return reconnect;
 }
 
 
@@ -211,7 +210,7 @@ static bool _reconnect(Device * dev)
     if (dev->logit)
 	printf("_reconnect: %s\n", dev->name);
 
-    Gettimeofday(&dev->last_reconnect, NULL);
+    Gettimeofday(&dev->time_stamp, NULL);
     dev->reconnect_count++;
 
     memset(&hints, 0, sizeof(struct addrinfo));
@@ -273,7 +272,7 @@ static void _acttodev(Device * dev, Action * sact)
     assert(sact != NULL);
     CHECK_MAGIC(sact);
 
-    if (!dev->loggedin && (sact->com != PM_LOG_IN)) {
+    if (!(dev->script_status & DEV_LOGGED_IN) && (sact->com != PM_LOG_IN)) {
         syslog(LOG_ERR, "Attempt to initiate Action %s while not logged in", 
 			         command_str[sact->com]);
         return;
@@ -305,14 +304,16 @@ static void _acttodev(Device * dev, Action * sact)
 	switch (act->cur->type) {
 	case EL_SEND:
 	    syslog(LOG_DEBUG, "start script");
-	    dev->status |= DEV_SENDING;
+	    dev->script_status |= DEV_SENDING;
 	    _process_send(dev);
 	    break;
 	case EL_EXPECT:
 	    Gettimeofday(&dev->time_stamp, NULL);
-	    dev->status |= DEV_EXPECTING;
+	    dev->script_status |= DEV_EXPECTING;
 	    return;
 	case EL_DELAY:
+	    Gettimeofday(&dev->time_stamp, NULL);
+	    dev->script_status |= DEV_DELAYING;
 	    return;
 	case EL_NONE:
 	default:
@@ -548,7 +549,7 @@ static void _disconnect(Device *dev)
 
     /* update state */
     dev->connect_status = DEV_NOT_CONNECTED;
-    dev->loggedin = FALSE;
+    dev->script_status = 0;
 
     /* delete PM_LOG_IN action queued for this device, if any */
     if (((act = list_peek(dev->acts)) != NULL) && (act->com == PM_LOG_IN))
@@ -563,10 +564,10 @@ static void _disconnect(Device *dev)
  * processing is done if we're stuck at an EXPECT with no 
  * matching stuff in the input buffer.
  */
-static void _process_script(Device * dev)
+static void _process_script(Device * dev, struct timeval *timeout)
 {
     Action *act = list_peek(dev->acts);
-    bool done = FALSE;
+    bool script_incomplete = FALSE;
 
     if (act == NULL)
 	return;
@@ -575,7 +576,7 @@ static void _process_script(Device * dev)
 	return;
 
     /* 
-     * The condition for "done" is:
+     * The condition for "script_incomplete" is:
      * 1) There is nothing I can interpret in dev->from
      *   a) buf_isempty(dev->from), or
      *   b) find_Reg_Ex() fails
@@ -584,43 +585,35 @@ static void _process_script(Device * dev)
      *   a)  (act = top_Action(dev->acts)) == NULL, or
      *   b)  script_el->type == EL_EXPECT
      */
-    while (!done) {
+    while (!script_incomplete) {
 	switch (act->cur->type) {
 	case EL_EXPECT:
-	    done = _process_expect(dev);
-	    /* 
-	     * XXX Band-aid (jg)
-	     * Without this return, a short read causes the test 
-	     * for act->cur != NULL at the top of this function
-	     * to fail next time the fd is ready and we go here
-	     * (e.g. when more of the buffer is filled).
-	     * This needs to be revisited and fixed better...
-	     */
-	    if (done)
+	    if ((script_incomplete = _process_expect(dev)))
+		return;
+	    break;
+	case EL_DELAY:
+	    if ((script_incomplete = _process_delay(dev, timeout)))
 		return;
 	    break;
 	case EL_SEND:
-	    done = _process_send(dev);
-	    break;
-	case EL_DELAY:
-	    done = _process_delay(dev);
+	    script_incomplete = _process_send(dev);
 	    break;
 	default:
 	    err_exit(FALSE, "unrecognized Script_El type %d", act->cur->type);
 	}
 	if ((act->cur = list_next(act->itr)) == NULL) {
 	    if (act->com == PM_LOG_IN)
-		dev->loggedin = TRUE;
+		dev->script_status |= DEV_LOGGED_IN;
 	    act_del_queuehead(dev->acts);
 	} else {
 	    if (act->cur->type == EL_EXPECT) {
-		gettimeofday(&dev->time_stamp, NULL);
-		dev->status |= DEV_EXPECTING;
+		Gettimeofday(&dev->time_stamp, NULL);
+		dev->script_status |= DEV_EXPECTING;
 	    }
 	}
 	act = list_peek(dev->acts);
 	if (act == NULL)
-	    done = TRUE;
+	    return;
 	else if (act->cur == NULL)
 	    act->cur = list_next(act->itr);
     }
@@ -663,7 +656,7 @@ bool _process_expect(Device * dev)
      * We already matched the regular expression in buf_getregex
      * but now we need to process values of parenthesized subexpressions.
      */
-    dev->status &= ~DEV_EXPECTING;
+    dev->script_status &= ~DEV_EXPECTING;
     res = _match_regex(dev, expect);
     assert(res == TRUE); /* the first regexec worked, this one should too */
 
@@ -703,32 +696,42 @@ bool _process_send(Device * dev)
     else
 	buf_printf(dev->to, fmt, act->target);
 
-    dev->status |= DEV_SENDING;
+    dev->script_status |= DEV_SENDING;
 
     return TRUE;
 }
 
-
-/*
- *   This just mediates a call to Delay() which uses and empty
- * Select() to cause struct timeval tv worth of delay.
- */
-bool _process_delay(Device * dev)
+/* return TRUE if delay is not finished yet */
+bool _process_delay(Device * dev, struct timeval *timeout)
 {
-    Action *act = list_peek(dev->acts);
-    struct timeval tv = act->cur->s_or_e.delay.tv;
+    bool finished = FALSE;
+    struct timeval delay, timeleft;
+    Action *act;
 
+    act = list_peek(dev->acts);
     assert(act != NULL);
     assert(act->cur != NULL);
     assert(act->cur->type == EL_DELAY);
 
-    if (dev->logit)
-        printf("_process_delay(%s): %ld.%-6.6ld \n",
-               dev->name, tv.tv_sec, tv.tv_usec);
+    delay = act->cur->s_or_e.delay.tv;
 
-    Delay(&tv);
+    /* first time */
+    if (!(dev->script_status & DEV_DELAYING)) {
+	if (dev->logit)
+	    printf("_process_delay(%s): %ld.%-6.6ld \n", dev->name, 
+			    delay.tv_sec, delay.tv_usec);
+	dev->script_status |= DEV_DELAYING;
+	Gettimeofday(&dev->time_stamp, NULL);
+    }
 
-    return FALSE;
+    /* timeout expired? */
+    if (_overdue(dev, &delay, &timeleft)) {
+	dev->script_status &= ~DEV_DELAYING;
+	finished = TRUE;
+    } else
+	_update_timeout(timeout, &timeleft);
+    
+    return !finished;
 }
 
 /*
@@ -820,7 +823,7 @@ static void _handle_write(Device * dev)
     if (n < 0)
 	return;
     if (buf_isempty(dev->to))
-	dev->status &= ~DEV_SENDING;
+	dev->script_status &= ~DEV_SENDING;
 }
 
 
@@ -860,12 +863,11 @@ Device *dev_create(const char *name)
     INIT_MAGIC(dev);
     dev->name = Strdup(name);
     dev->type = NO_DEV;
-    dev->loggedin = FALSE;
     dev->connect_status = DEV_NOT_CONNECTED;
-    dev->status = 0;
+    dev->script_status = 0;
     dev->fd = NO_FD;
     dev->acts = list_create((ListDelF) act_destroy);
-    gettimeofday(&dev->time_stamp, NULL);
+    Gettimeofday(&dev->time_stamp, NULL);
     timerclear(&dev->timeout);
     dev->to = NULL;
     dev->from = NULL;
@@ -874,7 +876,6 @@ Device *dev_create(const char *name)
     dev->plugs = list_create((ListDelF) dev_plug_destroy);
     dev->logit = FALSE;
     dev->reconnect_count = 0;
-    timerclear(&dev->last_reconnect);
     return dev;
 }
 
@@ -1050,7 +1051,7 @@ void dev_pre_select(fd_set *rset, fd_set *wset, int *maxfd)
 	/* The descriptor becomes writable when a non-blocking connect 
 	 * (ie, DEV_CONNECTING) completes. */
 	if ((dev->connect_status == DEV_CONNECTING) 
-			|| (dev->status & DEV_SENDING))
+			|| (dev->script_status & DEV_SENDING))
 	    FD_SET(dev->fd, wset);
     }
     list_iterator_destroy(itr);
@@ -1059,7 +1060,7 @@ void dev_pre_select(fd_set *rset, fd_set *wset, int *maxfd)
 /* 
  * Called after select to process ready file descriptors, timeouts, etc.
  */
-void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *tv)
+void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 {
     Device *dev;
     Action *act;
@@ -1075,9 +1076,13 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *tv)
     while ((dev = list_next(itr))) {
 	bool scripts_need_service = FALSE;
 
-	/* (re)connect if device not connected */
+	/* 
+	 * (Re)connect if device not connected.
+	 * If we are still waiting for a connect timeout, modify 'timeout' 
+	 * so select can wake up when it expires and run us again.
+	 */
 	if (dev->connect_status == DEV_NOT_CONNECTED 
-			&& _time_to_reconnect(dev, tv)) {
+			&& _time_to_reconnect(dev, timeout)) {
 	    if (!_reconnect(dev))
 		continue;
 	}
@@ -1088,7 +1093,7 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *tv)
 	 * Run the log in script to get back into business as usual. */
 	if ((dev->connect_status == DEV_CONNECTING)) {
 	    if (FD_ISSET(dev->fd, rset) || FD_ISSET(dev->fd, wset))
-		if (!_finish_connect(dev, tv))
+		if (!_finish_connect(dev, timeout))
 		    continue;
 	}
 	assert(dev->fd >= 0);
@@ -1100,17 +1105,22 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *tv)
 	    _handle_write(dev);
 	    scripts_need_service = TRUE;
 	}
-	/* Since I/O took place we need to see if the scripts should run */
-	if (scripts_need_service)
-	    _process_script(dev);
+	/* 
+	 * Since I/O took place we need to see if the scripts should run.
+	 * If we are processing a delay or expect, we may modify 'timeout' 
+	 * so select can wake up when timeout expires and run us again.
+	 */
+	if (scripts_need_service || (dev->script_status & DEV_DELAYING)
+			|| (dev->script_status & DEV_EXPECTING))
+	    _process_script(dev, timeout);
 
 	/* stalled on an expect */
-	if ((dev->status & DEV_EXPECTING)) {
-	    if (_overdue(&dev->time_stamp, &dev->timeout))
+	if ((dev->script_status & DEV_EXPECTING)) {
+	    if (_overdue(dev, &dev->timeout, NULL))
 		_recover(dev);
 	}
 
-	if (dev->status & (DEV_SENDING | DEV_EXPECTING))
+	if (dev->script_status & (DEV_SENDING | DEV_EXPECTING))
 	    scripts_complete = FALSE;
     }
 

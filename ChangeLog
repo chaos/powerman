@@ -1,4 +1,7 @@
 2002-09-25 garlick
+	* Reimplement _process_delay() so it uses the select loop to time out.
+
+2002-09-25 garlick
 	* Removed inter-dev delay (behlendo)
 	* Removed timeout interval and update interval.
 	* Disabled automatic status queries.

@@ -33,7 +33,6 @@
 
 typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE } Client_Status;
 typedef struct {
-    bool 		loggedin;	/* has the client logged in? */
     Client_Status 	read_status;
     Client_Status 	write_status;
     int 		seq;		/* command sequence (per client) */

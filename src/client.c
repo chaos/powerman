@@ -515,7 +515,6 @@ static void _create_client(void)
     /* create client data structure */
     client = (Client *) Malloc(sizeof(Client));
     INIT_MAGIC(client);
-    client->loggedin = TRUE;  /* FIXME: not currently used */
     client->read_status = CLI_READING;
     client->write_status = CLI_IDLE;
     client->seq = 0;

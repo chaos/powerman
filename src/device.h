@@ -30,15 +30,13 @@
 #include <regex.h>
 #include "buffer.h"
 
-/* valudes for dev->connect_status */
-#define DEV_NOT_CONNECTED 0
-#define DEV_CONNECTING    1
-#define DEV_CONNECTED     2
+/* bitwise values for dev->script_status */
+#define DEV_LOGGED_IN	    1
+#define DEV_SENDING	    2
+#define DEV_EXPECTING	    4
+#define DEV_DELAYING	    8
 
-/* bitwise values for dev->status */
-#define DEV_LOGGED_IN     1
-#define DEV_SENDING       2
-#define DEV_EXPECTING     4
+typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectStat;
 
 /*
  * Plug
@@ -63,20 +61,25 @@ struct device_struct {
 	    char    *service;
 	} tcpd;
     } devu;
-    bool	    loggedin;	    /* is device logged in */
-    int		    status:4;	    /* DEV_ bits reprepsenting dev state */
-    int		    connect_status:4; /* DEV_ bits reprepsenting dev state */
+
+    ConnectStat	    connect_status;
+    int		    script_status;  /* DEV_ bits reprepsenting script state */
 
     int		    fd;
     List	    acts;	    /* queue of Actions */
+
     struct timeval  time_stamp;	    /* update this after each operation */
     struct timeval  timeout;
+
     Buffer	    to;		    /* buffer -> device */
     Buffer	    from;	    /* buffer <- device */
+
     int		    num_plugs;	    /* Plug count for this device */
     List	    plugs;	    /* list of Plugs */
     Protocol	    *prot;	    /* list of expect/send scripts */
+
     bool	    logit;	    /* if true, call log function in buffer.c */
+
     struct timeval  last_reconnect; /* time of last reconnect attempt */
     int		    reconnect_count;/* number of reconnects attempted */
     MAGIC;
