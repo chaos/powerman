@@ -31,6 +31,7 @@
 # 2. command echo: on (/g general parms, 6 command echo)
 # 3. command confirmation: off (/g general parms, 8 command confirmation)
 # 4. disconnect timeout: default of 2 minutes
+# Note: prompt is not returned until device is ready to accept another command
 #
 begin protocol specification
 	specification name "wti"
@@ -39,7 +40,7 @@ begin protocol specification
 	on string  "ON"
 	all string "*"
 	plug count 8
-	device timeout 1.0
+	device timeout 22  # "/boot *" command takes about 20 sec
 	begin LOGIN_SCRIPT
 		expect "\n"
 		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA\IAC\DONT\TELOPT_TTYPE"
@@ -52,7 +53,6 @@ begin protocol specification
 	end LOGOUT_SCRIPT
 	begin STATUS_SCRIPT
 		send "/s\r\n"
-		expect "WTI2"
 		expect "Default"
 		expect "\\+\r\n"
 		expect "[^\n]*(ON|OFF)[^\n]*(ON|OFF)[^\n]*\r\n"
@@ -77,22 +77,18 @@ begin protocol specification
 	begin ON_SCRIPT
 		send "/on %s\r\n"
 		expect "NPS> "
-		delay 0.3
 	end ON_SCRIPT
 	begin OFF_SCRIPT
 		send "/off %s\r\n"
 		expect "NPS> "
-		delay 0.3
 	end OFF_SCRIPT
 	begin CYCLE_SCRIPT
 		send "/boot %s\r\n"
 		expect "NPS> "
-		delay 0.3
 	end CYCLE_SCRIPT
 	begin RESET_SCRIPT
 		send "/boot %s\r\n"
 		expect "NPS> "
-		delay 0.3
 	end RESET_SCRIPT
 	plug name "1"
 	plug name "2"
