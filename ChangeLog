@@ -1,3 +1,8 @@
+2003-12-02 Albert Chu <chu11@llnl.gov>
+
+    * /etc/ipmipower.dev: Replaced "failed to connect" with "timed out" 
+    and "not discovered".
+
 2003-11-30 Jim Garlick <garlick@llnl.gov>
 
     * src/wrappers.[ch], src/device.[ch], src/client.[ch], powermand.c:
