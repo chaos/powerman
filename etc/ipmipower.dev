@@ -6,8 +6,7 @@
 # motherboards via the BMC and the 'ipmipower' utility.
 #
 specification "ipmipower" {
-	# timeout should be larger than ipmipower's timeout
-	timeout  	65
+	timeout  	60
 
 	script login {
 		expect "ipmipower> "
