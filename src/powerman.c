@@ -978,3 +978,7 @@ static bool is_prompt(String targ)
     }
     return result;
 }
+
+/*
+ * vi:softtabstop=4
+ */

@@ -48,10 +48,6 @@ static Action *find_Client_script(Protocol * p, Cluster * cluster,
 				  String expect);
 static bool match_Client_template(Cluster * cluster, Action * act,
 				  regex_t * re, String expect);
-#ifndef NDUMP
-static void dump_Client_Status(Client_Status status);
-#endif
-
 /*
  *   Select has indicated that there is material read to
  * be read on the fd associated with the Client c. 
@@ -366,47 +362,6 @@ int match_Client(Client * client, void *key)
     return (client == key);
 }
 
-#ifndef NDUMP
-
-/*
- *    Debug printout of structure contents.
- */
-void dump_Client(Client * client)
-{
-    fprintf(stderr, "\tClient:%0x\n", (unsigned int) client);
-    if (client->loggedin == TRUE)
-	fprintf(stderr, "\t\tLogged in.\n");
-    else
-	fprintf(stderr, "\t\tNot logged in.\n");
-    fprintf(stderr, "\t\tread status: ");
-    dump_Client_Status(client->read_status);
-    fprintf(stderr, "\t\twrite status: ");
-    dump_Client_Status(client->write_status);
-    fprintf(stderr, "\t\tsequence number: %d\n", client->seq);
-    fprintf(stderr, "\t\tfd: %d\n", client->fd);
-    dump_Buffer(client->to);
-    dump_Buffer(client->from);
-}
-
-/*
- *    Debug printout of structure contents.
- */
-static void dump_Client_Status(Client_Status status)
-{
-    if (status == CLI_IDLE)
-	fprintf(stderr, "CLI_IDLE\n");
-    else if (status == CLI_READING)
-	fprintf(stderr, "CLI_READING\n");
-    else if (status == CLI_WRITING)
-	fprintf(stderr, "CLI_WRITING\n");
-    else if (status == CLI_DONE)
-	fprintf(stderr, "CLI_DONE\n");
-    else
-	fprintf(stderr, "unknown\n");
-}
-
-#endif
-
 /*
  *   Destructor
  *
@@ -427,3 +382,8 @@ void free_Client(Client * client)
 	free_Buffer(client->from);
     Free(client);
 }
+
+
+/*
+ * vi:softtabstop=4
+ */

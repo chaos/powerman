@@ -82,11 +82,6 @@ void finish_Action(Globals * g, Action * act);
 /* Constructor */
 Action *make_Action(int com);
 
-#ifndef NDUMP
-/* debug structure print out */
-void dump_Action(List acts);
-#endif
-
 /* Destructor */
 void free_Action(Action * act);
 

@@ -266,10 +266,6 @@ void clear_Buffer(Buffer b)
     b->in = b->out = b->buf;
 }
 
-
-#ifndef NDEBUG
-void dump_Buffer(Buffer b)
-{
-    fprintf(stderr, "dump_Buffer not implemented\n");
-}
-#endif				/* !NDEBUG */
+/*
+ * vi:softtabstop=4
+ */

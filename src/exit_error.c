@@ -110,3 +110,7 @@ void exit_error(const char *fmt, ...)
 
     exit(1);
 }
+
+/*
+ * vi:softtabstop=4
+ */

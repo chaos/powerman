@@ -47,9 +47,6 @@ struct listener_struct {
 Listener *make_Listener(void);
 void init_Listener(Listener *listener);
 void handle_Listener(Globals *g);
-#ifndef NDUMP
-void dump_Listener(Listener *listener);
-#endif
 void free_Listener(Listener *listener);
 
 

@@ -928,101 +928,6 @@ int match_Device(Device * dev, void *key)
     return (match_String(dev->name, (char *) key));
 }
 
-#ifndef NDUMP
-
-/*
- *  Debug structure dump routine 
- */
-void dump_Device(Device * dev)
-{
-    ListIterator act_iter;
-    List act;
-    Plug *plug;
-    ListIterator plug_i;
-    int i;
-
-    fprintf(stderr, "\tDevice: %0x\n", (unsigned int) dev);
-    fprintf(stderr, "\t\tname: %s\n", get_String(dev->name));
-    fprintf(stderr, "\t\tall nodes symbol: %s\n", get_String(dev->all));
-    fprintf(stderr, "\t\tdevice type: ");
-    if (dev->type == NO_DEV)
-	fprintf(stderr, "NO_DEV\n");
-    else if (dev->type == TTY_DEV) {
-	fprintf(stderr, "TTY_DEV\n");
-	fprintf(stderr, "\t\t\tdevice: %s\n",
-		get_String(dev->devu.ttyd.device));
-    } else if (dev->type == TCP_DEV) {
-	fprintf(stderr, "TCP_DEV\n");
-	fprintf(stderr, "\t\t\thost: %s\n",
-		get_String(dev->devu.tcpd.host));
-	fprintf(stderr, "\t\t\tservice: %s\n",
-		get_String(dev->devu.tcpd.service));
-    } else if (dev->type == PMD_DEV) {
-	fprintf(stderr, "PMD_DEV\n");
-	fprintf(stderr, "\t\t\thost: %s\n",
-		get_String(dev->devu.pmd.host));
-	fprintf(stderr, "\t\t\tservice: %s\n",
-		get_String(dev->devu.pmd.service));
-    } else if (dev->type == TELNET_DEV) {
-	fprintf(stderr, "TELNET_DEV\n");
-	fprintf(stderr, "\t\t\tunimplemented: %s\n",
-		get_String(dev->devu.telnetd.unimplemented));
-    } else if (dev->type == SNMP_DEV) {
-	fprintf(stderr, "SNMP_DEV\n");
-	fprintf(stderr, "\t\t\tunimplemented: %s\n",
-		get_String(dev->devu.snmpd.unimplemented));
-    } else
-	fprintf(stderr, "unknown\n");
-    fprintf(stderr, "\t\tloggedin: ");
-    if (dev->loggedin)
-	fprintf(stderr, "TRUE\n");
-    else
-	fprintf(stderr, "FALSE\n");
-    fprintf(stderr, "\t\terror: ");
-    if (dev->error)
-	fprintf(stderr, "TRUE\n");
-    else
-	fprintf(stderr, "FALSE\n");
-    fprintf(stderr, "\t\tstatus: \n");
-    if (dev->status == DEV_NOT_CONNECTED)
-	fprintf(stderr, "\t\t\tDEV_NOT_CONNECTED\n");
-    if (dev->status & DEV_CONNECTED)
-	fprintf(stderr, "\t\t\tDEV_CONNECTED\n");
-    if (dev->status & DEV_LOGGED_IN)
-	fprintf(stderr, "\t\t\tDEV_LOGGED_IN\n");
-    if (dev->status & DEV_SENDING)
-	fprintf(stderr, "\t\t\tDEV_SENDING\n");
-    if (dev->status & DEV_EXPECTING)
-	fprintf(stderr, "\t\t\tDEV_EXPECTING\n");
-    fprintf(stderr, "\t\tfd: %d\n", dev->fd);
-    fprintf(stderr, "\t\tActions:\n");
-    act_iter = list_iterator_create(dev->acts);
-    while ((act = list_next(act_iter)))
-	dump_Action(act);
-    list_iterator_destroy(act_iter);
-    /* FIXME: time_stamp type has changed jg */
-    /*fprintf(stderr, "\t\ttime_stamp: %d\n", 
-       (int)dev->time_stamp); */
-    /* FIXME: timeout_interval does not exist jg */
-    /*fprintf(stderr, "\t\ttimeout_interval: %d\n", 
-       (int)dev->timeout_interval); */
-    dump_Buffer(dev->to);
-    dump_Buffer(dev->from);
-    fprintf(stderr, "\t\tnumber of nodes: %d\n", dev->num_plugs);
-    fprintf(stderr, "\t\tPlugs:\n");
-    plug_i = list_iterator_create(dev->plugs);
-    while ((plug = list_next(plug_i))) {
-	dump_Plug(plug);
-    }
-    list_iterator_destroy(plug_i);
-    fprintf(stderr, "\t\tDevice Scripts:\n");
-    for (i = 0; i < dev->prot->num_scripts; i++)
-	dump_Script(dev->prot->scripts[i], i);
-}
-
-#endif
-
-
 /*
  *  Should I free protocol elements and targets here?
  */
@@ -1078,23 +983,6 @@ int match_Plug(Plug * plug, void *key)
 	return TRUE;
     return FALSE;
 }
-
-#ifndef NDUMP
-
-/*
- *  Debug structure dump routine 
- */
-void dump_Plug(Plug * plug)
-{
-    fprintf(stderr, "\t\t\tPlug: %0x\n", (unsigned int) plug);
-    fprintf(stderr, "\t\t\t\tName: %s\n", get_String(plug->name));
-    if (plug->node == NULL)
-	return;
-    fprintf(stderr, "\t\t\t\tNode: %s\n", get_String(plug->node->name));
-}
-
-#endif
-
 
 
 void free_Plug(Plug * plug)
@@ -1208,3 +1096,7 @@ bool overdue(struct timeval * time_stamp, struct timeval * timeout)
 	result = TRUE;
     return result;
 }
+
+/*
+ * vi:softtabstop=4
+ */

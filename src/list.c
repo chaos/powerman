@@ -1,5 +1,5 @@
 /* 
- * $Id$
+ * list.c,v 1.3 2002/09/04 16:26:28 dun Exp
  *
  * This file was incorporated into the project from the ConMan utility.
  *
@@ -751,3 +751,7 @@ static void list_iterator_free(ListIterator i)
     list_mutex_unlock(&freeListIteratorsLock);
     return;
 }
+
+/*
+ * vi:softtabstop=4
+ */

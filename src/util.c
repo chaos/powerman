@@ -109,3 +109,8 @@ unsigned char *memstr(unsigned char *mem, int len)
     str[j] = '\0';
     return str;
 }
+
+
+/*
+ * vi:softtabstop=4
+ */

@@ -62,10 +62,6 @@ static void process_command_line(Globals * g, int argc, char **argv);
 static void usage(char *prog);
 static void do_select_loop(Globals * g);
 static int find_max_fd(Globals * g, fd_set * rset, fd_set * wset);
-#ifndef NDUMP
-static void dump_Globals(void);
-static void dump_Server_Status(Server_Status status);
-#endif
 static Globals *make_Globals();
 static void sig_hup_handler(int signum);
 static void exit_handler(int signum);
@@ -528,77 +524,6 @@ static Globals *make_Globals()
     return g;
 }
 
-#ifndef NDUMP
-
-/* 
- *   Display a debug listing of everything in the Globals struct.
- */
-static void dump_Globals(void)
-{
-    ListIterator act_iter;
-    Action *act;
-    ListIterator cli_i;
-    Client *client;
-    ListIterator d_iter;
-    Device *dev;
-    int i;
-    Globals *g = cheat;
-
-    fprintf(stderr, "Config file: %s\n", g->config_file);
-#if 0
-    /* FIXME: doesn't compile and doesn't look like loop advances jg */
-    fprintf(stderr, "Specifications:\n");
-    while (g->specs != g->specs->next) {
-	Spec *spec;
-
-	spec = g->specs->next;
-	dump_Spec(spec);
-    }
-#endif
-    fprintf(stderr, "Globals: %0x\n", (unsigned int) g);
-    fprintf(stderr, "\ttimout interval: %d.%06d sec\n",
-	    (int) g->timeout_interval.tv_sec,
-	    (int) g->timeout_interval.tv_usec);
-    dump_Cluster(g->cluster);
-    dump_Server_Status(g->status);
-    act_iter = list_iterator_create(g->acts);
-    while ((act = list_next(act_iter)))
-	dump_Action((List) act);
-    list_iterator_destroy(act_iter);
-    dump_Listener(g->listener);
-    cli_i = list_iterator_create(g->clients);
-    while ((client = list_next(cli_i)))
-	dump_Client(client);
-    list_iterator_destroy(cli_i);
-    fprintf(stderr, "\tClient Scripts:\n");
-    for (i = 0; i < g->client_prot->num_scripts; i++)
-	dump_Script(g->client_prot->scripts[i], i);
-    d_iter = list_iterator_create(g->devs);
-    while ((dev = list_next(d_iter)))
-	dump_Device(dev);
-    list_iterator_destroy(d_iter);
-    Report_Memory();
-    fprintf(stderr, "That's all.\n");
-}
-
-/*
- * Helper functin for dump_Globals 
- */
-static void dump_Server_Status(Server_Status status)
-{
-    fprintf(stderr, "\tServer Status: %d: ", status);
-    if (status == Quiescent)
-	fprintf(stderr, "Quiescent\n");
-    else if (status == Occupied)
-	fprintf(stderr, "Occupied\n");
-    else
-	fprintf(stderr, "Unknown\n");
-}
-
-
-
-#endif
-
 #if 0
 /*
  *  destructor
@@ -623,3 +548,8 @@ static void free_Globals(Globals * g)
     Free(g);
 }
 #endif
+
+
+/*
+ * vi:softtabstop=4
+ */

@@ -86,3 +86,7 @@ void daemon_init(void)
     /* Review: check for error from syslog */
     syslog(LOG_NOTICE, buf);
 }
+
+/*
+ * vi:softtabstop=4
+ */

@@ -64,9 +64,6 @@ void client_reply(Cluster * cluster, Action * act);
 Client *make_Client();
 int match_Client(Client * client, void *key);
 void free_Client(Client * client);
-#ifndef NDUMP
-void dump_Client(Client * client);
-#endif
 
 
 

@@ -219,76 +219,6 @@ Script_El *make_Script_El(Script_El_T type, String s1, String s2, List map,
     return script_el;
 }
 
-#ifndef NDUMP
-
-/*
- *  Debug structure dump routine 
- */
-void dump_Script(List script, int num)
-{
-    ListIterator script_itr;
-    Script_El *script_el;
-
-    fprintf(stderr, "\t\tScript %s: %0x\n",
-	    pm_coms[num], (unsigned int) script);
-    script_itr = list_iterator_create(script);
-    while ((script_el = list_next(script_itr))) {
-	fprintf(stderr, "\t\t\ttype: ");
-	switch (script_el->type) {
-	case SND_EXP_UNKNOWN:
-	    fprintf(stderr, "SND_EXP_UNKNOWN\n");
-	    break;
-	case SEND:
-	    fprintf(stderr, "SEND\n");
-	    dump_Send(&(script_el->s_or_e.send));
-	    break;
-	case EXPECT:
-	    fprintf(stderr, "EXPECT\n");
-	    dump_Expect(&(script_el->s_or_e.expect));
-	    break;
-	case DELAY:
-	    fprintf(stderr, "DELAY\n");
-	    /* FIXME: def of s_or_e.delay has changed? */
-	    /*fprintf(stderr, "\t\t\t%d.%06d\n", script_el->s_or_e.delay.tv_sec, script_el->s_or_e.delay.tv_usec); */
-	    break;
-	default:
-	    fprintf(stderr, "unknown\n");
-	}
-    }
-    list_iterator_destroy(script_itr);
-}
-
-/*
- *  Debug structure dump routine 
- */
-void dump_Send(Send_T * send)
-{
-    fprintf(stderr, "\t\t\tSend: %0x\n", (unsigned int) send);
-    fprintf(stderr, "\t\t\t\tfmt: %s\n", get_String(send->fmt));
-}
-
-/*
- *  Debug structure dump routine 
- */
-void dump_Expect(Expect_T * expect)
-{
-    Interpretation *interp;
-    ListIterator map_i;
-
-    fprintf(stderr, "\t\t\tExpect: %0x\n", (unsigned int) expect);
-    if (expect->map == NULL)
-	fprintf(stderr, "\t\t\t\tmap: NULL\n");
-    else {
-	map_i = list_iterator_create(expect->map);
-	while ((interp = list_next(map_i))) {
-	    dump_Interpretation(interp);
-	}
-	list_iterator_destroy(map_i);
-    }
-}
-
-#endif
-
 /*
  *   Destructor
  *
@@ -359,51 +289,6 @@ int match_Spec(Spec * spec, void *key)
     return FALSE;
 }
 
-#ifndef NDUMP
-
-/*
- *  Debug structure dump routine 
- */
-void dump_Spec(Spec * spec)
-{
-    ListIterator script;
-    Spec_El *specl;
-    int i;
-
-    fprintf(stderr, "\tSpec: %0x\n", (unsigned int) spec);
-    if (spec == NULL)
-	return;
-    fprintf(stderr, "\t\tname: %s\n", get_String(spec->name));
-    fprintf(stderr, "\t\tspec type: ");
-    if (spec->type == NO_DEV) {
-	fprintf(stderr, "NO_DEV\n");
-    } else if (spec->type == TTY_DEV) {
-	fprintf(stderr, "TTY_DEV\n");
-    } else if (spec->type == TCP_DEV) {
-	fprintf(stderr, "TCP_DEV\n");
-    } else if (spec->type == PMD_DEV) {
-	fprintf(stderr, "PMD_DEV\n");
-    } else if (spec->type == TELNET_DEV) {
-	fprintf(stderr, "TELNET_DEV\n");
-    } else if (spec->type == SNMP_DEV) {
-	fprintf(stderr, "SNMP_DEV\n");
-    } else {
-	fprintf(stderr, "unknown\n");
-    }
-    fprintf(stderr, "\t\toff value: %s\n", get_String(spec->off));
-    fprintf(stderr, "\t\ton value: %s\n", get_String(spec->on));
-    fprintf(stderr, "\t\tall value: %s\n", get_String(spec->all));
-    fprintf(stderr, "\t\tsize: %d\n", spec->size);
-    for (i = 0; i < spec->num_scripts; i++) {
-	fprintf(stderr, "\t\t%s script:\n", pm_coms[i]);
-	script = list_iterator_create(spec->scripts[i]);
-	while ((specl = list_next(script)))
-	    dump_Spec_El(specl);
-    }
-}
-
-#endif
-
 void free_Spec(Spec * spec)
 {
     int i;
@@ -468,38 +353,6 @@ Spec_El *make_Spec_El(Script_El_T type, char *str1, char *str2, List map)
     return specl;
 }
 
-#ifndef NDUMP
-
-/*
- *  Debug structure dump routine 
- */
-void dump_Spec_El(Spec_El * specl)
-{
-    fprintf(stderr, "\t\t\tSpec_El: %0x\n", (unsigned int) specl);
-    switch (specl->type) {
-    case SEND:
-	fprintf(stderr, "\t\t\t\ttype:  SEND\n");
-	fprintf(stderr, "\t\t\t\tstring1:  %s\n",
-		get_String(specl->string1));
-	break;
-    case EXPECT:
-	fprintf(stderr, "\t\t\t\ttype:  EXPECT\n");
-	fprintf(stderr, "\t\t\t\tstring1:  %s\n",
-		get_String(specl->string1));
-	fprintf(stderr, "\t\t\t\tstring2:  %s\n",
-		get_String(specl->string2));
-	break;
-    case DELAY:
-	fprintf(stderr, "\t\t\t\ttype:  DEALY\n");
-	break;
-    case SND_EXP_UNKNOWN:
-	break;
-    }
-}
-
-#endif
-
-
 void free_Spec_El(Spec_El * specl)
 {
     assert(specl->string1 != NULL);
@@ -540,28 +393,6 @@ Cluster *make_Cluster(void)
     return cluster;
 }
 
-
-#ifndef NDUMP
-
-/*
- *  Debug structure dump routine 
- */
-void dump_Cluster(Cluster * cluster)
-{
-    Node *node;
-    ListIterator node_i;
-
-    fprintf(stderr, "\tCluster:%0x\n", (unsigned int) cluster);
-    fprintf(stderr, "\t\tNumber of nodes: %d\n", cluster->num);
-    node_i = list_iterator_create(cluster->nodes);
-    while ((node = list_next(node_i)))
-	dump_Node(node);
-    list_iterator_destroy(node_i);
-    fprintf(stderr, "\t\tTime stamp: %s",
-	    ctime(&(cluster->time_stamp.tv_sec)));
-}
-
-#endif
 
 void free_Cluster(Cluster * cluster)
 {
@@ -607,49 +438,6 @@ int match_Node(Node * node, void *key)
     return FALSE;
 }
 
-#ifndef NDUMP
-
-/*
- *  Debug structure dump routine 
- */
-void dump_Node(Node * node)
-{
-    fprintf(stderr, "\t\tNode: %0x\n", (unsigned int) node);
-    fprintf(stderr, "\t\t\tname: %s\n", get_String(node->name));
-    if (node->p_dev != NULL) {
-	fprintf(stderr, "\t\t\thard power state: ");
-	if (node->p_state == ST_UNKNOWN)
-	    fprintf(stderr, "ST_UNKNOWN\n");
-	else if (node->p_state == OFF)
-	    fprintf(stderr, "OFF\n");
-	else if (node->p_state == ON)
-	    fprintf(stderr, "ON\n");
-	else
-	    fprintf(stderr, "unknown\n");
-	fprintf(stderr, "\t\t\tdevice: %s\n",
-		get_String(node->p_dev->name));
-	fprintf(stderr, "\t\t\tindex: %d\n", node->p_index);
-    } else
-	fprintf(stderr, "\t\t\tNo hard power state available\n");
-    if (node->n_dev != NULL) {
-	fprintf(stderr, "\t\t\tsoft power state: ");
-	if (node->n_state == ST_UNKNOWN)
-	    fprintf(stderr, "ST_UNKNOWN\n");
-	else if (node->n_state == OFF)
-	    fprintf(stderr, "OFF\n");
-	else if (node->n_state == ON)
-	    fprintf(stderr, "ON\n");
-	else
-	    fprintf(stderr, "unknown\n");
-	fprintf(stderr, "\t\t\tdevice: %s\n",
-		get_String(node->n_dev->name));
-	fprintf(stderr, "\t\t\tindex: %d\n", node->n_index);
-    } else
-	fprintf(stderr, "\t\t\tNo soft power state available\n");
-}
-
-#endif
-
 void free_Node(Node * node)
 {
     free_String(node->name);
@@ -687,27 +475,6 @@ int match_Interp(Interpretation * interp, void *key)
 	return TRUE;
     return FALSE;
 }
-
-#ifndef NDUMP
-
-
-/*
- *  Debug structure dump routine 
- */
-void dump_Interpretation(Interpretation * interp)
-{
-    fprintf(stderr, "\t\t\t\tInterpretation: %0x\n",
-	    (unsigned int) interp);
-    fprintf(stderr, "\t\t\t\t\tMatch Position: %d\n", interp->match_pos);
-    if (interp->val == NULL)
-	fprintf(stderr, "\t\t\t\t\tval: NULL\n");
-    else
-	fprintf(stderr, "\t\t\t\t\tval: %s\n", interp->val);
-    fprintf(stderr, "\t\t\t\t\tnode: %s\n",
-	    get_String(interp->node->name));
-}
-
-#endif
 
 void free_Interp(Interpretation * interp)
 {
@@ -752,3 +519,7 @@ void set_tv(struct timeval *tv, char *s)
     tv->tv_sec = sec;
     tv->tv_usec = usec;
 }
+
+/*
+ * vi:softtabstop=4
+ */

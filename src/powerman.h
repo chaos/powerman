@@ -35,8 +35,6 @@ typedef enum { FALSE = 0, TRUE = 1 } bool;
 #define NO_FD           (-1)
 #define	MAXFD	         64
 
-#define NDUMP			/* Don't produce global data structure dump routines */
-
 /* #define NDEBUG 1 Don't produce debug code */
 #ifndef NDEBUG
 /* Use debugging macros */

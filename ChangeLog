@@ -1,6 +1,9 @@
 2002-09-13 garlick
 	* Ran indent -kr *.[ch] on everything in src except hostlist.[ch]
-	  and list.[ch]
+	  and list.[ch] 
+	* Tagged src with after-indent.
+	* Got rid of NDUMP code (deprecated debugging stuff).
+	* Added "vi:softtabstop=4" to *.c
 
 2002-09-12 garlick
 	* Brian documented some problems in the top of TODO.

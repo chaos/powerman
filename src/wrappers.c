@@ -191,8 +191,6 @@ void Delay(struct timeval *tv)
     assert(res == 0);
 }
 
-static int allocated_memory = 0;
-
 /* Review: look into dmalloc */
 #define MALLOC_MAGIC 0xf00fbaab
 char *Malloc(int size)
@@ -209,7 +207,6 @@ char *Malloc(int size)
 
     new = (char *) &p[2];
     memset(new, 0, size);
-    allocated_memory += size;
     return new;
 }
 
@@ -223,7 +220,6 @@ void Free(void *ptr)
 	size = p[1];
 	memset(p, 0, size + 2 * sizeof(int));
 	free(p);
-	allocated_memory -= size;
     }
 }
 
@@ -418,10 +414,6 @@ Sigfunc *Signal(int signo, Sigfunc * func)
     return (oact.sa_handler);
 }
 
-#ifndef NDUMP
-void Report_Memory()
-{
-    fprintf(stderr, "Remaining allocated memory is: %d\n",
-	    allocated_memory);
-}
-#endif
+/*
+ * vi:softtabstop=4
+ */

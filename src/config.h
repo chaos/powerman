@@ -228,15 +228,4 @@ void set_tv(struct timeval *tv, char *s);
 /* Bison generated code's externs */
 int parse_config_file(void);
 
-#ifndef NDUMP
-void dump_Spec(Spec * spec);
-void dump_Spec_El(Spec_El * specl);
-void dump_Cluster(Cluster * cluster);
-void dump_Node(Node * node);
-void dump_Interpretation(Interpretation * interp);
-void dump_Script(List script, int num);
-void dump_Expect(Expect_T * expect);
-void dump_Send(Send_T * send);
-#endif				/* !NDUMP */
-
 #endif				/* CONFIG_H */

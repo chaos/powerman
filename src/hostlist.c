@@ -2396,3 +2396,8 @@ int main(int ac, char **av)
 }
 
 #endif				/* TEST_MAIN */
+
+
+/*
+ * vi:softtabstop=8
+ */

@@ -264,33 +264,6 @@ Action *make_Action(int com)
     return act;
 }
 
-#ifndef NDUMP
-
-/*
- *    Debug printout of structure contents.
- */
-void dump_Action(List acts)
-{
-    Action *act = list_peek(acts);
-
-    fprintf(stderr, "\tAction: %x\n", (unsigned int) act);
-    if (act->client == NULL)
-	fprintf(stderr, "\t\tInternal action (no Client)\n");
-    else
-	fprintf(stderr, "\t\tAction for client fd: %d\n", act->client->fd);
-    fprintf(stderr, "\t\tSequence number: %d\n", act->seq);
-    fprintf(stderr, "\t\tcommand: %s\n", pm_coms[act->com]);
-    fprintf(stderr, "\t\t\tcurrent script : %d\n", (int) act->cur);
-    if (act->target == NULL)
-	fprintf(stderr, "\t\tTarget: Null\n");
-    else {
-	fprintf(stderr, "\t\tTarget: %s\n", get_String(act->target));
-    }
-}
-
-#endif
-
-
 /*
  *   Destructor
  *
@@ -324,3 +297,7 @@ void del_Action(List acts)
     act = list_pop(acts);
     free_Action(act);
 }
+
+/*
+ * vi:softtabstop=4
+ */
