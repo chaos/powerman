@@ -1,3 +1,9 @@
+2005-03-22 Albert Chu <chu11@llnl.gov>
+
+    * META: Updated for new release.
+
+    * : tag powerman-1-0-21
+
 2005-03-09 Jim Garlick <garlick@llnl.gov>
 
     * src/device.c: fixed memory leak dbg_actions (gnat powerman/233).
