@@ -53,6 +53,7 @@ install:
 	$(INSTALL) -m 644 etherwake.conf $(DESTDIR)$(packagedir)/etc/
 	$(INSTALL) -m 644 powerman.conf  $(DESTDIR)$(packagedir)/etc/
 	$(INSTALL) -m 644 wti.conf       $(DESTDIR)$(packagedir)/etc/
+	$(INSTALL) -m 644 icebox.conf    $(DESTDIR)$(packagedir)/etc/
 
 clean:
 	rm -f *~ *.o

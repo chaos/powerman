@@ -160,6 +160,7 @@ opts        = ''
 all         = 0
 fanout      = 256
 setting     = 0
+ICEBOX_SIZE = 10
 
 # Look for environment variables and set globals
 
@@ -317,27 +318,27 @@ for tty_name in ttys.keys():
         f = open(tty_name, 'r+')
     except IOError:
         if(verbose):
-            sys.stderr.write ("icebox: Unable to access icebox control device on port " + tty + "\n")
+            sys.stderr.write ("icebox: Unable to access icebox control device on port " + tty_name + "\n")
         sys.exit(1)
     try:
         fcntl.lockf(f.fileno(), FCNTL.LOCK_EX | FCNTL.LOCK_NB)
     except IOError:
         if(verbose):
-            sys.stderr.write ("icebox: Unable to gain exclusive lock on icebox control device on port " + tty + "\n")
+            sys.stderr.write ("icebox: Unable to gain exclusive lock on icebox control device on port " + tty_name + "\n")
         sys.exit(1)
     for box_name in tty.boxes.keys():
         box = tty.boxes[box_name]
-        if (box.num_requested == box.num_connected):
+        if (box.num_requested == ICEBOX_SIZE):
             target = 'c' + box.name + com + '\n'
             response = ''
             f.write(target)
             response = f.readline()
-            if (response[-1:] == '\n'):
+            while ((response[-1:] == '\n') or (response[-1:] == '\r')):
                 response = response[:-1]
             if ((com == 'on') or (com == 'off') or (com == 'reset')):
                 if (string.lower(response) != 'ok'):
                     if (verbose):
-                        sys.stderr.write ("icebox: Error returned from node " + name + " after command \"" + target + "\"\n")
+                        sys.stderr.write ("icebox: Error returned from icebox " + box.name + " after command \"" + target + "\"\n")
                     sys.exit(1)
             elif(com == 'ns'):
                 try:
@@ -371,7 +372,7 @@ for tty_name in ttys.keys():
                         sys.exit(1)
                     print box.ports[p[1:1]].node.name + ":" + temps
         else:
-            # (num_requested != num_connected):
+            # (num_requested != ICEBOX_SIZE):
             for port_name in box.ports.keys():
                 port = box.ports[port_name]
                 if (port.requested == 0):
@@ -380,19 +381,19 @@ for tty_name in ttys.keys():
                 response = ''
                 f.write(target)
                 response = f.readline()
-                if (response[-1:] == '\n'):
+                while ((response[-1:] == '\n') or (response[-1:] == '\r')):
                     response = response[:-1]
                 if ((com == 'on') or (com == 'off') or (com == 'reset')):
                     if (string.lower(response) != 'ok'):
                         if (verbose):
-                            sys.stderr.write ("icebox: Error returned from node " + name + " after command \"" + target + "\"\n")
+                            sys.stderr.write ("icebox: Error returned from port " + port.name + " after command \"" + target + "\"\n")
                         sys.exit(1)
                 elif(com == 'ns'):
                     try:
                         p,state = string.split(response, ':')
                     except ValueError:
                         if (verbose):
-                            sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from node " + name + " after command \"" + target + "\"\n")
+                            sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from port " + port.name + " after command \"" + target + "\"\n")
                         sys.exit(1)
                     if (((state == '0') and reverse) or ((state == '1') and not reverse)):
                         print port.node.name
