@@ -300,7 +300,7 @@ set_targets(Device *dev, Action *sact)
 			list_iterator_reset(act->itr);
 		}
 		act = do_target_copy(dev, sact, NULL);
-		list_push(dev->acts, (void *)act);
+		list_push(dev->acts, act);
 		break;
 	case PM_ERROR :
 	case PM_CHECK_LOGIN :
@@ -308,7 +308,7 @@ set_targets(Device *dev, Action *sact)
 	case PM_UPDATE_PLUGS :
 	case PM_UPDATE_NODES :
 		act = do_target_copy(dev, sact, NULL);
-		list_append(dev->acts, (void *)act);
+		list_append(dev->acts, act);
 		break;
 	case PM_POWER_ON :
 	case PM_POWER_OFF :
@@ -323,7 +323,7 @@ set_targets(Device *dev, Action *sact)
 		else /* dev->prot->mode == REGEX */
 		{
 			act = do_target_copy(dev, sact, sact->target);
-			list_append(dev->acts, (void *)act);
+			list_append(dev->acts, act);
 		}
 		break;
 	default :
@@ -375,33 +375,40 @@ do_target_some(Device *dev, Action *sact)
 	bool any;
 	Plug *plug;
 	ListIterator plug_i;
-        size_t nm = MAX_MATCH;
-        regmatch_t pm[MAX_MATCH];
+        size_t nm = 1;
+        regmatch_t pm[1];
         int eflags = 0;
         regex_t nre;
         reg_syntax_t cflags = REG_EXTENDED;
 
 	all = TRUE;
 	any = FALSE;
-	new_acts = list_create(free_Action);
+	new_acts = list_create((ListDelF) free_Action);
 	Regcomp( &nre, get_String(sact->target), cflags );
 	plug_i = list_iterator_create(dev->plugs);
 	while( (plug = list_next(plug_i)) )
 	{
-		/* If plug->node == NULL it means that there is no */
-		/* node pluged into that plug (or that node is not */
-		/* under management by this powermand).  In such a */
-		/* case do use the "all" target in the action.     */
+		/* If plug->node == NULL it means that there is no
+		 * node pluged into that plug (or that node is not
+		 * under management by this powermand).  In such a
+		 * case do not use the "all" target in the action.
+		 */
 		if (plug->node == NULL) 
 		{
 			all = FALSE;
 			continue;
 		}
-/* check if plug->node->name matches the target re */
-/* if it does make a new act for it and set any to TRUE */
-/* if it doesn't, set all to FALSE */
-		n = Regexec( &nre, get_String(plug->node->name), nm, pm, eflags );
-		if( (n == REG_NOMATCH) || ((pm[0].rm_eo - pm[0].rm_so) != length_String(plug->node->name)) )
+		/*
+		 * check if plug->node->name matches the target re.
+		 * if it does make a new act for it and set any to TRUE.
+		 * if it doesn't, set all to FALSE.
+		 */
+		n = Regexec( &nre, get_String(plug->node->name),
+			nm, pm, eflags );
+
+		if( (n == REG_NOMATCH)
+		    || ((pm[0].rm_eo - pm[0].rm_so)
+			!= length_String(plug->node->name)) )
 		{
 			all = FALSE;
 		}
@@ -409,22 +416,24 @@ do_target_some(Device *dev, Action *sact)
 		{
 			any = TRUE;
 			act = do_target_copy(dev, sact, plug->name);
-			list_append(new_acts, (void *)act);
+			list_append(new_acts, act);
 		}
 	}
 	list_iterator_destroy(plug_i);
+	regfree(&nre);
+
 	if ( all )
 	{
 /* list of new_acts is destroyed at the end of this function */
 		act = do_target_copy(dev, sact, dev->all);
-		list_append(dev->acts, (void *)act);
+		list_append(dev->acts, act);
 	}
 	else if ( any )
 	{
 /* we have some but not all so we need to stick them all on the queue */
 		while( (act = list_pop(new_acts)) )
 		{
-			list_append(dev->acts, (void *)act);
+			list_append(dev->acts, act);
 		}
 	}
 	list_destroy(new_acts);
@@ -675,7 +684,7 @@ process_expect(Device *dev)
 		else
 			do_Device_semantics(dev, act->cur->s_or_e.expect.map);
 	}
-	free_String((void *)expect);
+	free_String(expect);
 
 	if (dev->logit)
 		printf("process_expect(%s): match\n", 
@@ -951,7 +960,7 @@ make_Device(const char *name)
 	dev->error = FALSE;
 	dev->status = DEV_NOT_CONNECTED;
 	dev->fd = NO_FD;
-	dev->acts = list_create(free_Action);
+	dev->acts = list_create((ListDelF) free_Action);
 	gettimeofday( &(dev->time_stamp), NULL ); 
 	dev->timeout.tv_sec = 0;
 	dev->timeout.tv_usec = 0;
@@ -959,7 +968,7 @@ make_Device(const char *name)
 	dev->from = NULL;
 	dev->prot = NULL;
 	dev->num_plugs = 0;
-	dev->plugs = list_create(free_Plug);
+	dev->plugs = list_create((ListDelF) free_Plug);
 	dev->logit = FALSE;
 	return dev;
 }
@@ -972,9 +981,9 @@ make_Device(const char *name)
  * a node line referes to a device by its name.  
  */
 int
-match_Device(void *dev, void *key)
+match_Device(Device *dev, void *key)
 {
-	return ( match_String(((Device *)dev)->name, (char *)key) );
+	return ( match_String(dev->name, (char *)key) );
 }
 
 #ifndef NDUMP
@@ -985,7 +994,7 @@ match_Device(void *dev, void *key)
 void
 dump_Device(Device *dev)
 {
-	ListIterator    act_iter;
+	ListIterator act_iter;
 	List act;
 	Plug *plug;
 	ListIterator plug_i;
@@ -1075,23 +1084,21 @@ dump_Device(Device *dev)
  *  Should I free protocol elements and targets here?
  */
 void
-free_Device(void *vdev)
+free_Device(Device *dev)
 {
-	Device *dev = (Device *)vdev;
-
 	CHECK_MAGIC(dev);
 
-	free_String( (void *)dev->name );
-	free_String( (void *)dev->all );
+	free_String( dev->name );
+	free_String( dev->all );
 	if(dev->type == TCP_DEV)
 	{
-		free_String( (void *)dev->devu.tcpd.host );
-		free_String( (void *)dev->devu.tcpd.service );
+		free_String( dev->devu.tcpd.host );
+		free_String( dev->devu.tcpd.service );
 	}
 	else if(dev->type == PMD_DEV)
 	{
-		free_String( (void *)dev->devu.pmd.host );
-		free_String( (void *)dev->devu.pmd.service );
+		free_String( dev->devu.pmd.host );
+		free_String( dev->devu.pmd.service );
 	}
 	list_destroy(dev->acts);
 	list_destroy(dev->plugs);
@@ -1126,7 +1133,7 @@ make_Plug(const char *name)
  * parsed into a list and a node line referes to a plug by its name.   
  */
 int
-match_Plug(void *plug, void *key)
+match_Plug(Plug *plug, void *key)
 {
 	if( match_String(((Plug *)plug)->name, (char *)key) )
 		return TRUE;
@@ -1152,9 +1159,10 @@ dump_Plug(Plug *plug)
 
 
 void
-free_Plug(void *plug)
+free_Plug(Plug *plug)
 {
-	free_String( (void *)((Plug *)plug)->name );
+	regfree(&(plug->name_re));
+	free_String( plug->name );
 	Free(plug);
 }
 
@@ -1176,8 +1184,8 @@ match_RegEx(Device *dev, String expect)
 	Action *act;
 	regex_t *re;
 	int n;
-	size_t nmatch = MAX_MATCH;
-	regmatch_t pmatch[MAX_MATCH];
+	size_t nmatch = 1;
+	regmatch_t pmatch[1];
 	int eflags = 0;
 	Interpretation *interp;
 	ListIterator map_i;

@@ -536,13 +536,13 @@ make_Globals()
 	g->daemonize                = TRUE;
 	g->TCP_wrappers             = FALSE;
 	g->listener                 = make_Listener();
-	g->clients                  = list_create(free_Client);
+	g->clients                  = list_create((ListDelF) free_Client);
 	g->status                   = Quiescent;
 	g->cluster                  = NULL;
-	g->acts                     = list_create(free_Action);
+	g->acts                     = list_create((ListDelF) free_Action);
 	g->client_prot              = NULL;
-	g->specs                    = list_create(free_Spec);
-	g->devs                     = list_create(free_Device);
+	g->specs                    = list_create((ListDelF) free_Spec);
+	g->devs                     = list_create((ListDelF) free_Device);
 	g->config_file              = NULL;
 	g->cf                       = NULL;
 	g->cluster                  = make_Cluster();

@@ -58,13 +58,11 @@ make_String(const unsigned char *cs)
 }
 
 /*
- * Free a String object.  The argument is (void *) for compat with list.c.
+ * Free a String object.
  */
 void
-free_String(void *str)
+free_String(String s)
 {
-	String s = str;
-
 	assert(s);
 	assert(s->magic == STRING_MAGIC);
 	if(s->string)

@@ -35,7 +35,7 @@ typedef struct buffer_implementation *Buffer;
 
 typedef void (BufferLogFun)(unsigned char *mem, int len, void *arg);
 Buffer make_Buffer(int fd, int length, BufferLogFun logfun, void *logfunarg);
-void free_Buffer(void *vb);
+void free_Buffer(Buffer b);
 bool send_Buffer(Buffer b, const char *fmt, ...);
 int write_Buffer(Buffer b);
 int read_Buffer(Buffer b);

@@ -118,17 +118,17 @@ void handle_Device_write(Device *dev);
 bool stalled_Device(Device *dev);
 void recover_Device(Device *dev);
 Device *make_Device();
-int match_Device(void *dev, void *key);
+int match_Device(Device *dev, void *key);
 #ifndef NDUMP
 void dump_Device(Device *dev);
 #endif
-void free_Device(void *dev);
+void free_Device(Device *dev);
 Plug *make_Plug(const char *name);
-int  match_Plug(void *plug, void *key);
+int  match_Plug(Plug *plug, void *key);
 #ifndef NDUMP
 void dump_Plug(Plug *plug);
 #endif
-void free_Plug(void *plug);
+void free_Plug(Plug *plug);
 /* calculate if time_stamp + timeout > now */
 bool overdue(struct timeval *time_stamp, struct timeval *timeout);
 

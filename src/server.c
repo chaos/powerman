@@ -94,7 +94,7 @@ handle_Client_read(Protocol *client_prot, Cluster *cluster,
  * processing, and enqueue the Action.  
  */
 		act = process_input(client_prot, cluster, c);
-		if( act != NULL ) list_append(acts, (void *)act);
+		if( act != NULL ) list_append(acts, act);
 	}
 	while (act != NULL);
 
@@ -124,7 +124,7 @@ process_input(Protocol *client_prot, Cluster *cluster,
 	if( expect == NULL ) return NULL;
 
 	act = find_Client_script(client_prot, cluster, expect);
-	free_String((void *)expect);
+	free_String(expect);
 	if (act != NULL) 
 	{
 		act->client = c;
@@ -367,7 +367,7 @@ make_Client()
  * no longer has a client associated with it.
  */
 int
-match_Client(void *client, void *key)
+match_Client(Client *client, void *key)
 {
 	return(client == key);
 }
@@ -416,10 +416,8 @@ dump_Client_Status(Client_Status status)
  * Destroys:  Client
  */
 void
-free_Client(void *vclient)
+free_Client(Client *client)
 {
-	Client *client = (Client *)vclient;
-
 	CHECK_MAGIC(client);
 
 	if( client->fd != NO_FD ) 
@@ -431,4 +429,3 @@ free_Client(void *vclient)
 	if( client->from != NULL ) free_Buffer(client->from);
 	Free(client);
 }
-

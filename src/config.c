@@ -85,78 +85,87 @@ init_Client_Protocol(void)
 	scripts[PM_ERROR] = NULL;
 
 /* PM_LOG_IN 1 */
-	scripts[PM_LOG_IN] = list_create(free_Script_El);
+	scripts[PM_LOG_IN] = list_create((ListDelF) free_Script_El);
 	script_el = make_Script_El(EXPECT, string1 = make_String("powerman"), string2 = make_String("\n"), NULL, tv);
 	list_append(scripts[PM_LOG_IN], script_el);
-	free_String((void *)string1); free_String((void *)string2);
+	free_String(string1);
+	free_String(string2);
 
 /* PM_CHECK_LOGIN 2 */
-	scripts[PM_CHECK_LOGIN] = list_create(free_Script_El);
+	scripts[PM_CHECK_LOGIN] = list_create((ListDelF) free_Script_El);
 	script_el = make_Script_El(EXPECT, string1 = make_String("check login"), string2 = make_String("\n"), NULL, tv);
 	list_append(scripts[PM_CHECK_LOGIN], script_el);
-	free_String((void *)string1); free_String((void *)string2);
+	free_String(string1);
+	free_String(string2);
 
 /* PM_LOG_OUT 3 */
-	scripts[PM_LOG_OUT] = list_create(free_Script_El);
+	scripts[PM_LOG_OUT] = list_create((ListDelF) free_Script_El);
 	script_el = make_Script_El(EXPECT, string1 = make_String("quit"), string2 = make_String("\n"), NULL, tv);
 	list_append(scripts[PM_LOG_OUT], script_el);
-	free_String((void *)string1); free_String((void *)string2);
+	free_String(string1);
+	free_String(string2);
 
 /* PM_UPDATE_PLUGS 4 */
-	scripts[PM_UPDATE_PLUGS] = list_create(free_Script_El);
+	scripts[PM_UPDATE_PLUGS] = list_create((ListDelF) free_Script_El);
 	script_el = make_Script_El(EXPECT, string1 = make_String("update plugs"), string2 = make_String("\n"), NULL, tv);
 	list_append(scripts[PM_UPDATE_PLUGS], script_el);
-	free_String((void *)string1); free_String((void *)string2);
+	free_String(string1);
+	free_String(string2);
 
 /* PM_UPDATE_NODES 5 */
-	scripts[PM_UPDATE_NODES] = list_create(free_Script_El);
+	scripts[PM_UPDATE_NODES] = list_create((ListDelF) free_Script_El);
 	script_el = make_Script_El(EXPECT, string1 = make_String("update nodes"), string2 = make_String("\n"), NULL, tv);
 	list_append(scripts[PM_UPDATE_NODES], script_el);
-	free_String((void *)string1); free_String((void *)string2);
+	free_String(string1);
+	free_String(string2);
 
 /* PM_POWER_ON 6 */
-	scripts[PM_POWER_ON] = list_create(free_Script_El);
+	scripts[PM_POWER_ON] = list_create((ListDelF) free_Script_El);
 	script_el = make_Script_El(EXPECT, string1 = make_String("on ([^[:space:]]+)"), string2 = make_String("\n"), NULL, tv);
 	list_append(scripts[PM_POWER_ON], script_el);
-	free_String((void *)string1); free_String((void *)string2);
+	free_String(string1);
+	free_String(string2);
 
 /* PM_POWER_OFF 7 */
-	scripts[PM_POWER_OFF] = list_create(free_Script_El);
+	scripts[PM_POWER_OFF] = list_create((ListDelF) free_Script_El);
 	script_el = make_Script_El(EXPECT, string1 = make_String("off ([^[:space:]]+)"), string2 = make_String("\n"), NULL, tv);
 	list_append(scripts[PM_POWER_OFF], script_el);
-	free_String((void *)string1); free_String((void *)string2);
+	free_String(string1);
+	free_String(string2);
 
 /* PM_POWER_CYCLE 8 */
-	scripts[PM_POWER_CYCLE] = list_create(free_Script_El);
+	scripts[PM_POWER_CYCLE] = list_create((ListDelF) free_Script_El);
 	script_el = make_Script_El(EXPECT, string1 = make_String("cycle ([^[:space:]]+)"), string2 = make_String("\n"), NULL, tv);
 	list_append(scripts[PM_POWER_CYCLE], script_el);
-	free_String((void *)string1); free_String((void *)string2);
+	free_String(string1);
+	free_String(string2);
 
 /* PM_RESET 9 */
-	scripts[PM_RESET] = list_create(free_Script_El);
+	scripts[PM_RESET] = list_create((ListDelF) free_Script_El);
 	script_el = make_Script_El(EXPECT, string1 = make_String("reset ([^[:space:]]+)"), string2 = make_String("\n"), NULL, tv);
 	list_append(scripts[PM_RESET], script_el);
-	free_String((void *)string1); free_String((void *)string2);
+	free_String(string1);
+	free_String(string2);
 
 /* PM_NAMES 9 */
-	scripts[PM_NAMES] = list_create(free_Script_El);
+	scripts[PM_NAMES] = list_create((ListDelF) free_Script_El);
 	script_el = make_Script_El(EXPECT, string1 = make_String("names ([^[:space:]]+)"), string2 = make_String("\n"), NULL, tv);
 	list_append(scripts[PM_NAMES], script_el);
-	free_String((void *)string1); free_String((void *)string2);
+	free_String(string1);
+	free_String(string2);
 
 	return client_prot;
 }
 
 
-/*******************************************************************/
-/*                                                                 */
-/* Script_El                                                       */
-/*   A Script_El structure is an element in a script.  The script  */
-/* is a list of these elemments that implements one of the actions */
-/* that clients may request of devices.                            */
-/*                                                                 */
-/*******************************************************************/
-
+/*******************************************************************
+ *                                                                 *
+ * Script_El                                                       *
+ *   A Script_El structure is an element in a script.  The script  *
+ * is a list of these elemments that implements one of the actions *
+ * that clients may request of devices.                            *
+ *                                                                 *
+ *******************************************************************/
 /*
  *   Constructor
  *
@@ -222,7 +231,7 @@ dump_Script(List script, int num)
 			dump_Expect(&(script_el->s_or_e.expect));
 			break;
 		case DELAY :
-			fprintf(stderr, "DEALY\n");
+			fprintf(stderr, "DELAY\n");
 			/* FIXME: def of s_or_e.delay has changed? */
 			/*fprintf(stderr, "\t\t\t%d.%06d\n", script_el->s_or_e.delay.tv_sec, script_el->s_or_e.delay.tv_usec);*/
 			break;
@@ -273,33 +282,33 @@ dump_Expect(Expect_T *expect)
  * Destroys:  Script_El
  */
 void
-free_Script_El(void *script_el)
+free_Script_El(Script_El *script_el)
 {
 	assert( script_el != NULL );
-	switch( ((Script_El *)script_el)->type)
+	switch(script_el->type)
 	{
 	case SEND :
-		free_String((void *)((Script_El *)script_el)->s_or_e.send.fmt);
+		free_String(script_el->s_or_e.send.fmt);
 		break;
 	case EXPECT :
-		list_destroy(((Script_El *)script_el)->s_or_e.expect.map);
+		list_destroy(script_el->s_or_e.expect.map);
 		break;
 	case DELAY :
 	default :
 	}
-	Free( (Script_El *)script_el );
+	Free(script_el);
 }
 
-/*******************************************************************/
-/*                                                                 */
-/* Spec                                                            */
-/*    A Spec struct holds all the information about a device type  */
-/* while the config file is being parsed.  Device lines refer to   */
-/* entries in the Spec list to get their detailed construction     */
-/* and configuration information.  The Spec is not used after the  */
-/* config file is closed.                                          */
-/*                                                                 */
-/*******************************************************************/
+/*******************************************************************
+ *                                                                 *
+ * Spec                                                            *
+ *    A Spec struct holds all the information about a device type  *
+ * while the config file is being parsed.  Device lines refer to   *
+ * entries in the Spec list to get their detailed construction     *
+ * and configuration information.  The Spec is not used after the  *
+ * config file is closed.                                          *
+ *                                                                 *
+ *******************************************************************/
 /*
  *   Constructor
  *
@@ -334,9 +343,9 @@ make_Spec(char *name)
  * by its name.  
  */
 int
-match_Spec(void *spec, void *key)
+match_Spec(Spec *spec, void *key)
 {
-	if( match_String(((Spec *)spec)->name, (char *)key) )
+	if( match_String(spec->name, (char *)key) )
 		return TRUE;
 	return FALSE;
 }
@@ -354,10 +363,14 @@ dump_Spec(Spec *spec)
 	int i;
 
 	fprintf(stderr, "\tSpec: %0x\n", (unsigned int)spec);
-	if(spec == NULL) return;
+	if(spec == NULL)
+		return;
 	fprintf(stderr, "\t\tname: %s\n", get_String(spec->name));
 	fprintf(stderr, "\t\tspec type: ");
-	if(spec->type == NO_DEV) fprintf(stderr, "NO_DEV\n");
+	if(spec->type == NO_DEV)
+	{
+		fprintf(stderr, "NO_DEV\n");
+        }
 	else if(spec->type == TTY_DEV)
 	{
 		fprintf(stderr, "TTY_DEV\n");
@@ -378,7 +391,10 @@ dump_Spec(Spec *spec)
 	{
 		fprintf(stderr, "SNMP_DEV\n");
 	}
-	else fprintf(stderr, "unknown\n");
+	else
+        {
+		fprintf(stderr, "unknown\n");
+        }
 	fprintf(stderr, "\t\toff value: %s\n", get_String(spec->off));
 	fprintf(stderr, "\t\ton value: %s\n", get_String(spec->on));
 	fprintf(stderr, "\t\tall value: %s\n", get_String(spec->all));
@@ -395,20 +411,24 @@ dump_Spec(Spec *spec)
 #endif
 
 void
-free_Spec(void *vspec)
+free_Spec(Spec *spec)
 {
 	int i;
-	Spec *spec = (Spec *)vspec;
 
-	free_String((void *)spec->name);  spec->name = NULL;
-	free_String((void *)spec->off);   spec->off  = NULL;
-	free_String((void *)spec->on);    spec->on   = NULL;
-	free_String((void *)spec->all);   spec->all  = NULL;
+	free_String(spec->name);
+	spec->name = NULL;
+	free_String(spec->off);
+	spec->off = NULL;
+	free_String(spec->on);
+	spec->on = NULL;
+	free_String(spec->all);
+	spec->all = NULL;
+
 	if( spec->type != PMD_DEV )
 	{
 		for (i = 0; i < spec->size; i++)
 		{
-			free_String((void *)spec->plugname[i]);
+			free_String(spec->plugname[i]);
 		}
 		Free(spec->plugname);
 	}
@@ -418,16 +438,16 @@ free_Spec(void *vspec)
 	Free(spec);
 }
 
-/*******************************************************************/
-/*                                                                 */
-/* Spec_El                                                         */
-/*   A Spec_El structure is an object associated with a Spec       */
-/* that holds information for a Script_El.  The Script_El itself   */
-/* cannot be constructed unitl it is added to the device's         */
-/* protocol.  All the infromation the Script_El needs at that time */
-/* is present in the Spec_El.                                      */
-/*                                                                 */
-/*******************************************************************/
+/*******************************************************************
+ *                                                                 *
+ * Spec_El                                                         *
+ *   A Spec_El structure is an object associated with a Spec       *
+ * that holds information for a Script_El.  The Script_El itself   *
+ * cannot be constructed unitl it is added to the device's         *
+ * protocol.  All the infromation the Script_El needs at that time *
+ * is present in the Spec_El.                                      *
+ *                                                                 *
+ *******************************************************************/
 /*
  *   Constructor
  *
@@ -491,28 +511,28 @@ dump_Spec_El(Spec_El *specl)
 
 
 void
-free_Spec_El(void *specl)
+free_Spec_El(Spec_El *specl)
 {
-	assert( ((Spec_El *)specl)->string1 != NULL );
-	assert( ((Spec_El *)specl)->string2 != NULL );
-	free_String( (void *)((Spec_El *)specl)->string1 );
-	((Spec_El *)specl)->string1 = NULL;
-	free_String( (void *)((Spec_El *)specl)->string2 );
-	((Spec_El *)specl)->string2 = NULL;
-	list_destroy(((Spec_El *)specl)->map);
-	((Spec_El *)specl)->map = NULL;
+	assert( specl->string1 != NULL );
+	assert( specl->string2 != NULL );
+	free_String( specl->string1 );
+	specl->string1 = NULL;
+	free_String( specl->string2 );
+	specl->string2 = NULL;
+	list_destroy(specl->map);
+	specl->map = NULL;
 	Free(specl);
 }
 
 
-/*******************************************************************/
-/*                                                                 */
-/* Cluster                                                        */
-/*   A Cluster structure holds the list of Nodes in the cluster    */
-/* along with how many there are and when their state was last     */
-/* updated.                                                        */
-/*                                                                 */
-/*******************************************************************/
+/*******************************************************************
+ *                                                                 *
+ * Cluster                                                         *
+ *   A Cluster structure holds the list of Nodes in the cluster    *
+ * along with how many there are and when their state was last     *
+ * updated.                                                        *
+ *                                                                 *
+ *******************************************************************/
 /*
  *   Constructor
  *
@@ -527,7 +547,7 @@ make_Cluster(void)
 	cluster->update_interval.tv_sec  = UPDATE_SECONDS;
 	cluster->update_interval.tv_usec = 0;
 	cluster->num = 0;
-	cluster->nodes = list_create(free_Node);
+	cluster->nodes = list_create((ListDelF) free_Node);
 	Gettimeofday( &(cluster->time_stamp), NULL);
 	return cluster;
 }
@@ -556,21 +576,21 @@ dump_Cluster(Cluster *cluster)
 #endif
 
 void
-free_Cluster(void *cluster)
+free_Cluster(Cluster *cluster)
 {
-	list_destroy(((Cluster *)cluster)->nodes);
+	list_destroy(cluster->nodes);
 	Free(cluster);
 }
 
-/*******************************************************************/
-/*                                                                 */
-/* Node                                                            */
-/*   A Node structure holds the information for a single computer  */
-/* in the cluster.  It has a name and hard- and soft-power state   */
-/* as well as pointers indication with Device struct(s) are        */
-/* responsible for managing this Node.                             */
-/*                                                                 */
-/*******************************************************************/
+/*******************************************************************
+ *                                                                 *
+ * Node                                                            *
+ *   A Node structure holds the information for a single computer  *
+ * in the cluster.  It has a name and hard- and soft-power state   *
+ * as well as pointers indication with Device struct(s) are        *
+ * responsible for managing this Node.                             *
+ *                                                                 *
+ *******************************************************************/
 /*
  *   Constructor
  *
@@ -595,9 +615,9 @@ make_Node(const char *name)
 }	
 
 int
-match_Node(void *node, void *key)
+match_Node(Node *node, void *key)
 {
-	if( match_String(((Node *)node)->name, (char *)key) )
+	if( match_String(node->name, (char *)key) )
 		return TRUE;
 	return FALSE;	
 }
@@ -640,20 +660,20 @@ dump_Node(Node *node)
 #endif
 
 void
-free_Node(void *node)
+free_Node(Node *node)
 {
-	free_String( (void *)((Node *)node)->name);
+	free_String(node->name);
 	Free(node);
 }
 
-/*******************************************************************/
-/*                                                                 */
-/* Interpretation                                                  */
-/*   An Interpretation structure is the means by which an EXPECT   */
-/* script element identifies the pieces of the RegEx matched in an */
-/* may be interpreted to give state information.                   */
-/*                                                                 */
-/*******************************************************************/
+/*******************************************************************
+ *                                                                 *
+ * Interpretation                                                  *
+ *   An Interpretation structure is the means by which an EXPECT   *
+ * script element identifies the pieces of the RegEx matched in an *
+ * may be interpreted to give state information.                   *
+ *                                                                 *
+ *******************************************************************/
 /*
  *   Constructor
  *
@@ -673,9 +693,9 @@ make_Interp(char *name)
 }
 
 int
-match_Interp(void *interp, void *key)
+match_Interp(Interpretation *interp, void *key)
 {
-	if( match_String(((Interpretation *)interp)->plug_name, (char *)key) )
+	if( match_String(interp->plug_name, (char *)key) )
 		return TRUE;
 	return FALSE;	
 }
@@ -699,9 +719,9 @@ dump_Interpretation(Interpretation *interp)
 #endif
 
 void
-free_Interp(void *interp)
+free_Interp(Interpretation *interp)
 {
-	free_String( (void *)((Interpretation *)interp)->plug_name);
+	free_String(interp->plug_name);
 	Free(interp);
 }
 

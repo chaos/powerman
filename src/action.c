@@ -42,10 +42,11 @@
 #include "action.h"
 #include "server.h"
 
-/* Each of these represents a script that must be completed.     */
-/* An error message and two of the debug "dump" routines rely on */
-/* this array for the names of the client protocol operations.   */
-/* The header file has corresponding #define values.             */ 
+/* Each of these represents a script that must be completed.
+ * An error message and two of the debug "dump" routines rely on
+ * this array for the names of the client protocol operations.
+ * The header file has corresponding #define values.
+ */
 char *pm_coms[] = {
 	"PM_ERROR",
 	"PM_LOG_IN",
@@ -73,10 +74,10 @@ update_Action(Cluster *cluster, List acts)
 	syslog(LOG_INFO, "Updating plugs and nodes");
 
 	act = make_Action(PM_UPDATE_PLUGS);
-	list_append(acts, (void *)act);
+	list_append(acts, act);
 
 	act = make_Action(PM_UPDATE_NODES);
-	list_append(acts, (void *)act);
+	list_append(acts, act);
 }
 
 /*
@@ -145,7 +146,7 @@ random_Action(Cluster *cluster, List acts)
 		}
 		act->target = make_String(buf);
 	}
-	list_append(acts, (void *)act);
+	list_append(acts, act);
 }
 
 
@@ -169,7 +170,7 @@ find_Action(List acts, List clients)
 		if ( act->client == NULL ) continue;
 
 /* What if the client has disappeared since enqueuing the action? */
-		client = list_find_first(clients, match_Client, (void *)(act->client) );
+		client = list_find_first(clients, (ListFindF) match_Client, act->client );
 		if (client != NULL) continue;
 
 /* I could log an event here: "client abort prior to action completion"  */
@@ -308,18 +309,18 @@ dump_Action(List acts)
  * Destroys:  Action
  */
 void
-free_Action(void *act)
+free_Action(Action *act)
 {
-	CHECK_MAGIC((Action *)act);
+	CHECK_MAGIC(act);
 
-	if(((Action *)act)->target != NULL)
-		free_String((void *)((Action *)act)->target);
-	((Action *)act)->target = NULL;
-	if( ((Action *)act)->itr != NULL )
-		list_iterator_destroy(((Action *)act)->itr);
-	((Action *)act)->itr = NULL;
-	((Action *)act)->cur = NULL;
-	CLEAR_MAGIC((Action *)act);
+	if(act->target != NULL)
+		free_String(act->target);
+	act->target = NULL;
+	if( act->itr != NULL )
+		list_iterator_destroy(act->itr);
+	act->itr = NULL;
+	act->cur = NULL;
+	CLEAR_MAGIC(act);
 	Free(act);
 }
 

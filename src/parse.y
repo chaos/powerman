@@ -447,7 +447,8 @@ check_Spec()
 	{
 		if( current_spec->scripts[i] == NULL )
 		{
-			current_spec->scripts[i] = list_create(free_Spec_El);
+			current_spec->scripts[i] =
+				list_create((ListDelF) free_Spec_El);
 		}
 	}
 	name = get_String(current_spec->name);
@@ -636,7 +637,7 @@ makeScriptEl(Script_El_T mode, char *s2, char *s3, List s4)
 	sprintf(buf2, s3);
 	specl = make_Spec_El(mode, buf1, buf2, s4);
 	if (current_script == NULL)
-		current_script = list_create(free_Spec_El);
+		current_script = list_create((ListDelF) free_Spec_El);
 	list_append(current_script, specl);
 	return s2;
 }
@@ -644,7 +645,7 @@ makeScriptEl(Script_El_T mode, char *s2, char *s3, List s4)
 List
 makeMapSec(List s1, Interpretation *s2)
 {
-	list_append(s1, (void *)s2);
+	list_append(s1, s2);
 	return s1;
 }
 
@@ -653,8 +654,8 @@ makeMapSecHead(Interpretation *s1)
 {
 	List map;
 
-	map = list_create(free_Interp);
-	list_append(map, (void *)s1);
+	map = list_create((ListDelF) free_Interp);
+	list_append(map, s1);
 	return map;
 }
 
@@ -799,7 +800,7 @@ makeDevice(char *s2, char *s3, char *s4, char *s5)
 	Plug *plug;
 
 /* find that spec */
-	spec = list_find_first(cheat->specs, match_Spec, s3);
+	spec = list_find_first(cheat->specs, (ListFindF) match_Spec, s3);
 	if ( spec == NULL ) exit_msg("Device specification %s not found", s3);
 
 /* make the Device */
@@ -817,7 +818,7 @@ makeDevice(char *s2, char *s3, char *s4, char *s5)
 		for (i = 0; i < spec->size; i++)
 		{
 			plug = make_Plug(get_String(spec->plugname[i]));
-			list_append(dev->plugs, (void *)plug);
+			list_append(dev->plugs, plug);
 		}
 		break;
 	case PMD_DEV :
@@ -854,17 +855,17 @@ makeDevice(char *s2, char *s3, char *s4, char *s5)
 		List map;
 		ListIterator map_i;
 
-		scripts[i] = list_create(free_Script_El);
+		scripts[i] = list_create((ListDelF) free_Script_El);
 		script = list_iterator_create(spec->scripts[i]);
-		while( (specl = (Spec_El *)list_next(script)) )
+		while( (specl = list_next(script)) )
 		{
 			if( specl->map == NULL )
 				map = NULL;
 			else
 			{
-				map = list_create(free_Interp);
+				map = list_create((ListDelF) free_Interp);
 				map_i = list_iterator_create(specl->map);
-				while( (interp = (Interpretation *)list_next(map_i)) )
+				while( (interp = list_next(map_i)) )
 				{
 					new = make_Interp(get_String(interp->plug_name));
 					new->match_pos = interp->match_pos;
@@ -902,31 +903,34 @@ makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 
 	cheat->cluster->num++;
 	node = make_Node(s2);
-	list_append(cheat->cluster->nodes, (void *)node);
+	list_append(cheat->cluster->nodes, node);
 /* find the device controlling this nodes plug */
-	node->p_dev = list_find_first(cheat->devs, match_Device, s3);
+	node->p_dev = list_find_first(cheat->devs, (ListFindF) match_Device, s3);
 	if( node->p_dev == NULL ) exit_msg("Failed to find device %s", s3);
-/* PMD_DEV Plugs get created here, other Device types have Plugs      */
-/* defined in their Spec, and they must be searched to match the node */
+/*
+ * PMD_DEV Plugs get created here, other Device types have Plugs
+ * defined in their Spec, and they must be searched to match the node
+ */
 	switch( node->p_dev->type )
 	{
 	case PMD_DEV :
 		node->p_dev->num_plugs++;
 		plug = make_Plug(s4);
-		list_append(node->p_dev->plugs, (void *)plug);
+		list_append(node->p_dev->plugs, plug);
 		plug->node = node;
 		break;
 	case TCP_DEV :
-		plug = (Plug *)list_find_first(node->p_dev->plugs, match_Plug, (void *)s4);
+		plug = list_find_first(node->p_dev->plugs, (ListFindF) match_Plug, s4);
 		if( plug == NULL ) exit_msg("Can not locate plug %s on device %s", s4, s3);
 		plug->node = node;
 		break;
 	default :
 		exit_msg("That device type is not implemented yet");
 	}
-
-/* Some device support hard- and soft-power status.  If not a second */
-/* pair of entries will be need for the soft power status device.    */ 
+/*
+ * Some device support hard- and soft-power status.  If not a second
+ * pair of entries will be need for the soft power status device.
+ */
 	if ( s5 == NULL)
 	{
 		assert(s6 == NULL);
@@ -935,19 +939,20 @@ makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 	else
 	{
 		assert(s6 != NULL);
-		node->n_dev = list_find_first(cheat->devs, match_Device, s3);
+		node->n_dev = list_find_first(cheat->devs, (ListFindF) match_Device, s3);
 		if( node->n_dev == NULL ) exit_msg("Failed to find device %s", s3);
-		plug = list_find_first(node->n_dev->plugs, match_Plug, (void *)s6);
+		plug = list_find_first(node->n_dev->plugs, (ListFindF) match_Plug, s6);
 		plug->node = node;
 	}
-
-/* Finally an exhaustive search of the Interpretations in a device */
-/* is required because this node will be the target of some        */
+/*
+ * Finally an exhaustive search of the Interpretations in a device
+ * is required because this node will be the target of some
+ */
 	for (i = 0; i < node->p_dev->prot->num_scripts; i++)
 	{
 		script = node->p_dev->prot->scripts[i];
 		script_itr = list_iterator_create(script);
-		while( (script_el = (Script_El *)list_next(script_itr)) )
+		while( (script_el = list_next(script_itr)) )
 		{
 			switch( script_el->type )
 			{
@@ -956,7 +961,7 @@ makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 				break;
 			case EXPECT :
 				if( script_el->s_or_e.expect.map == NULL ) continue;
-				interp = (Interpretation *)list_find_first(script_el->s_or_e.expect.map, match_Interp, (void *)s4);
+				interp = list_find_first(script_el->s_or_e.expect.map, (ListFindF) match_Interp, s4);
 				if( interp != NULL )
 					interp->node = node;
 				break;

@@ -89,10 +89,8 @@ make_Buffer(int fd, int length, BufferLogFun *logfun, void *logfunarg)
  * Free a Buffer.
  */
 void
-free_Buffer(void *vb)
+free_Buffer(Buffer b)
 {
-	Buffer b = (Buffer)vb;
-
 	_buf_check(b);
 	Free(b->buf);
 	Free(b);

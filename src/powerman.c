@@ -120,8 +120,8 @@ static void append_Nodes(List cluster, List targ);
 static void update_Nodes_soft_state(List cluster, List reply);
 static void update_Nodes_hard_state(List cluster, List reply);
 static Node *xmake_Node(const char *name);
-static int cmp_Nodes(void *node1, void *node2);
-static void xfree_Node(void *node);
+static int cmp_Nodes(Node *node1, Node *node2);
+static void xfree_Node(Node *node);
 static bool is_prompt(String targ);
 
 const char *powerman_license = \
@@ -276,7 +276,7 @@ process_command_line(int argc, char **argv)
 			break;
 		case 'd':	/* --host */
 			if (conf->host != NULL)
-				free_String( (void *)conf->host );
+				free_String( conf->host );
 			conf->host = make_String(optarg);
 			break;
 		case 'F':	/* --file */
@@ -287,7 +287,7 @@ process_command_line(int argc, char **argv)
 			/* If not, can you find the named service?  */
 			/* If not, exit_error()                     */
 			if (conf->service != NULL)
-				free_String( (void *)conf->service );
+				free_String( conf->service );
 			conf->service = make_String(optarg);
 			break;
 		case 'n':	/* --noexec */
@@ -461,7 +461,7 @@ request_State(Config *conf)
 
 	cluster = get_Names(conf->fd);
 	get_State(conf->fd, cluster);
-	list_sort(cluster, cmp_Nodes);
+	list_sort(cluster, (ListCmpF) cmp_Nodes);
 	return cluster;
 }
 
@@ -477,7 +477,7 @@ get_Names(int fd)
 	char buf[80];
 	int res;
 
-	cluster = list_create(xfree_Node);
+	cluster = list_create((ListDelF) xfree_Node);
 	res = snprintf(buf, sizeof(buf), GET_NAMES_FMT, ".*");
 	assert(res != -1 && res <= sizeof(buf));
 	reply = dialog(fd, buf);
@@ -531,7 +531,7 @@ dialog(int fd, const char *str)
 	/* Review: should be moved to a #define at top of module with comment */
 	int limit = 100;
 	bool found = FALSE;
-	List reply = list_create(free_String);
+	List reply = list_create((ListDelF) free_String);
 	/* Review: check for NULL reply or use out_of_memory() */
 	String targ;
 
@@ -579,7 +579,7 @@ dialog(int fd, const char *str)
 				if( j < i )
 				{
 					targ = make_String(buf + j);
-					list_append(reply, (void *)targ);
+					list_append(reply, targ);
 				}
 				j = i + 1;
 			}
@@ -889,8 +889,8 @@ make_Config(void)
 static void
 free_Config(Config *conf)
 {
-	free_String((void *)conf->host);
-	free_String((void *)conf->service);
+	free_String(conf->host);
+	free_String(conf->service);
 	hostlist_destroy(conf->targ);
 	if( conf->reply != NULL)
 		list_destroy(conf->reply);
@@ -1016,21 +1016,21 @@ xmake_Node(const char *name)
 }
 
 static int
-cmp_Nodes(void *node1, void *node2)
+cmp_Nodes(Node *node1, Node *node2)
 {
-	assert(((Node *)node1) != NULL);
-	assert(((Node *)node1)->name != NULL);
-	assert(((Node *)node2) != NULL);
-	assert(((Node *)node2)->name != NULL);
+	assert(node1 != NULL);
+	assert(node1->name != NULL);
+	assert(node2 != NULL);
+	assert(node2->name != NULL);
 
-	return strcmp(get_String(((Node *)node1)->name), 
-			get_String(((Node *)node2)->name));
+	return strcmp(get_String(node1->name), 
+			get_String(node2->name));
 }
 
 static void
-xfree_Node(void *node)
+xfree_Node(Node *node)
 {
-	free_String( (void *)((Node *)node)->name);
+	free_String(node->name);
 	Free(node);
 }
 

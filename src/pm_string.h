@@ -35,7 +35,7 @@ unsigned char *get_String(String s);
 unsigned char byte_String(String s, int offset);
 int length_String(String s);
 bool empty_String(String s);
-void free_String(void *s);
+void free_String(String s);
 bool match_String(String s, unsigned char *cs);
 
 #endif /* PM_STRING_H */

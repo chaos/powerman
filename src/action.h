@@ -88,7 +88,7 @@ void dump_Action(List acts);
 #endif
 
 /* Destructor */
-void free_Action(void *act);
+void free_Action(Action *act);
 
 /* remove from queue and destroy */
 void del_Action(List acts);

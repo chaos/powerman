@@ -207,20 +207,20 @@ typedef struct {
 /* config.c prototypes */
 Protocol *init_Client_Protocol(void);
 Script_El *make_Script_El(Script_El_T type, String s1, String s2, List map, struct timeval tv);
-void free_Script_El(void *script_el);
+void free_Script_El(Script_El *script_el);
 Spec *make_Spec(char * name);
-int  match_Spec(void *spec, void *key);
-void free_Spec(void *spec);
+int  match_Spec(Spec *spec, void *key);
+void free_Spec(Spec *spec);
 Spec_El *make_Spec_El(Script_El_T type, char *str1, char *str2, List map);
-void free_Spec_El(void *specl);
+void free_Spec_El(Spec_El *specl);
 Cluster *make_Cluster(void);
-void free_Cluster(void *cluster);
+void free_Cluster(Cluster *cluster);
 Node *make_Node(const char *name);
-int  match_Node(void *node, void *key);
-void free_Node(void *node);
+int  match_Node(Node *node, void *key);
+void free_Node(Node *node);
 Interpretation *make_Interp(char * name);
-int match_Interp(void *interp, void *key);
-void free_Interp(void *interp);
+int match_Interp(Interpretation *interp, void *key);
+void free_Interp(Interpretation *interp);
 void set_tv(struct timeval *tv, char *s);
 
 

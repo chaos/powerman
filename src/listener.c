@@ -191,7 +191,7 @@ handle_Listener(Globals *g)
  */
 	fd_settings = Fcntl(client->fd, F_GETFL, 0);
 	Fcntl(client->fd, F_SETFL, fd_settings | O_NONBLOCK);
-	list_append(g->clients, (void *)client);
+	list_append(g->clients, client);
 	syslog(LOG_DEBUG, "New connection: <%s, %d> on descriptor %d", 
 	       fqdn, client->port, client->fd);
 	client->write_status = CLI_WRITING;
