@@ -1,8 +1,6 @@
 Short Term:
 * Bug: read occasionally returns EOF for no apparent reason in vpc and icebox3.
   Note: seems to affect all vpcd devices in succession.
-* Bug: actions cannot make progress towards timing out while devices are
-  not connected (may be fixed - check).  
 * Bug: query for N-1 plug states from an N plug device results in N-1
   queries (should always be one).
 * Bug: Deal with baytech login timeouts
@@ -10,6 +8,7 @@ Short Term:
   hard code the list.  
 * Seperate scripts for "all" commands so we can get timing right on ice box.
 * Reformat code w/out tabs
+* vpcd --hung_rpc can cause client to hang forever.
 
 Long term:
 * Build failure simulator test suite

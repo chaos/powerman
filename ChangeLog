@@ -4,6 +4,8 @@
 	* Plug state is no longer global - seperate copy for each client cmd.
 	* Fixed memory leaks in _create_client/_destroy_client.
 	* Trimmed TODO file.
+	* Fixed bug where actions could not make progress torward timeout
+	  while device is in unconnected state.
 
 2002-10-11 garlick
 	* Fix bug in vpcd where empty line would look like EOF on socket.

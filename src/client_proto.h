@@ -98,7 +98,7 @@
 #define CP_ERR_HLUNK	"207 Hostlist error"		CP_EOL
 #define CP_ERR_NOSUCHNODES "208 No such nodes: %s"	CP_EOL
 #define CP_ERR_COMPLETE	"209 Command completed with errors" CP_EOL
-#define CP_ERR_TIMEOUT	"310 Device timed out" 		CP_EOL
+#define CP_ERR_TIMEOUT	"310 Device %s timed out" 	CP_EOL
 #define CP_ERR_CLIBUSY	"211 Command in progress" 	CP_EOL
 #define CP_ERR_NOACTION	"213 Command causes no action" 	CP_EOL
 #define CP_ERR_UNIMPL	"214 Command cannot be handled by power control device(s)" CP_EOL

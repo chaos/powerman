@@ -32,10 +32,10 @@
 #include "hostlist.h"
 
 /* bitwise values for dev->script_status */
-#define DEV_LOGGED_IN	    1
-#define DEV_SENDING	    2
-#define DEV_EXPECTING	    4
-#define DEV_DELAYING	    8
+#define DEV_LOGGED_IN	    0x01
+#define DEV_SENDING	    0x02
+#define DEV_EXPECTING	    0x04
+#define DEV_DELAYING	    0x08
 
 /*
  * Action
@@ -65,7 +65,7 @@ typedef struct {
     int          refcount;/* free when refcount == 0 */
 } ArgList;
 
-typedef void (*ActionCB)(int client_id, bool error);
+typedef void (*ActionCB)(int client_id, char *errfmt, char *errarg);
 
 /*
  * Actions are appended to a per device list in dev->acts
@@ -79,6 +79,8 @@ typedef struct {
     int		 client_id; /* client id so completion can find client */
     bool	 error;	  /* error flag for action */
     struct timeval  time_stamp; /* time stamp for timeouts */
+    struct timeval  delay_start; /* time stamp for delay completion */
+    bool	 started;  /* TRUE if action has reached head of queue */
     ArgList      *arglist; /* argument for query actions (list of Arg's) */
     MAGIC;
 } Action;

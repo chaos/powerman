@@ -64,7 +64,7 @@ static char *_strip_whitespace(char *str);
 static void _parse_input(Client *c, char *input);
 static void _destroy_client(Client * client);
 static void _create_client(void);
-static void _act_finish(int client_id, bool error);
+static void _act_finish(int client_id, char *errfmt, char *errarg);
 
 #define _client_msg(c,args...) do {  \
     (c)->write_status = CLI_WRITING; \
@@ -356,7 +356,7 @@ static void _parse_input(Client *c, char *input)
 /*
  * Callback for device action completion.
  */
-static void _act_finish(int client_id, bool error)
+static void _act_finish(int client_id, char *errfmt, char *errarg)
 {
     Client *c;
 
@@ -366,9 +366,9 @@ static void _act_finish(int client_id, bool error)
     CHECK_MAGIC(c);
     assert(c->cmd != NULL);
 
-    if (error) {		    /* flag any errors for the final report */
+    if (errfmt) {		    /* flag any errors for the final report */
 	c->cmd->error = TRUE;
-	_client_msg(c, CP_ERR_TIMEOUT);/* XXX error is always a timeout */
+	_client_msg(c, errfmt, errarg);
     }
 
     if (--c->cmd->pending > 0)	    /* command is not complete */

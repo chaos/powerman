@@ -50,8 +50,8 @@ static bool _reconnect(Device * dev);
 static bool _finish_connect(Device * dev, struct timeval *timeout);
 static bool _time_to_reconnect(Device *dev, struct timeval *timeout);
 static void _disconnect(Device * dev);
-static bool _process_expect(Device * dev, struct timeval *timeout);
-static bool _process_send(Device * dev, struct timeval *timeout);
+static bool _process_expect(Device * dev);
+static bool _process_send(Device * dev);
 static bool _process_delay(Device * dev, struct timeval *timeout);
 static void _set_argval_onoff(ArgList *arglist, char *node, ArgState state);
 static void _match_subexpressions(Device * dev, List map, ArgList *arglist);
@@ -161,6 +161,7 @@ static Action *_create_action(Device *dev, int com, char *target,
     act->cur = NULL;
     act->target = target ? Strdup(target) : NULL;
     act->error = FALSE;
+    act->started = FALSE;
     act->arglist = arglist ? dev_link_arglist(arglist) : NULL;
     timerclear(&act->time_stamp);
     return act;
@@ -638,34 +639,49 @@ static void _process_action(Device * dev, struct timeval *timeout)
 
     while (!stalled) {
 	Action *act = list_peek(dev->acts);
+	struct timeval timeleft;
 
 	if (act == NULL)		/* no actions in queue */
 	    break;
 	dbg(DBG_ACTION, "_process_action: processing action %d", act->com);
 	_dbg_actions(dev);
 
+	/* Start the action if it is a new one.
+	 * act->cur points to the current script element.
+	 * act->time_stamp will cause action timeout if elapsed time for
+	 * entire action exceeds dev->timeout.
+	 */
 	assert(act->itr != NULL);
-	if (act->cur == NULL)		/* point at first script element */
-	    act->cur = list_next(act->itr);
+	if (!act->started) {
+	    act->cur = list_next(act->itr); /* point to first script elem */
+	    Gettimeofday(&act->time_stamp, NULL);
+	    act->started = TRUE;
+	}
 	assert(act->cur != NULL);
-	assert(act->error == FALSE);
 
-	switch (act->cur->type) {
-	    case EL_EXPECT:
-		stalled = !_process_expect(dev, timeout);
-		break;
-	    case EL_DELAY:
-		stalled = !_process_delay(dev, timeout);
-		break;
-	    case EL_SEND:
-		stalled = !_process_send(dev, timeout);
-		break;
-	    default:
-		assert(FALSE);
-		err_exit(FALSE, "_process_action: internal error");
+	/* process actions */
+	if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
+	    dbg(DBG_SCRIPT, "_process_action(%s): %s timeout - aborting", 
+			    dev->name, act->cur->type == EL_EXPECT ? "expect"
+			    : act->cur->type == EL_SEND ? "send"
+			    : "delay");
+	    act->error = TRUE;			    /* timed out */
+	} else if (!(dev->connect_status & DEV_CONNECTED)) {
+	    stalled = TRUE;			    /* not connnected */
+	} else if (act->cur->type == EL_EXPECT) {
+	    stalled = !_process_expect(dev);	    /* do expect */
+	} else if (act->cur->type == EL_SEND) {
+	    stalled = !_process_send(dev);	    /* do send */
+	} else {
+	    assert(act->cur->type == EL_DELAY);
+	    stalled = !_process_delay(dev, timeout); /* do delay */
 	}
 
-	if (!stalled) {
+	if (stalled) {	/* if stalled, set timeout for select */
+	    if (act->cur->type != EL_DELAY) /* FIXME: why test this? */
+		_update_timeout(timeout, &timeleft);
+	}
+	else {
 	    bool error = act->error;
 
 	    assert(act->itr != NULL);
@@ -676,7 +692,9 @@ static void _process_action(Device * dev, struct timeval *timeout)
 			dev->script_status |= DEV_LOGGED_IN;
 		} 
 		if (act->cb_fun)			/* notify client */
-		    act->cb_fun(act->client_id, act->error);
+		    act->cb_fun(act->client_id, 
+				    act->error ? CP_ERR_TIMEOUT : NULL,
+				    dev->name);
 		_destroy_action(list_dequeue(dev->acts));
 	    }
 
@@ -692,23 +710,16 @@ static void _process_action(Device * dev, struct timeval *timeout)
 }
 
 /* return TRUE if expect is finished */
-static bool _process_expect(Device * dev, struct timeval *timeout)
+static bool _process_expect(Device *dev)
 {
     regex_t *re;
     Action *act = list_peek(dev->acts);
     char *expect;
     bool finished = FALSE;
-    struct timeval timeleft;
 
     assert(act != NULL);
     assert(act->cur != NULL);
     assert(act->cur->type == EL_EXPECT);
-
-    /* first time through? */
-    if (!(dev->script_status & DEV_EXPECTING)) {
-	dev->script_status |= DEV_EXPECTING;
-	Gettimeofday(&act->time_stamp, NULL);
-    }
 
     re = &act->cur->s_or_e.expect.exp;
 
@@ -724,16 +735,7 @@ static bool _process_expect(Device * dev, struct timeval *timeout)
 	}
 	Free(expect);
 	finished = TRUE;
-    } else if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
-							/* timeout? */
-	dbg(DBG_SCRIPT, "_process_expect(%s): timeout - aborting", dev->name);
-	act->error = TRUE;
-	finished = TRUE;
-    } else {						/* keep trying */
-	_update_timeout(timeout, &timeleft);
-    }
-
-    if (!finished) {
+    } else {						/* no match */
 	unsigned char mem[MAX_BUF];
 	int len = buf_peekstr(dev->from, mem, MAX_BUF);
 	char *str = dbg_memstr(mem, len);
@@ -743,18 +745,14 @@ static bool _process_expect(Device * dev, struct timeval *timeout)
 	Free(str);
     }
 
-    if (finished)
-	dev->script_status &= ~DEV_EXPECTING;
-
     return finished;
 }
 
-static bool _process_send(Device * dev, struct timeval *timeout)
+static bool _process_send(Device * dev)
 {
     Action *act = list_peek(dev->acts);
     char *fmt;
     bool finished = FALSE;
-    struct timeval timeleft;
 
     assert(act != NULL);
     CHECK_MAGIC(act);
@@ -766,7 +764,6 @@ static bool _process_send(Device * dev, struct timeval *timeout)
     /* first time through? */
     if (!(dev->script_status & DEV_SENDING)) {
 	dev->script_status |= DEV_SENDING;
-	Gettimeofday(&act->time_stamp, NULL);
 	if (act->target == NULL)
 	    buf_printf(dev->to, fmt); 
 	else
@@ -775,19 +772,9 @@ static bool _process_send(Device * dev, struct timeval *timeout)
 
     if (buf_isempty(dev->to)) {				/* finished! */
 	dbg(DBG_SCRIPT, "_process_send(%s): send complete", dev->name);
-	finished = TRUE;
-    } else if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
-							/* timeout? */
-	dbg(DBG_SCRIPT, "_process_send(%s): timeout - aborting", dev->name);
-	act->error = TRUE;
-	finished = TRUE;
-    } else {						/* keep trying */
-	_update_timeout(timeout, &timeleft);
-    }
-
-    if (finished)
 	dev->script_status &= ~DEV_SENDING;
-    else 
+	finished = TRUE;
+    } else						/* more to write */
 	dbg(DBG_SCRIPT, "_process_send(%s): incomplete send", dev->name);
 
     return finished;
@@ -811,11 +798,11 @@ static bool _process_delay(Device * dev, struct timeval *timeout)
 	dbg(DBG_SCRIPT, "_process_delay(%s): %ld.%-6.6ld", dev->name, 
 			    delay.tv_sec, delay.tv_usec);
 	dev->script_status |= DEV_DELAYING;
-	Gettimeofday(&act->time_stamp, NULL);
+	Gettimeofday(&act->delay_start, NULL);
     }
 
     /* timeout expired? */
-    if (_timeout(&act->time_stamp, &delay, &timeleft)) {
+    if (_timeout(&act->delay_start, &delay, &timeleft)) {
 	dev->script_status &= ~DEV_DELAYING;
 	finished = TRUE;
     } else
@@ -1211,13 +1198,7 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 
 	/* process actions */
 	if (list_peek(dev->acts)) {
-	    if ((dev->connect_status & DEV_CONNECTED))
 		_process_action(dev, timeout);
-	    /* FIXME: actions can't make progress toward timing out if
-	     * device is not in connected state.
-	     * NOTE: the FIXME in client.c::_parse_input() (race on global 
-	     * plug state) needs to be fixed at the same time as this one.
-	     */
 	}
     }
     list_iterator_destroy(itr);
