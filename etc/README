@@ -24,11 +24,11 @@ The possible configuration settings are:
   # the whole thing, not just a particular "expect" for example
   timeout <float>   
 
-  # (optional) if plug names are static (e.g. not an ibmrsa.dev), they
-  # should be defined.  Any reference to a plug name in the powerman.conf must
-  # match one of the defined plug names.  Devices with dynamic plug names
-  # should not include a plug name directive, and the plug reference should
-  # be left off in the powerman.conf
+  # (optional) if plug names are static, they should be defined.  Any 
+  # reference to a plug name in the powerman.conf must match one of the 
+  # defined plug names.  Devices with dynamic plug names should not include 
+  # a plug name directive, and the plug reference should be left off in the 
+  # powerman.conf
   plug name { <string list> }
 
   # (optional) if a ping script is defined, and pingperiod is nonzero, the
@@ -50,7 +50,7 @@ XXX not done yet
 ______________________
 General config file info:
 
-<float>        decimal number
+<float>        decimal number - exponent forms not supported
 
 <string>       text surrounded by double quotes
                May contain C style special characters:

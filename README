@@ -1,37 +1,39 @@
-PowerMan version 1.0.17                                        26 April 2003
+PowerMan version 1.1                                        23 June 2003
 
 +--------------+
 | New Features |
 +--------------+
 
-o There is now a telnet option processor which filters telnet escapes out of
-  the device control stream and manages some trivial option negotiation.
-  Literal telnet escape sequences have been removed from device configurations.
+o Telnet protocol is fully supported.  There is now a telnet option processor 
+  which filters telnet escapes out of the device control stream and manages 
+  some trivial option negotiation.  Literal telnet escape sequences have been 
+  removed from device configurations.
 
-o For devices which dynamically assign "plug names" it is now possible to 
-  omit the plug name from the node lines in powerman.conf, and leave off 
-  the definition of all possible plug names in the device config.  A new 
-  script construct "setplugname" can be used to associate plug names with 
-  node names during script execution.
+o Devices specified in powerman.conf now should combine the host and port
+  in the hostname field, e.g. "hostname:port".  What was the port field is
+  now "flags" reserved for future use.  If a ":port" is not found in the
+  hostname field, the port is taken from the flags field and a warning about
+  deprecated usage is emitted to stdout.
 
-o To make it possible to support devices that have variable numbers of plugs
-  PowerMan scripts can now utilize a "foreachplug" or "foreachnode" construct 
-  to iterate over the configured plugs or plugs that have configured nodes for
-  a device, executing an inner block of script on each iteration.  These
-  constructs also reduce repetition in scripts with a fixed number of plugs.
+o The powerman.conf "device" entry now determines whether a device is directly
+  connected to a serial port or available via the network, thus serial RPC's
+  can either be directly connected or connected through a terminal server
+  and still use the same device scripts.
 
-o Support added for IBM RSA Remote Supervisor Adapter in telnet debug mode.
-  The ibmrsa.dev script utilizes the three features listed above.
-
-o For devices that have only a command to toggle power, PowerMan now supports
-  the conditionals "ifon" and "ifoff" which will execute a subblock of script
-  if the plug is on or off respectively.
-
-o Support added for Rackable Systems Phantom Remote Management Module.
-  The phantom.dev script utilizes the ifon/ifoff feature above.
-
-o In addition to the new constructs described above, the device script syntax
-  has changed in the following non-backwards compatible way:
+o Several changes to device script language (non backwards compatable):
+  - For devices which dynamically assign "plug names" it is now possible to 
+    omit the plug name from the node lines in powerman.conf, and leave off 
+    the definition of all possible plug names in the device config.  A new 
+    script construct "setplugname" can be used to associate plug names with 
+    node names during script execution.
+  - To make it possible to support devices that have variable numbers of plugs
+    PowerMan scripts can now utilize a "foreachplug" or "foreachnode" construct 
+    to iterate over the configured plugs or plugs that have configured nodes for
+    a device, executing an inner block of script on each iteration.  These
+    constructs also reduce repetition in scripts with a fixed number of plugs.
+  - For devices that have only a command to toggle power, PowerMan now supports
+    the conditionals "ifon" and "ifoff" which will execute a subblock of script
+    if the plug is on or off respectively.
   - Instead of repeating 'plug name "name"' statements, all the plug names
     can now be specified on one line, e.g. 'plug name { "name" "name" ... }.
   - The plugcount line is no longer necessary (or allowed).
@@ -49,13 +51,14 @@ o In addition to the new constructs described above, the device script syntax
     it is treated as a special file, otherwise tcp.  Telnet mode is always
     on even for serial devices, which should be harmless.
 
-o Devices specified in powerman.conf now should combine the host and port
-  in the hostname field, e.g. "hostname:port".  What was the port field is
-  now "flags" reserved for future use.  If a ":port" is not found in the
-  hostname field, the port is taken from the flags field and a warning about
-  deprecated usage is emitted to stdout.
+o Support added for IBM RSA Remote Supervisor Adapter in telnet debug mode.
 
-o Supported added for Baytech RPC-28-30NC remote power controller.
+o Support added for Rackable Systems Phantom Remote Management Module.
+
+o Support added for Baytech RPC-28-30NC remote power controller.
+
+o Support added for Baytech RPC-3 remote power controller with new style
+  firwmare.
 
 +------------+
 | Bugs fixed |
@@ -76,33 +79,26 @@ o Workaround for getaddrinfo bug in glibc-2.3.2-27.9 that caused client
 
 PowerMan development and testing takes place on the following RPC devices:
 
-o Linux NetworX ICE Box version 2 (V2.2-LLNL B208) (*)
+o Linux NetworX ICE Box version 2 (V2.2-LLNL B208) (*+)
 
-o Linux NetworX ICE Box version 3 (V3.0 B70) (*)
+o Linux NetworX ICE Box version 3 (V3.0 B70) (*+)
 
-o Baytech RPC-3 (Revision F 5.00 and F 5.01) (*)
+o Baytech RPC-3 (Revision F 5.00 and F 5.01) (*+)
 
-o Baytech RPC-28-30NC
+o Baytech RPC-3-20NC (F4.00) (*)
 
-o WTI NPS (v3.02)
+o Baytech RPC-28-30NC (+*)
 
-o WTI RPS-10
+o WTI NPS (v3.02) (+*)
 
-o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4)
+o WTI RPS-10 (+*)
+
+o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4) (+*)
 
 o IBM RSA Remote Supervisor Adapter (T2ET16- for x335, GEET117A for x345) (*)
 
-o Rackable Systems Phantom Remote Management Module (v3.0.4)
+o Rackable Systems Phantom Remote Management Module (v3.0.4) (+)
 
-
-Devices marked with an asterisk (*) are deployed on LLNL production clusters 
-of substantial size.
-
-+-------------+
-| Other Notes |
-+-------------+
-
-For further information, refer to man pages and the source.
-The contents of the doc directory are useful in understanding the basic 
-design of PowerMan but the code and data structures have changed 
-substantially since that information was created.
+Notes:
+(+) Present in powerman test rig.
+(*) Supported on other LLNL equipment
