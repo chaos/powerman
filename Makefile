@@ -84,7 +84,6 @@ install: all
 	$(INSTALL) etc/wti.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/vicebox.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/vpc.dev			$(DESTDIR)$(packagedir)
-	$(INSTALL) -m 644 etc/powerman.conf	$(DESTDIR)$(packagedir)
 	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/powerman.1	$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/powermand.1	$(DESTDIR)$(mandir)/man1
@@ -108,7 +107,6 @@ uninstall: distclean
 	rm -f $(DESTDIR)$(packagedir)/wti.dev
 	rm -f $(DESTDIR)$(packagedir)/vicebox.dev
 	rm -f $(DESTDIR)$(packagedir)/vpc.dev
-	mv $(DESTDIR)$(packagedir)/powerman.conf	$(packagedir)/powerman.conf.bak
 	rm -f $(DESTDIR)$(mandir)/man1/powerman.1
 	rm -f $(DESTDIR)$(mandir)/man1/powermand.1
 	rm -f $(DESTDIR)$(mandir)/man5/powerman.conf.5
