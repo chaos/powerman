@@ -94,11 +94,12 @@ class TtyClass:
         self.sorted_box_list = []
 
 def usage(msg):
-    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-q] [-r] [-t] [-V] [-w node,...] [on | off | reset | temp | tempf | ice n cm]"
+    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-L] [-q] [-r] [-t] [-V] [-w node,...] [on | off | reset | temp | tempf | ice n cm]"
     print "-a       = on/off/reset all nodes"
     print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
     print "-f fan   = fanout for parallelism (default: 256 where implemented)"
     print "-l ldir  = powerman lirary directory (default: /usr/lib/powerman)"
+    print "-L       = log commands and responses to $powermandir/log/log_file"
     print "-q       = suppress printing any errors that may have occurred"
     print "-r       = reverse sense, i.e. check for  nodes that are off"
     print "-t       = return the temperature rather than power status"
@@ -114,7 +115,11 @@ def usage(msg):
     print msg
     sys.exit(0)
 
-log = None
+def log(string):
+    if(logging):
+        log_file.write (string)
+        log_file.flush()
+        
 error_msg = {}
 error_msg[1]  = "You must be root to run this"
 error_msg[2]  = "Error attempting to id -u"
@@ -140,9 +145,7 @@ error_msg[21] = "Unexpected return (not a port state pair) from port"
 error_msg[22] = "Unexpected return (not a port temp pair) from port"
 
 def exit_error(msg_num, msg_data):
-    if (log):
-        log.write ("icebox: " + error_msg[msg_num] + ": " + msg_data + ".\n")
-        log.flush()
+    log("icebox: " + error_msg[msg_num] + ": " + msg_data + ".\n")
     if(verbose):
         sys.stderr.write ("icebox: " + error_msg[msg_num] + ": " + msg_data + ".\n")
     sys.exit(1)
@@ -185,21 +188,12 @@ def init(f):
         box.sorted_port_list.append(tokens[3])
     return nodes, ttys, sorted_node_list, sorted_tty_list
 
-Version = "icebox:Powerman 0.1.7"
-
-# Check for level of permision and exit for non-root users
-
-stat, uid = commands.getstatusoutput('/usr/bin/id -u')
-if (stat == 0):
-    if (uid != '0'):
-        exit_error(1, "")
-else:
-    exit_error(2, "")
-
 # initialize globals
+Version = "icebox:Powerman 0.1.7"
 powermandir  = '/usr/lib/powerman/'
 config_file = 'etc/icebox.conf'
 verbose     = 1
+logging     = 0
 reverse     = 0
 temperature = 0
 names       = []
@@ -211,6 +205,15 @@ setting     = 0
 ICEBOX_SIZE = 10
 PORT_DELAY  = 0.5
 BOX_DELAY   = 4.0
+
+# Check for level of permision and exit for non-root users
+
+stat, uid = commands.getstatusoutput('/usr/bin/id -u')
+if (stat == 0):
+    if (uid != '0'):
+        exit_error(1, "")
+else:
+    exit_error(2, "")
 
 # Look for environment variables and set globals
 
@@ -241,6 +244,8 @@ for opt in opts:
         fanout = val
     elif (op == '-l'):
         powermandir  = val
+    elif (op == '-L'):
+        logging  = 1
     elif (op == '-q'):
         verbose = 0
     elif (op == '-r'):
@@ -299,15 +304,14 @@ if (powermandir):
 else:
     exit_error(6, powermandir)
     
-log_file = powermandir + "log/log_file"
-try:
-    # I could put in a shared lock here, but it doesn't seem highly necessary
-    log = open(log_file, 'a')
-except IOError :
-    exit_error(8, log_file)
+if(logging):
+    try:
+        log_file = open(powermandir + "log/log_file", 'a')
+    except IOError :
+        exit_error(8, log_file)
+
 stat, datestring = commands.getstatusoutput('date')
-log.write("\n" + datestring + "\n")
-log.flush()
+log("\n" + datestring + "\n")
 
 try:
     # I could put in a shared lock here, but it doesn't seem highly necessary
@@ -330,12 +334,10 @@ if (com == "ice"):
         fcntl.lockf(f.fileno(), FCNTL.LOCK_EX | FCNTL.LOCK_NB)
     except IOError:
         exit_error(10, targettty)
-    log.write("say:  " + targetcom)
-    log.flush()
+    log("say:  " + targetcom)
     f.write(targetcom)
     response = f.readline()
-    log.write("hear:  " + response)
-    log.flush()
+    log("hear:  " + response)
     if (string.lower(response) != 'ok'):
         exit_error(11, targettty)
     f.close()
@@ -372,13 +374,11 @@ for tty_name in sorted_tty_list:
         if (box.num_requested == ICEBOX_SIZE):
             target = 'c' + box.name + com + '\r\n'
             response = ''
-            log.write("say:  " + target)
-            log.flush()
+            log("say:  " + target)
             f.write(target)
             time.sleep(BOX_DELAY)
             response = f.readline()
-            log.write("hear:  " + response)
-            log.flush()
+            log("hear:  " + response)
             while ((response[-1:] == '\n') or (response[-1:] == '\r')):
                 response = response[:-1]
             if ((com == 'on') or (com == 'off') or (com == 'reset')):
@@ -423,15 +423,13 @@ for tty_name in sorted_tty_list:
                     continue
                 target = 'c' + box.name + com + port.name + '\r\n'
                 response = ''
-                log.write("say:  " + target)
-                log.flush()
+                log("say:  " + target)
                 f.write(target)
                 time.sleep(PORT_DELAY)
                 retry_count = 0
                 while ((response == '') and (retry_count < 10)):
                     response = f.readline()
-                    log.write("hear:  " + response)
-                    log.flush()
+                    log("hear:  " + response)
                     while ((response[-1:] == '\n') or (response[-1:] == '\r')):
                         response = response[:-1]
                     retry_count = retry_count + 1

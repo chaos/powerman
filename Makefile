@@ -58,6 +58,7 @@ install:
 	cd etc; make install; cd ..
 	cd lib; make install; cd ..
 	cd man; make install; cd ..
+	$(mkinstalldirs) $(DESTDIR)$(packagedir)/log
 
 clean:
 	rm -f *~ *.o
