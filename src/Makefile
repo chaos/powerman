@@ -8,7 +8,8 @@ MAKE=		/usr/bin/make
 LEX=		/usr/bin/flex
 YACC=		/usr/bin/bison
 
-DEFS=		-DHAVE_CONFIG_H # -DNDEBUG
+DEFS=		-DHAVE_CONFIG_H -DPOWERMAN_VERSION=\"$(POWERMAN_VERSION)\"
+#DEFS+=		-DNDEBUG
 CFLAGS= 	-g -Wall $(DEFS)
 
 LIBS=		-lfl -lwrap -lnsl

@@ -48,16 +48,18 @@
 
 /* prototypes */
 static void _usage(char *prog);
+static void _version(void);
 static void _noop_handler(int signum);
 static void _exit_handler(int signum);
 static void _select_loop(void);
 
-#define OPT_STRING "c:fhd:"
+#define OPT_STRING "c:fhd:V"
 static const struct option long_options[] = {
     {"conf", required_argument, 0, 'c'},
     {"foreground", no_argument, 0, 'f'},
     {"help", no_argument, 0, 'h'},
     {"debug", required_argument, 0, 'd'},
+    {"version", no_argument, 0, 'V'},
     {0, 0, 0, 0}
 };
 
@@ -79,17 +81,17 @@ int main(int argc, char **argv)
     while ((c = getopt_long(argc, argv, OPT_STRING, longopts,
                         &lindex)) != -1) {
         switch (c) {
-        case 'c':              /* --conf */
+        case 'c':               /* --conf */
             if (config_filename != NULL) {
                 _usage(argv[0]);
                 /*NOTREACHED*/
             }
             config_filename = Strdup(optarg);
             break;
-        case 'f':              /* --foreground */
+        case 'f':               /* --foreground */
             daemonize = FALSE;
             break;
-        case 'd':              /* --debug */
+        case 'd':               /* --debug */
             {
                 unsigned long val = strtol(optarg, NULL, 0);
 
@@ -99,7 +101,11 @@ int main(int argc, char **argv)
                 dbg_setmask(val);
             }
             break;
-        case 'h':              /* --help */
+        case 'V':               /* --version */
+            _version();
+            /*NOTREACHED*/
+            break;
+        case 'h':               /* --help */
         default:
             _usage(argv[0]);
             /*NOTREACHED*/
@@ -140,6 +146,14 @@ static void _usage(char *prog)
            DFLT_CONFIG_FILE);
     printf("  -d --debug <mask>      Set debug mask [0]\n");
     printf("  -f --foreground        Don't daemonize\n");
+    printf("  -V --version           Report powerman version\n");
+    exit(0);
+}
+
+static void _version(void)
+{
+    printf("%s\n", 
+            strlen(POWERMAN_VERSION) > 0 ? POWERMAN_VERSION : "development");
     exit(0);
 }
 

@@ -47,13 +47,14 @@ static void _connect_to_server(char *host, char *port);
 static void _disconnect_from_server(void);
 static void _usage(void);
 static void _license(void);
+static void _version(void);
 static int _getline(void);
 static void _expect(char *str);
 static int _process_response(void);
 
 static int server_fd = -1;
 
-#define OPT_STRING "01crlqfubntLd:"
+#define OPT_STRING "01crlqfubntLd:V"
 static const struct option long_options[] = {
     {"on", no_argument, 0, '1'},
     {"off", no_argument, 0, '0'},
@@ -68,6 +69,7 @@ static const struct option long_options[] = {
     {"temp", no_argument, 0, 't'},
     {"license", no_argument, 0, 'L'},
     {"destination", required_argument, 0, 'd'},
+    {"version", no_argument, 0, 'V'},
     {0, 0, 0, 0}
 };
 
@@ -143,6 +145,10 @@ int main(int argc, char **argv)
             break;
         case 'L':              /* --license */
             _license();
+            /*NOTREACHED*/
+            break;
+        case 'V':              /* --version */
+            _version();
             /*NOTREACHED*/
             break;
         default:
@@ -274,12 +280,12 @@ static void _usage(void)
 {
     printf("Usage: %s [OPTIONS] [TARGETS]\n", "powerman");
     printf(
-  "-1 --on        Power on targets      -0 --off       Power off targets\n"
-  "-q --query     Query plug status     -l --list      List available targets\n"
-  "-c --cycle     Power cycle targets   -r --reset     Reset targets\n"
-  "-f --flash     Turn beacon on        -u --unflash   Turn beacon off\n"
-  "-b --beacon    Query beacon status   -n --node      Query node status\n"
-  "-t --temp      Query temperature\n"
+ "-1 --on        Power on targets      -0 --off       Power off targets\n"
+ "-q --query     Query plug status     -l --list      List available targets\n"
+ "-c --cycle     Power cycle targets   -r --reset     Reset targets\n"
+ "-f --flash     Turn beacon on        -u --unflash   Turn beacon off\n"
+ "-b --beacon    Query beacon status   -n --node      Query node status\n"
+ "-t --temp      Query temperature     -V --version   Report powerman version\n"
   );
     exit(1);
 }
@@ -299,6 +305,16 @@ static void _license(void)
  "PowerMan is free software; you can redistribute it and/or modify it\n"
  "under the terms of the GNU General Public License as published by\n"
  "the Free Software Foundation.\n");
+    exit(1);
+}
+
+/*
+ * Display powerman version and exit.
+ */
+static void _version(void)
+{
+    printf("%s\n", 
+            strlen(POWERMAN_VERSION) > 0 ? POWERMAN_VERSION : "development");
     exit(1);
 }
 

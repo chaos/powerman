@@ -26,8 +26,9 @@
 ####################################################################
 
 PROJECT= powerman
+VERSION = $(shell perl -ne 'print,exit if s/^\s*VERSION:\s*(\S*).*/\1/i' META)
+RELEASE = $(shell perl -ne 'print,exit if s/^\s*RELEASE:\s*(\S*).*/\1/i' META)
 PACKAGE= powerman
-VERSION= 1.0.0
 SHELL=   /bin/sh
 MAKE=    /usr/bin/make
 CC=      gcc
@@ -58,7 +59,7 @@ docdir		=	${prefix}/share/doc
 all: progs tests
 
 progs : 
-	$(MAKE) -C src
+	$(MAKE) -C src POWERMAN_VERSION=$(PROJECT)-$(VERSION)
 
 tests : 
 	$(MAKE) -C test
