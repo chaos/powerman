@@ -21,7 +21,8 @@ Short Term:
 * vpcd --hung_rpc can cause client to hang forever.
 * Make sure that tcp_wrappers works.
 * Verify that 0 <= match_pos < MAX_MATCH in parser (now we assert in device.c)
-
+* Attempt to initiate a command to devices that are delaying between
+  reconnects should cause an immediate connect attempt.
 
 Long term:
 * Build failure simulator test suite
