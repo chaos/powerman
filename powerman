@@ -108,8 +108,9 @@ for {set i 0} {$i < $argc} {incr i} {
 }
 
 if {$reset && $query}         {usage "Can't have both reset and query"} 
-if {$on + $off + $reset != 1} {usage "Need exactly one of on, off, or reset"}
+if {$on + $off + $reset != 1} {usage "Need exactly one of on, off, or reset" }
 
+	
 if {$verbose} {
     if {$on} {
 	if {$query} {puts "Here's who were're checking who's on"} else {
@@ -134,14 +135,12 @@ if {[file exists $powerlib]} {
     usage "Can't find $powerlib library"
 }
 
-# At this point all the globals should be in place and initialized for
-# the local configuration.  The hardware dependent layer is intialized
-# next.  Then the command is dispatched to its handler.
+# At this point all the globals should be in place.  Next the command 
+# is dispatched to its handler. 
 
-init
 if {$on} {
     if {$query} {
-	set response [check_dir $nodes on]
+	set response [check $nodes on]
 	set num_resp [llength $response]
 	if {$num_resp == 0} {puts "None are on"} else {
 	    if {$num_resp == 1} {puts "$response is on"} else {
@@ -149,12 +148,12 @@ if {$on} {
 	    }
 	}
     } else {
-	do_act $nodes on
+	power $nodes on
     }
 }
 if {$off} {
     if {$query} {
-	set response [check_dir $nodes off]
+	set response [check $nodes off]
 	set num_resp [llength $response]
 	if {$num_resp == 0} {puts "None are off"} else {
 	    if {$num_resp == 1} {puts "$response is off"} else {
@@ -162,13 +161,13 @@ if {$off} {
 	    }
 	}
     } else {
-	do_act $nodes off
+	power $nodes off
     }
 }
 if {$reset} {
-    do_act $nodes reset
+    power $nodes reset
 }
-fini
+
 
 
 

@@ -1,0 +1,105 @@
+# This is the cluster configuration file for the "powerman" application.
+# It consists entirely of tcl expressions setting program variables.  The 
+# "cluster" variable describes the cluster with one entry per node.  An
+# entry consists of the triple {<name> <power> <check>}, where <name> is
+# the name of the node, <power> is the power control type, and <check> is
+# the power monitoring type.  examples of other cluster configurations
+# are included as "bla_cluster" and may be ignored.  For each power control 
+# or monitoring type in "cluster" there must be a <power> or <check> 
+# variable listing exactly those nodes that actually implement that method 
+# in the "cluster" variable.  Other unused types are ignored.
+#
+# The following suppresses a second reading of the config file
+set configed 1
+set cluster {
+  {tux32 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux33 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux34 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux35 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux36 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux37 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux38 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux39 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux40 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux41 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux42 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux43 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux44 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux45 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux46 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux47 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux48 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux49 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux50 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux51 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux52 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux53 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux54 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux55 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux56 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux57 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux58 tux_power tux_check tux_on.gif tux_off.gif}
+  {tux59 tux_power tux_check tux_on.gif tux_off.gif}
+}
+set tux_power {
+	{tux32 32}
+	{tux33 33}
+	{tux34 34}
+	{tux35 35}
+	{tux36 36}
+	{tux37 37}
+	{tux38 38}
+	{tux39 39}
+	{tux40 40}
+	{tux41 41}
+	{tux42 42}
+	{tux43 43}
+	{tux44 44}
+	{tux45 45}
+	{tux46 46}
+	{tux47 47}
+	{tux48 48}
+	{tux49 49}
+	{tux50 50}
+	{tux51 51}
+	{tux52 52}
+	{tux53 53}
+	{tux54 54}
+	{tux55 55}
+	{tux56 56}
+	{tux57 57}
+	{tux58 58}
+	{tux59 59}
+}
+
+set tux_check {
+	{tux32 32}
+	{tux33 33}
+	{tux34 34}
+	{tux35 35}
+	{tux36 36}
+	{tux37 37}
+	{tux38 38}
+	{tux39 39}
+	{tux40 40}
+	{tux41 41}
+	{tux42 42}
+	{tux43 43}
+	{tux44 44}
+	{tux45 45}
+	{tux46 46}
+	{tux47 47}
+	{tux48 48}
+	{tux49 49}
+	{tux50 50}
+	{tux51 51}
+	{tux52 52}
+	{tux53 53}
+	{tux54 54}
+	{tux55 55}
+	{tux56 56}
+	{tux57 57}
+	{tux58 58}
+	{tux59 59}
+}
+

@@ -1,0 +1,178 @@
+#!/usr/bin/expectk -f
+# clusterview [file]
+# This program probably still needs one new features:
+#   The configuration file should mention the name of on and
+#     off "gif" files, if any, and the code should allow that 
+#     they don't exist
+
+proc usage msg {
+  global argv0
+  puts "usage: $argv0 \[file\]"
+  puts "file   = load file as config file"
+  puts $msg
+  exit
+}
+
+# Global initializations can only take place at the root context.  
+# Procs can access globals but can not create and pass them up.
+
+set config_file "/etc/powerman.conf"
+if {[info exists env(POWERMANCONF)]} {
+    set config_file $env(POWERMANCONF)
+}
+set lib_dir "/usr/lib/powerman"
+if {[info exists env(POWERMANLIBDIR)]} {
+    set lib_dir $env(POWERMANLIBDIR)
+}
+set configed 0
+set debug 0
+set verbose 0
+if {$argc > 0} {
+    set config_file [lindex $argv 0]
+}
+
+if {!$configed} {
+    if {[file exists $config_file]} {
+	source $config_file
+    } else {
+	usage "Can't find config file $config_file"
+    }
+}
+set powerlib [format "%s/powerlib.tcl" $lib_dir]
+if {[file exists $powerlib]} {
+    source $powerlib
+} else {
+    usage "Can't find $powerlib library"
+}
+
+# Assemble the list of nodes in the cluster
+
+set nodes [list_nodes]
+if {[llength $nodes] < 1} {usage "I don't see any nodes"}
+
+frame .top
+button .top.all_on -text "All On" -command all_on
+button .top.all_off -text "All Off" -command all_off
+button .top.all_reset -text "All Reset" -command all_reset
+pack .top.all_on .top.all_off .top.all_reset -side left
+pack .top
+
+set response [check $nodes on]
+foreach node_struct $cluster {
+    set node [lindex $node_struct 0]
+    if {[lsearch -exact $response $node] < 0} {
+	set use_gif [lindex $node_struct 4]
+    } else {
+	set use_gif [lindex $node_struct 3]
+    }
+    if {[file exists $lib_dir/$use_gif]} {
+      set image [image create photo -format gif -file $lib_dir/$use_gif]
+    } else {
+      set image ""
+    }
+    frame .$node 
+    label .$node.label -text "$node"
+    button .$node.button  -text "$node" -image $image -command "toggle_node $node"
+    pack .$node.label .$node.button -side left
+    pack .$node
+}
+
+set lockout_val 1
+
+frame .bottom
+button .bottom.lockout -text "unlocked" -command toggle_lockout
+if {$lockout_val} {
+  .bottom.lockout configure -text "unlocked"
+  .bottom.lockout configure -foreground red
+} else {
+  .bottom.lockout configure -text "locked"
+  .bottom.lockout configure -foreground black
+}
+
+button .bottom.done -text "done" -command exit
+pack .bottom.lockout  .bottom.done -side left
+pack .bottom
+
+
+proc toggle_lockout {} {
+    global lockout_val
+
+    set lockout_val [expr 1 - $lockout_val]
+    if {$lockout_val} {
+      .bottom.lockout configure -text "unlocked"
+      .bottom.lockout configure -foreground red
+    } else {
+      .bottom.lockout configure -text "locked"
+      .bottom.lockout configure -foreground black
+    }
+    pack .bottom.lockout
+}
+
+proc toggle_node a_node {
+    global nodes
+    global lockout_val
+
+    if {$lockout_val} {
+        set response [check $nodes on]
+        if {[lsearch -exact $response $a_node] < 0} {
+            power $a_node on
+        } else {
+            power $a_node off
+        }
+    }
+}
+
+proc check_all {} {
+    global nodes
+    global cluster
+    global lib_dir
+
+    set response [check $nodes on]
+    foreach node_struct $cluster {
+        set node [lindex $node_struct 0]
+	if {[lsearch -exact $response $node] < 0} {
+            set use_gif [lindex $node_struct 4]
+	    .$node.label configure -foreground red
+	} else {
+            set use_gif [lindex $node_struct 3]
+	    .$node.label configure -foreground black
+	}
+        if {[file exists $lib_dir/$use_gif]} {
+          set image [image create photo -format gif -file $lib_dir/$use_gif]
+        } else {
+          set image ""
+        }
+        .$node.button configure -image $image
+	pack .$node .$node.label .$node.button
+    }
+    after 1000 check_all
+}
+
+proc all_on {} {
+  global nodes
+  global lockout_val
+
+  if {$lockout_val} {
+    power $nodes on
+  }
+}
+
+proc all_off {} {
+  global nodes
+  global lockout_val
+
+  if {$lockout_val} {
+    power $nodes off
+  }
+}
+
+proc all_reset {} {
+  global nodes
+  global lockout_val
+
+  if {$lockout_val} {
+    power $nodes reset
+  }
+}
+
+after 1000 check_all

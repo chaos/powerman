@@ -1,40 +1,52 @@
 			PowerMan
 		     Andrew Uselton
 		      June 27, 2001
+		    update: 2001-07-11
 
-PowerMan is a project to incorporate power management and monitoring
+"PowerMan" is a project to incorporate power management and monitoring
 functionality for various node types in a cluster into a single
-library.  We currently wish to support these node types: CS20, DS10,
-DS20, ES40, and UP2000.  Powerman is the name of the project and also
-the name of an application exercising the library.  We also plan an
-snmp agent extension calling into the same library.  The library is
-called powerlib and is written in tcl.  
+application and library.  We currently support these node types: CS20,
+DS20, ES40, and UP2000 (DS10 would be similar).  "Powerman" is the
+name of the project and also the name of an application exercising the
+library, which is called "powerlib.tcl".  The application is written
+in "tcl", as are all of the libraries.  The application is evaluated by
+"#!/usr/bin/expect --", since the "conman.exp" functionality (for
+communicating with RMC) expects "expect."  We also plan an snmp agent
+extension calling into the same library.
 
 Powerman is written in tcl and has the following calling convention:   
 powerman [-c configfile] [-l libdir] [-defhqrv] [-on | -off] nodes ...
 
 Powerman with no command line parameters or with -h (and anything)
 prints a usage summary.
--1) -c configfile will read in configfile instead of the default 
-0) -d means print debugging information
-1) -e makes node list items be iterpreted as regular expressions
-2) -f forces the specified action without confirmation
-2 1/2) -l libdir will read the tcl libraries from libdir
-3) -q make the command a query, i.e. power status is returned and no
-other actin is taken
-4) -r reset the nodes, -r is mutually exclusive with both -q and +/-
-5) -on turns on the specified nodes
-6) -off turns off the specified nodes
-7) "nodes" is a comma separated list of nodes, where each element in
-the list is interpreted via standard globbing (unless -e is present)
-8) -v means be verbose about what you're doing
-Lists of nodes prepended with may be repeated after a separating
-space.  Powerman will look for the config file "/etc/powerman.conf" by
+1) -c configfile will read in configfile instead of the default 
+2) -d means print debugging information
+3) -e makes node list items be iterpreted as regular expressions
+4) -f forces the specified action without confirmation
+5) -l libdir will read the tcl libraries from libdir
+6) -q make the command a query, i.e. power status is returned and no
+     other actin is taken
+7) -r reset the nodes, -r is mutually exclusive with both -q and +/-
+8) -on turns on the specified nodes
+9) -off turns off the specified nodes
+10) -v means be verbose about what you're doing
+11) "nodes" is a comma separated list of nodes, where each element in
+      the list is interpreted via standard globbing (unless -e is
+      present) 
+
+There may be several "nodes" entries on the command line as long as
+they are separated by a space, as in:
+# powerman -q -on slc1,slc2 slc1*
+Note that this command will include slc1 twice.  All of the actions
+taken by "powerman" are idempotent, so this is allowed and has no
+harmfull effect.  
+
+Powerman will look for the config file "/etc/powerman.conf" by
 default, and the environment variable POWERMANCONF will override that
 choice, while the -c option takes precedence.  Similarly, powerman
 will look for its libraries in "/usr/lib/powerman" by default, and the
-environment variable POWERMANLIBDIR will override that choice. 
-
+environment variable POWERMANLIBDIR will override that choice, while
+the -l option takes precedence.
 
 Powerman processes its command line parameters, reads in the cluster
 configuration file and the powerlib.tcl library, and assembles the
@@ -57,23 +69,21 @@ Powerlib.tcl has theseroutines:
 7.  fini - perform any needed finalizations
 
 Each type of node accomplishes these activities differetly, so there
-is a low level library for each one.  These libraries are:
-cs20_powerlib.tcl
-ds10_powerlib.tcl
-ds20_powerlib.tcl
+is a low level library for each one.  The currently availablelibraries
+are: 
+cs20_powerlib.tcl 
+ds20_powerlib.tcl 
 es40_powerlib.tcl
-up2000_powerlib.tcl
-Each library has its own init and fin function that should
-be called before using one of its other functions and after,
-respectively.  The names of the above functions are the same in
-each library:
-init
-do_on
-do_off
-do_reset
-check_on
-check_off
-fini
+up2000_powerlib.tcl 
+Each library implements the above seven functions as applied to the
+corresponding hardware type.  For instance "cs20_powerlib.tcl"
+implements "cs20_do_on" by accepting a list of cs20 nodes, determining
+the subset that are off, and sending that subset "ether-wake" toggle
+packets.  NB sending an "ether-wake" toggle packet to a node that is
+already on would turn it off - probably not what was intended and
+violating indepotency.  NB2 "cs20_do_on" sequences through its list in
+order - an attempt to do this in parallel could end up with a race
+condition and fail to be idempotent.  
 
 In powerlib.tcl init reads in the configuration file, powerman.conf,
 which tells the library the names of all the nodes and their types,
@@ -96,14 +106,26 @@ of the lists returned to it from the <type>_powerlib.tcl calls.
 In powerlib.tcl fini calls the corresponding function in each
 <type>_powerlib.tcl.  
 
-The configuration file powerman.conf has, in addition to comment lines
-beginning with a '#', a sequence of lines saying "node=<name>
-type=<type> other_var=<value ..." and additional lines in the form
-"additional_var=<value>".  For the purposes of powerman the
-cluster consists of the set of nodes with distinct <name>s.  If a name
-is mentioned twice then the last variable=<value> assignment holds.
-Lines of all types can be in any order.  
-
+The configuration file "powerman.conf" is just a tcl script to set the
+global variables "type" and "cluster" to values reflecting the
+structure of the cluster in question.  The variable "configed" just
+assists in suppressing the evaluation of the config file a second
+time. 
+# powerman.conf for the slc cluster
+set configed 1
+set types {up2000 cs20 es40}
+set cluster {
+	{slc0  {type "up2000"} {<attribute> <value> ...} ... } 
+	...
+} 
+"Cluster" is a list of "node records" and each node record begins with
+a name for the node and an attribute/value pair giving the type of the
+node.  The node record may contain any number of additional
+attribute/value entries and each atribute may be associated with any
+number or structer of values.  All of the information in these
+additional attribute/value entries is interpreted by the
+<type>_powerlib.tcl library, and it is up to the administrator setting
+up the cluster to be sure and provide the correct data.  
 
 On the UP2000 the on, off, and reset functions are commands sent to
 the /dev/ttyD23 port controlling the external power controllers.  On

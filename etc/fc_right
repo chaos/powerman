@@ -1,0 +1,105 @@
+# This is the cluster configuration file for the "powerman" application.
+# It consists entirely of tcl expressions setting program variables.  The 
+# "cluster" variable describes the cluster with one entry per node.  An
+# entry consists of the triple {<name> <power> <check>}, where <name> is
+# the name of the node, <power> is the power control type, and <check> is
+# the power monitoring type.  examples of other cluster configurations
+# are included as "bla_cluster" and may be ignored.  For each power control 
+# or monitoring type in "cluster" there must be a <power> or <check> 
+# variable listing exactly those nodes that actually implement that method 
+# in the "cluster" variable.  Other unused types are ignored.
+#
+# The following suppresses a second reading of the config file
+set configed 1
+set cluster {
+  {fc32 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc33 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc34 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc35 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc36 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc37 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc38 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc39 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc40 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc41 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc42 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc43 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc44 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc45 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc46 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc47 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc48 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc49 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc50 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc51 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc52 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc53 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc54 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc55 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc56 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc57 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc58 etherwake digi cs20_on.gif cs20_off.gif}
+  {fc59 etherwake digi cs20_on.gif cs20_off.gif}
+}
+set etherwake {
+	{fc32 	00:02:56:00:06:69}
+	{fc33 	00:02:56:00:03:4D}
+	{fc34 	00:02:56:00:04:61}
+	{fc35 	00:02:56:00:04:85}
+	{fc36 	00:02:56:00:04:89}
+	{fc37 	00:02:56:00:04:81}
+	{fc38 	00:02:56:00:04:F2}
+	{fc39 	00:02:56:00:07:91}
+	{fc40 	00:02:56:00:03:19}
+	{fc41 	00:02:56:00:07:89}
+	{fc42 	00:02:56:00:03:85}
+	{fc43 	00:02:56:00:05:C2}
+	{fc44 	00:02:56:00:04:CE}
+	{fc45 	00:02:56:00:07:71}
+	{fc46 	00:02:56:00:03:35}
+	{fc47 	00:02:56:00:05:72}
+	{fc48 	00:02:56:00:05:C6}
+	{fc49 	00:02:56:00:04:DA}
+	{fc50 	00:02:56:00:06:22}
+	{fc51 	00:02:56:00:06:36}
+	{fc52 	00:02:56:00:03:A5}
+	{fc53 	00:02:56:00:04:49}
+	{fc54 	00:02:56:00:06:12}
+	{fc55 	00:02:56:00:05:D2}
+	{fc56 	00:02:56:00:04:AE}
+	{fc57 	00:02:56:00:05:D6}
+	{fc58 	00:00:00:00:00:00}
+	{fc59 	00:02:56:00:03:D8}
+}
+
+set digi {
+	{fc32 32}
+	{fc33 33}
+	{fc34 34}
+	{fc35 35}
+	{fc36 36}
+	{fc37 37}
+	{fc38 38}
+	{fc39 39}
+	{fc40 40}
+	{fc41 41}
+	{fc42 42}
+	{fc43 43}
+	{fc44 44}
+	{fc45 45}
+	{fc46 46}
+	{fc47 47}
+	{fc48 48}
+	{fc49 49}
+	{fc50 50}
+	{fc51 51}
+	{fc52 52}
+	{fc53 53}
+	{fc54 54}
+	{fc55 55}
+	{fc56 56}
+	{fc57 57}
+	{fc58 58}
+	{fc59 59}
+}
+

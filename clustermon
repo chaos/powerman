@@ -1,4 +1,4 @@
-#!/usr/bin/tcl
+#!/usr/bin/expect --
 # clustermon [-c file] [-l libdir] [-dv]
 
 proc usage msg {
@@ -64,8 +64,6 @@ if {[file exists $powerlib]} {
 # the local configuration.  The hardware dependent layer is intialized
 # next. .
 
-init
-
 # Assemble the list of nodes in the cluster
 
 set nodes {}
@@ -76,7 +74,7 @@ if {[llength $nodes] < 1} {usage "I don't see any nodes"}
 
 # Sequence through nodes printing a 1 for on and a 0 for off
 
-set response [check_dir $nodes on]
+set response [check $nodes on]
 set status_line ""
 foreach node_struct $cluster {
     if {[lsearch -exact $response [lindex $node_struct 0]] < 0} {
@@ -86,7 +84,6 @@ foreach node_struct $cluster {
     }
 }
 puts "$status_line"
-fini
 
 
 
