@@ -2,10 +2,9 @@
 # $Id$
 # $Source$
 #
-# This is just a start - not working yet.  In fact it seems that the
-# telnet interface can't access chains of nodes on our setup
-# (x335 / x345 nodes), so all you get here is access to the node
-# that has the RSA card in it. Sigh.
+# Telnet interface to IBM RSA cards.
+# This is waiting for a protocol to be developed for power control via
+# the telnet "debug mode" (IBM says "no problem")
 #
 specification {
 	name 		"ibmasm"
@@ -21,68 +20,21 @@ specification {
 		send "USERID\r\n"
 		send "PASSW0RD\r\n"
 		expect "Select" 
+		delay 1
+		send "\004"  			# ^D to enter "debug mode"
+		expect "==> " 
 	}
 	script logout {
-		send "\033"			# ESC to log off
+		send "exit\r\n"			# exit "debug mode"
+		send "\033\033"			# ESC ESC to log off
 	}
 	script status_all {
-		send "\t\t\t\t"			# tab to power/restart menu
-		expect "Server Power/Restart"
-		send "\r\n"			# select it
-		expect "System Power Status: (On|Off)"
-		map $1 "1"
-		expect "Select"
-		send "\033"			# ESC back to main menu
-		expect "Select"  	
 	}
 	script on {
-		send "\t\t\t\t"			# tab to power/restart menu
-		expect "Server Power/Restart"
-		send "\r\n"			# select it
-		expect "Select"
-		send "\r\n"			# select (default) power on
-		expect "continue?"
-		send "\r\n"			# select Yes
-		expect "performing a Power on Server Immediately"
-		send "\r\n"			# select Ok
-		expect "System Power Status: On"
-		expect "Select"
-		send "\033"			# return to main menu
-		expect "Select"
 	}
 	script off {
-		send "\t\t\t\t"			# tab to power/restart menu
-		expect "Server Power/Restart"
-		send "\r\n"			# select it
-		expect "Select"
-		send "\t\t"			# tab to power off
-		expect "Power off"
-		send "\r\n"			# select it
-		expect "continue?"
-		send "\r\n"			# select Yes
-		expect "performing a Power off Server Immediately"
-		send "\r\n"			# select Ok
-		expect "System Power Status: Off"
-		expect "Select"
-		send "\033"			# return to main menu
-		expect "Select"
 	}
 	script cycle {
-		send "\t\t\t\t"			# tab to power/restart menu
-		expect "Server Power/Restart"
-		send "\r\n"			# select it
-		expect "Select"
-		send "\t\t\t\t\t"		# tab to restart
-		expect "Restart"
-		send "\r\n"			# select it
-		expect "continue?"
-		send "\r\n"			# select Yes
-		expect "performing a Restart Server Immediately"
-		send "\r\n"			# select Ok
-		expect "System Power Status: Off"
-		expect "Select"
-		send "\033"			# return to main menu
-		expect "Select"
 	}
 	plug name "1"
 }
