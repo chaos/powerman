@@ -118,7 +118,15 @@ static void _prompt_loop(int num, int fd)
 	    }
 	    dev[num].plug[n1] = 1;
 	    printf("%d: on %d\n", num, n1);
+#if 0
+	    printf("XXX: delaying response to on command 10 seconds\n");
+	    sleep(10); /* try to trigger expect timeout */
+#endif
+#if 1
+	    printf("XXX: generating UNKONWN response to on command\n");
+#else
 	    goto ok;
+#endif
 	}
 	if (sscanf(buf, "off %d", &n1) == 1) {	/* off <plugnum> */
 	    if (n1 < 0 || n1 >= NUM_PLUGS) {

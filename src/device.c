@@ -54,7 +54,7 @@ static bool _reconnect(Device * dev);
 static bool _finish_connect(Device * dev, struct timeval *timeout);
 bool _time_to_reconnect(Device *dev, struct timeval *timeout);
 static void _disconnect(Device * dev);
-static bool _process_expect(Device * dev);
+static bool _process_expect(Device * dev, struct timeval *timeout);
 static bool _process_send(Device * dev);
 static bool _process_delay(Device * dev, struct timeval *timeout);
 static void _do_device_semantics(Device * dev, List map);
@@ -65,7 +65,7 @@ static void _handle_read(Device * dev);
 static void _handle_write(Device * dev);
 static void _process_script(Device * dev, struct timeval *timeout);
 static void _recover(Device * dev);
-static bool _overdue(Device *dev, struct timeval * timeout,
+static bool _timeout(Device *dev, struct timeval * timeout,
 		struct timeval *timeleft);
 
 static List dev_devices = NULL;
@@ -125,7 +125,7 @@ static void _buflogfun_from(unsigned char *mem, int len, void *arg)
  *  timeleft (OUT)	if timeout has not occurred, put time left here
  *  RETURN		TRUE if (time_stamp + timeout > now)
  */
-static bool _overdue(Device *dev, struct timeval *timeout,
+static bool _timeout(Device *dev, struct timeval *timeout,
 		struct timeval *timeleft)
 {
     struct timeval now;
@@ -139,11 +139,17 @@ static bool _overdue(Device *dev, struct timeval *timeout,
     if (timercmp(&now, &limit, >))	    /* if now > limit */
 	result = TRUE;
 
-    if (timeleft != NULL) {
-	if (result == FALSE)
-	    timersub(&limit, &now, timeleft);   /* timeleft = limit - now */
+    if (result == FALSE)
+	timersub(&limit, &now, timeleft);   /* timeleft = limit - now */
+    else
+	timerclear(timeleft);
+	
+    if (dev->logit) {
+	if (result)
+	    printf("_timeout(%s): now!\n", dev->name);
 	else
-	    timerclear(timeleft);
+	    printf("_timeout(%s): in %ld.%-6.6ld seconds\n", dev->name,
+			    timeleft->tv_sec, timeleft->tv_usec);
     }
 	
     return result;
@@ -175,7 +181,7 @@ bool _time_to_reconnect(Device *dev, struct timeval *timeout)
 	    timerclear(&retry);
 	    retry.tv_sec = rtab[rix > max_rtab_index ? max_rtab_index : rix];
 
-	    if (!_overdue(dev, &retry, &timeleft))
+	    if (!_timeout(dev, &retry, &timeleft))
 		reconnect = FALSE;
 	    if (timeout && !reconnect)
 		_update_timeout(timeout, &timeleft);
@@ -588,7 +594,7 @@ static void _process_script(Device * dev, struct timeval *timeout)
     while (!script_incomplete) {
 	switch (act->cur->type) {
 	case EL_EXPECT:
-	    if ((script_incomplete = _process_expect(dev)))
+	    if ((script_incomplete = _process_expect(dev, timeout)))
 		return;
 	    break;
 	case EL_DELAY:
@@ -626,21 +632,51 @@ static void _process_script(Device * dev, struct timeval *timeout)
  * If there is an Interpretation map for the expect then send that info to
  * the semantic processor.  
  */
-bool _process_expect(Device * dev)
+bool _process_expect(Device * dev, struct timeval *timeout)
 {
     regex_t *re;
     Action *act = list_peek(dev->acts);
     char *expect;
-    bool res;
+    bool finished = FALSE;
+    struct timeval timeleft;
 
     assert(act != NULL);
     assert(act->cur != NULL);
     assert(act->cur->type == EL_EXPECT);
 
-    re = &(act->cur->s_or_e.expect.exp);
+    /* first time through? */
+    if (!(dev->script_status & DEV_EXPECTING)) {
+	dev->script_status |= DEV_EXPECTING;
+	Gettimeofday(&dev->time_stamp, NULL);
+    }
 
-    if ((expect = buf_getregex(dev->from, re)) == NULL) {
-	if (dev->logit) {
+    re = &act->cur->s_or_e.expect.exp;
+
+    if ((expect = buf_getregex(dev->from, re))) {	/* match */
+
+	/* process values of parenthesized subexpressions */
+	if (act->cur->s_or_e.expect.map != NULL) {
+	    bool res = _match_regex(dev, expect);
+
+	    assert(res == TRUE); /* since the first regexec worked ... */
+	    _do_device_semantics(dev, act->cur->s_or_e.expect.map);
+	}
+
+	Free(expect);
+	dev->script_status &= ~DEV_EXPECTING;
+	finished = TRUE;
+    } else if (_timeout(dev, &dev->timeout, &timeleft)) { /* timeout? */
+	_recover(dev);	/* FIXME: need to record failure for client!!! */
+	dev->script_status &= ~DEV_EXPECTING;
+	finished = TRUE;
+    } else {						/* keep trying */
+	_update_timeout(timeout, &timeleft);
+    }
+
+    if (dev->logit) {
+	if (finished) {
+	    printf("_process_expect(%s): match\n", dev->name);
+	} else {
 	    unsigned char mem[MAX_BUF];
 	    int len = buf_peekstr(dev->from, mem, MAX_BUF);
 	    char *str = util_memstr(mem, len);
@@ -649,24 +685,9 @@ bool _process_expect(Device * dev)
 
 	    Free(str);
 	}
-	return TRUE;
     }
 
-    /*
-     * We already matched the regular expression in buf_getregex
-     * but now we need to process values of parenthesized subexpressions.
-     */
-    dev->script_status &= ~DEV_EXPECTING;
-    res = _match_regex(dev, expect);
-    assert(res == TRUE); /* the first regexec worked, this one should too */
-
-    if (act->cur->s_or_e.expect.map != NULL)
-	_do_device_semantics(dev, act->cur->s_or_e.expect.map);
-    Free(expect);
-
-    if (dev->logit)
-	printf("_process_expect(%s): match\n", dev->name);
-    return FALSE;
+    return !finished;
 }
 
 /*
@@ -706,9 +727,8 @@ bool _process_delay(Device * dev, struct timeval *timeout)
 {
     bool finished = FALSE;
     struct timeval delay, timeleft;
-    Action *act;
+    Action *act = list_peek(dev->acts);
 
-    act = list_peek(dev->acts);
     assert(act != NULL);
     assert(act->cur != NULL);
     assert(act->cur->type == EL_DELAY);
@@ -725,7 +745,7 @@ bool _process_delay(Device * dev, struct timeval *timeout)
     }
 
     /* timeout expired? */
-    if (_overdue(dev, &delay, &timeleft)) {
+    if (_timeout(dev, &delay, &timeleft)) {
 	dev->script_status &= ~DEV_DELAYING;
 	finished = TRUE;
     } else
@@ -1113,12 +1133,14 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 	if (scripts_need_service || (dev->script_status & DEV_DELAYING)
 			|| (dev->script_status & DEV_EXPECTING))
 	    _process_script(dev, timeout);
-
+#if 0
+	/* XXX doing this in _process_expect now */
 	/* stalled on an expect */
 	if ((dev->script_status & DEV_EXPECTING)) {
-	    if (_overdue(dev, &dev->timeout, NULL))
+	    if (_timeout(dev, &dev->timeout, NULL))
 		_recover(dev);
 	}
+#endif
 
 	if (dev->script_status & (DEV_SENDING | DEV_EXPECTING))
 	    scripts_complete = FALSE;
