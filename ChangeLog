@@ -4,6 +4,8 @@
 	* Merged _match_regex into _match_subexpression.  Removed intermediate
 	  regex match data from Interpretation struct (now temporary in 
 	  _match_subexpression).
+	* Fixed bug where query for N-1 plugs on an N-plug device resulted
+	  in N-1 separate queries, each acquiring state for the whole device.
 
 2002-10-14 garlick
 	* Remove RESET_SCRIPT definitions in wti and baytech device files.

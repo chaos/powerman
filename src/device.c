@@ -405,6 +405,10 @@ static bool _command_needs_device(Device *dev, hostlist_t hl)
     return needed;
 }
 
+/*
+ * Return true if all devices targetted by hostlist implement the
+ * specified action.
+ */
 bool dev_check_actions(int com, hostlist_t hl)
 {
     Device *dev;
@@ -440,9 +444,11 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, int client_id,
 
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
-	if (dev->prot->scripts[com] != NULL) { /* unimplemented commands */
-	    count += _enqueue_actions(dev, com, hl, fun, client_id, arglist);
-	}
+	if (!dev->prot->scripts[com]) /* unimplemented script */
+	    continue;
+	if (hl && !_command_needs_device(dev, hl)) /* uninvolved device */
+	    continue;
+	count += _enqueue_actions(dev, com, hl, fun, client_id, arglist);
     }
     list_iterator_destroy(itr);
 
@@ -467,25 +473,22 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
             list_prepend(dev->acts, act);
 	    count++;
             break;
-        case PM_LOG_OUT:
-            act = _create_action(dev, com, NULL, fun, client_id, arglist);
-            list_append(dev->acts, act);
-	    count++;
-            break;
-        case PM_UPDATE_PLUGS:
-        case PM_UPDATE_NODES:
         case PM_POWER_ON:
         case PM_POWER_OFF:
         case PM_POWER_CYCLE:
         case PM_RESET:
-	    if (hl != NULL) {
+	    if (hl) {
 		count += _enqueue_targetted_actions(dev, com, hl, fun, 
 				client_id, arglist);
-	    } else {
-		act = _create_action(dev, com, NULL, fun, client_id, arglist); 
-		list_append(dev->acts, act);
-		count++;
+		break;
 	    }
+	    /*FALLTHROUGH*/
+        case PM_UPDATE_PLUGS:
+        case PM_UPDATE_NODES:
+        case PM_LOG_OUT:
+            act = _create_action(dev, com, NULL, fun, client_id, arglist);
+            list_append(dev->acts, act);
+	    count++;
             break;
         default:
             assert(FALSE);
@@ -832,6 +835,21 @@ static bool _process_delay(Device * dev, struct timeval *timeout)
     return finished;
 }
 
+static char *_copy_pmatch(char *str, regmatch_t m)
+{
+    char *new;
+
+    assert(m.rm_so < MAX_BUF && m.rm_so >= 0);
+    assert(m.rm_eo < MAX_BUF && m.rm_eo >= 0);
+    assert(m.rm_eo - m.rm_so > 0);
+
+    new = Malloc(m.rm_eo - m.rm_so + 1);
+    memcpy(new, str + m.rm_so, m.rm_eo - m.rm_so);
+    new[m.rm_eo - m.rm_so] = '\0';
+    /* XXX andrew zapped trailing spaces in old code - needed here? */
+    return new;
+}
+
 static void _match_subexpressions(Device *dev, Action *act, char *expect)
 {
     Interpretation *interp;
@@ -854,33 +872,20 @@ static void _match_subexpressions(Device *dev, Action *act, char *expect)
 
     itr = list_iterator_create(act->cur->s_or_e.expect.map);
     while ((interp = list_next(itr))) {
-	char *val, *str, *end, tmp, *pos;
-	int len;
+	char *str;
 
 	if (interp->node == NULL) /* unused plug? */
 	    continue;
 	assert(interp->match_pos >= 0 && interp->match_pos < MAX_MATCH);
-	assert(pmatch[interp->match_pos].rm_so < MAX_BUF);
-	assert(pmatch[interp->match_pos].rm_so >= 0);
-	assert(pmatch[interp->match_pos].rm_eo < MAX_BUF);
-	assert(pmatch[interp->match_pos].rm_eo >= 0);
-	val = expect + pmatch[interp->match_pos].rm_so;
 
-	/* FIXME: clean this up */
-	str = val;
-	len = strlen(str);
-	end = str;
-	while (*end && !isspace(*end) && ((end - str) < len))
-	    end++;
-	tmp = *end;
-	len = end - str;
-	*end = '\0';
+	str = _copy_pmatch(expect, pmatch[interp->match_pos]);
 
-	if ((pos = _findregex(&dev->on_re, str, len)) != NULL)
+	if ((pos = _findregex(&dev->on_re, str, strlen(str))) != NULL)
 	    _set_argval_onoff(act->arglist, interp->node, ST_ON);
-	if ((pos = _findregex(&dev->off_re, str, len)) != NULL)
+	if ((pos = _findregex(&dev->off_re, str, strlen(str))) != NULL)
 	    _set_argval_onoff(act->arglist, interp->node, ST_OFF);
-	*end = tmp;
+
+	Free(str);
     }
     list_iterator_destroy(itr);
 }

@@ -51,8 +51,6 @@
 /* count of scripts above */
 #define NUM_SCRIPTS	    8
 
-#define UPDATE_SECONDS	    300
-
 /*
  * Script element (send, expect, or delay).
  */
@@ -60,14 +58,14 @@ typedef enum { EL_NONE, EL_SEND, EL_EXPECT, EL_DELAY } Script_El_Type;
 typedef struct {
     Script_El_Type type;
     union {
-	struct {
+	struct {		/* SEND */
 	    char *fmt;		/* printf(fmt, ...) style format string */
 	} send;
-	struct {
+	struct {		/* EXPECT */
 	    regex_t exp;	/* compiled regex */
 	    List map;		/* list of Interpretation structures */
 	} expect;
-	struct {
+	struct {		/* DELAY */
 	    struct timeval tv;	/* delay at this point in the script */
 	} delay;
     } s_or_e;
