@@ -12,6 +12,7 @@ import commands
 import string
 import getopt
 import os
+import time
 
 class ClusterClass:
     "Class definition for a cluster of nodes"
@@ -55,40 +56,53 @@ class ClusterClass:
         line = cfg.readline()
         i = 0
         while (line):
-            tokens = string.split(line)
-            if(tokens):
-                if (tokens[0][0] == '#'):
-                    pass
-                elif (string.lower(tokens[0]) == 'cluster'):
-                    if (len(tokens) >= 2):
-                        self.name = string.lower(tokens[1])
-                elif (string.lower(tokens[0]) == 'node'):
-                    if (len(tokens) >= 4):
-                        self.names.append(tokens[1])
-                        self.index[tokens[1]] = i
-                        i = i + 1
-                        # powermandir is a reference to a global variable
-                        self.q_com[tokens[2]] = powermandir + 'bin/' + tokens[2]
-                        if ( not os.path.isfile(self.q_com[tokens[2]])):
-                            if(verbose):
-                                sys.stderr.write("pm: Couldn't find low level routine " + self.q_com[tokens[2]] + "\n")
-                            sys.exit(1)
-                        try:
-                            self.q_types[tokens[2]].append(tokens[1])
-                        except KeyError:
-                            self.q_types[tokens[2]] = []
-                            self.q_types[tokens[2]].append(tokens[1])
-                        self.c_com[tokens[3]] = powermandir + 'bin/' + tokens[3]
-                        if ( not os.path.isfile(self.c_com[tokens[3]])):
-                            if(verbose):
-                                sys.stderr.write("pm: Couldn't find low level routine " + self.c_com[tokens[3]] + "\n")
-                            sys.exit(1)
-                        try:
-                            self.c_types[tokens[3]].append(tokens[1])
-                        except KeyError:
-                            self.c_types[tokens[3]] = []
-                            self.c_types[tokens[3]].append(tokens[1])
+            blocks = string.split(line, '{')
             line = cfg.readline()
+            if(len(blocks) < 2): continue
+            if (blocks[0][0] == '#'): continue
+            node_name = blocks[0]
+            while (node_name[-1:] in string.whitespace): node_name = node_name[:-1]
+            tokens = string.split(blocks[1])
+            last = len(tokens)
+            if (last < 1): continue
+            q_type = tokens[0]
+            if (last == 1): q_type =  q_type[:-1]
+            # if (q_type == icebox) do an __import__
+            # then do an icebox = IceBoxClusterClass(fongi_file)
+            # powermandir is a global
+            q_com = powermandir + 'bin/' + q_type
+            if (not os.path.isfile(q_com)):
+                if(verbose):
+                    sys.stderr.write("pm: Couldn't find low level routine " + q_com + "\n")
+                sys.exit(1)
+            if (len(blocks) == 3):
+                tokens = string.split(blocks[2])
+                last = len(tokens)
+                if (last < 1): continue
+                c_type = tokens[0]
+                if (last == 1): c_type =  c_type[:-1]
+                c_com = powermandir + 'bin/' + c_type
+                if (not os.path.isfile(c_com)):
+                    if(verbose):
+                        sys.stderr.write("pm: Couldn't find low level routine " + c_com + "\n")
+                    sys.exit(1)
+            else:
+                c_type = q_type
+                c_com = q_com
+            self.names.append(node_name)
+            self.index[node_name] = i
+            i = i + 1
+            self.q_com[q_type] = q_com
+            try:
+                self.q_types[q_type].append(node_name)
+            except KeyError:
+                self.q_types[q_type] = []
+                self.q_types[q_type].append(node_name)
+            try:
+                self.c_types[c_type].append(node_name)
+            except KeyError:
+                self.c_types[c_type] = []
+                self.c_types[c_type].append(node_name)
 
     def node_cmp(self, x1, x2):
         "Return -1, 0, or 1 as x1 is before, the same, or after x2"
@@ -129,6 +143,8 @@ class ClusterClass:
         # to exactly the (possibly empty) subset of n_list of the given type 
         for type in self.q_types.keys():
             if(len(self.q_types[type]) > 0):
+                # if (type == "icebox") then make a call to
+                # icebox.do_command("query")
                 q_str = self.q_com[type]
                 # Intersect n_list with self.q_types[type] to get c_sep_list,
                 # a comma separated list of the nodes from n_list that are of
@@ -175,6 +191,8 @@ class ClusterClass:
         exit_code = -1
         check_list = n_list
         for type in self.c_types.keys():
+            # if (type == "icebox") then make a call to
+            # icebox.do_command(com)
             if (type == 'etherwake'):
                 # Etherwake is a toggle, so you only want to apply
                 # it if the node is in the appropriate state.
@@ -236,24 +254,26 @@ def usage(msg):
     print msg
     sys.exit(0)
 
+def log(string):
+    if(logging):
+        log_file.write ("icebox: " + string + ".\n")
+        log_file.flush()
+
 # Begin main routine processing.
 
 Version = "pm: Powerman 0.1.8"
 
 # Check for level of permision and exit for non-root users
 
-stat, uid = commands.getstatusoutput('/usr/bin/id -u')
-if (stat == 0):
-    if (uid != '0'):
-        usage("You must be root to run this\n")
-else:
-    usage("pm: Error attempting to id -u\n")
+if (os.geteuid() != 0):
+    usage("You must be root to run this")
 
 # initialize globals
 powermandir = '/usr/lib/powerman/'
 config_file = '/etc/powerman.conf'
 work_col    = ''
 verbose     = 1
+logging     = 0
 reverse     = 0
 temperature = 0
 names       = []
@@ -308,6 +328,7 @@ for opt in options:
         powermandir  = val
         opts = "-l " + val + opts
     elif (op == '-L'):
+        logging = 1
         opts = "-L " + opts
     elif (op == '-q'):
         verbose = 0
@@ -371,6 +392,16 @@ else:
         sys.stderr.write("pm: Couldn\'t find library directory: " + powermandir + "\n")
     sys.exit(1)
 
+if(logging):
+    try:
+        log_file = open("/tmp/powerman.log", 'a')
+    except IOError :
+        exit_error(8, log_file)
+    
+log("\n\n" + time.asctime(time.localtime(time.time())))
+    
+
+
 # Initialize operations by creating the cluster based on the description
 # given in the config file.  That information includes for each node the
 # name, query function, and control function.
@@ -385,6 +416,8 @@ except IOError :
     sys.exit(1)
 
 if(all):
+    # I need to make marking nodes for action into another method for
+    # the ClusterClass
     names = theCluster.names
 
 # if names list is empty look for working collective
