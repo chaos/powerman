@@ -5,6 +5,8 @@
     * man/powerman.1: 
     Added info about HOST RANGES under tcsh.	
     Fixed typo in powerman examples.
+
+    * Makefile: Install new ipmipower.dev file.	
 	
 2003-10-16 Jim Garlick <garlick@llnl.gov>
 
