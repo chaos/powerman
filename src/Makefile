@@ -40,7 +40,8 @@ mkinstalldirs=	 $(SHELL) $(top_srcdir)/aux/mkinstalldirs
 COPTS = -g -O2 -Wall
 INC   = 
 
-top_srcdir=     .
+top_srcdir=     ..
+srcbin=		${top_srcdir}/bin
 prefix=	        /usr
 etcdir=         /etc
 exec_prefix=    ${prefix}
@@ -85,10 +86,10 @@ MODULE_HEADERS = action.h \
                  main.h \
                  server.h \
 
-all :  powermand powerman pictures
+all :  powermand powerman
 
 powermand : $(SERVER_OBJS)
-	$(CC) $(COPTS) -o powermand $(SERVER_OBJS) $(INC) $(LIB)
+	$(CC) $(COPTS) -o ${srcbin}/powermand $(SERVER_OBJS) $(INC) $(LIB)
 
 powerman.h : $(COMMON_HEADERS)
 
@@ -148,7 +149,7 @@ wrappers.o : wrappers.c powerman.h
 	$(CC) $(COPTS) -c -o $@ $< $(INC)
 
 powerman : $(CLIENT_OBJS)
-	$(CC) $(COPTS) -o powerman $(CLIENT_OBJS) $(INC) $(LIB)
+	$(CC) $(COPTS) -o ${srcbin}/powerman $(CLIENT_OBJS) $(INC) $(LIB)
 
 client.o : client.c powerman.h client.h
 	$(CC) $(COPTS) -c -o $@ $< $(INC)
@@ -156,8 +157,6 @@ client.o : client.c powerman.h client.h
 clean :
 	rm -f *~ *.o .#* parse_*
 
-distclean : clean
-	rm -f  powermand powerman
 
 
 

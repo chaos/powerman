@@ -41,7 +41,8 @@ mkinstalldirs=	 $(SHELL) $(top_srcdir)/aux/mkinstalldirs
 COPTS = -g -O2 -Wall
 INC   = 
 
-top_srcdir=     .
+top_srcdir=     ..
+srcbin=		${top_srcdir}/bin
 prefix=	        /usr
 exec_prefix=    ${prefix}
 bindir=         ${exec_prefix}/bin
@@ -54,7 +55,7 @@ OBJS = vicebox.o wrappers.o vice_error.o
 all :  vicebox svicebox
 
 vicebox : $(OBJS)
-	$(CC) $(COPTS) -o vicebox $(OBJS) $(INC) $(LIB)
+	$(CC) $(COPTS) -o ${srcbin}/vicebox $(OBJS) $(INC) $(LIB)
 
 vicebox.o : vicebox.c vicebox.h
 	$(CC) $(COPTS) -c -o $@ $< $(INC)
@@ -66,10 +67,8 @@ vice_error.o : vice_error.c vicebox.h
 	$(CC) $(COPTS) -c -o $@ $< $(INC)
 
 svicebox : svicebox.c
-	$(CC) $(COPTS) -c -o $@ $< $(INC)
+	$(CC) $(COPTS) -c -o ${srcbin}/$@ $< $(INC)
 
 clean :
 	rm -f *~ *.o
 
-distclean : clean
-	rm -f  vicebox svicebox
