@@ -48,42 +48,24 @@ hardware reset via remote power controller (RPC) devices.
 Target hostnames are mapped to plugs on RPC devices in 
 .I powerman.conf(5).
 .SH OPTIONS
-.LP
-.I "-r"
-.br
-.I "--reset"
-.br
+.TP
+.I "-r, --reset"
 Reset targets.
-.LP
-.I "-c"
-.br
-.I "--cycle"
-.br
+.TP
+.I "-c, --cycle"
 Power cycle targets.
-.LP
-.I "-1"
-.br
-.I "--on"
-.br
+.TP
+.I "-1, --on"
 Power on targets.
-.LP
-.I "-0"
-.br
-.I "--off"
-.br
+.TP
+.I "-0, --off"
 Power off targets.
-.LP
-.I "-l"
-.br
-.I "--list"
-.br
+.TP
+.I "-l, --list"
 List available targets.  If possible, output will be compressed into
 a host range (see TARGET SPECIFICATION below).
-.LP
-.I "-q"
-.br
-.I "--query"
-.br
+.TP
+.I "-q, --query"
 Query power status of targets (if none specified, query all targets).
 Status is not cached;  each time this option is used, powermand 
 queries the appropriate RPC's.  Targets connected to RPC's that could
