@@ -98,6 +98,33 @@ static void _command_help(Client *c)
 }
 
 
+static void _command_unknown(Client *c, String expect)
+{
+    c->write_status = CLI_WRITING;
+    buf_printf(c->to, "Unknown command\r\n" PROMPT);
+}
+
+
+static void _hostlist_error(Client *c)
+{
+    c->write_status = CLI_WRITING;
+    buf_printf(c->to, "Error: ");
+
+    switch (errno) {
+        case ERANGE:
+            buf_printf(c->to, "Too many hosts in range\r\n");
+            break;
+        case EINVAL:
+            buf_printf(c->to, "Invalid hostlist range\r\n");
+            break;
+        default:
+            buf_printf(c->to, "Unknown hostlist error\r\n");
+    }
+
+    buf_printf(c->to, PROMPT);
+}
+
+
 /*
  *   Select has indicated that there is material read to
  * be read on the fd associated with the Client c. 
@@ -163,11 +190,7 @@ static Action *_process_input(Client * c)
     if (act != NULL) {
         act->client = c;
         act->seq = c->seq++;
-    } else {
-        c->write_status = CLI_WRITING;
-        buf_printf(c->to, "%s" PROMPT, (strlen(str_get(expect)) > 2) ?
-            "Unknown command\r\n" : "");
-    }
+    } 
 
     str_destroy(expect);
     return act;
@@ -214,8 +237,11 @@ static Action *_parse_input(Client *c, String expect)
      * all others will be discarded.
      * FIXME: Buffer overruns are possible, fix it properly
      */
-    if (sscanf(str, "%s %s", cmd, arg) < 1)
+    if (sscanf(str, "%s %s", cmd, arg) < 1) {
+        c->write_status = CLI_WRITING;
+        buf_printf(c->to, PROMPT);
         return NULL;
+    }
 
     act = act_create(PM_ERROR);
 
@@ -240,14 +266,18 @@ static Action *_parse_input(Client *c, String expect)
         act->com = PM_CHECK_LOGIN;
     }
 
-    /* Unknown command */
     if (act->com == PM_ERROR) {
+        _command_unknown(c, expect);
         act_destroy(act); 
         return NULL;
     }
 
-    /* FIXME: shift to host lists only! */
-    // hostlist_t arg->targets = hostlist_create(arg);
+    if ((act->hl = hostlist_create(arg)) == NULL) {
+        _hostlist_error(c);
+        act_destroy(act); 
+        return NULL;
+    }
+
     act->target = str_create(arg);
     return act; 
 }

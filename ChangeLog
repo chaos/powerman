@@ -1,4 +1,7 @@
 2002-09-18 behlendorf
+  * Parsed hostlists now stored in the action structure and free'd
+    when the action is completed.
+  * Badly formated hostlists no longer crash the daemon.
   * Fixed segfault related to quit command, client connections are
     now properly cleaned up on the daemon side.
 

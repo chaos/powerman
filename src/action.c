@@ -155,6 +155,7 @@ Action *act_create(int com)
     act->itr = NULL;
     act->cur = NULL;
     act->target = NULL;
+    act->hl = NULL;
     return act;
 }
 
@@ -167,6 +168,10 @@ void act_destroy(Action * act)
     act->target = NULL;
     if (act->itr != NULL)
         list_iterator_destroy(act->itr);
+
+    if (act->hl != NULL)
+        hostlist_destroy(act->hl);
+
     act->itr = NULL;
     act->cur = NULL;
     CLEAR_MAGIC(act);

@@ -28,6 +28,7 @@
 #define ACTION_H
 
 #include "client.h"
+#include "hostlist.h"
 
 /* Indices into script arrays */
 /* Note: keep in sync with command_str[] array in device.c */
@@ -56,12 +57,13 @@
  */
 
 struct action_struct {
-    Client 		*client;
-    int 		seq;	/* sequence number from client */
-    int 		com;	/* one of the PM_* above */
-    ListIterator 	itr;	/* next place in the script sequence */
-    Script_El 		*cur;	/* current place in the script sequence */
-    String 		target;	/* node name hostlist */
+    Client       *client;
+    int          seq;    /* sequence number from client */
+    int          com;    /* one of the PM_* above */
+    ListIterator itr;    /* next place in the script sequence */
+    Script_El    *cur;   /* current place in the script sequence */
+    String       target; /* string version of hostlist */
+    hostlist_t   hl;     /* target hostlist */
     MAGIC;
 };
 

@@ -406,15 +406,8 @@ void _do_target_some(Device * dev, Action * sact)
     bool all = TRUE, any = FALSE;
     Plug *plug;
     ListIterator plug_i;
-    hostlist_t hl;
 
     new_acts = list_create((ListDelF) act_destroy);
-
-    if ((hl = hostlist_create(str_get(sact->target))) == NULL) {
-	      syslog(LOG_ERR, "Unable to create hostlist");
-        return;
-    }
-
     plug_i = list_iterator_create(dev->plugs);
     while ((plug = list_next(plug_i))) {
         /* If plug->node == NULL it means that there is no node pluged
@@ -427,7 +420,7 @@ void _do_target_some(Device * dev, Action * sact)
         }
 
         /* check if plug->node->name matches the target */
-        if (hostlist_find(hl, str_get(plug->node->name)) != -1) {
+        if (hostlist_find(sact->hl, str_get(plug->node->name)) != -1) {
             any = TRUE;
             act = _do_target_copy(dev, sact, plug->name);
             list_append(new_acts, act);
@@ -445,7 +438,6 @@ void _do_target_some(Device * dev, Action * sact)
                 list_append(dev->acts, act);
     }
 
-    hostlist_destroy(hl);
     list_iterator_destroy(plug_i);
     list_destroy(new_acts);
 }

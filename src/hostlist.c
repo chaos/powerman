@@ -52,8 +52,9 @@
 
 /* printf-style error function -- redefine to your project's error 
  * reporting facility. Should take args like _err(char *, ...)
+ * NOTE: Intentially unused, return codes are instead consulted
  */
-#define _err(fmt, args...) 	err_exit(FALSE, fmt, ## args)
+#define _err(fmt, args...) /* err_exit(FALSE, fmt, ## args) */
 
 /* number of elements to allocate when extending the hostlist array */
 #define HOSTLIST_CHUNK	16
