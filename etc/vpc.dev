@@ -1,3 +1,7 @@
+# 
+# $Id$
+# $Source$
+#
 begin protocol specification
 	specification name "vpc"
 	specification type "TCP"

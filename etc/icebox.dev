@@ -1,6 +1,6 @@
 #
-# icebox.dev,v 1.16 2002/10/21 06:26:43 garlick Exp
-# /chaos/cvs/powerman/etc/icebox.dev,v
+# $Id$
+# $Source$
 #
 # Linux Networx ICE box firmware version 2.x
 #
@@ -19,7 +19,6 @@ begin protocol specification
 	begin LOGOUT_SCRIPT
 		send "q\r\n"
 	end LOGOUT_SCRIPT
-# This is the query for hard power status
 	begin STATUS_SCRIPT
 		send "ps *\r\n"
 		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
@@ -34,7 +33,6 @@ begin protocol specification
 			map $9 "9"
 			map $10 "10"
 	end STATUS_SCRIPT
-# This is the query for soft power status
 	begin STATUS_SOFT_SCRIPT
 		send "ns *\r\n"
 		expect "N1:([012]) N2:([012]) N3:([012]) N4:([012]) N5:([012]) N6:([012]) N7:([012]) N8:([012]) N9:([012]) N10:([012])[[:space:]]*\r\n"

@@ -1,14 +1,18 @@
 #
-# APC masterswitch
+# $Id$
+# $Source$
+#
+# Tested with APC MasterSwitch plus 
+# APP v2.0.0 / AOS v2.5.4
 #
 begin protocol specification
 	specification name "apc"
 	specification type "TCP"
 	off string "OFF"
 	on string  "ON"
-	all string "*"
+	all string "9"
 	plug count 8
-	device timeout 30  
+	device timeout 10  
 	begin LOGIN_SCRIPT
 		expect "\n"
 		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA\IAC\DONT\TELOPT_TTYPE"
@@ -50,50 +54,86 @@ begin protocol specification
 		expect "> "
 		send "1\r\n" # select outlet control
 		expect "> "
+
+		send "8\r\n" # cancel any pending delays
+		expect "Enter 'YES' to continue or <ENTER> to cancel : "
+		send "YES\r\n"
+		expect "Success\r\n"
+		send "\r\n"
+		expect "> "
+
 		send "1\r\n" # immediate on
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
 		send "YES\r\n"
 		expect "Success\r\n"
 		send "\r\n"
 		expect "> "
+
 		send "\033"
 		expect "> "
 		send "\033"
 		expect "> "
-		delay 2.0   # might need fine tuning
 	end ON_SCRIPT
 	begin OFF_SCRIPT
 		send "%s\r\n"
 		expect "> "
 		send "1\r\n" # select outlet control
 		expect "> "
+
+		send "8\r\n" # cancel any pending delays
+		expect "Enter 'YES' to continue or <ENTER> to cancel : "
+		send "YES\r\n"
+		expect "Success\r\n"
+		send "\r\n"
+		expect "> "
+
 		send "3\r\n" # immediate off
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
 		send "YES\r\n"
 		expect "Success\r\n"
 		send "\r\n"
 		expect "> "
+
 		send "\033"
 		expect "> "
 		send "\033"
 		expect "> "
 	end OFF_SCRIPT
 	begin CYCLE_SCRIPT
+# If outlet is initially off, "immediate reboot" (4) will leave it off.
+# This doesn't match PowerMan's semantics for cycle.
 		send "%s\r\n"
 		expect "> "
 		send "1\r\n" # select outlet control
 		expect "> "
-		send "4\r\n" # immediate reboot
+
+		send "8\r\n" # cancel any pending delays
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
 		send "YES\r\n"
 		expect "Success\r\n"
 		send "\r\n"
 		expect "> "
+
+		send "3\r\n" # immediate off
+		expect "Enter 'YES' to continue or <ENTER> to cancel : "
+		send "YES\r\n"
+		expect "Success\r\n"
+		send "\r\n"
+		expect "> "
+
+		delay 2
+
+		send "1\r\n" # immediate on
+		expect "Enter 'YES' to continue or <ENTER> to cancel : "
+		send "YES\r\n"
+		expect "Success\r\n"
+		send "\r\n"
+		expect "> "
+
 		send "\033"
 		expect "> "
 		send "\033"
 		expect "> "
-		delay 8.0
 	end CYCLE_SCRIPT
 	plug name "1"
 	plug name "2"
