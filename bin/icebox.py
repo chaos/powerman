@@ -14,37 +14,43 @@ import os
 import fcntl, FCNTL
 import time
 import signal
+from powerman import NodeClass
 
-class NodeClass:
+class IBNodeClass(NodeClass):
     "Class definition for icebox attached nodes"
-    name = ""
     tty  = ""
     box  = ""
     port = ""
 
-    def __init__(self, name, tty, box, port):
+    def __init__(self, name, vals):
         "Node class initialization"
         self.name = name
-        self.tty  = tty
-        self.box  = box
-        self.port = port
+        try:
+            self.tty  = vals[0]
+            self.box  = vals[1]
+            self.port = vals[2]
+        except IndexError:
+            pm_defs.exit_error(6, str(vals))
+        self.requested = 0
+        # print self.name, self.tty, self.box, self.port
 
 class PortClass:
     "Class definition for an icebox port"
     name       = ""
     node       = None
-    requested  = 0
     PORT_DELAY = 0.5
 
-    def __init__(self, name, node):
+    def __init__(self, node):
         "Port class initialization"
-        self.name      = name
+        self.name      = node.port
         self.node      = node
-        self.requested = 0
 
     def do_command(self, box, com, f):
-        if (self.requested == 0):
+        if (self.node.requested == 0):
             return
+        # This will suppress doing a command to a node twice
+        # even if it's requested twice.
+        self.node.requested = 0
         # print "Doing port command", com
         if ((com == 'ph') or (com == 'pl') or (com == 'rp')):
             setting = 1
@@ -92,9 +98,7 @@ class PortClass:
                 temps = val
                 print self.node.name + ":" + temps
         if (not good_response):
-            exit_error(20, "")
-
-        
+            pm_defs.exit_error(20, "")
 
 class BoxClass:
     "Class definition for an icebox"
@@ -103,7 +107,6 @@ class BoxClass:
     ports            = {}
     sorted_port_list = []
     num_connected    = 0
-    num_requested    = 0
     ICEBOX_SIZE      = 10
     BOX_DELAY        = 0.1
 
@@ -114,15 +117,19 @@ class BoxClass:
         self.ports            = {}
         self.sorted_port_list = []
         self.num_connected    = 0
-        self.num_requested    = 0
 
-    def add(self, port):
+    def add(self, node):
         "Add a port to the list of occupied ports on the icebox"
+        port = PortClass(node)
         self.ports[port.name] = port
         self.sorted_port_list.append(port.name)
         self.num_connected    = self.num_connected + 1
 
     def do_command(self, com, f):
+        self.num_requested = 0
+        for port_name in self.ports.keys():
+            if (self.ports[port_name].node.requested):
+                self.num_requested = self.num_requested + 1
         if (self.num_requested == self.ICEBOX_SIZE):
             # print "Doing whole box command", com
             if ((com == 'ph') or (com == 'pl') or (com == 'rp')):
@@ -203,16 +210,26 @@ class TtyClass:
         try:
             f = open(self.name, 'r+')
         except IOError:
-            exit_error(13, self.name)
+            pm_defs.exit_error(13, self.name)
         try:
             fcntl.lockf(f.fileno(), FCNTL.LOCK_EX | FCNTL.LOCK_NB)
         except IOError:
-            exit_error(14, self.name)
+            pm_defs.exit_error(14, self.name)
         for box_name in self.sorted_box_list:
             box = self.boxes[box_name]
             box.do_command(com, f)
         fcntl.lockf(f.fileno(), FCNTL.LOCK_UN)
         f.close()
+
+    def add(self, node):
+        try:
+            box = self.boxes[node.box]
+        except KeyError:
+            box = BoxClass(node.box, self.name)
+            self.boxes[box.name] = box
+            self.sorted_box_list.append(box.name)
+        box.add(node)
+
 
 class IceBoxClusterClass:
     "Structure in which to gather all the icebox info in a single place"
@@ -220,91 +237,22 @@ class IceBoxClusterClass:
     ttys             = {}
     sorted_tty_list  = []
 
-    def __init__(self, file_name):
+    def __init__(self, nodes):
         "Read in the node, tty, box, and port for each node from the configuration file"
-        node_name = ''
-        node      = None
-        tty_name  = ''
-        tty       = None
-        box_name  = ''
-        box       = None
-        port_name = ''
-        port      = None
-        blocks    = []
-        tokens    = []
-        line      = ''
-        f         = None
-        
+        for node in nodes:
+            if (node.c_type != "icebox"):
+                continue
+            self.add(node)
+
+    def add(self, node):
+        self.nodes[node.name] = node
         try:
-            f = open(file_name, 'r')
-        except IOError :
-            exit_error(7, config_file)
-        line = f.readline()
-        while (line):
-            blocks = string.split(line, '{')
-            # you need this here because of the "coninue"s below
-            line = f.readline()
-            if(len(blocks) != 2): continue
-            if (blocks[0][0] == '#'): continue
-            tokens = string.split(blocks[1])
-            if ((len(tokens) != 4) or (tokens[0] != 'icebox')): continue
-            node_name = blocks[0]
-            while (node_name[-1:] in string.whitespace): node_name = node_name[:-1]
-            tty_name = tokens[1]
-            box_name = tokens[2]
-            port_name = tokens[3][:-1]
-            # print node_name, tty_name, box_name, port_name
-            node = NodeClass(node_name, tty_name, box_name, port_name)
-            self.nodes[node_name] = node
-            port = PortClass(port_name, node)
-            try:
-                tty = self.ttys[tty_name]
-            except KeyError:
-                tty = TtyClass(tty_name)
-                self.sorted_tty_list.append(tty_name)
-                self.ttys[tty_name] = tty
-            try:
-                box = tty.boxes[box_name]
-            except KeyError:
-                box = BoxClass(box_name, tty_name)
-                tty.boxes[box_name] = box
-                tty.sorted_box_list.append(box_name)
-            box.add(port)
-        f.close()
-
-    def mark_all(self):
-        for tty_name in self.sorted_tty_list:
-            tty = self.ttys[tty_name]
-            for box_name in tty.sorted_box_list:
-                box = tty.boxes[box_name]
-                for port_name in box.sorted_port_list:
-                    port = box.ports[port_name]
-                    port.requested = 1
-                    box.num_requested = box.num_requested + 1
-
-    def mark(self, names):
-        for name in names:
-            try:
-                node = self.nodes[name]
-                tty_name  = node.tty
-                box_name = node.box
-                port_name = node.port
-            except KeyError:
-                exit_error(12, name)
-            try:
-                tty = self.ttys[tty_name]
-            except KeyError:
-                exit_error(12, tty_name)
-            try:
-                box = tty.boxes[box_name]
-            except KeyError:
-                exit_error(12, box_name)
-            try:
-                port = box.ports[port_name]
-                port.requested = 1
-                box.num_requested = box.num_requested + 1
-            except KeyError:
-                exit_error(12, port_name)
+            tty = self.ttys[node.tty]
+        except KeyError:
+            tty = TtyClass(node.tty)
+            self.sorted_tty_list.append(tty.name)
+            self.ttys[tty.name] = tty
+        tty.add(node)
 
     def do_command(self, req):
         "carry out the requested command on each tty line"
@@ -321,7 +269,7 @@ class IceBoxClusterClass:
         elif (req == 'tempf'):
             com = 'tsf'
         else:
-            exit_error(3, req)
+            pm_defs.exit_error(3, req)
 
         signal.signal(signal.SIGALRM, ReadTimeout)
 
@@ -347,6 +295,40 @@ def usage(msg):
     print msg
     sys.exit(0)
 
+def config_init(config_file):
+    nodes = []
+    try:
+        cfg = open(config_file, 'r')
+    except IOError :
+        pm_defs.exit_error(7, config_file)
+    line = cfg.readline()
+    i = 0
+    while (line):
+        blocks = string.split(line, '{')
+        line = cfg.readline()
+        if(len(blocks) < 2): continue
+        if (blocks[0][0] == '#'): continue
+        node_name = blocks[0]
+        while (node_name[-1:] in string.whitespace): node_name = node_name[:-1]
+        tokens = string.split(blocks[1])
+        last = len(tokens) - 1
+        if (last < 3): continue
+        # Get rid of the trailing "}"
+        tokens[last] = tokens[last][:-1]
+        q_type = tokens[0]
+        c_type = tokens[0]
+        # powermandir is a global
+        # print tokens
+        # print ">" + q_type + "<"
+        if (q_type != "icebox"):
+            continue
+        node = IBNodeClass(node_name, tokens[1:])
+        node.q_type = q_type
+        node.c_type = c_type
+        nodes.append(node)
+    cfg.close()
+    return nodes
+
 def log(string):
     if(logging):
         log_file.write ("icebox: " + string + ".\n")
@@ -358,7 +340,7 @@ error_msg[2]  = "[2]Error attempting to id -u"
 error_msg[3]  = "[3]Unrecognized command"
 error_msg[4]  = "[4]This should be a list"
 error_msg[5]  = "[5]Couldn\'t find library directory"
-error_msg[6]  = "[6]Couldn\'t find library directory"
+error_msg[6]  = "[6]Config file format error"
 error_msg[7]  = "[7]Couldn\'t find configuration file"
 error_msg[8]  = "[8]Couldn\'t find log file"
 error_msg[9]  = "[9]Unable to access icebox control device on tty"
@@ -375,6 +357,7 @@ error_msg[19] = "[19]Unexpected return (not a port temp pair) from box"
 error_msg[20] = "[20]Command failed after 10 unsuccessfull reads"
 
 def exit_error(msg_num, msg_data):
+
     log(error_msg[msg_num] + ": " + msg_data)
     if(verbose):
         sys.stderr.write ("icebox: " + error_msg[msg_num] + ": " + msg_data + ".\n")
@@ -383,13 +366,19 @@ def exit_error(msg_num, msg_data):
 def ReadTimeout(sig, stack):
     log("Readline timed out")
 
+verbose = 1
+logging = 0
+reverse = 0
+
+def init_icebox(v_flag, l_flag, r_flag):
+    verbose = v_flag
+    logging = l_flag
+    reverse = r_flag
+    
 if __name__ == '__main__':
     # initialize globals
     powermandir  = '/usr/lib/powerman/'
     config_file = '/etc/powerman.conf'
-    verbose     = 1
-    logging     = 0
-    reverse     = 0
     names       = []
     req         = 'query'
     opts        = ''
@@ -398,7 +387,7 @@ if __name__ == '__main__':
 
     # Check for level of permision and exit for non-root users
     if (os.geteuid() != 0):
-        exit_error(1, "")
+        pm_defs.exit_error(1, "")
 
     # Look for environment variables and set globals
     try:
@@ -463,24 +452,26 @@ if __name__ == '__main__':
         if(os.path.isdir(powermandir)):
             sys.path.append(powermandir)
         else:
-            exit_error(5, powermandir)
+            pm_defs.exit_error(5, powermandir)
     else:
-        exit_error(6, powermandir)
-    
+        pm_defs.exit_error(5, powermandir)
+
     if(logging):
         try:
-            log_file = open("/tmp/icebox.log", 'a')
+            log_file_name = "/tmp/icebox.log"
+            log_file = open(log_file_name, 'a')
         except IOError :
-            exit_error(8, log_file)
-    
+            logging = 0
+            exit_error(8, log_file_name)
     log("\n\n" + time.asctime(time.localtime(time.time())))
-    
-    iceboxes = IceBoxClusterClass(config_file)
+
+    theNodes = config_init(config_file)
+    iceboxes = IceBoxClusterClass(theNodes)
 
     if (all):
-        iceboxes.mark_all()
-    else:
-        iceboxes.mark(names)
+        names = iceboxes.nodes.keys()
+    for name in iceboxes.nodes.keys():
+        iceboxes.nodes[name].mark()
 
     iceboxes.do_command(req)
     
