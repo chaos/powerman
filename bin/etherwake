@@ -25,6 +25,8 @@
 # v. 0-1-3:  2001-09-05
 # v. 0-1-4:  2001-09-05
 # v. 0-1-5:  2001-09-05
+# v. 0-1-6:  2001-09-07
+#            replace -v verbose with -q quiet
 ####################################################################
 
 import sys
@@ -35,11 +37,13 @@ import os
 import time
 
 def usage(msg):
-    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-w node,...] [-v] [-V] [on | off | reset]"
+    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-q] [-V] [-w node,...] [on | off | reset]"
     print "-a       = on/off/reset all nodes"
     print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
     print "-f fan   = fanout for parallelism (default: 256 where implemented)"
     print "-l ldir  = powerman lirary directory (default: /usr/lib/powerman)"
+    print "-q       = be quiet about any errors that may have occurred"
+    print "-V       = print version and exit"
     print "-w nodes = comma separated list of nodes"
     print "-w -     = read nodes from stdin, one per line"
     print "on       = turn on nodes (the default)"
@@ -65,7 +69,7 @@ def init(f):
         macs[tokens[0]] = tokens[1]
     return macs
 
-Version = "etherwake:Powerman 0.1.5"
+Version = "etherwake:Powerman 0.1.6"
 
 # Check for level of permision and restrict activities for non-root users
 
@@ -83,7 +87,7 @@ else:
 # initialize globals
 powermandir = '/usr/lib/powerman/'
 config_file = 'etc/etherwake.conf'
-verbose     = 0
+verbose     = 1
 names       = []
 com         = 1
 all         = 0
@@ -120,6 +124,11 @@ for opt in opts:
         fanout = val
     elif (op == '-l'):
         powermandir  = val
+    elif (op == '-q'):
+        verbose = 0
+    elif (op == '-V'):
+        print Version
+        sys.exit(0)
     elif (op == '-w'):
         if (val == '-'):
             name = sys.stdin.readline()
@@ -130,11 +139,6 @@ for opt in opts:
                 name = sys.stdin.readline()
         else:
             names = string.split(val, ',')
-    elif (op == '-v'):
-        verbose = 1
-    elif (op == '-V'):
-        print Version
-        sys.exit(0)
     else:
         usage("Unrecognized option " + op + "\n")
         
@@ -192,10 +196,8 @@ except IOError :
 # are not legitimate targets, but it will only send to known
 # legitimate targets, i.e. extra names in the list won't cause it
 # to fail, but it won't send to them.  
-numfound = 0
 if(all):
     for mac in macs:
-        numfound = numfound + 1
         os.system(etherwake + ' ' + mac)
         # It might be nice to schedule this rather than block for it.
         # I.e. fork and detatch.
@@ -207,17 +209,12 @@ else:
     for name in names:
         try:
             mac = macs[name]
-            numfound = numfound + 1
             os.system(etherwake + ' ' + mac)
             if (com == 2):
                 time.sleep(5)
                 os.system(etherwake + ' ' + mac)
         except KeyError:
             pass
-if (numfound == 0):
-    if(verbose):
-        sys.stderr.write("etherwake: Failed to find any nodes\n")
-    sys.exit(1)
 sys.exit(0)
 
 

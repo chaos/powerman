@@ -11,6 +11,10 @@
  * v. 0-1-3:  2001-09-05
  * v. 0-1-4:  2001-09-05
  * v. 0-1-5:  2001-09-05
+ * v. 0-1-6:  2001-09-07
+ *            No more bitmap mode.  No longer available to non-root 
+ *            users.
+ *            replace -v verbose with -q quiet
  ********************************************************************/
 
 /*
@@ -42,30 +46,27 @@
 #define MAXLINE 1000
 #define MAXSTRING 1000
 
-char *Version = "digi:Powerman 0.1.5";
+char *Version = "digi:Powerman 0.1.6";
 char *powermandir  = "/usr/lib/powerman/";
 char *config_file = "etc/digi.conf";
 char *POWERMANDIR = "POWERMANDIR";
 
-int verbose = 0;
+int verbose = 1;
 
 void
 usage(int argc, char **argv, char *msg)
 {
-  printf("usage: %s [-a] [-b] [-c conf] [-f fan] [-l dir] [-r] [-w node,...]\n", argv[0]);
+  printf("usage: %s [-a] [-c conf] [-f fan] [-l dir] [-q] [-r] [-t] [-V] [-w node,...]\n", argv[0]);
   printf ("-a       = print state for all nodes\n");
-  printf ("-b       = print a bitmap instead of node names (implies -a)\n");
-  printf ("-c conf  = configuration file (default: <ldir>/etc/etherwake.conf)\n");
+  printf ("-c conf  = configuration file (default: <ldir>/etc/digi.conf)\n");
   printf ("-f fan   = fanout (default: 256 where implemented)\n");
   printf ("-l ldir  = powerman lirary directory (default: /usr/lib/powerman)\n");
+  printf ("-q       = be quiet about any errors that may have occurred\n");
   printf ("-r       = reverse sense, i.e. report on off nodes\n");
+  printf ("-t       = temperature query (unsupported)\n");
+  printf ("-V       = print version and exit\n");
   printf ("-w nodes = comma separated list of nodes\n");
   printf ("-w -     = read nodes from stdin, one per line\n");
-  printf ("-v       = be verbose about any errors that may have occurred\n");
-  printf ("-V       = print version and exit\n");
-  printf ("on       = turn on nodes (the default)\n");
-  printf ("off      = turn off nodes\n");
-  printf ("reset    = reset nodes\n");
   printf ("%s\n", msg);
   exit(0);
 }
@@ -373,11 +374,15 @@ main(int argc, char **argv)
   int com = 1;
   int end;
   int opt;
-  int numfound = 0;
   int all = 0;
-  int bitmap = 0;
   int fanout = 256;
   int resp;
+
+  if(geteuid() != 0)
+    {
+      usage(argc, argv, "digi: must be root");
+    }
+      
 
   if((dir = getenv(POWERMANDIR)) == NULL)
     {
@@ -385,16 +390,12 @@ main(int argc, char **argv)
     }
   /* command line processing first */
 
-  while((opt = getopt (argc, argv, "abc:f:l:rw:vV")) != -1)
+  while((opt = getopt (argc, argv, "ac:f:l:rw:tvV")) != -1)
     {
       switch (opt)
 	{
 	case 'a' :
 	  all = 1;
-	  break;
-	case 'b' :
-	  all = 1;
-	  bitmap = 1;
 	  break;
 	case 'c' :
 	  confl = optarg;
@@ -405,18 +406,21 @@ main(int argc, char **argv)
 	case 'l' :
 	  dir = optarg;
 	  break;
+	case 'q' :
+	  verbose = 0;
+	  break;
 	case 'r' :
 	  com = 0;
 	  break;
-	case 'w' :
-	  names = get_names(optarg);
-	  break;
-	case 'v' :
-	  verbose = 1;
+	case 't' :
+	  exit(0);
 	  break;
 	case 'V' :
 	  printf("%s\n", Version);
 	  exit(0);
+	case 'w' :
+	  names = get_names(optarg);
+	  break;
 	default :
 	  usage(argc, argv, "Unrecognized argument");
 	}
@@ -465,35 +469,29 @@ main(int argc, char **argv)
   nodes = init(conf);
 
   /*
-   * at this point I can do the processing.  For "bitmap" processing print
-   * a digit for each node reflecting that nodes state.  For "all" nodes
-   * sequence throgh each element in the nodes list, and  if it is in the 
+   * at this point I can do the processing.  For "all" nodes
+   * sequence through each element in the nodes list, and  if it is in the 
    * requested state print its name.
    */
-  if(all || bitmap) 
+  if(all) 
     {
       node = nodes;
       while (node != NULL)
 	{
 	  resp = check(node->tty);
-	  if(bitmap)
-	    {
-	      printf("%1d", resp);
-	    }
-	  else
-	    {
-	      if(resp == com)
-		{
-		  printf("%s\n", node->name);
-		}
-	    }
+	  {
+	    if(resp == com)
+	      {
+		printf("%s\n", node->name);
+	      }
+	  }
 	  node = node->next;
 	}
       if (bitmap) printf("\n");
       return 0;
     }
   /* 
-   *   If this is not "bitmap" or "all" processing then sequence through 
+   *   If this is not "all" processing then sequence through 
    * the requested "names" list and, if it is in the requested state, 
    * print the node's name.
    */
@@ -504,19 +502,12 @@ main(int argc, char **argv)
       if((node = find(nodes, name->name, hint)) != NULL)
 	{
 	  hint = node;
-	  numfound++;
 	  if(check(node->tty) == com)
 	    {
 	      printf("%s\n", name->name);
 	    }
 	}
       name = name->next;
-    }
-  if(numfound == 0) 
-    {
-      if(verbose)
-	fprintf(stderr, "digi: Couldn't find any of the named nodes\n");
-      exit(1);
     }
   return 0;
 }

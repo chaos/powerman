@@ -1,6 +1,6 @@
 \." $Id$
 .\"
-.TH ETHERWAKE 1 "Release 0.1.5" "LLNL" "ETHERWAKE"
+.TH ETHERWAKE 1 "Release 0.1.6" "LLNL" "ETHERWAKE"
 
 .SH NAME
 etherwake \- low-level power control
@@ -53,8 +53,11 @@ Set the maximum concurrency, currently unused.
 .I "-l powermandir"
 Provide an alternate location for the PowerMan libraries.
 .LP
-.I "-v"
-be verbose, i.e. print error messages rather than dying quietly.
+.I "-q"
+be quiet, i.e. don't print error messages.
+.LP
+.I "-V"
+print version and exit.
 
 .SH "FILES"
 $powermandir/bin/etherwake
@@ -69,5 +72,5 @@ Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Alpha and
 Intel Linux clusters.
 
 .SH "SEE ALSO"
-digi(1), etherwake.conf(5), pm(1), rmc(1), wti(1)
+digi(1), etherwake.conf(5), icebox(1), pm(1), rmc(1), wti(1)
 

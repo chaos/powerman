@@ -1,33 +1,50 @@
 \." $Id$
 .\"
-.TH DIGI 1 "Release 0.1.6" "LLNL" "DIGI"
+.TH ICEBOX 1 "Release 0.1.5" "LLNL" "ICEBOX"
 
 .SH NAME
-digi \- low-level power monitoring queries
+icebox \- low-level power monitoring queries
 
 .SH SYNOPSIS
-.B digi
+.B icebox
 .I "[-options]"
-
+.LP
+.B icebox
+.I "[-options] [command]"
+.LP
+.B icebox
+.I "[-options] ice <tty> <box> <com>"
 .SH DESCRIPTION
-.B digi
+.B icebox
 is a low level utility in support of the PowerMan power management 
-program.  It communicates via an ioctl with a tty to determine
-the power status of a node equiped with a specially designed serial
-cable (which provides the requisite signal).   
-.B digi
+program.  It either (a) communicates with a tty to determine
+the power or temperature status of a node, (b) communicates with the 
+tty to set the power status of a node, or (c) communicates with 
+the tty to issue commands to the icebox.
+For a command in 
+.I "[on, off, reset]"
+.B icebox
+will carry out the given power control command.  N.B. "reset" is an actual
+reset of the CPUs not a power off followed by a power on.  
+.B icebox
 conforms to the PowerMan power monitoring interface.  One will generally
 prefer to use 
 .B pm
 rather than this low-level utility, but its use is not forbidden.
-Options are described in TARGET NODE LIST OPTIONS and OTHER OPTIONS below.
+The special command 
+.I "ice <tty> <box> <com>"
+is supported to give a knowlegable user access to icebox control commands, 
+i.e. commands directed at the icebox itself.
+Those commands are not supported by 
+.B pm
+.LPOptions are described in TARGET NODE LIST OPTIONS and OTHER OPTIONS below.
 .LP
-.B digi
+.B icebox
 queries the target nodes for their power status and prints the names of 
 those that are on, one per line (but see -r below).
 .LP
 The POWERMAN environment variable, if set, identifies an alternate 
-directory fo the PowerMan libraries and configuration files.
+directory for the PowerMan libraries and configuration files.
 
 .SH TARGET NODE LIST OPTIONS
 .I "-w host,host,..."
@@ -37,7 +54,7 @@ to be read from stdin, one per line.
 .LP
 .I "-a"
 Target "all" nodes in the cluster.  
-.B digi
+.B icebox
 determines the list of nodes in the cluster from the configuration file
 (see FILES below).
 
@@ -56,20 +73,20 @@ be quiet, i.e. don't print error messages.
 .LP
 .I "-r"
 reverse, i.e. print nodes that are off rather than on
+.LP
+.I "-t"
+query the temperature of the CPUs.
 
 .SH "FILES"
-$powermandir/bin/digi
+$powermandir/bin/icebox
 .br
-$powermandir/etc/digi.conf
+$powermandir/etc/icebox.conf
 .br
 
 .SH "ORIGIN"
-Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Alpha and
+Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's 
 Intel Linux clusters.
 
-.SH "LIMITATIONS"
-As presently implemented the ioctl calls are generated serially, and
-There may be a problem with them blocking.  
 .SH "SEE ALSO"
-digi.conf(5), etherwake(1), icebox(1), pm(1), rmc(1), wti(1)
+digi(1), icebox.conf(5), etherwake(1), pm(1), rmc(1), wti(1)
 

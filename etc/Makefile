@@ -11,12 +11,13 @@
 # v. 0-1-3:  2001-09-05
 # v. 0-1-4:  2001-09-05
 # v. 0-1-5:  2001-09-05
+# v. 0-1-6:  2001-09-07
 ####################################################################
 # Eventually this should build the configuration files from genders,
 # dhcpd, or other sources
 
 PACKAGE= powerman
-VERSION= 0.1.5
+VERSION= 0.1.6
 SHELL=   /bin/sh
 CC=      gcc
 DEFS=

@@ -1,6 +1,6 @@
 \." $Id$
 .\"
-.TH RMC 1 "Release 0.1.5	" "LLNL" "RMC"
+.TH RMC 1 "Release 0.1.6	" "LLNL" "RMC"
 
 .SH NAME
 rmc \- low-level power control
@@ -49,8 +49,11 @@ Set the maximum concurrency, currently unused.
 .I "-l powermandir"
 Provide an alternate location for the PowerMan libraries.
 .LP
-.I "-v"
-be verbose, i.e. print error messages rather than dying quietly.
+.I "-q"
+be quiet, i.e. print error messages rather than dying quietly.
+.LP
+.I "-V"
+print version and exit.
 
 .SH "FILES"
 $powermandir/bin/rmc
@@ -62,5 +65,5 @@ Intel Linux clusters.
 
 
 .SH "SEE ALSO"
-pm(1), digi(1), etherwake(1), wti(1)
+pm(1), digi(1), etherwake(1), icebox(1), wti(1)
 

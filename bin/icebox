@@ -1,0 +1,274 @@
+#!/usr/bin/env python
+####################################################################
+# $Id$
+# by Andrew C. Uselton <uselton2@llnl.gov> 
+# Copyright (C) 2000 Regents of the University of California
+# See ./DISCLAIMER
+# v. 0-1-6:  2001-09-07
+#            Initial development for Ice Box.  N.B. Unlike all the
+#            other low level modules, icebox is responsible for
+#            both query and control interfaces, thus the usage
+#            is a combination of the prototypes for the other low
+#            level modules and resembles "pm" more than the others.
+#            Furthermore, the Ice Box responds to more commands than
+#            just [on | off | reset].
+#            Also note that we no longer support bitmap mode
+#            Use -q for quiet mode rather than -v for verbose
+####################################################################
+
+import sys
+import commands
+import string
+import getopt
+import os
+import fcntl, FCNTL
+
+def usage(msg):
+    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-q] [-r] [-t] [-V] [-w node,...] [on | off | reset | temp | tempf | ice n cm]"
+    print "-a       = on/off/reset all nodes"
+    print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
+    print "-f fan   = fanout for parallelism (default: 256 where implemented)"
+    print "-l ldir  = powerman lirary directory (default: /usr/lib/powerman)"
+    print "-q       = suppress printing any errors that may have occurred"
+    print "-r       = reverse sense, i.e. check for  nodes that are off"
+    print "-t       = return the temperature rather than power status"
+    print "-V       = print version and exit"
+    print "-w nodes = comma separated list of nodes"
+    print "-w -     = read nodes from stdin, one per line"
+    print "on       = turn on nodes (the default)"
+    print "off      = turn off nodes"
+    print "reset    = reset nodes"
+    print "temp     = print the temperature status"
+    print "tempf    = print the full temperature status"
+    print "ice n cm = send cm to Ice Box number n"
+    print msg
+    sys.exit(0)
+
+def init(f):
+    "Read in the node, tty, box, and port for each node from the configuration file"
+    nodes = []
+    ttys  = {}
+    boxes = {}
+    ports = {}
+    line = f.readline()
+    while (line):
+        tokens = string.split(line)
+        line = f.readline()
+	if(len(tokens) < 4):
+            continue
+        if (tokens[0][0] == '#'): continue
+        nodes.append(tokens[0])
+        ttys[tokens[0]] = tokens[1]
+        boxes[tokens[0]] = tokens[2]
+        ports[tokens[0]] = tokens[3]
+    return nodes, ttys, boxes, ports
+
+Version = "icebox:Powerman 0.1.6"
+
+# Check for level of permision and exit for non-root users
+
+stat, uid = commands.getstatusoutput('/usr/bin/id -u')
+if (stat == 0):
+    if (uid != '0'):
+        if(verbose):
+            sys.stderr.write("icebox: You must be root to run this\n")
+        sys.exit(1)
+else:
+    if(verbose):
+        sys.stderr.write("icebox: Error attempting to id -u\n")
+    sys.exit(1)
+
+# initialize globals
+powermandir  = '/usr/lib/powerman/'
+config_file = 'etc/icebox.conf'
+verbose     = 1
+reverse     = 0
+temperature = 0
+names       = []
+com         = 'ns'
+opts        = ''
+all         = 0
+fanout      = 256
+setting     = 0
+
+# Look for environment variables and set globals
+
+try:
+    test = os.environ['POWERMANDIR']
+    if (os.path.isdir(test)):
+        powermandir = test
+except KeyError:
+    pass
+
+# Parse the command line, check for sanity, and set globals
+
+try:
+    opts, args = getopt.getopt(sys.argv[1:], 'ac:f:l:rw:tvV')
+except getopt.error:
+    usage("Error processing options\n")
+
+if(not opts):
+    usage("provide a list of nodes")
+
+for opt in opts:
+    op, val = opt
+    if (op == '-a'):
+        all = 1
+    elif (op == '-c'):
+        config_file = val
+    elif (op == '-f'):
+        fanout = val
+    elif (op == '-l'):
+        powermandir  = val
+    elif (op == '-q'):
+        verbose = 0
+    elif (op == '-r'):
+        reverse = 1
+    elif (op == '-t'):
+        com = 'ts'
+    elif (op == '-V'):
+        print Version
+        sys.exit(0)
+    elif (op == '-w'):
+        if (val == '-'):
+            name = sys.stdin.readline()
+            while (name):
+                if (name[-1:] == '\n'):
+                    name = name[:-1]
+                names.append(name)
+                name = sys.stdin.readline()
+        else:
+            names = string.split(val, ',')
+    else:
+        usage("Unrecognized option " + op + "\n")
+
+try:
+    if (args and args[0]):
+        if (args[0] == 'off'):
+            com = 'pl'
+            setting = 1
+        elif (args[0] == 'on'):
+            com = 'ph'
+            setting = 1
+        elif (args[0] == 'reset'):
+            com = 'rp'
+            setting = 1
+        elif (args[0] == 'temp'):
+            com = 'ts'
+        elif (args[0] == 'tempf'):
+            com = 'tsf'
+        elif (args[0] == 'ice'):
+            if (len(args) == 4):
+                com = 'ice'
+                targettty = args[1]
+                targetcom = 'c' + args[2] + args[3]
+        else:
+            if(verbose):
+                sys.stderr.write("icebox: Unrecognized command " + args[0] + "\n")
+            sys.exit(1)
+except TypeError:
+        if(verbose):
+            sys.stderr.write("icebox: Internal Error: " + args + " should be a list\n")
+        sys.exit(1)
+
+if (powermandir):
+    if (powermandir[-1] != '/'):
+        powermandir = powermandir + '/'
+    if(os.path.isdir(powermandir)):
+        sys.path.append(powermandir)
+        config_file = powermandir + config_file
+    else:
+        if(verbose):
+            sys.stderr.write("icebox: Couldn\'t find library directory: " + powermandir + "\n")
+        sys.exit(1)
+else:
+    if(verbose):
+        sys.stderr.write("icebox: Couldn\'t find library directory: " + powermandir + "\n")
+    sys.exit(1)
+    
+try:
+    f = open(config_file, 'r')
+    nodes, ttys, boxes, ports = init(f)
+    f.close()
+except IOError :
+    if(verbose):
+        sys.stderr.write("icebox: Couldn\'t find configuration file: " + config_file + "\n")
+    sys.exit(1)
+    
+# Carry out the action.  As a first cut we'll sequence through the nodes and
+# then open the tty, issue the command, and close the tty, once for each
+# node.  Later we can try keeping the tty open until it changes.  Later
+# still we can gather all the same tty nodes together and do them at once.
+# We can further gather together all the same box targets together and
+# do them at once.  Finally for a case where we want to do all the nodes
+# on a box we can issue the simpler command.
+if (all):
+    names = nodes
+
+if (com == "ice"):
+    # This only happens for directly invoking icebox on the command line
+    # pm will never call it
+    response = ''
+    # just pass along the command
+    try:
+        f = open(targettty, 'r+')
+        f.write(targetcom)
+        response = f.readline()
+        if (string.lower(response) != 'ok'):
+            if (verbose):
+                sys.stderr.write ("icebox: Error returned from tty " + targettty + " after command \"" + targetcom + "\"\n")
+            sys.exit(1)
+        f.close()
+    except IOError:
+        if(verbose):
+            sys.stderr.write ("icebox: Unable to access icebox control device on port " + targettty + "\n")
+        sys.exit(1)
+    exit(0)
+    
+# carry out the reqeusted command on each node
+for name in names:
+    try:
+        tty, box, port = ttys[name], boxes[name], ports[name]
+    except KeyError:
+        if(verbose):
+            sys.stderr.write("icebox: " + name + " not found\n")
+        sys.exit(1)
+    target = 'c' + box + com + port + '\n'
+    response = ''
+    try:
+        f = open(tty, 'r+')
+        fcntl.lockf(f.fileno(), FCNTL.LOCK_EX)
+        f.write(target)
+        response = f.readline()
+        fcntl.lockf(f.fileno(), FCNTL.LOCK_UN)
+        f.close()
+    except IOError:
+        if(verbose):
+            sys.stderr.write ("icebox: Unable to access icebox control device on port " + tty + "\n")
+        sys.exit(1)
+    if (response[-1:] == '\n'):
+        response = response[:-1]
+    # I'll take this out after verifying opperation
+    if ((com == 'on') or (com == 'off') or (com == 'reset')):
+        if (string.lower(response) != 'ok'):
+            if (verbose):
+                sys.stderr.write ("icebox: Error returned from node " + name + " after command \"" + target + "\"\n")
+            sys.exit(1)
+    elif(com == 'ns'):
+        try:
+            p,state = string.split(response, ':')
+        except ValueError:
+            if (verbose):
+                sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from node " + name + " after command \"" + target + "\"\n")
+            sys.exit(1)
+        if (((state == '0') and reverse) or ((state == '1') and not reverse)):
+            print name
+    elif((com == 'ts') or (com == 'tsf')):
+        try:
+            p,temps = string.split(response, ':')
+        except ValueError:
+            if (verbose):
+                sys.stderr.write ("icebox: Unexpected return \"" + response + "\" from node " + name + " after command \"" + target + "\"\n")
+            sys.exit(1)
+        print name + ":" + temps
+sys.exit(0)

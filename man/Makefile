@@ -11,10 +11,12 @@
 # v. 0-1-3:  2001-09-05
 # v. 0-1-4:  2001-09-05
 # v. 0-1-5:  2001-09-05
+# v. 0-1-6:  2001-09-07
+#            added icebox
 ####################################################################
 
 PACKAGE= powerman
-VERSION= 0.1.5
+VERSION= 0.1.6
 SHELL=   /bin/sh
 CC=      gcc
 DEFS=
@@ -45,12 +47,14 @@ install:
 	$(mkinstalldirs)              $(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 digi.1      $(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 etherwake.1 $(DESTDIR)$(mandir)/man1
+	$(INSTALL) -m 644 icebox.1 $(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 pm.1        $(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 rmc.1       $(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 wti.1       $(DESTDIR)$(mandir)/man1
 	$(mkinstalldirs)                   $(DESTDIR)$(mandir)/man5
 	$(INSTALL) -m 644 digi.conf.5      $(DESTDIR)$(mandir)/man5
 	$(INSTALL) -m 644 etherwake.conf.5 $(DESTDIR)$(mandir)/man5
+	$(INSTALL) -m 644 icebox.conf.5 $(DESTDIR)$(mandir)/man5
 	$(INSTALL) -m 644 powerman.conf.5  $(DESTDIR)$(mandir)/man5
 	$(INSTALL) -m 644 wti.conf.5       $(DESTDIR)$(mandir)/man5
 

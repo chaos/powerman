@@ -15,6 +15,8 @@
 #            Fix man page references so they can be ".1" or ".1.gz"
 #            Make powerman/etc/*.conf be "noreplace" config files
 # v. 0-1-5:  2001-09-05
+# v. 0-1-6:  2001-09-07
+#            add icebox and make a few changes to the code
 ####################################################################
  
 %define name    powerman
@@ -53,7 +55,6 @@ rm -rf "$RPM_BUILD_ROOT"
 %pre
 
 %post
-chmod 4755 /usr/lib/powerman/bin/digi
 # Once I have a good powerman configuration script I'll probably want to
 # run it here.
 
@@ -73,10 +74,12 @@ chmod 4755 /usr/lib/powerman/bin/digi
 /usr/lib/powerman/lib
 /usr/man/man1/digi.1*
 /usr/man/man1/etherwake.1*
+/usr/man/man1/icebox.1*
 /usr/man/man1/pm.1*
 /usr/man/man1/rmc.1*
 /usr/man/man1/wti.1*
 /usr/man/man5/digi.conf.5*
 /usr/man/man5/etherwake.conf.5*
+/usr/man/man5/icebox.conf.5*
 /usr/man/man5/powerman.conf.5*
 /usr/man/man5/wti.conf.5*

@@ -17,6 +17,10 @@
 # v. 0-1-3:  2001-09-05
 # v. 0-1-4:  2001-09-05
 # v. 0-1-5:  2001-09-05
+# v. 0-1-6:  2001-09-07
+#            no more bitmap mode.  Must be root to run.
+#            Add temperature query.
+#            replace -v verbose with -q quiet
 ####################################################################
 
 import sys
@@ -107,17 +111,27 @@ class ClusterClass:
         "Return -1, 0, or 1 as x1 is before, the same, or after x2"
         # based on integer comparison of the self.index value, which
         # is the order in which the config file listed the nodes.
+        # Icebox may return a name:temp rather than a name, so we'll
+        # want to strip that bit off to do the lookup.
         try:
-            y1 = self.index[x1]
+            name1,stuff1 = string.split(x1, ':')
+        except ValueError:
+            name1 = x1
+        try:
+            name2,stuff2 = string.split(x2, ':')
+        except ValueError:
+            name2 = x2
+        try:
+            y1 = self.index[name1]
         except KeyError:
             if(verbose):
-                sys.stderr.write("pm: " + x1 + " not found\n")
+                sys.stderr.write("pm: " + name1 + " not found\n")
             sys.exit(1)
         try:
-            y2 = self.index[x2]
+            y2 = self.index[name2]
         except KeyError:
             if(verbose):
-                sys.stderr.write("pm: " + x2 + " not found\n")
+                sys.stderr.write("pm: " + name2 + " not found\n")
             sys.exit(1)
         return cmp(y1, y2)
 
@@ -125,7 +139,6 @@ class ClusterClass:
         "return the subset of n_list that consists of nodes that are on (resp. off for -r)"
         # opts is the contents of the command line options
         #     -f, -l, -r, and -v
-        # -b is handled separately
         # n_list is a list of node names
         # -a and -w - are processed before coming here
         output = ""
@@ -150,7 +163,8 @@ class ClusterClass:
                         pass
                 if(c_sep_list):
                     # skip on past if empty list
-                    stat, message = commands.getstatusoutput(q_str + " -w " + c_sep_list + " " + opts)
+                    command = q_str + " -w " + c_sep_list + " " + opts
+                    stat, message = commands.getstatusoutput(command)
                     if (stat == 0):
                         # If you aren't carefull you could get non-node name
                         # info into output here if the underlying routine
@@ -162,16 +176,8 @@ class ClusterClass:
                             sys.stderr.write("pm: " + message + "\n")
                             sys.exit(1)
         nodes = string.split(output)
-        # This needs to sort the nodes properly based on node sequence,
-        # which is the order based on the integer at the end of each
-        # name.  If a string without an integer arrives here in one of
-        # the entries of the nodes list it will cause the sort routine
-        # to exit with an error.
         if (nodes):
             nodes.sort(self.node_cmp)
-            # note that this doesn't exit(1) if the list is empty.  An
-            # empty list is the correct result if no nodes are in the
-            # querried state.
         return nodes
 
     def set(self, com, opts, n_list):
@@ -192,7 +198,7 @@ class ClusterClass:
         if(check_list == []):
             exit_code = 1
             if(verbose):
-                sys.stderr.write("pm: no target nodes for operation\n")
+                sys.stderr.write("pm: no target nodes for operation (they are probably already on or off)\n")
             return exit_code
         for type in self.c_types.keys():
             if(len(self.c_types[type]) > 0):
@@ -227,93 +233,19 @@ class ClusterClass:
                 sys.stderr.write("pm: set found no matching nodes\n")
         return exit_code
 
-    def bitmap(self, opts):
-        # call the bitmap option for each type, merge the results,
-        # and supply an exit code
-        # opts has the -f, -l, and -v options if any
-        # the output dictionary is indexed by the query type and has
-        #   values that are the results of subsidiary calls to bitmap
-        #   queries
-        # index is also indexed by type and has the position of the
-        #    next entry in that type's list during the merge.  This will
-        #    also correspond to the position of the bit in that type's
-        #    bitmap.
-        # pos is also indexed by type and has the value of the next
-        #    entry in that type's list during the merge
-        exit_code = -1
-        output    = {}
-        index     = {}
-        pos       = {}
-        for type in self.q_types.keys():
-            pos[type] = None
-            if(len(self.q_types[type]) > 0):
-                index[type]        = 0
-                pos[type]          = self.q_types[type][index[type]]
-                q_str              = self.q_com[type]
-                q_str              = q_str + " -b"
-                stat, output[type] = commands.getstatusoutput(q_str + " " + opts)
-                if (stat == 0):
-                    if (len(output[type]) > 0):
-                        if (exit_code == -1):
-                            # Just confirming that something good ever happened
-                            exit_code = 0
-                        if(output[type][-1:] == "\n"):
-                            output[type] = output[type][:-1]
-                else:
-                    if (verbose):
-                        sys.stderr.write("pm: " + output[type] + "\n")
-                    exit_code = 1
-        # We've got the bitmaps in output[type] now,
-        # so merge them in node_cmp order and print the result
-        #
-        # Identify which list has the next bit to output
-        least = None
-        for type in self.q_types.keys():
-            if (pos[type] != None):
-                if (least == None):
-                    least = type
-                else:
-                    if(self.node_cmp(pos[type].ident, pos[least].ident) < 0):
-                        least = type
-        while (least != None):
-            try:
-                sys.stdout.write(output[least][index[least]])
-            except IndexError:
-                # There weren't as many bits as nodes in the list.
-                # This might be a sign of something bad, but it
-                # clould just be a wrong size config file for the
-                # bogus device.
-                pos[least] = None
-            index[least] = index[least] + 1
-            try:
-                pos[least] = self.q_types[least][index[least]]
-            except IndexError:
-                # We've reached the end of this type's list
-                pos[least] = None
-            # Again identify which list has the next bit to output
-            least = None
-            for type in self.q_types.keys():
-                if (pos[type] != None):
-                    if (least == None):
-                        least = type
-                    else:
-                        if(self.node_cmp(pos[type].ident, pos[least].ident) < 0):
-                            least = type
-        sys.stdout.write("\n")
-        # If exit_code is still -1 we didn't find any bitmaps for any types
-        if (exit_code == -1): exit_code = 1
-        return exit_code
 
 
 def usage(msg):
     "Tha usage message"
-    print "usage:", sys.argv[0], "[-a] [-b] [-c conf] [-f fan] [-l ldir] [-w node,...] [-v] [-V] [on | off | reset]"
+    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-q] [-r] [-t] [-V] [-w node,...] [on | off | reset]"
     print "-a       = on/off/reset all nodes"
-    print "-b       = print a bitmap instead of node names (implies -a)"
     print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
     print "-f fan   = fanout for parallelism (default: 256 where implemented)"
     print "-l ldir  = powerman lirary directory (default: /usr/lib/powerman)"
+    print "-q       = be quiet about any errors that may have occurred"
     print "-r       = reverse sense, i.e. check for  nodes that are off"
+    print "-t       = query temperatur rather than power status"
+    print "-V       = print version and exit"
     print "-w nodes = comma separated list of nodes"
     print "-w -     = read nodes from stdin, one per line"
     print "on       = turn on nodes (the default)"
@@ -324,18 +256,28 @@ def usage(msg):
 
 # Begin main routine processing.
 
-Version = "pm: Powerman 0.1.5"
+Version = "pm: Powerman 0.1.6"
+
+# Check for level of permision and exit for non-root users
+
+stat, uid = commands.getstatusoutput('/usr/bin/id -u')
+if (stat == 0):
+    if (uid != '0'):
+        usage("You must be root to run this\n")
+else:
+    usage("pm: Error attempting to id -u\n")
 
 # initialize globals
 powermandir = '/usr/lib/powerman/'
 config_file = '/etc/powerman.conf'
 work_col    = ''
-verbose     = 0
+verbose     = 1
+reverse     = 0
+temperature = 0
 names       = []
 com         = ''
 opts        = ''
 all         = 0
-bitmap      = 0
 fanout      = 256
 setting     = 0
 
@@ -365,18 +307,16 @@ except KeyError:
 # Parse the command line, check for sanity, and set globals
 
 try:
-    options, args = getopt.getopt(sys.argv[1:], 'abc:f:l:rw:vV')
+    options, args = getopt.getopt(sys.argv[1:], 'abc:f:l:rw:tvV')
 except getopt.error:
     usage("Error processing options")
 
 if(not options and not work_col):
-    usage("need at least -a, -b, -w, or a W_COL file")
+    usage("need at least -a, -w, or a W_COL file")
 for opt in options:
     op, val = opt
     if (op == '-a'):
         all = 1
-    elif (op == '-b'):
-        bitmap = 1
     elif (op == '-c'):
         config_file = val
     elif (op == '-f'):
@@ -385,8 +325,18 @@ for opt in options:
     elif (op == '-l'):
         powermandir  = val
         opts = "-l " + val + opts
+    elif (op == '-q'):
+        verbose = 0
+        opts = "-v " + opts
     elif (op == '-r'):
         opts = "-r " + opts
+        reverse = 1
+    elif (op == '-t'):
+        temperature = 1
+        opts = "-t " + opts
+    elif (op == '-V'):
+        print Version
+        sys.exit(0)
     elif (op == '-w'):
         if (val == '-'):
             name = sys.stdin.readline()
@@ -397,12 +347,6 @@ for opt in options:
                 name = sys.stdin.readline()
         else:
             names = string.split(val, ',')
-    elif (op == '-v'):
-        verbose = 1
-        opts = "-v " + opts
-    elif (op == '-V'):
-        print Version
-        sys.exit(0)
     else:
         usage("Unrecognized option " + op + "\n")
 
@@ -421,23 +365,11 @@ if (args and args[0]):
             sys.stderr.write("pm: Unrecognized command " + args[0] + "\n")
         sys.exit(1)
 
-# Check for level of permision and restrict activities for non-root users
-
-stat, uid = commands.getstatusoutput('/usr/bin/id -u')
-if (stat == 0):
-    if (uid == '0'):
-        unlockable = 1
-    else:
-        if(setting):
-            if(verbose):
-                sys.stderr.write("pm: must be root to set power status\n")
-            sys.exit(1)
-else:
-    if(setting):
-        if(verbose):
-            sys.stderr.write("pm: stat error while determining uid\n")
-        sys.exit(1)
-
+if (setting and temperature):
+    if (verbose):
+        sys.stderr.write("pm: temperature check only works in query mode\n")
+    sys.exit(1)
+        
 
 if (powermandir):
     if (powermandir[-1] != '/'):
@@ -471,11 +403,6 @@ except IOError :
 if(all):
     names = theCluster.names
 
-# Bitmap: call the bitmap method
-
-if(bitmap):
-    sys.exit(theCluster.bitmap(opts))
-    
 # if names list is empty look for working collective
 if (not names and work_col):
     f = open(work_col, 'r')
@@ -506,7 +433,8 @@ if(names_list == []):
     sys.exit(1)
 
 # sequence through list performing action: this will amount to a call to the
-# check or set method
+# check or set method.  If the -t option produces actual temperature output
+# that will be in the string with each node name returned.  
 
 if(setting):
     sys.exit(theCluster.set(com, opts, names_list))

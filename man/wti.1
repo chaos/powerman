@@ -1,6 +1,6 @@
 \." $Id$
 .\"
-.TH WTI 1 "Release 0.1.5" "LLNL" "WTI"
+.TH WTI 1 "Release 0.1.6" "LLNL" "WTI"
 
 .SH NAME
 wti \- low-level power control
@@ -52,9 +52,11 @@ Set the maximum concurrency, currently unused.
 .I "-l powermandir"
 Provide an alternate location for the PowerMan libraries.
 .LP
-.I "-v"
-be verbose, i.e. print error messages rather than dying quietly.
-
+.I "-q"
+be quiet, i.e. don't print error.
+.LP
+.I "-V"
+print the version and exit
 .SH "FILES"
 $powermandir/bin/wti
 .br
@@ -66,5 +68,4 @@ Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Alpha and
 Intel Linux clusters.
 
 .SH "SEE ALSO"
-pm(1), digi(1), etherwake(1), rmc(1), wti.conf(5)
-
+pm(1), digi(1), etherwake(1), icebox(1), rmc(1), wti.conf(5)

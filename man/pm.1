@@ -1,11 +1,14 @@
 \." $Id$
 .\"
-.TH PM 1 "Release 0.1.5" "LLNL" "PM"
+.TH PM 1 "Release 0.1.6" "LLNL" "PM"
 
 .SH NAME
 pm \- issue power monitoring queries and power control commands
 
 .SH SYNOPSIS
+.B pm
+.I "[-options]"
+.LP
 .B pm
 .I "[-options] [command]"
 
@@ -22,7 +25,7 @@ will power on, power off, or reset, respectively, the target nodes.  If
 none of the above commands is provided 
 .B pm
 queries the target nodes for their power status and prints the names of 
-those that are on, one per line (but see -b and -r below).
+those that are on, one per line (but see -t and -r below).
 .LP
 .B pm 
 operates in conjuction with one or more underlying, hardware-specific
@@ -31,15 +34,8 @@ utilites, each of wich conforms to a uniform interface.
 runs on a management workstation equipped with power monitoring and 
 control hardware.
 .LP
-The POWERMAN environment variable, if set, will be the 
-.LP
-.B pm 
-will attempt to run low level utilites with as much concurrency as 
-possible.  
-.B pm
-montors the return status of the underlying utilites and preserves
-any error messages they produce.  In verbose mode all such errors
-are reported to stderr.
+The POWERMAN environment variable, if set, if set, identifies an alternate 
+directory fo the PowerMan libraries and configuration files.
 
 .SH TARGET NODE LIST OPTIONS
 .I "-w host,host,..."
@@ -55,12 +51,6 @@ determines the list of nodes in the cluster from in configuration file
 
 .SH OTHER OPTIONS
 .LP
-.I "-b"
-bitmap mode.  Rather than poviding names of nodes that are on (resp. off 
-for -r) bitmap mode prints a string of 1's and 0's, with 1 for on and 0 
-for off.  All nodes are represented in the bitmap in the numerical order 
-of their node name (implies -a). 
-.LP
 .I "-c configfile"
 Provide an alternate name or location for the configuration file.
 .LP
@@ -69,11 +59,16 @@ Set the maximum concurrency for underlying utilities.  The default is 256.
 .I "-l powermandir"
 Provide an alternate location for the PowerMan libraries.
 .LP
+.I "-q"
+be quiet, i.e. don't print error messages.
+.LP
 .I "-r"
 reverse, i.e. print nodes that are off rather than on
 .LP
-.I "-v"
-be verbose, i.e. print error messages rather than dying quietly.
+.I "-t"
+query the CPU temperature(s), if available, rather than the power status.
+Output the node name followed by the temperature for the target nodes, one
+node per line.
 
 .SH "FILES"
 /usr/bin/pm
@@ -112,5 +107,4 @@ each node named with a unique integer at the end of the cluster name, as
 in fc0, fc1, fc2,...  A non-numeric naming scheme will break the 
 sort function.  
 .SH "SEE ALSO"
-cv(1), conman(1), digi(1), etherwake(1), powerman.conf(5), rmc(1), wti(1)
-
+cv(1), conman(1), digi(1), etherwake(1), icebox(1), powerman.conf(5), rmc(1), wti(1)
