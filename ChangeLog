@@ -8,6 +8,7 @@
 	* Added soft power status support to vpc, fixed login logic in vpc,
 	  Added --soft-off test.
 	* Don't clear wset bit after finish_connect unless fd != -1.
+	* Tagged powerman-1-0-8.
 
 2002-10-05 garlick
 	* More man page updates
