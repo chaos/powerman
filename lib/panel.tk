@@ -1,0 +1,915 @@
+namespace eval panel {
+    variable panel_update 0
+    variable floating_label
+    variable floating_label_x
+    variable floating_label_y
+    variable selecting
+    variable first_sel
+    variable sel_x
+    variable sel_y
+    variable tile_height
+    variable tile_width
+    variable panel_popup
+    variable panel_node_list
+    variable power_popup
+    variable panel_power_node_list
+    variable prefs_index
+    variable button_color_index
+    variable button_color_off_index
+    variable button_border_color_index
+    variable panel_boundary_index
+    variable tile_gap_index
+# The r, g, and b values of the selected button color for on nodes
+    variable bc_r
+    variable bc_g
+    variable bc_b
+# The r, g, and b values of the selected button color for off nodes
+    variable boc_r
+    variable boc_g
+    variable boc_b
+# The r, g, and b values of the selected button border color
+    variable bbc_r
+    variable bbc_g
+    variable bbc_b
+    variable panel_boundary
+    variable tile_gap
+# These are arrays indexed by nodes 
+    variable selected
+    variable selector
+    variable tile
+    variable label
+    variable fixed_label
+    variable b
+    variable t
+    variable l
+    variable r
+    variable stat
+# this is an array indexed by tiles
+    variable Index
+
+
+    proc init {} {
+	variable panel_update
+	variable floating_label
+	variable floating_label_x
+	variable floating_label_y
+	variable selecting
+	variable first_sel
+	variable sel_x
+	variable sel_y
+	variable tile_height
+	variable tile_width
+# These are arrays indexed by nodes 
+	variable selected
+	variable selector
+	variable panel_boundary
+	variable tile_gap
+	variable tile
+	# The r, g, and b values of the selected button color for on nodes
+	variable bc_r
+	variable bc_g
+	variable bc_b
+	# The r, g, and b values of the selected button color for off nodes
+	variable boc_r
+	variable boc_g
+	variable boc_b
+	# The r, g, and b values of the selected button border color
+	variable bbc_r
+	variable bbc_g
+	variable bbc_b
+	# Other preference controlled values
+	variable panel_boundry
+	variable tile_gap
+
+	set proc "::gui::panel::init"
+	if {$::app::debug} {puts "$proc"}
+
+	if {![info exists bc_r]}  {set bc_r 0}
+	if {![info exists bc_g]}  {set bc_g 0}
+	if {![info exists bc_b]}  {set bc_b 200}
+	if {![info exists boc_r]}  {set boc_r 200}
+	if {![info exists boc_g]}  {set boc_g 200}
+	if {![info exists boc_b]}  {set boc_b 200}
+	if {![info exists bbc_r]} {set bbc_r 255}
+	if {![info exists bbc_g]} {set bbc_g 128}
+	if {![info exists bbc_b]} {set bbc_b 128}
+
+	if {[info exists ::powerlib::cluster]} {
+# If a resize event causes the panel to be redisplayed its easiest if the
+# selected nodes are unselected and unmarked.
+	    foreach node $::powerlib::nodes {
+		if {[info exists selected($node)] && $selected($node)} {
+		    set selected($node) 0
+		    .cvcan delete $selector($node)
+		}
+	    }
+	    set total [llength $::powerlib::nodes]
+	    set rows  [expr ceil(sqrt(double($total)))]
+	    set cols  [expr ceil($total/double($rows))]
+	    set tile_width  [expr int($::gui::Viewport::Width/double($cols + 1))]
+	    set tile_height [expr int($::gui::Viewport::Height/double($rows + 1))]
+	    if {$tile_width > $tile_height} {
+		set tile_width  $tile_height
+	    } else {
+		set tile_height $tile_width
+	    }
+	    if {![info exists panel_boundary]} {
+		set panel_boundary [expr $tile_height/2]
+	    }
+	    if {![info exists tile_gap]} {
+		set tile_gap   [expr $tile_height/10]
+	    }
+	    set row 0
+	    set col 0
+	    if {[info exists tile]} {
+		.cvcan delete tile
+		.cvcan delete tile_border
+		unset tile
+	    }
+	    foreach node $::powerlib::nodes {
+		::gui::panel::mkNode $node $panel_boundary $tile_gap \
+			$row $col $tile_height $tile_width 
+		incr col
+		if {$col >= $cols} {
+		    set col 0
+		    incr row
+		}
+	    }
+
+	    .cvcan bind tile <Enter> {
+                set node $::gui::panel::Index([.cvcan find withtag current])
+		set ::gui::panel::floating_label [.cvcan create text %x \
+			[expr %y - 2] -text $::gui::panel::label($node) -fill black -anchor sw \
+			-tags floating_label]
+		set ::gui::panel::floating_label_x %x
+		set ::gui::panel::floating_label_y %y
+	    }
+
+	    .cvcan bind tile <Leave> {
+		if {[info exists ::gui::panel::floating_label]} {
+		    .cvcan delete $::gui::panel::floating_label
+		}
+	    }
+
+	    bind .cvcan <ButtonPress-1> {
+		set selection 1
+		set ::gui::panel::sel_x %x
+		set ::gui::panel::sel_y %y
+		set ::gui::panel::selecting 1
+	    }
+
+	    bind .cvcan <ButtonRelease-1> {
+		if {[info exists ::gui::panel::sel_x]} {
+		    if {$::gui::panel::sel_y < %y} {
+			set top $::gui::panel::sel_y
+			set bot %y
+		    } else {
+			set top %y
+			set bot $::gui::panel::sel_y
+		    }
+		    if {$::gui::panel::sel_x > %x} {
+			set right $::gui::panel::sel_x
+			set left %x
+		    } else {
+			set right %x
+			set left $::gui::panel::sel_x
+		    }
+		    unset ::gui::panel::sel_x
+		    unset ::gui::panel::sel_y
+		    foreach node $::powerlib::nodes {
+			if {($::gui::panel::r($node) > $left)      && \
+				($::gui::panel::l($node) < $right) && \
+				($::gui::panel::b($node) > $top)   && \
+				($::gui::panel::t($node) < $bot)} {
+			    ::gui::panel::panel_select $node
+			}
+		    }
+		    unset left
+		    unset right
+		    unset top
+		    unset bot
+		}
+		set selecting 0
+	    }
+
+	    bind .cvcan <Motion> {
+		if {[info exists ::gui::panel::floating_label]} {
+		    .cvcan move $::gui::panel::floating_label \
+			    [expr %x - $::gui::panel::floating_label_x] \
+			    [expr %y - $::gui::panel::floating_label_y]
+		    set ::gui::panel::floating_label_x %x
+		    set ::gui::panel::floating_label_y %y
+		}
+	    }
+
+	    bind .cvcan <Button-3> {::gui::panel::do_panel_pop %x %y}
+	    if {$panel_update == 0} {
+		set panel_update 1
+		::gui::panel::update
+	    }
+	}
+    }
+    # end of "proc panel" 
+
+    proc preferences {} {
+# To add a new preference to the list it requires you to coordinate 
+# things in several places and make sure they are consistent:
+# 1)  Add three lines here that set the new prefernce intry in the
+#       listbox, it's index, and increment the pref_index
+# 2)  Add the ::gui globals here and/or above for any parameters controlled
+#       by the preference as well as its index
+# 3)  Add a line to the procedure ::gui::alt_pref dispatching to the 
+#       procedure ::gui::make_the_pref
+# 4)  Add functions implementing the proc ::gui::make_the_pref
+# 5)  Add whatever code is neede to proc init
+# 6)  Add whatever code is needed to proc prefs_done
+	variable prefs_index
+	variable button_color_index
+	variable button_color_off_index
+	variable button_border_color_index
+	variable panel_boundary_index
+	variable tile_gap_index
+
+	set proc "::gui::panel::prfernces"
+	if {$::app::debug} {puts "$proc"}
+
+	if {![winfo exists .panel_prefs]} {
+	    set prefs [toplevel .panel_prefs]
+	    set x [expr [winfo rootx .] + [winfo width .] /5]
+	    set y [expr [winfo rooty .] + [winfo height .] /5]
+	    wm geometry .panel_prefs +$x+$y
+	    frame .panel_prefs.scroll_list
+	    listbox .panel_prefs.scroll_list.list -height 5 -selectmode single \
+		    -width 0 -yscrollcommand ".panel_prefs.scroll_list.scroll set"
+	    scrollbar .panel_prefs.scroll_list.scroll  \
+		    -command ".panel_prefs.scroll_list.list yview"
+	    set prefs_index 0
+	    
+	    .panel_prefs.scroll_list.list insert end "node on color"
+	    .panel_prefs.scroll_list.list activate $prefs_index
+	    .panel_prefs.scroll_list.list selection set $prefs_index
+	    set button_color_index $prefs_index
+	    incr prefs_index
+	    
+	    .panel_prefs.scroll_list.list insert end "node off color"
+	    set button_color_off_index $prefs_index
+	    incr prefs_index
+	    
+	    .panel_prefs.scroll_list.list insert end "tile border color"
+	    set button_border_color_index $prefs_index
+	    incr prefs_index
+	    
+	    .panel_prefs.scroll_list.list insert end "panel boundary"
+	    set panel_boundary_index $prefs_index
+	    incr prefs_index
+	    
+	    .panel_prefs.scroll_list.list insert end "tile gap"
+	    set tile_gap_index $prefs_index
+	    incr prefs_index
+
+	    pack .panel_prefs.scroll_list.list -side left
+	    pack .panel_prefs.scroll_list.scroll -side right -fill y
+	    pack .panel_prefs.scroll_list -side left
+	    
+	    frame .panel_prefs.expl
+	    
+	    frame .panel_prefs.expl.done_frame
+	    button .panel_prefs.expl.done_frame.done -text "done" \
+		    -command ::gui::panel::prefs_done
+	    pack .panel_prefs.expl.done_frame.done -side top -fill x -expand 1
+	    pack .panel_prefs.expl.done_frame
+	    
+	    ::gui::panel::make_button_color 
+	    
+	    pack .panel_prefs.expl -side right
+	    bind .panel_prefs.scroll_list.list <Button-1> {
+		::gui::panel::alt_pref [.panel_prefs.scroll_list.list nearest %y]
+	    }
+	}
+	focus .panel_prefs
+    }
+
+    proc alt_pref {el} {
+	variable button_color_index
+	variable button_color_off_index
+	variable button_border_color_index
+	variable panel_boundary_index
+	variable tile_gap_index
+
+	set proc "::gui::panel::alt_pref"
+	if {$::app::debug} {puts "$proc"}
+
+	switch $el  {
+	    0  {::gui::panel::make_button_color}
+	    1  {::gui::panel::make_button_off_color}
+	    2  {::gui::panel::make_button_border_color}
+	    3  {::gui::panel::make_panel_boundary}
+	    4  {::gui::panel::make_tile_gap}
+	}
+    }
+
+    proc make_button_color {} {
+	variable prefs_index
+	variable button_color_index
+	variable bc_r
+	variable bc_g
+	variable bc_b
+
+	set proc "::gui::panel::make_button_color"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .panel_prefs.expl.vals
+
+	.panel_prefs.scroll_list.list selection clear 0 $prefs_index
+	.panel_prefs.scroll_list.list selection set $button_color_index
+	.panel_prefs.scroll_list.list activate $button_color_index
+	frame .panel_prefs.expl.vals
+# This should be three slides 0 .. 255 for colors
+	scale .panel_prefs.expl.vals.r  -from 0 -to 255 -label "R" -showvalue 1 \
+		-variable ::gui::Viewport::bc_r \
+		-command {::gui::panel::set_bc "r"}
+	.panel_prefs.expl.vals.r set $bc_r
+	scale .panel_prefs.expl.vals.g  -from 0 -to 255 -label "G" -showvalue 1 \
+		-variable ::gui::Viewport::bc_g \
+		-command {::gui::panel::set_bc "g"}
+	.panel_prefs.expl.vals.g set $bc_g
+	scale .panel_prefs.expl.vals.b  -from 0 -to 255 -label "B" -showvalue 1 \
+		-variable ::gui::Viewport::bc_b \
+		-command {::gui::panel::set_bc "b"}
+	.panel_prefs.expl.vals.b set $bc_b
+	pack .panel_prefs.expl.vals.r .panel_prefs.expl.vals.g .panel_prefs.expl.vals.b \
+		-side left -fill x -expand 1
+	pack .panel_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .panel_prefs.expl.done_frame
+    }
+
+    proc set_bc {color val} {
+	variable bc_r
+	variable bc_g
+	variable bc_b
+
+	destroy .panel_prefs.expl.text_frame
+	switch $color {
+	    "r" {set bc_r $val}
+	    "g" {set bc_g $val}
+	    "b" {set bc_b $val}
+	}
+	set hex_color [format "\#%02x%02x%02x" $bc_r $bc_g $bc_b]
+	message .panel_prefs.expl.text_frame -aspect 20 -width 40 \
+		-background $hex_color \
+		-text "Button color in panel"
+	pack .panel_prefs.expl.text_frame -before .panel_prefs.expl.done_frame \
+		-fill x -expand 1
+    }
+
+    proc make_button_off_color {} {
+	variable prefs_index
+	variable button_color_off_index
+	variable boc_r
+	variable boc_g
+	variable boc_b
+
+	set proc "::gui::panel::make_button_color"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .panel_prefs.expl.vals
+
+	.panel_prefs.scroll_list.list selection clear 0 $prefs_index
+	.panel_prefs.scroll_list.list selection set $button_color_off_index
+	.panel_prefs.scroll_list.list activate $button_color_off_index
+	frame .panel_prefs.expl.vals
+# This should be three slides 0 .. 255 for colors
+	scale .panel_prefs.expl.vals.r  -from 0 -to 255 -label "R" -showvalue 1 \
+		-variable ::gui::Viewport::boc_r \
+		-command {::gui::panel::set_boc "r"}
+	.panel_prefs.expl.vals.r set $boc_r
+	scale .panel_prefs.expl.vals.g  -from 0 -to 255 -label "G" -showvalue 1 \
+		-variable ::gui::Viewport::boc_g \
+		-command {::gui::panel::set_boc "g"}
+	.panel_prefs.expl.vals.g set $boc_g
+	scale .panel_prefs.expl.vals.b  -from 0 -to 255 -label "B" -showvalue 1 \
+		-variable ::gui::Viewport::boc_b \
+		-command {::gui::panel::set_boc "b"}
+	.panel_prefs.expl.vals.b set $boc_b
+	pack .panel_prefs.expl.vals.r .panel_prefs.expl.vals.g .panel_prefs.expl.vals.b \
+		-side left -fill x -expand 1
+	pack .panel_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .panel_prefs.expl.done_frame
+    }
+
+    proc set_boc {color val} {
+	variable boc_r
+	variable boc_g
+	variable boc_b
+
+	destroy .panel_prefs.expl.text_frame
+	switch $color {
+	    "r" {set boc_r $val}
+	    "g" {set boc_g $val}
+	    "b" {set boc_b $val}
+	}
+	set hex_color [format "\#%02x%02x%02x" $boc_r $boc_g $boc_b]
+	message .panel_prefs.expl.text_frame -aspect 20 -width 40 \
+		-background $hex_color \
+		-text "tile color for off node in panel"
+	pack .panel_prefs.expl.text_frame -before .panel_prefs.expl.done_frame \
+		-fill x -expand 1
+    }
+
+    proc make_button_border_color {} {
+	variable prefs_index
+	variable button_border_color_index
+	variable bbc_r
+	variable bbc_g
+	variable bbc_b
+
+	set proc "::gui::panel::make_button_color"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .panel_prefs.expl.vals
+
+	.panel_prefs.scroll_list.list selection clear 0 $prefs_index
+	.panel_prefs.scroll_list.list selection set $button_border_color_index
+	.panel_prefs.scroll_list.list activate $button_border_color_index
+	frame .panel_prefs.expl.vals
+# This should be three slides 0 .. 255 for colors
+	scale .panel_prefs.expl.vals.r  -from 0 -to 255 -label "R" -showvalue 1 \
+		-variable ::gui::Viewport::bbc_r \
+		-command {::gui::panel::set_bbc "r"}
+	.panel_prefs.expl.vals.r set $bbc_r
+	scale .panel_prefs.expl.vals.g  -from 0 -to 255 -label "G" -showvalue 1 \
+		-variable ::gui::Viewport::bbc_g \
+		-command {::gui::panel::set_bbc "g"}
+	.panel_prefs.expl.vals.g set $bbc_g
+	scale .panel_prefs.expl.vals.b  -from 0 -to 255 -label "B" -showvalue 1 \
+		-variable ::gui::Viewport::bbc_b \
+		-command {::gui::panel::set_bbc "b"}
+	.panel_prefs.expl.vals.b set $bbc_b
+	pack .panel_prefs.expl.vals.r .panel_prefs.expl.vals.g .panel_prefs.expl.vals.b \
+		-side left -fill x -expand 1
+	pack .panel_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .panel_prefs.expl.done_frame
+    }
+
+    proc set_bbc {color val} {
+	variable bbc_r
+	variable bbc_g
+	variable bbc_b
+
+	destroy .panel_prefs.expl.text_frame
+	switch $color {
+	    "r" {set bbc_r $val}
+	    "g" {set bbc_g $val}
+	    "b" {set bbc_b $val}
+	}
+	set hex_color [format "\#%02x%02x%02x" $bbc_r $bbc_g $bbc_b]
+	message .panel_prefs.expl.text_frame -aspect 20 -width 40 \
+		-background $hex_color \
+		-text "tile border color for panel"
+	pack .panel_prefs.expl.text_frame -before .panel_prefs.expl.done_frame \
+		-fill x -expand 1
+    }
+
+    proc make_panel_boundary {} {
+# Changing this didn't seem to have an effect, but it should 
+# screw up tile placement, so you need to 
+# repaint the tiles from scratch.  Also it should be done right 
+# after the change size even
+	variable prefs_index
+	variable panel_boundary_index
+	variable panel_boundary
+
+	set proc "::gui::panel::make_panel_boundary"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .panel_prefs.expl.vals
+	destroy .panel_prefs.expl.text_frame
+
+	.panel_prefs.scroll_list.list selection clear 0 $prefs_index
+	.panel_prefs.scroll_list.list selection set $panel_boundary_index
+	.panel_prefs.scroll_list.list activate $panel_boundary_index
+	frame .panel_prefs.expl.vals
+
+	scale .panel_prefs.expl.vals.panel_boundary  \
+		-from 0 -to $::gui::panel::tile_width \
+		-label "panel boundary" -showvalue 1 \
+		-variable ::gui::panel::panel_boundary \
+		-command {set ::gui::panel::panel_boundary}
+	.panel_prefs.expl.vals.panel_boundary set $panel_boundary
+	pack .panel_prefs.expl.vals.panel_boundary \
+		-side left -fill x -expand 1
+	pack .panel_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .panel_prefs.expl.done_frame
+	message .panel_prefs.expl.text_frame -aspect 20 -width 40 \
+		-text "panel bounadary size"
+	pack .panel_prefs.expl.text_frame -before .panel_prefs.expl.done_frame \
+		-fill x -expand 1
+
+    }
+
+    proc make_tile_gap {} {
+# Changing this will screw up tile placement, so you need to 
+# repaint the tiles from scratch.  Also it should be done right 
+# after the change size even
+	variable prefs_index
+	variable tile_gap_index
+	variable tile_gap
+
+	set proc "::gui::panel::make_tile_gap"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .panel_prefs.expl.vals
+	destroy .panel_prefs.expl.text_frame
+
+	.panel_prefs.scroll_list.list selection clear 0 $prefs_index
+	.panel_prefs.scroll_list.list selection set $tile_gap_index
+	.panel_prefs.scroll_list.list activate $tile_gap_index
+	frame .panel_prefs.expl.vals
+
+	scale .panel_prefs.expl.vals.tile_gap  -from 0 -to $::gui::panel::tile_width \
+		-label "til_gap" -showvalue 1 \
+		-variable ::gui::panel::tile_gap \
+		-command {set tile_gap}
+	.panel_prefs.expl.vals.tile_gap set $tile_gap
+	pack .panel_prefs.expl.vals.tile_gap \
+		-side left -fill x -expand 1
+	pack .panel_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .panel_prefs.expl.done_frame
+	message .panel_prefs.expl.text_frame -aspect 20 -width 40 \
+		-text "tile_gap size"
+	pack .panel_prefs.expl.text_frame -before .panel_prefs.expl.done_frame \
+		-fill x -expand 1
+    }
+
+    proc prefs_done {} {
+
+	set proc "::gui::panel::prefs_done"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .panel_prefs
+    }
+
+	    
+    proc mkNode {node bound gap row col height width} {
+	variable bc_r
+	variable bc_g
+	variable bc_b
+	variable bbc_r
+	variable bbc_g
+	variable bbc_b
+# These are arrays indexed by nodes 
+	variable tile
+	variable label
+	variable fixed_label
+	variable b
+	variable t
+	variable l
+	variable r
+# this is an array indexed by tiles
+	variable Index
+
+	set button_color_on [format "\#%02x%02x%02x" $bc_r $bc_g $bc_b]
+	set button_border_color [format "\#%02x%02x%02x" $bbc_r $bbc_g $bbc_b] 
+	set button_color_off grey
+	set b($node) [expr $bound - $gap + ($row + 1) * $height]
+	set t($node) [expr $bound + $gap +  $row      * $height]
+	set l($node) [expr $bound + $gap +  $col      * $width ]
+	set r($node) [expr $bound - $gap + ($col + 1) * $width ]
+	set tile($node) [.cvcan create rectangle $l($node) $t($node) \
+		$r($node) $b($node) -outline black -fill $button_color_off  \
+		-tags tile]
+	set label($node) [format "%s" $node]
+	set Index($tile($node)) $node
+
+# Try some embellishments around the tile
+	if { $gap > 8} {
+	    set border 1
+	} else {
+	    set border 0
+	}
+	set ld [expr $l($node) - $border]
+	set td [expr $t($node) - $border]
+	set rd [expr $r($node) + $border]
+	set bd [expr $b($node) + $border]
+	.cvcan create polygon $ld $td $l($node) $t($node) $l($node) $b($node) \
+		$ld $bd -fill $button_border_color -tags tile_border
+	.cvcan create polygon $ld $td $l($node) $t($node) $r($node) $t($node) \
+		$rd $td -fill $button_border_color -tags tile_border
+	.cvcan create polygon $rd $td $r($node) $t($node) $r($node) $b($node) \
+		$rd $bd -fill $button_border_color -tags tile_border
+	.cvcan create polygon $ld $bd $l($node) $b($node) $r($node) $b($node) \
+		$rd $bd -fill $button_border_color -tags tile_border
+    }
+
+    proc panel_select {node} {
+# This is an array over nodes
+	variable selected
+	variable selector
+
+	if {[info exists selected($node)]} {
+	    set selected($node) [expr 1 - $selected($node)]
+	} else {
+	    set selected($node) 1
+	}
+	if {$selected($node)} {
+	    set selector($node) [.cvcan create rectangle \
+		    [expr $::gui::panel::l($node)   \
+		    + $::gui::panel::tile_width/4]  \
+		    [expr $::gui::panel::b($node)   \
+		    - $::gui::panel::tile_height/4] \
+		    [expr $::gui::panel::r($node)   \
+		    - $::gui::panel::tile_width/4]  \
+		    [expr $::gui::panel::t($node)   \
+		    + $::gui::panel::tile_height/4] \
+		    -fill black]
+	} else {
+	    .cvcan delete $selector($node)
+	}
+    }
+
+    proc update {} {
+	variable tile
+	variable bc_r
+	variable bc_g
+	variable bc_b
+	variable boc_r
+	variable boc_g
+	variable boc_b
+	variable update_event
+
+	set proc "::gui::panel::update"
+	if {$::app::debug} {puts "$proc"}
+	
+# We may have changed to another view since the last update and the
+# Osterhout book doesn't mention cancelling "after" events, so check
+# first that we're still in the "panel" mode.  If we're not then don't
+# do anything, and especially don't schedule any more updates.
+	if {$::gui::mode == "panel"} {
+	    set button_color_on [format "\#%02x%02x%02x" $bc_r $bc_g $bc_b]
+	    set button_color_off [format "\#%02x%02x%02x" $boc_r $boc_g $boc_b]
+	    foreach node $::powerlib::nodes {
+		if {$::app::state($node)} {
+		    .cvcan itemconfigure $tile($node) -fill $button_color_on
+		} else {
+		    .cvcan itemconfigure $tile($node) -fill $button_color_off
+		}
+	    }
+	    set panel_update 1
+	    after 1000 ::gui::panel::update
+	} else {
+	    set panel_update 0
+	}
+    }
+
+    proc do_panel_pop {x y} {
+	variable panel_popup
+	variable Index
+	variable panel_node_list
+	variable selected
+
+	set panel_node_list {}
+	foreach node $::powerlib::nodes {
+	    if {[info exists selected($node)] && $selected($node)} {
+		lappend panel_node_list $node
+	    }
+	}
+	if {[llength $panel_node_list] <= 0} {
+	    lappend panel_node_list $Index([.cvcan find closest $x $y])
+	}
+	if {[info exists ::gui::panel::panel_popup]} {
+	    if {[winfo ismapped $::gui::panel::panel_popup]} {
+		focus $panel_popup
+	    } else {
+		.p_pop post [expr $x + [winfo rootx .]] \
+			[expr $y + [winfo rooty .]]
+	    }
+	} else {
+	    set panel_popup [menu .p_pop -takefocus 1]
+	    .p_pop add command -label "never mind" 
+	    .p_pop add command -label "sticky label" \
+		    -command {::gui::panel::panel_sticky $::gui::panel::panel_node_list}
+	    .p_pop add command -label "console" \
+		    -command {::gui::panel::panel_console $::gui::panel::panel_node_list}
+	    .p_pop add command -label "console_status" \
+		    -command {
+		::gui::panel::panel_console_stat $::gui::panel::panel_node_list
+	    }
+	    .p_pop add command -label "power on/off" \
+		    -command {::gui::panel::panel_power $::gui::panel::panel_node_list}
+	    .p_pop post [expr $x + [winfo rootx .]] \
+			[expr $y + [winfo rooty .]]
+	}
+    }
+    
+    proc panel_sticky {node_list} {
+	variable panel_popup
+	variable fixed_label
+	variable label
+	variable l
+	variable b
+
+	foreach node $node_list {
+	    if {[info exists fixed_label($node)]} {
+		.cvcan delete $fixed_label($node)
+		unset fixed_label($node)
+	    } else {
+		set x [expr $l($node) + 2]
+		set y [expr $b($node) - 2]
+		set fixed_label($node) [.cvcan create text $x $y \
+			-text $label($node) -fill black -anchor sw \
+			-tags fixed_label]
+	    }
+	}
+    }
+
+    proc panel_console {node_list} {
+	variable panel_popup
+	
+	foreach node $node_list {
+	    exec xterm -T $node -n $node -e conman -j $node &	
+	}
+    }
+
+    proc panel_console_stat {node_list} {
+	variable panel_popup
+	variable stat
+	variable l
+	variable t
+
+	set con_stat [eval exec $::app::lib_dir/wtf.exp -j $node_list]
+	foreach line $con_stat {
+	    set node [string range $line 0 \
+		    [expr [string first ":" $line] - 1]]
+	    if {[info exists stat($node)]} {
+		.cvcan delete $stat($node)
+	    }
+	    set stat($node) [string range $line \
+		    [expr [string first ":" $line] + 1] end]
+	    set x [expr $l($node) + 2]
+	    set y [expr $t($node) + 2]
+	    .cvcan create text $x $y -text $stat($node) -fill black \
+		    -anchor nw -tags stat_up
+	}	
+    }
+
+    proc panel_power {node_list} {
+	variable panel_popup
+	variable power_popup
+	variable panel_power_node_list
+
+	if {[info exists power_popup]} {
+	    focus $power_popup
+	} else {
+	    set panel_power_node_list $node_list
+	    set power_popup [toplevel .power_popup -takefocus 1]
+	    set x [winfo pointerx .]
+	    set y [winfo pointery .]
+	    wm geometry .power_popup +$x+$y
+	    button .power_popup.on -text "on" \
+		    -command {
+		::powerlib::power $::gui::panel::panel_power_node_list "on"
+	    }
+	    button .power_popup.off -text "off" \
+		    -command {
+		::powerlib::power $::gui::panel::panel_power_node_list "off"
+	    }
+	    button .power_popup.reset -text "reset" \
+		    -command {
+		::powerlib::power $::gui::panel::panel_power_node_list "reset"
+	    }
+	    button .power_popup.cancel -text "cancel" \
+		    -command {
+		destroy .power_popup
+		unset ::gui::panel::power_popup
+	    }
+	    pack .power_popup.on .power_popup.off .power_popup.reset \
+		    .power_popup.cancel -side top -fill x -expand 1
+	}
+    }
+
+    proc fini {} {
+	variable panel_update
+	variable floating_label
+	variable floating_label_x
+	variable floating_label_y
+	variable selecting
+	variable first_sel
+	variable sel_x
+	variable sel_y
+	variable tile_height
+	variable tile_width
+# These are arrays indexed by nodes 
+	variable selected
+	variable selector
+	variable panel_boundary
+	variable tile_gap
+	variable tile
+
+	variable bc_r
+	variable bc_g
+	variable bc_b
+	variable panel_popup
+	variable panel_node_list
+	variable power_popup
+	variable panel_power_node_list
+	variable label
+	variable fixed_label
+	variable b
+	variable t
+	variable l
+	variable r
+	variable stat
+	variable Index
+
+	.cvcan delete all
+	if {[info exists floating_label]} {
+	    unset floating_label
+	}
+	if {[info exists floating_label_x]} {
+	    unset floating_label_x
+	}
+	if {[info exists floating_label_y]} {
+	    unset floating_label_y
+	}
+	if {[info exists selecting]} {
+	    unset selecting
+	}
+	if {[info exists first_sel]} {
+	    unset first_sel
+	}
+	if {[info exists sel_x]} {
+	    unset sel_x
+	}
+	if {[info exists sel_y]} {
+	    unset sel_y
+	}
+	if {[info exists tile_height]} {
+	    unset tile_height
+	}
+	if {[info exists tile_width]} {
+	    unset tile_width
+	}
+# These are arrays indexed by nodes 
+	if {[info exists selected]} {
+	    unset selected
+	}
+	if {[info exists selector]} {
+	    unset selector
+	}
+	if {[info exists panel_boundary]} {
+	    unset panel_boundary
+	}
+	if {[info exists  tile_gap]} {
+	    	unset tile_gap
+	}
+	if {[info exists tile]} {
+	    unset tile
+	}
+	if {[info exists bc_r]} {
+	    unset bc_r
+	}
+	if {[info exists bc_g]} {
+	    unset bc_g
+	}
+	if {[info exists bc_b]} {
+	    unset bc_b
+	}
+	if {[info exists panel_popup]} {
+	    unset panel_popup
+	}
+	if {[info exists panel_node_list]} {
+	    unset panel_node_list
+	}
+	if {[info exists power_popup]} {
+	    unset power_popup
+	}
+	if {[info exists panel_power_node_list]} {
+	    unset panel_power_node_list
+	}
+	if {[info exists label]} {
+	    unset label
+	}
+	if {[info exists fixed_label]} {
+	    unset fixed_label
+	}
+	if {[info exists b]} {
+	    unset b
+	}
+	if {[info exists t]} {
+	    unset t
+	}
+	if {[info exists l]} {
+	    unset l
+	}
+	if {[info exists r]} {
+	    unset r
+	}
+	if {[info exists stat]} {
+	    unset stat
+	}
+	if {[info exists Index]} {
+	    unset Index
+	}
+	set panel_update 0
+    }
+}

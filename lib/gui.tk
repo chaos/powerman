@@ -27,53 +27,14 @@ namespace eval gui {
     variable prefs_index
     variable fixed_index
     variable bg_index
-    variable button_color_index
-    variable button_border_color_index
     variable font_index
-    variable tile_gap_index
-    variable panel_boundary_index
-    variable floating_label
-    variable floating_label_x
-    variable floating_label_y
-    variable panel_popup
-    variable selecting
-    variable first_sel
-    variable sel_x
-    variable sel_y
-    variable tile_height
-    variable tile_width
-    variable power_popup
-    variable panel_node_list
-    variable panel_power_node_list
-# These are arrays indexed by node
-    variable tile
-    variable label
-    variable fixed_label
-    variable stat
-    variable b
-    variable t
-    variable l
-    variable r
-    variable selected
-    variable selector
-# This is an array indexed by tile
-    variable Index
+    variable delay_index
 # The r, g, and b values of the selected background
     variable bg_r
     variable bg_g
     variable bg_b
-# The r, g, and b values of the selected button color
-    variable bc_r
-    variable bc_g
-    variable bc_b
-# The r, g, and b values of the selected button border color
-    variable bbc_r
-    variable bbc_g
-    variable bbc_b
 # Other preference controlled values
     variable font "helvb18dgr"
-    variable panel_boundary
-    variable tile_gap
 
     set namespace "::gui"
     if {$::app::debug} {puts "$namespace"}
@@ -145,31 +106,40 @@ namespace eval gui {
 	variable bg_r
 	variable bg_g
 	variable bg_b
-	# The r, g, and b values of the selected button color
-	variable bc_r
-	variable bc_g
-	variable bc_b
-	# The r, g, and b values of the selected button border color
-	variable bbc_r
-	variable bbc_g
-	variable bbc_b
 	# Other preference controlled values
 	variable font
-	variable panel_boundry
-	variable tile_gap
 	
 	set proc "::gui::init"
 	if {$::app::debug} {puts "$proc"}
 
+	set panellib [format "%s/panel.tk" $::app::lib_dir]
+	if {![file exists $panellib]} {
+	    ::app::usage "Can't find $panellib library"
+	}
+	source $panellib
+
+# These aren't in sepatate files yet, since they're just stubs right now/
+#	set setslib [format "%s/sets.tk" $::app::lib_dir]
+#	if {![file exists $setslib]} {
+#	    ::app::usage "Can't find $setslib library"
+#	}
+#	source $setslib
+
+#	set activitylib [format "%s/activity.tk" $::app::lib_dir]
+#	if {![file exists $activitylib]} {
+#	    ::app::usage "Can't find $activitylib library"
+#	}
+#	source $activitylib
+
+#	set playlib [format "%s/play.tk" $::app::lib_dir]
+#	if {![file exists $playlib]} {
+#	    ::app::usage "Can't find $playlib library"
+#	}
+#	source $playlib
+
 	if {![info exists bg_r]}  {set bg_r 128}
 	if {![info exists bg_g]}  {set bg_g 128}
 	if {![info exists bg_b]}  {set bg_b 128}
-	if {![info exists bc_r]}  {set bc_r 0}
-	if {![info exists bc_g]}  {set bc_g 0}
-	if {![info exists bc_b]}  {set bc_b 255}
-	if {![info exists bbc_r]} {set bbc_r 255}
-	if {![info exists bbc_g]} {set bbc_g 128}
-	if {![info exists bbc_b]} {set bbc_b 128}
 
 	wm geometry . $Window::Geometry
 	wm title    . "cv"
@@ -198,14 +168,20 @@ namespace eval gui {
 
 	set mbar_edit_menu [menu .mbar.edit.menu]
 	.mbar.edit.menu add command -label "Select"
-	.mbar.edit.menu add command -label "Preferences" \
+	.mbar.edit.menu add command -label "Global Preferences" \
 		-command ::gui::preferences
+	.mbar.edit.menu add command -label "View Mode Prefs" \
+		-command ::gui::[set mode]::preferences
 
 	set mbar_view_menu [menu .mbar.view.menu]
-	.mbar.view.menu add command -label "panel" -command ::gui::panel
-	.mbar.view.menu add command -label "sets"
-	.mbar.view.menu add command -label "activity"
-	.mbar.view.menu add command -label "play"
+	.mbar.view.menu add command -label "panel" \
+		-command {::gui::change "panel"}
+	.mbar.view.menu add command -label "sets" \
+		-command {::gui::change "sets"}
+	.mbar.view.menu add command -label "activity" \
+		-command {::gui::change "activity"}
+	.mbar.view.menu add command -label "play" \
+		-command {::gui::change "play"}
 	
 	set mbar_help_menu [menu .mbar.help.menu]
 	.mbar.help.menu add command -label "About"
@@ -235,8 +211,30 @@ namespace eval gui {
     }
     # end of "proc init"
 
+    proc change {new_mode} {
+	variable mode
+
+	switch $mode {
+		"panel"    {::gui::panel::fini}
+		"sets"     {::gui::sets::fini}
+		"activity" {::gui::activity::fini}
+		"play"     {::gui::play::fini}
+	}
+	.mbar.edit.menu delete last
+	set mode $new_mode
+	.mbar.edit.menu add command -label "View Prefs" \
+		-command ::gui::[set mode]::preferences
+	switch $mode {
+		"panel"    {::gui::panel::init}
+		"sets"     {::gui::sets::init}
+		"activity" {::gui::activity::init}
+		"play"     {::gui::play::init}
+	}
+    }
+
     proc resize {c w h} {
 	variable startup
+	variable mode
 
 	set proc "::gui::resize"
 	if {$::app::debug} {puts "$proc"}
@@ -265,7 +263,12 @@ namespace eval gui {
 	    set ::gui::Canvas::Height   $h
 	    set ::gui::Viewport::Width  $w
 	    set ::gui::Viewport::Height $h
-	    ::gui::panel
+	    switch $mode {
+		"panel"     {::gui::panel::init}
+		"sets"      {::gui::sets::init}
+		"activity"  {::gui::activity::init}
+		"play"      {::gui::play::init}
+	    }
 	    # resize tiles to fit screen
 	}
     }
@@ -282,16 +285,11 @@ namespace eval gui {
 # 4)  Add functions implementing the proc ::gui::make_the_pref
 # 5)  Add whatever code is neede to proc init
 # 6)  Add whatever code is needed to proc prefs_done
-	variable fixed
 	variable prefs_index
 	variable fixed_index
 	variable bg_index
-	variable button_color_index
 	variable font_index
-	variable button_border_color_index
 	variable delay_index
-	variable panel_boundary_index
-	variable tile_gap_index
 
 	set proc "::gui::prfernces"
 	if {$::app::debug} {puts "$proc"}
@@ -317,28 +315,12 @@ namespace eval gui {
 	    set bg_index $prefs_index
 	    incr prefs_index
 	    
-	    .prefs.scroll_list.list insert end "button color"
-	    set button_color_index $prefs_index
-	    incr prefs_index
-	    
 	    .prefs.scroll_list.list insert end "font"
 	    set font_index $prefs_index
 	    incr prefs_index
 	    
-	    .prefs.scroll_list.list insert end "button border color"
-	    set button_border_color_index $prefs_index
-	    incr prefs_index
-	    
 	    .prefs.scroll_list.list insert end "delay"
 	    set delay_index $prefs_index
-	    incr prefs_index
-	    
-	    .prefs.scroll_list.list insert end "pane boundary"
-	    set panel_boundary_index $prefs_index
-	    incr prefs_index
-	    
-	    .prefs.scroll_list.list insert end "tile gap"
-	    set tile_gap_index $prefs_index
 	    incr prefs_index
 	    
 	    pack .prefs.scroll_list.list -side left
@@ -370,12 +352,8 @@ namespace eval gui {
 	switch $el  {
 	    0  {::gui::make_fixed_pref}
 	    1  {::gui::make_background}
-	    2  {::gui::make_button_color}
-	    3  {::gui::make_font}
-	    4  {::gui::make_button_border_color}
-	    5  {::gui::make_delay}
-	    6  {::gui::make_panel_boundary}
-	    7  {::gui::make_tile_gap}
+	    2  {::gui::make_font}
+	    3  {::gui::make_delay}
 	}
     }
 
@@ -476,8 +454,8 @@ namespace eval gui {
 		-variable ::gui::Viewport::bg_b \
 		-command {::gui::set_bg "b"}
 	.prefs.expl.vals.r set $bg_r
-	.prefs.expl.vals.r set $bg_g
-	.prefs.expl.vals.r set $bg_b
+	.prefs.expl.vals.g set $bg_g
+	.prefs.expl.vals.b set $bg_b
 	pack .prefs.expl.vals.r .prefs.expl.vals.g .prefs.expl.vals.b \
 		-side left -fill x -expand 1
 	pack .prefs.expl.vals -side top -fill x -expand 1 \
@@ -499,60 +477,6 @@ namespace eval gui {
 	message .prefs.expl.text_frame -aspect 20 -width 40 \
 		-background $hex_color \
 		-text "Background color for panel"
-	pack .prefs.expl.text_frame -before .prefs.expl.done_frame \
-		-fill x -expand 1
-    }
-
-    proc make_button_color {} {
-	variable prefs_index
-	variable button_color_index
-	variable bc_r
-	variable bc_g
-	variable bc_b
-
-	set proc "::gui::make_button_color"
-	if {$::app::debug} {puts "$proc"}
-
-	destroy .prefs.expl.vals
-
-	.prefs.scroll_list.list selection clear 0 $prefs_index
-	.prefs.scroll_list.list selection set $button_color_index
-	.prefs.scroll_list.list activate $button_color_index
-	frame .prefs.expl.vals
-# This should be three slides 0 .. 255 for colors
-	scale .prefs.expl.vals.r  -from 0 -to 255 -label "R" -showvalue 1 \
-		-variable ::gui::Viewport::bc_r \
-		-command {::gui::set_bc "r"}
-	.prefs.expl.vals.r set $bc_r
-	scale .prefs.expl.vals.g  -from 0 -to 255 -label "G" -showvalue 1 \
-		-variable ::gui::Viewport::bc_g \
-		-command {::gui::set_bc "g"}
-	.prefs.expl.vals.r set $bc_g
-	scale .prefs.expl.vals.b  -from 0 -to 255 -label "B" -showvalue 1 \
-		-variable ::gui::Viewport::bc_b \
-		-command {::gui::set_bc "b"}
-	.prefs.expl.vals.r set $bc_b
-	pack .prefs.expl.vals.r .prefs.expl.vals.g .prefs.expl.vals.b \
-		-side left -fill x -expand 1
-	pack .prefs.expl.vals -side top -fill x -expand 1 \
-		-before .prefs.expl.done_frame
-    }
-
-    proc set_bc {color val} {
-	variable bc_r
-	variable bc_g
-	variable bc_b
-
-	destroy .prefs.expl.text_frame
-	switch $color {
-	    "r" {set bc_r $val}
-	    "g" {set bc_g $val}
-	    "b" {set bc_b $val}
-	}
-	set hex_color [format "\#%02x%02x%02x" $bc_r $bc_g $bc_b]
-	message .prefs.expl.text_frame -aspect 20 -width 40 \
-		-background $hex_color \
-		-text "Button color in panel"
 	pack .prefs.expl.text_frame -before .prefs.expl.done_frame \
 		-fill x -expand 1
     }
@@ -597,60 +521,6 @@ namespace eval gui {
 
     }
 
-    proc make_button_border_color {} {
-	variable prefs_index
-	variable button_border_color_index
-	variable bbc_r
-	variable bbc_g
-	variable bbc_b
-
-	set proc "::gui::make_button_color"
-	if {$::app::debug} {puts "$proc"}
-
-	destroy .prefs.expl.vals
-
-	.prefs.scroll_list.list selection clear 0 $prefs_index
-	.prefs.scroll_list.list selection set $button_border_color_index
-	.prefs.scroll_list.list activate $button_border_color_index
-	frame .prefs.expl.vals
-# This should be three slides 0 .. 255 for colors
-	scale .prefs.expl.vals.r  -from 0 -to 255 -label "R" -showvalue 1 \
-		-variable ::gui::Viewport::bbc_r \
-		-command {::gui::set_bbc "r"}
-	.prefs.expl.vals.r set $bbc_r
-	scale .prefs.expl.vals.g  -from 0 -to 255 -label "G" -showvalue 1 \
-		-variable ::gui::Viewport::bbc_g \
-		-command {::gui::set_bbc "g"}
-	.prefs.expl.vals.r set $bbc_g
-	scale .prefs.expl.vals.b  -from 0 -to 255 -label "B" -showvalue 1 \
-		-variable ::gui::Viewport::bbc_b \
-		-command {::gui::set_bbc "b"}
-	.prefs.expl.vals.r set $bbc_b
-	pack .prefs.expl.vals.r .prefs.expl.vals.g .prefs.expl.vals.b \
-		-side left -fill x -expand 1
-	pack .prefs.expl.vals -side top -fill x -expand 1 \
-		-before .prefs.expl.done_frame
-    }
-
-    proc set_bbc {color val} {
-	variable bbc_r
-	variable bbc_g
-	variable bbc_b
-
-	destroy .prefs.expl.text_frame
-	switch $color {
-	    "r" {set bbc_r $val}
-	    "g" {set bbc_g $val}
-	    "b" {set bbc_b $val}
-	}
-	set hex_color [format "\#%02x%02x%02x" $bbc_r $bbc_g $bbc_b]
-	message .prefs.expl.text_frame -aspect 20 -width 40 \
-		-background $hex_color \
-		-text "tile border color for panel"
-	pack .prefs.expl.text_frame -before .prefs.expl.done_frame \
-		-fill x -expand 1
-    }
-
     proc make_delay {} {
 	variable prefs_index
 	variable delay_index
@@ -680,76 +550,6 @@ namespace eval gui {
 		-before .prefs.expl.done_frame
 	message .prefs.expl.text_frame -aspect 20 -width 40 \
 		-text "enter a value for delay"
-	pack .prefs.expl.text_frame -before .prefs.expl.done_frame \
-		-fill x -expand 1
-    }
-
-    proc make_panel_boundary {} {
-# Changing this didn't seem to have an effect, but it should 
-# screw up tile placement, so you need to 
-# repaint the tiles from scratch.  Also it should be done right 
-# after the change size even
-	variable prefs_index
-	variable panel_boundary_index
-	variable panel_boundary
-
-	set proc "::gui::make_panel_boundary"
-	if {$::app::debug} {puts "$proc"}
-
-	destroy .prefs.expl.vals
-	destroy .prefs.expl.text_frame
-
-	.prefs.scroll_list.list selection clear 0 $prefs_index
-	.prefs.scroll_list.list selection set $panel_boundary_index
-	.prefs.scroll_list.list activate $panel_boundary_index
-	frame .prefs.expl.vals
-
-	scale .prefs.expl.vals.panel_boundary  -from 0 -to $::gui::tile_width \
-		-label "pane boundary" -showvalue 1 \
-		-variable ::gui::panel_boundary \
-		-command {set ::gui::panel_boundary}
-	.prefs.expl.vals.panel_boundary set $panel_boundary
-	pack .prefs.expl.vals.panel_boundary \
-		-side left -fill x -expand 1
-	pack .prefs.expl.vals -side top -fill x -expand 1 \
-		-before .prefs.expl.done_frame
-	message .prefs.expl.text_frame -aspect 20 -width 40 \
-		-text "panel bounadary size"
-	pack .prefs.expl.text_frame -before .prefs.expl.done_frame \
-		-fill x -expand 1
-
-    }
-
-    proc make_tile_gap {} {
-# Changing this will screw up tile placement, so you need to 
-# repaint the tiles from scratch.  Also it should be done right 
-# after the change size even
-	variable prefs_index
-	variable tile_gap_index
-	variable tile_gap
-
-	set proc "::gui::make_tile_gap"
-	if {$::app::debug} {puts "$proc"}
-
-	destroy .prefs.expl.vals
-	destroy .prefs.expl.text_frame
-
-	.prefs.scroll_list.list selection clear 0 $prefs_index
-	.prefs.scroll_list.list selection set $tile_gap_index
-	.prefs.scroll_list.list activate $tile_gap_index
-	frame .prefs.expl.vals
-
-	scale .prefs.expl.vals.tile_gap  -from 0 -to $::gui::tile_width \
-		-label "til_gap" -showvalue 1 \
-		-variable ::gui::tile_gap \
-		-command {set tile_gap}
-	.prefs.expl.vals.tile_gap set $tile_gap
-	pack .prefs.expl.vals.tile_gap \
-		-side left -fill x -expand 1
-	pack .prefs.expl.vals -side top -fill x -expand 1 \
-		-before .prefs.expl.done_frame
-	message .prefs.expl.text_frame -aspect 20 -width 40 \
-		-text "tile_gap size"
 	pack .prefs.expl.text_frame -before .prefs.expl.done_frame \
 		-fill x -expand 1
     }
@@ -835,366 +635,132 @@ namespace eval gui {
 	.cvcan move all [expr -$number] 0.0
     }
 
-    proc panel {} {
-	variable mode
-	variable floating_label
-	variable floating_label_x
-	variable floating_label_y
-	variable selecting
-	variable first_sel
-	variable sel_x
-	variable sel_y
-	variable tile_height
-	variable tile_width
-# These are arrays indexed by nodes 
-	variable selected
-	variable selector
-
-	set proc "::gui::panel"
-	if {$::app::debug} {puts "$proc"}
-
-	set mode "panel"
-	if {[info exists ::powerlib::cluster]} {
-# If a resize event causes the panel to be redisplayed its easiest if the
-# selected nodes are unselected and unmarked.
-	    foreach node $::powerlib::nodes {
-		if {[info exists selected($node)] && $selected($node)} {
-		    set selected($node) 0
-		    .cvcan delete $selector($node)
-		}
-	    }
-	    set total [llength $::powerlib::nodes]
-	    set rows  [expr ceil(sqrt(double($total)))]
-	    set cols  [expr ceil($total/double($rows))]
-	    set tile_width  [expr int($::gui::Viewport::Width/double($cols + 1))]
-	    set tile_height [expr int($::gui::Viewport::Height/double($rows + 1))]
-	    if {$tile_width > $tile_height} {
-		set tile_width  $tile_height
-		set tile_height $tile_width
-	    }
-	    set bound [expr $tile_height/2]
-	    set gap   [expr $tile_height/10]
-	    set row 0
-	    set col 0
-	    if {[info exists tile]} {
-		.cvcan delete tile
-	    }
-	    foreach node $::powerlib::nodes {
-		::gui::mkNode $node $bound $gap $row $col \
-			$tile_height $tile_width 
-		incr col
-		if {$col >= $cols} {
-		    set col 0
-		    incr row
-		}
-	    }
-
-	    .cvcan bind tile <Enter> {
-                set node $::gui::Index([.cvcan find withtag current])
-		set ::gui::floating_label [.cvcan create text %x \
-			[expr %y - 2] -text $::gui::label($node) -fill black -anchor sw \
-			-tags floating_label]
-		set ::gui::floating_label_x %x
-		set ::gui::floating_label_y %y
-	    }
-
-	    .cvcan bind tile <Leave> {
-		if {[info exists ::gui::floating_label]} {
-		    .cvcan delete $::gui::floating_label
-		}
-	    }
-
-	    bind .cvcan <ButtonPress-1> {
-		set selection 1
-		set ::gui::sel_x %x
-		set ::gui::sel_y %y
-		set ::gui::selecting 1
-	    }
-
-	    bind .cvcan <ButtonRelease-1> {
-		if {[info exists ::gui::sel_x]} {
-		    if {$::gui::sel_y < %x} {
-			set top $::gui::sel_y
-			set bot %y
-		    } else {
-			set top %y
-			set bot $::gui::sel_y
-		    }
-		    if {$::gui::sel_x > %x} {
-			set right $::gui::sel_x
-			set left %x
-		    } else {
-			set right %x
-			set left $::gui::sel_x
-		    }
-		    unset ::gui::sel_x
-		    unset ::gui::sel_y
-		}
-		if {[info exists top]} {
-		    foreach node $::powerlib::nodes {
-			if {($::gui::r($node) > $left)      && \
-				($::gui::l($node) < $right) && \
-				($::gui::b($node) > $top)   && \
-				($::gui::t($node) < $bot)} {
-			    ::gui::panel_select $node
-			}
-		    }
-		    unset left
-		    unset right
-		    unset top
-		    unset bot
-		}
-		set selecting 0
-	    }
-
-	    bind .cvcan <Motion> {
-		if {[info exists ::gui::floating_label]} {
-		    .cvcan move $::gui::floating_label \
-			    [expr %x - $::gui::floating_label_x] \
-			    [expr %y - $::gui::floating_label_y]
-		    set ::gui::floating_label_x %x
-		    set ::gui::floating_label_y %y
-		}
-	    }
-
-	    bind .cvcan <Button-3> {::gui::do_panel_pop %x %y}
-	    ::gui::update_panel
+    namespace eval sets {
+	proc init {} {
+	    variable mode
+	    
+	    set proc "::gui::sets::init"
+	    if {$::app::debug} {puts "$proc"}
+	    
+	    set mode "sets"
+	}
+	# end of "proc init"
+ 
+	proc fini {} {
+	    .cvcan delete all
 	}
     }
-    # end of "proc panel" 
+    # end of namespace sets
 
-    proc mkNode {node bound gap row col height width} {
-# These are arrays indexed by nodes 
-	variable tile
-	variable label
-	variable fixed_label
-	variable b
-	variable t
-	variable l
-	variable r
-# this is an array indexed by tiles
-	variable Index
-
-	set b($node) [expr $bound - $gap + ($row + 1) * $height]
-	set t($node) [expr $bound + $gap +  $row      * $height]
-	set l($node) [expr $bound + $gap +  $col      * $width ]
-	set r($node) [expr $bound - $gap + ($col + 1) * $width ]
-	set tile($node) [.cvcan create rectangle $l($node) $t($node) \
-		$r($node) $b($node) -outline black -fill grey  \
-		-tags tile]
-	set label($node) [format "%s" $node]
-	set Index($tile($node)) $node
-
-# Try some embellishments around the tile
-	set ld [expr $l($node) - $gap/4]
-	set td [expr $t($node) - $gap/4]
-	set rd [expr $r($node) + $gap/4]
-	set bd [expr $b($node) + $gap/4]
-	.cvcan create polygon $ld $td $l($node) $t($node) $l($node) $b($node) \
-		$ld $bd -fill pink
-	.cvcan create polygon $ld $td $l($node) $t($node) $r($node) $t($node) \
-		$rd $td -fill pink
-	.cvcan create polygon $rd $td $r($node) $t($node) $r($node) $b($node) \
-		$rd $bd -fill pink
-	.cvcan create polygon $ld $bd $l($node) $b($node) $r($node) $b($node) \
-		$rd $bd -fill pink
-    }
-
-    proc panel_select {node} {
-# This is an array over nodes
-	variable selected
-	variable selector
-
-	if {[info exists selected($node)]} {
-	    set selected($node) [expr 1 - $selected($node)]
-	} else {
-	    set selected($node) 1
+    namespace eval activity {
+	proc init {} {
+	    variable mode
+	    
+	    set proc "::gui::activity::init"
+	    if {$::app::debug} {puts "$proc"}
+	    
+	    set mode "activity"
 	}
-	if {$selected($node)} {
-	    set selector($node) [.cvcan create rectangle            \
-		    [expr $::gui::l($node) + $::gui::tile_width/4]  \
-		    [expr $::gui::b($node) - $::gui::tile_height/4] \
-		    [expr $::gui::r($node) - $::gui::tile_width/4]  \
-		    [expr $::gui::t($node) + $::gui::tile_height/4] \
-		    -fill black]
-	} else {
-	    .cvcan delete $selector($node)
-	}
-    }
-
-    proc update_panel {} {
-	variable tile
-	variable bc_r
-	variable bc_g
-	variable bc_b
-
-	set proc "::gui::update_panel"
-	if {$::app::debug} {puts "$proc"}
+	# end of "proc activity"
 	
-	set hex_color [format "\#%02x%02x%02x" $bc_r $bc_g $bc_b]
-	foreach node $::powerlib::nodes {
-	    if {$::app::state($node)} {
-		.cvcan itemconfigure $tile($node) -fill $hex_color
-	    } else {
-		.cvcan itemconfigure $tile($node) -fill grey
-	    }
-	}
-	after 1000 ::gui::update_panel
-    }
-
-    proc do_panel_pop {x y} {
-	variable panel_popup
-	variable Index
-	variable panel_node_list
-	variable selected
-
-	set panel_node_list {}
-	foreach node $::powerlib::nodes {
-	    if {[info exists selected($node)] && $selected($node)} {
-		lappend panel_node_list $node
-	    }
-	}
-	if {[llength $panel_node_list] <= 0} {
-	    lappend panel_node_list $Index([.cvcan find closest $x $y])
-	}
-	if {[info exists ::gui::panel_popup]} {
-	    if {[winfo ismapped $::gui::panel_popup]} {
-		focus $panel_popup
-	    } else {
-		.p_pop post [expr $x + [winfo rootx .]] \
-			[expr $y + [winfo rooty .]]
-	    }
-	} else {
-	    set panel_popup [menu .p_pop -takefocus 1]
-	    .p_pop add command -label "never mind" 
-	    .p_pop add command -label "sticky label" \
-		    -command {::gui::panel_sticky $::gui::panel_node_list}
-	    .p_pop add command -label "console" \
-		    -command {::gui::panel_console $::gui::panel_node_list}
-	    .p_pop add command -label "console_status" \
-		    -command {
-		::gui::panel_console_stat $::gui::panel_node_list
-	    }
-	    .p_pop add command -label "power on/off" \
-		    -command {::gui::panel_power $::gui::panel_node_list}
-	    .p_pop post [expr $x + [winfo rootx .]] \
-			[expr $y + [winfo rooty .]]
+	proc fini {} {
+	    .cvcan delete all
 	}
     }
+    # end of namespace activity
+
+    namespace eval play {
+
+	proc init {} {
+	    variable mode
+	    
+	    set proc "::gui::play"
+	    if {$::app::debug} {puts "$proc"}
+	    
+	    set mode "play"
+	    
+	    set font helvb18gr
+	    set w [expr $::gui::Canvas::Width/2]
+	    set h [expr $::gui::Canvas::Height/2]
+	    
+	    if {$w < $h} {
+		set size [expr $w/4]
+	    } else {
+		set size [expr $h/4]
+	    }
+	    
+	    #wings
+	    set wings [.cvcan create oval \
+		    [expr $w-$size] \
+		    [expr $h-(2*$size)] \
+		    [expr $w+$size] \
+		    $h \
+		    -outline black -fill black -tags wings]
+	    #tummy
+	    set tummy [.cvcan create oval \
+		    [expr $w-(0.8*$size)] \
+		    [expr $h-(2*$size)] \
+		    [expr $w+(0.8*$size)] \
+		    $h \
+		    -outline black -fill white -tags tummy]
+	    #head
+	    set head [.cvcan create oval \
+		    [expr $w-(0.5*$size)] \
+		    [expr $h-(3.0*$size)] \
+		    [expr $w+(0.5*$size)] \
+		    [expr $h-(2*$size)] \
+		    -outline black -fill black -tags head]
+	    #right foot (screen left)
+	    set rfoot [.cvcan create oval \
+		    [expr $w-$size] \
+		    [expr $h-$size] \
+		    $w \
+		    $h \
+		    -outline black -fill yellow -tags rfoot]
+	    #left foot (screen right)
+	    set lfoot [.cvcan create oval \
+		    [expr $w] \
+		    [expr $h-$size] \
+		    [expr $w+$size] \
+		    $h \
+		    -outline black -fill yellow -tags lfoot]
+	    #beak
+	    set beak [.cvcan create oval \
+		    [expr $w-(0.3*$size)] \
+		    [expr $h-(2.5*$size)] \
+		    [expr $w+(0.3*$size)] \
+		    [expr $h-(2*$size)] \
+		    -outline black -fill yellow -tags beak]
+	    #right eye (screen left)
+	    set reye [.cvcan create oval \
+		    [expr $w-(0.4*$size)] \
+		    [expr $h-(2.7*$size)] \
+		    [expr $w-(0.1*$size)] \
+		    [expr $h-(2.4*$size)] \
+		    -outline black -fill white -tags reye]
+	    #left eye (screen right)
+	    set leye [.cvcan create oval \
+		    [expr $w+(0.1*$size)] \
+		    [expr $h-(2.7*$size)] \
+		    [expr $w+(0.4*$size)] \
+		    [expr $h-(2.4*$size)] \
+		    -outline black -fill white -tags leye]
+	    
+	    set name "tux"
+	    set label [.cvcan create text \
+		    [expr $w+(0.8*$size)] \
+		    [expr $h - (2*$size)] \
+		    -text $name \
+		    -font $font -fill black -anchor sw]
+	    
+	}
+	# end of "proc play" 
+	
+	proc fini {} {
+	    .cvcan delete all
+	}
+    }
+    # end of namespace play
     
-    proc panel_sticky {node_list} {
-	variable panel_popup
-	variable fixed_label
-	variable label
-	variable l
-	variable b
-
-	foreach node $node_list {
-	    if {[info exists fixed_label($node)]} {
-		.cvcan delete $fixed_label($node)
-	    } else {
-		set x [expr $l($node) + 2]
-		set y [expr $b($node) - 2]
-		set fixed_label($node) [.cvcan create text $x $y \
-			-text $label($node) -fill black -anchor sw \
-			-tags fixed_label]
-	    }
-	}
-    }
-
-    proc panel_console {node_list} {
-	variable panel_popup
-	
-	foreach node $node_list {
-	    exec xterm -T $node -n $node -e conman -j $node &	
-	}
-    }
-
-    proc panel_console_stat {node_list} {
-	variable panel_popup
-	variable stat
-	variable l
-	variable t
-
-	set con_stat [eval exec $::app::lib_dir/wtf.exp -j $node_list]
-	foreach line $con_stat {
-	    set node [string range $line 0 \
-		    [expr [string first ":" $line] - 1]]
-	    if {[info exists stat($node)]} {
-		.cvcan delete $stat($node)
-	    }
-	    set stat($node) [string range $line \
-		    [expr [string first ":" $line] + 1] end]
-	    set x [expr $l($node) + 2]
-	    set y [expr $t($node) + 2]
-	    .cvcan create text $x $y -text $stat($node) -fill black \
-		    -anchor nw -tags stat_up
-	}	
-    }
-
-    proc panel_power {node_list} {
-	variable panel_popup
-	variable power_popup
-	variable panel_power_node_list
-
-	if {[info exists power_popup]} {
-	    focus $power_popup
-	} else {
-	    set panel_power_node_list $node_list
-	    set power_popup [toplevel .power_popup -takefocus 1]
-	    set x [winfo pointerx .]
-	    set y [winfo pointery .]
-	    wm geometry .power_popup +$x+$y
-	    button .power_popup.on -text "on" \
-		    -command {
-		::powerlib::power $::gui::panel_power_node_list "on"
-	    }
-	    button .power_popup.off -text "off" \
-		    -command {
-		::powerlib::power $::gui::panel_power_node_list "off"
-	    }
-	    button .power_popup.reset -text "reset" \
-		    -command {
-		::powerlib::power $::gui::panel_power_node_list "reset"
-	    }
-	    button .power_popup.cancel -text "cancel" \
-		    -command {
-		destroy .power_popup
-		unset ::gui::power_popup
-	    }
-	    pack .power_popup.on .power_popup.off .power_popup.reset \
-		    .power_popup.cancel -side top -fill x -expand 1
-	}
-    }
-
-    proc sets {} {
-	variable mode
-
-	set proc "::gui::sets"
-	if {$::app::debug} {puts "$proc"}
-
-	set mode "sets"
-    }
-    # end of "proc sets"
- 
-    proc activity {} {
-	variable mode
-
-	set proc "::gui::activity"
-	if {$::app::debug} {puts "$proc"}
-
-	set mode "activity"
-    }
-    # end of "proc activity"
- 
-    proc play {} {
-	variable mode
-
-	set proc "::gui::play"
-	if {$::app::debug} {puts "$proc"}
-
-	set mode "play"
-    }
-    # end of "proc play" 
 }
 # end of "namespace eval gui"
