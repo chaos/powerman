@@ -1,3 +1,5 @@
+* Bug: was able to kill powerman by running "while true; do pm -q; done"
+  and interrupting with ^C after many iterations.
 * Build failure simulator test suite
 * Package with autoconf
 * Still several small memory leaks, find them
@@ -8,6 +10,7 @@
 * powerman client needs to implement option for expanding hostranges
 * Issuing a command involving an RPC that is currently in connect-retry mode
   causes the client to hang forever.  See FIXME note at bottom of device.c.
+  (Bug: a lot of commands could be queued for a device that is down long term.)
 * Make "soft" power status query possible again in server
 * Client should have option for verifying soft power status (expand hostranges
   and issue warnings where plug is on but node is off).  Needs to be optional
