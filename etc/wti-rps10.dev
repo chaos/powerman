@@ -2,9 +2,13 @@
 # $Id$
 # $Source$
 #
+# WTI RPS-10 remote power switch
+#
 # Master configured for 9600 baud, 
 # If 9600 - wait 0.5 sec before sending next command
 # If 2400 - wait 1.5 sec before sending next command
+# Command format is ^X^X^B^X^X^B^X^X<P><C>\r
+#   where <P> is port number (0 thru 9) and <C> is command (0, 1, T, ?)
 # FIXME: assumes only one plug at address 0.  There can be up to ten.
 begin protocol specification
 	specification name "wti-rps10"
@@ -13,7 +17,7 @@ begin protocol specification
 	on string  "On"
 	all string "*"
 	plug count 1
-	device timeout 12  # toggle can be configured for 10 sec
+	device timeout 12  # toggle can be configured for 5 or 10 sec
 	begin LOGIN_SCRIPT
 	end LOGIN_SCRIPT
 	begin LOGOUT_SCRIPT
