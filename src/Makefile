@@ -33,7 +33,7 @@ packagedir=     ${etcdir}/${PACKAGE}
 
 COMMON_OBJS = list.o pm_string.o wrappers.o exit_error.o hostlist.o
 
-SERVER_UTIL = $(COMMON_OBJS) daemon_init.o util.o buffer.o pidlock.o
+SERVER_UTIL = $(COMMON_OBJS) daemon_init.o util.o buffer.o
 
 SERVER_OBJS = $(SERVER_UTIL) action.o config.o device.o listener.o  \
 	      powermand.o server.o parse_lex.o parse_tab.o
