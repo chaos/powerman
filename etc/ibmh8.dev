@@ -6,7 +6,7 @@
 #
 # This device configuration supports direct control of IBM xSeries H8
 # service processors via an RS485-RS232 converter and the 'h8power'
-# utility, which assumes the RSA's are removed from the system.
+# utility.
 #
 specification "ibmh8" {
 	timeout  	30

@@ -272,7 +272,6 @@ static Action *_create_action(Device * dev, int com, Plug *target,
     act->vpf_fun = vpf_fun;
     act->client_id = client_id;
 
-    /*act->target = target;*/
     act->exec = list_create((ListDelF)_destroy_exec_ctx);
     e = _create_exec_ctx(dev, dev->scripts[act->com], target);
     list_push(act->exec, e);
@@ -288,7 +287,6 @@ static void _destroy_action(Action * act)
     assert(act->magic == ACT_MAGIC);
     act->magic = 0;
     dbg(DBG_ACTION, "_destroy_action: %d", act->com);
-    /*act->target = NULL;*/
     if (act->exec)
         list_destroy(act->exec);
     act->exec = NULL;

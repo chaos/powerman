@@ -1,3 +1,9 @@
+2003-09-03 Jim Garlick <garlick@llnl.gov>
+
+    * etc/ibmrsa.dev, etc/ibmrsa-smc.dev: Removed support for IBM RSA adapter.
+
+    * : tag powerman-1-0-18
+
 2003-08-17 Jim Garlick <garlick@llnl.gov>
 
     * etc/ibmh8.dev: Added and got working with 'h8power' utility.

@@ -46,8 +46,6 @@ install: all
 #	$(INSTALL) etc/vicebox.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/vpc.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/ibmh8.dev		$(DESTDIR)$(packagedir)
-	$(INSTALL) etc/ibmrsa.dev		$(DESTDIR)$(packagedir)
-	$(INSTALL) etc/ibmrsa-smc.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/phantom.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/phantom-llnl.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/ipmi.dev			$(DESTDIR)$(packagedir)

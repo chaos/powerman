@@ -51,9 +51,6 @@ o Several changes to device script language (non backwards compatable):
     it is treated as a special file, otherwise tcp.  Telnet mode is always
     on even for serial devices, which should be harmless.
 
-o Support added for late model firmware releases of IBM RSA Remote Supervisor 
-  Adapter in telnet debug mode.
-
 o Support added for Rackable Systems Phantom Remote Management Module.
 
 o Support added for Baytech RPC-28-30NC remote power controller.
@@ -104,8 +101,6 @@ o WTI RPS-10 (*)
 o APC MasterSwitch Plus (APP v2.0.0 / AOS v2.5.4)
 
 o APC MasterSwitch Plus (APP v2.2.0 / AOS v3.0.3) (*)
-
-o IBM RSA Remote Supervisor Adapter (GEET117A (x345) and T2ET116A (x335)) (*)
 
 o Rackable Systems Phantom Remote Management Module (v3.0.4b) (*)
 
