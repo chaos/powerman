@@ -46,6 +46,7 @@ int buf_getline(Buffer b, unsigned char *str, int len);
 int buf_peekline(Buffer b, unsigned char *str, int len);
 int buf_getstr(Buffer b, unsigned char *str, int len);
 int buf_peekstr(Buffer b, unsigned char *str, int len);
+char *buf_getregex(Buffer b, regex_t * re);
 void buf_eat(Buffer b, int len);
 
 #endif				/* BUFFER_H */

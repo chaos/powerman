@@ -6,10 +6,8 @@
 #include <ctype.h>
 
 #include "powerman.h"
-
-#include "buffer.h"
-#include "util.h"
 #include "wrappers.h"
+#include "util.h"
 
 /* 
  * Find regular expression in string.
@@ -33,48 +31,6 @@ unsigned char *util_findregex(regex_t * re, unsigned char *str, int len)
 	return NULL;
     assert(pmatch[0].rm_eo <= len);
     return (str + pmatch[0].rm_eo);
-}
-
-/*
- * A wrapper for buf_getline that returns a String type.
- *  b (IN)	target Buffer
- *  RETURN	line from buffer (caller must free)
- */
-char *util_bufgetline(Buffer b)
-{
-    unsigned char str[MAX_BUF];
-    int res = buf_getline(b, str, MAX_BUF);
-
-    return (res > 0 ? Strdup(str) : NULL);
-}
-
-/*
- * Apply regular expression to the contents of a Buffer.
- * If there is a match, return (and consume) from the beginning
- * of the buffer to the last character of the match.
- * NOTE: embedded \0 chars are converted to \377 by buf_getstr/buf_getline and
- * buf_peekstr/buf_getstr because libc regex functions would treat these as 
- * string terminators.  As a result, \0 chars cannot be matched explicitly.
- *  b (IN)	buffer to apply regex to
- *  re (IN)	regular expression
- *  RETURN	String match (caller must free) or NULL if no match
- */
-char *util_bufgetregex(Buffer b, regex_t * re)
-{
-    unsigned char str[MAX_BUF];
-    int bytes_peeked = buf_peekstr(b, str, MAX_BUF);
-    unsigned char *match_end;
-
-    if (bytes_peeked == 0)
-	return NULL;
-    match_end = util_findregex(re, str, bytes_peeked);
-    if (match_end == NULL)
-	return NULL;
-    assert(match_end - str <= strlen(str));
-    *match_end = '\0';
-    buf_eat(b, match_end - str);	/* only consume up to what matched */
-
-    return Strdup(str);
 }
 
 /*

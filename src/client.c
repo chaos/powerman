@@ -42,17 +42,26 @@
 #include "client.h"
 #include "buffer.h"
 #include "error.h"
-#include "util.h"
 #include "action.h"
 #include "hostlist.h"
 #include "client_proto.h"
 
 #define LISTEN_BACKLOG    5
 
-/* prototypes */
-static Action *_process_input(Client *c);
+/* prototypes for internal functions */
+static void _hostlist_error(Client *c);
+static int _match_nodename(Node* node, void *key);
+static bool _node_exists(char *name);
+static hostlist_t _hostlist_create_validated(Client *c, char *str);
+static void _client_query_nodes_reply(Client *c);
+static void _client_query_status_reply(Client *c);
+static void _handle_client_read(Client * c);
+static void _handle_client_write(Client * c);
+static char *_strip_whitespace(char *str);
 static Action *_parse_input(Client *c, char *input);
 static void _destroy_client(Client * client);
+static int _match_client(Client * client, void *key);
+static void _create_client(void);
 
 #define _client_msg(c,args...) do {  \
     (c)->write_status = CLI_WRITING; \
@@ -85,7 +94,6 @@ void cli_fini(void)
     /* destroy clients */
     list_destroy(cli_clients);
 }
-
 
 static void _hostlist_error(Client *c)
 {
@@ -259,7 +267,7 @@ done:
 static void _handle_client_read(Client * c)
 {
     int n;
-    Action *act = NULL;
+    char buf[CP_LINEMAX];
 
     CHECK_MAGIC(c);
 
@@ -273,46 +281,16 @@ static void _handle_client_read(Client * c)
         return;
     }
 
-    do {
-        /* 
-         *   If there isn't a full command left in the from buffer then this 
-         * returns NULL. Otherwise it will return a newly created Action
-         * act, extract the next command from the buffer, set the
-         * Action fields client, seq, com, num and target for later
-         * processing, and enqueue the Action.  
-         */
-        act = _process_input(c);
-        if (act != NULL)
-            act_add(act);
+    while (buf_getline(c->from, buf, sizeof(buf)) > 0) {
+	Action *act = _parse_input(c, buf);
 
-    } while (act != NULL);
+	if (act != NULL) {
+	    act->client = c;
+	    act->seq = c->seq++;
+	    act_add(act);
+	}
+    }
 }
-
-
-/*
- * Grab a line in the "from" buffer and try to parse it as a command.
- * If it's unrecognizable return an error, if it's just a \n\r ignore it,
- * but if it's a real command pass it back to the action queue.
- */
-static Action *_process_input(Client * c)
-{
-    Action *act;
-    char *expect;
-
-    expect = util_bufgetline(c->from);
-    if (expect == NULL)
-        return NULL;
-
-    act = _parse_input(c, expect);
-    if (act != NULL) {
-        act->client = c;
-        act->seq = c->seq++;
-    } 
-
-    Free(expect);
-    return act;
-}
-
 
 /*
  *   Select has notified that it is willing to accept some 
@@ -405,8 +383,8 @@ static Action *_parse_input(Client *c, char *input)
 }
 
 /*
- * Based on the last command successfully parsed output the
- * appropriate information and the prompt.
+ * Return the results of an action to the client.
+ * FIXME: results should be a part of the action.
  */
 void cli_reply(Action * act)
 {
@@ -417,12 +395,6 @@ void cli_reply(Action * act)
     assert(c->fd != NO_FD);
 
     switch (act->com) {
-        case PM_ERROR:		/* shouldn't happen */
-        case PM_NAMES:
-        case PM_CHECK_LOGIN:
-        case PM_UPDATE_NODES:
-	    _client_msg(c, CP_ERR_INTERNAL);
-            break;
         case PM_LOG_OUT:	/* quit */
 	    _client_msg(c, CP_RSP_QUIT);
             _handle_client_write(c);
@@ -436,18 +408,21 @@ void cli_reply(Action * act)
         case PM_POWER_OFF:	/* off */
         case PM_POWER_CYCLE:	/* cycle */
         case PM_RESET:		/* reset */
-	    /* FIXME: need to return status to the client here ! */
+	    /* FIXME: always returns success! */
 	    _client_msg(c, CP_RSP_SUCCESS);
             break;
+        case PM_ERROR:		/* shouldn't happen */
+        case PM_NAMES:
+        case PM_CHECK_LOGIN:
+        case PM_UPDATE_NODES:
         default:
             assert(FALSE);
+	    _client_msg(c, CP_ERR_INTERNAL);
+            break;
     }
 
     _client_prompt(c);
 }
-
-
-
 
 static void _destroy_client(Client * client)
 {

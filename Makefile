@@ -55,13 +55,13 @@ docdir		=	${prefix}/share/doc
 # I'm pretty sure the the %doc directive in the rpm spec file does that for 
 # me.
 
-all: progs
+all: progs tests
 
 progs : 
 	$(MAKE) -C src
 
 tests : 
-	$(MAKE) -C vicebox
+	$(MAKE) -C test
 
 docs : 
 	$(MAKE) -C doc 
@@ -80,6 +80,7 @@ install: all
 	$(INSTALL) etc/pmd.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/wti.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/vicebox.dev		$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/vpc.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) -m 644 etc/powerman.conf	$(DESTDIR)$(packagedir)
 	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/powerman.1	$(DESTDIR)$(mandir)/man1
@@ -103,6 +104,7 @@ uninstall: distclean
 	rm -f $(DESTDIR)$(packagedir)/pmd.dev
 	rm -f $(DESTDIR)$(packagedir)/wti.dev
 	rm -f $(DESTDIR)$(packagedir)/vicebox.dev
+	rm -f $(DESTDIR)$(packagedir)/vpc.dev
 	mv $(DESTDIR)$(packagedir)/powerman.conf	$(packagedir)/powerman.conf.bak
 	rm -f $(DESTDIR)$(mandir)/man1/powerman.1
 	rm -f $(DESTDIR)$(mandir)/man1/powermand.1
@@ -114,7 +116,7 @@ clean:
 	find . -name \*~ -o -name .#* | xargs rm -f
 	make -C src clean
 	make -C doc clean
-	make -C vicebox clean
+	make -C test clean
 
 distclean: clean
 	rm -f *.tgz* *.rpm

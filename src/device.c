@@ -633,7 +633,7 @@ bool _process_expect(Device * dev)
 
     re = &(act->cur->s_or_e.expect.exp);
 
-    if ((expect = util_bufgetregex(dev->from, re)) == NULL) {
+    if ((expect = buf_getregex(dev->from, re)) == NULL) {
 	if (dev->logit) {
 	    unsigned char mem[MAX_BUF];
 	    int len = buf_peekstr(dev->from, mem, MAX_BUF);
@@ -647,7 +647,7 @@ bool _process_expect(Device * dev)
     }
 
     /*
-     * We already matched the regular expression in util_bufgetregex
+     * We already matched the regular expression in buf_getregex
      * but now we need to process values of parenthesized subexpressions.
      */
     dev->status &= ~DEV_EXPECTING;
