@@ -1,46 +1,90 @@
 namespace eval rack {
-    variable mode
+    variable rack_update 0
+    variable Light
+    variable Label
+    variable Node
 # The size of 1 U in pixels
     variable U
     variable U_min
 # Node width measured in U is actually 76/7 (19" over 1 3/4")
     variable node_width_U 10
 # Rack height measured in U is usually 40
-    variable rack_height_U 40
+    variable rack_height_U 42
 # The size of the edge around the cluster measured in pixels
     variable cluster_boundary 40
 # The size of the rack itself around the nodes in pixels
     variable rack_boundary 10
 # The gap between nodes in pixels
     variable rack_gap 10
-# The r, g, and b values of the selected button color for on nodes
-    variable bc_r
-    variable bc_g
-    variable bc_b
+# The r, g, and b values of the selected rack color 
+    variable rbc_r
+    variable rbc_g
+    variable rbc_b
 # The r, g, and b values of the selected rack label color
     variable rlc_r
     variable rlc_g
     variable rlc_b
-# The r, g, and b values of the selected node color for off nodes
+# The r, g, and b values of the selected node color
     variable nc_r
     variable nc_g
     variable nc_b
+# The r, g, and b values of the selected node label color
+    variable nlc_r
+    variable nlc_g
+    variable nlc_b
+# The r, g, and b values of the node color for selected nodes
+    variable snc_r
+    variable snc_g
+    variable snc_b
+# An array pids over nodes for invocations of conman
+    variable Conman
+    variable Conmen
+    variable stat
+# Arrays over nodes for their left, right, top, and bottom pixel
+# positions in the Viewport
+    variable l
+    variable r
+    variable t
+    variable b
+    variable rack_power_node_list
+    variable power_popup
+# variables to assist with selection
+    variable sel_x
+    variable sel_y
+# These are arrays indexed by nodes 
+    variable selected
+    variable select_pat
+    variable select_mode
+    variable U_index
+    variable node_width_index
+    variable rack_height_index
+    variable cluster_boundary_index
+    variable rack_boundary_index
+    variable rack_gap_index
+    variable rbc_index
+    variable rlc_index
+    variable nc_index
+    variable nlc_index
+    variable snc_index
 
     proc init {} {
-	variable mode
+	variable rack_update
+	variable Light
+	variable Label
+	variable Node
 # The size of 1 U in pixels
 	variable U
 	variable U_min
 # Node width measured in U is actually 76/7 (19" over 1 3/4")
-	variable node_width_U 10
+	variable node_width_U 
 # Rack height measured in U is usually 40
-	variable rack_height_U 40
+	variable rack_height_U
 # The size of the edge around the cluster measured in pixels
-	variable cluster_boundary 40
+	variable cluster_boundary
 # The size of the rack itself around the nodes in pixels
-	variable rack_boundary 10
+	variable rack_boundary
 # The gap between nodes in pixels
-	variable rack_gap 10
+	variable rack_gap
 # The r, g, and b values of the selected rack border color
 	variable rbc_r
 	variable rbc_g
@@ -49,98 +93,185 @@ namespace eval rack {
 	variable rlc_r
 	variable rlc_g
 	variable rlc_b
-# The r, g, and b values of the selected node color for off nodes
+# The r, g, and b values of the selected node color
 	variable nc_r
 	variable nc_g
 	variable nc_b
+# The r, g, and b values of the node color for selected nodes
+	variable snc_r
+	variable snc_g
+	variable snc_b
 # The r, g, and b values of the selected node label color
 	variable nlc_r
 	variable nlc_g
 	variable nlc_b
+	variable Index
+# variables to assist with selection
+	variable sel_x
+	variable sel_y
+# These are arrays indexed by nodes 
+	variable selected
 
 	set proc "::gui::rack::init"
 	if {$::app::debug} {puts "$proc"}
 	
-	set mode "rack"
-
+	if {[info exists Node]} {
+	    .cvcan delete node_label
+	    .cvcan delete node_light
+	    .cvcan delete node
+	    .cvcan delete rack_label
+	    .cvcan delete rack
+	    unset Node
+	    unset Light
+	    unset Label
+	}
 	if {![info exists rbc_r]}  {set rbc_r 0}
 	if {![info exists rbc_g]}  {set rbc_g 0}
 	if {![info exists rbc_b]}  {set rbc_b 0}
 	if {![info exists rlc_r]}  {set rlc_r 255}
 	if {![info exists rlc_g]}  {set rlc_g 255}
 	if {![info exists rlc_b]}  {set rlc_b 255}
-	if {![info exists noc_r]}  {set nc_r 0}
-	if {![info exists noc_g]}  {set nc_g 0}
-	if {![info exists noc_b]}  {set nc_b 255}
+	if {![info exists nc_r]}   {set nc_r 0}
+	if {![info exists nc_g]}   {set nc_g 0}
+	if {![info exists nc_b]}   {set nc_b 255}
+	if {![info exists snc_r]}  {set snc_r 255}
+	if {![info exists snc_g]}  {set snc_g 255}
+	if {![info exists snc_b]}  {set snc_b 255}
 	if {![info exists nlc_r]}  {set nlc_r 0}
 	if {![info exists nlc_g]}  {set nlc_g 0}
 	if {![info exists nlc_b]}  {set nlc_b 0}
 # The thinnest node that will allow it to be written on
 	set U_min [expr $::gui::font_size + 5]
-	set last [llength $::powerlib::nodes]
-	if {$last > 0} {
-	    set test_name [lindex $::powerlib::nodes $last]
-	} else {
-	    set test_name "node100"
-	}
-	set min_node_width  [font measure $::gui::current_font \
-		[format "%s: %s" $test_name "inactive"]]
-	set test_U [expr $min_node_width / $node_width_U]
-# The least wide node that can still get both name and console state written in
-	if {$test_U > $U_min} {
-	    set U_min $test_U
-	}
-
-	set num_racks [llength $::powerlib::locations]
-	set U_1 [expr (($::gui::Canvas::Width - 2 * $cluster_boundary \
-		- $rack_gap * ($num_racks - 1))/$num_racks \
-		- 2 * $rack_boundary) / $node_width_U]
-
-	set U_2 [expr ($::gui::Canvas::Height - 2 * $rack_boundary - \
-		2 * $cluster_boundary)/$rack_height_U]
-
-# The largest node that will fit entirely on the canvas
-	set U [expr ($U_1 < $U_2) ? $U_1 : $U_2]
-
-	if { $U < $U_min } {
-	    puts "We are in fixed Viewport mode due to overlarge U = $U"
-	    set U $U_min
-	    set ::gui::Viewport::fixed 1
-# Anything else needed to initialize fixed viewport operation including
-# setting the Viewport parameters, creating scrollbars, and setting their 
-# values.
-	} else {
-	    if {$::gui::Viewport::fixed} {
-		puts "We arrived here in fixed Viewport mode"
-# stuff to set up fixed viewport, or to turn the mode back to adjustable
-# mode and get rid of scrollbars and such
-	    } else {
-# This is where I always want to end up for now...
-# There may be a little extra room up-down or left-right after the U
-# is determined, so spread it out in the boundary and/or gap between racks.
-		set extra_y [expr ($::gui::Canvas::Height - \
-			$rack_height_U * $U - 2 * $rack_boundary - \
-			2 *  $cluster_boundary) / 2]
-		set cluster_boundary_y [expr $cluster_boundary + $extra_y]
-		set extra_x [expr ($::gui::Canvas::Width - \
-			$num_racks * $node_width_U * $U - \
-			($num_racks - 1) * $rack_gap - \
-			$num_racks * 2 * $rack_boundary - \
-			2 * $cluster_boundary) / ($num_racks + 1)]
-		set cluster_boundary_x [expr $cluster_boundary + $extra_x]
-		set rack_gap [expr $rack_gap + $extra_x]
-		set rack_off_x [expr $::gui::Viewport::LeftOff + \
-			$cluster_boundary_x]
-		set rack_off_y [expr $::gui::Viewport::TopOff + \
-			$cluster_boundary + 2 * $rack_boundary + \
-			$rack_height_U * $U]
-		foreach rack $::powerlib::locations {
-		    mkRack $rack $rack_off_x $rack_off_y 
-		    set rack_off_x [expr $rack_off_x + \
-			    $node_width_U * $U + 2 * $rack_boundary + \
-			    $rack_gap]
-		} 
+	if {[info exists ::powerlib::cluster]} {
+# If a resize event causes the panel to be redisplayed its easiest if the
+# selected nodes are unselected and unmarked.
+	    foreach node $::powerlib::nodes {
+		if {[info exists selected($node)] && $selected($node)} {
+		    ::gui::rack::rack_select $node
+		}
 	    }
+
+	    set last [llength $::powerlib::nodes]
+	    if {$last > 0} {
+		set test_name [lindex $::powerlib::nodes $last]
+	    } else {
+		set test_name "node100"
+	    }
+	    set min_node_width  [font measure $::gui::current_font \
+		    [format "%s: %s" $test_name "inactive"]]
+	    set test_U [expr $min_node_width / $node_width_U]
+	    # The least wide node that can still get both name and console state written in
+	    if {$test_U > $U_min} {
+		set U_min $test_U
+	    }
+	    
+	    set num_racks [llength $::powerlib::locations]
+	    if {$num_racks == 0} {
+		puts "Cluster is defined but there are no racks"
+		break
+	    }
+	    if {![info exists U]} {
+		set U_1 [expr (($::gui::Canvas::Width - 2 * $cluster_boundary \
+			- $rack_gap * ($num_racks - 1))/$num_racks \
+			- 2 * $rack_boundary) / $node_width_U]
+		
+		set U_2 [expr ($::gui::Canvas::Height - 2 * $rack_boundary - \
+			2 * $cluster_boundary)/$rack_height_U]
+		
+		# The largest node that will fit entirely on the canvas
+		set U [expr ($U_1 < $U_2) ? $U_1 : $U_2]
+	    }
+	    if { $U < $U_min } {
+		# We are in fixed Viewport mode due to overlarge U
+		set U $U_min
+		set min_width [expr ($node_width_U * $U + \
+			$rack_boundary) * $num_racks + 2 * $cluster_boundary]
+		if {$min_width > $::gui::Canvas::Width} {
+		    set ::gui::Viewport::Width $min_width
+		}
+		set min_height [expr $rack_height_U * $U + \
+			2 * $cluster_boundary]
+		if {$min_height > $::gui::Canvas::Height} {
+		    set ::gui::Viewport::Height $min_height
+		}
+		::gui::set_fixed
+		# Anything else needed to initialize fixed viewport operation including
+		# setting the Viewport parameters, creating scrollbars, and setting their 
+		# values.
+	    }
+	    set extra_y [expr ($::gui::Viewport::Height - \
+		    $rack_height_U * $U - 2 * $rack_boundary - \
+		    2 *  $cluster_boundary) / 2]
+	    set cluster_boundary_y [expr $cluster_boundary + $extra_y]
+	    set extra_x [expr ($::gui::Viewport::Width - \
+		    $num_racks * $node_width_U * $U - \
+		    ($num_racks - 1) * $rack_gap - \
+		    $num_racks * 2 * $rack_boundary - \
+		    2 * $cluster_boundary) / ($num_racks + 1)]
+	    set cluster_boundary_x [expr $cluster_boundary + $extra_x]
+	    set rack_gap [expr $rack_gap + $extra_x]
+	    set rack_off_x [expr $::gui::Viewport::LeftOff + \
+		    $cluster_boundary_x]
+	    set rack_off_y [expr $::gui::Viewport::TopOff + \
+		    $cluster_boundary + 2 * $rack_boundary + \
+		    $rack_height_U * $U]
+	    foreach rack $::powerlib::locations {
+		mkRack $rack $rack_off_x $rack_off_y 
+		set rack_off_x [expr $rack_off_x + \
+			$node_width_U * $U + 2 * $rack_boundary + \
+			$rack_gap]
+	    } 
+	    if {$rack_update == 0} {
+		set rack_update 1
+		update
+	    }
+
+	    bind .cvcan <Button-3> {::gui::rack::do_rack_pop %x %y}
+
+	    bind .cvcan <ButtonPress-1> {
+		foreach node $::powerlib::nodes {
+		    if {[info exists ::gui::rack::selected($node)] && \
+			    $::gui::rack::selected($node)} {
+			::gui::rack::rack_select $node
+		    }
+		}
+		set ::gui::rack::sel_x %x
+		set ::gui::rack::sel_y %y
+	    }
+
+	    bind .cvcan <ButtonRelease-1> {
+		if {[info exists ::gui::rack::sel_x]} {
+		    if {$::gui::rack::sel_y < %y} {
+			set top $::gui::rack::sel_y
+			set bot %y
+		    } else {
+			set top %y
+			set bot $::gui::rack::sel_y
+		    }
+		    if {$::gui::rack::sel_x > %x} {
+			set right $::gui::rack::sel_x
+			set left %x
+		    } else {
+			set right %x
+			set left $::gui::rack::sel_x
+		    }
+		    unset ::gui::rack::sel_x
+		    unset ::gui::rack::sel_y
+		    foreach node $::powerlib::nodes {
+			if {($::gui::rack::r($node) > $left)      && \
+				($::gui::rack::l($node) < $right) && \
+				($::gui::rack::b($node) > $top)   && \
+				($::gui::rack::t($node) < $bot)} {
+			    ::gui::rack::rack_select $node
+			}
+		    }
+		    unset left
+		    unset right
+		    unset top
+		    unset bot
+		}
+	    }
+
 	}
     }
     # end of "proc init"
@@ -180,30 +311,1111 @@ namespace eval rack {
 	}
     }
 
+    proc delRack {rack} {
+	variable Racks
+    }
+
     proc mkNode {node x y h} {
+	variable Node
+	variable Light
+	variable Label
 	variable node_width_U 
 	variable U
-# The r, g, and b values of the selected rack label color
+# The r, g, and b values of the selected node color
 	variable nc_r
 	variable nc_g
 	variable nc_b
+# The r, g, and b values of the selected node label color
+	variable nlc_r
+	variable nlc_g
+	variable nlc_b
+# Arrays over nodes for their left, right, top, and bottom pixel
+# positions in the Viewport
+	variable l
+	variable r
+	variable t
+	variable b
+# An array over canvas rectangles giving the node with which each 
+# is associated 
+	variable Index
+
+	set node_color [format "\#%02x%02x%02x" $nc_r $nc_g $nc_b]
+	set label_color [format "\#%02x%02x%02x" $nlc_r $nlc_g $nlc_b]
+	set l($node) $x
+	set t($node) [expr $y - $h * $U]
+	set r($node) [expr $x + $node_width_U * $U]
+	set b($node) $y
+	set Node($node) [.cvcan create rectangle $l($node) $t($node) \
+		$r($node) $b($node) -fill $node_color -tags node]
+	set radius [expr $U/4]
+	set Light($node) [.cvcan create oval  \
+		[expr ($l($node) + $r($node))/2 - $radius] \
+		[expr ($t($node) + $b($node))/2 - $radius] \
+		[expr ($l($node) + $r($node))/2 + $radius] \
+		[expr ($t($node) + $b($node))/2 + $radius] \
+		-fill black -tags node_light]
+	set Label($node) [.cvcan create text [expr $l($node) + 2] \
+		[expr $b($node) - 2] \
+		-text $node -font $::gui::current_font \
+		-anchor sw -fill $label_color -tags node_label ]
+	set Index($Node($node)) $node
+    }
+
+    proc delNode {node} {
+	variable Nodes
+    }
+
+    proc do_rack_pop {x y} {
+	variable rack_popup
+	variable Index
+	variable rack_node_list
+	variable selected
+
+	set rack_node_list {}
+	foreach node $::powerlib::nodes {
+	    if {[info exists selected($node)] && $selected($node)} {
+		lappend rack_node_list $node
+	    }
+	}
+	if {[llength $rack_node_list] <= 0} {
+	    lappend rack_node_list $Index([.cvcan find closest $x $y])
+	}
+	if {[info exists rack_popup]} {
+	    if {[winfo ismapped .r_pop]} {
+		focus .r_pop
+	    } else {
+		.r_pop post [expr $x + [winfo rootx .]] \
+			[expr $y + [winfo rooty .]]
+	    }
+	} else {
+	    set rack_popup [menu .r_pop -takefocus 1]
+	    .r_pop add command -label "never mind" \
+		    -font $::gui::current_font \
+		    -command {unset rack_popup}
+	    .r_pop add command -label "console" -font $::gui::current_font \
+		    -command {::gui::rack::rack_console \
+		    $::gui::rack::rack_node_list}
+	    .r_pop add command -label "console_status" \
+		    -font $::gui::current_font \
+		    -command {::gui::rack::rack_console_stat \
+		    $::gui::rack::rack_node_list
+	    }
+	    .r_pop add command -label "broadcast console" \
+		    -font $::gui::current_font \
+		    -command {::gui::rack::broadcast_console \
+		    $::gui::rack::rack_node_list}
+	    .r_pop add command -label "cancel consoles" \
+		    -font $::gui::current_font \
+		    -command {::gui::rack::cancel_consoles \
+		    $::gui::rack::rack_node_list}
+	    .r_pop add command -label "power on/off" \
+		    -font $::gui::current_font \
+		    -command {::gui::rack::rack_power \
+		    $::gui::rack::rack_node_list}
+	    .r_pop post [expr $x + [winfo rootx .]] \
+			[expr $y + [winfo rooty .]]
+	}
+    }
+    
+    proc rack_console {node_list} {
+	variable Conman
+	
+	foreach node $node_list {
+	    set Conman($node) [exec xterm -T $node -n $node -e conman \
+		    -j $node &]
+	    puts "pid for conman to node $node is: $Conman($node)"
+	}
+    }
+
+    proc rack_console_stat {node_list} {
+	variable stat
+	variable r
+	variable b
 # The r, g, and b values of the selected rack label color
 	variable nlc_r
 	variable nlc_g
 	variable nlc_b
 
-	set node_color [format "\#%02x%02x%02x" $nc_r $nc_g $nc_b]
 	set label_color [format "\#%02x%02x%02x" $nlc_r $nlc_g $nlc_b]
-	.cvcan create rectangle $x [expr $y - $h * $U] \
-		[expr $x + $node_width_U * $U] $y -fill $node_color -tags node
-	.cvcan create text [expr $x + 2] [expr $y -2] \
-		-text $node -font $::gui::current_font \
-		-anchor sw -fill $label_color -tags rack_label 
+	set con_stat [eval exec $::app::lib_dir/wtf.exp -j $node_list]
+	foreach line $con_stat {
+	    set node [string range $line 0 \
+		    [expr [string first ":" $line] - 1]]
+	    if {[info exists stat($node)]} {
+		.cvcan delete $stat($node)
+	    }
+	    set stat($node) [string range $line \
+		    [expr [string first ":" $line] + 1] end]
+	    set x [expr $r($node) - 2]
+	    set y [expr $b($node) - 2]
+	    .cvcan create text $x $y -text $stat($node) -fill $label_color \
+		    -anchor se -tags stat_up -font $::gui::current_font 
+	}	
+    }
+
+    proc broadcast_console {node_list} {
+	variable Conmen
+
+	set Conmen [exec xterm -T "Broadcast" -n "Broadcast" -e conman \
+		    -j $node_list &]
+    }
+    
+    proc cancel_consoles {node_list} {
+	variable Conman
+	variable Conmen
+
+	foreach node $node_list {
+	    if {[info exists Conman($node)]} {
+		exec kill -9 $Conman($node)
+		unset Conman($node)
+	    }
+	} 
+	if {[info exists Conmen]} {
+	    exec kill -9 $Conmen
+	    unset Conmen
+	}	    
+    }
+
+    proc rack_power {node_list} {
+	variable power_popup
+	variable rack_power_node_list
+
+	if {[info exists power_popup]} {
+	    focus .power_popup
+	} else {
+	    set rack_power_node_list $node_list
+	    set power_popup [toplevel .power_popup -takefocus 1]
+	    set x [winfo pointerx .]
+	    set y [winfo pointery .]
+	    wm geometry .power_popup +$x+$y
+	    button .power_popup.on -text "on" -font $::gui::current_font \
+		    -command {::powerlib::power \
+		    $::gui::rack::rack_power_node_list "on"
+	    }
+	    button .power_popup.off -text "off" -font $::gui::current_font \
+		    -command {::powerlib::power \
+		    $::gui::rack::rack_power_node_list "off"
+	    }
+	    button .power_popup.reset -text "reset" \
+		    -font $::gui::current_font \
+		    -command {::powerlib::power \
+		    $::gui::rack::rack_power_node_list "reset"
+	    }
+	    button .power_popup.cancel -text "cancel" \
+		    -font $::gui::current_font \
+		    -command {
+		destroy .power_popup 
+		unset ::gui::rack::power_popup
+	    }
+	    pack .power_popup.on .power_popup.off .power_popup.reset \
+		    .power_popup.cancel -side top -fill x -expand 1
+	}
     }
 
     proc fini {} {
+	variable rack_update
+	variable Light
+	variable Label
+	variable Node
+	variable U
+	variable U_min
+	variable node_width_U 10
+	variable rack_height_U 42
+	variable cluster_boundary 40
+	variable rack_boundary 10
+	variable rack_gap 10
+	variable rbc_r
+	variable rbc_g
+	variable rbc_b
+	variable rlc_r
+	variable rlc_g
+	variable rlc_b
+	variable nc_r
+	variable nc_g
+	variable nc_b
+	variable nlc_r
+	variable nlc_g
+	variable nlc_b
+	variable snc_r
+	variable snc_g
+	variable snc_b
+	variable Conman
+	variable Conmen
+	variable stat
+	variable l
+	variable r
+	variable t
+	variable b
+	variable rack_power_node_list
+	variable power_popup
+	variable sel_x
+	variable sel_y
+	variable selected
+	variable U_index
+	variable node_width_index
+	variable rack_height_index
+	variable cluster_boundary_index
+	variable rack_boundary_index
+	variable rack_gap_index
+	variable rbc_index
+	variable rlc_index
+	variable nc_index
+	variable nlc_index
+	variable snc_index
+	
 	.cvcan delete all
+	if {[info exists Light]} {unset Light}
+	if {[info exists Label]} {unset Label}
+	if {[info exists Node]} {unset Node}
+	if {[info exists U]} {unset U}
+	if {[info exists U_min]} {unset U_min}
+	if {[info exists node_width_U 10]} {unset node_width_U 10}
+	if {[info exists rack_height_U 42]} {unset rack_height_U 42}
+	if {[info exists cluster_boundary 40]} {unset cluster_boundary 40}
+	if {[info exists rack_boundary 10]} {unset rack_boundary 10}
+	if {[info exists rack_gap 10]} {unset rack_gap 10}
+	if {[info exists rbc_r]} {unset rbc_r}
+	if {[info exists rbc_g]} {unset rbc_g}
+	if {[info exists rbc_b]} {unset rbc_b}
+	if {[info exists rlc_r]} {unset rlc_r}
+	if {[info exists rlc_g]} {unset rlc_g}
+	if {[info exists rlc_b]} {unset rlc_b}
+	if {[info exists nc_r]} {unset nc_r}
+	if {[info exists nc_g]} {unset nc_g}
+	if {[info exists nc_b]} {unset nc_b}
+	if {[info exists nlc_r]} {unset nlc_r}
+	if {[info exists nlc_g]} {unset nlc_g}
+	if {[info exists nlc_b]} {unset nlc_b}
+	if {[info exists snc_r]} {unset snc_r}
+	if {[info exists snc_g]} {unset snc_g}
+	if {[info exists snc_b]} {unset snc_b}
+	if {[info exists Conman]} {unset Conman}
+	if {[info exists Conmen]} {unset Conmen}
+	if {[info exists stat]} {unset stat}
+	if {[info exists l]} {unset l}
+	if {[info exists r]} {unset r}
+	if {[info exists t]} {unset t}
+	if {[info exists b]} {unset b}
+	if {[info exists rack_power_node_list]} {unset rack_power_node_list}
+	if {[info exists power_popup]} {unset power_popup}
+	if {[info exists sel_x]} {unset sel_x}
+	if {[info exists sel_y]} {unset sel_y}
+	if {[info exists selected]} {unset selected}
+	if {[info exists U_index]} {unset U_index}
+	if {[info exists node_width_index]} {unset node_width_index}
+	if {[info exists rack_height_index]} {unset rack_height_index}
+	if {[info exists cluster_boundary_index]} {unset cluster_boundary_index}
+	if {[info exists rack_boundary_index]} {unset rack_boundary_index}
+	if {[info exists rack_gap_index]} {unset rack_gap_index}
+	if {[info exists rbc_index]} {unset rbc_index}
+	if {[info exists rlc_index]} {unset rlc_index}
+	if {[info exists nc_index]} {unset nc_index}
+	if {[info exists nlc_index]} {unset nlc_index}
+	if {[info exists snc_index]} {unset snc_index}
+	set rack_update 0
     }
+    
+    proc rack_select {node} {
+	variable Node
+	# This is an array over nodes
+	variable selected
+	# The r, g, and b values of the regular node color
+	variable nc_r
+	variable nc_g
+	variable nc_b
+# The r, g, and b values of the node color for selected nodes
+	variable snc_r
+	variable snc_g
+	variable snc_b
+	variable l
+	variable b
+
+	set selected_color [format "\#%02x%02x%02x" $snc_r $snc_g $snc_b]
+	set node_color [format "\#%02x%02x%02x" $nc_r $nc_g $nc_b]
+	if {[info exists selected($node)]} {
+	    set selected($node) [expr 1 - $selected($node)]
+	} else {
+	    set selected($node) 1
+	}
+	if {$selected($node)} {
+	    .cvcan itemconfigure $Node($node) -fill $selected_color
+	} else {
+	    .cvcan itemconfigure $Node($node) -fill $node_color
+	}
+    }
+    proc select_com {} {
+	variable selected
+	variable select_pat ""
+	variable select_mode 0
+
+	foreach node $::powerlib::nodes {
+	    if {[info exists selected($node)] && $selected($node)} {
+		rack_select $node
+	    }   
+	}
+	if {![winfo exists .rack_select]} {
+	    toplevel .rack_select
+	    set x [expr [winfo rootx .] + [winfo width .] /5]
+	    set y [expr [winfo rooty .] + [winfo height .] /5]
+	    wm geometry .rack_select +$x+$y
+	    label .rack_select.label -text "selection pattern" \
+		    -font $::gui::current_font 
+	    entry .rack_select.entry -width 20 -textvariable select_pat
+	    frame .rack_select.mode
+	    radiobutton .rack_select.mode.regex -text "regex" \
+		    -value 1 -variable select_mode 
+	    radiobutton .rack_select.mode.glob -text "glob" \
+		    -value 0 -variable select_mode 
+	    pack .rack_select.mode.regex .rack_select.mode.glob \
+		    -side top -fill x -expand 1
+	    button .rack_select.done -text "done" \
+		    -command ::gui::rack::selection_done
+
+	    pack .rack_select.label .rack_select.entry .rack_select.mode \
+		    .rack_select.done -side left -fill y -expand 1
+	    bind .rack_select.mode.regex <Button-1> {
+		set ::gui::rack::select_mode 1
+	    }
+	    bind .rack_select.mode.glob <Button-1> {
+		set ::gui::rack::select_mode 0
+	    }
+	}
+	focus .rack_select
+    }
+
+    proc selection_done {} {
+	variable selected
+	variable select_pat
+	variable select_mode
+
+	set select_pat [.rack_select.entry get]
+	foreach node $::powerlib::nodes {
+	    if {$select_mode} {
+		puts "Checking regex match for $node with $select_pat"
+		if {[regexp $select_pat $node]} {
+		    rack_select $node
+		}
+	    } else {
+		puts "Checking glob match for $node with $select_pat"
+		if {[string match $select_pat $node]} {
+		    rack_select $node
+		}
+	    }
+	}
+	destroy .rack_select
+    }
+
+    proc update {} {
+	variable Light
+	variable rack_update
+
+	set proc "::gui::rack::update"
+	if {$::app::debug} {puts "$proc"}
+	
+# We may have changed to another view since the last update and the
+# Osterhout book doesn't mention cancelling "after" events, so check
+# first that we're still in the "rack" mode.  If we're not then don't
+# do anything, and especially don't schedule any more updates.
+	if {$::gui::mode == "rack"} {
+	    foreach node $::powerlib::nodes {
+		if {$::app::state($node)} {
+		    .cvcan itemconfigure $Light($node) -fill red
+		} else {
+		    .cvcan itemconfigure $Light($node) -fill black
+		}
+	    }
+	    set rack_update 1
+	    after 1000 ::gui::rack::update
+	} else {
+	    set rack_update 0
+	}
+    }
+
+
+    proc preferences {} {
+# To add a new preference to the list it requires you to coordinate 
+# things in several places and make sure they are consistent:
+# 1)  Add three lines here that set the new prefernce intry in the
+#       listbox, it's index, and increment the pref_index
+# 2)  Add the ::gui globals here and/or above for any parameters controlled
+#       by the preference as well as its index
+# 3)  Add a line to the procedure ::gui::alt_pref dispatching to the 
+#       procedure ::gui::make_the_pref
+# 4)  Add functions implementing the proc ::gui::make_the_pref
+# 5)  Add whatever code is neede to proc init
+# 6)  Add whatever code is needed to proc prefs_done
+	variable prefs_index
+	variable U_index
+	variable node_width_index
+	variable rack_height_index
+	variable cluster_boundary_index
+	variable rack_boundary_index
+	variable rack_gap_index
+	variable rbc_index
+	variable rlc_index
+	variable nc_index
+	variable nlc_index
+	variable snc_index
+
+	set proc "::gui::rack::prfernces"
+	if {$::app::debug} {puts "$proc"}
+
+	if {![winfo exists .rack_prefs]} {
+	    toplevel .rack_prefs
+	    set x [expr [winfo rootx .] + [winfo width .] /5]
+	    set y [expr [winfo rooty .] + [winfo height .] /5]
+	    wm geometry .rack_prefs +$x+$y
+	    frame .rack_prefs.scroll_list
+	    listbox .rack_prefs.scroll_list.list -height 5 \
+		    -selectmode single -width 0 \
+		    -yscrollcommand ".rack_prefs.scroll_list.scroll set"
+	    scrollbar .rack_prefs.scroll_list.scroll  \
+		    -command ".rack_prefs.scroll_list.list yview"
+	    set prefs_index 0
+	    
+	    .rack_prefs.scroll_list.list insert end "U in pixels"
+	    set U_index $prefs_index
+	    incr prefs_index
+	    
+	    .rack_prefs.scroll_list.list insert end "Node width in U"
+	    set node_width_index $prefs_index
+	    incr prefs_index
+	    
+	    .rack_prefs.scroll_list.list insert end "rack height in U"
+	    set rack_height_index $prefs_index
+	    incr prefs_index
+	    
+	    .rack_prefs.scroll_list.list insert end "cluster boundary"
+	    set cluster_boundary_index $prefs_index
+	    incr prefs_index
+	    
+	    .rack_prefs.scroll_list.list insert end "rack boundary"
+	    set rack_boundary_index $prefs_index
+	    incr prefs_index
+	    
+	    .rack_prefs.scroll_list.list insert end "rack gap"
+	    set rack_gap_index $prefs_index
+	    incr prefs_index
+
+	    .rack_prefs.scroll_list.list insert end "rack boundary color"
+	    set rbc_index $prefs_index
+	    incr prefs_index
+	    
+	    .rack_prefs.scroll_list.list insert end "rack label color"
+	    set rlc_index $prefs_index
+	    incr prefs_index
+	    
+	    .rack_prefs.scroll_list.list insert end "node color"
+	    set nc_index $prefs_index
+	    incr prefs_index
+	    
+	    .rack_prefs.scroll_list.list insert end "node label color"
+	    set nlc_index $prefs_index
+	    incr prefs_index
+	    
+	    .rack_prefs.scroll_list.list insert end "selected node color"
+	    set snc_index $prefs_index
+	    incr prefs_index
+	    
+	    pack .rack_prefs.scroll_list.list -side left
+	    pack .rack_prefs.scroll_list.scroll -side right -fill y
+	    pack .rack_prefs.scroll_list -side left
+	    
+	    frame .rack_prefs.expl
+	    
+	    frame .rack_prefs.expl.done_frame
+	    button .rack_prefs.expl.done_frame.done -text "done" \
+		    -font $::gui::current_font -command ::gui::rack::prefs_done
+	    pack .rack_prefs.expl.done_frame.done -side top -fill x -expand 1
+	    pack .rack_prefs.expl.done_frame
+	    
+	    ::gui::rack::make_U 
+	    
+	    pack .rack_prefs.expl -side right
+	    bind .rack_prefs.scroll_list.list <Button-1> {
+		::gui::rack::alt_pref [.rack_prefs.scroll_list.list nearest %y]
+	    }
+	}
+	focus .rack_prefs
+    }
+
+    proc alt_pref {el} {
+	variable U_index
+	variable node_width_index
+	variable rack_height_index
+	variable cluster_boundary_index
+	variable rack_boundary_index
+	variable rack_gap_index
+	variable rbc_index
+	variable rlc_index
+	variable nc_index
+	variable nlc_index
+	variable snc_index
+
+	set proc "::gui::rack::alt_pref"
+	if {$::app::debug} {puts "$proc"}
+
+	switch $el  {
+	    0  {::gui::rack::make_U}
+	    1  {::gui::rack::make_node_width}
+	    2  {::gui::rack::make_rack_height}
+	    3  {::gui::rack::make_cluster_boundary}
+	    4  {::gui::rack::make_rack_boundary}
+	    5  {::gui::rack::make_rack_gap}
+	    6  {::gui::rack::make_rbc}
+	    7  {::gui::rack::make_rlc}
+	    8  {::gui::rack::make_nc}
+	    9  {::gui::rack::make_nlc}
+	    10 {::gui::rack::make_snc}
+	}
+    }
+
+    proc make_U {} {
+# Changing this didn't seem to have an effect, but it should 
+# screw up tile placement, so you need to 
+# repaint the tiles from scratch.  Also it should be done right 
+# after the change size even
+	variable prefs_index
+	variable U_index
+	variable U
+	variable U_min
+
+	set proc "::gui::rack::make_U"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .rack_prefs.expl.vals
+	destroy .rack_prefs.expl.text_frame
+
+	.rack_prefs.scroll_list.list selection clear 0 $prefs_index
+	.rack_prefs.scroll_list.list selection set $U_index
+	.rack_prefs.scroll_list.list activate $U_index
+	frame .rack_prefs.expl.vals
+
+	scale .rack_prefs.expl.vals.u  \
+		-from $U_min -to [expr 5 * $U_min] \
+		-label "U in pixels" -showvalue 1 -font $::gui::current_font \
+		-variable ::gui::rack::U \
+		-command {set ::gui::rack::U}
+	.rack_prefs.expl.vals.u set $U
+	pack .rack_prefs.expl.vals.u \
+		-side left -fill x -expand 1
+	pack .rack_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .rack_prefs.expl.done_frame
+	message .rack_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-text "set the size of one U in pixels" \
+		-font $::gui::current_font 
+	pack .rack_prefs.expl.text_frame \
+		-before .rack_prefs.expl.done_frame \
+		-fill x -expand 1
+
+    }
+
+    proc make_node_width {} {
+# Changing this didn't seem to have an effect, but it should 
+# screw up tile placement, so you need to 
+# repaint the tiles from scratch.  Also it should be done right 
+# after the change size even
+	variable prefs_index
+	variable node_width_index
+	variable node_width_U
+
+	set proc "::gui::rack::make_node_width"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .rack_prefs.expl.vals
+	destroy .rack_prefs.expl.text_frame
+
+	.rack_prefs.scroll_list.list selection clear 0 $prefs_index
+	.rack_prefs.scroll_list.list selection set $node_width_index
+	.rack_prefs.scroll_list.list activate $node_width_index
+	frame .rack_prefs.expl.vals
+
+	scale .rack_prefs.expl.vals.node_width  \
+		-from 1 -to 25 -label "node_width in U" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::rack::node_width_U \
+		-command {set ::gui::rack::node_width_U}
+	.rack_prefs.expl.vals.node_width set $node_width_U
+	pack .rack_prefs.expl.vals.node_width \
+		-side left -fill x -expand 1
+	pack .rack_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .rack_prefs.expl.done_frame
+	message .rack_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-text "set the width of a node in U" \
+		-font $::gui::current_font 
+	pack .rack_prefs.expl.text_frame \
+		-before .rack_prefs.expl.done_frame \
+		-fill x -expand 1
+
+    }
+
+    proc make_rack_height {} {
+# Changing this didn't seem to have an effect, but it should 
+# screw up tile placement, so you need to 
+# repaint the tiles from scratch.  Also it should be done right 
+# after the change size even
+	variable prefs_index
+	variable rack_height_index
+	variable rack_height_U
+
+	set proc "::gui::rack::make_rack_height"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .rack_prefs.expl.vals
+	destroy .rack_prefs.expl.text_frame
+
+	.rack_prefs.scroll_list.list selection clear 0 $prefs_index
+	.rack_prefs.scroll_list.list selection set $rack_height_index
+	.rack_prefs.scroll_list.list activate $rack_height_index
+	frame .rack_prefs.expl.vals
+
+	scale .rack_prefs.expl.vals.rack_height  \
+		-from 1 -to 100 -label "rack_height in U" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::rack::rack_height_U \
+		-command {set ::gui::rack::rack_height_U}
+	.rack_prefs.expl.vals.rack_height set $rack_height_U
+	pack .rack_prefs.expl.vals.rack_height \
+		-side left -fill x -expand 1
+	pack .rack_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .rack_prefs.expl.done_frame
+	message .rack_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-text "set the height of a rack in U" \
+		-font $::gui::current_font 
+	pack .rack_prefs.expl.text_frame \
+		-before .rack_prefs.expl.done_frame \
+		-fill x -expand 1
+
+    }
+
+    proc make_rack_boundary {} {
+# Changing this didn't seem to have an effect, but it should 
+# screw up tile placement, so you need to 
+# repaint the tiles from scratch.  Also it should be done right 
+# after the change size even
+	variable prefs_index
+	variable rack_boundary_index
+	variable rack_boundary
+	variable U
+
+	set proc "::gui::rack::make_rack_boundary"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .rack_prefs.expl.vals
+	destroy .rack_prefs.expl.text_frame
+
+	.rack_prefs.scroll_list.list selection clear 0 $prefs_index
+	.rack_prefs.scroll_list.list selection set $rack_boundary_index
+	.rack_prefs.scroll_list.list activate $rack_boundary_index
+	frame .rack_prefs.expl.vals
+
+	scale .rack_prefs.expl.vals.rack_boundary  \
+		-from 0 -to [expr 10 * $U] \
+		-label "rack_boundary in pixels" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::rack::rack_boundary \
+		-command {set ::gui::rack::rack_boundary}
+	.rack_prefs.expl.vals.rack_boundary set $rack_boundary
+	pack .rack_prefs.expl.vals.rack_boundary \
+		-side left -fill x -expand 1
+	pack .rack_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .rack_prefs.expl.done_frame
+	message .rack_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-text "set the size of the rack_boundary in pixels" \
+		-font $::gui::current_font 
+	pack .rack_prefs.expl.text_frame \
+		-before .rack_prefs.expl.done_frame \
+		-fill x -expand 1
+
+    }
+
+    proc make_cluster_boundary {} {
+# Changing this didn't seem to have an effect, but it should 
+# screw up tile placement, so you need to 
+# repaint the tiles from scratch.  Also it should be done right 
+# after the change size even
+	variable prefs_index
+	variable cluster_boundary_index
+	variable cluster_boundary
+	variable U
+
+	set proc "::gui::rack::make_cluster_boundary"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .rack_prefs.expl.vals
+	destroy .rack_prefs.expl.text_frame
+
+	.rack_prefs.scroll_list.list selection clear 0 $prefs_index
+	.rack_prefs.scroll_list.list selection set $cluster_boundary_index
+	.rack_prefs.scroll_list.list activate $cluster_boundary_index
+	frame .rack_prefs.expl.vals
+
+	scale .rack_prefs.expl.vals.cluster_boundary  \
+		-from 0 -to [expr 10 * $U] \
+		-label "cluster_boundary in pixels" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::rack::cluster_boundary \
+		-command {set ::gui::rack::cluster_boundary}
+	.rack_prefs.expl.vals.cluster_boundary set $cluster_boundary
+	pack .rack_prefs.expl.vals.cluster_boundary \
+		-side left -fill x -expand 1
+	pack .rack_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .rack_prefs.expl.done_frame
+	message .rack_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-text "set the size of the cluster_boundary in pixels" \
+		-font $::gui::current_font 
+	pack .rack_prefs.expl.text_frame \
+		-before .rack_prefs.expl.done_frame \
+		-fill x -expand 1
+
+    }
+
+    proc make_rack_gap {} {
+# Changing this didn't seem to have an effect, but it should 
+# screw up tile placement, so you need to 
+# repaint the tiles from scratch.  Also it should be done right 
+# after the change size even
+	variable prefs_index
+	variable rack_gap_index
+	variable rack_gap
+	variable U
+
+	set proc "::gui::rack::make_rack_gap"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .rack_prefs.expl.vals
+	destroy .rack_prefs.expl.text_frame
+
+	.rack_prefs.scroll_list.list selection clear 0 $prefs_index
+	.rack_prefs.scroll_list.list selection set $rack_gap_index
+	.rack_prefs.scroll_list.list activate $rack_gap_index
+	frame .rack_prefs.expl.vals
+
+	scale .rack_prefs.expl.vals.rack_gap  \
+		-from 0 -to [expr 10 * $U] \
+		-label "rack_gap in pixels" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::rack::rack_gap \
+		-command {set ::gui::rack::rack_gap}
+	.rack_prefs.expl.vals.rack_gap set $rack_gap
+	pack .rack_prefs.expl.vals.rack_gap \
+		-side left -fill x -expand 1
+	pack .rack_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .rack_prefs.expl.done_frame
+	message .rack_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-text "set the size of the rack_gap in pixels" \
+		-font $::gui::current_font 
+	pack .rack_prefs.expl.text_frame \
+		-before .rack_prefs.expl.done_frame \
+		-fill x -expand 1
+
+    }
+
+    proc make_rbc {} {
+	variable prefs_index
+	variable rbc_index
+	variable rbc_r
+	variable rbc_g
+	variable rbc_b
+
+	set proc "::gui::rack::make_rbc"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .rack_prefs.expl.vals
+
+	.rack_prefs.scroll_list.list selection clear 0 $prefs_index
+	.rack_prefs.scroll_list.list selection set $rbc_index
+	.rack_prefs.scroll_list.list activate $rbc_index
+	frame .rack_prefs.expl.vals
+# This should be three slides 0 .. 255 for colors
+	scale .rack_prefs.expl.vals.r  -from 0 -to 255 -label "R" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::rbc_r \
+		-command {::gui::rack::set_rbc "r"}
+	.rack_prefs.expl.vals.r set $rbc_r
+	scale .rack_prefs.expl.vals.g  -from 0 -to 255 -label "G" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::rbc_g \
+		-command {::gui::rack::set_rbc "g"}
+	.rack_prefs.expl.vals.g set $rbc_g
+	scale .rack_prefs.expl.vals.b  -from 0 -to 255 -label "B" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::rbc_b \
+		-command {::gui::rack::set_rbc "b"}
+	.rack_prefs.expl.vals.b set $rbc_b
+	pack .rack_prefs.expl.vals.r .rack_prefs.expl.vals.g .rack_prefs.expl.vals.b \
+		-side left -fill x -expand 1
+	pack .rack_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .rack_prefs.expl.done_frame
+    }
+
+    proc set_rbc {color val} {
+	variable rbc_r
+	variable rbc_g
+	variable rbc_b
+
+	destroy .rack_prefs.expl.text_frame
+	switch $color {
+	    "r" {set rbc_r $val}
+	    "g" {set rbc_g $val}
+	    "b" {set rbc_b $val}
+	}
+	set hex_color [format "\#%02x%02x%02x" $rbc_r $rbc_g $rbc_b]
+	message .rack_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-background $hex_color \
+		-text "Rack boundary color" -font $::gui::current_font 
+	pack .rack_prefs.expl.text_frame -before .rack_prefs.expl.done_frame \
+		-fill x -expand 1
+    }
+
+    proc make_rlc {} {
+	variable prefs_index
+	variable rlc_index
+	variable rlc_r
+	variable rlc_g
+	variable rlc_b
+
+	set proc "::gui::rack::make_rlc"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .rack_prefs.expl.vals
+
+	.rack_prefs.scroll_list.list selection clear 0 $prefs_index
+	.rack_prefs.scroll_list.list selection set $rlc_index
+	.rack_prefs.scroll_list.list activate $rlc_index
+	frame .rack_prefs.expl.vals
+# This should be three slides 0 .. 255 for colors
+	scale .rack_prefs.expl.vals.r  -from 0 -to 255 -label "R" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::rlc_r \
+		-command {::gui::rack::set_rlc "r"}
+	.rack_prefs.expl.vals.r set $rlc_r
+	scale .rack_prefs.expl.vals.g  -from 0 -to 255 -label "G" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::rlc_g \
+		-command {::gui::rack::set_rlc "g"}
+	.rack_prefs.expl.vals.g set $rlc_g
+	scale .rack_prefs.expl.vals.b  -from 0 -to 255 -label "B" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::rlc_b \
+		-command {::gui::rack::set_rlc "b"}
+	.rack_prefs.expl.vals.b set $rlc_b
+	pack .rack_prefs.expl.vals.r .rack_prefs.expl.vals.g .rack_prefs.expl.vals.b \
+		-side left -fill x -expand 1
+	pack .rack_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .rack_prefs.expl.done_frame
+    }
+
+    proc set_rlc {color val} {
+	variable rbc_r
+	variable rbc_g
+	variable rbc_b
+	variable rlc_r
+	variable rlc_g
+	variable rlc_b
+
+	destroy .rack_prefs.expl.text_frame
+	switch $color {
+	    "r" {set rlc_r $val}
+	    "g" {set rlc_g $val}
+	    "b" {set rlc_b $val}
+	}
+	set message_color [format "\#%02x%02x%02x" $rbc_r $rbc_g $rbc_b]
+	set text_color [format "\#%02x%02x%02x" $rlc_r $rlc_g $rlc_b]
+	message .rack_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-background $message_color \
+		-text "Rack label color" -font $::gui::current_font \
+		-foreground $text_color
+	pack .rack_prefs.expl.text_frame -before .rack_prefs.expl.done_frame \
+		-fill x -expand 1
+    }
+
+    proc make_nc {} {
+	variable prefs_index
+	variable nc_index
+	variable nc_r
+	variable nc_g
+	variable nc_b
+
+	set proc "::gui::rack::make_nc"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .rack_prefs.expl.vals
+
+	.rack_prefs.scroll_list.list selection clear 0 $prefs_index
+	.rack_prefs.scroll_list.list selection set $nc_index
+	.rack_prefs.scroll_list.list activate $nc_index
+	frame .rack_prefs.expl.vals
+# This should be three slides 0 .. 255 for colors
+	scale .rack_prefs.expl.vals.r  -from 0 -to 255 -label "R" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::nc_r \
+		-command {::gui::rack::set_nc "r"}
+	.rack_prefs.expl.vals.r set $nc_r
+	scale .rack_prefs.expl.vals.g  -from 0 -to 255 -label "G" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::nc_g \
+		-command {::gui::rack::set_nc "g"}
+	.rack_prefs.expl.vals.g set $nc_g
+	scale .rack_prefs.expl.vals.b  -from 0 -to 255 -label "B" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::nc_b \
+		-command {::gui::rack::set_nc "b"}
+	.rack_prefs.expl.vals.b set $nc_b
+	pack .rack_prefs.expl.vals.r .rack_prefs.expl.vals.g .rack_prefs.expl.vals.b \
+		-side left -fill x -expand 1
+	pack .rack_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .rack_prefs.expl.done_frame
+    }
+
+    proc set_nc {color val} {
+	variable nc_r
+	variable nc_g
+	variable nc_b
+
+	destroy .rack_prefs.expl.text_frame
+	switch $color {
+	    "r" {set nc_r $val}
+	    "g" {set nc_g $val}
+	    "b" {set nc_b $val}
+	}
+	set hex_color [format "\#%02x%02x%02x" $nc_r $nc_g $nc_b]
+	message .rack_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-background $hex_color \
+		-text "Node color" -font $::gui::current_font 
+	pack .rack_prefs.expl.text_frame -before .rack_prefs.expl.done_frame \
+		-fill x -expand 1
+    }
+
+    proc make_nlc {} {
+	variable prefs_index
+	variable nlc_index
+	variable nlc_r
+	variable nlc_g
+	variable nlc_b
+
+	set proc "::gui::rack::make_nlc"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .rack_prefs.expl.vals
+
+	.rack_prefs.scroll_list.list selection clear 0 $prefs_index
+	.rack_prefs.scroll_list.list selection set $nlc_index
+	.rack_prefs.scroll_list.list activate $nlc_index
+	frame .rack_prefs.expl.vals
+# This should be three slides 0 .. 255 for colors
+	scale .rack_prefs.expl.vals.r  -from 0 -to 255 -label "R" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::nlc_r \
+		-command {::gui::rack::set_nlc "r"}
+	.rack_prefs.expl.vals.r set $nlc_r
+	scale .rack_prefs.expl.vals.g  -from 0 -to 255 -label "G" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::nlc_g \
+		-command {::gui::rack::set_nlc "g"}
+	.rack_prefs.expl.vals.g set $nlc_g
+	scale .rack_prefs.expl.vals.b  -from 0 -to 255 -label "B" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::nlc_b \
+		-command {::gui::rack::set_nlc "b"}
+	.rack_prefs.expl.vals.b set $nlc_b
+	pack .rack_prefs.expl.vals.r .rack_prefs.expl.vals.g .rack_prefs.expl.vals.b \
+		-side left -fill x -expand 1
+	pack .rack_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .rack_prefs.expl.done_frame
+    }
+
+    proc set_nlc {color val} {
+	variable nc_r
+	variable nc_g
+	variable nc_b
+	variable nlc_r
+	variable nlc_g
+	variable nlc_b
+
+	destroy .rack_prefs.expl.text_frame
+	switch $color {
+	    "r" {set nlc_r $val}
+	    "g" {set nlc_g $val}
+	    "b" {set nlc_b $val}
+	}
+	set message_color [format "\#%02x%02x%02x" $nc_r $nc_g $nc_b]
+	set text_color [format "\#%02x%02x%02x" $nlc_r $nlc_g $nlc_b]
+	message .rack_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-background $message_color \
+		-foreground $text_color \
+		-text "Node label color" -font $::gui::current_font 
+	pack .rack_prefs.expl.text_frame -before .rack_prefs.expl.done_frame \
+		-fill x -expand 1
+    }
+
+    proc make_snc {} {
+	variable prefs_index
+	variable snc_index
+	variable snc_r
+	variable snc_g
+	variable snc_b
+
+	set proc "::gui::rack::make_snc"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .rack_prefs.expl.vals
+
+	.rack_prefs.scroll_list.list selection clear 0 $prefs_index
+	.rack_prefs.scroll_list.list selection set $snc_index
+	.rack_prefs.scroll_list.list activate $snc_index
+	frame .rack_prefs.expl.vals
+# This should be three slides 0 .. 255 for colors
+	scale .rack_prefs.expl.vals.r  -from 0 -to 255 -label "R" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::snc_r \
+		-command {::gui::rack::set_snc "r"}
+	.rack_prefs.expl.vals.r set $snc_r
+	scale .rack_prefs.expl.vals.g  -from 0 -to 255 -label "G" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::snc_g \
+		-command {::gui::rack::set_snc "g"}
+	.rack_prefs.expl.vals.g set $snc_g
+	scale .rack_prefs.expl.vals.b  -from 0 -to 255 -label "B" \
+		-showvalue 1 -font $::gui::current_font \
+		-variable ::gui::Viewport::snc_b \
+		-command {::gui::rack::set_snc "b"}
+	.rack_prefs.expl.vals.b set $snc_b
+	pack .rack_prefs.expl.vals.r .rack_prefs.expl.vals.g .rack_prefs.expl.vals.b \
+		-side left -fill x -expand 1
+	pack .rack_prefs.expl.vals -side top -fill x -expand 1 \
+		-before .rack_prefs.expl.done_frame
+    }
+
+    proc set_snc {color val} {
+	variable snc_r
+	variable snc_g
+	variable snc_b
+
+	destroy .rack_prefs.expl.text_frame
+	switch $color {
+	    "r" {set snc_r $val}
+	    "g" {set snc_g $val}
+	    "b" {set snc_b $val}
+	}
+	set hex_color [format "\#%02x%02x%02x" $snc_r $snc_g $snc_b]
+	message .rack_prefs.expl.text_frame -aspect 4000 -width 4000 \
+		-background $hex_color \
+		-text "Selected node color" -font $::gui::current_font 
+	pack .rack_prefs.expl.text_frame -before .rack_prefs.expl.done_frame \
+		-fill x -expand 1
+    }
+
+    proc prefs_done {} {
+
+	set proc "::gui::rack::prefs_done"
+	if {$::app::debug} {puts "$proc"}
+
+	destroy .rack_prefs
+	::gui::rack::init
+    }
+
+
 }
 # end of namespace rack
 	

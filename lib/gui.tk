@@ -11,8 +11,7 @@
 # setting "pref_2" to "yes".
 #
 namespace eval gui {
-    variable mode "panel"
-    variable toplevel        .
+    variable mode "rack"
     variable mbar            
     variable mbar_file       
     variable mbar_file_menu  
@@ -99,7 +98,6 @@ namespace eval gui {
 	
     proc init {} {
 	variable mode
-	variable toplevel        
 	variable mbar            
 	variable mbar_file       
 	variable mbar_file_menu  
@@ -181,7 +179,8 @@ namespace eval gui {
 	.mbar.file.menu add command -label "Exit" -command exit
 
 	set mbar_edit_menu [menu .mbar.edit.menu]
-	.mbar.edit.menu add command -label "Select"
+	.mbar.edit.menu add command -label "Select" \
+		-command ::gui::[set mode]::select_com
 	.mbar.edit.menu add command -label "Global Preferences" \
 		-command ::gui::preferences
 	.mbar.edit.menu add command -label "View Mode Prefs" \
@@ -230,24 +229,12 @@ namespace eval gui {
     proc change {new_mode} {
 	variable mode
 
-	switch $mode {
-		"rack"     {::gui::rack::fini}
-		"panel"    {::gui::panel::fini}
-		"sets"     {::gui::sets::fini}
-		"activity" {::gui::activity::fini}
-		"play"     {::gui::play::fini}
-	}
+	::gui::[set mode]::fini
 	.mbar.edit.menu delete last
 	set mode $new_mode
 	.mbar.edit.menu add command -label "View Mode Prefs" \
 		-command ::gui::[set mode]::preferences
-	switch $mode {
-		"rack"     {::gui::rack::init}
-		"panel"    {::gui::panel::init}
-		"sets"     {::gui::sets::init}
-		"activity" {::gui::activity::init}
-		"play"     {::gui::play::init}
-	}
+	::gui::[set mode]::init
     }
 
     proc resize {c w h} {
@@ -637,6 +624,7 @@ namespace eval gui {
     }
 
     proc prefs_done {} {
+	variable mode
 	variable bg_r
 	variable bg_g
 	variable bg_b
@@ -647,6 +635,7 @@ namespace eval gui {
 	set hex_color [format "\#%02x%02x%02x" $bg_r $bg_g $bg_b]
 	.cvcan configure -background $hex_color
 	destroy .prefs
+	gui::[set mode]::init
     }
 
     proc updown {args} {

@@ -18,11 +18,10 @@
 
 proc usage msg {
   global argv0
-  puts "usage: $argv0 \[-c file\] \[-l libdir\] \[-defhqrv\] \[-on | -off\] {nodes ...}"
+  puts "usage: $argv0 \[-c file\] \[-l libdir\] \[-dehqrv\] \[-on | -off\] {nodes ...}"
   puts "-c file   = load file as config file"
   puts "-d        = debugging output"
   puts "-e        = use regular expressions instead of globbing"
-  puts "-f        = force the action without confirmation"
   puts "-l libdir = look for tcl libs in libdir"
   puts "-q        = query the state instead of setting it"
   puts "-r        = reset the nodes, mutually exclusive with -q, -on, and -off"
@@ -37,10 +36,7 @@ proc usage msg {
   exit
 }
 
-proc read_nodes node_list {
-    global regex
-    global cluster
-
+proc read_nodes {node_list} {
     set return_nodes {}
     set j 0
     set k [string length $node_list]
@@ -49,7 +45,7 @@ proc read_nodes node_list {
 	if {$j < 0} {set j $k} else {incr j [expr $i-1]}
 	set node_expr [string range $node_list $i $j]
 	set nlist $powerlib::nodes
-	if {$regex} {
+	if {$::app::regex} {
 	    set index [lsearch -regexp $nlist $node_expr]
 	} else {
 	    set index [lsearch $nlist $node_expr]
@@ -58,7 +54,7 @@ proc read_nodes node_list {
 	    set node [lindex $nlist $index]
 	    lappend return_nodes $node
 	    set nlist [lrange $nlist [incr index] end]
-	    if {$regex} {
+	    if {$::app::regex} {
 		set index [lsearch -regexp $nlist $node_expr]
 	    } else {
 		set index [lsearch $nlist $node_expr]
@@ -88,17 +84,16 @@ set app::lib_dir "/usr/lib/powerman"
 if {[info exists env(POWERMANLIBDIR)]} {
     set app::lib_dir $env(POWERMANLIBDIR)
 }
-set configed      0
-set debug         0
-set regex         0
-set force         0
-set app::verbose  0
-set node_list     {}
-set query         0 
-set on            0
-set off           0
-set reset         0
-set app::tkdanger 0
+set ::app::configed      0
+set ::app::debug         0
+set ::app::regex         0
+set ::app::verbose  0
+set ::app::node_list     {}
+set ::app::query         0 
+set ::app::on            0
+set ::app::off           0
+set ::app::reset         0
+set ::app::tkdanger      0
 
 for {set i 0} {$i < $argc} {incr i} {
   switch -- [lindex $argv $i] {
@@ -106,24 +101,23 @@ for {set i 0} {$i < $argc} {incr i} {
 	  incr i
 	  set app::config_file [lindex $argv $i]
       }
-      "-d"    {set debug 1}
-      "-e"    {set regex 1}
-      "-f"    {set force 1}
+      "-d"    {set ::app::debug 1}
+      "-e"    {set ::app::regex 1}
       "-l"    { 
 	  incr i
 	  set app::lib_dir [lindex $argv $i]
       }
-      "-q"    {set query 1}
-      "-r"    {set reset 1}
-      "-v"    {set app::verbose 1}
+      "-q"    {set ::app::query 1}
+      "-r"    {set ::app::reset 1}
+      "-v"    {set ::app::verbose 1}
       "-V"    {
 	  puts "$Version"
 	  exit
       }
-      "-on"   {set on  1}
-      "-off"  {set off 1}
+      "-on"   {set ::app::on  1}
+      "-off"  {set ::app::off 1}
       default {
-	  if {!$configed} {
+	  if {!$::app::configed} {
 	      if {![file exists $app::config_file]} {
 		  usage "Can't find config file"
 	      }
@@ -138,70 +132,62 @@ for {set i 0} {$i < $argc} {incr i} {
               } else {
                   usage "Can't find $powerlib library"
               }
-              set configed 1
+              set ::app::configed 1
 	  }
-          set node_list [ concat $node_list [read_nodes [lindex $argv $i]]]
+          set ::app::node_list [ concat $::app::node_list [read_nodes [lindex $argv $i]]]
       }
   } 
 }
 
-if {[llength $node_list] == 0} {usage "No nodes specified (use \"\*\" for all)"}
+if {[llength $::app::node_list] == 0} {usage "No nodes specified (use \"\*\" for all)"}
 
-if {$reset && $query}         {usage "Can't have both reset and query"} 
-if {$on + $off + $reset != 1} {usage "Need exactly one of on, off, or reset" }
-if {!$query && !$unlockable}  {
+if {$::app::reset && $::app::query}         {usage "Can't have both reset and query"} 
+if {$::app::on + $::app::off + $::app::reset != 1} {usage "Need exactly one of on, off, or reset" }
+if {!$::app::query && !$unlockable}  {
 	puts "You must be root to do this"
 	exit
 } 
 	
-if {$app::verbose} {
-    if {$on} {
-	if {$query} {puts "Here's who were're checking who's on"} else {
+if {$::app::verbose} {
+    if {$::app::on} {
+	if {$::app::query} {puts "Here's who were're checking who's on"} else {
 	    puts "Turning on these guys"
 	}
     }
-    if {$off} {
-	if {$query} {puts "Here's who were're checking for who's off"} else {
+    if {$::app::off} {
+	if {$::app::query} {puts "Here's who were're checking for who's off"} else {
 	    puts "Turning off these guys"
 	}
     }
-    if {$reset} {
+    if {$::app::reset} {
 	puts "Resetting these guys"
     }
-    puts $node_list
+    puts $::app::node_list
 }
 
 # At this point all the globals should be in place.  Next the command 
 # is dispatched to its handler. 
 
-if {$on} {
-    if {$query} {
-	set response [powerlib::check $node_list on]
-	set num_resp [llength $response]
-	if {$num_resp == 0} {puts "None are on"} else {
-	    if {$num_resp == 1} {puts "$response is on"} else {
-		puts "$response are on"
-	    }
+if {$::app::on} {
+    if {$::app::query} {
+	foreach resp [powerlib::check $::app::node_list on] {
+	    puts "$resp"
 	}
     } else {
-	powerlib::power $node_list on
+	powerlib::power $::app::node_list on
     }
 }
-if {$off} {
-    if {$query} {
-	set response [powerlib::check $node_list off]
-	set num_resp [llength $response]
-	if {$num_resp == 0} {puts "None are off"} else {
-	    if {$num_resp == 1} {puts "$response is off"} else {
-		puts "$response are off"
-	    }
+if {$::app::off} {
+    if {$::app::query} {
+	foreach resp [powerlib::check $::app::node_list off] {
+	    puts "$resp"
 	}
     } else {
-	powerlib::power $node_list off
+	powerlib::power $::app::node_list off
     }
 }
-if {$reset} {
-    powerlib::power $node_list reset
+if {$::app::reset} {
+    powerlib::power $::app::node_list reset
 }
 
 

@@ -162,7 +162,7 @@ if {[string length $::app::config_file] > 0} {
     foreach node $::powerlib::nodes {
 	set ::app::state($node) 0
     }
-    ::gui::panel::init
+    ::gui::rack::init
 }
 
 after $app::delay ::app::update

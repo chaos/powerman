@@ -34,6 +34,7 @@ namespace eval powerlib {
     variable control
     variable check
     variable gifs
+    variable lexicographic_sort 0
 
     proc check {node_list onoff} {
 	#
@@ -125,6 +126,7 @@ namespace eval powerlib {
     
     
     
+    variable node_num
     ####################################################################
     # Library initializations
     # 
@@ -140,6 +142,7 @@ namespace eval powerlib {
 	variable control
 	variable check
 	variable gifs
+	variable node_num
 
 	source $file
 	foreach node_struct $cluster {
@@ -165,9 +168,15 @@ namespace eval powerlib {
 	foreach type $control_types {
 	    source $::app::lib_dir/$type.tcl
 	}
-
+	set nodes [lsort -dictionary $nodes]
     }
     
+    proc comp {first second} {
+	variable node_num
+
+	expr $node_num($first) - $node_num($second)
+    }
+
     proc fini {} {
 	variable cluster
 	variable nodes
