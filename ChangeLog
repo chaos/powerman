@@ -3,6 +3,7 @@
 	  per-device statistics (reconnects, successful actions).
 	* Renamed "TCP wrappers" to "tcpwrappers", added to etc/powerman.conf.
 	* Fixed bug where tcp wrappers denial would kill powermand.
+	* Tagged powerman-1-0-13
 
 2002-10-21 grondo
 	* hostlist.c : fixed bug where test matches testN
