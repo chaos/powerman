@@ -5,6 +5,7 @@
 	  (triggers act->cmd != NULL assertion in _act_finish).
 	  Error handling was inappropriate anyway - try silently ignoring
 	  unimplemented commands, and queuing actions for un-logged-in devices.
+	* Client works again (though still minimal)
 
 2002-10-02 garlick
 	* Created Command data structure to represent what was called

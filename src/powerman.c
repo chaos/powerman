@@ -46,8 +46,9 @@
 static void _connect_to_server(void);
 static void _disconnect_from_server(void);
 static void _usage(void);
-static void _getline(void);
+static int _getline(void);
 static void _expect(char *str);
+static int _process_response(void);
 
 static int server_fd = -1;
 
@@ -81,6 +82,7 @@ int main(int argc, char **argv)
     hostlist_t targets;
     bool have_targets = FALSE;
     char targstr[CP_LINEMAX];
+    int res = 0;
     enum { CMD_NONE, CMD_ON, CMD_OFF, CMD_LIST, CMD_CYCLE, CMD_RESET,
 	    CMD_REPORT } cmd = CMD_NONE;
 
@@ -139,44 +141,42 @@ int main(int argc, char **argv)
 	    if (have_targets)
 		_usage();
 	    dprintf(server_fd, CP_NODES CP_EOL);
-	    _getline();
+	    res = _process_response();
 	    _expect(CP_PROMPT);
 	    break;
 	case CMD_REPORT:
 	    if (!have_targets)
 		_usage();
 	    dprintf(server_fd, CP_STATUS CP_EOL, targstr);
-	    _getline();
-	    _getline();
-	    _getline();
+	    res = _process_response();
 	    _expect(CP_PROMPT);
 	    break;
 	case CMD_ON:
 	    if (!have_targets)
 		_usage();
 	    dprintf(server_fd, CP_ON CP_EOL, targstr);
-	    _getline();
+	    res = _process_response();
 	    _expect(CP_PROMPT);
 	    break;
 	case CMD_OFF:
 	    if (!have_targets)
 		_usage();
 	    dprintf(server_fd, CP_OFF CP_EOL, targstr);
-	    _getline();
+	    res = _process_response();
 	    _expect(CP_PROMPT);
 	    break;
 	case CMD_RESET:
 	    if (!have_targets)
 		_usage();
 	    dprintf(server_fd, CP_RESET CP_EOL, targstr);
-	    _getline();
+	    res = _process_response();
 	    _expect(CP_PROMPT);
 	    break;
 	case CMD_CYCLE:
 	    if (!have_targets)
 		_usage();
 	    dprintf(server_fd, CP_CYCLE CP_EOL, targstr);
-	    _getline();
+	    res = _process_response();
 	    _expect(CP_PROMPT);
 	    break;
 	case CMD_NONE:
@@ -186,7 +186,7 @@ int main(int argc, char **argv)
 
     _disconnect_from_server();
 
-    exit(0);
+    exit(res);
 }
 
 /*
@@ -233,12 +233,16 @@ static void _disconnect_from_server(void)
     _expect(CP_RSP_QUIT);
 }
 
-/* get a line from the socket and display on stdout */
-static void _getline(void)
+/* 
+ * Get a line from the socket and display on stdout.
+ * Return the numerical portion of the repsonse.
+ */
+static int _getline(void)
 {
     char buf[CP_LINEMAX];
     int size = CP_LINEMAX;
     char *p = buf;
+    int num;
 
     while (size > 1) { /* leave room for terminating null */
 	if (Read(server_fd, p, 1) <= 0)
@@ -250,7 +254,22 @@ static void _getline(void)
 	size--; p++;
     }
     *p = '\0';
-    printf("%s\n", buf);
+    if (strlen(buf) > 4)
+	printf("%s\n", buf + 4);
+    else
+	err_exit(FALSE, "unexpected response from server\n");
+    num = strtol(buf, (char **)NULL, 10);
+    return (num == LONG_MIN || num == LONG_MAX) ? -1 : num;
+}
+
+static int _process_response(void)
+{
+    int num;
+
+    do {
+	num = _getline();
+    } while (!CP_IS_ALLDONE(num));
+    return (CP_IS_FAILURE(num) ? num : 0);
 }
 
 /* 
@@ -272,6 +291,7 @@ static void _expect(char *str)
     if (strcmp(str, buf) != 0)
 	err_exit(FALSE, "%s\n", buf);
 }
+
 
 /*
  * vi:softtabstop=4

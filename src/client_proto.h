@@ -33,7 +33,7 @@
  * 2. server sends protocol version string
  * 3. server sends prompt
  * 4. client sends command
- * 5. server sends response
+ * 5. server sends response (see note under Responses below)
  * If not quit, goto 3
  */
 
@@ -57,28 +57,33 @@
 #define CP_STATUS_ALL	"status"
 
 /* 
- * Responses - response codes from 100-199 are success, 200-299 are failure.
+ * Responses - 
+ * 1XX's are successful (indicates end of response)
+ * 2XX's are failure (indicates end of response)
+ * 3XX's are informational
+ * Responses can be multi-line.  Client knows response is complete when
+ * it reads a 1XX or 2XX line.
  */
 #define CP_IS_SUCCESS(i)	((i) >= 100 && (i) < 200)
 #define CP_IS_FAILURE(i)	((i) >= 200 && (i) < 300)
-#define CP_IS_VALID(i)		((i) >= 100 && (i) < 300)
+#define CP_IS_ALLDONE(i)	((i) >= 100 && (i) < 300)
 
 /* success */
 #define CP_RSP_SUCCESS	"100 Success"			CP_EOL	/* generic */
 #define CP_RSP_NODES	"101 %s" 			CP_EOL	/* hostlist */
-#define CP_RSP_QUIT	"103 Goodbye"			CP_EOL
 #define CP_RSP_STATUS	\
-	"102 on:      %s"				CP_EOL	\
-       	"102 off:     %s" 				CP_EOL	\
+	"302 on:      %s"				CP_EOL	\
+       	"302 off:     %s" 				CP_EOL	\
 	"102 unknown: %s" 				CP_EOL	/* hostlists */
+#define CP_RSP_QUIT	"103 Goodbye"			CP_EOL
 #define CP_RSP_HELP 	\
-	"104 nodes                - query node list" 	CP_EOL	\
-	"104 status [<nodes>]     - query power status"	CP_EOL	\
-	"104 on <nodes>           - power on" 		CP_EOL	\
-	"104 off <nodes>          - power off"		CP_EOL	\
-	"104 cycle <nodes>        - power cycle"	CP_EOL	\
-	"104 reset <nodes>        - hardware reset (if available)" CP_EOL	\
-	"104 help                 - display help"	CP_EOL	\
+	"304 nodes                - query node list" 	CP_EOL	\
+	"304 status [<nodes>]     - query power status"	CP_EOL	\
+	"304 on <nodes>           - power on" 		CP_EOL	\
+	"304 off <nodes>          - power off"		CP_EOL	\
+	"304 cycle <nodes>        - power cycle"	CP_EOL	\
+	"304 reset <nodes>        - hardware reset (if available)" CP_EOL \
+	"304 help                 - display help"	CP_EOL	\
 	"104 quit                 - logout"		CP_EOL
 #define CP_RSP_COMPLETE	"105 Command completed successfully" CP_EOL
 
@@ -93,7 +98,7 @@
 #define CP_ERR_HLUNK	"207 Hostlist error"		CP_EOL
 #define CP_ERR_NOSUCHNODES "208 No such nodes: %s"	CP_EOL
 #define CP_ERR_COMPLETE	"209 Command completed with errors" CP_EOL
-#define CP_ERR_TIMEOUT	"210 Command timed out" 	CP_EOL
+#define CP_ERR_TIMEOUT	"310 Command timed out" 	CP_EOL
 #define CP_ERR_CLIBUSY	"211 Command in progress" 	CP_EOL
 #define CP_ERR_NOACTION	"213 Command causes no action" 	CP_EOL
 
