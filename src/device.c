@@ -66,10 +66,11 @@ typedef struct {
     bool	 error;	  /* error flag for action */
     struct timeval  time_stamp; /* time stamp for timeouts */
     struct timeval  delay_start; /* time stamp for delay completion */
-    bool	 started;  /* TRUE if action has reached head of queue */
     ArgList      *arglist; /* argument for query actions (list of Arg's) */
     MAGIC;
 } Action;
+
+#define _act_started(act)   ((act)->cur != NULL)
 
 
 
@@ -188,7 +189,6 @@ static Action *_create_action(Device *dev, int com, char *target,
     act->cur = NULL;
     act->target = target ? Strdup(target) : NULL;
     act->error = FALSE;
-    act->started = FALSE;
     act->arglist = arglist ? dev_link_arglist(arglist) : NULL;
     timerclear(&act->time_stamp);
     return act;
@@ -388,7 +388,7 @@ static bool _reconnect(Device * dev)
     return (dev->connect_status == DEV_CONNECTED);
 }
 
-/* helper for dev_check_actions */
+/* helper for dev_check_actions/dev_enqueue_actions */
 static bool _command_needs_device(Device *dev, hostlist_t hl)
 {
     bool needed = FALSE;
@@ -682,10 +682,9 @@ static void _process_action(Device * dev, struct timeval *timeout)
 	 * entire action exceeds dev->timeout.
 	 */
 	assert(act->itr != NULL);
-	if (!act->started) {
+	if (!_act_started(act)) {
 	    act->cur = list_next(act->itr); /* point to first script elem */
 	    Gettimeofday(&act->time_stamp, NULL);
-	    act->started = TRUE;
 	}
 	assert(act->cur != NULL);
 
