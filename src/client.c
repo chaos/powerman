@@ -62,11 +62,8 @@ typedef struct {
 } Command;
 
 #define CLI_MAGIC    0xdadadada
-typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE } Client_Status;
 typedef struct {
     int magic;
-    Client_Status read_status;
-    Client_Status write_status;
     int fd;                     /* file desriptor for  the socket */
     char *ip;                   /* IP address of the client's host */
     unsigned short int port;    /* Port of client connection */
@@ -139,7 +136,6 @@ static void _client_printf(Client *c, const char *fmt, ...)
     assert(len == strlen(str));
 
     /* Write to the client buffer */
-    c->write_status = CLI_WRITING;
     written = cbuf_write(c->to, str, len, &dropped);
     if (written < 0)
         err(TRUE, "_client_printf: cbuf_write returned %d", written);
@@ -549,9 +545,7 @@ static void _parse_input(Client * c, char *input)
     } else if (!strncasecmp(str, CP_QUIT, strlen(CP_QUIT))) {
         _client_printf(c, CP_RSP_QUIT);                 /* quit */
         _handle_write(c);
-        c->read_status = CLI_DONE;
-        c->write_status = CLI_IDLE;
-        return;                                         /* no prompt */
+        goto done;
     } else if (sscanf(str, CP_ON, arg1) == 1) {         /* on hostlist */
         cmd = _create_command(c, PM_POWER_ON, arg1);
     } else if (sscanf(str, CP_OFF, arg1) == 1) {        /* off hostlist */
@@ -588,7 +582,6 @@ static void _parse_input(Client * c, char *input)
         _client_printf(c, CP_ERR_UNKNOWN);
     }
 
-
     /* enqueue device actions and tie up the client if necessary */
     if (cmd) {
         assert(cmd->hl != NULL);
@@ -608,6 +601,10 @@ static void _parse_input(Client * c, char *input)
     /* reissue prompt if we didn't queue up any device actions */
     if (cmd == NULL)
         _client_printf(c, CP_PROMPT);
+    return;
+done:
+    Close(c->fd);
+    c->fd = NO_FD;
 }
 
 /*
@@ -791,8 +788,6 @@ static void _create_client(void)
     /* create client data structure */
     c = (Client *) Malloc(sizeof(Client));
     c->magic = CLI_MAGIC;
-    c->read_status = CLI_READING;
-    c->write_status = CLI_IDLE;
     c->to = NULL;
     c->from = NULL;
     c->cmd = NULL;
@@ -869,16 +864,18 @@ static void _handle_read(Client * c)
     n = cbuf_write_from_fd(c->from, c->fd, -1, &dropped);
     if (n < 0) {
         err(TRUE, "client read error");
-        c->read_status = CLI_DONE;
-        return;
+        goto err;
     }
     if (n == 0) {
         err(FALSE, "client read returned EOF");
-        c->read_status = CLI_DONE;
-        return;
+        goto err;
     }
     if (dropped != 0)
         err(FALSE, "dropped %d bytes of client input", dropped);
+    return;
+err:
+    Close(c->fd);
+    c->fd = NO_FD;
 }
 
 /* 
@@ -892,14 +889,9 @@ static void _handle_write(Client * c)
     n = cbuf_read_to_fd(c->to, c->fd, -1);
     if (n < 0) {
         err(TRUE, "write error on client");
-        return;
+        Close(c->fd);
+        c->fd = NO_FD;
     }
-    if (n == 0) { /* XXX is this even possible? */
-        err(FALSE, "write sent no data to client");
-        return; 
-    }
-    if (cbuf_is_empty(c->to))
-        c->write_status = CLI_IDLE;
 }
 
 static void _handle_input(Client *c)
@@ -938,12 +930,14 @@ void cli_pre_select(fd_set * rset, fd_set * wset, int *maxfd)
 
         FD_SET(client->fd, &cli_fdset);
 
-        if (client->read_status == CLI_READING) {
-            FD_SET(client->fd, rset);
-            *maxfd = MAX(*maxfd, client->fd);
-        }
+        /* always set read set bits so select will unblock if the
+         * connection is dropped.
+         */
+        FD_SET(client->fd, rset);
+        *maxfd = MAX(*maxfd, client->fd);
 
-        if (client->write_status == CLI_WRITING) {
+        /* need to be in the write set if we are sending anything */
+        if (!cbuf_is_empty(client->to)) {
             FD_SET(client->fd, wset);
             *maxfd = MAX(*maxfd, client->fd);
         }
@@ -968,19 +962,16 @@ void cli_post_select(fd_set * rset, fd_set * wset)
 
     itr = list_iterator_create(cli_clients);
     while ((c = list_next(itr))) {
-        if (c->fd < 0)
-            continue;
-
-        if (FD_ISSET(c->fd, rset))
+        if (c->fd != NO_FD && FD_ISSET(c->fd, rset))
             _handle_read(c);
 
-        if (FD_ISSET(c->fd, wset))
+        if (c->fd != NO_FD && FD_ISSET(c->fd, wset))
             _handle_write(c);
 
-        _handle_input(c);
+        if (c->fd != NO_FD)
+            _handle_input(c);
 
-        if ((c->read_status == CLI_DONE) &&
-            (c->write_status == CLI_IDLE))
+        if (c->fd == NO_FD)
             list_delete(itr);
     }
     list_iterator_destroy(itr);
