@@ -85,11 +85,15 @@ typedef struct {
     List	    plugs;	    /* list of Plugs */
     Protocol	    *prot;	    /* list of expect/send scripts */
 
-    struct timeval  last_reconnect; /* time of last reconnect attempt */
-    int		    reconnect_count;/* number of reconnects attempted */
+    struct timeval  last_retry;     /* time of last reconnect retry */
+    int		    retry_count;    /* number of retries attempted */
 
     struct timeval  last_ping;	    /* time of last ping (if any) */
     struct timeval  ping_period;    /* configurable ping period (0.0 = none) */
+
+    int		    stat_successful_connects;
+    int		    stat_successful_actions;
+
     MAGIC;
 } Device;
 
@@ -103,9 +107,10 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, int client_id,
 bool dev_check_actions(int com, hostlist_t hl);
 void dev_initial_connect(void);
 
-Device *dev_create();
+Device *dev_create(const char *name);
 void dev_destroy(Device * dev);
 Device *dev_findbyname(char *name);
+List dev_getdevices(void);
 
 Plug *dev_plug_create(const char *name);
 int dev_plug_match(Plug * plug, void *key);

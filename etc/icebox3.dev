@@ -7,8 +7,8 @@
 begin protocol specification
 	specification name "icebox3"
 	specification type "TCP"
-	off string "0|OFF"		# 0/1 for "status" and "status_soft"
-	on string  "1|ON"		#     and OFF/ON for "status_beacon"
+	off string "0|OFF"		# 0/1 for STATUS and STATUS_SOFT
+	on string  "1|ON"		#     and OFF/ON for STATUS_BEACON
 	all string "*"
 	plug count 10
 	device timeout 20

@@ -57,6 +57,7 @@ static int _match_client(Client * client, void *key);
 static Client *_find_client(int client_id);
 static hostlist_t _hostlist_create_validated(Client *c, char *str);
 static void _client_query_nodes_reply(Client *c);
+static void _client_query_devices_reply(Client *c);
 static void _client_query_reply(Client *c);
 static void _client_query_raw_reply(Client *c);
 static void _handle_client_read(Client * c);
@@ -185,6 +186,53 @@ static void _client_query_nodes_reply(Client *c)
 	_client_msg(c, CP_RSP_NODES, hosts);
 }
 
+/* helper for _client_query_devices_reply() */
+static bool _make_pluglist(Device *dev, char *str, int len)
+{
+    hostlist_t hl = hostlist_create(NULL);
+    ListIterator itr;
+    bool res = FALSE;
+    Plug *plug;
+
+    if (hl != NULL) {
+	itr = list_iterator_create(dev->plugs);
+	while ((plug = list_next(itr))) {
+	    hostlist_push(hl, plug->node);
+	}
+	list_iterator_destroy(itr);
+	if (hostlist_ranged_string(hl, len, str) != -1) 
+	    res = TRUE;
+	hostlist_destroy(hl);
+    }
+    return res;
+}
+
+/* 
+ * Reply to client request for list of devices in powerman configuration.
+ */
+static void _client_query_devices_reply(Client *c)
+{
+    List devs = dev_getdevices();
+    Device *dev;
+    ListIterator itr;
+
+    if (devs) {
+
+	itr = list_iterator_create(devs);
+	while ((dev = list_next(itr))) {
+	    char nodelist[CP_LINEMAX];
+
+	    if (_make_pluglist(dev, nodelist, sizeof(nodelist))) {
+		_client_msg(c, CP_RSP_DEVICES, dev->name, nodelist, 
+			    dev->stat_successful_connects - 1, /* reconnects */
+			    dev->stat_successful_actions);
+	    }
+	}
+	list_iterator_destroy(itr);
+    }
+    _client_msg(c, CP_RSP_QUERY_COMPLETE);
+}
+
 /* helper for _client_query_status_reply */
 static int _argval_ranged_string(ArgList *arglist, char *str, int len, 
 		ArgState state)
@@ -252,7 +300,7 @@ static void _client_query_raw_reply(Client *c)
 	else
 	    _client_msg(c, CP_RSP_RAW, str, "unknown");
     }
-    _client_msg(c, CP_RSP_RAW_DONE);
+    _client_msg(c, CP_RSP_QUERY_COMPLETE);
 }
 
 /*
@@ -344,6 +392,8 @@ static void _parse_input(Client *c, char *input)
 	_client_msg(c, CP_RSP_HELP);			/* help */
     } else if (!strncasecmp(str, CP_NODES, strlen(CP_NODES))) {
 	_client_query_nodes_reply(c);			/* nodes */
+    } else if (!strncasecmp(str, CP_DEVICES, strlen(CP_DEVICES))) {
+	_client_query_devices_reply(c);			/* devices */
     } else if (!strncasecmp(str, CP_QUIT, strlen(CP_QUIT))) {
 	_client_msg(c, CP_RSP_QUIT);			/* quit */
 	_handle_client_write(c);

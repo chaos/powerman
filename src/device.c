@@ -231,6 +231,14 @@ void dev_add(Device *dev)
     list_append(dev_devices, dev);
 }
 
+/* 
+ * Client needs access to device list to process "devices" query.
+ */
+List dev_getdevices(void)
+{
+    return dev_devices;
+}
+
 /*
  * Telemetry logging callback for Buffer outgoing to device.
  */
@@ -301,16 +309,16 @@ bool _time_to_reconnect(Device *dev, struct timeval *timeout)
 {
     static int rtab[] = { 1, 2, 4, 8, 15, 30, 60 };
     int max_rtab_index = sizeof(rtab)/sizeof(int) - 1;
-    int rix = dev->reconnect_count - 1;
+    int rix = dev->retry_count - 1;
     struct timeval timeleft, retry;
     bool reconnect = TRUE;
 
-    if (dev->reconnect_count > 0) {
+    if (dev->retry_count > 0) {
 
 	    timerclear(&retry);
 	    retry.tv_sec = rtab[rix > max_rtab_index ? max_rtab_index : rix];
 
-	    if (!_timeout(&dev->last_reconnect, &retry, &timeleft))
+	    if (!_timeout(&dev->last_retry, &retry, &timeleft))
 		reconnect = FALSE;
 	    if (timeout && !reconnect)
 		_update_timeout(timeout, &timeleft);
@@ -337,8 +345,8 @@ static bool _reconnect(Device * dev)
     assert(dev->connect_status == DEV_NOT_CONNECTED);
     assert(dev->fd == -1);
 
-    Gettimeofday(&dev->last_reconnect, NULL);
-    dev->reconnect_count++;
+    Gettimeofday(&dev->last_retry, NULL);
+    dev->retry_count++;
 
     memset(&hints, 0, sizeof(struct addrinfo));
     addrinfo = &hints;
@@ -618,7 +626,8 @@ static bool _finish_connect(Device *dev, struct timeval *timeout)
     } else {
 	err(FALSE, "_finish_connect: %s connected", dev->name);
 	dev->connect_status = DEV_CONNECTED;
-	dev->reconnect_count = 0;
+	dev->stat_successful_connects++;
+	dev->retry_count = 0;
         _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, 0, NULL);
     }
 
@@ -769,6 +778,8 @@ static void _process_action(Device * dev, struct timeval *timeout)
 		    act->cb_fun(act->client_id, 
 				    act->error ? CP_ERR_TIMEOUT : NULL,
 				    dev->name);
+		if (!act->error)
+		    dev->stat_successful_actions++;
 		_destroy_action(list_dequeue(dev->acts));
 	    }
 
@@ -952,7 +963,7 @@ Device *dev_create(const char *name)
     dev->fd = NO_FD;
     dev->acts = list_create((ListDelF) _destroy_action);
     timerclear(&dev->timeout);
-    timerclear(&dev->last_reconnect);
+    timerclear(&dev->last_retry);
     timerclear(&dev->last_ping);
     timerclear(&dev->ping_period);
     dev->to = NULL;
@@ -960,7 +971,9 @@ Device *dev_create(const char *name)
     dev->prot = NULL;
     dev->num_plugs = 0;
     dev->plugs = list_create((ListDelF) dev_plug_destroy);
-    dev->reconnect_count = 0;
+    dev->retry_count = 0;
+    dev->stat_successful_connects = 0;
+    dev->stat_successful_actions = 0;
     return dev;
 }
 
