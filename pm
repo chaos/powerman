@@ -4,24 +4,6 @@
 # by Andrew C. Uselton <uselton2@llnl.gov> 
 # Copyright (C) 2000 Regents of the University of California
 # See ./DISCLAIMER
-# v. 0-1-0:  2001-08-27
-#            Initial Python embodiment of the PowerMan project
-#            see "usage" for protoytpe
-# Changes from 0-1-0 tagging:
-# 1)  $POWERMANCONF environment variable was appended to $POWERMANDIR
-#     rather than searched independently.  Now it is treated as an
-#     independent relative or absolute path.
-# v. 0-1-1:  2001-08-31
-#            renovation in support of rpm builds
-# v. 0-1-2:  2001-09-05
-# v. 0-1-3:  2001-09-05
-# v. 0-1-4:  2001-09-05
-# v. 0-1-5:  2001-09-05
-# v. 0-1-6:  2001-09-07
-#            no more bitmap mode.  Must be root to run.
-#            Add temperature query.
-#            replace -v verbose with -q quiet
-# v. 0-1-7:  2001-09-17
 ####################################################################
 
 import sys
@@ -214,7 +196,8 @@ class ClusterClass:
                 except ValueError:
                     pass
             if(c_sep_list):
-                stat, message = commands.getstatusoutput(c_str + " -w " + c_sep_list + " " + com)
+                command = c_str + " -w " + c_sep_list + " " + com
+                stat, message = commands.getstatusoutput(command)
                 if (stat == 0):
                     # this is confirming that something
                     # good ever happened

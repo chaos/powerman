@@ -3,20 +3,6 @@
 # by Andrew C. Uselton <uselton2@llnl.gov> 
 # Copyright (C) 2000 Regents of the University of California
 # See ../DISCLAIMER
-# v. 0-1-0:  2001-08-28
-#            $POWERMANDIR/Makefile
-# v. 0-1-1:  2001-08-31
-#            renovation in support of rpm builds
-# v. 0-1-2:  2001-09-05
-#            make targets no longer (necessarily) need root 
-#            priveleges, and no longer check.  suid of digi 
-#            now happens in RPM post install sript
-# v. 0-1-3:  2001-09-05
-# v. 0-1-4:  2001-09-05
-# v. 0-1-5:  2001-09-05
-# v. 0-1-6:  2001-09-07
-#            no longer use src/digi.c, since there's a Python version
-# v. 0-1-7:  2001-09-17
 ####################################################################
 
 PACKAGE= powerman
@@ -39,14 +25,16 @@ exec_prefix=    ${prefix}
 bindir=         ${exec_prefix}/bin
 sbindir=        ${exec_prefix}/sbin
 libdir=         ${exec_prefix}/lib
+mandir=         $(prefix)/man
+etcdir=         /etc
 packagedir=     ${libdir}/${PACKAGE}
+docdir=         ${prefix}/$(PACKAGE)-$(VERSION)
 # I've removed the doc and packagedoc variables and their install commands.
 # I'm pretty sure the the %doc directive in the rpm spec file does that for 
 # me.
 
 all: 
-	cd src; make; cd ..
-	mv src/ether-wake lib
+	cd src; $(MAKE); cd ..
 
 %:%.c
 	$(CC) $(COPTS) $< -o $@ $(INC) $(LIB)
@@ -54,28 +42,53 @@ all:
 install: 
 	$(mkinstalldirs) $(DESTDIR)$(bindir)
 	$(INSTALL) pm    $(DESTDIR)$(bindir)/
-	cd bin; make install; cd ..
-	cd etc; make install; cd ..
-	cd lib; make install; cd ..
-	cd man; make install; cd ..
+        $(mkinstalldirs)           $(DESTDIR)$(packagedir)/bin
+        $(INSTALL) bin/bogus_check $(DESTDIR)$(packagedir)/bin/
+        $(INSTALL) bin/bogus_set   $(DESTDIR)$(packagedir)/bin/
+        $(INSTALL) bin/digi        $(DESTDIR)$(packagedir)/bin/
+        $(INSTALL) bin/etherwake   $(DESTDIR)$(packagedir)/bin/
+        $(INSTALL) bin/icebox      $(DESTDIR)$(packagedir)/bin/
+        $(INSTALL) bin/rmc         $(DESTDIR)$(packagedir)/bin/
+        $(INSTALL) bin/wti         $(DESTDIR)$(packagedir)/bin/
+        $(mkinstalldirs)                 $(DESTDIR)$(etcdir)
+        $(INSTALL) -m 644 etc/powerman.conf  $(DESTDIR)$(etcdir)
+        $(mkinstalldirs)                 $(DESTDIR)$(packagedir)/etc
+        $(INSTALL) -m 644 etc/bogus.conf     $(DESTDIR)$(packagedir)/etc/
+        $(INSTALL) -m 644 etc/digi.conf      $(DESTDIR)$(packagedir)/etc/
+        $(INSTALL) -m 644 etc/etherwake.conf $(DESTDIR)$(packagedir)/etc/
+        $(INSTALL) -m 644 etc/powerman.conf  $(DESTDIR)$(packagedir)/etc/
+        $(INSTALL) -m 644 etc/wti.conf       $(DESTDIR)$(packagedir)/etc/
+        $(INSTALL) -m 644 etc/icebox.conf    $(DESTDIR)$(packagedir)/etc/
+        $(mkinstalldirs)      $(DESTDIR)$(packagedir)/lib
+        $(INSTALL) ether-wake $(DESTDIR)$(packagedir)/lib/
+        $(mkinstalldirs)              $(DESTDIR)$(mandir)/man1
+        $(INSTALL) -m 644 man/digi.1      $(DESTDIR)$(mandir)/man1
+        $(INSTALL) -m 644 man/etherwake.1 $(DESTDIR)$(mandir)/man1
+        $(INSTALL) -m 644 man/icebox.1 $(DESTDIR)$(mandir)/man1
+        $(INSTALL) -m 644 man/pm.1        $(DESTDIR)$(mandir)/man1
+        $(INSTALL) -m 644 man/rmc.1       $(DESTDIR)$(mandir)/man1
+        $(INSTALL) -m 644 man/wti.1       $(DESTDIR)$(mandir)/man1
+        $(mkinstalldirs)                   $(DESTDIR)$(mandir)/man5
+        $(INSTALL) -m 644 man/digi.conf.5      $(DESTDIR)$(mandir)/man5
+        $(INSTALL) -m 644 man/etherwake.conf.5 $(DESTDIR)$(mandir)/man5
+        $(INSTALL) -m 644 man/icebox.conf.5 $(DESTDIR)$(mandir)/man5
+        $(INSTALL) -m 644 man/powerman.conf.5  $(DESTDIR)$(mandir)/man5
+        $(INSTALL) -m 644 man/wti.conf.5       $(DESTDIR)$(mandir)/man5
 	$(mkinstalldirs) $(DESTDIR)$(packagedir)/log
 
 clean:
 	rm -f *~ *.o
 
 allclean: clean
-	cd bin; make clean; cd ..
-	cd etc; make clean; cd ..
-	cd lib; make clean; cd ..
-	cd man; make clean; cd ..
-	cd src; make clean; cd ..
+	cd bin; rm -f *~ *.o; cd ..
+	cd etc; rm -f *~ *.o; cd ..
+	cd lib; rm -f *~ *.o; cd ..
+	cd man; rm -f *~ *.o; cd ..
+	cd src; rm -f *~ *.o; cd ..
 
-distclean: clean
-	cd bin; make distclean; cd ..
-	cd etc; make distclean; cd ..
-	cd lib; make distclean; cd ..
-	cd man; make distclean; cd ..
-	cd src; make distclean; cd ..
+distclean: allclean
+	cd lib; rm -f ether-wake; cd ..
+	cd src; rm -f ether-wake; cd ..
 
 # DEVELOPER TARGETS
 

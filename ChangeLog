@@ -3,7 +3,31 @@
 # by Andrew C. Uselton <uselton2@llnl.gov> 
 # Copyright (C) 2000 Regents of the University of California
 # See ./DISCLAIMER
+# v. 0-1-0:  2001-08-28
+#            Initial Python embodiment of the PowerMan project
+#            see "usage" for protoytpe
+# Changes from 0-1-0 tagging:
+# 1)  $POWERMANCONF environment variable was appended to $POWERMANDIR
+#     rather than searched independently.  Now it is treated as an
+#     independent relative or absolute path.
+# v. 0-1-1:  2001-08-31
+#            renovation in support of rpm builds
+# v. 0-1-2:  2001-09-05
+#            make targets no longer (necessarily) need root
+#            priveleges, and no longer check.  suid of digi
+#            now happens in RPM post install sript
+# v. 0-1-6:  2001-09-07
+#            no longer use src/digi.c, since there's a Python version
+#            no more bitmap mode.  Must be root now.
+#            digi is no longer suid root
+#            replace -v verbose with -q quiet
 # v. 0-1-7:  2001-09-17
+#            Change the behavior of unfull iceboxes such that the
+#            collective operation is not called, thus only a request
+#            for ten of ten ports will invoke the collective
+#            command.
+#            Fixed a bug in which more than one readline() is
+#            necessary before a query's response arrives.
 #    Release 3:
 #                PowerMan now issues commands without regard to the 
 #       current state of the target nodes, with the exception of the 
@@ -25,4 +49,10 @@
 #	response to the file #powermandir/log/log_file.
 #	         The reply from the icebox can be empty and the driver will
 #	read again, up to 10 times before failing.  
+#    Release 4:
+#                Unified Makefile into a single file in the root 
+#	directory of the distribution.
+#	         Removed all Changelog and version information from
+#	all files except pm, Makefile, and powerman.spec.
+#	         Removed all but the main Makefile and from cvs         
 ####################################################################

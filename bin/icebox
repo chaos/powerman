@@ -4,23 +4,6 @@
 # by Andrew C. Uselton <uselton2@llnl.gov> 
 # Copyright (C) 2000 Regents of the University of California
 # See ./DISCLAIMER
-# v. 0-1-6:  2001-09-07
-#            Initial development for Ice Box.  N.B. Unlike all the
-#            other low level modules, icebox is responsible for
-#            both query and control interfaces, thus the usage
-#            is a combination of the prototypes for the other low
-#            level modules and resembles "pm" more than the others.
-#            Furthermore, the Ice Box responds to more commands than
-#            just [on | off | reset].
-#            Also note that we no longer support bitmap mode
-#            Use -q for quiet mode rather than -v for verbose
-# v. 0-1-7:  2001-09-17
-#            Change the behavior of unfull iceboxes such that the
-#            collective operation is not called, thus only a request
-#            for ten of ten ports will invoke the collective
-#            command.
-#            Fixed a bug in which more than one readline() is
-#            necessary before a query's response arrives.
 ####################################################################
 
 import sys
@@ -94,7 +77,7 @@ class TtyClass:
         self.sorted_box_list = []
 
 def usage(msg):
-    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-L] [-q] [-r] [-t] [-V] [-w node,...] [on | off | reset | temp | tempf | ice n cm]"
+    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-L] [-q] [-r] [-t] [-w node,...] [on | off | reset | temp | tempf | ice n cm]"
     print "-a       = on/off/reset all nodes"
     print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
     print "-f fan   = fanout for parallelism (default: 256 where implemented)"
@@ -103,7 +86,6 @@ def usage(msg):
     print "-q       = suppress printing any errors that may have occurred"
     print "-r       = reverse sense, i.e. check for  nodes that are off"
     print "-t       = return the temperature rather than power status"
-    print "-V       = print version and exit"
     print "-w nodes = comma separated list of nodes"
     print "-w -     = read nodes from stdin, one per line"
     print "on       = turn on nodes (the default)"
@@ -117,35 +99,33 @@ def usage(msg):
 
 def log(string):
     if(logging):
-        log_file.write (string)
+        log_file.write ("icebox: " + string + ".\n")
         log_file.flush()
         
 error_msg = {}
-error_msg[1]  = "You must be root to run this"
-error_msg[2]  = "Error attempting to id -u"
-error_msg[3]  = "Unrecognized command"
-error_msg[4]  = "This should be a list"
-error_msg[5]  = "Couldn\'t find library directory"
-error_msg[6]  = "Couldn\'t find library directory"
-error_msg[7]  = "Couldn\'t find configuration file"
-error_msg[8]  = "Couldn\'t find log file"
-error_msg[9]  = "Unable to access icebox control device on tty"
-error_msg[10] = "Unable to gain exclusive lock on icebox control device on tty"
-error_msg[11] = "Error returned from tty"
-error_msg[12] = "Not a recogognized node name"
-error_msg[13] = "Unable to access icebox control device on tty"
-error_msg[14] = "Unable to gain exclusive lock on icebox control device on tty"
-error_msg[15] = "Error returned from icebox"
-error_msg[16] = "Unexpected return (not a list) from box"
-error_msg[17] = "Unexpected return (not a port state pair) from box"
-error_msg[18] = "Unexpected return (not a list) from box"
-error_msg[19] = "Unexpected return (not a port temp pair) from box"
-error_msg[20] = "Error returned from port"
-error_msg[21] = "Unexpected return (not a port state pair) from port"
-error_msg[22] = "Unexpected return (not a port temp pair) from port"
+error_msg[1]  = "[1]You must be root to run this"
+error_msg[2]  = "[2]Error attempting to id -u"
+error_msg[3]  = "[3]Unrecognized command"
+error_msg[4]  = "[4]This should be a list"
+error_msg[5]  = "[5]Couldn\'t find library directory"
+error_msg[6]  = "[6]Couldn\'t find library directory"
+error_msg[7]  = "[7]Couldn\'t find configuration file"
+error_msg[8]  = "[8]Couldn\'t find log file"
+error_msg[9]  = "[9]Unable to access icebox control device on tty"
+error_msg[10] = "[10]Unable to gain exclusive lock on icebox control device on tty"
+error_msg[11] = "[11]Error returned from tty"
+error_msg[12] = "[12]Not a recogognized node name"
+error_msg[13] = "[13]Unable to access icebox control device on tty"
+error_msg[14] = "[14]Unable to gain exclusive lock on icebox control device on tty"
+error_msg[15] = "[15]Error returned from icebox"
+error_msg[16] = "[16]Unexpected return (not a list) from box"
+error_msg[17] = "[17]Unexpected return (not a port state pair) from box"
+error_msg[18] = "[18]Unexpected return (not a list) from box"
+error_msg[19] = "[19]Unexpected return (not a port temp pair) from box"
+error_msg[20] = "[20]Command failed after 10 unsuccessfull reads"
 
 def exit_error(msg_num, msg_data):
-    log("icebox: " + error_msg[msg_num] + ": " + msg_data + ".\n")
+    log(error_msg[msg_num] + ": " + msg_data)
     if(verbose):
         sys.stderr.write ("icebox: " + error_msg[msg_num] + ": " + msg_data + ".\n")
     sys.exit(1)
@@ -202,7 +182,7 @@ all         = 0
 fanout      = 256
 setting     = 0
 ICEBOX_SIZE = 10
-PORT_DELAY  = 0.5
+PORT_DELAY  = 5.0
 BOX_DELAY   = 4.0
 
 # Check for level of permision and exit for non-root users
@@ -226,7 +206,7 @@ except KeyError:
 # Parse the command line, check for sanity, and set globals
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'ac:f:l:Lrw:tvV')
+    opts, args = getopt.getopt(sys.argv[1:], 'ac:f:l:Lrw:tv')
 except getopt.error:
     usage("Error processing options\n")
 
@@ -251,9 +231,6 @@ for opt in opts:
         reverse = 1
     elif (op == '-t'):
         com = 'ts'
-    elif (op == '-V'):
-        print Version
-        sys.exit(0)
     elif (op == '-w'):
         if (val == '-'):
             name = sys.stdin.readline()
@@ -380,7 +357,7 @@ for tty_name in sorted_tty_list:
             log("hear:  " + response)
             while ((response[-1:] == '\n') or (response[-1:] == '\r')):
                 response = response[:-1]
-            if ((com == 'on') or (com == 'off') or (com == 'reset')):
+            if ((com == 'ph') or (com == 'pl') or (com == 'rp')):
                 if (string.lower(response) != 'ok'):
                     exit_error(15, box.name)
             elif(com == 'ns'):
@@ -420,35 +397,39 @@ for tty_name in sorted_tty_list:
                 port = box.ports[port_name]
                 if (port.requested == 0):
                     continue
-                target = 'c' + box.name + com + port.name + '\r\n'
-                response = ''
-                log("say:  " + target)
-                f.write(target)
-                time.sleep(PORT_DELAY)
+                target = 'c' + box.name + com + port.name
                 retry_count = 0
-                while ((response == '') and (retry_count < 10)):
+                good_response = 0
+                while (not good_response and (retry_count < 10)):
+                    log("say:  " + target)
+                    f.write(target + '\n')
+                    time.sleep(PORT_DELAY)
                     response = f.readline()
-                    log("hear:  " + response)
+                    f.readline()
                     while ((response[-1:] == '\n') or (response[-1:] == '\r')):
                         response = response[:-1]
                     retry_count = retry_count + 1
-                if ((com == 'on') or (com == 'off') or (com == 'reset')):
-                    if (string.lower(response) != 'ok'):
-                        exit_error(20, port.name)
-                elif(com == 'ns'):
-                    try:
-                        p,state = string.split(response, ':')
-                    except ValueError:
-                        exit_error(21, port.name)
-                    if (((state == '0') and reverse) or ((state == '1') and not reverse)):
-                        print port.node.name
-                elif((com == 'ts') or (com == 'tsf')):
-                    try:
-                        p,temps = string.split(response, ':')
-                    except ValueError:
-                        exit_error(22, port.name)
-                    print port.node.name + ":" + temps
-                    
+                    log("hear:  " + response)
+                    if(response != ''):
+                        if ((com == 'ph') or (com == 'pl') or (com == 'rp')):
+                            if (string.lower(response) == 'ok'):
+                                good_response = 1
+                        else:
+                            try:
+                                p,val = string.split(response, ':')
+                            except ValueError:
+                                continue
+                            if(p == "N" + port.name):
+                                good_response = 1
+                                if(com == 'ns'):
+                                    state = val
+                                    if (((state == '0') and reverse) or ((state == '1') and not reverse)):
+                                        print port.node.name
+                                elif((com == 'ts') or (com == 'tsf')):
+                                    temps = val
+                                    print port.node.name + ":" + temps
+                if (not good_response):
+                    exit_error(20, "")
     fcntl.lockf(f.fileno(), FCNTL.LOCK_UN)
     f.close()
 sys.exit(0)

@@ -4,11 +4,6 @@
 # by Andrew C. Uselton <uselton2@llnl.gov> 
 # Copyright (C) 2000 Regents of the University of California
 # See ./DISCLAIMER
-# v. 0-1-6:  2001-09-07
-#            reimplemented in Python from original C source
-#            no bitmap mode
-#            replace -v verbose with -q quiet
-# v. 0-1-7:  2001-09-17
 ####################################################################
 
 import sys
@@ -19,7 +14,7 @@ import os
 import fcntl, FCNTL
 
 def usage(msg):
-    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-q] [-r] [-t] [-V] [-w node,...]"
+    print "usage:", sys.argv[0], "[-a] [-c conf] [-f fan] [-l ldir] [-q] [-r] [-t] [-w node,...]"
     print "-a       = on/off/reset all nodes"
     print "-c conf  = configuration file (default: <ldir>/etc/bogus.conf)"
     print "-f fan   = fanout for parallelism (default: 256 where implemented)"
@@ -27,7 +22,6 @@ def usage(msg):
     print "-q       = be quiet about any errors that may have occurred"
     print "-r       = reverse sense, i.e. check for  nodes that are off"
     print "-t       = temperature (not implemented)"
-    print "-V       = print version and exit"
     print "-w nodes = comma separated list of nodes"
     print "-w -     = read nodes from stdin, one per line"
     print msg
@@ -45,8 +39,6 @@ def init(f):
         if (tokens[0][0] == '#'): continue
         ttys[tokens[0]] = tokens[1]
     return ttys
-
-Version = "digi:Powerman 0.1.7"
 
 # initialize globals
 powermandir  = '/usr/lib/powerman/'
@@ -70,7 +62,7 @@ except KeyError:
 # Parse the command line, check for sanity, and set globals
 
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'ac:f:l:qrtVw:')
+    opts, args = getopt.getopt(sys.argv[1:], 'ac:f:l:qrtw:')
 except getopt.error:
     usage("Error processing options\n")
 
@@ -93,9 +85,6 @@ for opt in opts:
         reverse = 1
     elif (op == '-t'):
         usage("temperature monitoring is not implemented for the digi device\n")
-    elif (op == '-V'):
-        print Version
-        sys.exit(0)
     elif (op == '-w'):
         if (val == '-'):
             name = sys.stdin.readline()

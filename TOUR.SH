@@ -4,19 +4,6 @@
 # by Andrew C. Uselton <uselton2@llnl.gov> 
 # Copyright (C) 2000 Regents of the University of California
 # See ../DISCLAIMER
-# v. 0-1-0:  2001-08-28
-#            A few hints on getting started and experimenting
-# v. 0-1-1:  2001-08-31
-#            renovation in support of r./pm builds
-# v. 0-1-2:  2001-09-05
-# v. 0-1-3:  2001-09-05
-# v. 0-1-4:  2001-09-05
-# v. 0-1-5:  2001-09-05
-# v. 0-1-6:  2001-09-07
-#            no more bitmap mode.  Must be root now.
-#            digi is no longer suid root
-#            added icetest suite for cyclops0[1-2] on icebox
-# v. 0-1-7:  2001-09-17
 ####################################################################
 
 echo "Read through this file and run its commands one at a time."
