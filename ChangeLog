@@ -1,3 +1,7 @@
+2003-02-24 Jim Garlick <garlick@llnl.gov>
+
+    * powerman.spec: fixed default attrs for %doc files.
+
 2003-02-19 Jim Garlick <garlick@llnl.gov>
 
     * src/pluglist.[ch]: new PlugList abstraction for lists of Plugs.
@@ -13,7 +17,7 @@
 
 2003-01-12 Jim Garlick <garlick@llnl.gov>
 
-    * src/arglist.[ch], src/device.c: further cleanup of arglist abstraction
+    * src/arglist.[ch], src/device.c: further cleanup of ArgList abstraction
 
 2003-01-12 Albert Chu <chu11@llnl.gov>
 
@@ -52,7 +56,7 @@
 
     * src/arglist.[ch]: New.  Pulled content from device.c and tried to
     abstract more effectively.  Make it possible to preserve order of
-    arglist despite the use of a hash table for efficiency.
+    ArgList despite the use of a hash table for efficiency.
 
     * src/device.c, src/client.c: use new arglist interfaces.
 
