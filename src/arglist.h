@@ -50,7 +50,7 @@ void arglist_unlink(ArgList arglist);  /* --refcount (destroy if 0) */
 
 /* accessor */
 void arglist_set(ArgList arglist, char *node, char *val, InterpState state);
-bool arglist_get(ArgList arglist, char *node, char *val, InterpState *state);
+bool arglist_get(ArgList arglist, char *node, char **val, InterpState *state);
 
 /* iteration */
 ArgListIterator arglist_iterator_create(ArgList arglist);

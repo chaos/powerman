@@ -1,3 +1,7 @@
+2003-12-22 Jim Garlick <garlick@llnl.gov>
+
+    * src/arglist.[ch]: Fixed thinko in arglist_get prototype.
+
 2003-12-21 Jim Garlick <garlick@llnl.gov>
 
     * src/arglist.[ch]: New.  Pulled content from device.c and tried to

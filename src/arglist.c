@@ -120,7 +120,7 @@ ArgList arglist_link(ArgList arglist)
     return arglist;
 }
 
-bool arglist_get(ArgList arglist, char *node, char *val, InterpState *state)
+bool arglist_get(ArgList arglist, char *node, char **val, InterpState *state)
 {
     Arg *arg = NULL;
 
@@ -128,7 +128,7 @@ bool arglist_get(ArgList arglist, char *node, char *val, InterpState *state)
         arg = hash_find(arglist->args, node);
     if (arg) {
         if (val)
-            val = arg->val;
+            *val = arg->val;
         if (state)
             *state = arg->state;
     }
