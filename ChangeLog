@@ -6,6 +6,8 @@
 
     * src/device.c, src/client.c: use new arglist interfaces.
 
+    * : tag powerman-1-0-19-argval
+
 2003-12-19 Jim Garlick <garlick@llnl.gov>
 
     * Makefile, powerman.spec, man/powerman.1: remove 'on' and 'off' sym links.
