@@ -594,11 +594,13 @@ static void _process_script(Device * dev, struct timeval *timeout)
     while (!script_incomplete) {
 	switch (act->cur->type) {
 	case EL_EXPECT:
-	    if ((script_incomplete = _process_expect(dev, timeout)))
+	    script_incomplete = _process_expect(dev, timeout);
+	    if (script_incomplete)
 		return;
 	    break;
 	case EL_DELAY:
-	    if ((script_incomplete = _process_delay(dev, timeout)))
+	    script_incomplete = _process_delay(dev, timeout);
+	    if (script_incomplete)
 		return;
 	    break;
 	case EL_SEND:
@@ -607,6 +609,7 @@ static void _process_script(Device * dev, struct timeval *timeout)
 	default:
 	    err_exit(FALSE, "unrecognized Script_El type %d", act->cur->type);
 	}
+	assert(act->itr != NULL);
 	if ((act->cur = list_next(act->itr)) == NULL) {
 	    if (act->com == PM_LOG_IN)
 		dev->script_status |= DEV_LOGGED_IN;
@@ -661,13 +664,10 @@ bool _process_expect(Device * dev, struct timeval *timeout)
 	    assert(res == TRUE); /* since the first regexec worked ... */
 	    _do_device_semantics(dev, act->cur->s_or_e.expect.map);
 	}
-
 	Free(expect);
-	dev->script_status &= ~DEV_EXPECTING;
 	finished = TRUE;
     } else if (_timeout(dev, &dev->timeout, &timeleft)) { /* timeout? */
-	_recover(dev);	/* FIXME: need to record failure for client!!! */
-	dev->script_status &= ~DEV_EXPECTING;
+	/*_recover(dev);*/	/* FIXME: need to record failure for client!!! */
 	finished = TRUE;
     } else {						/* keep trying */
 	_update_timeout(timeout, &timeleft);
@@ -686,6 +686,9 @@ bool _process_expect(Device * dev, struct timeval *timeout)
 	    Free(str);
 	}
     }
+
+    if (finished)
+	dev->script_status &= ~DEV_EXPECTING;
 
     return !finished;
 }
@@ -854,22 +857,27 @@ static void _handle_write(Device * dev)
 static void _recover(Device * dev)
 {
     Plug *plug;
-    ListIterator plug_i;
+    ListIterator itr;
 
     assert(dev != NULL);
 
     syslog(LOG_ERR, "expect timeout on %s", dev->name);
     if (dev->logit)
         printf("expect timeout %s\n", dev->name);
+
+    /* dequeue all actions for this device */
     while (!list_is_empty(dev->acts))
 	act_del_queuehead(dev->acts);
-    plug_i = list_iterator_create(dev->plugs);
-    while ((plug = list_next(plug_i))) {
+
+    itr = list_iterator_create(dev->plugs);
+    while ((plug = list_next(itr))) {
 	if (plug->node != NULL) {
 	    plug->node->p_state = ST_UNKNOWN;
 	    plug->node->n_state = ST_UNKNOWN;
 	}
     }
+    list_iterator_destroy(itr);
+
     _disconnect(dev);
     dev->reconnect_count = 0;
     _reconnect(dev);
@@ -1133,14 +1141,13 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 	if (scripts_need_service || (dev->script_status & DEV_DELAYING)
 			|| (dev->script_status & DEV_EXPECTING))
 	    _process_script(dev, timeout);
-#if 0
+
 	/* XXX doing this in _process_expect now */
 	/* stalled on an expect */
 	if ((dev->script_status & DEV_EXPECTING)) {
-	    if (_timeout(dev, &dev->timeout, NULL))
+	    if (_timeout(dev, &dev->timeout, timeout))
 		_recover(dev);
 	}
-#endif
 
 	if (dev->script_status & (DEV_SENDING | DEV_EXPECTING))
 	    scripts_complete = FALSE;

@@ -1,33 +1,10 @@
 2002-09-25 garlick
 	* Reimplement _process_delay() so it uses the select loop to time out.
 	* Incomplete work on _process_expect() so it uses the select loop
-	  to time out. No response does not cause a timeout.  Incorrect 
-	  response triggers assertion failure:
-
-D(vpc0): 2 UNKNOWN: on 1\n3 vpc> 
-_timeout(vpc0): in 4.998204 seconds
-_process_expect(vpc0): no match: '2 UNKNOWN: on 1\n3 vpc> '
-select - timeout 4.998204 sec
-_timeout(vpc0): now!
-expect timeout vpc0
-_disconnect: vpc0
-_reconnect: vpc0
-_process_expect(vpc0): match
-powermand: list.c:508: list_next: Assertion `i != ((void *)0)' failed.
-
-Program received signal SIGABRT, Aborted.
-0x42029241 in kill () from /lib/i686/libc.so.6
-(gdb) bt
-#0  0x42029241 in kill () from /lib/i686/libc.so.6
-#1  0x4202902a in raise () from /lib/i686/libc.so.6
-#2  0x4202a7d2 in abort () from /lib/i686/libc.so.6
-#3  0x42022ddb in __assert_fail () from /lib/i686/libc.so.6
-#4  0x080509c1 in list_next (i=0x0) at list.c:508
-#5  0x08052ce8 in _process_script (dev=0x80772c8, timeout=0xbffff860)
-    at device.c:610
-#6  0x08054106 in dev_post_select (rset=0xbffff7e0, wset=0xbffff760, 
-    timeout=0xbffff860) at device.c:1139
-
+	  to time out. TODO: 
+	  - no response does not cause a timeout
+	  - expect timeout should cause actions to be retried
+	  - results need to be included in the client reply
 
 2002-09-25 garlick
 	* Removed inter-dev delay (behlendo)
