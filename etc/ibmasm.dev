@@ -9,52 +9,76 @@ begin protocol specification
 	on string  "On"
 	all string "*"
 	plug count 1
-	device timeout 30 
+	device timeout  5
 	begin LOGIN_SCRIPT
-		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA\IAC\DONT\TELOPT_TTYPE"
+		send "\IAC\DONT\TELOPT_NAWS\IAC\DONT\TELOPTTTYPE"
 		expect "Login ID:"
-		send "USERID\tPASSW0RD\r\n"
-		expect "Tasks"
+		send "USERID\r\n"
+		send "PASSW0RD\r\n"
+		expect "Select" 
 	end LOGIN_SCRIPT
 	begin LOGOUT_SCRIPT
-		send "\033\033"			# select main menu, then ESC */
+		send "\033"			# ESC to log off
 	end LOGOUT_SCRIPT
 	begin STATUS_SCRIPT
-		send "\t\t\t\t\r\n"          	# select Server Power/Restart
+		send "\t\t\t\t"			# tab to power/restart menu
+		expect "Server Power/Restart"
+		send "\r\n"			# select it
 		expect "System Power Status: (On|Off)"
-		map "$1" "1"	
+		map $1 "1"
+		expect "Select"
+		send "\033"			# ESC back to main menu
+		expect "Select"  	
 	end STATUS_SCRIPT
 	begin ON_SCRIPT
-		send "\t\t\t\t\r\n"          	# select Server Power/Restart
+		send "\t\t\t\t"			# tab to power/restart menu
 		expect "Server Power/Restart"
-		send "\r\n"			# select Power on immediately
-		expect "The system will power on.  Do you wish to continue?"
+		send "\r\n"			# select it
+		expect "Select"
+		send "\r\n"			# select (default) power on
+		expect "continue?"
 		send "\r\n"			# select Yes
-		expect "The system is performing a Power on Server Immediately."
+		expect "performing a Power on Server Immediately"
 		send "\r\n"			# select Ok
-		delay 0.3
+		expect "System Power Status: On"
+		expect "Select"
 		send "\033"			# return to main menu
+		expect "Select"
 	end ON_SCRIPT
 	begin OFF_SCRIPT
-		send "\t\t\t\t\r\n"          	# select Server Power/Restart
+		send "\t\t\t\t"			# tab to power/restart menu
 		expect "Server Power/Restart"
-		send "\t\t\r\n"			# select Power off immediately
-		expect "Do you wish to continue?"
+		send "\r\n"			# select it
+		expect "Select"
+		send "\t\t"			# tab to power off
+		expect "Power off"
+		send "\r\n"			# select it
+		expect "continue?"
 		send "\r\n"			# select Yes
-		delay 0.3
+		expect "performing a Power off Server Immediately"
 		send "\r\n"			# select Ok
-		delay 0.3
+		expect "System Power Status: Off"
+		expect "Select"
 		send "\033"			# return to main menu
+		expect "Select"
 	end OFF_SCRIPT
 	begin CYCLE_SCRIPT
-		send "\t\t\t\t\r\n"          	# select Server Power/Restart
+		send "\t\t\t\t"			# tab to power/restart menu
 		expect "Server Power/Restart"
-		send "\t\t\t\t\t\r\n"		# select Restart immediately
-		expect "Do you wish to continue?"
+		send "\r\n"			# select it
+		expect "Select"
+		send "\t\t\t\t\t"		# tab to restart
+		expect "Restart"
+		send "\r\n"			# select it
+		expect "continue?"
 		send "\r\n"			# select Yes
-		delay 0.3
+		expect "performing a Restart Server Immediately"
 		send "\r\n"			# select Ok
-		delay 0.3
+		expect "System Power Status: Off"
+		expect "Select"
 		send "\033"			# return to main menu
+		expect "Select"
 	end CYCLE_SCRIPT
+	plug name "1"
+
 end protocol specification

@@ -579,6 +579,7 @@ static void _parse_input(Client * c, char *input)
 /*
  * Callback for device debugging printfs (sent to client if --telemetry)
  */
+#define TRUNC_MSG "[truncated]"
 static void _telemetry_printf(int client_id, const char *fmt, ...)
 {
     va_list ap;
@@ -586,10 +587,15 @@ static void _telemetry_printf(int client_id, const char *fmt, ...)
 
     if ((c = _find_client(client_id))) {
         char buf[CP_LINEMAX];
+        int len = CP_LINEMAX - sizeof(CP_INFO_TELEMETRY) - sizeof(TRUNC_MSG);
+        int n;
 
         va_start(ap, fmt);
-        vsnprintf(buf, CP_LINEMAX, fmt, ap); /* ignore truncation */
+        n = vsnprintf(buf, len, fmt, ap);
         va_end(ap);
+
+        if (n < 0 || n >= len)
+            strcat(buf, TRUNC_MSG);
 
         _client_printf(c, CP_INFO_TELEMETRY, buf);
     }
