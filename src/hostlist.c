@@ -808,6 +808,7 @@ static size_t
 hostrange_to_string(hostrange_t hr, size_t n, char *buf, char *separator)
 {
 	unsigned long i;
+	int truncated = 0;
 	int len = 0;
 	char sep = separator == NULL ? ',' : separator[0];
 
@@ -818,20 +819,22 @@ hostrange_to_string(hostrange_t hr, size_t n, char *buf, char *separator)
 		return snprintf(buf, n, "%s", hr->prefix);
 
 	for (i = hr->lo; i <= hr->hi; i++) {
-		size_t m = (n - len) <= n ? n - len : 0;
-		len += snprintf(buf + len, m, "%s%0*lu",
-				hr->prefix, hr->width, i);
-		if (len >= n || len < 0) {
+		size_t m = (n - len) <= n ? n - len : 0; /* check for < 0 */
+		int ret = snprintf(buf + len, m, "%s%0*lu",
+				   hr->prefix, hr->width, i);
+		if (ret < 0 || ret > m) {
 			len = n;
+			truncated = 1;
 			break;
 		}
+		len+=ret;
 		buf[len++] = sep;
 	}
 
 	/* back up over final separator */
 	buf[--len] = '\0';
 
-	return len;
+	return truncated == 1 ? -1 : len;
 }
 
 /* Place the string representation of the numeric part of hostrange into buf
@@ -939,7 +942,7 @@ static int hostlist_push_range(hostlist_t hl, hostrange_t hr)
 	assert(hr != NULL);
 	LOCK_HOSTLIST(hl);
 
-	tail = (hl->nranges > 0) ? hl->hr[hl->nranges - 1] : hl->hr[0];
+	tail = (hl->nranges > 0) ? hl->hr[hl->nranges-1] : hl->hr[0];
 
 	if (hl->size == hl->nranges && !hostlist_expand(hl))
 		goto error;
@@ -1798,21 +1801,24 @@ size_t hostlist_deranged_string(hostlist_t hl, size_t n, char *buf)
 {
 	int i;
 	int len = 0;
+	int truncated = 0;
 
 	LOCK_HOSTLIST(hl);
 	for (i = 0; i < hl->nranges; i++) {
 		size_t m = (n - len) <= n ? n - len : 0;
-		len += hostrange_to_string(hl->hr[i], m, buf + len, ",");
-		if (len >= n || len < 0) {
+		int ret = hostrange_to_string(hl->hr[i], m, buf + len, ",");
+		if (ret < 0 || ret > m) {
 			len = n;
+			truncated = 1;
 			break;
 		}
+		len+=ret;
 		buf[len++] = ',';
 	}
 	UNLOCK_HOSTLIST(hl);
 	buf[len > 0 ? --len : 0] = '\0';
 
-	return len;
+	return truncated == 1 ? -1 : len;
 }
 
 /* return true if a bracket is needed for the range at i in hostlist hl */
@@ -2099,7 +2105,7 @@ void hostset_destroy(hostset_t set)
  */
 static int hostset_insert_range(hostset_t set, hostrange_t hr)
 {
-	int i, n = 0;
+	int i, n;
 	int inserted = 0;
 	int retval = 0;
 	hostlist_t hl;
@@ -2244,33 +2250,6 @@ size_t hostset_ranged_string(hostset_t set, size_t n, char *buf)
 size_t hostset_deranged_string(hostset_t set, size_t n, char *buf)
 {
 	return hostlist_deranged_string(set->hl, n, buf);
-}
-
-
-/* getnodename - equivalent to gethostname, but return only the first component of the fully 
- *	qualified name (e.g. "linux123.foo.bar" becomes "linux123") */
-int
-getnodename (char *name, size_t len)
-{
-	int error_code, name_len;
-	char *dot_ptr, path_name[1024];
-
-	error_code = gethostname (path_name, sizeof(path_name));
-	if (error_code)
-		return error_code;
-
-	dot_ptr = strchr (path_name, '.');
-	if (dot_ptr == NULL)
-		dot_ptr = path_name + strlen(path_name);
-	else
-		dot_ptr[0] = '\0';
-
-	name_len = (dot_ptr - path_name);
-	if (name_len > len)
-		return ENAMETOOLONG;
-
-	strcpy (name, path_name);
-	return 0;
 }
 
 #if TEST_MAIN 
