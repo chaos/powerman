@@ -1,6 +1,6 @@
 #
-# $Id$
-# $Source$
+# wti-rps10.dev,v 1.6 2003/01/17 23:50:34 garlick Exp
+# /chaos/cvs/powerman/etc/wti-rps10.dev,v
 #
 # Master configured for 9600 baud:
 # if 9600 - wait 0.5 sec before sending next command
@@ -14,15 +14,17 @@
 #   
 specification  {
 	name 		"wti-rps10"
-	type 		"serial";
-	offstring 	"Off";
-	onstring  	"On";
-	timeout 	13;  # toggle can be configured for 10 sec
+	type 		"serial"
+	offstring 	"Off"
+	onstring  	"On"
+	plugcount	10
+	timeout 	13  # toggle can be configured for 10 sec
+
 	script login {
-		expect "RPS-10 Ready\n\n";
+		expect "RPS-10 Ready\n\n"
 	}
 	script logout {
-		send "\r";
+		send "\r"
 	}
 # Do not define STATUS_ALL_SCRIPT because there may not be all 10
 # boxes in a chain, and any missing ones will not respond, causing
