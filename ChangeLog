@@ -119,6 +119,8 @@
 	* Make some char *'s into unsigned char *'s that are carrying
 	  non-printable values such as \376 (baytech telnet telnet handshake)).
 	* Redo telemetry logging to support callback at the Buffer level.
+	* Fixed a memory leak where buffers were reallocated on a device
+	  reconnect but old ones weren't freed.
 	* Telemetry logging on server now shows when expect or delay
 	  commands are being processed.
 	* Updated baytech and icebox configs to use 10 sec timeout.
