@@ -1,0 +1,12 @@
+The powerman test rig includes the following test hardware:
+
+apc.dev 		APC MasterSwitch Plus APP v2.0.0, AOS v2.5.4 
+baytech-rpc28-nc.dev 	Baytech RPC28-30NC F3.01
+baytech.dev		Baytech RPC-3 F5.00
+icebox.dev		Linux Networx ICE box v2.x
+icebox3.dev		Linux Networx ICE box v3.x
+ipmi.dev		(borrow 7/03) Intel SE7501WV2
+phantom.dev		Phantom 3.0.4b with fakey motherboard
+wti-rps10.dev		WTI RPS-10 (chain of 3)
+wti.dev			WTI NPS 3.02
+

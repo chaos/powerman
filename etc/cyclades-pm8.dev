@@ -9,10 +9,8 @@ specification "pm8" {
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
 
-# XXX - problem here - the device may be already logged in and
-# we will hang.  
 	script login {
-		send "\r"
+		send "exit\r\r"
 		expect "Username:"
 		send "admin\r"
 		expect "Password:"
