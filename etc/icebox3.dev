@@ -20,7 +20,7 @@ begin protocol specification
 	begin LOGOUT_SCRIPT
 		send "q\r\n"
 	end LOGOUT_SCRIPT
-	begin STATUS_SCRIPT
+	begin STATUS_ALL_SCRIPT
 		send "ps *\r\n"
 		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
 			map $1 "1"
@@ -33,8 +33,8 @@ begin protocol specification
 			map $8 "8"
 			map $9 "9"
 			map $10 "10"
-	end STATUS_SCRIPT
-	begin STATUS_SOFT_SCRIPT
+	end STATUS_ALL_SCRIPT
+	begin STATUS_SOFT_ALL_SCRIPT
 		send "ns *\r\n"
 		expect "N1:([012]) N2:([012]) N3:([012]) N4:([012]) N5:([012]) N6:([012]) N7:([012]) N8:([012]) N9:([012]) N10:([012])[[:space:]]*\r\n"
 			map $1 "1"
@@ -47,9 +47,9 @@ begin protocol specification
 			map $8 "8"
 			map $9 "9"
 			map $10 "10"
-	end STATUS_SOFT_SCRIPT
+	end STATUS_SOFT_ALL_SCRIPT
 	# Assumption: v3 implies that "ts" is deprecated in favor of "is"
-        begin STATUS_TEMP_SCRIPT
+        begin STATUS_TEMP_ALL_SCRIPT
                 send "is *\r\n"
                 expect "N1:([^ ]+) N2:([^ ]+) N3:([^ ]+) N4:([^ ]+) N5:([^ ]+) N6:([^ ]+) N7:([^ ]+) N8:([^ ]+) N9:([^ ]+) N10:([^ ]+) N11:[^ ]+ N12:[^ ]+[[:space:]]*\r\n"
                         map $1 "1"
@@ -62,8 +62,8 @@ begin protocol specification
                         map $8 "8"
                         map $9 "9"
                         map $10 "10"
-        end STATUS_TEMP_SCRIPT
-        begin STATUS_BEACON_SCRIPT
+        end STATUS_TEMP_ALL_SCRIPT
+        begin STATUS_BEACON_ALL_SCRIPT
                 send "be *\r\n"
                 expect "N1:([A-Z]+) N2:([A-Z]+) N3:([A-Z]+) N4:([A-Z]+) N5:([A-Z]+) N6:([A-Z]+) N7:([A-Z]+) N8:([A-Z]+) N9:([A-Z]+) N10:([A-Z]+) N11:[A-Z]+ N12:[A-Z]+[[:space:]]*\r\n"
                         map $1 "1"
@@ -76,7 +76,7 @@ begin protocol specification
                         map $8 "8"
                         map $9 "9"
                         map $10 "10"
-        end STATUS_BEACON_SCRIPT
+        end STATUS_BEACON_ALL_SCRIPT
 	begin ON_SCRIPT
 		send "ph %s\r\n"
 		expect "OK\r\n"

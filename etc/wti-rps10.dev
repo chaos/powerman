@@ -7,15 +7,13 @@
 # If 2400 - wait 1.5 sec before sending next command
 # Format of commands is ^X^X^B^X^X^B^X^XPC\r
 #   where P is port number (0-9) and C is command (0,1,T,?)
-# FIXME: assumes only one plug at address 0.  There can be up to ten.
 #   
 begin protocol specification
 	specification name "wti-rps10"
 	specification type "serial"
 	off string "Off"
 	on string  "On"
-	all string "*"
-	plug count 1
+	plug count 10
 	device timeout 13  # toggle can be configured for 10 sec
 	begin LOGIN_SCRIPT
 		expect "RPS-10 Ready\n\n"
@@ -23,31 +21,42 @@ begin protocol specification
 	begin LOGOUT_SCRIPT
 		send "\r"
 	end LOGOUT_SCRIPT
+# Do not define STATUS_ALL_SCRIPT because there may not be all 10
+# boxes in a chain, and any missing ones will time out
 	begin STATUS_SCRIPT
-		send "\030\030\002\030\030\002\030\0300?\r"
-		expect "Plug 0 (On|Off)\n\n"
-			map $1 "0"
-		expect "Complete\n\n"
+		send "\030\030\002\030\030\002\030\030%s?\r"
+		expect "Plug [0-9] (On|Off)\n\n"
+			map $1 "%s"
+#		expect "Complete\n\n"
 		delay 0.5
 	end STATUS_SCRIPT
 	begin ON_SCRIPT
 		send "\030\030\002\030\030\002\030\030%s1\r"
 		expect "Plug [0-9] On"
-		expect "Complete"
+#		expect "Complete"
 		delay 0.5
 	end ON_SCRIPT
 	begin OFF_SCRIPT
 		send "\030\030\002\030\030\002\030\030%s0\r"
 		expect "Plug [0-9] Off"
-		expect "Complete"
+#		expect "Complete"
 		delay 0.5
 	end OFF_SCRIPT
 	begin CYCLE_SCRIPT
 		send "\030\030\002\030\030\002\030\030%sT\r"
 		expect "Plug [0-9] Off"
 		expect "Plug [0-9] On"
-		expect "Complete"
+#		expect "Complete"
 		delay 0.5
 	end CYCLE_SCRIPT
 	plug name "0"
+	plug name "1"
+	plug name "2"
+	plug name "3"
+	plug name "4"
+	plug name "5"
+	plug name "6"
+	plug name "7"
+	plug name "8"
+	plug name "9"
 end protocol specification

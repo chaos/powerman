@@ -1,6 +1,26 @@
+2002-01-17 garlick
+    * Get rid of "all string" - use _ALL script variants instead.
+      This increases repetition in scripts but is cleaner.
+    * Query scripts now all have an _ALL variant.  There is a subtlety here.
+      Some devices will hang if you query a plug that is not present,
+      e.g. the daisy-chained wti-rps10 devices; in this case define
+      STATUS_SCRIPT but not STATUS_SCRIPT_ALL.  Other devices support only
+      a query of all devices or perform better that way; in that case
+      define STATUS_SCRIPT_ALL but not STATUS_SCRIPT.
+    * Defined a special 'map' argument of "%s" to indicate the action target
+      (matches similar usage in a 'send' statement).  This is needed for
+      mapping responses from single plug queries to appropriate query argument.
+    * Remove 'node' entry from Interp struct.  Map device plug names to
+      node names on the fly when results are interpreted.  This is cleaner 
+      since we have to map on the fly anyway to handle "%s" action target,
+      and it paves the way for making it possible for all devices of a given
+      type to reference the same array scripts instead of copying them for  
+      each instantiation.
+    * Complete support for wti-rps10.
+
 2002-01-16 garlick
     * Add SERIAL_DEV device type
-    * Add beginnings of support wti-rps10 device (serial)
+    * Add support for wti-rps10 device (serial)
 
 2002-01-13 garlick
     * Update icebox3 beacon script for B70 of the ice box firmware.

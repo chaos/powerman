@@ -15,7 +15,6 @@ begin protocol specification
 	specification type "TCP"
 	off string "OFF"
 	on string  "ON"
-	all string "*"
 	plug count 8
 	device timeout 30  # "/boot *" command takes about 20 sec
 	begin LOGIN_SCRIPT
@@ -28,7 +27,7 @@ begin protocol specification
 	begin LOGOUT_SCRIPT
 		send "/x\r\n"
 	end LOGOUT_SCRIPT
-	begin STATUS_SCRIPT
+	begin STATUS_ALL_SCRIPT
 		send "/s\r\n"
 		expect "Default"
 		expect "\\+\r\n"
@@ -55,14 +54,26 @@ begin protocol specification
 		send "/on %s\r\n"
 		expect "NPS> "
 	end ON_SCRIPT
+	begin ON_ALL_SCRIPT
+		send "/on *\r\n"
+		expect "NPS> "
+	end ON_ALL_SCRIPT
 	begin OFF_SCRIPT
 		send "/off %s\r\n"
 		expect "NPS> "
 	end OFF_SCRIPT
+	begin OFF_ALL_SCRIPT
+		send "/off *\r\n"
+		expect "NPS> "
+	end OFF_ALL_SCRIPT
 	begin CYCLE_SCRIPT
 		send "/boot %s\r\n"
 		expect "NPS> "
 	end CYCLE_SCRIPT
+	begin CYCLE_ALL_SCRIPT
+		send "/boot *\r\n"
+		expect "NPS> "
+	end CYCLE_ALL_SCRIPT
 	plug name "1"
 	plug name "2"
 	plug name "3"

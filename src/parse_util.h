@@ -42,22 +42,26 @@
 #define PM_LOG_IN           0
 #define PM_LOG_OUT          1
 #define PM_STATUS_PLUGS     2
-#define PM_STATUS_NODES     3
-#define PM_PING             4
-#define PM_POWER_ON         5
-#define PM_POWER_ON_ALL     6
-#define PM_POWER_OFF        7
-#define PM_POWER_OFF_ALL    8
-#define PM_POWER_CYCLE      9
-#define PM_POWER_CYCLE_ALL  10
-#define PM_RESET            11
-#define PM_RESET_ALL        12
-#define PM_STATUS_TEMP      13
-#define PM_STATUS_BEACON    14
-#define PM_BEACON_ON        15
-#define PM_BEACON_OFF       16
+#define PM_STATUS_PLUGS_ALL 3
+#define PM_STATUS_NODES     4
+#define PM_STATUS_NODES_ALL 5
+#define PM_PING             6
+#define PM_POWER_ON         7
+#define PM_POWER_ON_ALL     8
+#define PM_POWER_OFF        9
+#define PM_POWER_OFF_ALL    10
+#define PM_POWER_CYCLE      11
+#define PM_POWER_CYCLE_ALL  12
+#define PM_RESET            13
+#define PM_RESET_ALL        14
+#define PM_STATUS_TEMP      15
+#define PM_STATUS_TEMP_ALL  16
+#define PM_STATUS_BEACON    17
+#define PM_STATUS_BEACON_ALL 18
+#define PM_BEACON_ON        19
+#define PM_BEACON_OFF       20
 /* count of scripts above */
-#define NUM_SCRIPTS         17
+#define NUM_SCRIPTS         21
 
 /*
  * A Map is a list of Interps.
@@ -66,9 +70,8 @@
 typedef struct {
     char *plug_name;            /* plug name e.g. "10" */
     int match_pos;              /* index into pmatch array after regex call */
-    char *node;                 /* where to update matched values */
 } Interp;
-typedef List Map;               /* a map is a list of Interps */
+typedef List Map;
 
 /*
  * A Script is a list of Stmts.
@@ -111,13 +114,12 @@ typedef struct {
     DevType type;               /* device type, e.g. TCP_DEV */
     char *off;                  /* off string, e.g. "OFF" */
     char *on;                   /* on string, e.g. "ON" */
-    char *all;                  /* all string, e.g. "*" */
     int size;                   /* number of plugs per device */
     struct timeval timeout;     /* timeout for this device */
     struct timeval ping_period; /* ping period for this device 0.0 = none */
     char **plugname;            /* list of plug names (e.g. "1" thru "10") */
     PreScript prescripts[NUM_SCRIPTS];  /* array of PreScripts */
-} Spec;
+} Spec;                                 /*   script may be NULL if undefined */
 
 Stmt *conf_stmt_create(StmtType type, char *s1, List map,
                                  struct timeval tv);

@@ -7,7 +7,6 @@ begin protocol specification
 	specification type "TCP"
 	off string "OFF"
 	on string  "ON"
-	all string "*"
 	plug count 8
 	device timeout 5.0
 #	ping period 10.0
@@ -23,7 +22,7 @@ begin protocol specification
 		send "logoff\r\n"
 		expect "[0-9]* OK"
 	end LOGOUT_SCRIPT
-	begin STATUS_SCRIPT
+	begin STATUS_ALL_SCRIPT
 		send "stat\r\n"
 		expect "plug 0: (ON|OFF)"
 			map $1 "0"
@@ -43,8 +42,8 @@ begin protocol specification
 			map $1 "7"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end STATUS_SCRIPT
-	begin STATUS_SOFT_SCRIPT
+	end STATUS_ALL_SCRIPT
+	begin STATUS_SOFT_ALL_SCRIPT
 		send "stat_soft\r\n"
 		expect "plug 0: (ON|OFF)"
 			map $1 "0"
@@ -64,17 +63,27 @@ begin protocol specification
 			map $1 "7"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
-	end STATUS_SOFT_SCRIPT
+	end STATUS_SOFT_ALL_SCRIPT
 	begin ON_SCRIPT
 		send "on %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
 	end ON_SCRIPT
+	begin ON_ALL_SCRIPT
+		send "on *\r\n"
+		expect "[0-9]* OK"
+		expect "[0-9]* vpc> "
+	end ON_ALL_SCRIPT
 	begin OFF_SCRIPT
 		send "off %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
 	end OFF_SCRIPT
+	begin OFF_ALL_SCRIPT
+		send "off *\r\n"
+		expect "[0-9]* OK"
+		expect "[0-9]* vpc> "
+	end OFF_ALL_SCRIPT
 	begin CYCLE_SCRIPT
 		send "off %s\r\n"
 		expect "[0-9]* OK"
@@ -84,6 +93,15 @@ begin protocol specification
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
 	end CYCLE_SCRIPT
+	begin CYCLE_ALL_SCRIPT
+		send "off *\r\n"
+		expect "[0-9]* OK"
+		expect "[0-9]* vpc> "
+		delay 1.0
+		send "on *\r\n"
+		expect "[0-9]* OK"
+		expect "[0-9]* vpc> "
+	end CYCLE_ALL_SCRIPT
 	plug name "0"
 	plug name "1"
 	plug name "2"

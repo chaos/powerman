@@ -57,7 +57,6 @@ static List makeMapSec(List s1, Interp *s2);
 static char *makeStmt(StmtType mode, char *s2, List s3);
 
 static char *makeSpecSize(char *s2);
-static char *makeSpecAll(char *s2);
 static char *makeSpecOn(char *s2);
 static char *makeSpecOff(char *s2);
 static char *makeSpecType(char *s2);
@@ -95,7 +94,6 @@ static void _doubletotv(struct timeval *tv, double val);
 %token TOK_SPEC_TYPE
 %token TOK_OFF_STRING
 %token TOK_ON_STRING
-%token TOK_ALL_STRING
 %token TOK_PLUG_COUNT
 %token TOK_B_LOGIN
 %token TOK_EXPECT
@@ -107,12 +105,20 @@ static void _doubletotv(struct timeval *tv, double val);
 %token TOK_E_LOGOUT
 %token TOK_B_STATUS
 %token TOK_E_STATUS
+%token TOK_B_STATUS_ALL
+%token TOK_E_STATUS_ALL
 %token TOK_B_STATUS_SOFT
 %token TOK_E_STATUS_SOFT
+%token TOK_B_STATUS_SOFT_ALL
+%token TOK_E_STATUS_SOFT_ALL
 %token TOK_B_STATUS_TEMP
 %token TOK_E_STATUS_TEMP
+%token TOK_B_STATUS_TEMP_ALL
+%token TOK_E_STATUS_TEMP_ALL
 %token TOK_B_STATUS_BEACON
 %token TOK_E_STATUS_BEACON
+%token TOK_B_STATUS_BEACON_ALL
+%token TOK_E_STATUS_BEACON_ALL
 %token TOK_B_BEACON_ON
 %token TOK_E_BEACON_ON
 %token TOK_B_BEACON_OFF
@@ -188,7 +194,6 @@ specification_item_list : specification_item_list specification_item
 specification_item : spec_type_line 
         | off_string_line 
         | on_string_line 
-        | all_string_line 
         | spec_size_line 
         | dev_timeout
 ;
@@ -202,10 +207,6 @@ off_string_line : TOK_OFF_STRING TOK_STRING_VAL {
 ;
 on_string_line    : TOK_ON_STRING TOK_STRING_VAL {
     $$ = (char *)makeSpecOn($2);
-}
-;
-all_string_line : TOK_ALL_STRING TOK_STRING_VAL {
-    $$ = (char *)makeSpecAll($2);
 }
 ;
 spec_size_line    : TOK_PLUG_COUNT TOK_NUMERIC_VAL {
@@ -232,13 +233,25 @@ spec_script    : TOK_B_LOGIN script_list TOK_E_LOGIN {
         | TOK_B_STATUS script_list TOK_E_STATUS {
     $$ = (char *)makeScriptSec($2, PM_STATUS_PLUGS);
 } 
+        | TOK_B_STATUS_ALL script_list TOK_E_STATUS_ALL {
+    $$ = (char *)makeScriptSec($2, PM_STATUS_PLUGS_ALL);
+} 
         | TOK_B_STATUS_SOFT script_list TOK_E_STATUS_SOFT {
     $$ = (char *)makeScriptSec($2, PM_STATUS_NODES);
+}
+        | TOK_B_STATUS_SOFT_ALL script_list TOK_E_STATUS_SOFT_ALL {
+    $$ = (char *)makeScriptSec($2, PM_STATUS_NODES_ALL);
 }
         | TOK_B_STATUS_TEMP script_list TOK_E_STATUS_TEMP {
     $$ = (char *)makeScriptSec($2, PM_STATUS_TEMP);
 }
+        | TOK_B_STATUS_TEMP_ALL script_list TOK_E_STATUS_TEMP_ALL {
+    $$ = (char *)makeScriptSec($2, PM_STATUS_TEMP_ALL);
+}
         | TOK_B_STATUS_BEACON script_list TOK_E_STATUS_BEACON {
+    $$ = (char *)makeScriptSec($2, PM_STATUS_BEACON);
+}
+        | TOK_B_STATUS_BEACON_ALL script_list TOK_E_STATUS_BEACON_ALL {
     $$ = (char *)makeScriptSec($2, PM_STATUS_BEACON);
 }
         | TOK_B_BEACON_ON script_list TOK_E_BEACON_ON {
@@ -426,8 +439,6 @@ static Spec *check_Spec()
         _spec_missing("off string");
     if( current_spec->on == NULL )
         _spec_missing("on string");
-    /*if( current_spec->all == NULL )
-    _spec_missing("all string");*/ /* this is optional */
     if( (current_spec->size == 0) )
         _spec_missing("size");
     for (i = 0; i < current_spec->size; i++) 
@@ -481,14 +492,6 @@ static char *makeSpecOn(char *s2)
     if( current_spec->on != NULL )
         _errormsg("duplicate on string");
     current_spec->on = Strdup(s2);
-    return s2;
-}
-
-static char *makeSpecAll(char *s2)
-{
-    if( current_spec->all != NULL )
-        _errormsg("duplicate all string");
-    current_spec->all = Strdup(s2);
     return s2;
 }
 
@@ -629,12 +632,12 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     /* set up the host name and port */
     switch(dev->type) {
     case TCP_DEV :
-        dev->devu.tcp.host = Strdup(s4);
-        dev->devu.tcp.service = Strdup(s5);
+        dev->u.tcp.host = Strdup(s4);
+        dev->u.tcp.service = Strdup(s5);
         break;
     case SERIAL_DEV :
-        dev->devu.serial.special = Strdup(s4);
-        dev->devu.serial.flags = Strdup(s5);
+        dev->u.serial.special = Strdup(s4);
+        dev->u.serial.flags = Strdup(s5);
         break;
     default :
         _errormsg("unimplemented device type");
@@ -644,7 +647,6 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
         list_append(dev->plugs, plug);
     }
     /* begin transfering info from the Spec to the Device */
-    dev->all = spec->all ? Strdup(spec->all) : NULL;
     re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
     Regcomp( &(dev->on_re), spec->on, cflags);
     Regcomp( &(dev->off_re), spec->off, cflags);
@@ -701,11 +703,6 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
  */
 static char *makeNode(char *s2, char *s3, char *s4)
 {
-    int i;
-    Interp *interp;
-    List script;
-    ListIterator itr;
-    Stmt *stmt;
     Plug *plug;
     Device *dev;
 
@@ -724,32 +721,6 @@ static char *makeNode(char *s2, char *s3, char *s4)
         _errormsg("unknown plug");
     }
     plug->node = Strdup(s2);
-    /*
-     * Finally an exhaustive search of the Interps in a device
-     * is required because this node will be the target of some
-     */
-    for (i = 0; i < NUM_SCRIPTS; i++) {
-    if ((script = dev->scripts[i]) == NULL)
-        continue; /* unimplemented */
-    itr = list_iterator_create(script);
-    while( (stmt = list_next(itr)) ) {
-        switch( stmt->type ) {
-        case STMT_SEND :
-        case STMT_DELAY :
-            break;
-        case STMT_EXPECT :
-            if( stmt->u.expect.map == NULL ) 
-                continue;
-            interp = list_find_first(stmt->u.expect.map, 
-                                     (ListFindF) conf_interp_match, s4);
-            if( interp != NULL )
-                interp->node = Strdup(s2);
-            break;
-        default :
-        }
-    }
-    list_iterator_destroy(itr);
-    }
     return s2;
 }
 

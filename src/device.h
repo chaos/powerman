@@ -68,7 +68,6 @@ typedef struct {
     int magic;
     char *name;                 /* name of device */
 
-    char *all;                  /* string to select all plugs */
     regex_t on_re;              /* regex to match "on" in query */
     regex_t off_re;             /* regex to match "off" in query */
 
@@ -83,7 +82,7 @@ typedef struct {
             char *special;
             char *flags;
         } serial;
-    } devu;
+    } u;
 
     ConnectStat connect_status;
     int script_status;          /* DEV_* bits reprepsenting script state */

@@ -16,7 +16,6 @@ begin protocol specification
 	specification type "TCP"
 	off string "Off"
 	on string  "On"
-	all string "0"
 	plug count 8
 	device timeout 10   # about 5 sec for cycle command
 	ping period 90
@@ -38,7 +37,7 @@ begin protocol specification
 		expect "Enter Selection>"
 		send "6\r\n"
 	end LOGOUT_SCRIPT
-	begin STATUS_SCRIPT
+	begin STATUS_ALL_SCRIPT
 		send "status\r\n"
 		expect "Circuit Breaker:[^\n]*\r\n"
 		expect "[^\n]*(On|Off)[^\n]*\r\n"
@@ -58,17 +57,26 @@ begin protocol specification
 		expect "[^\n]*(On|Off)[^\n]*\r\n"
 			map $1 "8"
 		expect "RPC-3>"
-	end STATUS_SCRIPT
+	end STATUS_ALL_SCRIPT
 	begin ON_SCRIPT
 		send "on %s\r\n"
 		expect "RPC-3>"
 	end ON_SCRIPT
+	begin ON_ALL_SCRIPT
+		send "on 0\r\n"
+		expect "RPC-3>"
+	end ON_ALL_SCRIPT
 	begin OFF_SCRIPT
 		send "off %s\r\n"
 		expect "RPC-3>"
 	end OFF_SCRIPT
+	begin OFF_ALL_SCRIPT
+		send "off 0\r\n"
+		expect "RPC-3>"
+	end OFF_ALL_SCRIPT
 # If outlet is initially off, "reboot" will leave it off.
-# This doesn't match PowerMan's semantics for cycle.
+# This doesn't match PowerMan's semantics for cycle, so explicitly power
+# off then on.
 	begin CYCLE_SCRIPT
 		send "off %s\r\n"
 		expect "RPC-3>"
@@ -76,6 +84,13 @@ begin protocol specification
 		send "on %s\r\n"
 		expect "RPC-3>"
 	end CYCLE_SCRIPT
+	begin CYCLE_ALL_SCRIPT
+		send "off 0\r\n"
+		expect "RPC-3>"
+		delay 2
+		send "on 0\r\n"
+		expect "RPC-3>"
+	end CYCLE_ALL_SCRIPT
 	plug name "1"
 	plug name "2"
 	plug name "3"

@@ -175,7 +175,6 @@ specification[ \t]+name           {   return TOK_SPEC_NAME; }
 specification[ \t]+type           {   return TOK_SPEC_TYPE; }
 off[ \t]+string                   {   return TOK_OFF_STRING; }
 on[ \t]+string                    {   return TOK_ON_STRING; }
-all[ \t]+string                   {   return TOK_ALL_STRING; }
 plug[ \t]+count                   {   return TOK_PLUG_COUNT; }
 expect                            {   return TOK_EXPECT; }
 map                               {   return TOK_MAP; }
@@ -187,8 +186,12 @@ begin[ \t]+LOGOUT_SCRIPT          {   return TOK_B_LOGOUT; }
 end[ \t]+LOGOUT_SCRIPT            {   return TOK_E_LOGOUT; }
 begin[ \t]+STATUS_SCRIPT          {   return TOK_B_STATUS; }
 end[ \t]+STATUS_SCRIPT            {   return TOK_E_STATUS; }
+begin[ \t]+STATUS_ALL_SCRIPT      {   return TOK_B_STATUS_ALL; }
+end[ \t]+STATUS_ALL_SCRIPT        {   return TOK_E_STATUS_ALL; }
 begin[ \t]+STATUS_SOFT_SCRIPT     {   return TOK_B_STATUS_SOFT; }
 end[ \t]+STATUS_SOFT_SCRIPT       {   return TOK_E_STATUS_SOFT; }
+begin[ \t]+STATUS_SOFT_ALL_SCRIPT {   return TOK_B_STATUS_SOFT_ALL; }
+end[ \t]+STATUS_SOFT_ALL_SCRIPT   {   return TOK_E_STATUS_SOFT_ALL; }
 begin[ \t]+ON_SCRIPT              {   return TOK_B_ON; }
 end[ \t]+ON_SCRIPT                {   return TOK_E_ON; }
 begin[ \t]+ON_ALL_SCRIPT          {   return TOK_B_ON_ALL; }
@@ -209,8 +212,12 @@ begin[ \t]+PING_SCRIPT            {   return TOK_B_PING; }
 end[ \t]+PING_SCRIPT              {   return TOK_E_PING; }
 begin[ \t]+STATUS_TEMP_SCRIPT     {   return TOK_B_STATUS_TEMP; }
 end[ \t]+STATUS_TEMP_SCRIPT       {   return TOK_E_STATUS_TEMP; }
+begin[ \t]+STATUS_TEMP_ALL_SCRIPT {   return TOK_B_STATUS_TEMP_ALL; }
+end[ \t]+STATUS_TEMP_ALL_SCRIPT   {   return TOK_E_STATUS_TEMP_ALL; }
 begin[ \t]+STATUS_BEACON_SCRIPT   {   return TOK_B_STATUS_BEACON; }
 end[ \t]+STATUS_BEACON_SCRIPT     {   return TOK_E_STATUS_BEACON; }
+begin[ \t]+STATUS_BEACON_ALL_SCRIPT {   return TOK_B_STATUS_BEACON_ALL; }
+end[ \t]+STATUS_BEACON_ALL_SCRIPT {   return TOK_E_STATUS_BEACON_ALL; }
 begin[ \t]+BEACON_ON_SCRIPT       {   return TOK_B_BEACON_ON; }
 end[ \t]+BEACON_ON_SCRIPT         {   return TOK_E_BEACON_ON; }
 begin[ \t]+BEACON_OFF_SCRIPT      {   return TOK_B_BEACON_OFF; }

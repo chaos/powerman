@@ -431,7 +431,9 @@ static Command *_create_command(Client * c, int com, char *arg1)
             _destroy_command(cmd);
             cmd = NULL;
         }
-    }
+    } else
+        cmd->hl = hostlist_copy(conf_getnodes());
+
     if (cmd && !dev_check_actions(cmd->com, cmd->hl)) {
         _destroy_command(cmd);
         _client_printf(c, CP_ERR_UNIMPL);
@@ -445,10 +447,7 @@ static Command *_create_command(Client * c, int com, char *arg1)
                 || cmd->com == PM_STATUS_NODES
                 || cmd->com == PM_STATUS_TEMP
                 || cmd->com == PM_STATUS_BEACON)) {
-        if (cmd->hl)
-            cmd->arglist = dev_create_arglist(cmd->hl);
-        else
-            cmd->arglist = dev_create_arglist(conf_getnodes());
+        cmd->arglist = dev_create_arglist(cmd->hl);
         if (cmd->arglist == NULL) {
             _destroy_command(cmd);
             _internal_error_response(c);
@@ -555,9 +554,10 @@ static void _parse_input(Client * c, char *input)
         _client_printf(c, CP_ERR_UNKNOWN);
     }
 
+
     /* enqueue device actions and tie up the client if necessary */
-    /* Note: cmd->hl may be NULL */
     if (cmd) {
+        assert(cmd->hl != NULL);
         dbg(DBG_CLIENT, "_parse_input: enqueuing actions");
         cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish, 
                 c->telemetry ? _telemetry_printf : NULL, 

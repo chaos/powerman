@@ -188,8 +188,6 @@ static void _spec_destroy(Spec * spec)
     Free(spec->name);
     Free(spec->off);
     Free(spec->on);
-    if (spec->all)
-        Free(spec->all);
 
     for (i = 0; i < spec->size; i++)
         Free(spec->plugname[i]);
@@ -301,19 +299,13 @@ Interp *conf_interp_create(char *name)
     interp = (Interp *) Malloc(sizeof(Interp));
     interp->plug_name = Strdup(name);
     interp->match_pos = -1;
-    interp->node = NULL;
     return interp;
-}
-
-int conf_interp_match(Interp * interp, void *key)
-{
-    return (strcmp(interp->plug_name, (char *) key) == 0);
 }
 
 void conf_interp_destroy(Interp * interp)
 {
-    Free(interp->plug_name);
-    Free(interp->node);
+    if (interp->plug_name)
+        Free(interp->plug_name);
     Free(interp);
 }
 

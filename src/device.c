@@ -94,6 +94,7 @@ static void _handle_write(Device * dev);
 static void _process_action(Device * dev, struct timeval *timeout);
 static bool _timeout(struct timeval *timestamp, struct timeval *timeout,
                      struct timeval *timeleft);
+static int _get_all_script(Device * dev, int com);
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
                             ActionCB complete_fun, VerbosePrintf vpf_fun,
                             int client_id, ArgList * arglist);
@@ -352,8 +353,7 @@ static bool _tcp_reconnect(Device * dev)
     hints.ai_flags = AI_CANONNAME;
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    Getaddrinfo(dev->devu.tcp.host, dev->devu.tcp.service, 
-            &hints, &addrinfo);
+    Getaddrinfo(dev->u.tcp.host, dev->u.tcp.service, &hints, &addrinfo);
 
     dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
                      addrinfo->ai_protocol);
@@ -396,13 +396,15 @@ static bool _serial_reconnect(Device * dev)
     assert(dev->connect_status == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
-    dev->fd = open(dev->devu.serial.special, O_RDWR);
+    dev->fd = open(dev->u.serial.special, O_RDWR);
     if (dev->fd >= 0) {
         dev->connect_status = DEV_CONNECTED;
         dev->stat_successful_connects++;
         dev->retry_count = 0;
         _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
     }
+    
+    /* FIXME: handle serial.flags */
 
     dbg(DBG_DEVICE, "_serial_reconnect: %s on fd %d", dev->name, dev->fd);
 
@@ -434,6 +436,7 @@ static bool _command_needs_device(Device * dev, hostlist_t hl)
     ListIterator itr;
     Plug *plug;
 
+
     itr = list_iterator_create(dev->plugs);
     while ((plug = list_next(itr))) {
         if (plug->node != NULL && hostlist_find(hl, plug->node) != -1) {
@@ -455,18 +458,18 @@ bool dev_check_actions(int com, hostlist_t hl)
     ListIterator itr;
     bool valid = TRUE;
 
-    if (hl != NULL) {
-        itr = list_iterator_create(dev_devices);
-        while ((dev = list_next(itr))) {
-            if (_command_needs_device(dev, hl)) {
-                if (dev->scripts[com] == NULL) {  /* unimplemented */
-                    valid = FALSE;
-                    break;
-                }
+    assert(hl != NULL);
+
+    itr = list_iterator_create(dev_devices);
+    while ((dev = list_next(itr))) {
+        if (_command_needs_device(dev, hl)) {
+            if (!dev->scripts[com] && _get_all_script(dev, com) == -1)  {
+                valid = FALSE;
+                break;
             }
         }
-        list_iterator_destroy(itr);
     }
+    list_iterator_destroy(itr);
     return valid;
 }
 
@@ -486,10 +489,10 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
     while ((dev = list_next(itr))) {
         int count;
 
-        if (!dev->scripts[com])               /* unimplemented script */
-            continue;
-        if (hl && !_command_needs_device(dev, hl))  /* uninvolved device */
-            continue;
+        if (!dev->scripts[com] && _get_all_script(dev, com) == -1) 
+            continue;                               /* unimplemented script */
+        if (hl && !_command_needs_device(dev, hl)) 
+            continue;                               /* uninvolved device */
         count = _enqueue_actions(dev, com, hl, complete_fun, vpf_fun, 
                 client_id, arglist);
         if (count > 0 && !(dev->connect_status & DEV_CONNECTED))
@@ -521,27 +524,26 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
         list_prepend(dev->acts, act);
         count++;
         break;
-    case PM_POWER_ON:
-    case PM_POWER_OFF:
-    case PM_BEACON_ON:
-    case PM_BEACON_OFF:
-    case PM_POWER_CYCLE:
-    case PM_RESET:
-        if (hl) {
-            count += _enqueue_targetted_actions(dev, com, hl, complete_fun,
-                                                vpf_fun, client_id, arglist);
-            break;
-        }
-    /*FALLTHROUGH*/ case PM_STATUS_PLUGS:
-    case PM_STATUS_NODES:
-    case PM_STATUS_TEMP:
-    case PM_STATUS_BEACON:
     case PM_LOG_OUT:
     case PM_PING:
         act = _create_action(dev, com, NULL, complete_fun, vpf_fun, client_id, 
                 arglist);
         list_append(dev->acts, act);
         count++;
+        break;
+
+    case PM_POWER_ON:
+    case PM_POWER_OFF:
+    case PM_BEACON_ON:
+    case PM_BEACON_OFF:
+    case PM_POWER_CYCLE:
+    case PM_RESET:
+    case PM_STATUS_PLUGS:
+    case PM_STATUS_NODES:
+    case PM_STATUS_TEMP:
+    case PM_STATUS_BEACON:
+        count += _enqueue_targetted_actions(dev, com, hl, complete_fun,
+                                                vpf_fun, client_id, arglist);
         break;
     default:
         assert(FALSE);
@@ -572,10 +574,44 @@ static int _get_all_script(Device * dev, int com)
         if (dev->scripts[PM_RESET_ALL])
             new = PM_RESET_ALL;
         break;
+    case PM_STATUS_PLUGS:
+        if (dev->scripts[PM_STATUS_PLUGS_ALL])
+            new = PM_STATUS_PLUGS_ALL;
+        break;
+    case PM_STATUS_NODES:
+        if (dev->scripts[PM_STATUS_NODES_ALL])
+            new = PM_STATUS_NODES_ALL;
+        break;
+    case PM_STATUS_TEMP:
+        if (dev->scripts[PM_STATUS_TEMP_ALL])
+            new = PM_STATUS_TEMP_ALL;
+        break;
+    case PM_STATUS_BEACON:
+        if (dev->scripts[PM_STATUS_BEACON_ALL])
+            new = PM_STATUS_BEACON_ALL;
+        break;
     default:
         break;
     }
     return new;
+}
+
+static bool _is_query_action(int com)
+{
+    switch (com) {
+        case PM_STATUS_PLUGS:
+        case PM_STATUS_PLUGS_ALL:
+        case PM_STATUS_NODES:
+        case PM_STATUS_NODES_ALL:
+        case PM_STATUS_TEMP:
+        case PM_STATUS_TEMP_ALL:
+        case PM_STATUS_BEACON:
+        case PM_STATUS_BEACON_ALL:
+            return TRUE;
+        default:
+            return FALSE;
+    }
+    /*NOTREACHED*/
 }
 
 
@@ -591,6 +627,8 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
     int count = 0;
     Action *act;
 
+    assert(hl != NULL);
+
     itr = list_iterator_create(dev->plugs);
     while ((plug = list_next(itr))) {
         /* antisocial to gratuitously turn on/off unused plug */
@@ -603,13 +641,19 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
             all = FALSE;
             continue;
         }
-        /* match! */
-        act = _create_action(dev, com, plug->name, complete_fun, vpf_fun,
-                    client_id, arglist);
-        list_append(new_acts, act);
+        /* append action to 'new_acts' */
+        if (dev->scripts[com] != NULL) { /* maybe we only have _ALL... */
+            act = _create_action(dev, com, plug->name, complete_fun, vpf_fun,
+                        client_id, arglist);
+            list_append(new_acts, act);
+        }
     }
+    list_iterator_destroy(itr);
 
-    if (all) {
+    /* See if we can use a command targetted at all plugs 
+     * (discard 'new_acts' later on if so)
+     */
+    if (all || _is_query_action(com)) {
         int ncom;
         /* _ALL script available - use that */
         if ((ncom = _get_all_script(dev, com)) != -1) {
@@ -617,16 +661,10 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
                     client_id, arglist);
             list_append(dev->acts, act);
             count++;
-        } else if (dev->all != NULL) {  /* normal script, "*" plug */
-            act =
-                _create_action(dev, com, dev->all, complete_fun, vpf_fun,
-                        client_id, arglist);
-            list_append(dev->acts, act);
-            count++;
         }
     }
 
-    /* "all" wasn't appropriate or wasn't defined so do one action per plug */
+    /* _ALL wasn't appropriate or wasn't defined so do one action per plug */
     if (count == 0) {
         while ((act = list_pop(new_acts))) {
             list_append(dev->acts, act);
@@ -634,7 +672,6 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
         }
     }
 
-    list_iterator_destroy(itr);
     list_destroy(new_acts);
 
     return count;
@@ -1073,6 +1110,21 @@ static char *_copy_pmatch(char *str, regmatch_t m)
     return new;
 }
 
+static char *_plug_to_node(Device *dev, char *plug_name)
+{
+    ListIterator itr;
+    char *node = NULL;
+    Plug *plug;
+
+    itr = list_iterator_create(dev->plugs);
+    while ((plug = list_next(itr))) {
+        if (strcmp(plug->name, plug_name) == 0)
+            node = plug->node;
+    }
+    list_iterator_destroy(itr);
+    return node;
+}
+
 static void _match_subexpressions(Device * dev, Action * act, char *expect)
 {
     Interp *interp;
@@ -1082,9 +1134,7 @@ static void _match_subexpressions(Device * dev, Action * act, char *expect)
     int eflags = 0;
     int n;
 
-    if (act->com != PM_STATUS_PLUGS
-        && act->com != PM_STATUS_NODES
-        && act->com != PM_STATUS_TEMP && act->com != PM_STATUS_BEACON)
+    if (!_is_query_action(act->com))
         return;
     if (act->cur->u.expect.map == NULL)
         return;
@@ -1098,19 +1148,23 @@ static void _match_subexpressions(Device * dev, Action * act, char *expect)
 
     itr = list_iterator_create(act->cur->u.expect.map);
     while ((interp = list_next(itr))) {
-        char *str;
+        char *str;          
+        char *plug_name = strcmp(interp->plug_name, "%s") == 0 
+            ? act->target : interp->plug_name;
+        char *node = _plug_to_node(dev, plug_name);
 
-        if (interp->node == NULL)       /* unused plug? */
+        if (node == NULL)   /* unused plug? */
             continue;
+        
         assert(interp->match_pos >= 0 && interp->match_pos <= MAX_MATCH_POS);
 
         str = _copy_pmatch(expect, pmatch[interp->match_pos]);
 
         if (_findregex(&dev->on_re, str, strlen(str)))
-            _set_argval_state(act->arglist, interp->node, ST_ON);
+            _set_argval_state(act->arglist, node, ST_ON);
         if (_findregex(&dev->off_re, str, strlen(str)))
-            _set_argval_state(act->arglist, interp->node, ST_OFF);
-        _set_argval(act->arglist, interp->node, str);
+            _set_argval_state(act->arglist, node, ST_OFF);
+        _set_argval(act->arglist, node, str);
 
         Free(str);
     }
@@ -1167,18 +1221,16 @@ void dev_destroy(Device * dev)
 
     Free(dev->name);
     Free(dev->specname);
-    if (dev->all)
-        Free(dev->all);
     regfree(&(dev->on_re));
     regfree(&(dev->off_re));
     switch (dev->type) {
     case TCP_DEV:
-        Free(dev->devu.tcp.host);
-        Free(dev->devu.tcp.service);
+        Free(dev->u.tcp.host);
+        Free(dev->u.tcp.service);
         break;
     case SERIAL_DEV:
-        Free(dev->devu.serial.special);
-        Free(dev->devu.serial.flags);
+        Free(dev->u.serial.special);
+        Free(dev->u.serial.flags);
         break;
     case NO_DEV:
         assert(0); /* can't happen */
