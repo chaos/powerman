@@ -71,14 +71,14 @@ typedef struct {
 #define _act_started(act)   ((act)->cur != NULL)
 
 
+static bool _process_setstatus(Device * dev);
+static bool _process_setplugname(Device * dev);
 static bool _process_expect(Device * dev);
 static bool _process_send(Device * dev);
 static bool _process_delay(Device * dev, struct timeval *timeout);
 static void _set_argval_state(ArgList * arglist, char *node,
                               ArgState state);
 static void _set_argval(ArgList * arglist, char *node, char *val);
-static void _match_subexpressions(Device * dev, Action * act,
-                                  char *expect);
 static int _match_name(Device * dev, void *key);
 static void _handle_read(Device * dev);
 static void _handle_write(Device * dev);
@@ -97,8 +97,8 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
                                       VerbosePrintf vpf_fun,
                                       int client_id, ArgList * arglist);
 static unsigned char *_findregex(regex_t * re, unsigned char *str,
-                                 int len);
-static char *_getregex_buf(cbuf_t b, regex_t * re);
+                                 int len, size_t nm, regmatch_t pm[]);
+static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[]);
 static bool _command_needs_device(Device * dev, hostlist_t hl);
 static void _process_ping(Device * dev, struct timeval *timeout);
 
@@ -125,24 +125,28 @@ static void _dbg_actions(Device * dev)
  *  re (IN)   regular expression
  *  str (IN)  where to look for regular expression
  *  len (IN)  number of chars in str to search
+ *  nm (IN)   number of elem in pm array (can be 0)
+ *  pm (OUT)  filled with subexpression matches (can be NULL)
  *  RETURN    pointer to char following the last char of the match,
- *            or NULL if no match
+ *            or if pm = NULL, the first char of str;  NULL if no match
  */
-static unsigned char *_findregex(regex_t * re, unsigned char *str, int len)
+static unsigned char *_findregex(regex_t * re, unsigned char *str, int len,
+        size_t nm, regmatch_t pm[])
 {
     int n;
-    size_t nmatch = MAX_MATCH_POS + 1;
-    regmatch_t pmatch[MAX_MATCH_POS + 1];
     int eflags = 0;
+    char *res = NULL;
 
-    /* FIXME: len not observed before assertion! */
-    n = Regexec(re, str, nmatch, pmatch, eflags);
-    if (n != REG_NOERROR)
-        return NULL;
-    if (pmatch[0].rm_so == -1 || pmatch[0].rm_eo == -1)
-        return NULL;
-    assert(pmatch[0].rm_eo <= len);
-    return (str + pmatch[0].rm_eo);
+    n = Regexec(re, str, nm, pm, eflags);
+    if (n != REG_NOMATCH) {
+        if (nm > 0) {
+            assert(pm[0].rm_eo <= len);
+            res = str + pm[0].rm_eo;
+        } else
+            res = str;
+    }
+    
+    return res;
 }
 
 /*
@@ -156,7 +160,7 @@ static unsigned char *_findregex(regex_t * re, unsigned char *str, int len)
  *  re (IN) regular expression
  *  RETURN  String match (caller must free) or NULL if no match
  */
-static char *_getregex_buf(cbuf_t b, regex_t * re)
+static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[])
 {
     unsigned char *str = Malloc(MAX_DEV_BUF + 1);
     unsigned char *match_end;
@@ -176,7 +180,7 @@ static char *_getregex_buf(cbuf_t b, regex_t * re)
         }
     }
     str[bytes_peeked] = '\0';           /* null terminate result */
-    match_end = _findregex(re, str, bytes_peeked);
+    match_end = _findregex(re, str, bytes_peeked, nm, pm);
     if (match_end == NULL) {
         Free(str);
         return NULL;
@@ -553,6 +557,8 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
             all = FALSE;
             continue;
         }
+        if (plug->name == NULL)
+            continue;
         /* append action to 'new_acts' */
         if (dev->scripts[com] != NULL) { /* maybe we only have _ALL... */
             act = _create_action(dev, com, plug->name, complete_fun, vpf_fun,
@@ -763,6 +769,10 @@ static void _process_action(Device * dev, struct timeval *timeout)
             stalled = !_process_expect(dev);            /* do expect */
         } else if (act->cur->type == STMT_SEND) {
             stalled = !_process_send(dev);              /* do send */
+        } else if (act->cur->type == STMT_SETSTATUS) {
+            stalled = !_process_setstatus(dev);         /* set status */
+        } else if (act->cur->type == STMT_SETPLUGNAME) {
+            stalled = !_process_setplugname(dev);         /* set plugname */
         } else {
             assert(act->cur->type == STMT_DELAY);
             stalled = !_process_delay(dev, timeout);    /* do delay */
@@ -813,30 +823,173 @@ static void _process_action(Device * dev, struct timeval *timeout)
     }
 }
 
+/* Make a copy of a device's cached subexpression match, referenced by
+ * 'mp' match position, or NULL if no match.  Caller must free the result.
+ */
+static char *_copy_pmatch(Device *dev, int mp)
+{
+    char *new;
+    regmatch_t m; 
+
+    if (!dev->matchstr) /* no previous match */
+        return NULL;
+    if (mp < 0 || mp >= (sizeof(dev->pmatch) / sizeof(regmatch_t)))
+        return NULL;    /* match position is out of range */
+
+    m = dev->pmatch[mp];
+
+    if (m.rm_so >= strlen(dev->matchstr) || m.rm_so < 0)
+        return NULL;    /* start pointer is out of range */
+                        /* NOTE: will be -1 if subexpression did not match */
+    if (m.rm_eo > strlen(dev->matchstr) || m.rm_eo < 0)
+        return NULL;    /* end pointer is out of range */
+    if (m.rm_eo - m.rm_so <= 0)
+        return NULL;    /* match is nonzero length */
+
+    new = Malloc(m.rm_eo - m.rm_so + 1);
+    memcpy(new, dev->matchstr + m.rm_so, m.rm_eo - m.rm_so);
+    new[m.rm_eo - m.rm_so] = '\0';
+    
+    return new;
+}
+
+static char *_plug_to_node(Device *dev, char *plug_name)
+{
+    ListIterator itr;
+    char *node = NULL;
+    Plug *plug;
+
+    itr = list_iterator_create(dev->plugs);
+    while ((plug = list_next(itr))) {
+        if (plug->name && strcmp(plug->name, plug_name) == 0)
+            node = plug->node;
+    }
+    list_iterator_destroy(itr);
+    return node;
+}
+
+static bool _process_setstatus(Device * dev)
+{
+    bool finished = TRUE;
+    char *plug_name = NULL;
+    Action *act = list_peek(dev->acts);
+
+    assert(act != NULL);
+    assert(act->cur != NULL);
+    assert(act->cur->type == STMT_SETSTATUS);
+
+    /* 
+     * Usage: setstatus [plug] status
+     * plug can be literal plug name, or regex match, or omitted, 
+     * (implying target plug name).
+     */
+    if (act->cur->u.setstatus.plug_name)    /* literal */
+        plug_name = Strdup(act->cur->u.setstatus.plug_name);
+    if (!plug_name)                         /* regex match */
+        plug_name = _copy_pmatch(dev, act->cur->u.setstatus.plug_mp);
+    if (!plug_name && act->target != NULL)  /* missing (use target) */
+        plug_name = Strdup(act->target);
+    /* if no plug name, do nothing */
+
+    if (plug_name) {
+        char *str = _copy_pmatch(dev, act->cur->u.setstatus.stat_mp);
+        char *node = _plug_to_node(dev, plug_name);
+
+        if (str && node) {
+            if (_findregex(&dev->on_re, str, strlen(str), 0, NULL))
+                _set_argval_state(act->arglist, node, ST_ON);
+            if (_findregex(&dev->off_re, str, strlen(str), 0, NULL))
+                _set_argval_state(act->arglist, node, ST_OFF);
+            _set_argval(act->arglist, node, str);
+            Free(str);
+        } 
+        /* if no match, do nothing */
+        Free(plug_name); 
+    }
+
+    return finished;
+}
+
+static bool _process_setplugname(Device * dev)
+{
+    bool finished = TRUE;
+    char *node_name = NULL;
+    Action *act = list_peek(dev->acts);
+
+    assert(act != NULL);
+    assert(act->cur != NULL);
+    assert(act->cur->type == STMT_SETSTATUS);
+
+    /* 
+     * Usage: setplugname node plug
+     * Both node and plug are regex matches.
+     */
+    node_name = _copy_pmatch(dev, act->cur->u.setplugname.node_mp);
+    /* if no node name, do nothing */
+
+    if (node_name) {
+        char *plug_name = _copy_pmatch(dev, act->cur->u.setplugname.plug_mp);
+
+        if (plug_name) {
+            Plug *plug;
+            ListIterator itr;
+
+            /* find the right plug:node tuple for this node */
+            itr = list_iterator_create(dev->plugs);
+            while ((plug = list_next(itr))) {
+                if (plug->node && strcmp(plug->node, node_name) == 0)
+                    break;
+            }
+            list_iterator_destroy(itr);
+
+            /* update the plug name */
+            if (plug) {
+                printf("XXX node %s old %s new %s\n", 
+                        node_name, plug->name, plug_name);
+                if (plug->name)                 /* free old plug name */
+                    Free(plug->name);
+                plug->name = Strdup(plug_name); /* store new plug name */
+            }
+            Free(plug_name);
+        }
+        /* if no match, do nothing */
+        Free(node_name); 
+    }
+
+    return finished;
+}
+
 /* return TRUE if expect is finished */
 static bool _process_expect(Device * dev)
 {
     regex_t *re;
     Action *act = list_peek(dev->acts);
-    char *expect;
     bool finished = FALSE;
+    size_t nm;
+    regmatch_t *pm;
 
     assert(act != NULL);
     assert(act->cur != NULL);
     assert(act->cur->type == STMT_EXPECT);
 
     re = &act->cur->u.expect.exp;
+    pm = dev->pmatch;
+    nm = sizeof(dev->pmatch) / sizeof(regmatch_t);
 
-    if ((expect = _getregex_buf(dev->from, re))) {      /* match */
-        char *memstr = dbg_memstr(expect, strlen(expect));
+    /* Free previously cached expect match string */
+    if (dev->matchstr) {
+        Free(dev->matchstr);
+        dev->matchstr = NULL;
+    }
 
-        if (act->vpf_fun)
+    /* Match? */
+    if ((dev->matchstr = _getregex_buf(dev->from, re, nm, pm))) {
+        if (act->vpf_fun) {
+            char *memstr = dbg_memstr(dev->matchstr, strlen(dev->matchstr));
+
             act->vpf_fun(act->client_id, "recv(%s): '%s'", dev->name, memstr);
-        Free(memstr);
-
-        /* process values of parenthesized subexpressions, if any */
-        _match_subexpressions(dev, act, expect);
-        Free(expect);
+            Free(memstr);
+        }
         finished = TRUE;
     } 
     return finished;
@@ -874,6 +1027,9 @@ static bool _process_send(Device * dev)
     assert(act->magic == ACT_MAGIC);
     assert(act->cur != NULL);
     assert(act->cur->type == STMT_SEND);
+
+    if (!act->target)
+        err(FALSE, "_process_send(%s): attempt to take action on unnamed plug");
 
     /* first time through? */
     if (!(dev->script_status & DEV_SENDING)) {
@@ -941,93 +1097,6 @@ static bool _process_delay(Device * dev, struct timeval *timeout)
     return finished;
 }
 
-static char *_copy_pmatch(char *str, regmatch_t m)
-{
-    char *new;
-
-    assert(m.rm_so < MAX_DEV_BUF && m.rm_so >= 0);
-    assert(m.rm_eo < MAX_DEV_BUF && m.rm_eo >= 0);
-    assert(m.rm_eo - m.rm_so > 0);
-
-    new = Malloc(m.rm_eo - m.rm_so + 1);
-    memcpy(new, str + m.rm_so, m.rm_eo - m.rm_so);
-    new[m.rm_eo - m.rm_so] = '\0';
-    /* XXX andrew zapped trailing spaces in old code - needed here? */
-    return new;
-}
-
-static char *_plug_to_node(Device *dev, char *plug_name)
-{
-    ListIterator itr;
-    char *node = NULL;
-    Plug *plug;
-
-    itr = list_iterator_create(dev->plugs);
-    while ((plug = list_next(itr))) {
-        if (plug->name && strcmp(plug->name, plug_name) == 0)
-            node = plug->node;
-    }
-    list_iterator_destroy(itr);
-    return node;
-}
-
-static void _match_subexpressions(Device * dev, Action * act, char *expect)
-{
-    Interp *interp;
-    ListIterator itr;
-    size_t nmatch = MAX_MATCH_POS + 1;
-    regmatch_t pmatch[MAX_MATCH_POS + 1];
-    int eflags = 0;
-    int n;
-
-    if (!_is_query_action(act->com))
-        return;
-    if (act->cur->u.expect.map == NULL)
-        return;
-
-    /* match regex against expect - must succede, we checked before */
-    n = Regexec(&act->cur->u.expect.exp, expect, nmatch, pmatch,
-                eflags);
-    assert(n == REG_NOERROR);
-    assert(pmatch[0].rm_so != -1 && pmatch[0].rm_eo != -1);
-    assert(pmatch[0].rm_so <= strlen(expect));
-
-    itr = list_iterator_create(act->cur->u.expect.map);
-    while ((interp = list_next(itr))) {
-        char *str, *plug_name, *node;          
-
-        /* Command: map $1 "1"
-         *   Copy the results of the regex match to the arglist for the 
-         *   node associated with plug 1. 
-         * Command: map $1 "%s"
-         *   Copy the results of the regex match to the arglist for the
-         *   target node.  This is used in the single-plug status command
-         *   where the node's plug name is passed in.
-         */
-        if (!strcmp(interp->plug_name, "%s"))
-            plug_name = act->target;
-        else 
-            plug_name = interp->plug_name;
-        node = plug_name ? _plug_to_node(dev, plug_name) : NULL;
-
-        if (node == NULL)   /* unused plug? */
-            continue;
-        
-        assert(interp->match_pos >= 0 && interp->match_pos <= MAX_MATCH_POS);
-
-        str = _copy_pmatch(expect, pmatch[interp->match_pos]);
-
-        if (_findregex(&dev->on_re, str, strlen(str)))
-            _set_argval_state(act->arglist, node, ST_ON);
-        if (_findregex(&dev->off_re, str, strlen(str)))
-            _set_argval_state(act->arglist, node, ST_OFF);
-        _set_argval(act->arglist, node, str);
-
-        Free(str);
-    }
-    list_iterator_destroy(itr);
-}
-
 Device *dev_create(const char *name, DevType type)
 {
     Device *dev;
@@ -1041,6 +1110,7 @@ Device *dev_create(const char *name, DevType type)
     dev->script_status = 0;
     dev->fd = NO_FD;
     dev->acts = list_create((ListDelF) _destroy_action);
+    dev->matchstr = NULL;
 
     timerclear(&dev->timeout);
     timerclear(&dev->last_retry);
@@ -1137,7 +1207,7 @@ int dev_plug_match_plugname(Plug * plug, void *key)
 }
 int dev_plug_match_noname(Plug * plug, void *key)
 {
-    return (plug->name == NULL ? 1 : 0);
+    return ((plug->name == NULL && plug->node == NULL) ? 1 : 0);
 }
 
 /* helper for dev_create */

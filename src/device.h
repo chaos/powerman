@@ -91,6 +91,9 @@ typedef struct {
     ConnectStat connect_status;
     int script_status;          /* DEV_* bits reprepsenting script state */
 
+    char *matchstr;             /* cache regex matches for future $N ref */
+    regmatch_t pmatch[MAX_MATCH_POS+1];
+
     int fd;
     List acts;                  /* queue of Actions */
 

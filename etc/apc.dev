@@ -10,7 +10,7 @@ specification {
 	type 		"telnet"
 	offstring 	"OFF"
 	onstring  	"ON"
-	plugcount 	8
+	maxplugcount 	8
 	timeout 	10  
 
 	script login {
@@ -30,22 +30,22 @@ specification {
 	}
 	script status_all {
 		send "\r\n"  # refresh
-		expect "1-[^\n]*(ON|OFF)[^\n]*\r\n"
-			map $1 "1"
-		expect "2-[^\n]*(ON|OFF)[^\n]*\r\n"
-			map $1 "2"
-		expect "3-[^\n]*(ON|OFF)[^\n]*\r\n"
-			map $1 "3"
-		expect "4-[^\n]*(ON|OFF)[^\n]*\r\n"
-			map $1 "4"
-		expect "5-[^\n]*(ON|OFF)[^\n]*\r\n"
-			map $1 "5"
-		expect "6-[^\n]*(ON|OFF)[^\n]*\r\n"
-			map $1 "6"
-		expect "7-[^\n]*(ON|OFF)[^\n]*\r\n"
-			map $1 "7"
-		expect "8-[^\n]*(ON|OFF)[^\n]*\r\n"
-			map $1 "8"
+		expect "(1)-[^\n]*(ON|OFF)[^\n]*\r\n"
+		setstatus $1 $2
+		expect "(2)-[^\n]*(ON|OFF)[^\n]*\r\n"
+		setstatus $1 $2
+		expect "(3)-[^\n]*(ON|OFF)[^\n]*\r\n"
+		setstatus $1 $2
+		expect "(4)-[^\n]*(ON|OFF)[^\n]*\r\n"
+		setstatus $1 $2
+		expect "(5)-[^\n]*(ON|OFF)[^\n]*\r\n"
+		setstatus $1 $2
+		expect "(6)-[^\n]*(ON|OFF)[^\n]*\r\n"
+		setstatus $1 $2
+		expect "(7)-[^\n]*(ON|OFF)[^\n]*\r\n"
+		setstatus $1 $2
+		expect "(8)-[^\n]*(ON|OFF)[^\n]*\r\n"
+		setstatus $1 $2
 		expect "> "
 	}
 	script on {

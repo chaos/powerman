@@ -60,23 +60,17 @@
 #define PM_STATUS_BEACON_ALL 18
 #define PM_BEACON_ON        19
 #define PM_BEACON_OFF       20
+#define PM_RESOLVE          21
 /* count of scripts above */
-#define NUM_SCRIPTS         21
+#define NUM_SCRIPTS         22
 
-/*
- * A Map is a list of Interps.
- */
-#define MAX_MATCH_POS   20
-typedef struct {
-    char *plug_name;            /* plug name e.g. "10" */
-    int match_pos;              /* index into pmatch array after regex call */
-} Interp;
-typedef List Map;
 
 /*
  * A Script is a list of Stmts.
  */
-typedef enum { STMT_SEND, STMT_EXPECT, STMT_DELAY } StmtType;
+#define MAX_MATCH_POS   20
+typedef enum { STMT_SEND, STMT_EXPECT, STMT_SETSTATUS, STMT_DELAY, 
+    STMT_SETPLUGNAME  } StmtType;
 typedef struct {
     StmtType type;
     union {
@@ -85,8 +79,16 @@ typedef struct {
         } send;
         struct {                /* EXPECT */
             regex_t exp;        /* compiled regex */
-            Map map;            /* list of Interp structures */
         } expect;
+        struct {                /* SETSTATUS (regexes refer to prev expect) */
+            char *plug_name;    /* plug name if literally specified */
+            int plug_mp;        /* regex subexp match pos of plug name if not */
+            int stat_mp;        /* regex subexp match pos of plug status */
+        } setstatus;
+        struct {                /* SETPLUGNAME (regexes refer to prev expect) */
+            int plug_mp;        /* regex match position of plug name */
+            int node_mp;        /* regex match position of node name */
+        } setplugname;
         struct {                /* DELAY */
             struct timeval tv;  /* delay at this point in the script */
         } delay;
@@ -99,9 +101,10 @@ typedef List Script;
  */
 typedef struct {
     StmtType type;              /* delay/expect/send */
-    char *string1;              /* expect string, send fmt */
+    char *str;                  /* expect string, send fmt, setstatus plug */
     struct timeval tv;          /* delay value */
-    List map;                   /* interpretations */
+    int mp1;                    /* setstatus plug, setplugname plug match pos */
+    int mp2;                    /* settatus stat, setplugname node match pos */
 } PreStmt;
 typedef List PreScript;
 
@@ -121,21 +124,17 @@ typedef struct {
     PreScript prescripts[NUM_SCRIPTS];  /* array of PreScripts */
 } Spec;                                 /*   script may be NULL if undefined */
 
-Stmt *conf_stmt_create(StmtType type, char *s1, List map,
-                                 struct timeval tv);
+Stmt *conf_stmt_create(StmtType type, char *str, struct timeval tv, 
+        int plug_mp, int stat_or_node_mp);
 void conf_stmt_destroy(Stmt * stmt);
 
 Spec *conf_spec_create(char *name);
 int conf_spec_match(Spec * spec, void *key);
 void conf_spec_destroy(Spec * spec);
 
-PreStmt *conf_prestmt_create(StmtType type, char *str1,
-                             struct timeval *tv, List map);
+PreStmt *conf_prestmt_create(StmtType type, char *str, struct timeval tv,
+                int mp1, int mp2);
 void conf_prestmt_destroy(PreStmt * specl);
-
-Interp *conf_interp_create(char *name);
-int conf_interp_match(Interp * interp, void *key);
-void conf_interp_destroy(Interp * interp);
 
 void conf_init(char *filename);
 void conf_fini(void);

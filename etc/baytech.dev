@@ -16,7 +16,7 @@ specification {
 	type 		"telnet"
 	offstring 	"Off"
 	onstring  	"On"
-	plugcount 	8
+	maxplugcount 	8
 	timeout 	10   # about 5 sec for cycle command
 	pingperiod 	90
 
@@ -41,21 +41,21 @@ specification {
 		send "status\r\n"
 		expect "Circuit Breaker:[^\n]*\r\n"
 		expect "[^\n]*(On|Off)[^\n]*\r\n"
-			map $1 "1"
+		setstatus "1" $1
 		expect "[^\n]*(On|Off)[^\n]*\r\n"
-			map $1 "2"
+		setstatus "2" $1
 		expect "[^\n]*(On|Off)[^\n]*\r\n"
-			map $1 "3"
+		setstatus "3" $1
 		expect "[^\n]*(On|Off)[^\n]*\r\n"
-			map $1 "4"
+		setstatus "4" $1
 		expect "[^\n]*(On|Off)[^\n]*\r\n"
-			map $1 "5"
+		setstatus "5" $1
 		expect "[^\n]*(On|Off)[^\n]*\r\n"
-			map $1 "6"
+		setstatus "6" $1
 		expect "[^\n]*(On|Off)[^\n]*\r\n"
-			map $1 "7"
+		setstatus "7" $1
 		expect "[^\n]*(On|Off)[^\n]*\r\n"
-			map $1 "8"
+		setstatus "8" $1
 		expect "RPC-3>"
 	}
 	script on {

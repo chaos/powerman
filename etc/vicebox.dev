@@ -7,7 +7,7 @@ specification {
 	type 		"TCP"
 	offstring 	"0"
 	onstring  	"1"
-	plugcount 	10
+	maxplugcount 	10
 	timeout 	100.0
 	script login {
 		expect "V2\.2\r\n"
@@ -20,30 +20,30 @@ specification {
 	script status_all {
 		send "ps *\r\n"
 		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
-			map $1 "1"
-			map $2 "2"
-			map $3 "3"
-			map $4 "4"
-			map $5 "5"
-			map $6 "6"
-			map $7 "7"
-			map $8 "8"
-			map $9 "9"
-			map $10 "10"
+		setstatus "1" $1
+		setstatus "2" $2
+		setstatus "3" $3
+		setstatus "4" $4
+		setstatus "5" $5
+		setstatus "6" $6
+		setstatus "7" $7
+		setstatus "8" $8
+		setstatus "9" $9
+		setstatus "10" $10
 	}
 	script status_soft_all {
 		send "ns *\r\n"
 		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
-			map $1 "1"
-			map $2 "2"
-			map $3 "3"
-			map $4 "4"
-			map $5 "5"
-			map $6 "6"
-			map $7 "7"
-			map $8 "8"
-			map $9 "9"
-			map $10 "10"
+		setstatus "1" $1
+		setstatus "2" $2
+		setstatus "3" $3
+		setstatus "4" $4
+		setstatus "5" $5
+		setstatus "6" $6
+		setstatus "7" $7
+		setstatus "8" $8
+		setstatus "9" $9
+		setstatus "10" $10
 	}
 	script on {
 		send "ph %s\r\n"

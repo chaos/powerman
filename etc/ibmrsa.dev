@@ -13,15 +13,15 @@
 # 
 # Normally the RSA's provide a web front end.  PowerMan uses an undocumented
 # debug interface available by telnetting into the RSA and typing ctrl-D.
-# The 'power' command in debug mode was added in April 2003.   See f/w images:
-# GEET117A.tgz (x345) and T2ET116-.tgz (x335).
+# The 'power' command in debug mode was added in April 2003 in f/w versions:
+# GEET117A (x345) and T2ET116- (x335).
 #
 specification {
 	name 		"ibmrsa"
 	type 		"telnet"
 	offstring 	"off"
 	onstring  	"on"
-	plugcount 	24
+	maxplugcount 	24
 	timeout  	20
 
 	script login {
@@ -36,18 +36,56 @@ specification {
 	script logout {
 		send "\004"  			# ^D to log completely off
 	}
+	# refresh table of hostnames vs plug names
+	script resolve {
+		send "remotesp\r\n"
+		foreachplug {
+		  expect "[:alnum:]{2}[ ]+([:alnum:]+)[ ]+Hawk[ ]+([0-9A-F]{2})"
+		  setplugname $1 $2  # hostname plugname
+		}
+	}
+	script status_all {
+		send "power 2 0\r\n"
+		foreachplug {
+		  expect "Server (0x[0-9A-F]{2}) Status = (on|off)"
+		  setstatus $1 $2    # plugname status
+		}	
+	}
 	script status {
 		send "power 2 %s\r\n"
 		expect "Status = (on|off)\r\n"
-			map $1 "%s"
+		setstatus $1
+	}
+	script on_all {
+		send "power 1 0\r\n"
+		foreachplug {
+		  expect "Status = on\r\n"
+		}
 	}
 	script on {
 		send "power 1 %s\r\n"
 		expect "Status = on\r\n"
 	}
+	script off_all {
+		send "power 0 0\r\n"
+		foreachplug {
+		  expect "Status = off\r\n"
+		}
+	}
 	script off {
 		send "power 0 %s\r\n"
 		expect "Status = off\r\n"
+	}
+	script cycle_all {
+		send "power 0 0\r\n"
+		foreachplug {
+		  expect "Status = off\r\n"
+		}
+		delay 2
+		send "power 1 0\r\n"
+		foreachplug {
+		  expect "Status = on\r\n"
+		}
 	}
 	script cycle {
 		send "power 0 %s\r\n"

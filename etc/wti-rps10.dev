@@ -16,7 +16,7 @@ specification  {
 	type 		"serial"
 	offstring 	"Off"
 	onstring  	"On"
-	plugcount	10
+	maxplugcount	10
 	timeout 	5 
 
 	script login {
@@ -27,8 +27,8 @@ specification  {
 # expect to time out
 	script status {
 		send "\030\030\002\030\030\002\030\030%s?\r"
-		expect "Plug [0-9] (On|Off)"
-			map $1 "%s"
+		expect "Plug ([0-9]) (On|Off)"
+		setstatus $1 $2
 		expect "Complete"
 		#delay 0.5
 	}
@@ -44,7 +44,7 @@ specification  {
 		expect "Complete"
 		#delay 0.5
 	}
-# The T command is dip switch configurable for 5 or 10 second delay
+# The T command is dip switch c "%s"onfigurable for 5 or 10 second delay
 	script cycle {
 		send "\030\030\002\030\030\002\030\030%s0\r"
 		expect "Plug [0-9] Off"

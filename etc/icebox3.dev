@@ -12,7 +12,7 @@ specification {
 	type 		"TCP"
 	offstring 	"0|OFF"		# 0/1 for STATUS and STATUS_SOFT
 	onstring  	"1|ON"		#     and OFF/ON for STATUS_BEACON
-	plugcount 	10
+	maxplugcount 	10
 	timeout 	20
 	script login {
 		expect "V3[^\n]*\r\n"
@@ -25,59 +25,59 @@ specification {
 	script status_all {
 		send "ps *\r\n"
 		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
-			map $1 "1"
-			map $2 "2"
-			map $3 "3"
-			map $4 "4"
-			map $5 "5"
-			map $6 "6"
-			map $7 "7"
-			map $8 "8"
-			map $9 "9"
-			map $10 "10"
+		setstatus "1" $1
+		setstatus "2" $2
+		setstatus "3" $3
+		setstatus "4" $4
+		setstatus "5" $5
+		setstatus "6" $6
+		setstatus "7" $7
+		setstatus "8" $8
+		setstatus "9" $9
+		setstatus "10" $10
 	}
 	script status_soft_all {
 		send "ns *\r\n"
 		expect "N1:([012]) N2:([012]) N3:([012]) N4:([012]) N5:([012]) N6:([012]) N7:([012]) N8:([012]) N9:([012]) N10:([012])[[:space:]]*\r\n"
-			map $1 "1"
-			map $2 "2"
-			map $3 "3"
-			map $4 "4"
-			map $5 "5"
-			map $6 "6"
-			map $7 "7"
-			map $8 "8"
-			map $9 "9"
-			map $10 "10"
+		setstatus "1" $1
+		setstatus "2" $2
+		setstatus "3" $3
+		setstatus "4" $4
+		setstatus "5" $5
+		setstatus "6" $6
+		setstatus "7" $7
+		setstatus "8" $8
+		setstatus "9" $9
+		setstatus "10" $10
 	}
 	# Assumption: v3 implies that "ts" is deprecated in favor of "is"
 	script status_temp_all {
                 send "is *\r\n"
                 expect "N1:([^ ]+) N2:([^ ]+) N3:([^ ]+) N4:([^ ]+) N5:([^ ]+) N6:([^ ]+) N7:([^ ]+) N8:([^ ]+) N9:([^ ]+) N10:([^ ]+) N11:[^ ]+ N12:[^ ]+[[:space:]]*\r\n"
-                        map $1 "1"
-                        map $2 "2"
-                        map $3 "3"
-                        map $4 "4"
-                        map $5 "5"
-                        map $6 "6"
-                        map $7 "7"
-                        map $8 "8"
-                        map $9 "9"
-                        map $10 "10"
+                setstatus "1" $1
+                setstatus "2" $2
+                setstatus "3" $3
+                setstatus "4" $4
+                setstatus "5" $5
+                setstatus "6" $6
+                setstatus "7" $7
+                setstatus "8" $8
+                setstatus "9" $9
+                setstatus "10" $10
         }
 	script status_beacon_all {
                 send "be *\r\n"
                 expect "N1:([A-Z]+) N2:([A-Z]+) N3:([A-Z]+) N4:([A-Z]+) N5:([A-Z]+) N6:([A-Z]+) N7:([A-Z]+) N8:([A-Z]+) N9:([A-Z]+) N10:([A-Z]+) N11:[A-Z]+ N12:[A-Z]+[[:space:]]*\r\n"
-                        map $1 "1"
-                        map $2 "2"
-                        map $3 "3"
-                        map $4 "4"
-                        map $5 "5"
-                        map $6 "6"
-                        map $7 "7"
-                        map $8 "8"
-                        map $9 "9"
-                        map $10 "10"
+                setstatus "1" $1
+                setstatus "2" $2
+                setstatus "3" $3
+                setstatus "4" $4
+                setstatus "5" $5
+                setstatus "6" $6
+                setstatus "7" $7
+                setstatus "8" $8
+                setstatus "9" $9
+                setstatus "10" $10
         }
 	script on {
 		send "ph %s\r\n"

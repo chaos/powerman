@@ -7,7 +7,7 @@ specification {
 	type 		"TCP"
 	offstring 	"OFF"
 	onstring  	"ON"
-	plugcount 	8
+	maxplugcount 	8
 	timeout 	5.0
 #	pingperiod 	10.0
 	script ping {
@@ -24,45 +24,48 @@ specification {
 	}
 	script status_all {
 		send "stat\r\n"
-		expect "plug 0: (ON|OFF)"
-			map $1 "0"
-		expect "plug 1: (ON|OFF)"
-			map $1 "1"
-		expect "plug 2: (ON|OFF)"
-			map $1 "2"
-		expect "plug 3: (ON|OFF)"
-			map $1 "3"
-		expect "plug 4: (ON|OFF)"
-			map $1 "4"
-		expect "plug 5: (ON|OFF)"
-			map $1 "5"
-		expect "plug 6: (ON|OFF)"
-			map $1 "6"
-		expect "plug 7: (ON|OFF)"
-			map $1 "7"
+		expect "plug (0): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (1): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (2): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (3): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (4): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (5): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (6): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (7): (ON|OFF)"
+		setstatus $1 $2
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
 	}
 	script status_soft_all {
 		send "stat_soft\r\n"
-		expect "plug 0: (ON|OFF)"
-			map $1 "0"
-		expect "plug 1: (ON|OFF)"
-			map $1 "1"
-		expect "plug 2: (ON|OFF)"
-			map $1 "2"
-		expect "plug 3: (ON|OFF)"
-			map $1 "3"
-		expect "plug 4: (ON|OFF)"
-			map $1 "4"
-		expect "plug 5: (ON|OFF)"
-			map $1 "5"
-		expect "plug 6: (ON|OFF)"
-			map $1 "6"
-		expect "plug 7: (ON|OFF)"
-			map $1 "7"
+		setstatus $1 $2
+		expect "plug (0): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (1): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (2): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (3): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (4): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (5): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (6): (ON|OFF)"
+		setstatus $1 $2
+		expect "plug (7): (ON|OFF)"
+		setstatus $1 $2
 		expect "[0-9]* OK"
+		setstatus $1 $2
 		expect "[0-9]* vpc> "
+		setstatus $1 $2
 	}
 	script on {
 		send "on %s\r\n"

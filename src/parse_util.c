@@ -148,8 +148,8 @@ static bool _validate_config(void)
  * Create/destroy Stmt structs, which are element in a script.
  */
 
-Stmt *conf_stmt_create(StmtType type, char *s1,
-                                 List map, struct timeval tv)
+Stmt *conf_stmt_create(StmtType type, char *str, struct timeval tv, 
+        int plug_mp, int stat_or_node_mp)
 {
     Stmt *stmt;
     reg_syntax_t cflags = REG_EXTENDED;
@@ -158,11 +158,21 @@ Stmt *conf_stmt_create(StmtType type, char *s1,
     stmt->type = type;
     switch (type) {
     case STMT_SEND:
-        stmt->u.send.fmt = Strdup(s1);
+        stmt->u.send.fmt = Strdup(str);
         break;
     case STMT_EXPECT:
-        Regcomp(&(stmt->u.expect.exp), s1, cflags);
-        stmt->u.expect.map = map;
+        Regcomp(&(stmt->u.expect.exp), str, cflags);
+        break;
+    case STMT_SETSTATUS:
+        stmt->u.setstatus.stat_mp = stat_or_node_mp;
+        if (str)
+            stmt->u.setstatus.plug_name = Strdup(str);
+        else
+            stmt->u.setstatus.plug_mp = plug_mp;
+        break;
+    case STMT_SETPLUGNAME:
+        stmt->u.setplugname.plug_mp = plug_mp;
+        stmt->u.setplugname.node_mp = stat_or_node_mp;
         break;
     case STMT_DELAY:
         stmt->u.delay.tv = tv;
@@ -181,10 +191,9 @@ void conf_stmt_destroy(Stmt * stmt)
         Free(stmt->u.send.fmt);
         break;
     case STMT_EXPECT:
-        if (stmt->u.expect.map != NULL)
-            list_destroy(stmt->u.expect.map);
         break;
     case STMT_DELAY:
+        break;
     default:
     }
     Free(stmt);
@@ -261,8 +270,8 @@ Spec *conf_find_spec(char *name)
  * is present in the PreStmt. 
  */
 
-PreStmt *conf_prestmt_create(StmtType type, char *str1,
-                             struct timeval * tv, List map)
+PreStmt *conf_prestmt_create(StmtType type, char *str, struct timeval tv,
+        int mp1, int mp2)
 {
     PreStmt *specl;
 
@@ -272,28 +281,34 @@ PreStmt *conf_prestmt_create(StmtType type, char *str1,
     switch (type) {
     case STMT_SEND:
     case STMT_EXPECT:
-        assert(str1 != NULL && tv == NULL);
-        specl->string1 = Strdup(str1);
+        assert(str != NULL);
+        specl->str = Strdup(str);
+        break;
+    case STMT_SETSTATUS:
+        specl->mp1 = mp1;
+        specl->mp2 = mp2;
+        if (str)
+            specl->str = Strdup(str);
+        break;
+    case STMT_SETPLUGNAME:
+        specl->mp1 = mp1;
+        specl->mp2 = mp2;
         break;
     case STMT_DELAY:
-        assert(str1 == NULL && tv != NULL);
-        specl->tv = *tv;
+        assert(str == NULL);
+        specl->tv = tv;
         break;
     default:
         assert(FALSE);
     }
-    specl->map = map;
     return specl;
 }
 
 void conf_prestmt_destroy(PreStmt * specl)
 {
-    if (specl->string1 != NULL)
-        Free(specl->string1);
-    specl->string1 = NULL;
-    if (specl->map != NULL)
-        list_destroy(specl->map);
-    specl->map = NULL;
+    if (specl->str != NULL)
+        Free(specl->str);
+    specl->str = NULL;
     Free(specl);
 }
 
@@ -320,27 +335,6 @@ bool conf_addnode(char *node)
 hostlist_t conf_getnodes(void)
 {
     return conf_nodes;
-}
-
-/*
- * Create/destroy Interp's (which map regex subexpression matches to plugs)
- */
-
-Interp *conf_interp_create(char *name)
-{
-    Interp *interp;
-
-    interp = (Interp *) Malloc(sizeof(Interp));
-    interp->plug_name = Strdup(name);
-    interp->match_pos = -1;
-    return interp;
-}
-
-void conf_interp_destroy(Interp * interp)
-{
-    if (interp->plug_name)
-        Free(interp->plug_name);
-    Free(interp);
 }
 
 /*

@@ -118,9 +118,10 @@ name                              {   return TOK_SPEC_NAME; }
 type                              {   return TOK_SPEC_TYPE; }
 offstring                         {   return TOK_OFF_STRING; }
 onstring                          {   return TOK_ON_STRING; }
-plugcount                         {   return TOK_PLUG_COUNT; }
+maxplugcount                      {   return TOK_MAX_PLUG_COUNT; }
 expect                            {   return TOK_EXPECT; }
-map                               {   return TOK_MAP; }
+setstatus                         {   return TOK_SETSTATUS; }
+setplugname                       {   return TOK_SETPLUGNAME; }
 send                              {   return TOK_SEND; }
 delay                             {   return TOK_DELAY; }
 login                             {   return TOK_LOGIN; }

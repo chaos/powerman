@@ -1,3 +1,20 @@
+2003-04-14 garlick
+    * Renamed "plugcount" to "maxplugcount" in device configurations.
+    * Renamed "map" to "setstatus" in device configurations.
+    * Moved regex subexpression match buffer to the device structure.  There
+      will be a persistant copy per device so $N can reference the most recent
+      expect results from a seperate statement.
+    * Make "setstatus" its own statement and change to work as follows -
+      "setstatus [plugname] status", where status is a regex match, and name
+      can be a regex match or a literal plug name in quotes.  If omitted,
+      the plug name defaults to the current target.
+    * Add "setplugname" statement, "setplugname nodename plugname", where
+      both args are regex matches.  Rework plug/node logic so plug names must
+      either be defined in powerman.conf so that they match the plug names
+      in the device config, or they are omitted along with the device config
+      plug names.  In the latter case, the plug names must come from a 
+      setplugname statement in a device script.
+
 2003-04-13 garlick
     * README: began update for 1.0.17 release.
 
