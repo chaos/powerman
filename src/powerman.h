@@ -66,3 +66,7 @@ typedef enum { NO_DEV, TCP_DEV } Dev_Type;
 #define DFLT_CONFIG_FILE 	"/etc/powerman/powerman.conf"
 
 #endif				/* POWERMAN_H */
+
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */

@@ -160,5 +160,5 @@ void conf_set_listen_port(int val);
 #endif				/* CONFIG_H */
 
 /*
- * vi:softtabstop=4
+ * vi:tabstop=4 shiftwidth=4 expandtab
  */

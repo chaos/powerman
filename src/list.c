@@ -751,7 +751,3 @@ static void list_iterator_free(ListIterator i)
     list_mutex_unlock(&freeListIteratorsLock);
     return;
 }
-
-/*
- * vi:softtabstop=4
- */

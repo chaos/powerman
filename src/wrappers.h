@@ -69,3 +69,7 @@ time_t Time(time_t * t);
 char *Strncpy(char *s1, const char *s2, int len);
 
 #endif				/* WRAPPERS_H */
+
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */

@@ -29,3 +29,7 @@
 void daemon_init(void);
 
 #endif				/* DAEMON_INIT_H */
+
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */

@@ -126,5 +126,5 @@ void dev_unlink_arglist(ArgList *arglist);
 #endif				/* DEVICE_H */
 
 /*
- * vi:softtabstop=4
+ * vi:tabstop=4 shiftwidth=4 expandtab
  */

@@ -130,3 +130,7 @@
 #define CP_ERR_UNIMPL	"214 Command cannot be handled by power control device(s)" CP_EOL
 
 #endif /* CLIENT_PROTO_H */
+
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */

@@ -1,3 +1,7 @@
+2002-10-24 garlick
+	* Changed magic vim comment at bottom of each file for tab expansion.
+	* Tagged before-2nd-indent
+
 2002-10-22 garlick
 	* Fixed bug where buf_readline() would occasionally assert on the 
 	  size of destination buffer on client read (gnat powerman/123)

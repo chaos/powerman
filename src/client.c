@@ -478,23 +478,18 @@ static void _act_finish(int client_id, char *errfmt, char *errarg)
      * All actions completed - return final status to the client.
      */
     switch (c->cmd->com) {
-        case PM_STATUS_PLUGS:  /* query-status */
-	    _client_query_reply(c);
-            break;
-	case PM_STATUS_NODES:
+        case PM_STATUS_PLUGS:	/* status */
+	case PM_STATUS_NODES:	/* soft */
+	case PM_STATUS_BEACON:	/* beacon */
 	    _client_query_reply(c);
 	    break;
-        case PM_STATUS_TEMP:
-	    _client_query_raw_reply(c);
-	    break;
-	case PM_STATUS_BEACON:
-	    /*_client_query_raw_reply(c);*/
-	    _client_query_reply(c);
+        case PM_STATUS_TEMP:	/* temp */
+	    _client_query_raw_reply(c); /* FIXME: cmd->error  handled? */
 	    break;
         case PM_POWER_ON:	/* on */
         case PM_POWER_OFF:	/* off */
-        case PM_BEACON_ON:	/* beacon_on */
-        case PM_BEACON_OFF:	/* beacon_off */
+        case PM_BEACON_ON:	/* flash */
+        case PM_BEACON_OFF:	/* unflash */ 
         case PM_POWER_CYCLE:	/* cycle */
         case PM_RESET:		/* reset */
 	    if (c->cmd->error)
@@ -790,5 +785,5 @@ void cli_post_select(fd_set *rset, fd_set *wset)
 }
 
 /*
- * vi:softtabstop=4
+ * vi:tabstop=4 shiftwidth=4 expandtab
  */

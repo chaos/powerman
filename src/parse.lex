@@ -308,3 +308,7 @@ scanner_fini(void)
   list_destroy(line_ptrs);
 }
 
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */
+

@@ -165,5 +165,5 @@ unsigned char *dbg_memstr(unsigned char *mem, int len)
 }
 
 /*
- * vi:softtabstop=4
+ * vi:tabstop=4 shiftwidth=4 expandtab
  */

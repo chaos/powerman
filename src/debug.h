@@ -34,3 +34,7 @@ char *dbg_tvstr(struct timeval *tv, char *str, int len);
 unsigned char *dbg_memstr(unsigned char *mem, int len);
 
 #endif /* DEBUG_H */
+
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */

@@ -330,5 +330,5 @@ void conf_set_listen_port(int val)		{ conf_listen_port = val; }
 int conf_get_listen_port(void)			{ return conf_listen_port; }
 
 /*
- * vi:softtabstop=4
+ * vi:tabstop=4 shiftwidth=4 expandtab
  */

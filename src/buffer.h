@@ -50,3 +50,7 @@ char *buf_getregex(Buffer b, regex_t * re);
 void buf_eat(Buffer b, int len);
 
 #endif				/* BUFFER_H */
+
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */

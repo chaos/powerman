@@ -1253,5 +1253,5 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 }
 
 /*
- * vi:softtabstop=4
+ * vi:tabstop=4 shiftwidth=4 expandtab
  */

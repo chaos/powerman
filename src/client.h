@@ -65,3 +65,7 @@ void cli_post_select(fd_set *rset, fd_set *wset);
 void cli_pre_select(fd_set *rset, fd_set *wset, int *maxfd);
 
 #endif				/* CLIENT_H */
+
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */

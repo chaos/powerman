@@ -35,3 +35,7 @@ void err_exit(bool errno_valid, const char *fmt, ...);
 void err(bool errno_valid, const char *fmt, ...);
 
 #endif				/* EXIT_ERROR_H */
+
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */

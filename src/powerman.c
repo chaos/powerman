@@ -300,7 +300,6 @@ static void _expect(char *str)
 	err_exit(FALSE, "%s\n", buf);
 }
 
-
 /*
- * vi:softtabstop=4
+ * vi:tabstop=4 shiftwidth=4 expandtab
  */
