@@ -79,7 +79,7 @@ void pipe_destroy(void *data)
     Free(pd);
 }
 
-/* Start the coprocess using Stevens' nifty pty_fork() function.
+/* Start the coprocess using forkpty(3).
  */
 bool pipe_connect(Device * dev)
 {
