@@ -27,6 +27,8 @@
 #ifndef EXIT_ERROR_H
 #define EXIT_ERROR_H
 
+#include "powerman.h" 
+
 typedef void (*ErrCallback)(void);
 void init_error(char *prog, ErrCallback callback);
 void syslog_on_error(bool syslog_enable);

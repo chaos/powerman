@@ -41,8 +41,9 @@
 #include "exit_error.h"
 #include "powermand.h"
 #include "wrappers.h"
+#include "hostlist.h"
 
-#define OPT_STRING "cd:F:h10Lnp:qrsvVQxz"
+#define OPT_STRING "cd:F:h10Llnp:qrsvVQxz"
 static const struct option long_options[] =
 {
 		{"on",      no_argument,       0, '1'},
@@ -51,7 +52,7 @@ static const struct option long_options[] =
 		{"reset",   no_argument,       0, 'r'},
 		{"file",    required_argument, 0, 'F'},
 		{"help",    no_argument,       0, 'h'},
-		{"list",    no_argument,       0, 'n'},
+		{"list",    no_argument,       0, 'l'},
 		{"queryon", no_argument,       0, 'q'},
 		{"queryoff",no_argument,       0, 'Q'},
 		{"soft",    no_argument,       0, 's'},
@@ -59,6 +60,7 @@ static const struct option long_options[] =
 		{"version", no_argument,       0, 'V'},
 		{"regex",   no_argument,       0, 'x'},
 		{"report",  no_argument,       0, 'z'},
+		{"noexec",  no_argument,       0, 'n'},
 		{"host",    required_argument, 0, 'd'},
 		{"port",    required_argument, 0, 'p'},
 		{"license", no_argument,       0, 'L'},
@@ -84,6 +86,8 @@ typedef struct config_struct {
 	bool verify;
 	List targ;
 	List reply;
+	hostlist_t ntarg;
+	bool noexec;
 }Config;
 
 static Config *process_command_line(int argc, char ** argv);
@@ -164,7 +168,6 @@ static Config *
 process_command_line(int argc, char **argv)
 {
 	int c;
-	int i;
 	String targ;
 	Config *conf;
 	int longindex;
@@ -203,7 +206,7 @@ process_command_line(int argc, char **argv)
 		case 'L':	/* --license */
 			printf("%s", powerman_license);
 			exit(0);
-		case 'n':	/* --list */
+		case 'l':	/* --list */
 			if (conf->com != CMD_ERROR)
 				exit_msg(EXACTLY_ONE_MSG);
 			conf->com = CMD_NAMES;
@@ -215,6 +218,9 @@ process_command_line(int argc, char **argv)
 			if (conf->service != NULL)
 				free_String( (void *)conf->service );
 			conf->service = make_String(optarg);
+			break;
+		case 'n':	/* --noexec */
+			conf->noexec = TRUE;
 			break;
 		case 'q':	/* --queryon */
 			if (conf->com != CMD_ERROR)
@@ -253,12 +259,35 @@ process_command_line(int argc, char **argv)
 	}
 	if (conf->com == CMD_ERROR)
 		exit_msg(EXACTLY_ONE_MSG);
-	i = optind;
-	while (i < argc)
+
+	/*
+	 * This code used to push args directly onto conf->targ.
+	 * Now we build conf->ntarg with Mark's hostlist_t package to
+	 * get support for Quadrics style host ranges and push the members
+	 * of this list onto the native powerman list one by one afterwards.
+	 * Globs and regexes understdood by powerman should pass right through.
+	 * XXX I think the plan is to support Mark's hostlist_t type throughout
+	 * powerman eventually, but we're not there yet.
+	 */
+	while (optind < argc)
 	{
-		targ = make_String(argv[i]);
-		list_append(conf->targ, (void *)targ);
-		i++;
+		hostlist_push(conf->ntarg, argv[optind]);
+		optind++;
+	}
+	/* Now deconstruct conf->ntarg and build conf->targ */
+	if (hostlist_count(conf->ntarg) > 0) 
+	{
+		char *host;
+
+		while ((host = hostlist_shift(conf->ntarg))) {
+			targ = make_String(host);
+			list_append(conf->targ, (void *)targ);
+		}
+	}
+	if (conf->noexec) {
+		/* show conf->targ */
+		print_Targets(conf->targ);
+		exit(0);
 	}
 	return conf;
 }
@@ -274,7 +303,7 @@ usage(char * prog)
   -c --cycle     Power cycle targets   -r --reset    Reset targets\n\
   -1 --on        Power on targets      -0 --off      Power off targets\n\
   -q --queryon   List on targets       -Q --queryoff List off targets\n\
-  -z --report    List on/off/unknown   -n --list     List targets (no action)\n\
+  -z --report    List on/off/unknown   -l --list     List targets (no action)\n\
   -h --help      Display this help\n");
     printf("MODIFIER OPTIONS:\n\
   -s --soft      Use soft power status   -v --verify    Verify state change\n\
@@ -760,7 +789,7 @@ print_Targets(List targ)
  * Config source
  */
 static Config *
-make_Config()
+make_Config(void)
 {
 	Config *conf;
 	char *env;
@@ -768,6 +797,7 @@ make_Config()
 	int p;
 
 	conf = (Config *)Malloc(sizeof(Config));
+	conf->noexec = FALSE;
 	conf->host = NULL;
 	conf->service = NULL;
 	if ((env = getenv("POWERMAN_HOST"))) 
@@ -806,6 +836,7 @@ make_Config()
 	conf->readable = FALSE;
 	conf->verify = FALSE;
 	conf->targ = list_create(free_String);
+	conf->ntarg = hostlist_create(NULL);
 	conf->reply = NULL;
 	return conf;
 }

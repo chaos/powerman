@@ -50,7 +50,7 @@ sbindir=        ${exec_prefix}/sbin
 libdir=         ${exec_prefix}/lib
 packagedir=     ${etcdir}/${PACKAGE}
 
-COMMON_OBJS = list.o pm_string.o wrappers.o exit_error.o
+COMMON_OBJS = list.o pm_string.o wrappers.o exit_error.o hostlist.o
 
 SERVER_UTIL = $(COMMON_OBJS) daemon_init.o log.o util.o buffer.o
 
@@ -244,6 +244,31 @@ exit_error.o: /usr/include/libio.h /usr/include/_G_config.h
 exit_error.o: /usr/include/wchar.h /usr/include/bits/wchar.h
 exit_error.o: /usr/include/gconv.h /usr/include/bits/stdio_lim.h powerman.h
 exit_error.o: list.h exit_error.h
+exit_error.o: powerman.h
+hostlist.o: /usr/include/string.h /usr/include/features.h
+hostlist.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
+hostlist.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stddef.h
+hostlist.o: /usr/include/pthread.h /usr/include/sched.h
+hostlist.o: /usr/include/bits/types.h /usr/include/time.h
+hostlist.o: /usr/include/bits/sched.h /usr/include/signal.h
+hostlist.o: /usr/include/bits/sigset.h /usr/include/bits/signum.h
+hostlist.o: /usr/include/bits/pthreadtypes.h /usr/include/bits/initspin.h
+hostlist.o: /usr/include/bits/sigthread.h /usr/include/stdio.h
+hostlist.o: /usr/include/libio.h /usr/include/_G_config.h
+hostlist.o: /usr/include/wchar.h /usr/include/bits/wchar.h
+hostlist.o: /usr/include/gconv.h
+hostlist.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
+hostlist.o: /usr/include/bits/stdio_lim.h /usr/include/stdlib.h
+hostlist.o: /usr/include/assert.h /usr/include/errno.h
+hostlist.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
+hostlist.o: /usr/include/asm/errno.h /usr/include/ctype.h
+hostlist.o: /usr/include/endian.h /usr/include/bits/endian.h
+hostlist.o: /usr/include/sys/param.h /usr/include/limits.h
+hostlist.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
+hostlist.o: /usr/include/linux/limits.h /usr/include/linux/param.h
+hostlist.o: /usr/include/asm/param.h /usr/include/sys/types.h
+hostlist.o: /usr/include/unistd.h /usr/include/bits/posix_opt.h
+hostlist.o: /usr/include/bits/confname.h hostlist.h exit_error.h powerman.h
 list.o: /usr/include/assert.h /usr/include/features.h
 list.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
 list.o: /usr/include/stdlib.h
@@ -391,7 +416,7 @@ powerman.o: /usr/include/limits.h
 powerman.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
 powerman.o: /usr/include/bits/sockaddr.h /usr/include/asm/socket.h
 powerman.o: /usr/include/asm/sockios.h /usr/include/bits/in.h
-powerman.o: /usr/include/bits/byteswap.h /usr/include/bits/netdb.h
+powerman.o: /usr/include/bits/byteswap.h /usr/include/bits/netdb.h hostlist.h
 powermand.o: /usr/include/errno.h /usr/include/features.h
 powermand.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
 powermand.o: /usr/include/bits/errno.h /usr/include/linux/errno.h

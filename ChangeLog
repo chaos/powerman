@@ -56,3 +56,4 @@
 	* Moved system includes out of powerman.h.
 	* Merged general code review suggestions in to TODO file
 	  (but not the specific yet)
+	* Added support for quadrics style host ranges in powerman client.
