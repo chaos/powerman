@@ -18,14 +18,10 @@ specification  {
 	offstring 	"Off"
 	onstring  	"On"
 	plugcount	10
-	timeout 	13  # toggle can be configured for 10 sec
+	timeout 	5 
 
 	script login {
-#		expect "RPS-10 Ready\n\n"
-		send ""
-	}
-	script logout {
-		send "\r"
+		delay 2
 	}
 # Do not define STATUS_ALL_SCRIPT because there may not be all 10
 # boxes in a chain, and any missing ones will not respond, causing
@@ -34,27 +30,31 @@ specification  {
 		send "\030\030\002\030\030\002\030\030%s?\r"
 		expect "Plug [0-9] (On|Off)"
 			map $1 "%s"
-#		expect "Complete"
-		delay 0.5
+		expect "Complete"
+		#delay 0.5
 	}
 	script on {
 		send "\030\030\002\030\030\002\030\030%s1\r"
 		expect "Plug [0-9] On"
-#		expect "Complete"
-		delay 0.5
+		expect "Complete"
+		#delay 0.5
 	}
 	script off {
 		send "\030\030\002\030\030\002\030\030%s0\r"
 		expect "Plug [0-9] Off"
-#		expect "Complete"
-		delay 0.5
+		expect "Complete"
+		#delay 0.5
 	}
+# The T command is dip switch configurable for 5 or 10 second delay
 	script cycle {
-		send "\030\030\002\030\030\002\030\030%sT\r"
+		send "\030\030\002\030\030\002\030\030%s0\r"
 		expect "Plug [0-9] Off"
+		expect "Complete"
+		delay 2.0
+		send "\030\030\002\030\030\002\030\030%s1\r"
 		expect "Plug [0-9] On"
-#		expect "Complete"
-		delay 0.5
+		expect "Complete"
+		#delay 0.5
 	}
 	plug name "0"
 	plug name "1"

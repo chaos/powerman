@@ -402,7 +402,6 @@ static void _serial_setup(char *devname, int fd, int baud, int databits,
     int res;
     struct termios tio;
     int i;
-
     res = tcgetattr(fd, &tio);
     if (res < 0)
         err_exit(TRUE, "%s: error getting serial attributes\n", devname);
@@ -464,6 +463,10 @@ static void _serial_setup(char *devname, int fd, int baud, int databits,
             err_exit(FALSE, "%s: error setting parity to %c\n", 
                     devname, parity);
     }
+
+    tio.c_oflag &= ~OPOST; /* turn off post-processing of output */
+    tio.c_iflag = tio.c_lflag = 0;
+
 
     if (tcsetattr(fd, TCSANOW, &tio) < 0)
         err_exit(TRUE, "%s: error setting serial attributes\n", devname);
