@@ -1,7 +1,3 @@
-BUGS:
-* If powerman client dies mid protocol, server dies on SIGPIPE.
-
-OTHER:
 * Store scripts in a list and search the list for the script name, rather than
   hard code the list.  
 * Build failure simulator test suite

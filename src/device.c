@@ -177,7 +177,6 @@ static char *_getregex_buf(cbuf_t b, regex_t * re)
     for (i = 0; i < bytes_peeked; i++) {/* convert embedded \0 to \377 */
         if (str[i] == '\0') {
             str[i] = '\377';
-            dbg(DBG_SCRIPT, "_getregex_buf: converted \\0 to \\377");
         }
     }
     str[bytes_peeked] = '\0';           /* null terminate result */
@@ -723,6 +722,33 @@ static void _disconnect(Device * dev)
         _destroy_action(list_dequeue(dev->acts));
 }
 
+static void _act_completion(Action *act, Device *dev)
+{
+    assert(act->complete_fun != NULL);
+
+    switch (act->errnum) {
+    case ACT_ECONNECTTIMEOUT:
+        act->complete_fun(act->client_id, act->errnum, 
+                "%s: connect timeout", dev->name);
+        break;
+    case ACT_ELOGINTIMEOUT:
+        act->complete_fun(act->client_id, act->errnum, 
+                "%s: login timeout", dev->name);
+        break;
+    case ACT_EEXPFAIL:
+        act->complete_fun(act->client_id, act->errnum, 
+                "%s: action timed out waiting for expected response", dev->name);
+        break;
+    case ACT_EABORT:
+        act->complete_fun(act->client_id, act->errnum, 
+                "%s: action aborted due to previous action timeout", dev->name);
+        break;
+    case ACT_ESUCCESS:
+        act->complete_fun(act->client_id, act->errnum, NULL);
+        break;
+    }
+}
+
 /*
  * Process the script for the current action for this device.
  * Update timeout and return if one of the script elements stalls.
@@ -753,12 +779,16 @@ static void _process_action(Device * dev, struct timeval *timeout)
         }
         assert(act->cur != NULL);
 
-        /* process actions */
+        /* process actions 
+         */
         if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
-            dbg(DBG_SCRIPT, "_process_action(%s): %s timeout - aborting",
-                dev->name, act->cur->type == STMT_EXPECT ? "expect"
-                : act->cur->type == STMT_SEND ? "send" : "delay");
-            act->errnum = ACT_ETIMEOUT;  /* timed out */
+            if (!(dev->connect_status == DEV_CONNECTED)) 
+                act->errnum = ACT_ECONNECTTIMEOUT;
+            else if (!(dev->script_status & DEV_LOGGED_IN))
+                act->errnum = ACT_ELOGINTIMEOUT;
+            else
+                act->errnum = ACT_EEXPFAIL;
+
             if (act->vpf_fun) {
                 unsigned char mem[MAX_DEV_BUF];
                 int len = cbuf_peek(dev->from, mem, MAX_DEV_BUF);
@@ -786,50 +816,38 @@ static void _process_action(Device * dev, struct timeval *timeout)
         if (stalled) {          /* if stalled, set timeout for select */
             _update_timeout(timeout, &timeleft);
         } else {
-            bool error = (act->errnum != ACT_ESUCCESS);
+            ActError res = act->errnum;
 
             assert(act->itr != NULL);
             /* completed action - notify client and dequeue action */
-            if (error || (act->cur = list_next(act->itr)) == NULL) {
+            if (res != ACT_ESUCCESS || !(act->cur = list_next(act->itr))) {
                 if (act->com == PM_LOG_IN) {
-                    if (!error)
+                    if (res == ACT_ESUCCESS)
                         dev->script_status |= DEV_LOGGED_IN;
                 }
-                if (act->complete_fun)        /* notify client */
-                    switch (act->errnum) {
-                    case ACT_ESUCCESS:
-                        act->complete_fun(act->client_id, act->errnum, NULL);
-                        break;
-                    case ACT_ETIMEOUT:
-                        act->complete_fun(act->client_id, act->errnum, 
-                            "Action for device %s timed out", dev->name);
-                        break;
-                    default:
-                        act->complete_fun(act->client_id, act->errnum, 
-                            "Action for device %s failed with error %d", 
-                            dev->name, act->errnum);
-                        break;
-                    }
-                if (error)
+                if (act->complete_fun)                  /* notify client */
+                    _act_completion(act, dev);
+                if (res == ACT_ESUCCESS)
                     dev->stat_successful_actions++;
                 _destroy_action(list_dequeue(dev->acts));
             }
 
-            /* if one action failed, abort the rest in the device queue */
-            if (error) {
+            /* if one action failed, abort the rest in the device queue 
+             * in preparation for reconnect.
+             */
+            if (res != ACT_ESUCCESS) {
                 Action *act;
 
                 while ((act = list_dequeue(dev->acts)) != NULL) { 
-                    if (act->complete_fun) {
-                        act->complete_fun(act->client_id, ACT_EABORT, 
-                                "Action for device %s aborted due to pending reconnect", dev->name);
-                    }
+                    act->errnum = (res == ACT_EEXPFAIL ? ACT_EABORT : res);
+                    if (act->complete_fun)
+                        _act_completion(act, dev);
                     _destroy_action(act);
                 }
             }
 
             /* reconnect/login if expect timed out */
-            if (error && (dev->connect_status & DEV_CONNECTED)) {
+            if (res != ACT_ESUCCESS && (dev->connect_status & DEV_CONNECTED)) {
                 dbg(DBG_DEVICE,
                     "_process_action: disconnecting due to error");
                 _disconnect(dev);
@@ -857,7 +875,6 @@ static bool _process_expect(Device * dev)
     if ((expect = _getregex_buf(dev->from, re))) {      /* match */
         char *memstr = dbg_memstr(expect, strlen(expect));
 
-        dbg(DBG_SCRIPT, "_process_expect(%s): match: '%s'", dev->name, memstr);
         if (act->vpf_fun)
             act->vpf_fun(act->client_id, "recv(%s): '%s'", dev->name, memstr);
         Free(memstr);
@@ -866,18 +883,7 @@ static bool _process_expect(Device * dev)
         _match_subexpressions(dev, act, expect);
         Free(expect);
         finished = TRUE;
-    } else {                    /* no match */
-        unsigned char mem[MAX_DEV_BUF];
-        int len = cbuf_peek(dev->from, mem, MAX_DEV_BUF);
-      
-        if (len > 0) { 
-            char *memstr = dbg_memstr(mem, len);
-
-            dbg(DBG_SCRIPT, "_process_expect(%s): no match: '%s'", 
-                    dev->name, memstr);
-            Free(memstr);
-        }
-    }
+    } 
     return finished;
 }
 
@@ -929,8 +935,6 @@ static bool _process_send(Device * dev)
         else {
             char *memstr = dbg_memstr(str, strlen(str));
 
-            dbg(DBG_SCRIPT, "_process_send(%s): sending: '%s'", 
-                    dev->name, memstr);
             if (act->vpf_fun)
                 act->vpf_fun(act->client_id, "send(%s): '%s'", 
                         dev->name, memstr);
@@ -943,11 +947,9 @@ static bool _process_send(Device * dev)
     }
 
     if (cbuf_is_empty(dev->to)) {           /* finished! */
-        dbg(DBG_SCRIPT, "_process_send(%s): send complete", dev->name);
         dev->script_status &= ~DEV_SENDING;
         finished = TRUE;
-    } else                                  /* more to write */
-        dbg(DBG_SCRIPT, "_process_send(%s): incomplete send", dev->name);
+    } 
 
     return finished;
 }
@@ -967,8 +969,6 @@ static bool _process_delay(Device * dev, struct timeval *timeout)
 
     /* first time */
     if (!(dev->script_status & DEV_DELAYING)) {
-        dbg(DBG_SCRIPT, "_process_delay(%s): %ld.%-6.6ld", dev->name,
-            delay.tv_sec, delay.tv_usec);
         if (act->vpf_fun)
             act->vpf_fun(act->client_id, "delay(%s): %ld.%-6.6ld", dev->name, 
                     delay.tv_sec, delay.tv_usec);

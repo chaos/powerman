@@ -105,7 +105,8 @@ typedef struct {
     int stat_successful_actions;
 } Device;
 
-typedef enum {ACT_ESUCCESS, ACT_ETIMEOUT, ACT_EABORT} ActError;
+typedef enum { ACT_ESUCCESS, ACT_EEXPFAIL, ACT_EABORT, ACT_ECONNECTTIMEOUT,
+               ACT_ELOGINTIMEOUT } ActError;
 typedef void (*ActionCB) (int client_id, ActError acterr, const char *fmt, ...);
 typedef void (*VerbosePrintf) (int client_id, const char *fmt, ...);
 
