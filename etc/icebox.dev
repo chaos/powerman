@@ -54,21 +54,21 @@ begin protocol specification
 		expect "OK\r\n"
 		delay 0.7
 	end ON_SCRIPT
-	begin ON_SCRIPT_ALL
+	begin ON_ALL_SCRIPT
 		send "ph *\r\n"
 		expect "OK\r\n"
 		delay 7
-	end ON_SCRIPT_ALL
+	end ON_ALL_SCRIPT
 	begin OFF_SCRIPT
 		send "pl %s\r\n"
 		expect "OK\r\n"
 		delay 0.7
 	end OFF_SCRIPT
-	begin OFF_SCRIPT_ALL
+	begin OFF_ALL_SCRIPT
 		send "pl *\r\n"
 		expect "OK\r\n"
 		delay 7
-	end OFF_SCRIPT_ALL
+	end OFF_ALL_SCRIPT
 	begin CYCLE_SCRIPT
 		send "pl %s\r\n"
 		expect "OK\r\n"
@@ -77,24 +77,24 @@ begin protocol specification
 		expect "OK\r\n"
 		delay 0.7
 	end CYCLE_SCRIPT
-	begin CYCLE_SCRIPT_ALL
+	begin CYCLE_ALL_SCRIPT
 		send "pl *\r\n"
 		expect "OK\r\n"
 		delay 7
 		send "ph *\r\n"
 		expect "OK\r\n"
 		delay 7
-	end CYCLE_SCRIPT_ALL
+	end CYCLE_ALL_SCRIPT
 	begin RESET_SCRIPT
 		send "rp %s\r\n"
 		expect "OK\r\n"
 		delay 0.7
 	end RESET_SCRIPT
-	begin RESET_SCRIPT_ALL
+	begin RESET_ALL_SCRIPT
 		send "rp *\r\n"
 		expect "OK\r\n"
 		delay 7
-	end RESET_SCRIPT_ALL
+	end RESET_ALL_SCRIPT
 	plug name "1"
 	plug name "2"
 	plug name "3"
