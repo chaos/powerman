@@ -216,9 +216,6 @@ static Action *_create_action(Device * dev, int com, char *target,
     act->arglist = arglist ? dev_link_arglist(arglist) : NULL;
     timerclear(&act->time_stamp);
 
-    /* XXX */
-    if (vpf_fun)
-        vpf_fun(act->client_id, "%s: action created", dev->name);
     return act;
 }
 
@@ -748,7 +745,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
         _dbg_actions(dev);
 
         /* Start the action if it is a new one.
-         * act->cur points to the current script element.
+         * act->cur points to the current script statement.
          * act->time_stamp will cause action timeout if elapsed time for
          * entire action exceeds dev->timeout.
          */
@@ -765,6 +762,15 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 dev->name, act->cur->type == STMT_EXPECT ? "expect"
                 : act->cur->type == STMT_SEND ? "send" : "delay");
             act->error = TRUE;  /* timed out */
+            if (act->vpf_fun) {
+                unsigned char mem[MAX_DEV_BUF];
+                int len = cbuf_peek(dev->from, mem, MAX_DEV_BUF);
+                char *memstr = dbg_memstr(mem, len);
+
+                act->vpf_fun(act->client_id, "recv(%s): '%s'",
+                        dev->name, memstr);
+                Free(memstr);
+            }
         } else if (!(dev->connect_status & DEV_CONNECTED)) {
             stalled = TRUE;     /* not connnected */
         } else if (act->cur->type == STMT_EXPECT) {
@@ -841,6 +847,8 @@ static bool _process_expect(Device * dev)
         char *memstr = dbg_memstr(expect, strlen(expect));
 
         dbg(DBG_SCRIPT, "_process_expect(%s): match: '%s'", dev->name, memstr);
+        if (act->vpf_fun)
+            act->vpf_fun(act->client_id, "recv(%s): '%s'", dev->name, memstr);
         Free(memstr);
 
         /* process values of parenthesized subexpressions, if any */
@@ -912,6 +920,9 @@ static bool _process_send(Device * dev)
 
             dbg(DBG_SCRIPT, "_process_send(%s): sending: '%s'", 
                     dev->name, memstr);
+            if (act->vpf_fun)
+                act->vpf_fun(act->client_id, "send(%s): '%s'", 
+                        dev->name, memstr);
             Free(memstr);
         }
         assert(written < 0 || (dropped == strlen(str) - written));
@@ -947,6 +958,9 @@ static bool _process_delay(Device * dev, struct timeval *timeout)
     if (!(dev->script_status & DEV_DELAYING)) {
         dbg(DBG_SCRIPT, "_process_delay(%s): %ld.%-6.6ld", dev->name,
             delay.tv_sec, delay.tv_usec);
+        if (act->vpf_fun)
+            act->vpf_fun(act->client_id, "delay(%s): %ld.%-6.6ld", dev->name, 
+                    delay.tv_sec, delay.tv_usec);
         dev->script_status |= DEV_DELAYING;
         Gettimeofday(&act->delay_start, NULL);
     }
