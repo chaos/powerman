@@ -72,7 +72,7 @@ begin protocol specification
 	begin CYCLE_SCRIPT
 		send "off %s\r\n"
 		expect "RPC-3>"
-		sleep 2
+		delay 2
 		send "on %s\r\n"
 		expect "RPC-3>"
 	end CYCLE_SCRIPT
