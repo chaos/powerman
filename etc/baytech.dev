@@ -1,0 +1,111 @@
+####################################################################
+# $Id$
+# by Andrew C. Uselton <uselton2@llnl.gov> 
+####################################################################
+#   Copyright (C) 2001-2002 The Regents of the University of California.
+#   Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
+#   Written by Andrew Uselton (uselton2@llnl.gov>
+#   UCRL-CODE-2002-008.
+#   
+#   This file is part of PowerMan, a remote power management program.
+#   For details, see <http://www.llnl.gov/linux/powerman/>.
+#   
+#   PowerMan is free software; you can redistribute it and/or modify it under
+#   the terms of the GNU General Public License as published by the Free
+#   Software Foundation; either version 2 of the License, or (at your option)
+#   any later version.
+#   
+#   PowerMan is distributed in the hope that it will be useful, but WITHOUT 
+#   ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+#   FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
+#   for more details.
+#   
+#   You should have received a copy of the GNU General Public License along
+#   with PowerMan; if not, write to the Free Software Foundation, Inc.,
+#   59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+####################################################################
+#
+# Tested the following firmware versions:
+#    Revision F 5.00, (C) 2001
+#    Revision F 5.01, (C) 2001
+# Assumes:
+# 1. command confirmation : disabled (3/configuration, 6/outlets, 2/...)
+# 2. Net: prompt for password : enabled (3/configuration, 5/access, 2/...)
+#
+begin protocol specification
+	specification name "baytech"
+	specification type "TCP"
+	off string "Off"
+	on string  "On"
+	all string "0"
+	size "8"
+	device timeout "5.0"
+	string interpretation mode "LITERAL"
+	begin PM_LOG_IN 
+		expect "\n"
+		send "\IAC\DO\TELOPT_ECHO\IAC\DO\TELOPT_SGA"
+		expect "Enter password>"
+		send "baytech\r\n"
+		expect "Enter Selection>"
+		send "1\r\n"
+		expect "RPC-3>"
+	end PM_LOG_IN
+	begin PM_CHECK_LOGIN
+		send "\r\n"
+		expect "RPC-3>"
+	end PM_CHECK_LOGIN
+	begin PM_LOG_OUT
+		send "menu\r\n"
+		expect "Enter Selection>"
+		send "6\r\n"
+	end PM_LOG_OUT
+	begin PM_UPDATE_PLUGS 
+		send "status\r\n"
+		expect "Circuit Breaker:[^\n]*\r\n"
+		expect "[^\n]*(On|Off)[^\n]*\r\n"
+			map "1" "1"
+		expect "[^\n]*(On|Off)[^\n]*\r\n"
+			map "1" "2"
+		expect "[^\n]*(On|Off)[^\n]*\r\n"
+			map "1" "3"
+		expect "[^\n]*(On|Off)[^\n]*\r\n"
+			map "1" "4"
+		expect "[^\n]*(On|Off)[^\n]*\r\n"
+			map "1" "5"
+		expect "[^\n]*(On|Off)[^\n]*\r\n"
+			map "1" "6"
+		expect "[^\n]*(On|Off)[^\n]*\r\n"
+			map "1" "7"
+		expect "[^\n]*(On|Off)[^\n]*\r\n"
+			map "1" "8"
+		expect "RPC-3>"
+	end PM_UPDATE_PLUGS 
+	begin PM_POWER_ON
+		send "on %s\r\n"
+		expect "RPC-3>"
+		delay "0.3"
+	end PM_POWER_ON
+	begin PM_POWER_OFF
+		send "off %s\r\n"
+		expect "RPC-3>"
+		delay "0.3"
+	end PM_POWER_OFF
+	begin PM_POWER_CYCLE
+		send "reboot %s\r\n"
+		expect "RPC-3>"
+		delay "0.3"
+	end PM_POWER_CYCLE
+	begin PM_RESET
+		send "reboot %s\r\n"
+		expect "RPC-3>"
+		delay "0.3"
+	end PM_RESET
+	plug name "1"
+	plug name "2"
+	plug name "3"
+	plug name "4"
+	plug name "5"
+	plug name "6"
+	plug name "7"
+	plug name "8"
+end protocol specification
