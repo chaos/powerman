@@ -70,8 +70,6 @@ begin protocol specification
 # If outlet is initially off, "reboot" will leave it off.
 # This doesn't match PowerMan's semantics for cycle.
 	begin CYCLE_SCRIPT
-		#send "reboot %s\r\n"
-		#expect "RPC-3>"
 		send "off %s\r\n"
 		expect "RPC-3>"
 		sleep 2
