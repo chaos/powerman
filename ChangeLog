@@ -4,6 +4,7 @@
 	* Renamed pm_string.[ch] -> string.[ch]
 	* Renamed exit_error.[ch] -> error.[ch]
 	* Indented inline comments.
+	* Made some globals local to powermand.c
 
 2002-09-13 garlick
 	* Ran indent -kr *.[ch] on everything in src except hostlist.[ch]

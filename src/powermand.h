@@ -50,7 +50,6 @@ typedef enum { Quiescent, Occupied } Server_Status;
 typedef struct {
     struct timeval timeout_interval;	/* select(,,,tv) value */
     struct timeval interDev;	/* Delay() after a device write */
-    bool daemonize;		/* Can suppress for debugging */
     bool TCP_wrappers;		/* Config: use TCP wrappers? */
     Listener *listener;		/* listener module info */
     List clients;		/* server module info */
@@ -60,8 +59,6 @@ typedef struct {
     Protocol *client_prot;	/* protocol for server module */
     List specs;			/* device specifications */
     List devs;			/* device module info */
-    char *config_file;
-    FILE *cf;
      MAGIC;
 } Globals;
 

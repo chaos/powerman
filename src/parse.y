@@ -349,19 +349,22 @@ node_line	: TOK_NODE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL
 %%
 
 
-/* 
- *   Virtually everything that follows is in one-to-one correspondence
- * with something from the config file.  The names match.  It's easy to 
- * tell.  parse_config_file() is the root of the parser.  It's the
- * only function the outside world needs to see.
+/*
+ * Entry point into the yacc/lex parser.
  */
-int parse_config_file (void)
+int parse_config_file (char *filename)
 {
+    extern FILE *yyin; /* part of lexer */
+
+    yyin = fopen(filename, "r");
+    if (!yyin)
+	err_exit(TRUE, "%s", filename);
     yyparse();
+    fclose(yyin);
     return 0;
 } 
 
-char *makeGlobalSec(char *s2)
+static char *makeGlobalSec(char *s2)
 {
     if( cheat->cluster == NULL )
 	err_exit(FALSE, "missing cluster name");
@@ -370,13 +373,13 @@ char *makeGlobalSec(char *s2)
     return NULL;
 }
 
-char *makeTCPWrappers()
+static char *makeTCPWrappers()
 {
     cheat->TCP_wrappers = TRUE;
     return NULL;
 }
 
-char *makeClientPort(char *s2)
+static char *makeClientPort(char *s2)
 {
     int n;
     int port;
@@ -394,19 +397,19 @@ char *makeClientPort(char *s2)
     return s2;
 }
 
-char *makeTimeOut(char *s2)
+static char *makeTimeOut(char *s2)
 {
     conf_strtotv( &(cheat->timeout_interval), s2);
     return s2;
 }
 
-char *makeInterDev(char *s2)
+static char *makeInterDev(char *s2)
 {
     conf_strtotv( &(cheat->interDev), s2);
     return s2;
 }
 
-char *makeUpdate(char *s2)
+static char *makeUpdate(char *s2)
 {
     assert( cheat->cluster != NULL );
     conf_strtotv( &(cheat->cluster->update_interval), s2);
@@ -416,7 +419,7 @@ char *makeUpdate(char *s2)
 /*
  * We've got a whole Spec now so do some sanity checks.
  */
-Spec *check_Spec()
+static Spec *check_Spec()
 {
     Spec *this_spec;
     int i;
@@ -453,7 +456,7 @@ Spec *check_Spec()
     return this_spec;
 }
 
-char *makeSpecName(char *s2)
+static char *makeSpecName(char *s2)
 {
     /* 
      *   N.B. The Specification's name line must be before all other
@@ -465,7 +468,7 @@ char *makeSpecName(char *s2)
     return s2;
 }
 
-char *makeSpecType(char *s2)
+static char *makeSpecType(char *s2)
 {
     int n;
 
@@ -484,7 +487,7 @@ char *makeSpecType(char *s2)
     return s2;
 }
 
-char *makeSpecOff(char *s2)
+static char *makeSpecOff(char *s2)
 {
     if( current_spec->off != NULL )
 	err_exit(FALSE, "off string %s for this specification already seen", 
@@ -493,7 +496,7 @@ char *makeSpecOff(char *s2)
     return s2;
 }
 
-char *makeSpecOn(char *s2)
+static char *makeSpecOn(char *s2)
 {
     if( current_spec->on != NULL )
 	err_exit(FALSE, "on string %s for this specification already seen", 
@@ -502,7 +505,7 @@ char *makeSpecOn(char *s2)
     return s2;
 }
 
-char *makeSpecAll(char *s2)
+static char *makeSpecAll(char *s2)
 {
     if( current_spec->all != NULL )
 	err_exit(FALSE, "all string %s for this specification already seen", 
@@ -511,7 +514,7 @@ char *makeSpecAll(char *s2)
     return s2;
 }
 
-char *makeSpecSize(char *s2)
+static char *makeSpecSize(char *s2)
 {
     int size = 0;
     int n;
@@ -538,13 +541,13 @@ char *makeSpecSize(char *s2)
     return s2;
 }
 
-char *makeDevTimeout(char *s2)
+static char *makeDevTimeout(char *s2)
 {
     conf_strtotv( &(current_spec->timeout), s2);
     return s2;
 }
 
-char *makeInterp(char *s2)
+static char *makeInterp(char *s2)
 {
     int n;
     int len = strlen("LITERAL");
@@ -562,7 +565,7 @@ char *makeInterp(char *s2)
     return s2;
 }
 
-char *makeLogInSec(char *s2)
+static char *makeLogInSec(char *s2)
 {
     if( current_spec->scripts[PM_LOG_IN] != NULL )
 	err_exit(FALSE, "log in script already seen for this specification");
@@ -572,7 +575,7 @@ char *makeLogInSec(char *s2)
     return s2;
 }
 
-char *makeScriptEl(Script_El_T mode, char *s2, char *s3, List s4)
+static char *makeScriptEl(Script_El_T mode, char *s2, char *s3, List s4)
 {
     Spec_El *specl;
     int i;
@@ -607,13 +610,13 @@ char *makeScriptEl(Script_El_T mode, char *s2, char *s3, List s4)
     return s2;
 }
 
-List makeMapSec(List s1, Interpretation *s2)
+static List makeMapSec(List s1, Interpretation *s2)
 {
     list_append(s1, s2);
     return s1;
 }
 
-List makeMapSecHead(Interpretation *s1)
+static List makeMapSecHead(Interpretation *s1)
 {
     List map;
 
@@ -622,7 +625,7 @@ List makeMapSecHead(Interpretation *s1)
     return map;
 }
 
-Interpretation *makeMapLine(char *s2, char *s3)
+static Interpretation *makeMapLine(char *s2, char *s3)
 {
     Interpretation *interp;
     int n;
@@ -634,7 +637,7 @@ Interpretation *makeMapLine(char *s2, char *s3)
     return interp;
 }
 
-char *makeCheckLoginSec(char *s2)
+static char *makeCheckLoginSec(char *s2)
 {
     if( current_spec->scripts[PM_CHECK_LOGIN] != NULL )
 	err_exit(FALSE, 
@@ -644,7 +647,7 @@ char *makeCheckLoginSec(char *s2)
     return s2;
 }
 
-char *makeLogOutSec(char *s2)
+static char *makeLogOutSec(char *s2)
 {
     if( current_spec->scripts[PM_LOG_OUT] != NULL )
 	err_exit(FALSE, "log out script already seen for this specification");
@@ -654,7 +657,7 @@ char *makeLogOutSec(char *s2)
     return s2;
 }
 
-char *makeUpdatePlugsSec(char *s2)
+static char *makeUpdatePlugsSec(char *s2)
 {
     if( current_spec->scripts[PM_UPDATE_PLUGS] != NULL )
 	err_exit(FALSE, "update plugs script already seen for this specification");
@@ -663,7 +666,7 @@ char *makeUpdatePlugsSec(char *s2)
     return s2;
 }
 
-char *makeUpdateNodesSec(char *s2)
+static char *makeUpdateNodesSec(char *s2)
 {
     if( current_spec->scripts[PM_UPDATE_NODES] != NULL )
 	err_exit(FALSE, 
@@ -673,7 +676,7 @@ char *makeUpdateNodesSec(char *s2)
     return s2;
 }
 
-char *makePowerOnSec(char *s2)
+static char *makePowerOnSec(char *s2)
 {
     if( current_spec->scripts[PM_POWER_ON] != NULL )
 	err_exit(FALSE, "power on script already seen for this specification");
@@ -682,7 +685,7 @@ char *makePowerOnSec(char *s2)
     return s2;
 }
 
-char *makePowerOffSec(char *s2)
+static char *makePowerOffSec(char *s2)
 {
     if( current_spec->scripts[PM_POWER_OFF] != NULL )
 	err_exit(FALSE, "power off script already seen for this specification");
@@ -691,7 +694,7 @@ char *makePowerOffSec(char *s2)
     return s2;
 }
 
-char *makePowerCycleSec(char *s2)
+static char *makePowerCycleSec(char *s2)
 {
     if( current_spec->scripts[PM_POWER_CYCLE] != NULL )
 	err_exit(FALSE, 
@@ -701,7 +704,7 @@ char *makePowerCycleSec(char *s2)
     return s2;
 }
 
-char *makeResetSec(char *s2)
+static char *makeResetSec(char *s2)
 {
     if( current_spec->scripts[PM_RESET] != NULL )
 	err_exit(FALSE, "reset script already seen for this specification");
@@ -710,7 +713,7 @@ char *makeResetSec(char *s2)
     return s2;
 }
 
-char *makePlugNameLine(char *s2)
+static char *makePlugNameLine(char *s2)
 {
     int i = 0;
 
@@ -737,7 +740,7 @@ char *makePlugNameLine(char *s2)
  * on which it is listening (s5).  From these facts we can fully 
  * build a Device structure.
  */   
-char *makeDevice(char *s2, char *s3, char *s4, char *s5)
+static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 {
     Device *dev;
     Spec *spec;
@@ -917,7 +920,7 @@ static char *makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 void yyerror()
 {
     errno = 0;
-    err_exit(FALSE, "parse error.  %s line %d", cheat->config_file, yyline);
+    err_exit(FALSE, "parse error on line %d", yyline);
 }
 
 /*

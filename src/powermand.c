@@ -58,20 +58,19 @@
 #include "wrappers.h"
 
 /* prototypes */
-static void process_command_line(Globals * g, int argc, char **argv);
 static void usage(char *prog);
 static void do_select_loop(Globals * g);
 static int find_max_fd(Globals * g, fd_set * rset, fd_set * wset);
 static Globals *make_Globals();
-static void sig_hup_handler(int signum);
+static void noop_handler(int signum);
 static void exit_handler(int signum);
-static void read_Config_file(Globals * g);
 
 /* This is synonymous with the Globals *g declared in main().
  * I call attention to global access as "cheat".  This only
  * happens in the parser.
  */
 Globals *cheat;
+
 
 static const char *powerman_license =
     "Copyright (C) 2001-2002 The Regents of the University of California.\n"
@@ -94,82 +93,57 @@ static const struct option long_options[] = {
     {0, 0, 0, 0}
 };
 
-static const struct option *longopts = long_options;
-
-static bool debug_telemetry = FALSE;
-
-
-/*
- * There is no shutdown/restart signal handling, nor does
- *         exitting clean any mallocs up.  Once it enters the
- *         select loop it stays there until you call the "kill"
- *         option.
- */
-/* 
- *   Globals has the the timeout intervals, a structure for the 
- * client protocol, and pointers for the listener, the list of 
- * devices, the list of clients, the list of pending actions, 
- * and the cluster state info.
- */
-int main(int argc, char **argv)
+void _validate_config_file(char *filename)
 {
-    Globals *g;
-    Device *dev;
-    ListIterator dev_i;
+    struct stat stbuf;
 
-    err_init(argv[0]);
-    cheat = g = make_Globals();
-
-    process_command_line(g, argc, argv);
-
-    if (geteuid() != 0)
-	err_exit(FALSE, "must be root");
-
-    Signal(SIGHUP, sig_hup_handler);
-    Signal(SIGTERM, exit_handler);
-
-    read_Config_file(g);
-
-    if (g->daemonize)
-	daemon_init();		/* closes all open fd's, opens syslog */
-
-    dev_i = list_iterator_create(g->devs);
-    while ((dev = list_next(dev_i)))
-	dev_init(dev, debug_telemetry);
-    list_iterator_destroy(dev_i);
-
-    listen_init(g->listener);
-
-    /* We now have a socket at g->listener->fd running in listen mode */
-    /* and a file descriptor for communicating with each device */
-    do_select_loop(g);
-    return 0;
+    if (stat(filename, &stbuf) < 0)
+	err_exit(TRUE, "%s", filename);
+    if ((stbuf.st_mode & S_IFMT) != S_IFREG)
+	err_exit(FALSE, "%s is not a regular file\n", filename);
 }
 
-/* 
- *   The primary task here is to get the configuration file name.
- * There is no internally defined default so the program must always
- * be run with a "-c <file>" command line parameter or the "kill" 
- * option "-k".  The other options are self explanitory and less
- * important.
- */
-static void process_command_line(Globals * g, int argc, char **argv)
+/* initialize all the power control devices */
+void _initialize_devs(List devs, bool debug_telemetry)
+{
+    Device *dev;
+    ListIterator itr = list_iterator_create(devs);
+
+    while ((dev = list_next(itr)))
+	dev_init(dev, debug_telemetry);
+    list_iterator_destroy(itr);
+}
+
+
+static const struct option *longopts = long_options;
+
+
+int main(int argc, char **argv)
 {
     int c;
-    int longindex;
+    int lindex;
+    Globals *g;
+    char *config_filename = NULL;
+    bool debug_telemetry = FALSE;
+    bool daemonize = TRUE;
 
+    /* initialize error module */
+    err_init(argv[0]);
+
+    /* FIXME: initialize a big blob of globals */
+    cheat = g = make_Globals();
+
+    /* parse command line options */
     opterr = 0;
-    while ((c =
-	    getopt_long(argc, argv, OPT_STRING, longopts,
-			&longindex)) != -1) {
+    while ((c = getopt_long(argc, argv, OPT_STRING, longopts, &lindex)) != -1) {
 	switch (c) {
 	case 'c':		/* --config_file */
-	    if (g->config_file != NULL)
+	    if (config_filename != NULL)
 		usage(argv[0]);
-	    g->config_file = Strdup(optarg);
+	    config_filename = Strdup(optarg);
 	    break;
 	case 'f':		/* --foreground */
-	    g->daemonize = FALSE;
+	    daemonize = FALSE;
 	    break;
 	case 'h':		/* --help */
 	    usage(argv[0]);
@@ -190,13 +164,40 @@ static void process_command_line(Globals * g, int argc, char **argv)
 	}
     }
 
-    if (debug_telemetry && g->daemonize == TRUE)
+    if (debug_telemetry && daemonize == TRUE)
 	err_exit(FALSE, "--telemetry cannot be used in daemon mode");
 
-    if (!g->config_file)
-	g->config_file = Strdup(DFLT_CONFIG_FILE);
-}
+    if (geteuid() != 0)
+	err_exit(FALSE, "must be root");
 
+    if (config_filename == NULL)
+	config_filename = DFLT_CONFIG_FILE;
+    _validate_config_file(config_filename);
+
+    Signal(SIGHUP, noop_handler);
+    Signal(SIGTERM, exit_handler);
+
+    /* build the client protocol */
+    g->client_prot = conf_init_client_protocol();
+
+    /* call yacc/lex parser */
+    parse_config_file(config_filename);
+
+    /* drop controlling tty, open syslog, etc */
+    if (daemonize)
+	daemon_init();
+
+    /* initialize all the power control devs */
+    _initialize_devs(g->devs, debug_telemetry);
+
+    /* initialize listener */
+    listen_init(g->listener);
+
+    /* We now have a socket at g->listener->fd running in listen mode */
+    /* and a file descriptor for communicating with each device */
+    do_select_loop(g);
+    return 0;
+}
 
 static void usage(char *prog)
 {
@@ -438,50 +439,13 @@ static int find_max_fd(Globals * g, fd_set * rs, fd_set * ws)
     return maxfd;
 }
 
-/*
- *   Eventually this will initiate a re read of the config file and
- * a reinitialization of the internal data structures.
- */
-static void sig_hup_handler(int signum)
+static void noop_handler(int signum)
 {
 }
 
-/*
- *   Send a death poem on the way out.
- */
 static void exit_handler(int signum)
 {
     err_exit(FALSE, "exiting on signal %d", signum);
-}
-
-
-/*
- *   This function has two jobs.  Get the config file based on the
- * name on the command line, and wrap the call to the parser 
- * (parse.lex and parse.y).  
- */
-static void read_Config_file(Globals * g)
-{
-    struct stat stbuf;
-
-    CHECK_MAGIC(g);
-
-    /* Did we really get a config file? */
-    if (g->config_file == NULL)
-	err_exit(FALSE, "no config file specified");
-    if (stat(g->config_file, &stbuf) < 0)
-	err_exit(TRUE, "%s", g->config_file);
-    if ((stbuf.st_mode & S_IFMT) != S_IFREG)
-	err_exit(FALSE, "%s is not a regular file\n", g->config_file);
-    g->cf = fopen(g->config_file, "r");
-    if (g->cf == NULL)
-	err_exit(TRUE, "%s", g->config_file);
-
-    g->client_prot = conf_init_client_protocol();
-
-    parse_config_file();
-
-    fclose(g->cf);
 }
 
 static Globals *make_Globals()
@@ -495,18 +459,14 @@ static Globals *make_Globals()
     g->timeout_interval.tv_usec = 0;
     g->interDev.tv_sec = 0;
     g->interDev.tv_usec = INTER_DEV_USECONDS;
-    g->daemonize = TRUE;
     g->TCP_wrappers = FALSE;
     g->listener = listen_create();
     g->clients = list_create((ListDelF) cli_destroy);
     g->status = Quiescent;
-    g->cluster = NULL;
     g->acts = list_create((ListDelF) act_destroy);
     g->client_prot = NULL;
     g->specs = list_create((ListDelF) conf_spec_destroy);
     g->devs = list_create((ListDelF) dev_destroy);
-    g->config_file = NULL;
-    g->cf = NULL;
     g->cluster = conf_cluster_create();
     return g;
 }
@@ -516,7 +476,6 @@ static void free_Globals(Globals * g)
 {
     int i;
 
-    Free(g->config_file);
     list_destroy(g->specs);
     conf_cluster_destroy(g->cluster);
     list_destroy(g->acts);

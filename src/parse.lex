@@ -52,8 +52,6 @@ extern int yyline;
 #include "powermand.h"
 extern void yyerror();
 	
- int yyin_init = 0;     /* Flag for starting byte source */
-	
 #define MAX_INCLUDE_DEPTH 10   /* How many include files? */
  YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH]; /* and their buffers */
  int include_stack_ptr = 0;  /* which one is current? */
@@ -72,13 +70,7 @@ extern void yyerror();
 %%
 
 %{
-	/* When we start out we want to be reading the already open */
-	/* file from the command line */
-	if( yyin_init == 0 )
-	{
-		yyin = cheat->cf;
-	}
-	yyin_init = 1;
+	/* yyin gets initialized in parse.y */
 %}
 
 
