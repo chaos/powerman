@@ -784,10 +784,10 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
         hostlist_iterator_destroy(hitr);
         list_iterator_destroy(itr);
         hostlist_destroy(nodelist);
-        if (pluglist)
-            hostlist_destroy(pluglist);
-        if (pitr)
+        if (pluglist) {
             hostlist_iterator_destroy(pitr);
+            hostlist_destroy(pluglist);
+        }
         return;
     }
     hostlist_destroy(nodelist);

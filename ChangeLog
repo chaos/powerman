@@ -4,6 +4,8 @@
     specification, e.g. this now works:
       node "thunder[0-63]" "i0" "pthunder[0-63]"
 
+    * etc/ipmipower.dev: Last regex didn't compile - try this one?
+
 2003-01-09 Albert Chu <chu11@llnl.gov>
 
     * etc/ipmipower.dev: Added additional expressions that result
