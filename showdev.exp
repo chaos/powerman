@@ -1,0 +1,72 @@
+#!/usr/bin/expect --
+
+##
+#  $Id$
+#    by Chris Dunlap <cdunlap@llnl.gov>
+##
+#  DOCUMENT_ME!
+##
+
+
+proc print_mac_addr {console line} {
+  set word "\[^ ]+"
+  set x "\[0-9A-Fa-f]"
+  set addr "$x$x-$x$x-$x$x-$x$x-$x$x-$x$x"
+  set pat "^$word +($word) +($addr) *\r"
+  if [regexp $pat $line ignore iface mac] {
+    puts "$console: $iface: $mac"
+  }
+  return
+}
+
+
+log_user 0
+
+set env(PATH) "/usr/bin:/usr/local/bin"
+
+if [catch {eval spawn conman $argv} err] {
+  puts "$err"; exit 1
+}
+
+expect eof {
+  puts "ERROR: Unexpected EOF."; exit 1
+} timeout {
+  puts "ERROR: Timed-out."; exit 1
+} -re "(ERROR: \[^\r]*)\r\n" {
+  puts "$expect_out(1,string)"; exit 1
+} -re "<ConMan> Connection to console (\[^ ]+) opened.\r\n" {
+  set console $expect_out(1,string)
+}
+
+set timeout 3
+send "\r"
+expect eof {
+  puts "ERROR: Unexpected EOF."; exit 1
+} timeout {
+  puts "ERROR: Console $console is not at SRM."; exit 1
+} -gl ">>>\$" {
+  ;
+}
+set timeout 10
+
+send "show dev\r"
+expect eof {
+  puts "ERROR: Unexpected EOF."; exit 1
+} timeout {
+  puts "ERROR: Timed-out."; exit 1
+} -gl "No such command\r\n" {
+  puts "ERROR: No such command."; exit 1
+} -re "\n\[^\r]*\r" {
+  print_mac_addr $console $expect_out(0,string); exp_continue
+} -gl ">>>\$" {
+  ;
+}
+
+send "&."
+expect eof {
+  puts "ERROR: Unexpected EOF."; exit 1
+} timeout {
+  puts "ERROR: Timed-out."; exit 1
+} -re "\r\n<ConMan> Connection to console $console closed.\r\n" {
+  ;
+}

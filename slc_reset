@@ -1,0 +1,36 @@
+#!/usr/bin/perl
+#
+# Call to the Power package's do_reset() function in powerlib.pl
+# Usage: slc_reset host [host...]
+# Andrew Uselton 6/15/01
+#
+use strict;
+
+# might want to put a path in here
+require "powerlib.pl";
+
+use vars qw($node $val $EXITERROR $EXITOK $ON $OFF);
+my ($node, $val, $EXITERROR, $EXITOK, $ON, $OFF);
+
+$EXITERROR = 1;
+$EXITOK    = 0;
+$ON        = 1;
+$OFF       = 0;
+
+if (!@ARGV) {
+    printf STDERR ("Usage: slc_reset node [node...]\n");
+    exit($EXITERROR);
+}	
+
+Power::power_init(@ARGV);
+
+printf ("Resetting nodes @ARGV\n");
+$val = Power::do_reset(@ARGV);
+if ($val == $OFF)
+{ 
+    printf("Error: One or more of the nodes is not ON!\n");
+    exit($EXITERROR);
+}
+Power::power_fin();
+exit($EXITOK);
+

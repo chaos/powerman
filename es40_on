@@ -1,0 +1,40 @@
+#!/usr/bin/perl
+#
+# Call to the ES40Power package's do_on() function in es40_powerlib.pl
+# Usage: es40_on host [host...]
+# adapted from the original "api_reset" of
+# Jim Garlick 2/15/01
+# by
+# Andrew Uselton 6/5/01
+#
+use strict;
+
+# might want to put a path in here
+require "es40_powerlib.pl";
+
+use vars qw($node $val $EXITERROR $EXITOK $ON $OFF);
+my ($node, $val, $EXITERROR, $EXITOK, $ON, $OFF);
+
+$EXITERROR = 1;
+$EXITOK    = 0;
+$ON        = 1;
+$OFF       = 0;
+
+if (!@ARGV) {
+    printf STDERR ("Usage: es40_on node [node...]\n");
+    exit($EXITERROR);
+}	
+
+ES40Power::es40_power_init(@ARGV);
+
+foreach $node (@ARGV) {
+	printf ("Turning on node $node\n");
+	$val = ES40Power::do_on($node);
+	if ($val == $ON)
+	{ 
+	    printf("Error: Node %s already ON\n", $node);
+	    exit($EXITERROR);
+	}
+}
+exit($EXITOK);
+

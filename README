@@ -1,0 +1,120 @@
+			PowerMan
+		     Andrew Uselton
+		      June 27, 2001
+
+PowerMan is a project to incorporate power management and monitoring
+functionality for ES40, UP2000, and CS20 node types in the slc cluster
+into a single library.  The four basic functions of PowerMan are:
+
+1.  check - Return a boolean value of ON or OFF for a node
+2.  on    - If a node is off turn it on else return error
+3.  off   - If a node is on turn it off else return error
+4.  reset - If a node is on reset it else return an error
+
+Each type of node accomplishes these activities differetly, so there
+is a low level library for each one.  These libraries are:
+cs20_powerlib.pl
+es40_powerlib.pl
+up2000_powerlib.pl
+Each library has a "power_init" and "power_fin" function that should
+be called before using one of its other functions and after,
+respectively.  The names of the above four functions are the same in
+each library:
+do_on
+do_off
+do_reset
+node_on
+Each function takes a single node name as a parameter.  All of the
+functions return the power status with return value 1 meaning "on" and
+0 meaning "off".  Each library has a helper function "plug_on" that
+does the actual work of invoking the lower level power status
+program "ditty".  These functions require root priveleges to query the
+special devices.  Eventually special priveleges will also be neede to
+run conman and the expect scripts.  
+
+On the UP2000 the on, off, and reset functions are commands sent to
+the /dev/ttyD23 port controlling the external power controllers.  On
+the ES40s these functions are implemented via expect scripts through
+"conman" communicating with the RMC>> facility.  On the CS20s they are
+implemented via the "ether-wake" program, which is compiled from
+Scyld's ether-wake.c with the included Makefile.  "Ether-wake" also
+needs the nodes hardware MAC address, and this is provided by the
+"show_dev.exp" expect script in the "conman" suite - an early version
+of that command is in this distribution, though it will be supplanted
+by "conman" eventually.
+
+As of June 27th the ES40's expect scripts are still under development,
+the CS20's ether-wake program is awaiting a working Wake-On-LAN BIOS
+on the one node we have (slc6), and the power monitoring functionality
+only works completely on nodes slc[6,14,15] (the cs20 and two ES40s)
+where special connector "dongles" merge the pin-1 output of the
+parallel port into the pin-4 DSR line of the DB9 serial port 1 output.
+Additionaly, slc[0-5] (the UP2000s) will reflect correct power status
+except just after power-on, and just after boot.  slc[8-13] (the
+remaining ES40s) will always show "power off" status until we provide
+dongles.
+
+For each library there are four perl scripts, one for each function,
+for testing the corresponding functions.  
+UP2000_powerlib.pl  ES40_powerlib.pl  CS20_powerlib.pl
+------------------  ----------------  ----------------
+up2000_check        es40_check        cs20_check
+up2000_on           es40_on           cs20_on
+up2000_off          es40_off          cs20_off
+up2000_reset        es40_reset        cs20_reset
+Each takes a (space separated) list of nodes from the command line and
+calls the library for the approriate command.  The script calls the
+"init" and "fin" functions and refuses to turn off an already off node,
+etc.  Note that the "up2000_check" script returns shell script style
+return values, i.e. 0 means "is on" and 1 means "is off".  Each test
+function also prints out a short message stating what it is doing.
+The libraries, in general, are silent.  
+
+The scripts "monitor" and "altmon" are low level calls to the "ditty"
+command or "the up2000_check" command that repeat at one second
+intervals.  You may want to have a similar script giving you continual
+staus while you experiment with the various commands.  
+
+The library "powerlib.pl" gathers the other three libraries and
+implements the (check, on, off, reset) suite at the level of the whole
+cluster.  Thus each call is dispatched to the appropriate node
+specific implementation based on knowing the composisiton of the
+cluster.  "Powerlib.pl" also implements some new functions.
+"Power_cluster" returns a list of the nodes in the cluster.
+"Power_stat" returns a hash of the power status of all nodes in the
+cluster, though it only actually sets the power status of those nodes
+in the called command line - the others are set to a neutral
+($UNASKED) value.  The new function "nodes_on" returns "ON" only if
+all the nodes in the command line are on.  Similarly, "nodes_off"
+returns "OFF" only if all the nodes are off.  
+
+Finally, there is a commandline script for each of the four functions
+att the "powerlib.pl" level, i.e. irrespective of the node type.  All
+of these scripts are still specific just to the slc cluster, so the
+four functions are:
+slc_check
+slc_on
+slc_off
+slc_reset
+There is one more script, "slc_stat", that prints a vector of power
+indicators the length of the cluster.  Each indicator has a 1 for "ON",
+a 0 for "OFF", a "-" if the corresponding node was not on the command
+line, and a "?" if the node was queried but a status could not be
+determined (this last shouldn't happen except as a bug).  
+
+Work that remains to be done includes the following:
+1.  Incorporate the expect scripts that will turn on, turn off, and
+      reset the ES40 nodes (and DS10s and DS20s)
+2.  Fix the Wake-On-LAN facility in the CS20 and test it
+3.  Incorporate globbing and regexp expansion for node lists
+4.  Abstract the node details into a configuration file
+5.  Standardize the calling conventions so that a script knows where
+      to find all the libraries, maybe combine all the libraries into
+      a single file
+6.  Clean up the interfaces, document, and regularize the code
+7.  Determine if the Perl implementation is adequate or if it needs to
+    be reimplemented in C
+8.  Write the necessary scripts to extract cluster configuration
+      information from Genders and put it in the configuration file
+9.  Integrate with "conman", esp the showdev.exp and other expect 
+      scripts
