@@ -6,7 +6,8 @@
 #define DBG_SELECT          0x0002
 #define DBG_CLIENT          0x0004
 #define DBG_ACTION          0x0008
-#define DBG_MEMORY          0x0100
+#define DBG_MEMORY          0x0010
+#define DBG_TELNET          0x0020
 
 #define DBG_NAME_TAB {                      \
     { DBG_DEVICE,       "device" },         \
@@ -14,6 +15,7 @@
     { DBG_CLIENT,       "client" },         \
     { DBG_ACTION,       "action" },         \
     { DBG_MEMORY,       "memory" },         \
+    { DBG_TELNET,       "telnet" },         \
     { 0, NULL }                             \
     }
 

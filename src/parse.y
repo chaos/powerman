@@ -447,6 +447,8 @@ static char *makeSpecType(char *s2)
         current_spec->type = TCP_DEV;
     else if ( (n = strncmp(s2, "serial", 6)) == 0)
         current_spec->type = SERIAL_DEV;
+    else if ( (n = strncmp(s2, "telnet", 6)) == 0)
+        current_spec->type = TELNET_DEV;
     return s2;
 }
 
@@ -596,14 +598,14 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     _errormsg("device specification not found");
 
     /* make the Device */
-    dev = dev_create(s2);
+    dev = dev_create(s2, spec->type);
     dev->specname = Strdup(s3);
-    dev->type = spec->type;
     dev->timeout = spec->timeout;
     dev->ping_period = spec->ping_period;
     /* set up the host name and port */
     switch(dev->type) {
     case TCP_DEV :
+    case TELNET_DEV :
         dev->u.tcp.host = Strdup(s4);
         dev->u.tcp.service = Strdup(s5);
         break;

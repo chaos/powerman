@@ -37,6 +37,10 @@
 #include <stdio.h>
 #include <termios.h>
 
+#define TELOPTS
+#define TELCMDS
+#include <arpa/telnet.h>
+
 #include "powerman.h"
 #include "list.h"
 #include "parse_util.h"
@@ -111,6 +115,12 @@ static unsigned char *_findregex(regex_t * re, unsigned char *str,
 static char *_getregex_buf(cbuf_t b, regex_t * re);
 static bool _command_needs_device(Device * dev, hostlist_t hl);
 static void _process_ping(Device * dev, struct timeval *timeout);
+static void _init_telnet(Device * dev);
+static void _process_telnet(Device * dev);
+static void _telnet_recvcmd(Device *dev, unsigned char cmd);
+static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt);
+static void _telnet_sendcmd(Device *dev, unsigned char cmd);
+static void _telnet_sendopt(Device *dev, unsigned char cmd, unsigned char opt);
 
 static List dev_devices = NULL;
 
@@ -342,7 +352,7 @@ static bool _tcp_reconnect(Device * dev)
     int fd_settings;
 
     assert(dev->magic == DEV_MAGIC);
-    assert(dev->type == TCP_DEV);
+    assert(dev->type == TCP_DEV || dev->type == TELNET_DEV);
     assert(dev->connect_status == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
@@ -542,6 +552,8 @@ static bool _reconnect(Device * dev)
 
     switch (dev->type) {
     case TCP_DEV:
+        /*FALLTHROUGH*/
+    case TELNET_DEV:
         res = _tcp_reconnect(dev);
         break;
     case SERIAL_DEV:
@@ -816,7 +828,7 @@ static bool _tcp_finish_connect(Device * dev, struct timeval *timeout)
     int error = 0;
     int len = sizeof(err);
 
-    assert(dev->type == TCP_DEV);
+    assert(dev->type == TCP_DEV || dev->type == TELNET_DEV);
     assert(dev->connect_status == DEV_CONNECTING);
     rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &error, &len);
     /*
@@ -838,6 +850,9 @@ static bool _tcp_finish_connect(Device * dev, struct timeval *timeout)
         dev->retry_count = 0;
         _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
     }
+
+    if (dev->type == TELNET_DEV && dev->connect_status == DEV_CONNECTED)
+        _init_telnet(dev);
 
     return (dev->connect_status == DEV_CONNECTED);
 }
@@ -901,7 +916,7 @@ static void _tcp_disconnect(Device * dev)
 {
     assert(dev->connect_status == DEV_CONNECTING
            || dev->connect_status == DEV_CONNECTED);
-    assert(dev->type == TCP_DEV);
+    assert(dev->type == TCP_DEV || dev->type == TELNET_DEV);
 
     dbg(DBG_DEVICE, "_tcp_disconnect: %s on fd %d", dev->name, dev->fd);
 
@@ -933,6 +948,8 @@ static void _disconnect(Device * dev)
     Action *act;
 
     switch (dev->type) {
+    case TELNET_DEV:
+        /*FALLTHROUGH*/
     case TCP_DEV:
         _tcp_disconnect(dev);
         break;
@@ -1090,6 +1107,128 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 break;
             }
         }
+    }
+}
+
+static void _telnet_sendopt(Device *dev, unsigned char cmd, unsigned char opt)
+{
+    char str[] = { IAC, cmd, opt };
+    int n;
+
+    dbg(DBG_TELNET, "%s: _telnet_sendopt: %s %s", dev->name, 
+            TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>",
+            TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
+
+    n = cbuf_write(dev->to, str, sizeof(str), NULL);
+    if (n < sizeof(str))
+        err((n < 0), "_telnet_sendopt: cbuf_write returned %d", n);
+}
+
+static void _telnet_sendcmd(Device *dev, unsigned char cmd)
+{
+    char str[] = { IAC, cmd };
+    int n;
+
+    dbg(DBG_TELNET, "%s: _telnet_sendcmd: %s", dev->name, 
+            TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>");
+
+    n = cbuf_write(dev->to, str, sizeof(str), NULL);
+    if (n < sizeof(str))
+        err((n < 0), "_telnet_sendcmd: cbuf_write returned %d", n);
+}
+
+static void _telnet_recvcmd(Device *dev, unsigned char cmd)
+{
+    dbg(DBG_TELNET, "%s: _telnet_recvcmd: %s", dev->name, 
+            TELCMD_OK(cmd) ?  TELCMD(cmd) : "<unknown>");
+}
+
+static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
+{
+    dbg(DBG_TELNET, "%s: _telnet_recvopt: %s %s", dev->name, 
+            TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>", 
+            TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
+
+    switch (cmd)
+    {
+    case DO:
+        switch (opt) {
+            case TELOPT_NAWS:
+            case TELOPT_TTYPE:
+            case TELOPT_TM:
+                _telnet_sendopt(dev, WONT, opt);
+                break;
+            case TELOPT_SGA:    /* suppress go ahead */
+                _telnet_sendopt(dev, WILL, opt);
+                break;
+            default:
+                break;
+        }
+        break;
+    default:
+        break;
+    }
+}
+
+static void _init_telnet(Device * dev)
+{
+    _telnet_sendopt(dev, DONT, TELOPT_NAWS);
+    _telnet_sendopt(dev, DONT, TELOPT_TTYPE);
+}
+
+static void _process_telnet(Device * dev)
+{
+    unsigned char peek[MAX_DEV_BUF];
+    unsigned char device[MAX_DEV_BUF];
+    int len, i, k;
+
+    assert(dev->type == TELNET_DEV);
+    assert(dev->u.tcp.from_telnet != NULL);
+
+    len = cbuf_peek(dev->from, peek, MAX_DEV_BUF);
+    for (i = 0, k = 0; i < len; i++) {
+        switch (dev->u.tcp.tstate) {
+        case TELNET_NONE:
+            if (peek[i] == IAC)
+                dev->u.tcp.tstate = TELNET_CMD;
+            else
+                device[k++] = peek[i];
+            break;
+        case TELNET_CMD:
+            switch (peek[i]) {
+            case IAC:           /* escaped IAC */
+                device[k++] = peek[i];
+                dev->u.tcp.tstate = TELNET_NONE;
+                break;
+            case DONT:          /* option commands - one more byte coming */
+            case DO:
+            case WILL:
+            case WONT:
+                dev->u.tcp.tcmd = peek[i];
+                dev->u.tcp.tstate = TELNET_OPT;
+                break;
+            default:            /* single char commands - process immediately */
+                _telnet_recvcmd(dev, peek[i]);
+                dev->u.tcp.tstate = TELNET_NONE;
+                break;
+            }
+            break;
+        case TELNET_OPT:        /* option char - process stored command */
+            _telnet_recvopt(dev, dev->u.tcp.tcmd, peek[i]);
+            dev->u.tcp.tstate = TELNET_NONE;
+            break;
+        }
+    }
+    /* rewrite buffers if anything changed */
+    if (k < len) {
+        int n;
+
+        n = cbuf_drop(dev->from, len);
+        if (n < len)
+            err((n < 0), "_divert_telnet: cbuf_drop returned %d", n);
+        n = cbuf_write(dev->from, device, k, NULL);
+        if (n < k)
+            err((n < 0), "_divert_telnet: cbuf_write (device) returned %d", n);
     }
 }
 
@@ -1308,7 +1447,7 @@ static void _match_subexpressions(Device * dev, Action * act, char *expect)
     list_iterator_destroy(itr);
 }
 
-Device *dev_create(const char *name)
+Device *dev_create(const char *name, DevType type)
 {
     Device *dev;
     int i;
@@ -1316,7 +1455,7 @@ Device *dev_create(const char *name)
     dev = (Device *) Malloc(sizeof(Device));
     dev->magic = DEV_MAGIC;
     dev->name = Strdup(name);
-    dev->type = NO_DEV;
+    dev->type = type;
     dev->connect_status = DEV_NOT_CONNECTED;
     dev->script_status = 0;
     dev->fd = NO_FD;
@@ -1328,7 +1467,13 @@ Device *dev_create(const char *name)
     dev->to = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
     cbuf_opt_set(dev->to, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
     dev->from = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
-    cbuf_opt_set(dev->to, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
+    cbuf_opt_set(dev->from, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
+    if (dev->type == TELNET_DEV) {
+        dev->u.tcp.from_telnet = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
+        cbuf_opt_set(dev->u.tcp.from_telnet, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
+        dev->u.tcp.tstate = TELNET_NONE;
+        dev->u.tcp.tcmd = 0;
+    }
     for (i = 0; i < NUM_SCRIPTS; i++)
         dev->scripts[i] = NULL;
     dev->plugs = list_create((ListDelF) dev_plug_destroy);
@@ -1361,6 +1506,9 @@ void dev_destroy(Device * dev)
     regfree(&(dev->on_re));
     regfree(&(dev->off_re));
     switch (dev->type) {
+    case TELNET_DEV:
+        cbuf_destroy(dev->u.tcp.from_telnet);
+        /*FALLTHROUGH*/
     case TCP_DEV:
         Free(dev->u.tcp.host);
         Free(dev->u.tcp.service);
@@ -1596,7 +1744,7 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
         if (dev->connect_status == DEV_NOT_CONNECTED) {
             if (_time_to_reconnect(dev, timeout))
                 _reconnect(dev);
-            /* complete non-blocking connect if ready */
+        /* complete non-blocking connect if ready */
         } else if ((dev->connect_status == DEV_CONNECTING)) {
             assert(dev->fd != NO_FD);
             if (FD_ISSET(dev->fd, wset)) {
@@ -1618,6 +1766,10 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
             if (FD_ISSET(dev->fd, wset))
                 _handle_write(dev);
         }
+
+        /* If telnet device, process telnet escapes */
+        if (dev->type == TELNET_DEV);
+            _process_telnet(dev);
 
         /* process actions */
         if (list_peek(dev->acts)) {

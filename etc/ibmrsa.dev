@@ -26,15 +26,14 @@
 #
 specification {
 	name 		"ibmrsa"
-	type 		"TCP"
+	type 		"telnet"
 	offstring 	"off"
 	onstring  	"on"
 	plugcount 	24
 	timeout  	20
 
 	script login {
-		send "\IAC\DONT\TELOPT_NAWS\IAC\DONT\TELOPTTTYPE"
-		send "\IAC\WONT\TELOPT_TM"	# quiet \IAC\DO\TELOPT_TM's
+#		send "\IAC\DONT\TELOPT_NAWS\IAC\DONT\TELOPTTTYPE"
 		expect "Login ID:"
 		send "USERID\r\n"
 		send "PASSW0RD\r\n"
