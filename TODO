@@ -15,6 +15,23 @@
 * powerman client needs option for querying status of individual node for
   Kimberlite failover interface.
 * De-serialize commands issued to the devices.  They should be issued
-  in parrelel and the results colated.
-
-
+  in parallel and the results colated. [Note: they appear to be issued in 
+  parallel now, but delays are implemented as inline Delay() calls, thus
+  delays are serialized. -jg]
+* Find this bug in powermand (exhibited on mdev when doing a powerman -0 
+  on one node):
+  > (no debugging symbols found)...(no debugging symbols found)...
+  > Program received signal SIGSEGV, Segmentation fault.
+  > 0x4207fb8a in strcmp () from /lib/i686/libc.so.6
+  > (gdb) bt
+  > #0  0x4207fb8a in strcmp () from /lib/i686/libc.so.6
+  > #1  0x0804cf58 in hostrange_hn_within ()
+  > #2  0x0804e90a in hostlist_find ()
+  > #3  0x0805299e in _do_target_some ()
+  > #4  0x08052830 in _set_targets ()
+  > #5  0x080525c2 in _acttodev ()
+  > #6  0x0805270a in dev_apply_action ()
+  > #7  0x080514fb in act_initiate ()
+  > #8  0x080547f7 in _select_loop ()
+  > #9  0x0805457d in main ()
+  > #10 0x42017589 in __libc_start_main () from /lib/i686/libc.so.6
