@@ -161,7 +161,7 @@ config_item     : client_port
                 | node
                 | deprecated
 ;
-deprecated      : TOK_SCRIPT TOK_B_NODES   { 
+deprecated      : TOK_B_NODES   { 
     _warnmsg("'begin nodes' no longer needed"); 
 }               | TOK_E_NODES   { 
     _warnmsg("'end nodes' no longer needed"); 
