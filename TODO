@@ -7,8 +7,12 @@
   simultaneous status queries will return unpredictable results.
   (NOTE: workaround applied in client.c::_parse_input() which depends on
   the "cannot make progress toward timing out" bug above.  See note there.)
+* Bug: status query will not return unknown if device disconnects/reconnects
+  (as in login timeout).  Client will see timeout, but will get bad data.
 * Bug: query for N-1 plug states from an N plug device results in N-1
   queries (should always be one).
+* Bug: need a way to deal with RPC's such as Baytech's which time out idle
+  sessions such that first command typed after timeout will fail.
 * PM_LOG_OFF action is not used - remove from the code.
 * Build failure simulator test suite
 * Package with autoconf
@@ -28,3 +32,5 @@
   command (e.g. don't hard code the number of scripts?)
 * Power sequencing.  Provide a way of expressing the max number of outlets
   or power control devices which can be powered on in parallel.
+* Support power control devices that are accessed via serial port.
+* Move telnet protocol from device configuration into powermand.
