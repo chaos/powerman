@@ -26,6 +26,10 @@
 
 /* Primary entry points to this module are:
  *
+ * initialization - dev_init() and dev_fini() are called from powermand.
+ * dev_initial_connect(), called one time only after dev_init(), begins
+ * connection establishment to all devices.
+ *
  * parser - at config file parse time, each device is instantiated by
  * the dev_create() function, which puts the device on the local 'dev_devices' 
  * list.  
@@ -42,10 +46,6 @@
  * should unblock select/poll; the latter to move data between device cbufs
  * and the device file descriptors, to manage timeouts, and to move
  * device scripts along when new state develops (e.g. data in cbufs).
- *
- * initialization - dev_init() and dev_fini() are called from powermand.
- * dev_initial_connect(), called one time only after dev_init(), begins
- * connection establishment to all devices.
  *
  * FIXME: the Device type is not externally opaque as it ought to be:
  * - parser threads plugs on to the device after it is created
