@@ -2,12 +2,18 @@ In order to retag something to a new version do the following
 1)  increment the version numbers in Makefile, powerman.spec, and pm 
 2)  Fix bugs and make changes
 3)  cvs commit
+    If you're starting work on a branch you'll want to do something
+    like this: 
+    cvs rtag -b -r powerman-0-2-0 powerman-0-2-0-branch powerman
 4)  you will probaly want to remove the previous version, especially
       if you are installing an identically numbered (but different)
       version during debugging.
 	rpm -q powerman
 	rpm -e powerman-x.y.z-r
 5)  make rpm tag=HEAD
+    This would be "make rpm tag=powerman-x-y-z-branch" in the case of
+    a branch in the sources, where "powerman-x-y-z-branch" is the
+    branch tag.
 6)  distribute to test sites
 7)  rpm -i powerman-x.y.z-r.i386.rpm  (if, like me, you ended up 
             with a bunch of rpm database entires you can't get rid
@@ -21,32 +27,32 @@ In order to retag something to a new version do the following
      but this is not reproducable.  Once you've reached a stable point
      you should.  
        a) cvs rtag powerman-x-y-z powerman
-          (If you're being naughty and fixing problems in an already
+          If you're being naughty and fixing problems in an already
           tagged release then add the -F option, but only do this when
           you can guarantee that you can destroy all the previously
           distributed instances of this version, as during late
-          testing) 
+          testing
+          If you're working on a branch the command would be
+          cvs rtag -r powerman-x-y-z-branch powerman-x-y-zz powerman
        b) make rpm
+          This should work from the main line or a branch, since it
+          builds the default tag based on the Makefile's own 
+	  $PACKAGE and $VERSION variables.
        c) distribute widely
 
 It is permissable to hand out tag=HEAD versions, which are
 irreproducible under this scheme, so long as you make it clear that it
-is an interrum solution in an emergency and should be updated as soon
+is an interim solution in an emergency and should be updated as soon
 as possible.  When doing so you should use a release version greater
 than one.  
 
 local targets for distribution include:
 testing:
-	Host		Cluster		Version
-	---------	--------------	------------------
-	turing		vicebox		powerman-0.2.0-1.i386.rpm
-	devi		dev		powerman-0.2.0-1.i386.rpm
-	tritium		slc		powerman-0.2.0-1.i386.rpm
-	deuterium	No cluster	powerman-0.2.0-1.i386.rpm 
-			for now
+	turing
+	devi
+	tritium
+	deuterium
 production:
-	furnace		I'm not sure    none
-			about the status 
-			of this
-	pcrai		pcra		powerman-0.2.0-1.i386.rpm
-	pcrbi		pcrb		powerman-0.2.0-1.i386.rpm
+	furnace
+	pcrai
+	pcrbi
