@@ -8,7 +8,6 @@
 # commented out.
 #
 specification "icebox3" {
-	name 		"icebox3"
 	type 		TCP
 	offstring 	"0|OFF"		# 0/1 for STATUS and STATUS_SOFT
 	onstring  	"1|ON"		#     and OFF/ON for STATUS_BEACON
