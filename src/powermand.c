@@ -223,7 +223,7 @@ static void _select_loop(void)
 	cli_process_select(&rset, &wset, over_time);
 	active_devs = dev_process_select(&rset, &wset, over_time);
 
-	/* queue up an update action */
+	/* queue up an "update nodes" and "update plugs" for the cluster */
 	if (over_time) {
 	    act_update();
 	    Gettimeofday(&time_stamp, NULL);
@@ -240,8 +240,8 @@ static void _select_loop(void)
 
 	    /* double check - if there was an action in the queue, launch it */
 	    if ((act = act_find()) != NULL) {
-		act_initiate(act);
-		status = STAT_OCCUPIED;
+		if (act_initiate(act))
+		    status = STAT_OCCUPIED;
 	    }
 	}
     }

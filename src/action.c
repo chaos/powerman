@@ -114,10 +114,10 @@ Action *act_find(void)
  * some Action comes to the head of the list that requires device
  * communication (or the list runs out and the function returns).
  *   When an Action is encountered thatrequires device 
- * communication the cluster is marked "Occupied" and corresponding
- * Actions are dispatched to each appropriate device.
+ * communication the cluster is marked "Occupied" (return value TRUE)
+ * and corresponding Actions are dispatched to each appropriate device.
  */
-void act_initiate(Action * act)
+bool act_initiate(Action * act)
 {
     Device *dev;
     ListIterator itr;
@@ -133,8 +133,8 @@ void act_initiate(Action * act)
     case PM_NAMES:
 	act_finish(act);
 	if ((act = act_find()) != NULL)
-	    act_initiate(act);
-	return;
+	    return act_initiate(act);
+	return FALSE;
     case PM_UPDATE_PLUGS:
     case PM_UPDATE_NODES:
     case PM_POWER_ON:
@@ -149,8 +149,8 @@ void act_initiate(Action * act)
     while ((dev = list_next(itr)))
 	dev_acttodev(dev, act);
     list_iterator_destroy(itr);
-}
-
+    return TRUE;
+} 
 /*
  *    From either act_initiate() or the main select() loop this function
  * replies to a client if appropriate, marks the timestamp (suppressing

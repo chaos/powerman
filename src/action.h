@@ -72,7 +72,7 @@ void act_update(void);
 Action *act_find(void);
 
 /* process Action and (possibly) dispatch to devices */
-void act_initiate(Action * act);
+bool act_initiate(Action * act);
 
 /* clean up and reply to client */
 void act_finish(Action * act);
