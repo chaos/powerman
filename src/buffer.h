@@ -29,7 +29,7 @@
 
 #include <regex.h>
 
-#define MAX_BUF    1024
+#define MAX_BUF    8192
 
 typedef struct buffer_implementation *Buffer;
 

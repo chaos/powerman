@@ -8,7 +8,7 @@
 	  in N-1 separate queries, each acquiring state for the whole device.
 	* Fixed bug where read returned EOF occasionally.  This was a read
 	  attempt on a zero length buffer.  It turns out the read buffer was
-	  huge and never was compacted.  Reduced buffer size from 64K to 1K.
+	  huge and never was compacted.  Reduced buffer size from 64K to 8K.
 	* Tagged powerman-1-0-11.
 
  2002-10-14 garlick
