@@ -81,11 +81,11 @@ init_Device(Device *dev)
 		break;
 	case TTY_DEV :
 	case SNMP_DEV :
-		exit_error("Not yet implemented");
+		exit_msg("powerman device not yet implemented");
 		break;
 	case NO_DEV :
 	default :
-		exit_error("No such device");
+		exit_msg("no such powerman device");
 	}
 }
 
@@ -502,7 +502,8 @@ process_script(Device *dev)
 			done = process_delay(dev);
 			break;
 		default :
-			exit_error("Unrecognized Script_El type %d", act->cur->type);
+			exit_msg("unrecognized Script_El type %d", 
+					act->cur->type);
 		}
 		if( (act->cur = (Script_El *)list_next(act->itr)) == NULL )
 		{
@@ -939,7 +940,7 @@ dump_Device(Device *dev)
 	}
 	list_iterator_destroy(plug_i);
 	fprintf(stderr, "\t\tDevice Scripts:\n");
-	forcount(i, dev->prot->num_scripts)
+	for (i = 0; i < dev->prot->num_scripts; i++)
 		dump_Script(dev->prot->scripts[i], i);
 }
 

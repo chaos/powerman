@@ -49,7 +49,7 @@ typedef struct {
 } Plug;
 
 typedef struct {
-	String *device;
+	String device;
 } TTY_Dev;
 
 typedef struct {

@@ -380,9 +380,9 @@ char *
 makeGlobalSec(char *s2)
 {
 	if( cheat->cluster == NULL )
-		exit_error("Missing cluster name");
+		exit_msg("Missing cluster name");
 	if( cheat->listener->port == NO_PORT )
-		exit_error("Missing Listener port");
+		exit_msg("Missing Listener port");
 	return NULL;
 }
 
@@ -390,7 +390,7 @@ char *
 makeClusterName(char *s2)
 {
 	if( cheat->cluster != NULL )
-		exit_error("Cluster name %s already encountered", 
+		exit_msg("Cluster name %s already encountered", 
 			get_String(cheat->cluster->name));
 	cheat->cluster = make_Cluster(s2);
 	return s2;
@@ -427,7 +427,7 @@ makeClientPort(char *s2)
 	int port;
 
 	if( cheat->listener->port != NO_PORT )
-		exit_error("Listener port %d already encountered", cheat->listener->port);
+		exit_msg("Listener port %d already encountered", cheat->listener->port);
 
 	n = sscanf(s2, "%d", &port);
 	if ( n == 1)
@@ -436,7 +436,7 @@ makeClientPort(char *s2)
 	}
 	else
 	{
-		exit_error("Unable to identify port %s", s2);
+		exit_msg("Unable to identify port %s", s2);
 	}
 	return s2;
 }
@@ -483,7 +483,7 @@ check_Spec()
  * perahps some commands are unimplemented.  Put empty lists in their
  * array spots so other routines don't faulter.
  */
-	forcount(i, current_spec->num_scripts)
+	for (i = 0; i < current_spec->num_scripts; i++)
 	{
 		if( current_spec->scripts[i] == NULL )
 		{
@@ -492,17 +492,17 @@ check_Spec()
 	}
 	name = get_String(current_spec->name);
 	if( current_spec->type == NO_DEV )
-		exit_error("Missing type for specification %s", name);
+		exit_msg("Missing type for specification %s", name);
 	if( current_spec->off == NULL )
-		exit_error("Missing Off string for specification %s", name);
+		exit_msg("Missing Off string for specification %s", name);
 	if( current_spec->on == NULL )
-		exit_error("Missing On string for specification %s", name);
+		exit_msg("Missing On string for specification %s", name);
 	if( current_spec->all == NULL )
-		exit_error("Missing All string for specification %s", name);
+		exit_msg("Missing All string for specification %s", name);
 	if( (current_spec->type != PMD_DEV) && (current_spec->size == 0) )
-		exit_error("Missing Size field for specification %s", name);
+		exit_msg("Missing Size field for specification %s", name);
 	if( current_spec->mode == NO_MODE )
-		exit_error("Missing interpretation mode field for specification %s", name);
+		exit_msg("Missing interpretation mode field for specification %s", name);
 
 	list_append(cheat->specs, current_spec);
 	this_spec = current_spec;
@@ -520,7 +520,7 @@ makeSpecName(char *s2)
  * specification info.
  */
 	if( current_spec != NULL )
-		exit_error("There is already a specification in progress");
+		exit_msg("There is already a specification in progress");
 	current_spec = make_Spec(s2);
 	return s2;
 }
@@ -531,7 +531,7 @@ makeSpecType(char *s2)
 
 
 	if( current_spec->type != NO_DEV )
-		exit_error("Specification type already seen");
+		exit_msg("Specification type already seen");
 	if( (n = strncmp(s2, "TCP", 3)) == 0)
 		current_spec->type = TCP_DEV;
 	if( (n = strncmp(s2, "PMD", 3)) == 0)
@@ -548,7 +548,7 @@ char *
 makeSpecOff(char *s2)
 {
 	if( current_spec->off != NULL )
-		exit_error("Off string %s for this specification already seen", 
+		exit_msg("Off string %s for this specification already seen", 
 				get_String(current_spec->off));
 	current_spec->off = make_String(s2);
 	return s2;
@@ -558,7 +558,7 @@ makeSpecOn(char *s2)
 {
 
 	if( current_spec->on != NULL )
-		exit_error("On string %s for this specification already seen", 
+		exit_msg("On string %s for this specification already seen", 
 				get_String(current_spec->on));
 	current_spec->on = make_String(s2);
 	return s2;
@@ -568,7 +568,7 @@ makeSpecAll(char *s2)
 {
 
 	if( current_spec->all != NULL )
-		exit_error("All string %s for this specification already seen", 
+		exit_msg("All string %s for this specification already seen", 
 				get_String(current_spec->all));
 	current_spec->all = make_String(s2);
 	return s2;
@@ -581,11 +581,11 @@ makeSpecSize(char *s2)
 	int i;
 
 	if( current_spec->type == PMD_DEV )
-		exit_error("PowerMan device types may not list a size");
+		exit_msg("PowerMan device types may not list a size");
 	if( current_spec->size != 0 )
-		exit_error("Size field already seen for this specification");
+		exit_msg("Size field already seen for this specification");
 	n = sscanf(s2, "%d", &size);
-	if( n != 1) exit_error("Failed to interpret size \"%s\"", s2);
+	if( n != 1) exit_msg("Failed to interpret size \"%s\"", s2);
 	ASSERT( size >= 0 );
 	current_spec->size = size;
 	/* PMD_DEV devices don't know their size yet */
@@ -595,7 +595,7 @@ makeSpecSize(char *s2)
 	else
 	  {
 		current_spec->plugname = (String *)Malloc(size * sizeof(String));
-		forcount(i, size)
+		for (i = 0; i < size; i++)
 		  current_spec->plugname[i] = NULL;
 	  }
 	return s2;
@@ -618,7 +618,7 @@ makeInterp(char *s2)
 	
 
 	if( current_spec->mode != NO_MODE )
-		exit_error("Interpretation mode field already seen for this specification");
+		exit_msg("Interpretation mode field already seen for this specification");
 	
 	if ( (n = strncmp(s2, "LITERAL", len)) == 0 )
 	{
@@ -630,7 +630,7 @@ makeInterp(char *s2)
 	}
 	else
 	{
-		exit_error("Illegal string interpretation mode in config file");
+		exit_msg("Illegal string interpretation mode in config file");
 	}
 	return s2;
 }
@@ -640,7 +640,7 @@ makeLogInSec(char *s2)
 {
 
 	if( current_spec->scripts[PM_LOG_IN] != NULL )
-		exit_error("Log in script already seen for this specification");
+		exit_msg("Log in script already seen for this specification");
 
 	current_spec->scripts[PM_LOG_IN] = current_script;
 	current_script = NULL;
@@ -667,7 +667,7 @@ makeScriptEl(Script_El_T mode, char *s2, char *s3, List s4)
  * make_Spec_El to be constructed.
  */
 	len = strlen(s2);
-	forcount(i, len)
+	for (i = 0; i < len; i++)
 		if (s2[i] == '%') found = TRUE;
 	if (found)
 		sprintf(buf1, s2, "%s");
@@ -706,7 +706,7 @@ makeMapLine(char *s2, char *s3)
 
 	interp = make_Interp(s3);
 	n = sscanf(s2, "%d", &(interp->match_pos));
-	if( n != 1) exit_error("Could not interpret %s as an integer", s2);
+	if( n != 1) exit_msg("Could not interpret %s as an integer", s2);
 	return interp;
 }
 
@@ -715,7 +715,7 @@ makeCheckLoginSec(char *s2)
 {
 
 	if( current_spec->scripts[PM_CHECK_LOGIN] != NULL )
-		exit_error("Check log in script already seen for this specification");
+		exit_msg("Check log in script already seen for this specification");
 
 	current_spec->scripts[PM_CHECK_LOGIN] = current_script;
 	current_script = NULL;
@@ -726,7 +726,7 @@ makeLogOutSec(char *s2)
 {
 
 	if( current_spec->scripts[PM_LOG_OUT] != NULL )
-		exit_error("Log out script already seen for this specification");
+		exit_msg("Log out script already seen for this specification");
 
 	current_spec->scripts[PM_LOG_OUT] = current_script;
 	current_script = NULL;
@@ -737,7 +737,7 @@ makeUpdatePlugsSec(char *s2)
 {
 
 	if( current_spec->scripts[PM_UPDATE_PLUGS] != NULL )
-		exit_error("Update plugs script already seen for this specification");
+		exit_msg("Update plugs script already seen for this specification");
 
 	current_spec->scripts[PM_UPDATE_PLUGS] = current_script;
 	current_script = NULL;
@@ -748,7 +748,7 @@ makeUpdateNodesSec(char *s2)
 {
 
 	if( current_spec->scripts[PM_UPDATE_NODES] != NULL )
-		exit_error("Update nodes script already seen for this specification");
+		exit_msg("Update nodes script already seen for this specification");
 
 	current_spec->scripts[PM_UPDATE_NODES] = current_script;
 	current_script = NULL;
@@ -759,7 +759,7 @@ makePowerOnSec(char *s2)
 {
 
 	if( current_spec->scripts[PM_POWER_ON] != NULL )
-		exit_error("Power on script already seen for this specification");
+		exit_msg("Power on script already seen for this specification");
 
 	current_spec->scripts[PM_POWER_ON] = current_script;
 	current_script = NULL;
@@ -770,7 +770,7 @@ makePowerOffSec(char *s2)
 {
 
 	if( current_spec->scripts[PM_POWER_OFF] != NULL )
-		exit_error("Power off script already seen for this specification");
+		exit_msg("Power off script already seen for this specification");
 
 	current_spec->scripts[PM_POWER_OFF] = current_script;
 	current_script = NULL;
@@ -781,7 +781,7 @@ makePowerCycleSec(char *s2)
 {
 
 	if( current_spec->scripts[PM_POWER_CYCLE] != NULL )
-		exit_error("Power cycle script already seen for this specification");
+		exit_msg("Power cycle script already seen for this specification");
 
 	current_spec->scripts[PM_POWER_CYCLE] = current_script;
 	current_script = NULL;
@@ -792,7 +792,7 @@ makeResetSec(char *s2)
 {
 
 	if( current_spec->scripts[PM_RESET] != NULL )
-		exit_error("Reset script already seen for this specification");
+		exit_msg("Reset script already seen for this specification");
 
 	current_spec->scripts[PM_RESET] = current_script;
 	current_script = NULL;
@@ -804,17 +804,17 @@ makePlugNameLine(char *s2)
 	int i = 0;
 
 	if( current_spec == NULL ) 
-		exit_error("Plug Name Line outside of Spec");
+		exit_msg("Plug Name Line outside of Spec");
 	if( current_spec->plugname == NULL ) 
-		exit_error("Plug Name Line without plugname array");
+		exit_msg("Plug Name Line without plugname array");
 	if( current_spec->size <= 0 ) 
-		exit_error("Plug Name Line with spec size = %d", current_spec->size);
+		exit_msg("Plug Name Line with spec size = %d", current_spec->size);
 	while( (current_spec->plugname[i] != NULL) && (i < current_spec->size) )
 	{
 		i++;
 	}
 	if( i == current_spec->size )
-		exit_error("More than %d Plug Name Lines", current_spec->size);
+		exit_msg("More than %d Plug Name Lines", current_spec->size);
 	current_spec->plugname[i] = make_String(s2);
 	return s2;
 }
@@ -840,7 +840,7 @@ makeDevice(char *s2, char *s3, char *s4, char *s5)
 
 /* find that spec */
 	spec = list_find_first(cheat->specs, match_Spec, s3);
-	if ( spec == NULL ) exit_error("Device specification %s not found", s3);
+	if ( spec == NULL ) exit_msg("Device specification %s not found", s3);
 
 /* make the Device */
 	dev = make_Device(s2);
@@ -854,7 +854,7 @@ makeDevice(char *s2, char *s3, char *s4, char *s5)
 		dev->devu.tcpd.host = make_String(s4);
 		dev->devu.tcpd.service = make_String(s5);
 		dev->num_plugs = spec->size;
-		forcount(i, spec->size)
+		for (i = 0; i < spec->size; i++)
 		{
 			plug = make_Plug(get_String(spec->plugname[i]));
 			list_append(dev->plugs, (void *)plug);
@@ -865,7 +865,7 @@ makeDevice(char *s2, char *s3, char *s4, char *s5)
 		dev->devu.pmd.service = make_String(s5);
 		break;
 	default :
-		exit_error("That device type is not implemented yet");
+		exit_msg("That device type is not implemented yet");
 	}
 /* begin transfering info from the Spec to the Device */
 	dev->all = copy_String(spec->all);
@@ -884,7 +884,7 @@ makeDevice(char *s2, char *s3, char *s4, char *s5)
  * to be set up.  The make_Script_El() call transforms the EXPECT strings
  * into compiled RegEx recognizers. 
  */
-	forcount(i, dev->prot->num_scripts)
+	for (i = 0; i < dev->prot->num_scripts; i++)
 	{
 		ListIterator script;
 		Spec_El *specl;
@@ -945,7 +945,7 @@ makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 	list_append(cheat->cluster->nodes, (void *)node);
 /* find the device controlling this nodes plug */
 	node->p_dev = list_find_first(cheat->devs, match_Device, s3);
-	if( node->p_dev == NULL ) exit_error("Failed to find device %s", s3);
+	if( node->p_dev == NULL ) exit_msg("Failed to find device %s", s3);
 /* PMD_DEV Plugs get created here, other Device types have Plugs      */
 /* defined in their Spec, and they must be searched to match the node */
 	switch( node->p_dev->type )
@@ -958,11 +958,11 @@ makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 		break;
 	case TCP_DEV :
 		plug = (Plug *)list_find_first(node->p_dev->plugs, match_Plug, (void *)s4);
-		if( plug == NULL ) exit_error("Can not locate plug %s on device %s", s4, s3);
+		if( plug == NULL ) exit_msg("Can not locate plug %s on device %s", s4, s3);
 		plug->node = node;
 		break;
 	default :
-		exit_error("That device type is not implemented yet");
+		exit_msg("That device type is not implemented yet");
 	}
 
 /* Some device support hard- and soft-power status.  If not a second */
@@ -976,14 +976,14 @@ makeNode(char *s2, char *s3, char *s4, char *s5, char *s6)
 	{
 		ASSERT(s6 != NULL);
 		node->n_dev = list_find_first(cheat->devs, match_Device, s3);
-		if( node->n_dev == NULL ) exit_error("Failed to find device %s", s3);
+		if( node->n_dev == NULL ) exit_msg("Failed to find device %s", s3);
 		plug = list_find_first(node->n_dev->plugs, match_Plug, (void *)s6);
 		plug->node = node;
 	}
 
 /* Finally an exhaustive search of the Interpretations in a device */
 /* is required because this node will be the target of some        */
-	forcount(i, node->p_dev->prot->num_scripts)
+	for (i = 0; i < node->p_dev->prot->num_scripts; i++)
 	{
 		script = node->p_dev->prot->scripts[i];
 		script_itr = list_iterator_create(script);
@@ -1014,5 +1014,5 @@ void
 yyerror()
 {
 	errno = 0;
-	exit_error("Parse error.  %s line %d", cheat->config_file, yyline);
+	exit_msg("Parse error.  %s line %d", cheat->config_file, yyline);
 }

@@ -32,6 +32,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <sys/socket.h>
+#include <stdio.h>
 
 #include "powerman.h"
 #include "exit_error.h"
@@ -135,6 +136,17 @@ Select(int maxfd, fd_set *rset, fd_set *wset, fd_set *eset, struct timeval *tv)
 	return n;
 }
 
+time_t
+Time(time_t *t)
+{
+	time_t n;
+
+	n = time(t);
+	if (n < 0) 
+		exit_error("time");
+	return n;
+}
+
 void
 Gettimeofday(struct timeval *tv, struct timezone *tz)
 {
@@ -149,7 +161,7 @@ Delay(struct timeval *tv)
 	struct timeval t, start, end, delta;
 
 	if (tv == NULL)
-		exit_error("Delay called with NULL timeval");
+		exit_msg("Delay called with NULL timeval");
 	t = *tv;
 	Gettimeofday(&start, NULL);
 	for (;;) {

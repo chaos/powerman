@@ -27,47 +27,50 @@
 #ifndef POWERMAN_H
 #define POWERMAN_H
 
+#define PROJECT "powerman"
+#define VERSION "1.0.0"
+
 typedef enum { FALSE=0, TRUE=1 } bool;
 
 #define NO_FD           (-1)
 #define	MAXFD	         64
 
-#define NDUMP 1  /* Don't produce global data structure dump routines */
+#define NDUMP   /* Don't produce global data structure dump routines */
+
 /* #define NDEBUG 1 Don't produce debug code */
 #ifndef NDEBUG
 /* Use debugging macros */
 
-#define ASSERT(f)    \
+#  define ASSERT(f)    \
         if(f)        \
         {}           \
         else         \
         exit_msg("Assertion failed: %s, line %u", __FILE__, __LINE__)
-#define MAGIC            int magic
-#define INIT_MAGIC(x)    (x)->magic = (MAGIC_VAL)
-#define CHECK_MAGIC(x)   ASSERT((x)->magic == MAGIC_VAL)
-#define CLEAR_MAGIC(x)   (x)->magic = (0)
+#  define MAGIC            int magic
+#  define INIT_MAGIC(x)    (x)->magic = (MAGIC_VAL)
+#  define CHECK_MAGIC(x)   ASSERT((x)->magic == MAGIC_VAL)
+#  define CLEAR_MAGIC(x)   (x)->magic = (0)
 
-#define MAGIC_VAL          0xdeadbee0
+#  define MAGIC_VAL          0xdeadbee0
 #else
 /* Don't use debugging macros */
-#define ASSERT(f)
-#define MAGIC            
-#define INIT_MAGIC(x, y) 
-#define CHECK_MAGIC(x)
-#define CLEAR_MAGIC(x)   
+#  define ASSERT(f)
+#  define MAGIC            
+#  define INIT_MAGIC(x, y) 
+#  define CHECK_MAGIC(x)
+#  define CLEAR_MAGIC(x)   
 #endif
 
 #define MAX(x, y) (((x) > (y))? (x) : (y))
 #define MIN(x, y) (((x) < (y))? (x) : (y))
-#define foreach(x, y) for (x = (y)->next; x != y; x = (x)->next)
-#define forcount(x, y) for (x = 0; x < y; (x)++)
 
-#define DAEMON_NAME   "powermand"
-#define PID_FILE_NAME "/var/run/powerman/powerman.pid"
-#define PID_DIR       "/var/run/powerman"
-#define ROOT_DIR      "/etc/powerman"
-#define DFLT_CONFIG_FILE "/etc/powerman/powerman.conf"
+#define DAEMON_NAME   		"powermand"
+#define PID_FILE_NAME 		"/var/run/powerman/powerman.pid"
+#define PID_DIR       		"/var/run/powerman"
+#define ROOT_DIR      		"/etc/powerman"
+#define DFLT_CONFIG_FILE 	"/etc/powerman/powerman.conf"
 
+/* XXX try to migrate data types back to modules that define them */
 typedef enum client_status_enum Client_Status;
 typedef struct client_struct Client;
 typedef struct action_struct Action;

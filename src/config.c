@@ -319,7 +319,7 @@ make_Spec(char *name)
 	spec->timeout.tv_usec = 0;
 	spec->mode = NO_MODE;
 	spec->scripts = (List *)Malloc(spec->num_scripts*sizeof(List));
-	forcount(i, spec->num_scripts)
+	for (i = 0; i < spec->num_scripts; i++)
 		spec->scripts[i] = NULL;
 	return spec;
 }
@@ -382,7 +382,7 @@ dump_Spec(Spec *spec)
 	fprintf(stderr, "\t\ton value: %s\n", get_String(spec->on));
 	fprintf(stderr, "\t\tall value: %s\n", get_String(spec->all));
 	fprintf(stderr, "\t\tsize: %d\n", spec->size);
-	forcount(i, spec->num_scripts)
+	for (i = 0; i < spec->num_scripts; i++)
 	{
 		fprintf(stderr, "\t\t%s script:\n", pm_coms[i]);
 		script = list_iterator_create(spec->scripts[i]);
@@ -727,11 +727,11 @@ set_tv(struct timeval *tv, char *s)
 	ASSERT( tv != NULL );
 	n = sscanf(s, "%d.%s", &sec, decimal);
 	if( (n != 2) || (sec < 0) ) 
-		exit_error("Couldn't get the seconds and useconds from %s", s);
+		exit_msg("couldn't get the seconds and useconds from %s", s);
 	len = strlen(decimal);
 	n = sscanf(decimal, "%d", &usec);
 	if( (n != 1) || (usec < 0) ) 
-		exit_error("Couldn't get the useconds from %s", decimal);
+		exit_msg("couldn't get the useconds from %s", decimal);
 	while( len > 6 )
 	{
 		usec /= 10;

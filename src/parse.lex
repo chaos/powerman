@@ -234,13 +234,13 @@ include                        BEGIN(lex_incl);
 	yytext[len - 1] = '\0';
 	
 	if ( include_stack_ptr >= MAX_INCLUDE_DEPTH )
-		exit_error("Includes nested too deeply" );
+		exit_msg("Includes nested too deeply" );
 	
 	include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
 	
 	yyin = fopen( yytext + 1, "r" );
 	
-	if ( yyin == NULL )exit_error("Failed to open file \"%s\"", yytext + 1);
+	if ( yyin == NULL )exit_error("%s", yytext + 1);
 	
 	yy_switch_to_buffer( yy_create_buffer( yyin, YY_BUF_SIZE ) );
 	BEGIN(INITIAL);

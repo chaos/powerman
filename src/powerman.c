@@ -41,7 +41,6 @@
 #include "exit_error.h"
 #include "powermand.h"
 #include "wrappers.h"
-#include "client.h"
 
 #define OPT_STRING "cd:F:h10Lnp:qrsvVQxz"
 static const struct option long_options[] =
@@ -283,7 +282,7 @@ usage(char * prog)
   -d --host HOST Server name [localhost] -p --port PORT Server port\n\
   -V --version   Display version info    -L --license   Display license\n");
     printf("TARGETS:\n\
-  Target hostname arguments - may be a glob [default] or regex [-x]\n");
+  Target hostname arguments - may contain glob [default] or regex [-x]\n");
 }
 
 /* 
@@ -885,7 +884,7 @@ update_Nodes_soft_state(List cluster, List reply)
 
 	node_i = list_iterator_create(cluster);
 	node = (Node *)list_next(node_i);
-	forcount(i, length_String(targ))
+	for(i = 0; length_String(targ); i++)
 	{
 		ASSERT( node != NULL );
 		switch(byte_String(targ, i))
@@ -922,7 +921,7 @@ update_Nodes_hard_state(List cluster, List reply)
 
 	node_i = list_iterator_create(cluster);
 	node = (Node *)list_next(node_i);
-	forcount(i, length_String(targ))
+	for (i = 0; i < length_String(targ); i++)
 	{
 		ASSERT( node != NULL );
 		switch(byte_String(targ, i))
@@ -994,7 +993,7 @@ is_prompt(String targ)
 	
 	ASSERT(targ != NULL);
 
-	forcount(i, length_String(targ))
+	for (i = 0; i < length_String(targ); i++)
 	{
 		if(byte_String(targ, i) == PROMPT) result = TRUE;
 		i++;

@@ -231,4 +231,4 @@ void dump_Send(Send_T *send);
 
 #endif
 
-#endif
+#endif /* CONFIG_H */

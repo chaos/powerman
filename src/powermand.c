@@ -77,7 +77,7 @@ Globals *cheat;  /* This is synonymous with the Globals *g declared in */
                  /* "cheat".  This only happens in exit_error() and in */
                  /* the parser.    */
 
-const char *powerman_license = \
+static const char *powerman_license = \
     "Copyright (C) 2001-2002 The Regents of the University of California.\n"  \
     "Produced at Lawrence Livermore National Laboratory.\n"                   \
     "Written by Andrew Uselton <uselton2@llnl.gov>.\n"                           \
@@ -89,7 +89,7 @@ const char *powerman_license = \
 
 #define OPT_STRING "c:fhkLrV"
 #define HAVE_RECONFIGURE_OPTION 0 /* XXX not yet */
-const struct option long_options[] =
+static const struct option long_options[] =
 {
 		{"config_file",    required_argument, 0, 'c'},
 		{"foreground",     no_argument,       0, 'f'},
@@ -103,7 +103,7 @@ const struct option long_options[] =
 		{0, 0, 0, 0}
 };
 
-const struct option *longopts = long_options;
+static const struct option *longopts = long_options;
 
 
 /*
@@ -166,7 +166,7 @@ main(int argc, char **argv)
  * option "-k".  The other options are self explanitory and less
  * important.
  */
-void
+static void
 process_command_line(Globals *g, int argc, char **argv)
 {
 	int c;
@@ -202,7 +202,7 @@ process_command_line(Globals *g, int argc, char **argv)
 			printf("%s-%s\n", PROJECT, VERSION);
 			exit(0);
 		default:
-			exit_msg("Unrecognized command line option (try -h).");
+			exit_msg("Unrecognized cmd line option (see --help).");
 			exit(0);
 			break;
 		}
@@ -237,7 +237,7 @@ process_command_line(Globals *g, int argc, char **argv)
  * There can be multiple powemand instances but currently "-k" will
  * only TERM the last one started.
  */
-void
+static void
 signal_daemon(int signum)
 {
 	FILE *fp;
@@ -257,10 +257,10 @@ signal_daemon(int signum)
 	return;
 }
 
-void usage(char *prog)
+static void 
+usage(char *prog)
 {
     printf("Usage: %s [OPTIONS]\n", prog);
-    printf("\n");
     printf("  -c --config_file FILE\tSpecify configuration [%s]\n", 
 		    DFLT_CONFIG_FILE);
     printf("  -f --foreground\tDon't daemonize (debug)\n");
@@ -271,8 +271,6 @@ void usage(char *prog)
     printf("  -r --reconfigure\tReread configuration\n");
 #endif
     printf("  -V --version\t\tDisplay version information\n");
-    printf("\n");
-    return;
 }
 
 
@@ -293,7 +291,7 @@ void usage(char *prog)
  * "quiecent" and a new action may be initiated from the list 
  * queued up by the clients.  
  */ 
-void
+static void
 do_select_loop(Globals *g)
 {
 	int maxfd = 0;
@@ -453,7 +451,7 @@ do_select_loop(Globals *g)
  * status in its data structure, device read is always on, and device
  * write stsus is also maintained in the device structure.  
  */ 
-int
+static int
 find_max_fd(Globals *g, fd_set *rs, fd_set *ws)
 {
 	Device *dev;
@@ -502,7 +500,7 @@ find_max_fd(Globals *g, fd_set *rs, fd_set *ws)
  *   Eventually this will initiate a re read of the config file and
  * a reinitialization of the internal data structures.
  */
-void
+static void
 sig_hup_handler(int signum)
 {
 	return;
@@ -517,7 +515,7 @@ sig_hup_handler(int signum)
  * some client or device connection.  The message would disapear 
  * without a trace.  
  */
-void
+static void
 exit_handler(int signum)
 {
 	syslog(LOG_NOTICE, "%s: %m", "done");
@@ -560,7 +558,7 @@ read_Config_file(Globals *g)
  *
  * produces:  Globals 
  */
-Globals *
+static Globals *
 make_Globals()
 {
 	Globals *g;
@@ -593,7 +591,7 @@ make_Globals()
 /* 
  *   Display a debug listing of everything in the Globals struct.
  */
-void
+static void
 dump_Globals(void)
 {
 	ListIterator    act_iter;
@@ -633,7 +631,7 @@ dump_Globals(void)
 		dump_Client(client);
 	list_iterator_destroy(c_iter);
 	fprintf(stderr, "\tClient Scripts:\n");
-	forcount(i, g->client_prot->num_scripts)
+	for (i = 0; i < g->client_prot->num_scripts; i++)
 		dump_Script(g->client_prot->scripts[i], i);
 	d_iter = list_iterator_create(g->devs);
 	while( (dev = (Device *)list_next(d_iter)) )
@@ -659,12 +657,13 @@ dump_Server_Status(Server_Status status)
 
 #endif
 
+#if 0
 /*
  *  destructor
  *
  * destroys:  Globals
  */
-void
+static void
 free_Globals(Globals *g)
 {
 	int i;
@@ -676,11 +675,11 @@ free_Globals(Globals *g)
 	free_Listener(g->listener);
 	list_iterator_create(g->clients);
 	list_destroy(g->clients);
-	forcount(i, g->client_prot->num_scripts)
+	for (i = 0; i < g->client_prot->num_scripts; i++)
 		list_destroy(g->client_prot->scripts[i]);
 	Free(g->client_prot, g->client_prot->num_scripts*sizeof(List *));
 	list_destroy(g->devs);
 	Free(g, sizeof(Globals));
 	free_Log();
 }
-
+#endif

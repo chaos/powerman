@@ -87,7 +87,7 @@ init_log(const char *name, int level)
 	flags = O_WRONLY | O_CREAT | O_APPEND | O_NONBLOCK;
 	log->fd = Open(get_String(log->name), flags, S_IRUSR | S_IWUSR);
 	log->to = make_Buffer(log->fd);
-	t = time(NULL);
+	t = Time(NULL);
 	log->level = level;
 	log_it(0, "Started %s", ctime(&t));
 }

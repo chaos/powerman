@@ -391,7 +391,7 @@ powerman.o: /usr/include/limits.h
 powerman.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
 powerman.o: /usr/include/bits/sockaddr.h /usr/include/asm/socket.h
 powerman.o: /usr/include/asm/sockios.h /usr/include/bits/in.h
-powerman.o: /usr/include/bits/byteswap.h /usr/include/bits/netdb.h client.h
+powerman.o: /usr/include/bits/byteswap.h /usr/include/bits/netdb.h
 powermand.o: /usr/include/errno.h /usr/include/features.h
 powermand.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
 powermand.o: /usr/include/bits/errno.h /usr/include/linux/errno.h
@@ -482,15 +482,19 @@ wrappers.o: /usr/include/sys/uio.h /usr/include/bits/uio.h
 wrappers.o: /usr/include/bits/socket.h /usr/include/limits.h
 wrappers.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/limits.h
 wrappers.o: /usr/include/bits/sockaddr.h /usr/include/asm/socket.h
-wrappers.o: /usr/include/asm/sockios.h powerman.h exit_error.h wrappers.h
+wrappers.o: /usr/include/asm/sockios.h /usr/include/stdio.h
+wrappers.o: /usr/include/libio.h /usr/include/_G_config.h
+wrappers.o: /usr/include/wchar.h /usr/include/bits/wchar.h
+wrappers.o: /usr/include/gconv.h
+wrappers.o: /usr/lib/gcc-lib/i386-redhat-linux/2.96/include/stdarg.h
+wrappers.o: /usr/include/bits/stdio_lim.h powerman.h exit_error.h wrappers.h
 wrappers.o: /usr/include/sys/time.h /usr/include/bits/time.h
 wrappers.o: /usr/include/sys/select.h /usr/include/bits/select.h
 wrappers.o: /usr/include/regex.h /usr/include/netdb.h
 wrappers.o: /usr/include/netinet/in.h /usr/include/stdint.h
-wrappers.o: /usr/include/bits/wchar.h /usr/include/bits/wordsize.h
-wrappers.o: /usr/include/bits/in.h /usr/include/endian.h
-wrappers.o: /usr/include/bits/endian.h /usr/include/bits/byteswap.h
-wrappers.o: /usr/include/bits/netdb.h
+wrappers.o: /usr/include/bits/wordsize.h /usr/include/bits/in.h
+wrappers.o: /usr/include/endian.h /usr/include/bits/endian.h
+wrappers.o: /usr/include/bits/byteswap.h /usr/include/bits/netdb.h
 wrappers.o: /usr/include/sys/time.h /usr/include/features.h
 wrappers.o: /usr/include/sys/cdefs.h /usr/include/gnu/stubs.h
 wrappers.o: /usr/include/bits/types.h

@@ -146,7 +146,7 @@ send_Buffer(Buffer b, const char *fmt, ...)
 	}
 
 /* We have space (the usual case from the start) */
-	snprintf(b->in, len + 1, str);
+	strncpy(b->in, str, len + 1);
 	if( ! is_log_buffer(b) ) /* bogus */
 		log_it(0, "send \"%s\" to descriptor %d", b->in, b->fd);
 	b->in += len;
@@ -180,7 +180,7 @@ check_Buffer(Buffer b, int len)
 	{
 		if( ! is_log_buffer(b) ) /* bogus */
 			log_it(0, "Buffer shift required on descriptr %d", b->fd);
-		forcount (i, num)
+		for (i = 0; i <  num; i++)
 			b->buf[i] = b->buf[i + del];
 		b->out -= del;
 		b->in  -= del;
@@ -251,7 +251,7 @@ read_Buffer(Buffer b)
 	 * (all bits zero) character."
 	 * http://www.scit.wlv.ac.uk/~jphb/comms/telnet.html
 	 */
-	forcount(i, n - 1)
+	for (i = 0; i < n - 1; i++)
 	  if(b->in[i] == '\0') b->in[i] = '\n';
 
 	/* Make room if needed and possible */
@@ -259,7 +259,7 @@ read_Buffer(Buffer b)
 
 	/* If there still isn't room enough we'll just have to drop some */
 	len = ( n > b->end - b->in ) ? b->end - b->in : n;
-	snprintf(b->in, len + 1, str);
+	strncpy(b->in, str, len + 1);
 	b->in += len;
 	*(b->in) = '\0';
 	return n;
@@ -290,6 +290,7 @@ empty_Buffer(Buffer b)
  * an empty line (just "\n" or "\r\n") is not returned to 
  * the caller as a line of input.
  */
+/* XXX overflow possible */
 int
 get_str_from_Buffer(Buffer b, regex_t *re, char *str, int length)
 {
@@ -302,7 +303,8 @@ get_str_from_Buffer(Buffer b, regex_t *re, char *str, int length)
 	len = b->in - b->out;
 
 	memset(str, 0, length);
-	snprintf(str, len + 1, b->out);
+	ASSERT(len + 1 < length);
+	strncpy(str, b->out, len + 1);
 	if( re == NULL )
 		/* get a line */
 		pos = (char *)memchr(str, '\n', len);

@@ -63,6 +63,7 @@ pid_t Fork(void);
 typedef void Sigfunc(int);
 Sigfunc *Signal(int signo, Sigfunc *func);
 void Gettimeofday(struct timeval *tv, struct timezone *tz);
+time_t Time(time_t *t);
 #ifndef NDUMP
 void Report_Memory(void);
 #endif

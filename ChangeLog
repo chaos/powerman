@@ -54,3 +54,5 @@
 	  set improperly, and start with a default config file.
 	* Powermand options changed per code review.
 	* Moved system includes out of powerman.h.
+	* Merged general code review suggestions in to TODO file
+	  (but not the specific yet)

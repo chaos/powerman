@@ -28,4 +28,4 @@
 
 void daemon_init(void);
 
-#endif
+#endif /* DAEMON_INIT_H */
