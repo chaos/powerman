@@ -112,7 +112,8 @@ def node_cmp(n1, n2):
 def prompt(fd, string, delay):
     log("say:  " + string)
     os.write(fd, string + '\r\n')
-    time.sleep(delay)
+    if (delay > 0):
+        time.sleep(delay)
     done = 0
     retry_count = 0
     response = ""

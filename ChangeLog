@@ -104,6 +104,13 @@
 #       by a single "prompt" command.  The signal handling for the
 #	alarm is with the prompt command and both are in the pm_utils
 #       module.   Other minor changes and bug fixes.
+# v. 0-2-0: 2001-10-?
+#	           Added a random 0.25 to 1.0 second back off in 
+#	attempt to acquire lock on tty in icebox, with 60 retries before
+#	failure.  This is in support of conman's spawning of n parallel
+#	threads to invoke powerman one node at a time for resets.
+#	Also removed any delay in querying mode and set delays back to 
+#	0.3 seconds per port or 3.5 seconds per icebox.
 ####################################################################
 
 

@@ -16,6 +16,7 @@ import time
 import signal
 import pm_utils, pm_classes
 import termios, TERMIOS
+import random
 
 class NodeDataClass:
     "Class definition for icebox attached nodes"
@@ -39,7 +40,7 @@ class PortClass:
     "Class definition for an icebox port"
     name       = ""
     node       = None
-    PORT_DELAY = 0.5
+    PORT_DELAY = 0.3
 
     def __init__(self, node):
         "Port class initialization"
@@ -85,7 +86,10 @@ class PortClass:
         good_response = 0
         while (not good_response and (retry_count < 10)):
             retry_count = retry_count + 1
-            response = pm_utils.prompt(tty, target, self.PORT_DELAY)
+            delay = 0
+            if (setting):
+                delay = PORT_DELAY
+            response = pm_utils.prompt(tty, target, delay)
             if(response == ''):
                 continue
             if (setting):
@@ -106,7 +110,7 @@ class PortClass:
                     self.node.mark(self.node.name)
             elif((com == 'ts') or (com == 'tsf')):
                 temps = val
-                self.node.mark("%s:%s", (self.node.name, temps))
+                self.node.mark("%s:%s" % (self.node.name, temps))
         if (not good_response):
             pm_utils.exit_error(21, self.name + ",box " + box.name)
 
@@ -115,7 +119,7 @@ class BoxClass:
     name             = ""
     ports            = {}
     ICEBOX_SIZE      = 10
-    BOX_DELAY        = 5.0
+    BOX_DELAY        = 3.5
 
     def __init__(self, name):
         "Box class initialization"
@@ -166,7 +170,10 @@ class BoxClass:
             good_response = 0
             while (not (good_response == 10) and (retry_count < 10)):
                 retry_count = retry_count + 1
-                response = pm_utils.prompt(tty, target, self.BOX_DELAY)
+                delay = 0
+                if (setting):
+                    delay = BOX_DELAY
+                response = pm_utils.prompt(tty, target, delay)
                 if(response == ''):
                     continue
                 if (setting):
@@ -220,15 +227,17 @@ class BoxClass:
 
 class TtyClass:
     "Class definition for a tty with icebox(es) attached"
-    name            = ""
-    boxes           = {}
+    name       = ""
+    boxes      = {}
+    locked     = 0
     prev_attrs = None
 
     def __init__(self, name):
         "Tty class initialization"
-        self.name            = name
-        self.boxes           = {}
+        self.name       = name
+        self.boxes      = {}
         self.prev_attrs = None
+        self.locked     = 0
 
     def do_command(self):
         # print "Doing tty command", com
@@ -239,10 +248,20 @@ class TtyClass:
             tty = os.open(self.name, os.O_RDWR | os.O_SYNC, 0)
         except IOError:
             pm_utils.exit_error(18, self.name)
-        try:
-            fcntl.lockf(tty, FCNTL.LOCK_EX | FCNTL.LOCK_NB)
-        except IOError:
-            pm_utils.exit_error(19, self.name)
+            # This code was added in suport of conman's reset function
+            # which will spawn n parallel calls to powerman with a
+            # single node each
+        retry_count = 60
+        while (not self.locked and retry_count):
+            retry_count = retry_count - 1
+            try:
+                fcntl.lockf(tty, FCNTL.LOCK_EX | FCNTL.LOCK_NB)
+                self.locked = 1
+            except IOError:
+                if (retry_count):
+                    sleep(random.random(0.25, 1.0))
+                else:
+                    pm_utils.exit_error(19, self.name)
         try:
             start_attrs = termios.tcgetattr(tty)
         except IOError:
@@ -266,6 +285,7 @@ class TtyClass:
             termios.tcsetattr(tty, TERMIOS.TCSANOW, start_attrs)
         except IOError:
             pm_utils.exit_error(24, self.name)
+        self.locked = 0
         fcntl.lockf(tty, FCNTL.LOCK_UN)
         os.close(tty)
         # end of do_command for ttys

@@ -123,15 +123,15 @@ for opt in options:
     else:
         usage("Unrecognized option " + op + "\n")
 
-if (args and args[0] and not com):
-    com = string.lower(args[0])
-    if (not ((com == 'off') or (com == 'on') or (com == 'reset'))):
-        usage ("\n\nUnrecognized command.")
-else:
-    if (reverse):
+if (not com):
+    if (args and args[0]):
+        com = string.lower(args[0])
+    elif (reverse):
         com = "rquery"
     else:
         com = "query"
+if (not ((com == 'off') or (com == 'on') or (com == 'reset') or (com == 'temp') or (com == 'query') or (com == 'rquery'))):
+    usage ("\n\nUnrecognized command.")
     
         
 
