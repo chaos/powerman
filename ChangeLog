@@ -2,6 +2,9 @@
 	* Fixed bug where Action "found" client by client struct address, but
 	  if client had died, address could still be valid.  Now we use a 
 	  unique integer identifier to find client.
+	* Made device read/write error handling a little cleaner.
+	* Don't set plug state to unknown before querying status to avoid
+	  triggering race described in FIXME comment in client.c _parse_input()
 
 2002-10-06 garlick
 	* More man page edits.

@@ -381,14 +381,23 @@ static void _parse_input(Client *c, char *input)
     } else if (sscanf(str, CP_RESET, arg1) == 1) {	/* reset hostlist */
 	cmd = _create_command(c, PM_RESET, arg1);
     } else if (sscanf(str, CP_STATUS, arg1) == 1) {	/* status [hostlist] */
-	_client_query_status_init(); /* set state to unknown */
+	/*_client_query_status_init(); */ /* see FIXME below */
 	cmd = _create_command(c, PM_UPDATE_PLUGS, arg1);
     } else if (!strncasecmp(str, CP_STATUS_ALL, strlen(CP_STATUS_ALL))) {
-	_client_query_status_init(); /* set state to unknown */
+	/*_client_query_status_init(); */ /* see FIXME below */
 	cmd = _create_command(c, PM_UPDATE_PLUGS, NULL);
     } else {						/* error: unknown */
 	_client_msg(c, CP_ERR_UNKNOWN);
     }
+    /* FIXME: state query utilizes essentially global variables to store
+     * the state.  This results in a race when multiple query commands are
+     * being processed simultaneously.  
+     * The _client_query_status_init() calls above are commented out to
+     * avoid returning "unknown" data to one client while another's status
+     * query is in progress.  This works at the moment because "unknown"
+     * can never be returned to the client, since actions don't currently
+     * time out when a device is not accessible.
+     */
 
     /* enqueue device actions and tie up the client if necessary */
     /* Note: cmd->hl may be NULL */

@@ -553,12 +553,15 @@ static void _handle_read(Device * dev)
 
     CHECK_MAGIC(dev);
     n = buf_read(dev->from);
-    if (n < 0 && errno == EWOULDBLOCK) {
+    assert(n >= 0 || errno == ECONNRESET || errno == EWOULDBLOCK);
+    if (n < 0) {
 	err(TRUE, "read error on %s", dev->name);
+	_disconnect(dev);
+	_reconnect(dev);
 	return;
     }
-    if (n == 0 || (n < 0 && errno == ECONNRESET)) {
-	err(n < 0, "read error on %s", dev->name);
+    if (n == 0) {
+	err(FALSE, "read returned EOF on %s", dev->name);
 	_disconnect(dev);
 	_reconnect(dev);
 	return;
@@ -575,9 +578,18 @@ static void _handle_write(Device * dev)
     CHECK_MAGIC(dev);
 
     n = buf_write(dev->to);
-    assert(n >= 0 || (errno == ECONNRESET || errno == EWOULDBLOCK));
-    if (n <= 0)
-	err(n < 0, "write error on %s", dev->name);
+    assert (n >= 0 || errno == EAGAIN || errno == ECONNRESET || errno == EPIPE);
+    if (n < 0) {
+	err(TRUE, "write error on %s", dev->name);
+	_disconnect(dev);
+	_reconnect(dev);
+    }
+    if (n == 0) {
+	err(TRUE, "write sent no data on %s", dev->name);
+	_disconnect(dev);
+	_reconnect(dev);
+	/* XXX: is this even possible? */
+    }
 }
 
 static void _disconnect(Device *dev)
@@ -1125,6 +1137,8 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 		_process_action(dev, timeout);
 	    /* FIXME: actions can't make progress toward timing out if
 	     * device is not in connected state.
+	     * NOTE: the FIXME in client.c::_parse_input() (race on global 
+	     * plug state) needs to be fixed at the same time as this one.
 	     */
 	}
     }

@@ -21,6 +21,7 @@
 #include <sys/socket.h>
 #include <string.h>
 #include <signal.h>
+#include <errno.h>
 
 #define NUM_THREADS	8
 #define BASE_PORT	8080
@@ -52,10 +53,11 @@ static int _dgets(char *buf, int size, int fd)
     char *p = buf;
     int sizeleft = size;
     char c;
+    int res;
 
     while (sizeleft > 1) { /* leave room for terminating null */
-	if (read(fd, &c, 1) <= 0)
-	    return -1;
+	if ((res = read(fd, &c, 1)) <= 0)
+	    return res;
 	if (c == '\n')
 	    break;
 	if (c == '\r')
@@ -91,6 +93,7 @@ static void _prompt_loop(int num, int fd)
     int i;
     int n1;
     int logged_in = 0;
+    int res;
 
     for (seq = 0; ; seq++) {
 	char buf[128];
@@ -101,8 +104,13 @@ static void _prompt_loop(int num, int fd)
 	}
 
 	dprintf(fd, "%d vpc> ", seq);		/* prompt */
-	if (_dgets(buf, sizeof(buf), fd) < 0) {
-	    printf("%d: lost connection\n", num);
+	res = _dgets(buf, sizeof(buf), fd);
+	if (res < 0) {
+	    printf("%d: %s\n", num, strerror(errno));
+	    break;
+	}
+	if (res == 0) {
+	    printf("%d: read returned EOF\n", num);
 	    break;
 	}
 	if (strlen(buf) == 0)			/* empty command */

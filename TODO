@@ -1,7 +1,13 @@
+* Bug: running "pm -q" in a tight loop against vpcd will occasionally result
+  in read returning 0 in device.c, which results in disconnect/reconnect for
+  that device, after which everything carries on.  (Bug may be in vpcd).
+* Bug: actions cannot make progress towards timing out while devices are
+  not connected.  
 * Bug: since plug state is global and is reset before each status query, 
   simultaneous status queries will return unpredictable results.
-* Bug: while running "while true; do pm -q; done", commands to power on/off
-  nodes will occasionally results in disconnect/reconnect to device.
+  (NOTE: workaround applied in client.c::_parse_input() which depends on
+  the "cannot make progress toward timing out" bug above.  See note there.)
+* PM_LOG_OFF action is not used - remove from the code.
 * Build failure simulator test suite
 * Package with autoconf
 * Still several small memory leaks, find them
@@ -10,9 +16,6 @@
   per subpanel (and express device-subpanel relationship and subpanel max 
   parallelism in config file)
 * powerman client needs to implement option for expanding hostranges
-* Issuing a command involving an RPC that is currently in connect-retry mode
-  causes the client to hang forever.  See FIXME note at bottom of device.c.
-  (Bug: a lot of commands could be queued for a device that is down long term.)
 * Make "soft" power status query possible again in server
 * Client should have option for verifying soft power status (expand hostranges
   and issue warnings where plug is on but node is off).  Needs to be optional
