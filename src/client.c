@@ -45,9 +45,9 @@
 #include "util.h"
 #include "action.h"
 #include "hostlist.h"
+#include "client_proto.h"
 
 #define LISTEN_BACKLOG    5
-#define PROMPT            "PowerMan> "
 
 /* prototypes */
 static Action *_process_input(Client *c);
@@ -80,48 +80,33 @@ void cli_fini(void)
     list_destroy(cli_clients);
 }
 
-
-static void _command_help(Client *c)
+static void _client_msg(Client *c, char *fmt, char *arg1)
 {
     c->write_status = CLI_WRITING;
-    buf_printf(c->to,
-        "------------- Command Reference -------------\r\n"
-        "query-hard <nodes>  - query hard power status\r\n"
-        "query-soft <nodes>  - query soft power status\r\n"
-        "query-nodes         - query available node list\r\n"
-        "on <nodes>          - hard power on\r\n"
-        "off <nodes>         - hard power off\r\n"
-        "cycle <nodes>       - hard power cycle\r\n"
-        "reset <nodes>       - soft power reset\r\n"
-        "help                - display help\r\n"
-        "quit                - logout\r\n"); 
+    buf_printf(c->to, fmt, arg1);
 }
 
-
-static void _command_unknown(Client *c, String expect)
+static void _client_prompt(Client *c)
 {
     c->write_status = CLI_WRITING;
-    buf_printf(c->to, "Unknown command\r\n" PROMPT);
+    buf_printf(c->to, CP_PROMPT);
 }
-
 
 static void _hostlist_error(Client *c)
 {
     c->write_status = CLI_WRITING;
-    buf_printf(c->to, "Error: ");
 
     switch (errno) {
         case ERANGE:
-            buf_printf(c->to, "Too many hosts in range\r\n");
+	    _client_msg(c, CP_ERR_HLRANGE, NULL);
             break;
         case EINVAL:
-            buf_printf(c->to, "Invalid hostlist range\r\n");
+	    _client_msg(c, CP_ERR_HLINVAL, NULL);
             break;
         default:
-            buf_printf(c->to, "Unknown hostlist error\r\n");
+	    _client_msg(c, CP_ERR_HLUNK, NULL);
+	    break;
     }
-
-    buf_printf(c->to, PROMPT);
 }
 
 
@@ -225,60 +210,56 @@ static void _handle_client_write(Client * c)
  */
 static Action *_parse_input(Client *c, String expect)
 {
-    Action *act;
+    Action *act = NULL;
     char *str = str_get(expect);
-    char cmd[4096], arg[4096];
+    char arg1[CP_LINEMAX];
+    int args = 0;
 
-    memset(cmd, 0, 4096);
-    memset(arg, 0, 4096);
+    memset(arg1, 0, CP_LINEMAX);
 
     /* Break the command in to <command> <arg> and discard any
      * leading or trailing white space.  Only one arg is accepted,
      * all others will be discarded.
-     * FIXME: Buffer overruns are possible, fix it properly
      */
-    if (sscanf(str, "%s %s", cmd, arg) < 1) {
-        c->write_status = CLI_WRITING;
-        buf_printf(c->to, PROMPT);
-        return NULL;
+
+    if (strlen(str) >= CP_LINEMAX) {
+	_client_msg(c, CP_ERR_TOOLONG, NULL);
+    } else if (!strncasecmp(str, CP_HELP, strlen(CP_HELP))) {
+	_client_msg(c, CP_RSP_HELP, NULL);
+    } else if (!strncasecmp(str, CP_QUERY_STATUS, strlen(CP_QUERY_STATUS))) {
+	act = act_create(PM_UPDATE_PLUGS);
+    } else if (!strncasecmp(str, CP_QUERY_NODES, strlen(CP_QUERY_NODES))) {
+        act = act_create(PM_NAMES);
+    } else if (!strncasecmp(str, CP_QUIT, strlen(CP_QUIT))) {
+        act = act_create(PM_LOG_OUT); 
+    } else if (sscanf(str, CP_ON, arg1) == 1) {
+        act = act_create(PM_POWER_ON);
+	args = 1;
+    } else if (sscanf(str, CP_OFF, arg1) == 1) {
+        act = act_create(PM_POWER_OFF);
+	args = 1;
+    } else if (sscanf(str, CP_CYCLE, arg1) == 1) {
+        act = act_create(PM_POWER_CYCLE);
+	args = 1;
+    } else if (sscanf(str, CP_RESET, arg1) == 1) {
+        act = act_create(PM_RESET); 
+	args = 1;
+    } else {
+	_client_msg(c, CP_ERR_UNKNOWN, NULL);
     }
 
-    act = act_create(PM_ERROR);
-
-    if (!strncasecmp(cmd, "query-hard", 10))
-        act->com = PM_UPDATE_PLUGS;
-    else if (!strncasecmp(cmd, "query-soft", 10))
-        act->com = PM_UPDATE_NODES;
-    else if (!strncasecmp(cmd, "query-nodes", 11))
-        act->com = PM_NAMES;
-    else if (!strncasecmp(cmd, "on", 2))
-        act->com = PM_POWER_ON;
-    else if (!strncasecmp(cmd, "off", 3))
-        act->com = PM_POWER_OFF;
-    else if (!strncasecmp(cmd, "cycle", 5))
-        act->com = PM_POWER_CYCLE;
-    else if (!strncasecmp(cmd, "reset", 5))
-        act->com = PM_RESET;
-    else if (!strncasecmp(cmd, "quit", 4))
-        act->com = PM_LOG_OUT;
-    else if (!strncasecmp(cmd, "help", 4)) {
-        _command_help(c);
-        act->com = PM_CHECK_LOGIN;
+    /* convert argument to hostlist */
+    assert(args == 1 || args == 0);
+    if (act != NULL && args == 1) {
+	act->target = str_create(arg1);
+	if ((act->hl = hostlist_create(arg1)) == NULL) {
+	    _hostlist_error(c);
+	    act_destroy(act); 
+	    act = NULL;
+	}
     }
-
-    if (act->com == PM_ERROR) {
-        _command_unknown(c, expect);
-        act_destroy(act); 
-        return NULL;
-    }
-
-    if ((act->hl = hostlist_create(arg)) == NULL) {
-        _hostlist_error(c);
-        act_destroy(act); 
-        return NULL;
-    }
-
-    act->target = str_create(arg);
+    if (act == NULL)
+	_client_prompt(c);
     return act; 
 }
 
@@ -306,10 +287,11 @@ void cli_reply(Action * act)
 
     switch (act->com) {
         case PM_ERROR:
-            buf_printf(client->to, "%s\r\n" PROMPT, "Error: Internal");
+	    /* shouldn't happen */
+	    _client_msg(client, CP_ERR_INTERNAL, NULL);
             break;
         case PM_LOG_OUT:
-            buf_printf(client->to, "Goodbye\r\n");
+	    _client_msg(client, CP_RSP_QUIT, NULL);
             _handle_client_write(client);
             client->read_status = CLI_DONE;
             client->write_status = CLI_IDLE;
@@ -319,26 +301,26 @@ void cli_reply(Action * act)
                 buf_printf(client->to, (node->p_state == ST_ON) ? "1" :
                     ((node->p_state == ST_OFF) ? "0" : "?"));
                 
-            buf_printf(client->to, "\r\n" PROMPT);
+            buf_printf(client->to, "\r\n" CP_PROMPT);
             break;
         case PM_UPDATE_NODES:  /* query-hard */
             while ((node = list_next(itr)))
                 buf_printf(client->to, (node->n_state == ST_ON) ? "1" :
                     ((node->n_state == ST_OFF) ? "0" : "?"));
 
-            buf_printf(client->to, "\r\n" PROMPT);
+            buf_printf(client->to, "\r\n" CP_PROMPT);
             break;
         case PM_CHECK_LOGIN:
         case PM_POWER_ON:
         case PM_POWER_OFF:
         case PM_POWER_CYCLE:
         case PM_RESET:
-            buf_printf(client->to, PROMPT);
+            buf_printf(client->to, CP_PROMPT);
             break;
         case PM_NAMES:
 
             if ((hl = hostlist_create(NULL)) == NULL) {
-                buf_printf(client->to, "%s\r\n" PROMPT,
+                buf_printf(client->to, "%s\r\n" CP_PROMPT,
                     "Error: Unable to create hostlist");
                 break;
             }
@@ -350,7 +332,7 @@ void cli_reply(Action * act)
             if (hostlist_ranged_string(hl, 4096, hosts) == -1)
                 syslog(LOG_ERR, "%s", "Truncated hostlist returned to client");
                 
-            buf_printf(client->to, "%s\r\n" PROMPT, hosts);
+            buf_printf(client->to, "%s\r\n" CP_PROMPT, hosts);
             hostlist_destroy(hl);
             break;
         default:
@@ -539,7 +521,7 @@ static void _create_client(void)
     syslog(LOG_DEBUG, "New connection: <%s, %d> on descriptor %d",
         fqdn, client->port, client->fd);
     client->write_status = CLI_WRITING;
-    buf_printf(client->to, "PowerMan v" VERSION "\r\n" PROMPT);
+    buf_printf(client->to, "PowerMan v" VERSION "\r\n" CP_PROMPT);
 }
 
 
