@@ -104,7 +104,7 @@ fi
 /etc/powerman/wti.dev
 /etc/powerman/vicebox.dev
 %config(noreplace) /etc/powerman/powerman.conf
-%config(noreplace) /etc/rc.d/init.d/powerman
+%config(noreplace) %attr(0755,root,root)/etc/rc.d/init.d/powerman
 /usr/man/man1/powerman.1*
 /usr/man/man1/powermand.1*
 /usr/man/man5/powerman.conf.5*
