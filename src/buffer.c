@@ -37,7 +37,6 @@
 #include "exit_error.h"
 #include "wrappers.h"
 #include "buffer.h"
-#include "log.h"
 
 
 #define BUF_MAGIC  0x4244052

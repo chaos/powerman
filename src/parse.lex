@@ -170,6 +170,7 @@ extern void yyerror();
 	"\\TELOPT_AUTHENTICATION"     *string_buf_ptr++ =  37;
 	"\\TELOPT_ENCRYPT"            *string_buf_ptr++ =  38;
 	"\\TELOPT_NEW_ENVIRON"        *string_buf_ptr++ =  39;
+	\\[0-9][0-9][0-9]	      *string_buf_ptr++ =  strtol(&yytext[1], NULL, 8);
 	\\(.|\n)                      *string_buf_ptr++ = yytext[1];
 	[^\\\n\"]+               {
 		char *yptr = yytext;

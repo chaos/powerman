@@ -56,7 +56,6 @@
 #include "server.h"
 #include "exit_error.h"
 #include "wrappers.h"
-#include "log.h"
 
 /* prototypes */
 static void process_command_line(Globals *g, int argc, char **argv);
@@ -123,11 +122,7 @@ main(int argc, char **argv)
 	Device *dev;
 	ListIterator dev_i;
 
-#ifdef NDUMP
-	init_error(argv[0], NULL);
-#else
-	init_error(argv[0], dump_Globals);
-#endif
+	init_error(argv[0]);
 	cheat = g = make_Globals();
 	
 	process_command_line(g, argc, argv);
@@ -142,8 +137,6 @@ main(int argc, char **argv)
 	if( g->daemonize )
 		daemon_init(); 	/* closes all open fd's, opens syslog */
 				/*   and tells exit_error to use syslog */
-
-	start_Log();		/* opens log file (if any) */
 
 	dev_i = list_iterator_create(g->devs);
 	while( (dev = (Device *)list_next(dev_i)) )
@@ -255,8 +248,6 @@ do_select_loop(Globals *g)
 	bool active_devs; /* active_devs == FALSE => Quiescent */
 	bool activity;    /* activity == TRUE => scripts need service */
 	Action *act;
-	struct timeval now;
-	struct timeval hourly;
 
 	CHECK_MAGIC(g);
 
@@ -282,22 +273,6 @@ do_select_loop(Globals *g)
  */  
 		tv = g->timeout_interval;
 		n = Select(maxfd + 1, &rset, &wset, NULL, &tv);
-
-		/* time to time stamp the log?     */
-		/* it does so on the hour, but     */
-		/* make sure it does it only once. */
-		Gettimeofday(&now, NULL);
-		if ( ((now.tv_sec % 3600) == 0) &&
-		     (now.tv_sec != hourly.tv_sec) )
-		{
-			hourly = now;
-			send_Log(0, "Hourly time stamp %s: ", 
-			       ctime(&(hourly.tv_sec)));
-		}
-
-                /* Log write?  */
-		if ( write_pending_Log() && FD_ISSET(fd_Log(), &wset) )
-			handle_Log();
 
                 /* New connection? */
 		if ( FD_ISSET(g->listener->fd, &rset) )
@@ -415,10 +390,6 @@ find_max_fd(Globals *g, fd_set *rs, fd_set *ws)
 	 */
 	FD_ZERO(rs);
 	FD_ZERO(ws);
-	if (write_pending_Log()) {
-		FD_SET(fd_Log(), ws);
-		maxfd = MAX(maxfd, fd_Log());
-	}
 	if (g->listener->read)  {
 		FD_SET(g->listener->fd, rs);
 		maxfd = MAX(maxfd, g->listener->fd);
@@ -632,6 +603,5 @@ free_Globals(Globals *g)
 	Free(g->client_prot);
 	list_destroy(g->devs);
 	Free(g);
-	free_Log();
 }
 #endif

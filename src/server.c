@@ -27,6 +27,7 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
+#include <syslog.h>
 
 #include "powerman.h"
 #include "list.h"
@@ -37,7 +38,6 @@
 #include "wrappers.h"
 #include "pm_string.h"
 #include "buffer.h"
-#include "log.h"
 #include "server.h"
 #include "util.h"
 
@@ -425,7 +425,7 @@ free_Client(void *vclient)
 	if( client->fd != NO_FD ) 
 	{
 		Close(client->fd);
-		send_Log(0, "client on descriptor %d signs off", ((Client *)client)->fd);
+		syslog(LOG_DEBUG, "client on descriptor %d signs off", ((Client *)client)->fd);
 	}
 	if( client->to != NULL ) free_Buffer(client->to);
 	if( client->from != NULL ) free_Buffer(client->from);

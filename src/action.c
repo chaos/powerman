@@ -28,6 +28,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <syslog.h>
 
 #include "powerman.h"
 
@@ -35,7 +36,6 @@
 #include "wrappers.h"
 #include "exit_error.h"
 #include "buffer.h"
-#include "log.h"
 #include "config.h"
 #include "device.h"
 #include "powermand.h"
@@ -70,7 +70,7 @@ update_Action(Cluster *cluster, List acts)
 	Action *act;
 
 	Gettimeofday( &(cluster->time_stamp), NULL);
-	send_Log(0, "Updating %s", ctime(&(cluster->time_stamp.tv_sec)));
+	syslog(LOG_INFO, "Updating plugs and nodes");
 
 	act = make_Action(PM_UPDATE_PLUGS);
 	list_append(acts, (void *)act);

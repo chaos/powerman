@@ -29,8 +29,7 @@
 
 #include "powerman.h" 
 
-typedef void (*ErrCallback)(void);
-void init_error(char *prog, ErrCallback callback);
+void init_error(char *prog);
 void syslog_on_error(bool syslog_enable);
 void exit_error(const char *fmt, ...);
 void exit_msg(const char *fmt, ...);

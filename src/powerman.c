@@ -150,7 +150,7 @@ main(int argc, char **argv)
 {
 	Config *conf;
 
-	init_error(argv[0], NULL);
+	init_error(argv[0]);
 	conf = process_command_line(argc, argv);
 
 	/*if( geteuid() != 0 ) exit_msg("Must be root");*/

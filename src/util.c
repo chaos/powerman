@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <sys/types.h>
 #include <regex.h>
+#include <assert.h>
+#include <string.h>
+#include <ctype.h>
 
 #include "powerman.h"
 
@@ -51,4 +54,43 @@ get_String_from_Buffer(Buffer b, regex_t *re)
 		match = TRUE;
 	}
 	return (match ? make_String(str) : NULL);
+}
+
+/*
+ * Convert memory to string, turning non-printable character into "C" representation.
+ * Call Free() on the result to free its storage.
+ */
+char *
+memstr(char *mem, int len)
+{
+	int i, j; 
+	int strsize = len * 4; /* worst case */
+	char *str= Malloc(strsize + 1);
+
+	for (i = j = 0; i < len; i++)
+	{
+		switch (mem[i])
+		{
+			case '\r':
+				strcpy(&str[j], "\\r");
+				j += 2;	
+				break;
+			case '\n':
+				strcpy(&str[j], "\\n");
+				j += 2;	
+				break;
+			default:
+				if (isprint(mem[i]))
+					str[j++] = mem[i];
+				else
+				{
+					sprintf(&str[j], "\\%.3o", mem[i]);
+					j += 4;
+				}
+				break;
+		}
+		assert(j <= strsize || i == len);
+	}
+	str[j] = '\0';
+	return str;
 }

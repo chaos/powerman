@@ -42,31 +42,18 @@
 
 static char *program = NULL;	/* basename of calling program */
 static bool syslog_on = FALSE;	/* use stderr until told otherwise */
-static ErrCallback error_callback = NULL; /* called just before exit */
 
 #define ERROR_BUFLEN 1024
-
-static void
-_make_error_callback(void)
-{
-	ErrCallback cb = error_callback;
-
-	error_callback = NULL; /* prevent recursion */
-	if (cb)
-		cb();
-}
 
 /*
  * Initialize this module with the name of the program.
  */
 void
-init_error(char *prog, ErrCallback cb)
+init_error(char *prog)
 {
 	char *p = strrchr(prog, '/'); /* store only the basename */
 
 	program = p ? p + 1 : prog;
-
-	error_callback = cb;
 }
 
 /*
@@ -99,7 +86,6 @@ exit_msg(const char *fmt, ...)
 	else
 		fprintf(stderr, "%s: %s\n", program, buf);
 
-	_make_error_callback();
 	exit(1);
 }
 
@@ -126,6 +112,5 @@ exit_error(const char *fmt, ...)
 	else
 		fprintf(stderr, "%s: %s: %s\n", program, buf, strerror(er));
 
-	_make_error_callback();
 	exit(1);
 }

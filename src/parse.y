@@ -43,7 +43,6 @@
 #include "server.h"
 #include "listener.h"
 #include "exit_error.h"
-#include "log.h"
 #include "pm_string.h"
 #include "buffer.h"
 #include "wrappers.h"
@@ -74,7 +73,6 @@ static char *makeSpecType(char *s2);
 static char *makeSpecName(char *s2);
 static Spec *check_Spec();
 static char *makeClientPort(char *s2);
-static char *makeLogFile(char *s2, char *s3);
 static char *makeDevTimeout(char *s2);
 static char *makeUpdate(char *s2);
 static char *makeInterDev(char *s2);
@@ -299,7 +297,6 @@ global_item_list : global_item_list global_item
                  | global_item
 ;
 global_item : TCP_wrappers
-	    | log_file 
 	    | client_port 
             | timeout          /* select() loop pace */
             | interdev         /* delay batween device commands */
@@ -307,10 +304,6 @@ global_item : TCP_wrappers
 ;
 TCP_wrappers : TOK_TCP_WRAPPERS {
 	$$ = (char *)makeTCPWrappers();
-}
-;
-log_file : TOK_LOG_FILE TOK_STRING_VAL TOK_STRING_VAL {
-	$$ = (char *)makeLogFile($2, $3);
 }
 ;
 client_port : TOK_CLIENT_PORT TOK_STRING_VAL {
@@ -385,23 +378,6 @@ makeTCPWrappers()
 {
 	cheat->TCP_wrappers = TRUE;
 	return NULL;
-}
-
-char *
-makeLogFile(char *s2, char *s3)
-{
-	int n;
-	int level;
-
-	assert( s2 != NULL );
-
-/* gets the "log" fd, prints a timestamp */
-/* log level 0 is the most restrictive */
-	n = sscanf(s3, "%d", &level);
-	if ( n != 1)
-		level = 0;
-	make_Log(s2, level); /* exits if already initialized */
-	return s2;
 }
 
 char *

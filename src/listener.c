@@ -39,7 +39,6 @@
 #include "server.h"
 #include "buffer.h"
 #include "exit_error.h"
-#include "log.h"
 #include "pm_string.h"
 #include "listener.h"
 
@@ -137,7 +136,7 @@ handle_Listener(Globals *g)
 /* client died after it initiated connect and before we could accept */
 	{
 		free_Client(client);
-		send_Log(0, "Client aborted connection attempt");
+		syslog(LOG_ERR, "Client aborted connection attempt");
 		return;
 	}
 
@@ -147,7 +146,7 @@ handle_Listener(Globals *g)
 	{
 		Close(client->fd);
 		free_Client(client);
-		send_Log(0, "Unable to convert network address into string");
+		syslog(LOG_ERR, "Unable to convert network address into string");
 		return;
 	}
 	client->to = make_Buffer(client->fd, MAX_BUF);
@@ -164,7 +163,7 @@ handle_Listener(Globals *g)
 	/* get client->host */
 	if ( (hent = gethostbyaddr((const char *) &saddr.sin_addr, sizeof(struct in_addr), AF_INET)) == NULL ) 
 	{
-		send_Log(0, "Unable to get host name from network address");
+		syslog(LOG_ERR, "Unable to get host name from network address");
 	}
 	else
 	{
@@ -181,7 +180,7 @@ handle_Listener(Globals *g)
 		{
 			Close(client->fd);
 			free_Client(client);
-			send_Log(0, "Client rejected: <%s, %d>", fqdn, client->port);
+			syslog(LOG_ERR, "Client rejected: <%s, %d>", fqdn, client->port);
 			return;
 		}
 	}
@@ -193,7 +192,7 @@ handle_Listener(Globals *g)
 	fd_settings = Fcntl(client->fd, F_GETFL, 0);
 	Fcntl(client->fd, F_SETFL, fd_settings | O_NONBLOCK);
 	list_append(g->clients, (void *)client);
-	send_Log(0, "New connection: <%s, %d> on descriptor %d", 
+	syslog(LOG_DEBUG, "New connection: <%s, %d> on descriptor %d", 
 	       fqdn, client->port, client->fd);
 	client->write_status = CLI_WRITING;
 	send_Buffer(client->to, "PowerMan V1.0.0\r\npassword> ");

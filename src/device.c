@@ -44,7 +44,6 @@
 #include "wrappers.h"
 #include "pm_string.h"
 #include "buffer.h"
-#include "log.h"
 #include "util.h"
 
 /* prototypes */
@@ -142,7 +141,7 @@ initiate_nonblocking_connect(Device *dev)
 		Action *act;
 
 		dev->status = DEV_CONNECTED;
-		send_Log(0, "Early device connect");
+		syslog(LOG_INFO, "Early device connect");
 		act = make_Action(PM_LOG_IN);
 		map_Action_to_Device(dev, act);
 	}
@@ -171,7 +170,7 @@ map_Action_to_Device(Device *dev, Action *sact)
 
 	if ( !dev->loggedin && (sact->com != PM_LOG_IN) )
 	{
-		send_Log(0, "Attempt to initiate Action %s while not logged in", 
+		syslog(LOG_ERR, "Attempt to initiate Action %s while not logged in", 
 		       pm_coms[sact->com]);
 		return;
 	}
@@ -199,7 +198,7 @@ map_Action_to_Device(Device *dev, Action *sact)
 		switch ( act->cur->type )
 		{
 		case SEND :
-			send_Log(0, "start script:");
+			syslog(LOG_DEBUG, "start script");
 			dev->status |= DEV_SENDING;
 			process_send(dev);
 			break;
@@ -412,42 +411,6 @@ do_Device_connect(Device *dev)
 	map_Action_to_Device(dev, act);
 }
 
-
-static char *
-_binstr(char *str, int len)
-{
-	int i, j; 
-	int cpysize = len * 4; /* worst case */
-	char *cpy = Malloc(cpysize + 1);
-
-	for (i = j = 0; i < len; i++)
-	{
-		switch (str[i])
-		{
-			case '\r':
-				strcpy(&cpy[j], "\\r");
-				j += 2;	
-				break;
-			case '\n':
-				strcpy(&cpy[j], "\\n");
-				j += 2;	
-				break;
-			default:
-				if (isprint(str[i]))
-					cpy[j++] = str[i];
-				else
-				{
-					sprintf(&cpy[j], "\\%.3o", str[i]);
-					j += 4;
-				}
-				break;
-		}
-		assert(j <= cpysize || i == len);
-	}
-	cpy[j] = '\0';
-	return cpy;
-}
-
 /*
  *   The Read gets the string.  If it is EOF then we've lost 
  * our connection with the device and need to reconnect.  
@@ -474,7 +437,7 @@ handle_Device_read(Device *dev, int debug)
 
 		if (len > 0)
 		{
-			char *bstr = _binstr(str, len);
+			char *bstr = memstr(str, len);
 			printf("D(%s): %s\n", get_String(dev->name), bstr);
 			Free(bstr);
 		}
@@ -497,7 +460,7 @@ do_Device_reconnect(Device *dev)
 	Action *act;
 
 	Close(dev->fd);
-	send_Log(0, "Lost connection to device");
+	syslog(LOG_ERR, "Lost connection to device");
 	dev->status   = DEV_NOT_CONNECTED;
 	dev->loggedin = FALSE;
 	if ( ((act = (Action *)list_peek(dev->acts)) != NULL) && 
@@ -835,7 +798,7 @@ handle_Device_write(Device *dev, int debug)
 
 		if (len > 0)
 		{
-			char *bstr = _binstr(str, len);
+			char *bstr = memstr(str, len);
 			printf("S(%s): %s\n", get_String(dev->name), bstr);
 			Free(bstr);
 		}
