@@ -5,7 +5,7 @@
 # See ./DISCLAIMER
 ####################################################################
 # Config file for the new PowerMan daemon
-include "vicebox.spec"
+include "/etc/vicebox.spec"
 begin global
 	cluster name "tux"
 	log file "/tmp/powermand.log.16x16-14" "0"

@@ -74,6 +74,7 @@ install: all
 	$(mkinstalldirs)			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/baytech.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/icebox.dev		$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/pmd.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/wti.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/vicebox.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) -m 644 etc/powerman.conf	$(DESTDIR)$(packagedir)
@@ -90,6 +91,7 @@ uninstall: distclean
 	rm -f $(DESTDIR)$(bindir)/powermand
 	rm -f $(DESTDIR)$(packagedir)/baytech.dev
 	rm -f $(DESTDIR)$(packagedir)/icebox.dev
+	rm -f $(DESTDIR)$(packagedir)/pmd.dev
 	rm -f $(DESTDIR)$(packagedir)/wti.dev
 	rm -f $(DESTDIR)$(packagedir)/vicebox.dev
 	mv $(DESTDIR)$(packagedir)/powerman.conf	$(packagedir)/powerman.conf.bak

@@ -31,7 +31,7 @@ begin protocol specification
 	on string  "1"
 	all string "*"
 # PMD type devices are a special case.  size is determined dynamically
-	size "0"
+#	size "0"
 	string interpretation mode "REGEX"
 	begin PM_LOG_IN 
 		expect "word> " "> "

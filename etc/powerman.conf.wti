@@ -5,7 +5,7 @@
 # See ./DISCLAIMER
 ####################################################################
 # Config file for the new PowerMan daemon
-include "wti.spec"
+include "/etc/powerman/wti.spec"
 begin global
 	cluster name "tux"
 	log file "/tmp/powermand.log.wti" "0"
