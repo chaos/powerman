@@ -40,6 +40,7 @@ error_msg[21] = "[21]Timed out after ten attempts to access port"
 error_msg[22] = "[22]Faild to get termios attrs for tty"
 error_msg[23] = "[23]Faild to set termios attrs for tty"
 error_msg[24] = "[24]Faild to restore termios attrs for tty"
+error_msg[25] = "[25]Failure during recursive call to pm"
 
 verbose = 1
 logging = 0

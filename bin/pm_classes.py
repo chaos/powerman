@@ -133,6 +133,20 @@ class ClusterClass:
         "Pass the command on to the various node types"
         if((com == 'off') or (com == 'on') or (com == 'reset')):
             for c_type in self.c_types.keys():
+                if (c_type == "etherwake"):
+                    # Deal with toggle problem here
+                    if (com == "off"):
+                        recursive_query = 'pm -ar' + opstr
+                    else:
+                        recursive_query = 'pm -a' + opstr
+                    status,output = commands.getstatusoutput(recursive_query)
+                    if (status):
+                        # Something wrong in recursive call
+                        pm_utils.exit_error(25, output)
+                    ignore_nodes = string.split(output)
+                    for node in c_set.nodes:
+                        if (node.is_marked() and (node.name in ignore_nodes)):
+                            node.unmark()
                 c_set = self.c_types[c_type]
                 c_set.set_data.do_com()
         else:

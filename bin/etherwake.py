@@ -31,7 +31,7 @@ class NodeDataClass:
         # print self.type, self.mac
 
 class SetDataClass:
-    "Structure in which to gather all the wti info in a single place"
+     "A set of _nodes_ from the _cluster_ and the _etherwake_ program"
     cluster   = None
     nodes     = []
     etherwake = ""

@@ -85,7 +85,17 @@ static char usage_msg[] =
 #include <sys/ioctl.h>
 #include <linux/if.h>
 
-#ifdef UIO_MAXIOV
+/* 
+ * I'm getting an error out of the following ifdef while trying to 
+ * build powerman-0-1-10.  I never had this problem before.  
+ * UIO_MAXIOV comes from <bits/uio.h> which is included in <sys/uio.h> 
+ * which, in turn is included by <sys/socket.h>.  However, the correct
+ * definition for setsockopt appears in <sys/socket.h>.  I'm going to 
+ * fix it with an explicite #undef UIO_MAXIOV.
+ * -Andrew 2002-02-26
+*/
+#undef UIO_MAXIOV
+#ifdef UIO_MAXIOV 
 extern int setsockopt __P ((int __fd, int __level, int __optname,
 							__ptr_t __optval, int __optlen));
 #else				/* New, correct head files.  */

@@ -6,7 +6,7 @@
 ####################################################################
  
 %define name    powerman
-%define version 0.1.9
+%define version 0.1.10
 %define release 1
 
 Name: %name
@@ -47,6 +47,8 @@ rm -rf "$RPM_BUILD_ROOT"
 %preun
 # If there'e anything in post that needs to be undone, or a backup of
 # a config file to be made, I can perhaps do it here.
+rm -f /usr/lib/powerman/*.pyc
+rm -f /usr/lib/powerman/*~
 
 %files
 %defattr(-,root,root,0755)
