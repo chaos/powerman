@@ -1,3 +1,7 @@
+2003-05-01 Jim Garlick <garlick@llnl.gov>
+   
+    * etc/phantom.dev: got working with the actual hardware (all but temp)
+
 2003-04-23 Jim Garlick <garlick@llnl.gov>
 
     * src/*: rename "setstatus" to "setplugstate".
