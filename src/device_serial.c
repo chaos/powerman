@@ -149,7 +149,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
 /*
  * Open the special file associated with this device.
  */
-bool serial_reconnect(Device * dev)
+bool serial_connect(Device * dev)
 {
     int baud = 9600, databits = 8, stopbits = 1; 
     char parity = 'N';
@@ -157,17 +157,17 @@ bool serial_reconnect(Device * dev)
     int fd_settings;
 
     assert(dev->magic == DEV_MAGIC);
-    assert(dev->connect_status == DEV_NOT_CONNECTED);
+    assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
     dev->fd = open(dev->host, O_RDWR | O_NONBLOCK | O_NOCTTY);
     if (dev->fd < 0) {
-        dbg(DBG_DEVICE, "_serial_reconnect: %s open %s failed", 
+        dbg(DBG_DEVICE, "_serial_connect: %s open %s failed", 
                 dev->name, dev->host);
         goto out;
     }
     if (!isatty(dev->fd)) {
-        err(FALSE, "_serial_reconnect: %s is not a tty\n", dev->name);
+        err(FALSE, "_serial_connect: %s is not a tty\n", dev->name);
         goto out;
     }
     /*  [lifted from conman] According to the UNIX Programming FAQ v1.37
@@ -188,14 +188,13 @@ bool serial_reconnect(Device * dev)
     if (res < 0)
         goto out;
 
-    dev->connect_status = DEV_CONNECTED;
+    dev->connect_state = DEV_CONNECTED;
     dev->stat_successful_connects++;
     dev->retry_count = 0;
-    dev_login(dev);
 
-    err(FALSE, "_serial_reconnect: %s opened", dev->name);
+    err(FALSE, "_serial_connect: %s opened", dev->name);
 out: 
-    return (dev->connect_status == DEV_CONNECTED);
+    return (dev->connect_state == DEV_CONNECTED);
 }
 
 
@@ -204,7 +203,7 @@ out:
  */
 void serial_disconnect(Device * dev)
 {
-    assert(dev->connect_status == DEV_CONNECTED);
+    assert(dev->connect_state == DEV_CONNECTED);
     dbg(DBG_DEVICE, "_serial_disconnect: %s on fd %d", dev->name, dev->fd);
 
     /* close device if open */

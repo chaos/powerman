@@ -28,6 +28,7 @@
 
 #define YYSTYPE char *  /*  The generic type returned by all parse matches */
 #undef YYDEBUG          /* no debug code plese */
+#include <sys/stat.h>
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
@@ -39,6 +40,8 @@
 #include "list.h"
 #include "parse_util.h"
 #include "device.h"
+#include "device_serial.h"
+#include "device_tcp.h"
 #include "client.h"
 #include "error.h"
 #include "string.h"
@@ -632,6 +635,58 @@ static Stmt *makeStmt(PreStmt *p)
     return stmt;
 }
 
+static DeviceType _parse_hoststr(char *hoststr, char *flagstr, 
+                                 char **host, char **port, char **flags)
+{
+    DeviceType devtype;
+
+    /* serial device */
+    if (hoststr[0] == '/') {
+        struct stat sb;
+
+        if (stat(hoststr, &sb) == 0 && ((sb.st_mode & S_IFCHR))) {
+            *host = Strdup(hoststr);
+            *port = NULL;
+            *flags = Strdup(flagstr);
+        } else 
+            _errormsg("serial device not found or not a char special file");
+
+        devtype = TYPE_SERIAL;
+
+    /* network device */
+    } else {
+        char *cp = strchr(hoststr, ':');
+        int n;
+
+        /* case 1: host='host:port', flags=NULL */
+        if (cp) {
+            *cp++ = '\0';
+            n = _strtolong(cp); /* verify port number */
+            if (n < 1 || n > 65535)
+                _errormsg("port number out of range");
+            *host = Strdup(hoststr);
+            *port = Strdup(cp);
+            *flags = NULL;
+        }
+
+        /* case 2: host='host', flags='port' (deprecated) */
+        else if (flagstr != NULL) {
+            _warnmsg("port number in flags is deprecated");
+            n = _strtolong(flagstr);
+            if (n < 1 || n > 65535)
+                _errormsg("port number out of range");
+            *host = Strdup(hoststr);
+            *port = Strdup(flagstr);
+            *flags = NULL;
+        } else
+            _errormsg("hostname is missing :port");
+
+        devtype = TYPE_TCP;
+    }
+    
+    return devtype;     
+}
+
 static void makeDevice(char *devstr, char *specstr, char *hoststr, 
                         char *flagstr)
 {
@@ -639,7 +694,8 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
     Device *dev;
     Spec *spec;
     char *plugname;
-    char *port;
+    char *host, *port, *flags;
+    DeviceType devtype;
     int i;
 
     /* find that spec */
@@ -647,25 +703,30 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
     if ( spec == NULL ) 
         _errormsg("device specification not found");
 
+    /* deduce the device type from hoststr */
+    devtype = _parse_hoststr(hoststr, flagstr, &host, &port, &flags);
+
     /* make the Device */
     dev = dev_create(devstr);
     dev->specname = Strdup(specstr);
     dev->timeout = spec->timeout;
     dev->ping_period = spec->ping_period;
+    dev->host = host;
+    dev->port = port;
+    dev->flags = flags;
 
-    /* set up the host name and port */
-    /* hoststr may contain host[:port] */
-    /* XXX: or for backwards compat, port may be in flags position */
-    dev->host = Strdup(hoststr);
-    if ((port = strchr(dev->host, ':')))  {
-        *port++ = '\0';
-        dev->port = Strdup(port);
-    } else if (hoststr[0] != '/' && flagstr != NULL) {
-        dev->port = Strdup(flagstr);
-        _warnmsg("port number in flags is deprecated");
+    if (devtype == TYPE_SERIAL) {
+        dev->connect = serial_connect;
+        dev->disconnect = serial_disconnect;
+        dev->finish_connect = NULL;
+        dev->preprocess = NULL;
+    } else {
+        assert(devtype == TYPE_TCP);
+        dev->connect = tcp_connect;
+        dev->disconnect = tcp_disconnect;
+        dev->finish_connect = tcp_finish_connect;
+        dev->preprocess = tcp_preprocess;
     }
-    if (flagstr != NULL)
-        dev->flags = Strdup(flagstr);
 
     /* create plugs */
     if (spec->plugs) {

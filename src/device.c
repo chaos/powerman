@@ -45,9 +45,6 @@
 #include "hostlist.h"
 #include "debug.h"
 #include "client_proto.h"
-#include "device_telnet.h"
-#include "device_serial.h"
-#include "device_tcp.h"
 
 /* ExecCtx's are the state for the execution of a block of statements.
  * They are stacked on the Action (new ExecCtx pushed when executing an
@@ -58,8 +55,8 @@ typedef struct {
     List block;                 /* List of stmts */
     ListIterator itr;           /* next stmt in block */
     Stmt *cur;                  /* current stmt */
-    ListIterator plugitr;
-    bool subblock;              /* return from subblock flag */
+    ListIterator plugitr;       /* used by foreach */
+    bool processing;            /* flag used by stmts, ifon/ifoff */
 } ExecCtx;
 
 /* Actions are queued on a device and executed one at a time.  Each action
@@ -116,6 +113,10 @@ static unsigned char *_findregex(regex_t * re, unsigned char *str,
 static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[]);
 static bool _command_needs_device(Device * dev, hostlist_t hl);
 static void _process_ping(Device * dev, struct timeval *timeout);
+static void _login(Device *dev);
+static void _disconnect(Device * dev);
+static bool _connect(Device * dev);
+static bool _time_to_reconnect(Device * dev, struct timeval *timeout);
 
 static List dev_devices = NULL;
 
@@ -221,7 +222,7 @@ static ExecCtx *_create_exec_ctx(Device *dev, List block, Plug *target)
     new->block = block;
     new->target = target;
     new->plugitr = NULL;
-    new->subblock = FALSE;
+    new->processing = FALSE;
 
     return new;
 }
@@ -364,7 +365,7 @@ void _update_timeout(struct timeval *timeout, struct timeval *tv)
  * Return TRUE if OK to attempt reconnect.  If FALSE, put the time left 
  * in timeout if it is less than timeout or if timeout is zero.
  */
-bool dev_time_to_reconnect(Device * dev, struct timeval *timeout)
+static bool _time_to_reconnect(Device * dev, struct timeval *timeout)
 {
     static int rtab[] = { 1, 2, 4, 8, 15, 30, 60 };
     int max_rtab_index = sizeof(rtab) / sizeof(int) - 1;
@@ -385,11 +386,17 @@ bool dev_time_to_reconnect(Device * dev, struct timeval *timeout)
     return reconnect;
 }
 
-bool dev_reconnect(Device * dev)
+static bool _connect(Device * dev)
 {
-    if (dev->host[0] == '/')
-        return serial_reconnect(dev);
-    return tcp_reconnect(dev);
+    bool connected;
+
+    assert(dev->connect != NULL);
+    connected = dev->connect(dev);
+
+    if (connected)
+        _login(dev);
+
+    return connected;
 }
 
 /* helper for dev_check_actions/dev_enqueue_actions */
@@ -457,7 +464,7 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
             continue;                               /* uninvolved device */
         count = _enqueue_actions(dev, com, hl, complete_fun, vpf_fun, 
                 client_id, arglist);
-        if (count > 0 && !(dev->connect_status & DEV_CONNECTED))
+        if (count > 0 && dev->connect_state != DEV_CONNECTED)
             dev->retry_count = 0;   /* expedite retries on this device */
         total += count;
     }
@@ -640,7 +647,7 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
     return count;
 }
 
-void dev_login(Device *dev)
+static void _login(Device *dev)
 {
     _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
 }
@@ -657,20 +664,20 @@ static void _handle_read(Device * dev)
     n = cbuf_write_from_fd(dev->from, dev->fd, -1, &dropped);
     if (n < 0) {
         err(TRUE, "read error on %s", dev->name);
-        dev_disconnect(dev);
-        dev_reconnect(dev);
+        _disconnect(dev);
+        _connect(dev);
         return;
     }
     if (dropped > 0) {
         err(FALSE, "buffer space for %s exhausted", dev->name);
-        dev_disconnect(dev);
-        dev_reconnect(dev);
+        _disconnect(dev);
+        _connect(dev);
         return;
     }
     if (n == 0) {
         err(FALSE, "read returned EOF on %s", dev->name);
-        dev_disconnect(dev);
-        dev_reconnect(dev);
+        _disconnect(dev);
+        _connect(dev);
         return;
     }
 }
@@ -686,33 +693,31 @@ static void _handle_write(Device * dev)
     n = cbuf_read_to_fd(dev->to, dev->fd, -1);
     if (n < 0) {
         err(TRUE, "write error on %s", dev->name);
-        dev_disconnect(dev);
-        dev_reconnect(dev);
+        _disconnect(dev);
+        _connect(dev);
     }
     if (n == 0) {
         err(FALSE, "write sent no data on %s", dev->name);
-        dev_disconnect(dev);
-        dev_reconnect(dev);
+        _disconnect(dev);
+        _connect(dev);
         /* XXX: is this even possible? */
     }
 }
 
-void dev_disconnect(Device * dev)
+static void _disconnect(Device * dev)
 {
     Action *act;
 
-    if (dev->host[0] == '/')
-        serial_disconnect(dev);
-    else
-        tcp_disconnect(dev);
+    assert(dev->disconnect != NULL);
+    dev->disconnect(dev);
 
     /* flush buffers */
     cbuf_flush(dev->from);
     cbuf_flush(dev->to);
 
     /* update state */
-    dev->connect_status = DEV_NOT_CONNECTED;
-    dev->script_status = 0;
+    dev->connect_state = DEV_NOT_CONNECTED;
+    dev->logged_in = FALSE;
 
     /* delete PM_LOG_IN action queued for this device, if any */
     if (((act = list_peek(dev->acts)) != NULL) && act->com == PM_LOG_IN)
@@ -771,9 +776,9 @@ static void _process_action(Device * dev, struct timeval *timeout)
 
         /* timeout exceeded? */
         if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
-            if (!(dev->connect_status == DEV_CONNECTED)) 
+            if (!(dev->connect_state == DEV_CONNECTED)) 
                 act->errnum = ACT_ECONNECTTIMEOUT;
-            else if (!(dev->script_status & DEV_LOGGED_IN))
+            else if (!dev->logged_in)
                 act->errnum = ACT_ELOGINTIMEOUT;
             else
                 act->errnum = ACT_EEXPFAIL;
@@ -783,7 +788,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 int len = cbuf_peek(dev->from, mem, MAX_DEV_BUF);
                 char *memstr = dbg_memstr(mem, len);
     
-                if (!(dev->connect_status == DEV_CONNECTED)) 
+                if (!(dev->connect_state == DEV_CONNECTED)) 
                     act->vpf_fun(act->client_id, "connect(%s): timeout",
                             dev->name);
                 else
@@ -793,7 +798,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
             }
 
         /* not connected but timeout not yet exceeded */
-        } else if (!(dev->connect_status == DEV_CONNECTED)) {
+        } else if (!(dev->connect_state == DEV_CONNECTED)) {
             stalled = TRUE;                             /* not connnected */
 
         /* connected - process statements */
@@ -829,7 +834,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
             /* completed action successfully! */
             if (e == NULL) {
                 if (act->com == PM_LOG_IN)
-                    dev->script_status |= DEV_LOGGED_IN;
+                    dev->logged_in = TRUE;
                 if (act->complete_fun)
                     _act_completion(act, dev);
                 _destroy_action(list_dequeue(dev->acts));
@@ -855,10 +860,10 @@ static void _process_action(Device * dev, struct timeval *timeout)
             }
 
             /* reconnect/login if expect timed out */
-            if ((dev->connect_status & DEV_CONNECTED)) {
+            if ((dev->connect_state == DEV_CONNECTED)) {
                 dbg(DBG_DEVICE, "_process_action: disconnecting due to error");
-                dev_disconnect(dev);
-                dev_reconnect(dev);
+                _disconnect(dev);
+                _connect(dev);
                 break;
             }
         }
@@ -940,8 +945,8 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
 {
     bool finished = TRUE;
 
-    if (e->subblock) { /* if returning from subblock, we are done */
-        e->subblock = FALSE; 
+    if (e->processing) { /* if returning from subblock, we are done */
+        e->processing = FALSE; 
 
     } else {
         InterpState state = _get_argval(act->arglist, 
@@ -959,7 +964,7 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
 
         /* condition met? start a new execution context for this block */
         if (condition) {
-            e->subblock = TRUE;
+            e->processing = TRUE;
             new = _create_exec_ctx(dev, e->cur->u.ifonoff.stmts, e->target);
             list_push(act->exec, new);
         } 
@@ -1152,7 +1157,7 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
     bool finished = FALSE;
 
     /* first time through? */
-    if (!(dev->script_status & DEV_SENDING)) {
+    if (!e->processing) {
         int dropped = 0;
         char *str = _malloc_sprintf(e->cur->u.send.fmt, e->target ? 
                 (e->target->name ? e->target->name : "[unresolved]") : 0);
@@ -1173,13 +1178,13 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
             Free(memstr);
         }
         assert(written < 0 || (dropped == strlen(str) - written));
-        dev->script_status |= DEV_SENDING;
+        e->processing = TRUE;
       
         Free(str);
     }
 
     if (cbuf_is_empty(dev->to)) {           /* finished! */
-        dev->script_status &= ~DEV_SENDING;
+        e->processing = FALSE;
         finished = TRUE;
     } 
 
@@ -1196,17 +1201,17 @@ static bool _process_delay(Device *dev, Action *act, ExecCtx *e,
     delay = e->cur->u.delay.tv;
 
     /* first time */
-    if (!(dev->script_status & DEV_DELAYING)) {
+    if (!e->processing) {
         if (act->vpf_fun)
             act->vpf_fun(act->client_id, "delay(%s): %ld.%-6.6ld", dev->name, 
                     delay.tv_sec, delay.tv_usec);
-        dev->script_status |= DEV_DELAYING;
+        e->processing = TRUE;
         Gettimeofday(&act->delay_start, NULL);
     }
 
     /* timeout expired? */
     if (_timeout(&act->delay_start, &delay, &timeleft)) {
-        dev->script_status &= ~DEV_DELAYING;
+        e->processing = FALSE;
         finished = TRUE;
     } else
         _update_timeout(timeout, &timeleft);
@@ -1222,8 +1227,7 @@ Device *dev_create(const char *name)
     dev = (Device *) Malloc(sizeof(Device));
     dev->magic = DEV_MAGIC;
     dev->name = Strdup(name);
-    dev->connect_status = DEV_NOT_CONNECTED;
-    dev->script_status = 0;
+    dev->connect_state = DEV_NOT_CONNECTED;
     dev->fd = NO_FD;
     dev->acts = list_create((ListDelF) _destroy_action);
     dev->matchstr = NULL;
@@ -1447,8 +1451,8 @@ void dev_initial_connect(void)
 
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
-        assert(dev->connect_status == DEV_NOT_CONNECTED);
-        dev_reconnect(dev);
+        assert(dev->connect_state == DEV_NOT_CONNECTED);
+        _connect(dev);
     }
     list_iterator_destroy(itr);
 }
@@ -1479,7 +1483,7 @@ void dev_pre_select(fd_set * rset, fd_set * wset, int *maxfd)
         *maxfd = MAX(*maxfd, dev->fd);
 
         /* need to be in the write set if we are sending anything */
-        if (dev->connect_status == DEV_CONNECTED) {
+        if (dev->connect_state == DEV_CONNECTED) {
             if (!cbuf_is_empty(dev->to)) {
                 FD_SET(dev->fd, wset);
                 *maxfd = MAX(*maxfd, dev->fd);
@@ -1487,7 +1491,7 @@ void dev_pre_select(fd_set * rset, fd_set * wset, int *maxfd)
         }
 
         /* descriptor will become writable after a connect */
-        if (dev->connect_status == DEV_CONNECTING) {
+        if (dev->connect_state == DEV_CONNECTING) {
             FD_SET(dev->fd, wset);
             *maxfd = MAX(*maxfd, dev->fd);
         }
@@ -1512,34 +1516,42 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *timeout)
     while ((dev = list_next(itr))) {
 
         /* reconnect if necessary */
-        if (dev->connect_status == DEV_NOT_CONNECTED) {
-            if (dev_time_to_reconnect(dev, timeout))
-                dev_reconnect(dev);
+        if (dev->connect_state == DEV_NOT_CONNECTED) {
+            if (_time_to_reconnect(dev, timeout))
+                _connect(dev);
         /* complete non-blocking connect if ready */
-        } else if ((dev->connect_status == DEV_CONNECTING)) {
+        } else if ((dev->connect_state == DEV_CONNECTING)) {
             assert(dev->fd != NO_FD);
             if (FD_ISSET(dev->fd, wset)) {
-                tcp_finish_connect(dev, timeout);
+                assert(dev->finish_connect != NULL);
+                if (dev->finish_connect(dev)) {
+                    _login(dev);
+                } else {
+                    _disconnect(dev);
+                    if (_time_to_reconnect(dev, timeout))
+                        _connect(dev);
+                } 
                 if (dev->fd != NO_FD)
                     FD_CLR(dev->fd, wset);      /* avoid _handle_write error */
             }
         }
 
         /* if this device needs a ping, put it in the qeuue */
-        if ((dev->connect_status & DEV_CONNECTED)) {
+        if ((dev->connect_state == DEV_CONNECTED)) {
             _process_ping(dev, timeout);
         }
 
         /* read/write from/to buffer */
-        if (dev->fd != NO_FD && (dev->connect_status & DEV_CONNECTED)) {
+        if (dev->fd != NO_FD && dev->connect_state == DEV_CONNECTED) {
             if (FD_ISSET(dev->fd, rset))
                 _handle_read(dev);      /* also handles ECONNRESET */
             if (FD_ISSET(dev->fd, wset))
                 _handle_write(dev);
         }
 
-        /* process any telnet escapes */
-        telnet_process(dev);
+        /* handle device-specific preprocessing such as telnet escapes */
+        if (dev->connect_state == DEV_CONNECTED && dev->preprocess != NULL)
+            dev->preprocess(dev);
 
         /* process actions */
         if (list_peek(dev->acts)) {

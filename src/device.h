@@ -129,16 +129,12 @@ typedef struct {
 /*
  * Device
  */
-typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectStat;
+typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectState;
 typedef enum { TELNET_NONE, TELNET_CMD, TELNET_OPT } TelnetState;
-/* bitwise values for dev->script_status */
-#define DEV_LOGGED_IN   1
-#define DEV_SENDING     2
-#define DEV_EXPECTING   4
-#define DEV_DELAYING    8
+typedef enum { TYPE_TCP, TYPE_SERIAL, TYPE_PIPE } DeviceType;
 
 #define DEV_MAGIC       0xbeefb111
-typedef struct {
+typedef struct _device {
     int magic;
     char *name;                 /* name of device */
 
@@ -151,8 +147,8 @@ typedef struct {
     TelnetState tstate;         /* state of telnet processing */
     unsigned char tcmd;         /* buffered telnet command */
 
-    ConnectStat connect_status;
-    int script_status;          /* DEV_* bits reprepsenting script state */
+    ConnectState connect_state; /* is device connected/open? */
+    bool logged_in;             /* TRUE if login script has run successfully */
 
     char *matchstr;             /* cache regex matches for future $N ref */
     regmatch_t pmatch[MAX_MATCH_POS+1];
@@ -176,6 +172,11 @@ typedef struct {
 
     int stat_successful_connects;
     int stat_successful_actions;
+                                /* connect/disconnect/preprocess methods */
+    bool (*connect)(struct _device *dev); 
+    bool (*finish_connect)(struct _device *dev);
+    void (*preprocess)(struct _device *dev);
+    void (*disconnect)(struct _device *dev);
 } Device;
 
 typedef enum { ACT_ESUCCESS, ACT_EEXPFAIL, ACT_EABORT, ACT_ECONNECTTIMEOUT,
@@ -210,11 +211,6 @@ void dev_post_select(fd_set * rset, fd_set * wset, struct timeval *tv);
 ArgList *dev_create_arglist(hostlist_t hl);
 ArgList *dev_link_arglist(ArgList * arglist);
 void dev_unlink_arglist(ArgList * arglist);
-
-void dev_login(Device *dev);
-void dev_disconnect(Device *dev);
-bool dev_reconnect(Device *dev);
-bool dev_time_to_reconnect(Device * dev, struct timeval *timeout);
 
 #endif                          /* DEVICE_H */
 

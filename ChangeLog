@@ -1,3 +1,16 @@
+2003-05-05 Jim Garlick <garlick@llnl.gov>
+    * src/{device.[ch],device_tcp.c,device_serial.c}: renamed 
+    dev->connect_status to dev->connect_state and fixed a couple of places 
+    where it was being treated as a bitmask instead of an enum.
+
+    * src/device.[ch]: replaced dev->script_status with dev->logged_in flag
+    and e->processing flag in execution context.
+
+    * src/device*: replaced conditional calls to tcp/serial connect/disconnect
+    functions with function pointers.  Moved device_telnet.c into device_tcp.c.
+
+    * src/parse.y: cleaned up host/flags parsing.
+    
 2003-05-01 Jim Garlick <garlick@llnl.gov>
 
     * src/parse.y: destroyStmt was trying to destroy NULL setplugstate.interps

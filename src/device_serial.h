@@ -1,4 +1,4 @@
-bool serial_reconnect(Device * dev);
+bool serial_connect(Device * dev);
 void serial_disconnect(Device * dev);
 
 /*
