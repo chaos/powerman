@@ -479,9 +479,12 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
         case PM_POWER_OFF:
         case PM_POWER_CYCLE:
         case PM_RESET:
-	    count += _enqueue_targetted_actions(dev, com, hl, fun, 
+	    if (hl) {
+		count += _enqueue_targetted_actions(dev, com, hl, fun, 
 			    client_id, arglist);
-	    break;
+		break;
+	    }
+	    /*FALLTHROUGH*/
         case PM_UPDATE_PLUGS:
         case PM_UPDATE_NODES:
         case PM_LOG_OUT:
@@ -544,7 +547,7 @@ static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
             continue;
         }
         /* check if node name for plug matches the target */
-        if (hl && hostlist_find(hl, plug->node) == -1) {
+        if (hostlist_find(hl, plug->node) == -1) {
 	    all = FALSE;
 	    continue;
 	}
@@ -554,13 +557,7 @@ static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
     }
 
     if (all) {
-	int new;
-	                		/* _ALL version of script */
-	if ((new = _get_all_script(dev, com)) == -1) {
-	    act = _create_action(dev, new, NULL, fun, client_id, arglist);
-	    list_append(dev->acts, act);
-	    count++;
-	} else if (dev->all != NULL) {	/* normal script, "*" plug */
+	if (dev->all != NULL) {	/* normal script, "*" plug */
 	    act = _create_action(dev, com, dev->all, fun, client_id, arglist);
 	    list_append(dev->acts, act);
 	    count++;
