@@ -2,6 +2,8 @@
 
     * Makefile, powerman.spec, man/powerman.1: remove 'on' and 'off' sym links.
 
+    * etc/README: added statement description.
+
 2003-12-17 Jim Garlick <garlick@llnl.gov>
 
     * src/device.c: remove _verify_plugassign (hold over from when we had

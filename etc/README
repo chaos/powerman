@@ -43,7 +43,34 @@ the form:
 	# statements
   }
 
-XXX not done yet
+Script statements are one of the following:
+
+  # <string> is set to the device
+  send <string>
+
+  # script pauses for <float> seconds
+  delay <float>
+
+  # <string> is converted to a compiled regular expression, which is matched
+  # against device input.  The script blocks until the regex is matched or
+  # the device timeout occurs (in which case the script is aborted).  Upon 
+  # matching, any parenthesized expressiones are assigned to variables: $1 
+  # for the first match, $2 for the second match, and so on.
+  expect <string>
+
+  # Set the plug state.  The first argument is the name of the plug.
+  # The off and on strings are compiled regexes, which if matched by 
+  # <regmatch>, result in the plug state being set to off or on.
+  # If no off or on strings are provided, state will be unknown.
+  setplugstate <string> <regmatch> off=<string> on=<string>
+
+  ifon {
+	# statements
+  }
+
+  foreachplug {
+	# statements
+  }
 
 ______________________
 General config file info:
@@ -58,6 +85,9 @@ General config file info:
 
 <script_name>  name of script which implies particular inputs and outputs.
                May be: login, logout, status, status_all , [XXX finish list]
+
+
+<regmatch>     $1, $2, ... $N
 
 The '#' comment character may appear any where in a line and "comments out"
 text until the end of line.
