@@ -775,14 +775,17 @@ print_readable(Config *conf, List cluster)
 
 	/* Report the status */
 	if (! hostlist_is_empty(on)) {
+		hostlist_sort(on);
 		hostlist_ranged_string(on, sizeof(tmpstr), tmpstr);
 		printf("on\t%s\n", tmpstr);
 	}
 	if (! hostlist_is_empty(off)) {
+		hostlist_sort(off);
 		hostlist_ranged_string(off, sizeof(tmpstr), tmpstr);
 		printf("off\t%s\n", tmpstr);
 	}
 	if (! hostlist_is_empty(unk)) {
+		hostlist_sort(unk);
 		hostlist_ranged_string(unk, sizeof(tmpstr), tmpstr);
 		printf("unknown\t%s\n", tmpstr);
 	}	

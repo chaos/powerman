@@ -119,12 +119,17 @@
 	* Make some char *'s into unsigned char *'s that are carrying
 	  non-printable values such as \376 (baytech telnet telnet handshake)).
 	* Redo telemetry logging to support callback at the Buffer level.
-	* Telemetry logging on servern now shows when expect or delay
+	* Telemetry logging on server now shows when expect or delay
 	  commands are being processed.
 	* Updated baytech and icebox configs to use 10 sec timeout.
 	  Baytech at least seems to require > 2sec to respond sometimes.
 	  Fixed a thinko I introduced to the config file earlier.
+	* Instead of stripping NULL's out of buffers when creating strings,
+	  convert them to \377.
 	* Fix get_String_from_Buffer() to only consume buffer up to and
-	  including regex match - not whole buffer.
+	  including regex match - not whole buffer (Gregg H.)
 	* Server telemetry now shows the buffer contents when reporting
 	  no match.
+
+2002-08-09 garlick
+	* Sort hostlists before display in powerman.c
