@@ -38,67 +38,6 @@
 #include "hostlist.h"
 #include "string.h"
 
-/* Indices into script array */
-#define PM_LOG_IN           0
-#define PM_LOG_OUT          1
-#define PM_STATUS_PLUGS     2
-#define PM_STATUS_PLUGS_ALL 3
-#define PM_STATUS_NODES     4
-#define PM_STATUS_NODES_ALL 5
-#define PM_PING             6
-#define PM_POWER_ON         7
-#define PM_POWER_ON_ALL     8
-#define PM_POWER_OFF        9
-#define PM_POWER_OFF_ALL    10
-#define PM_POWER_CYCLE      11
-#define PM_POWER_CYCLE_ALL  12
-#define PM_RESET            13
-#define PM_RESET_ALL        14
-#define PM_STATUS_TEMP      15
-#define PM_STATUS_TEMP_ALL  16
-#define PM_STATUS_BEACON    17
-#define PM_STATUS_BEACON_ALL 18
-#define PM_BEACON_ON        19
-#define PM_BEACON_OFF       20
-#define PM_RESOLVE          21
-/* count of scripts above */
-#define NUM_SCRIPTS         22
-
-
-/*
- * A Script is a list of Stmts.
- */
-#define MAX_MATCH_POS   20
-typedef enum { STMT_SEND, STMT_EXPECT, STMT_SETSTATUS, STMT_DELAY, 
-    STMT_SETPLUGNAME, STMT_FOREACHPLUG, STMT_FOREACHNODE  } StmtType;
-typedef struct {
-    StmtType type;
-    union {
-        struct {                /* SEND */
-            char *fmt;          /* printf(fmt, ...) style format string */
-        } send;
-        struct {                /* EXPECT */
-            regex_t exp;        /* compiled regex */
-        } expect;
-        struct {                /* SETSTATUS (regexes refer to prev expect) */
-            char *plug_name;    /* plug name if literally specified */
-            int plug_mp;        /* regex subexp match pos of plug name if not */
-            int stat_mp;        /* regex subexp match pos of plug status */
-        } setstatus;
-        struct {                /* SETPLUGNAME (regexes refer to prev expect) */
-            int plug_mp;        /* regex match position of plug name */
-            int node_mp;        /* regex match position of node name */
-        } setplugname;
-        struct {                /* DELAY */
-            struct timeval tv;  /* delay at this point in the script */
-        } delay;
-        struct {                /* FOREACHPLUG | FOREACHNODE */
-            List stmts;
-        } foreach;
-    } u;
-} Stmt;
-typedef List Script;
-
 void conf_init(char *filename);
 void conf_fini(void);
 

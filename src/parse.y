@@ -599,13 +599,15 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
     }
 
     /* create plugs */
-    itr = list_iterator_create(spec->plugs);
-    while((plugname = list_next(itr))) {
-        Plug *plug = dev_plug_create(plugname);
+    if (spec->plugs) {
+        itr = list_iterator_create(spec->plugs);
+        while((plugname = list_next(itr))) {
+            Plug *plug = dev_plug_create(plugname);
 
-        list_append(dev->plugs, plug);
+            list_append(dev->plugs, plug);
+        }
+        list_iterator_destroy(itr);
     }
-    list_iterator_destroy(itr);
 
     /* transfer remaining info from the spec to the device */
     re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
@@ -650,7 +652,7 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
         _errormsg("unknown device");
 
     /* 
-     * Legal plugs are specified in advance with 'plug' lines in the device
+     * Legal plugs are specified in advance with 'plug name' line in the device
      * configuration file.  Node line references to plug names must match
      * these names.
      */
@@ -666,16 +668,14 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
     /* 
      * Some devices do not specify plug names in advance.  For these devices,
      * a Node line must not reference a plug name (that field is omitted).
-     * Instead, we simply grab the next available plug entry in the plug
-     * list (sized by device config's 'maxplugcount' variable).  The plug
-     * names will be filled in later via the 'resolve' script (see ibmrsa.dev).
+     * Instead, we simply create a plug entry for each node configured for 
+     * the device.  The names will be filled in later via 'setaddr' statements 
+     * (see ibmrsa.dev).
      */
     } else {
-        plug = list_find_first(dev->plugs,(ListFindF)dev_plug_match_noname, "");
-        if (plug == NULL)
-            _errormsg("device plugcount exceeded");
-
+        plug = dev_plug_create(NULL);
         plug->node = Strdup(nodestr);
+        list_append(dev->plugs, plug);
     }
 }
 
