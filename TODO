@@ -1,40 +1,30 @@
-* Bug: running "pm -q" in a tight loop against vpcd will occasionally result
-  in read returning 0 in device.c, which results in disconnect/reconnect for
-  that device, after which everything carries on.  (Bug may be in vpcd).
+Short Term:
+* Bug: read occasionally returns EOF for no apparent reason in vpc and icebox3.
+  Note: seems to affect all vpcd devices in succession.
 * Bug: actions cannot make progress towards timing out while devices are
-  not connected.  
-* Bug: since plug state is global and is reset before each status query, 
-  simultaneous status queries will return unpredictable results.
-  (NOTE: workaround applied in client.c::_parse_input() which depends on
-  the "cannot make progress toward timing out" bug above.  See note there.)
-* Bug: status query will not return unknown if device disconnects/reconnects
-  (as in login timeout).  Client will see timeout, but will get bad data.
+  not connected (may be fixed - check).  
 * Bug: query for N-1 plug states from an N plug device results in N-1
   queries (should always be one).
-* Bug: need a way to deal with RPC's such as Baytech's which time out idle
-  sessions such that first command typed after timeout will fail.
+* Bug: Deal with baytech login timeouts
 * Store scripts in a list and search the list for the script name, rather than
-  hard code the list.  Enable ICE box temperature and beacon support by 
-  allowing the client to execute arbitrary scripts.
-* Define the arguments to a script in a flexible manner.
-* PM_LOG_OFF action is not used - remove from the code.
+  hard code the list.  
+* Seperate scripts for "all" commands so we can get timing right on ice box.
+* Reformat code w/out tabs
+
+Long term:
 * Build failure simulator test suite
 * Package with autoconf
-* Still several small memory leaks, find them
-* Reformat code w/out tabs
 * Powerman client needs to implement option for expanding hostranges
-* Make "soft" power status query possible again in server
-* Client should have option for verifying soft power status (expand hostranges
-  and issue warnings where plug is on but node is off).  Needs to be optional
-  since would double cluster query latency.  
-* Consider supporting additional ICE commands such as querying temperature and 
-  beacon status in ice box, toggling beacon, extracting firmware version, 
-  updating firmware, etc.  
-* Consider supporting ice v3 ability to sequence >1 plug (e.g. ph 1,2,3) in 
-  a single command.
-* Consider a way for users to arbitrarily map a device script to a server 
-  command (e.g. don't hard code the number of scripts?)
 * Power sequencing.  Provide a way of expressing the max number of outlets
   or power control devices which can be powered on in parallel.
 * Support power control devices that are accessed via serial port.
 * Move telnet protocol from device configuration into powermand.
+* Consider supporting ice v3 ability to sequence >1 plug (e.g. ph 1,2,3) in 
+  a single command.
+* Consider supporting additional ICE commands such as querying temperature and 
+  beacon status in ice box, toggling beacon, extracting firmware version, 
+  updating firmware, etc.  
+* Make "soft" power status query possible again in server
+* Client should have option for verifying soft power status (expand hostranges
+  and issue warnings where plug is on but node is off).  Needs to be optional
+  since would double cluster query latency.  

@@ -704,7 +704,6 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 static char *makeNode(char *s2, char *s3, char *s4)
 {
     int i;
-    Node *node;
     Interpretation *interp;
     List script;
     ListIterator itr;
@@ -712,8 +711,8 @@ static char *makeNode(char *s2, char *s3, char *s4)
     Plug *plug;
     Device *dev;
 
-    node = conf_node_create(s2);
-    conf_addnode(node);
+    if (!conf_addnode(s2))
+	_errormsg("duplicate node");
     /* find the device controlling this nodes plug */
     dev = dev_findbyname(s3);
     if(dev == NULL) 
@@ -728,7 +727,7 @@ static char *makeNode(char *s2, char *s3, char *s4)
 		fprintf(stderr, "%s\n", s4);
 		_errormsg("unknown plug");
 	    }
-	    plug->node = node;
+	    plug->node = Strdup(s2);
 	    break;
 	default :
 	    _errormsg("unimplemented device type");
@@ -752,7 +751,7 @@ static char *makeNode(char *s2, char *s3, char *s4)
 		    interp = list_find_first(script_el->s_or_e.expect.map, 
 				(ListFindF) conf_interp_match, s4);
 		    if( interp != NULL )
-			interp->node = node;
+			interp->node = Strdup(s2);
 		    break;
 		case EL_NONE :
 		default :

@@ -53,7 +53,8 @@ static void _disconnect(Device * dev);
 static bool _process_expect(Device * dev, struct timeval *timeout);
 static bool _process_send(Device * dev, struct timeval *timeout);
 static bool _process_delay(Device * dev, struct timeval *timeout);
-static void _match_subexpressions(Device * dev, List map);
+static void _set_argval_onoff(ArgList *arglist, char *node, ArgState state);
+static void _match_subexpressions(Device * dev, List map, ArgList *arglist);
 static bool _match_regex(Device * dev, char *expect);
 static int _match_name(Device * dev, void *key);
 static void _handle_read(Device * dev);
@@ -62,11 +63,11 @@ static void _process_action(Device * dev, struct timeval *timeout);
 static bool _timeout(struct timeval * timestamp, struct timeval * timeout,
 		struct timeval *timeleft);
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl, 
-		ActionCB fun, int client_id);
+		ActionCB fun, int client_id, ArgList *arglist);
 static Action *_create_action(Device *dev, int com, char *target,
-		ActionCB fun, int client_id);
+		ActionCB fun, int client_id, ArgList *arglist);
 static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
-		ActionCB fun, int client_id);
+		ActionCB fun, int client_id, ArgList *arglist);
 static unsigned char *_findregex(regex_t * re, unsigned char *str, int len);
 static char *_getregex_buf(Buffer b, regex_t * re);
 static bool _command_needs_device(Device *dev, hostlist_t hl);
@@ -146,7 +147,7 @@ static char *_getregex_buf(Buffer b, regex_t * re)
 }
 
 static Action *_create_action(Device *dev, int com, char *target,
-		ActionCB fun, int client_id)
+		ActionCB fun, int client_id, ArgList *arglist)
 {
     Action *act;
 
@@ -160,6 +161,7 @@ static Action *_create_action(Device *dev, int com, char *target,
     act->cur = NULL;
     act->target = target ? Strdup(target) : NULL;
     act->error = FALSE;
+    act->arglist = arglist ? dev_link_arglist(arglist) : NULL;
     timerclear(&act->time_stamp);
     return act;
 }
@@ -176,6 +178,8 @@ static void _destroy_action(Action * act)
         list_iterator_destroy(act->itr);
     act->itr = NULL;
     act->cur = NULL;
+    if (act->arglist)
+	dev_unlink_arglist(act->arglist);
     CLEAR_MAGIC(act);
     Free(act);
 }
@@ -365,7 +369,7 @@ static bool _command_needs_device(Device *dev, hostlist_t hl)
 
     itr = list_iterator_create(dev->plugs);
     while ((plug = list_next(itr))) {
-	if (plug->node != NULL && hostlist_find(hl, plug->node->name) != -1) {
+	if (plug->node != NULL && hostlist_find(hl, plug->node) != -1) {
 	    needed = TRUE;
 	    break;
 	}
@@ -400,7 +404,8 @@ bool dev_check_actions(int com, hostlist_t hl)
  * Return an action count so the client be notified when all the
  * actions "check in".
  */
-int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, int client_id)
+int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, int client_id,
+		ArgList *arglist)
 {
     Device *dev;
     ListIterator itr;
@@ -409,7 +414,7 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, int client_id)
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
 	if (dev->prot->scripts[com] != NULL) { /* unimplemented commands */
-	    count += _enqueue_actions(dev, com, hl, fun, client_id);
+	    count += _enqueue_actions(dev, com, hl, fun, client_id, arglist);
 	}
     }
     list_iterator_destroy(itr);
@@ -418,7 +423,7 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, int client_id)
 }
 
 static int _enqueue_actions(Device *dev, int com, hostlist_t hl, 
-		ActionCB fun, int client_id)
+		ActionCB fun, int client_id, ArgList *arglist)
 {
     Action *act;
     int count = 0;
@@ -431,12 +436,12 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
                 list_iterator_reset(act->itr);
 		dbg(DBG_ACTION, "resetting iterator for non-login action");
             } 
-            act = _create_action(dev, com, NULL, fun, client_id);
+            act = _create_action(dev, com, NULL, fun, client_id, arglist);
             list_prepend(dev->acts, act);
 	    count++;
             break;
         case PM_LOG_OUT:
-            act = _create_action(dev, com, NULL, fun, client_id);
+            act = _create_action(dev, com, NULL, fun, client_id, arglist);
             list_append(dev->acts, act);
 	    count++;
             break;
@@ -448,9 +453,9 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
         case PM_RESET:
 	    if (hl != NULL) {
 		count += _enqueue_targetted_actions(dev, com, hl, fun, 
-				client_id);
+				client_id, arglist);
 	    } else {
-		act = _create_action(dev, com, NULL, fun, client_id); 
+		act = _create_action(dev, com, NULL, fun, client_id, arglist); 
 		list_append(dev->acts, act);
 		count++;
 	    }
@@ -464,7 +469,7 @@ static int _enqueue_actions(Device *dev, int com, hostlist_t hl,
 
 
 static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
-		ActionCB fun, int client_id)
+		ActionCB fun, int client_id, ArgList *arglist)
 {
     List new_acts = list_create((ListDelF) _destroy_action);
     Action *act;
@@ -481,17 +486,17 @@ static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
             continue;
         }
         /* check if node name for plug matches the target */
-        if (hostlist_find(hl, plug->node->name) == -1) {
+        if (hostlist_find(hl, plug->node) == -1) {
 	    all = FALSE;
 	    continue;
 	}
 	/* match! */
-	act = _create_action(dev, com, plug->name, fun, client_id);
+	act = _create_action(dev, com, plug->name, fun, client_id, arglist);
 	list_append(new_acts, act);
     }
 
     if (all) {
-	act = _create_action(dev, com, dev->all, fun, client_id);
+	act = _create_action(dev, com, dev->all, fun, client_id, arglist);
         list_append(dev->acts, act);
 	count++;
     } else {
@@ -538,7 +543,7 @@ static bool _finish_connect(Device *dev, struct timeval *timeout)
 	err(FALSE, "_finish_connect: %s connected", dev->name);
 	dev->connect_status = DEV_CONNECTED;
 	dev->reconnect_count = 0;
-        _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, 0);
+        _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, 0, NULL);
     }
 
     return (dev->connect_status == DEV_CONNECTED);
@@ -687,7 +692,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
 }
 
 /* return TRUE if expect is finished */
-bool _process_expect(Device * dev, struct timeval *timeout)
+static bool _process_expect(Device * dev, struct timeval *timeout)
 {
     regex_t *re;
     Action *act = list_peek(dev->acts);
@@ -715,7 +720,7 @@ bool _process_expect(Device * dev, struct timeval *timeout)
 	    bool res = _match_regex(dev, expect);
 
 	    assert(res == TRUE); /* since the first regexec worked ... */
-	    _match_subexpressions(dev, act->cur->s_or_e.expect.map);
+	    _match_subexpressions(dev, act->cur->s_or_e.expect.map, act->arglist);
 	}
 	Free(expect);
 	finished = TRUE;
@@ -789,7 +794,7 @@ static bool _process_send(Device * dev, struct timeval *timeout)
 }
 
 /* return TRUE if delay is finished */
-bool _process_delay(Device * dev, struct timeval *timeout)
+static bool _process_delay(Device * dev, struct timeval *timeout)
 {
     bool finished = FALSE;
     struct timeval delay, timeleft;
@@ -825,7 +830,7 @@ bool _process_delay(Device * dev, struct timeval *timeout)
  * through all the Interpretations for this EXPECT and sets the
  * plug or node states for whatever plugs it finds.
  */
-void _match_subexpressions(Device * dev, List map)
+static void _match_subexpressions(Device * dev, List map, ArgList *arglist)
 {
     Action *act;
     Interpretation *interp;
@@ -849,7 +854,6 @@ void _match_subexpressions(Device * dev, List map)
 	while (((Interpretation *) interp = list_next(map_i))) {
 	    if (interp->node == NULL)
 		continue;
-	    interp->node->p_state = ST_UNKNOWN;
 	    re = &(dev->on_re);
 	    str = interp->val;
 	    len = strlen(str);
@@ -860,10 +864,10 @@ void _match_subexpressions(Device * dev, List map)
 	    len = end - str;
 	    *end = '\0';
 	    if ((pos = _findregex(re, str, len)) != NULL)
-		interp->node->p_state = ST_ON;
+		_set_argval_onoff(arglist, interp->node, ST_ON);
 	    re = &(dev->off_re);
 	    if ((pos = _findregex(re, str, len)) != NULL)
-		interp->node->p_state = ST_OFF;
+		_set_argval_onoff(arglist, interp->node, ST_OFF);
 	    *end = tmp;
 	}
 	break;
@@ -871,7 +875,6 @@ void _match_subexpressions(Device * dev, List map)
 	while (((Interpretation *) interp = list_next(map_i))) {
 	    if (interp->node == NULL)
 		continue;
-	    interp->node->n_state = ST_UNKNOWN;
 	    re = &(dev->on_re);
 	    str = interp->val;
 	    len = strlen(str);
@@ -882,10 +885,10 @@ void _match_subexpressions(Device * dev, List map)
 	    len = end - str;
 	    *end = '\0';
 	    if ((pos = _findregex(re, str, len)) != NULL)
-		interp->node->n_state = ST_ON;
+		_set_argval_onoff(arglist, interp->node, ST_ON);
 	    re = &(dev->off_re);
 	    if ((pos = _findregex(re, str, len)) != NULL)
-		interp->node->n_state = ST_OFF;
+		_set_argval_onoff(arglist, interp->node, ST_OFF);
 	    *end = tmp;
 	}
 	break;
@@ -977,6 +980,7 @@ int dev_plug_match(Plug * plug, void *key)
 void dev_plug_destroy(Plug * plug)
 {
     Free(plug->name);
+    Free(plug->node);
     Free(plug);
 }
 
@@ -1035,6 +1039,80 @@ static bool _match_regex(Device * dev, char *expect)
     list_iterator_destroy(map_i);
     return TRUE;
 }
+
+static void _destroy_arg(Arg *arg)
+{
+    assert(arg != NULL);
+    assert(arg->node != NULL);
+    Free(arg->node);
+    Free(arg);
+}
+
+/*
+ * Create arglist.
+ */
+ArgList *dev_create_arglist(hostlist_t hl)
+{
+    ArgList *new = (ArgList *)Malloc(sizeof(ArgList));
+    hostlist_iterator_t itr;
+    Arg *arg;
+    char *node;
+
+    new->refcount = 1;
+    new->argv = list_create((ListDelF) _destroy_arg);
+   
+    if ((itr = hostlist_iterator_create(hl)) == NULL) {
+	dev_unlink_arglist(new);
+	return NULL;
+    }
+    while ((node = hostlist_next(itr)) != NULL) {
+	arg = (Arg *)Malloc(sizeof(Arg));
+	arg->node = Strdup(node);
+	arg->state = ST_UNKNOWN;
+	list_append(new->argv, arg);
+    }
+    hostlist_iterator_destroy(itr);
+
+    return new;
+}
+
+/*
+ * Decrement the refcount for arglist and free when zero.
+ */
+void dev_unlink_arglist(ArgList *arglist)
+{
+    if (--arglist->refcount == 0) {
+	list_destroy(arglist->argv);
+	Free(arglist);
+    }
+}
+
+/*
+ * Increment the ref count for arglist.
+ */
+ArgList *dev_link_arglist(ArgList *arglist)
+{
+    arglist->refcount++;
+    return arglist;
+}
+
+/* helper for _set_argval_onoff */
+static int _arg_match(Arg *arg, void *key)
+{
+    return (strcmp(arg->node, (char *)key) == 0);
+}
+
+/*
+ * Set the value of the argument with key = node.
+ */
+static void _set_argval_onoff(ArgList *arglist, char *node, ArgState state)
+{
+    Arg *arg;
+
+    if ((arg = list_find_first(arglist->argv, (ListFindF) _arg_match, node)))
+	arg->state = state;
+}
+
 
 /*
  * Called prior to the select loop to initiate connects to all devices.

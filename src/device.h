@@ -53,6 +53,17 @@
 #define PM_POWER_CYCLE      6
 #define PM_RESET            7
 
+typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } ArgState;
+
+typedef struct {
+    char         *node;   /* key */
+    ArgState     state;   /* value */
+} Arg;
+
+typedef struct {
+    List	 argv;    /* list of Arg structures */
+    int          refcount;/* free when refcount == 0 */
+} ArgList;
 
 typedef void (*ActionCB)(int client_id, bool error);
 
@@ -68,6 +79,7 @@ typedef struct {
     int		 client_id; /* client id so completion can find client */
     bool	 error;	  /* error flag for action */
     struct timeval  time_stamp; /* time stamp for timeouts */
+    ArgList      *arglist; /* argument for query actions (list of Arg's) */
     MAGIC;
 } Action;
 
@@ -78,7 +90,7 @@ typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectStat;
  */
 typedef struct {
     char	    *name;	    /* how the plug is known to the device */
-    Node	    *node;	    
+    char	    *node;	    /* node name */
 } Plug;
 
 /*
@@ -120,7 +132,8 @@ typedef struct {
 void dev_init(void);
 void dev_fini(void);
 void dev_add(Device *dev);
-int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, int client_id);
+int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, int client_id,
+		ArgList *arglist);
 bool dev_check_actions(int com, hostlist_t hl);
 void dev_initial_connect(void);
 
@@ -134,6 +147,10 @@ void dev_plug_destroy(Plug * plug);
 
 void dev_pre_select(fd_set *rset, fd_set *wset, int *maxfd);
 void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *tv);
+
+ArgList *dev_create_arglist(hostlist_t hl);
+ArgList *dev_link_arglist(ArgList *arglist);
+void dev_unlink_arglist(ArgList *arglist);
 
 #endif				/* DEVICE_H */
 

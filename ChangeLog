@@ -1,3 +1,10 @@
+2002-10-14 garlick
+	* Remove RESET_SCRIPT definitions in wti and baytech device files.
+	* Got rid of Cluster and Node data structures.
+	* Plug state is no longer global - seperate copy for each client cmd.
+	* Fixed memory leaks in _create_client/_destroy_client.
+	* Trimmed TODO file.
+
 2002-10-11 garlick
 	* Fix bug in vpcd where empty line would look like EOF on socket.
 

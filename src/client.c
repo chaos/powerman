@@ -55,11 +55,8 @@ static void _destroy_command(Command *cmd);
 static void _hostlist_error(Client *c);
 static int _match_client(Client * client, void *key);
 static Client *_find_client(int client_id);
-static int _match_nodename(Node* node, void *key);
-static bool _node_exists(char *name);
 static hostlist_t _hostlist_create_validated(Client *c, char *str);
 static void _client_query_nodes_reply(Client *c);
-static void _client_query_status_init(void);
 static void _client_query_status_reply(Client *c);
 static void _handle_client_read(Client * c);
 static void _handle_client_write(Client * c);
@@ -124,24 +121,6 @@ static void _hostlist_error(Client *c)
     }
 }
 
-/* helper for _node_exists() */
-static int _match_nodename(Node* node, void *key)
-{
-    return (strcmp((char *)key, node->name) == 0);
-}
-
-/* 
- * Return TRUE if node exists in the powerman configuration 
- */
-static bool _node_exists(char *name)
-{
-    List nodes = conf_getnodes();
-    Node *node;
-
-    node = list_find_first(nodes, (ListFindF) _match_nodename, name);
-    return (node == NULL ? FALSE : TRUE);
-}
-
 /* 
  * Build a hostlist_t from a string, validating each node name against 
  * powerman configuration.  If any bogus nodes are found, issue error 
@@ -169,7 +148,7 @@ static hostlist_t _hostlist_create_validated(Client *c, char *str)
 	return NULL;
     }
     while ((host = hostlist_next(itr)) != NULL) {
-	if (!_node_exists(host)) {
+	if (!conf_node_exists(host)) {
 	    valid = FALSE;
 	    hostlist_push_host(badhl, host);
 	}
@@ -196,42 +175,35 @@ static hostlist_t _hostlist_create_validated(Client *c, char *str)
  */
 static void _client_query_nodes_reply(Client *c)
 {
-    List nodes = conf_getnodes();
-    hostlist_t hl;
+    hostlist_t nodes = conf_getnodes();
     char hosts[CP_LINEMAX];
-    ListIterator itr;
-    Node *node;
 
-    if ((hl = hostlist_create(NULL)) == NULL) {
-	_hostlist_error(c);
-	return;
-    }
-
-    itr = list_iterator_create(nodes);
-    while ((node = list_next(itr)))
-	hostlist_push_host(hl, node->name);
-
-    if (hostlist_ranged_string(hl, sizeof(hosts), hosts) == -1) 
+    if (hostlist_ranged_string(nodes, sizeof(hosts), hosts) == -1) 
 	_client_msg(c, CP_ERR_INTERNAL);
     else
 	_client_msg(c, CP_RSP_NODES, hosts);
-
-    hostlist_destroy(hl);
-    list_iterator_destroy(itr);
 }
 
-static void _client_query_status_init(void)
+/* helper for _client_query_status_reply */
+static int _argval_ranged_string(ArgList *arglist, char *str, int len, 
+		ArgState state)
 {
-    List nodes = conf_getnodes();
+    hostlist_t hl = hostlist_create(NULL);
     ListIterator itr;
-    Node *node;
+    Arg *arg;
+    int res = -1;
 
-    itr = list_iterator_create(nodes);
-    while ((node = list_next(itr))) {
-	node->p_state = ST_UNKNOWN;
-	node->n_state = ST_UNKNOWN;
-    }
-    list_iterator_destroy(itr);
+    if (hl != NULL) {
+	itr = list_iterator_create(arglist->argv);
+	while ((arg = list_next(itr))) {
+	    if (arg->state == state)
+		hostlist_push(hl, arg->node);
+	}
+	if (hostlist_ranged_string(hl, len, str) != -1) 
+	    res = 0;
+	hostlist_destroy(hl);
+    } 
+    return res;
 }
 
 /* 
@@ -239,58 +211,18 @@ static void _client_query_status_init(void)
  */
 static void _client_query_status_reply(Client *c)
 {
-    List nodes = conf_getnodes();
-    hostlist_t hl_on = hostlist_create(NULL);
-    hostlist_t hl_off = hostlist_create(NULL);
-    hostlist_t hl_unk = hostlist_create(NULL);
-    char on[CP_LINEMAX];
-    char off[CP_LINEMAX];
-    char unk[CP_LINEMAX];
-    ListIterator itr = list_iterator_create(nodes);
-    Node *node;
+    char on[CP_LINEMAX], off[CP_LINEMAX], unknown[CP_LINEMAX];
+    ArgList *arglist = c->cmd->arglist;
+    int n;
 
-    if (hl_on == NULL || hl_off == NULL || hl_unk == NULL) {
-	_hostlist_error(c);
-	goto done;
-    }
-
-    while ((node = list_next(itr))) {
-	if (c->cmd && c->cmd->hl && hostlist_find(c->cmd->hl, node->name) == -1)
-	    continue;
-	switch (node->p_state) {
-	    case ST_ON:
-		hostlist_push_host(hl_on, node->name);
-		break;
-	    case ST_OFF:
-		hostlist_push_host(hl_off, node->name);
-		break;
-	    default:
-		hostlist_push_host(hl_unk, node->name);
-		break;
-	}
-    }
-    if (hostlist_ranged_string(hl_on, sizeof(on), on) == -1) {
+    assert(c->cmd != NULL);
+    n  = _argval_ranged_string(arglist, on,      CP_LINEMAX, ST_ON);
+    n |= _argval_ranged_string(arglist, off,     CP_LINEMAX, ST_OFF);
+    n |= _argval_ranged_string(arglist, unknown, CP_LINEMAX, ST_UNKNOWN);
+    if (n != 0)
 	_client_msg(c, CP_ERR_INTERNAL);
-	goto done;
-    }
-    if (hostlist_ranged_string(hl_off, sizeof(off), off) == -1) {
-	_client_msg(c, CP_ERR_INTERNAL);
-	goto done;
-    }
-    if (hostlist_ranged_string(hl_unk, sizeof(unk), unk) == -1) {
-	_client_msg(c, CP_ERR_INTERNAL);
-	goto done;
-    }
-    _client_msg(c, CP_RSP_STATUS, on, off, unk);
-
-done:
-    list_iterator_destroy(itr);
-    if (hl_on)
-	hostlist_destroy(hl_on);
-    if (hl_off)
-	hostlist_destroy(hl_off);
-    if (hl_unk)
-	hostlist_destroy(hl_unk);
+    else
+	_client_msg(c, CP_RSP_STATUS, on, off, unknown);
 }
 
 /*
@@ -304,6 +236,7 @@ static Command *_create_command(Client *c, int com, char *arg1)
     cmd->error = FALSE;
     cmd->pending = 0;
     cmd->hl = NULL;
+    cmd->arglist = NULL;
     
     if (arg1) {
 	cmd->hl = _hostlist_create_validated(c, arg1);
@@ -317,6 +250,16 @@ static Command *_create_command(Client *c, int com, char *arg1)
 	_destroy_command(cmd);
 	cmd = NULL;
     }
+    /* NOTE: cmd->arglist has a reference count and can persist after we 
+     * unlink from it in _destroy_command().  If client goes away prematurely,
+     * query actions still have valid pointers.
+     */
+    if (cmd && (cmd->com == PM_UPDATE_PLUGS || cmd->com == PM_UPDATE_NODES)) {
+	if (cmd->hl)
+	    cmd->arglist = dev_create_arglist(cmd->hl);
+	else
+	    cmd->arglist = dev_create_arglist(conf_getnodes());
+    }
     return cmd;
 }
 
@@ -327,20 +270,22 @@ static void _destroy_command(Command *cmd)
 {
     if (cmd->hl)
 	hostlist_destroy(cmd->hl);
+    if (cmd->arglist)
+	dev_unlink_arglist(cmd->arglist);
     Free(cmd);
 }
 
 /* helper for _parse_input that deletes leading & trailing whitespace */
 static char *_strip_whitespace(char *str)
 {
-	char *head = str;
-	char *tail = str + strlen(str) - 1;
+    char *head = str;
+    char *tail = str + strlen(str) - 1;
 
-	while (*head && isspace(*head))
-	    head++;
-	while (tail > head && isspace(*tail))
-	    *tail-- = '\0';
-	return head;
+    while (*head && isspace(*head))
+	head++;
+    while (tail > head && isspace(*tail))
+	*tail-- = '\0';
+    return head;
 }
 
 /*
@@ -381,30 +326,19 @@ static void _parse_input(Client *c, char *input)
     } else if (sscanf(str, CP_RESET, arg1) == 1) {	/* reset hostlist */
 	cmd = _create_command(c, PM_RESET, arg1);
     } else if (sscanf(str, CP_STATUS, arg1) == 1) {	/* status [hostlist] */
-	/*_client_query_status_init(); */ /* see FIXME below */
 	cmd = _create_command(c, PM_UPDATE_PLUGS, arg1);
     } else if (!strncasecmp(str, CP_STATUS_ALL, strlen(CP_STATUS_ALL))) {
-	/*_client_query_status_init(); */ /* see FIXME below */
 	cmd = _create_command(c, PM_UPDATE_PLUGS, NULL);
     } else {						/* error: unknown */
 	_client_msg(c, CP_ERR_UNKNOWN);
     }
-    /* FIXME: state query utilizes essentially global variables to store
-     * the state.  This results in a race when multiple query commands are
-     * being processed simultaneously.  
-     * The _client_query_status_init() calls above are commented out to
-     * avoid returning "unknown" data to one client while another's status
-     * query is in progress.  This works at the moment because "unknown"
-     * can never be returned to the client, since actions don't currently
-     * time out when a device is not accessible.
-     */
 
     /* enqueue device actions and tie up the client if necessary */
     /* Note: cmd->hl may be NULL */
     if (cmd) {
 	dbg(DBG_CLIENT, "_parse_input: enqueuing actions");
 	cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish, 
-			c->client_id);
+			c->client_id, cmd->arglist);
 	if (cmd->pending == 0) {
 	    _client_msg(c, CP_ERR_NOACTION);		
 	    _destroy_command(cmd);
@@ -483,16 +417,16 @@ static void _destroy_client(Client * client)
         client->fd = NO_FD;
         dbg(DBG_CLIENT, "_destroy_client: closing fd %d", client->fd);
     }
-
     if (client->to)
         buf_destroy(client->to);
-
     if (client->from)
         buf_destroy(client->from);
-
     if (client->cmd)
 	_destroy_command(client->cmd);
-
+    if (client->ip)
+	Free(client->ip);
+    if (client->host)
+	Free(client->host);
     Free(client);
 }
 

@@ -36,6 +36,7 @@
 #include <sys/types.h>
 
 #include "list.h"
+#include "hostlist.h"
 #include "string.h"
 
 #define NUM_SCRIPTS	8
@@ -97,34 +98,14 @@ typedef struct {
 } Spec;
 
 /*
- * Node
- */
-typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } State_Val; /* plug state */
-typedef struct {
-    char	    *name;	/* hostname */
-    State_Val	    p_state;	/* plug state, i.e. hard-power status */
-    State_Val	    n_state;	/* node state, i.e. soft-power status */
-    MAGIC;
-} Node;
-
-/*
  * Interpretation - a Script_El map entry.
  */
 typedef struct {
-    char      *plug_name;	/* plug name e.g. "10" */
+    char	    *plug_name;	/* plug name e.g. "10" */
     int		    match_pos;	/* offset into string where match is */
     char	    *val;	/* pointer based on match_pos */
-    Node	    *node;	/* where to update matched values */
+    char	    *node;	/* where to update matched values */
 } Interpretation;
-
-/*
- * Defines the set of nodes managed by powerman.
- */
-typedef struct {
-    int		    num;	/* node count */
-    List	    nodes;	/* list of Node structures */
-} Cluster;
-
 
 Protocol *conf_init_client_protocol(void);
 
@@ -140,10 +121,6 @@ Spec_El *conf_spec_el_create(Script_El_Type type, char *str1,
 		struct timeval *tv, List map);
 void conf_spec_el_destroy(Spec_El * specl);
 
-Node *conf_node_create(const char *name);
-int conf_node_match(Node * node, void *key);
-void conf_node_destroy(Node * node);
-
 Interpretation *conf_interp_create(char *name);
 int conf_interp_match(Interpretation * interp, void *key);
 void conf_interp_destroy(Interpretation * interp);
@@ -154,8 +131,9 @@ void conf_fini(void);
 void conf_add_spec(Spec *spec);
 Spec *conf_find_spec(char *name);
 
-void conf_addnode(Node *node);
-List conf_getnodes(void);
+bool conf_addnode(char *node);
+bool conf_node_exists(char *node);
+hostlist_t conf_getnodes(void);
 
 bool conf_get_use_tcp_wrappers(void);
 void conf_set_use_tcp_wrappers(bool val);

@@ -29,6 +29,7 @@
 
 #include "buffer.h"
 #include "hostlist.h"
+#include "device.h"
 
 #define NO_PORT           (-1)
 
@@ -37,6 +38,7 @@ typedef struct {
     hostlist_t		hl;		/* target nodes */
     int			pending;	/* count of pending device actions */
     bool		error;		/* cumulative error flag for actions */
+    ArgList		*arglist;	/* argument for query commands */
 } Command;
 
 typedef enum { CLI_IDLE, CLI_READING, CLI_WRITING, CLI_DONE } Client_Status;

@@ -45,9 +45,6 @@
 static int _spec_match(Spec *spec, void *key);
 static void _spec_destroy(Spec *spec);
 
-static Cluster *_cluster_create(void);
-static void _cluster_destroy(Cluster * cluster);
-
 /* 
  * Device specifications only exist during parsing.
  * After that their contents are copied for each instantiation of the device and
@@ -60,7 +57,7 @@ static List		tmp_specs = NULL;
  */
 static bool		conf_use_tcp_wrap = FALSE;
 static int		conf_listen_port = NO_PORT;
-static Cluster	        *conf_cluster = NULL;
+static hostlist_t	conf_nodes = NULL;
 
 /* 
  * initialize module
@@ -72,8 +69,7 @@ conf_init(char *filename)
     struct stat stbuf;
     int parse_config_file(char *filename);
 
-    /* initialize cluster */
-    conf_cluster = _cluster_create();
+    conf_nodes = hostlist_create(NULL);
 
     tmp_specs = list_create((ListDelF) _spec_destroy);
 
@@ -99,7 +95,8 @@ conf_init(char *filename)
 void
 conf_fini(void)
 {
-    _cluster_destroy(conf_cluster);
+    if (conf_nodes != NULL)
+	hostlist_destroy(conf_nodes);
 }
 
 /*******************************************************************
@@ -266,75 +263,28 @@ void conf_spec_el_destroy(Spec_El * specl)
     specl->map = NULL;
     Free(specl);
 }
-/*******************************************************************
- *                                                                 *
- * Cluster                                                         *
- *   A Cluster structure holds the list of Nodes in the cluster    *
- * along with how many there are and when their state was last     *
- * updated.                                                        *
- *                                                                 *
- *******************************************************************/
 
-static Cluster *_cluster_create(void)
+bool conf_node_exists(char *node)
 {
-    Cluster *cluster;
+    int res;
 
-    cluster = (Cluster *) Malloc(sizeof(Cluster));
-    cluster->num = 0;
-    cluster->nodes = list_create((ListDelF) conf_node_destroy);
-    return cluster;
+    res = hostlist_find(conf_nodes, node);
+    return (res == -1 ? FALSE : TRUE);
 }
 
-
-static void _cluster_destroy(Cluster * cluster)
+bool conf_addnode(char *node)
 {
-    list_destroy(cluster->nodes);
-    Free(cluster);
+    /* nodes must be unique */
+    if (conf_node_exists(node))
+	return FALSE;
+
+    hostlist_push(conf_nodes, node);
+    return TRUE;
 }
 
-/*******************************************************************
- *                                                                 *
- * Node                                                            *
- *   A Node structure holds the information for a single computer  *
- * in the cluster.  It has a name and hard- and soft-power state   *
- * as well as pointers indication with Device struct(s) are        *
- * responsible for managing this Node.                             *
- *                                                                 *
- *******************************************************************/
-
-Node *conf_node_create(const char *name)
+hostlist_t conf_getnodes(void)
 {
-    Node *node;
-
-
-    node = (Node *) Malloc(sizeof(Node));
-    INIT_MAGIC(node);
-    node->name = Strdup(name);
-    node->p_state = ST_UNKNOWN;
-    node->n_state = ST_UNKNOWN;
-    return node;
-}
-
-int conf_node_match(Node * node, void *key)
-{
-    return (strcmp(node->name, (char *) key) == 0);
-}
-
-void conf_node_destroy(Node * node)
-{
-    Free(node->name);
-    Free(node);
-}
-
-void conf_addnode(Node *node)
-{
-    conf_cluster->num++;
-    list_append(conf_cluster->nodes, node);
-}
-
-List conf_getnodes(void)
-{
-    return conf_cluster->nodes;
+    return conf_nodes;
 }
 
 /*******************************************************************
@@ -366,6 +316,7 @@ int conf_interp_match(Interpretation * interp, void *key)
 void conf_interp_destroy(Interpretation * interp)
 {
     Free(interp->plug_name);
+    Free(interp->node);
     Free(interp);
 }
 

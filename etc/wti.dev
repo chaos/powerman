@@ -86,10 +86,6 @@ begin protocol specification
 		send "/boot %s\r\n"
 		expect "NPS> "
 	end CYCLE_SCRIPT
-	begin RESET_SCRIPT
-		send "/boot %s\r\n"
-		expect "NPS> "
-	end RESET_SCRIPT
 	plug name "1"
 	plug name "2"
 	plug name "3"

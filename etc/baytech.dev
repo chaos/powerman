@@ -89,10 +89,6 @@ begin protocol specification
 		send "reboot %s\r\n"
 		expect "RPC-3>"
 	end CYCLE_SCRIPT
-	begin RESET_SCRIPT
-		send "reboot %s\r\n"
-		expect "RPC-3>"
-	end RESET_SCRIPT
 	plug name "1"
 	plug name "2"
 	plug name "3"
