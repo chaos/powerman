@@ -424,19 +424,18 @@ handle_Device_read(Device *dev, int debug)
 	int n;
 
 	CHECK_MAGIC(dev);
-	if (debug)
-	{
-		char str[MAX_BUF];
-		printf("XXX\n");
-		if (peek_string_Buffer(dev->from, str, MAX_BUF) > 0)
-			printf("D: %s", str);
-	}
 	n = read_Buffer(dev->from);
 	if ( (n < 0) && (errno == EWOULDBLOCK) ) return;
 	if ( (n == 0) || ((n < 0) && (errno == ECONNRESET)) ) 
 	{
 		do_Device_reconnect(dev);
 		return;
+	}
+	if (debug)
+	{
+		char str[MAX_BUF];
+		if (peek_line_Buffer(dev->from, str, MAX_BUF) > 0)
+			printf("D: %s", str);
 	}
 }
 
@@ -791,7 +790,7 @@ handle_Device_write(Device *dev, int debug)
 	{
 		char str[MAX_BUF];
 
-		if (peek_string_Buffer(dev->to, str, MAX_BUF) > 0)
+		if (peek_line_Buffer(dev->to, str, MAX_BUF) > 0)
 			printf("S: %s", str);
 	}
 	n = write_Buffer(dev->to);
