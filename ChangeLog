@@ -1,3 +1,7 @@
+2003-1-12 Albert Chu <chu11@llnl.gov>
+
+    * etc/ipmipower.dev: Fixed regex typo, it should now compile.
+
 2003-01-10 Jim Garlick <garlick@llnl.gov>
 
     * src/parse.y: allow hostlists in the 'plug name' field of a node
