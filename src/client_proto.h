@@ -101,5 +101,6 @@
 #define CP_ERR_TIMEOUT	"310 Command timed out" 	CP_EOL
 #define CP_ERR_CLIBUSY	"211 Command in progress" 	CP_EOL
 #define CP_ERR_NOACTION	"213 Command causes no action" 	CP_EOL
+#define CP_ERR_UNIMPL	"214 Command cannot be handled by power control device(s)" CP_EOL
 
 #endif /* CLIENT_PROTO_H */

@@ -376,13 +376,15 @@ static Spec *check_Spec()
 
     /* 
      * perahps some commands are unimplemented.  Put empty lists in their
-     * array spots so other routines don't faulter.
+     * array spots.
      */
+#if 0 /* XXX */
     for (i = 0; i < NUM_SCRIPTS; i++) {
 	if( current_spec->scripts[i] == NULL ) {
 	    current_spec->scripts[i] = list_create((ListDelF) conf_spec_el_destroy);
 	}
     }
+#endif
     name = current_spec->name;
     if( current_spec->type == NO_DEV )
 	_spec_missing("specification type");
@@ -675,6 +677,11 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 	List map;
 	ListIterator map_i;
 
+	if (spec->scripts[i] == NULL) {
+	    dev->prot->scripts[i] = NULL;
+	    continue; /* unimplemented */
+	}
+
 	dev->prot->scripts[i] = list_create((ListDelF) conf_script_el_destroy);
 	script = list_iterator_create(spec->scripts[i]);
 	while( (specl = list_next(script)) ) {
@@ -743,7 +750,8 @@ static char *makeNode(char *s2, char *s3, char *s4)
      * is required because this node will be the target of some
      */
     for (i = 0; i < NUM_SCRIPTS; i++) {
-	script = dev->prot->scripts[i];
+	if ((script = dev->prot->scripts[i]) == NULL)
+	    continue; /* unimplemented */
 	itr = list_iterator_create(script);
 	while( (script_el = list_next(itr)) ) {
 	    switch( script_el->type ) {

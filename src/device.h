@@ -103,8 +103,7 @@ typedef struct {
     int		    fd;
     List	    acts;	    /* queue of Actions */
 
-    struct timeval  time_stamp;	    /* update this after each operation */
-    struct timeval  timeout;
+    struct timeval  timeout;	    /* configurable device timeout */
 
     Buffer	    to;		    /* buffer -> device */
     Buffer	    from;	    /* buffer <- device */
@@ -122,6 +121,7 @@ void dev_init(void);
 void dev_fini(void);
 void dev_add(Device *dev);
 int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, void *arg);
+bool dev_check_actions(int com, hostlist_t hl);
 void dev_initial_connect(void);
 
 Device *dev_create();

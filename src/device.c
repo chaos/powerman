@@ -51,14 +51,14 @@ static bool _finish_connect(Device * dev, struct timeval *timeout);
 static bool _time_to_reconnect(Device *dev, struct timeval *timeout);
 static void _disconnect(Device * dev);
 static bool _process_expect(Device * dev, struct timeval *timeout);
-static bool _process_send(Device * dev);
+static bool _process_send(Device * dev, struct timeval *timeout);
 static bool _process_delay(Device * dev, struct timeval *timeout);
-static void _do_device_semantics(Device * dev, List map);
+static void _match_subexpressions(Device * dev, List map);
 static bool _match_regex(Device * dev, char *expect);
 static int _match_name(Device * dev, void *key);
 static void _handle_read(Device * dev);
 static void _handle_write(Device * dev);
-static void _process_script(Device * dev, struct timeval *timeout);
+static void _process_action(Device * dev, struct timeval *timeout);
 static bool _timeout(struct timeval * timestamp, struct timeval * timeout,
 		struct timeval *timeleft);
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl, 
@@ -69,6 +69,7 @@ static int _enqueue_targetted_actions(Device *dev, int com, hostlist_t hl,
 		ActionCB fun, void *arg);
 static unsigned char *_findregex(regex_t * re, unsigned char *str, int len);
 static char *_getregex_buf(Buffer b, regex_t * re);
+static bool _command_needs_device(Device *dev, hostlist_t hl);
 
 static List dev_devices = NULL;
 
@@ -276,15 +277,11 @@ bool _time_to_reconnect(Device *dev, struct timeval *timeout)
 	    timerclear(&retry);
 	    retry.tv_sec = rtab[rix > max_rtab_index ? max_rtab_index : rix];
 
-	    if (!_timeout(&dev->time_stamp, &retry, &timeleft))
+	    if (!_timeout(&dev->last_reconnect, &retry, &timeleft))
 		reconnect = FALSE;
 	    if (timeout && !reconnect)
 		_update_timeout(timeout, &timeleft);
     }
-#if 0
-    dbg(DBG_DEVICE, "_time_to_reconnect(%d): %s", dev->reconnect_count,
-			reconnect ? "yes" : "no");
-#endif
     return reconnect;
 }
 
@@ -307,7 +304,7 @@ static bool _reconnect(Device * dev)
     assert(dev->connect_status == DEV_NOT_CONNECTED);
     assert(dev->fd == -1);
 
-    Gettimeofday(&dev->time_stamp, NULL);
+    Gettimeofday(&dev->last_reconnect, NULL);
     dev->reconnect_count++;
 
     memset(&hints, 0, sizeof(struct addrinfo));
@@ -342,7 +339,7 @@ static bool _reconnect(Device * dev)
     fd_settings = Fcntl(dev->fd, F_GETFL, 0);
     Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
 
-    /* 0 = connected; -1 implies EINPROGRESS */
+    /* Connect - 0 = connected, -1 implies EINPROGRESS */
     dev->connect_status = DEV_CONNECTING;
     if (Connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen) >= 0)
 	_finish_connect(dev, NULL);
@@ -359,6 +356,45 @@ static bool _reconnect(Device * dev)
     return (dev->connect_status == DEV_CONNECTED);
 }
 
+/* helper for dev_check_actions */
+static bool _command_needs_device(Device *dev, hostlist_t hl)
+{
+    bool needed = FALSE;
+    ListIterator itr; 
+    Plug *plug;
+
+    itr = list_iterator_create(dev->plugs);
+    while ((plug = list_next(itr))) {
+	if (plug->node != NULL && hostlist_find(hl, plug->node->name) != -1) {
+	    needed = TRUE;
+	    break;
+	}
+    }
+    list_iterator_destroy(itr);
+    return needed;
+}
+
+bool dev_check_actions(int com, hostlist_t hl)
+{
+    Device *dev;
+    ListIterator itr;
+    bool valid = TRUE;
+
+    if (hl != NULL) {
+	itr = list_iterator_create(dev_devices);
+	while ((dev = list_next(itr))) {
+	    if (_command_needs_device(dev, hl)) {
+		if (dev->prot->scripts[com] == NULL) { /* unimplemented */
+		    valid = FALSE;
+		    break;
+		}
+	   }
+	}
+	list_iterator_destroy(itr);
+    }
+    return valid;
+}
+
 /*
  * Translate a command from a client into actions for devices.
  * Return an action count so the client be notified when all the
@@ -372,10 +408,9 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB fun, void *arg)
 
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
-	if (dev->prot->scripts[com] == NULL) /* skip unimplemented commands */
-	    continue;
-	/* do the real work */
-	count += _enqueue_actions(dev, com, hl, fun, arg);
+	if (dev->prot->scripts[com] != NULL) { /* unimplemented commands */
+	    count += _enqueue_actions(dev, com, hl, fun, arg);
+	}
     }
     list_iterator_destroy(itr);
 
@@ -501,6 +536,7 @@ static bool _finish_connect(Device *dev, struct timeval *timeout)
     } else {
 	err(FALSE, "_finish_connect: %s connected", dev->name);
 	dev->connect_status = DEV_CONNECTED;
+	dev->reconnect_count = 0;
         _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL);
     }
 
@@ -508,10 +544,7 @@ static bool _finish_connect(Device *dev, struct timeval *timeout)
 }
 
 /*
- *   The Read gets the string.  If it is EOF then we've lost 
- * our connection with the device and need to reconnect.  
- * buf_read() does the real work.  If something arrives,
- * that is handled in _process_script().
+ * Select says device is ready for reading.
  */
 static void _handle_read(Device * dev)
 {
@@ -526,10 +559,24 @@ static void _handle_read(Device * dev)
     if (n == 0 || (n < 0 && errno == ECONNRESET)) {
 	err(n < 0, "read error on %s", dev->name);
 	_disconnect(dev);
-	/*dev->reconnect_count = 0;*/
 	_reconnect(dev);
 	return;
     }
+}
+
+/*
+ * Select says device is ready for writing.
+ */
+static void _handle_write(Device * dev)
+{
+    int n;
+
+    CHECK_MAGIC(dev);
+
+    n = buf_write(dev->to);
+    assert(n >= 0 || (errno == ECONNRESET || errno == EWOULDBLOCK));
+    if (n <= 0)
+	err(n < 0, "write error on %s", dev->name);
 }
 
 static void _disconnect(Device *dev)
@@ -564,9 +611,10 @@ static void _disconnect(Device *dev)
 
 /*
  * Process the script for the current action for this device.
- * Update timeout and return if we are stalled in an expect or a delay.
+ * Update timeout and return if one of the script elements stalls.
+ * Start the next action if we complete this one.
  */
-static void _process_script(Device * dev, struct timeval *timeout)
+static void _process_action(Device * dev, struct timeval *timeout)
 {
     bool stalled = FALSE;
 
@@ -575,7 +623,7 @@ static void _process_script(Device * dev, struct timeval *timeout)
 
 	if (act == NULL)		/* no actions in queue */
 	    break;
-	dbg(DBG_ACTION, "_process_script: processing action %d", act->com);
+	dbg(DBG_ACTION, "_process_action: processing action %d", act->com);
 	_dbg_actions(dev);
 
 	assert(act->itr != NULL);
@@ -592,10 +640,11 @@ static void _process_script(Device * dev, struct timeval *timeout)
 		stalled = !_process_delay(dev, timeout);
 		break;
 	    case EL_SEND:
-		_process_send(dev); /* can't stall */
+		stalled = !_process_send(dev, timeout);
 		break;
 	    default:
-		err_exit(FALSE, "_process_script is very confused");
+		assert(FALSE);
+		err_exit(FALSE, "_process_action: internal error");
 	}
 
 	if (!stalled) {
@@ -615,9 +664,8 @@ static void _process_script(Device * dev, struct timeval *timeout)
 
 	    /* reconnect/login if expect timed out */
 	    if (error && (dev->connect_status & DEV_CONNECTED)) {
-		dbg(DBG_DEVICE, "_process_script: disconnecting due to error");
+		dbg(DBG_DEVICE, "_process_action: disconnecting due to error");
 		_disconnect(dev);
-		/*dev->reconnect_count = 0;*/
 		_reconnect(dev);
 		break;
 	    }
@@ -625,13 +673,6 @@ static void _process_script(Device * dev, struct timeval *timeout)
     }
 }
 
-/*
- *   The next Script_El is an EXPECT.  Indeed we know exactly what to
- * be expecting, so we go to the buffer and look to see if there's a
- * possible new input.  If the regex matches, extract the expect string.
- * If there is an Interpretation map for the expect then send that info to
- * the semantic processor.  
- */
 /* return TRUE if expect is finished */
 bool _process_expect(Device * dev, struct timeval *timeout)
 {
@@ -661,7 +702,7 @@ bool _process_expect(Device * dev, struct timeval *timeout)
 	    bool res = _match_regex(dev, expect);
 
 	    assert(res == TRUE); /* since the first regexec worked ... */
-	    _do_device_semantics(dev, act->cur->s_or_e.expect.map);
+	    _match_subexpressions(dev, act->cur->s_or_e.expect.map);
 	}
 	Free(expect);
 	finished = TRUE;
@@ -690,21 +731,13 @@ bool _process_expect(Device * dev, struct timeval *timeout)
     return finished;
 }
 
-/*
- *   buf_printf() does al the real work.  send.fmt has a string
- * printf(fmt, ...) style.  If it has a "%s" then call buf_printf
- * with the target as its last argument.  Otherwise just send the
- * string and update the device's status.  
- */
-bool _process_send(Device * dev)
+static bool _process_send(Device * dev, struct timeval *timeout)
 {
-    bool finished = TRUE;
-    Action *act;
+    Action *act = list_peek(dev->acts);
     char *fmt;
+    bool finished = FALSE;
+    struct timeval timeleft;
 
-    CHECK_MAGIC(dev);
-
-    act = list_peek(dev->acts);
     assert(act != NULL);
     CHECK_MAGIC(act);
     assert(act->cur != NULL);
@@ -712,12 +745,32 @@ bool _process_send(Device * dev)
 
     fmt = act->cur->s_or_e.send.fmt;
 
-    if (act->target == NULL)
-	buf_printf(dev->to, fmt);
-    else
-	buf_printf(dev->to, fmt, act->target);
+    /* first time through? */
+    if (!(dev->script_status & DEV_SENDING)) {
+	dev->script_status |= DEV_SENDING;
+	Gettimeofday(&act->time_stamp, NULL);
+	if (act->target == NULL)
+	    buf_printf(dev->to, fmt); 
+	else
+	    buf_printf(dev->to, fmt, act->target);
+    }
 
-    dev->script_status |= DEV_SENDING;
+    if (buf_isempty(dev->to)) {				/* finished! */
+	dbg(DBG_SCRIPT, "_process_send(%s): send complete", dev->name);
+	finished = TRUE;
+    } else if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
+							/* timeout? */
+	dbg(DBG_SCRIPT, "_process_send(%s): timeout - aborting", dev->name);
+	act->error = TRUE;
+	finished = TRUE;
+    } else {						/* keep trying */
+	_update_timeout(timeout, &timeleft);
+    }
+
+    if (finished)
+	dev->script_status &= ~DEV_SENDING;
+    else 
+	dbg(DBG_SCRIPT, "_process_send(%s): incomplete send", dev->name);
 
     return finished;
 }
@@ -759,7 +812,7 @@ bool _process_delay(Device * dev, struct timeval *timeout)
  * through all the Interpretations for this EXPECT and sets the
  * plug or node states for whatever plugs it finds.
  */
-void _do_device_semantics(Device * dev, List map)
+void _match_subexpressions(Device * dev, List map)
 {
     Action *act;
     Interpretation *interp;
@@ -828,24 +881,6 @@ void _do_device_semantics(Device * dev, List map)
     list_iterator_destroy(map_i);
 }
 
-/*
- *   buf_write does all the work here except for changing the 
- * device state.
- */
-static void _handle_write(Device * dev)
-{
-    int n;
-
-    CHECK_MAGIC(dev);
-
-    n = buf_write(dev->to);
-    if (n < 0)
-	return;
-    if (buf_isempty(dev->to))
-	dev->script_status &= ~DEV_SENDING;
-}
-
-
 Device *dev_create(const char *name)
 {
     Device *dev;
@@ -858,8 +893,8 @@ Device *dev_create(const char *name)
     dev->script_status = 0;
     dev->fd = NO_FD;
     dev->acts = list_create((ListDelF) _destroy_action);
-    Gettimeofday(&dev->time_stamp, NULL);
     timerclear(&dev->timeout);
+    timerclear(&dev->last_reconnect);
     dev->to = NULL;
     dev->from = NULL;
     dev->prot = NULL;
@@ -869,24 +904,16 @@ Device *dev_create(const char *name)
     return dev;
 }
 
-/*
- *   This match utility is compatible with the list API's ListFindF
- * prototype for searching a list of Device * structs.  The match
- * criterion is a string match on their names.  This comes into use 
- * in the parser when the devices have been parsed into a list and 
- * a node line referes to a device by its name.  
- */
+/* helper for dev_findbyname */
 static int _match_name(Device * dev, void *key)
 {
     return (strcmp(dev->name, (char *)key) == 0);
 }
 
-
 Device *dev_findbyname(char *name)
 {
     return list_find_first(dev_devices, (ListFindF) _match_name, name);
 }
-
 
 void dev_destroy(Device * dev)
 {
@@ -916,7 +943,6 @@ void dev_destroy(Device * dev)
 	buf_destroy(dev->from);
     Free(dev);
 }
-
 
 Plug *dev_plug_create(const char *name)
 {
@@ -976,7 +1002,7 @@ static bool _match_regex(Device * dev, char *expect)
     assert(pmatch[0].rm_so <= strlen(expect));
 
     /* 
-     *  The "foreach" construct assumes that the initializer is never NULL
+     *  The while block assumes that the initializer is never NULL
      * but instead points to a header record to be skipped.  In this case
      * the initializer can be NULL, though.  That is how we signal there
      * is no subexpression to be interpreted.  If it is non-NULL then it
@@ -1032,16 +1058,13 @@ void dev_pre_select(fd_set *rset, fd_set *wset, int *maxfd)
 
 	FD_SET(dev->fd, &dev_fdset);
 
-	/* 
-	 * If we are not in the read set always, then select will
-	 * not unblock if the connection is dropped.
+	/* always set read set bits so select will unblock if the 
+	 * connection is dropped.
 	 */
 	FD_SET(dev->fd, rset);
 	*maxfd = MAX(*maxfd, dev->fd);
 
-	/*
-	 * Need to be in the write set if we are sending scripted text.
-	 */
+	/* need to be in the write set if we are sending scripted text */
 	if (dev->connect_status == DEV_CONNECTED) {
 	    if ((dev->script_status & DEV_SENDING)) {
 		FD_SET(dev->fd, wset);
@@ -1049,9 +1072,7 @@ void dev_pre_select(fd_set *rset, fd_set *wset, int *maxfd)
 	    }
 	}
 
-	/*
-	 * Descriptor will become writable after a connect.
-	 */
+	/* descriptor will become writable after a connect */
 	if (dev->connect_status == DEV_CONNECTING) {
 	    FD_SET(dev->fd, wset);
 	    *maxfd = MAX(*maxfd, dev->fd);
@@ -1077,29 +1098,33 @@ void dev_post_select(fd_set *rset, fd_set *wset, struct timeval *timeout)
 
 	/* reconnect if necessary */
 	if (dev->connect_status == DEV_NOT_CONNECTED) {
-	    if (_time_to_reconnect(dev, timeout) && !_reconnect(dev))
-		continue;
+	    if (_time_to_reconnect(dev, timeout))
+		_reconnect(dev);
+	/* complete non-blocking connect if ready */
+	} else if ((dev->connect_status == DEV_CONNECTING)) {
+	    assert(dev->fd != NO_FD);
+	    if (FD_ISSET(dev->fd, wset)) {
+		_finish_connect(dev, timeout);
+		FD_CLR(dev->fd, wset); /* avoid _handle_write error */
+	    }
 	}
 
-	if (dev->fd == NO_FD)
-	    continue;
-
-	/* complete non-blocking connect + "log in"  to the device */
-	if ((dev->connect_status == DEV_CONNECTING)) {
-	    if (FD_ISSET(dev->fd, rset) || FD_ISSET(dev->fd, wset))
-		if (!_finish_connect(dev, timeout))
-		    continue;
-	}
-	
 	/* read/write from/to buffer */
-	if (FD_ISSET(dev->fd, rset))
-	    _handle_read(dev);
-	if (FD_ISSET(dev->fd, wset))
-	    _handle_write(dev);
+	if (dev->fd != NO_FD) {
+	    if (FD_ISSET(dev->fd, rset))
+		_handle_read(dev); /* also handles ECONNRESET */
+	    if (FD_ISSET(dev->fd, wset))
+		_handle_write(dev);
+	}
 
-	/* in case of I/O or timeout, process scripts (expect/send/delay) */
-	if ((dev->connect_status & DEV_CONNECTED) && list_peek(dev->acts))
-	    _process_script(dev, timeout);
+	/* process actions */
+	if (list_peek(dev->acts)) {
+	    if ((dev->connect_status & DEV_CONNECTED))
+		_process_action(dev, timeout);
+	    /* FIXME: actions can't make progress toward timing out if
+	     * device is not in connected state.
+	     */
+	}
     }
     list_iterator_destroy(itr);
 }

@@ -1,3 +1,11 @@
+2002-10-06 garlick
+	* _process_send can now time out.
+	* Clean up device.c select handling a bit to make it clear why actions
+	  will not time out if device is not connected. 
+	* _handle_write now handles errors from buf_write.
+	* Client now returns error on unimplemented commands.
+	* Changed powerman "-z --report" option to "-q --query"
+
 2002-10-05 garlick
 	* More man page updates
 	* Updated TODO, moved README to d1oc/Overview.txt, removed Retagging.

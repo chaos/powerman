@@ -50,6 +50,8 @@
 #define LISTEN_BACKLOG    5
 
 /* prototypes for internal functions */
+static Command *_create_command(Client *c, int com, char *arg1);
+static void _destroy_command(Command *cmd);
 static void _hostlist_error(Client *c);
 static int _match_client(Client * client, void *key);
 static bool _client_exists(Client *cli);
@@ -298,12 +300,20 @@ static Command *_create_command(Client *c, int com, char *arg1)
     cmd->com = com;
     cmd->error = FALSE;
     cmd->pending = 0;
-    cmd->hl = arg1 ? _hostlist_create_validated(c, arg1) : NULL;
-    if (arg1 && cmd->hl == NULL) {
-	Free(cmd);
+    cmd->hl = NULL;
+    
+    if (arg1) {
+	cmd->hl = _hostlist_create_validated(c, arg1);
+	if (cmd->hl == NULL) {
+	    _destroy_command(cmd);
+	    cmd = NULL;
+	}
+    }
+    if (cmd && !dev_check_actions(cmd->com, cmd->hl)) {
+	_client_msg(c, CP_ERR_UNIMPL);
+	_destroy_command(cmd);
 	cmd = NULL;
     }
-    
     return cmd;
 }
 
@@ -342,6 +352,8 @@ static void _parse_input(Client *c, char *input)
 
     memset(arg1, 0, CP_LINEMAX);
 
+    /* NOTE: sscanf is safe because 'str' is guaranteed to be < CP_LINEMAX */
+
     if (strlen(str) >= CP_LINEMAX) {
 	_client_msg(c, CP_ERR_TOOLONG);			/* error: too long */
     } else if (c->cmd != NULL) {
@@ -376,7 +388,9 @@ static void _parse_input(Client *c, char *input)
     }
 
     /* enqueue device actions and tie up the client if necessary */
+    /* Note: cmd->hl may be NULL */
     if (cmd) {
+	dbg(DBG_CLIENT, "_parse_input: enqueuing actions");
 	cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish, c);
 	if (cmd->pending == 0) {
 	    _client_msg(c, CP_ERR_NOACTION);		

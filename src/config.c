@@ -200,7 +200,8 @@ static void _spec_destroy(Spec * spec)
 	Free(spec->plugname[i]);
     Free(spec->plugname);
     for (i = 0; i < NUM_SCRIPTS; i++)
-	list_destroy(spec->scripts[i]);
+	if (spec->scripts[i])
+	    list_destroy(spec->scripts[i]);
     Free(spec);
 }
 
