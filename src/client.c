@@ -41,7 +41,6 @@
 #include "client.h"
 #include "buffer.h"
 #include "error.h"
-#include "string.h"
 #include "util.h"
 #include "action.h"
 #include "hostlist.h"
@@ -51,7 +50,7 @@
 
 /* prototypes */
 static Action *_process_input(Client *c);
-static Action *_parse_input(Client *c, String expect);
+static Action *_parse_input(Client *c, char *expect);
 static void _destroy_client(Client * client);
 
 /* tcp wrappers support */
@@ -165,7 +164,7 @@ static void _handle_client_read(Client * c)
 static Action *_process_input(Client * c)
 {
     Action *act;
-    String expect;
+    char *expect;
 
     expect = util_bufgetline(c->from);
     if (expect == NULL)
@@ -177,7 +176,7 @@ static Action *_process_input(Client * c)
         act->seq = c->seq++;
     } 
 
-    str_destroy(expect);
+    Free(expect);
     return act;
 }
 
@@ -208,10 +207,9 @@ static void _handle_client_write(Client * c)
  * Returning a NULL means the passed command was unknown, otherwise
  * and action will be allocated and passed back for queueing.
  */
-static Action *_parse_input(Client *c, String expect)
+static Action *_parse_input(Client *c, char *str)
 {
     Action *act = NULL;
-    char *str = str_get(expect);
     char arg1[CP_LINEMAX];
     int args = 0;
 
@@ -251,7 +249,7 @@ static Action *_parse_input(Client *c, String expect)
     /* convert argument to hostlist */
     assert(args == 1 || args == 0);
     if (act != NULL && args == 1) {
-	act->target = str_create(arg1);
+	act->target = Strdup(arg1);
 	if ((act->hl = hostlist_create(arg1)) == NULL) {
 	    _hostlist_error(c);
 	    act_destroy(act); 
@@ -326,7 +324,7 @@ void cli_reply(Action * act)
             }
 
             while ((node = list_next(itr)))
-                hostlist_push_host(hl, str_get(node->name));
+                hostlist_push_host(hl, node->name);
 
             /* FIXME: Deal with possible truncation issue */
             if (hostlist_ranged_string(hl, 4096, hosts) == -1)
@@ -481,8 +479,8 @@ static void _create_client(void)
     if (*p == '/')
         *p = '\0';
 
-    client->ip = str_create(buf);
-    ip = str_get(client->ip);
+    client->ip = Strdup(buf);
+    ip = client->ip;
     fqdn = ip;
     host = STRING_UNKNOWN;
 
@@ -491,8 +489,8 @@ static void _create_client(void)
 		    sizeof(struct in_addr), AF_INET)) == NULL) {
         syslog(LOG_ERR, "Unable to get host name from network address");
     } else {
-        client->host = str_create(hent->h_name);
-        host = str_get(client->host);
+        client->host = Strdup(hent->h_name);
+        host = client->host;
         fqdn = host;
     }
 

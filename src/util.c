@@ -8,7 +8,6 @@
 #include "powerman.h"
 
 #include "buffer.h"
-#include "string.h"
 #include "util.h"
 #include "wrappers.h"
 
@@ -41,12 +40,12 @@ unsigned char *util_findregex(regex_t * re, unsigned char *str, int len)
  *  b (IN)	target Buffer
  *  RETURN	line from buffer (caller must free)
  */
-String util_bufgetline(Buffer b)
+char *util_bufgetline(Buffer b)
 {
     unsigned char str[MAX_BUF];
     int res = buf_getline(b, str, MAX_BUF);
 
-    return (res > 0 ? str_create(str) : NULL);
+    return (res > 0 ? Strdup(str) : NULL);
 }
 
 /*
@@ -60,7 +59,7 @@ String util_bufgetline(Buffer b)
  *  re (IN)	regular expression
  *  RETURN	String match (caller must free) or NULL if no match
  */
-String util_bufgetregex(Buffer b, regex_t * re)
+char *util_bufgetregex(Buffer b, regex_t * re)
 {
     unsigned char str[MAX_BUF];
     int bytes_peeked = buf_peekstr(b, str, MAX_BUF);
@@ -75,7 +74,7 @@ String util_bufgetregex(Buffer b, regex_t * re)
     *match_end = '\0';
     buf_eat(b, match_end - str);	/* only consume up to what matched */
 
-    return str_create(str);
+    return Strdup(str);
 }
 
 /*

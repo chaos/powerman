@@ -40,7 +40,6 @@
 #include "device.h"
 #include "action.h"
 #include "wrappers.h"
-#include "string.h"
 #include "config.h"
 #include "client.h"
 
@@ -126,7 +125,7 @@ Script_El *conf_script_el_create(Script_El_Type type, char *s1,
     script_el->type = type;
     switch (type) {
     case EL_SEND:
-	script_el->s_or_e.send.fmt = str_create(s1);
+	script_el->s_or_e.send.fmt = Strdup(s1);
 	break;
     case EL_EXPECT:
 	Regcomp(&(script_el->s_or_e.expect.exp), s1, cflags);
@@ -145,7 +144,7 @@ void conf_script_el_destroy(Script_El * script_el)
     assert(script_el != NULL);
     switch (script_el->type) {
     case EL_SEND:
-	str_destroy(script_el->s_or_e.send.fmt);
+	Free(script_el->s_or_e.send.fmt);
 	break;
     case EL_EXPECT:
 	list_destroy(script_el->s_or_e.expect.map);
@@ -173,7 +172,7 @@ Spec *conf_spec_create(char *name)
     int i;
 
     spec = (Spec *) Malloc(sizeof(Spec));
-    spec->name = str_create(name);
+    spec->name = Strdup(name);
     spec->type = NO_DEV;
     spec->size = 0;
     spec->timeout.tv_sec = 0;
@@ -187,9 +186,7 @@ Spec *conf_spec_create(char *name)
 /* list 'match' function for conf_find_spec() */
 static int _spec_match(Spec * spec, void *key)
 {
-    if (str_match(spec->name, (char *) key))
-	return TRUE;
-    return FALSE;
+    return (strcmp(spec->name, (char *)key) == 0);
 }
 
 /* list destructor for tmp_specs */
@@ -197,14 +194,14 @@ static void _spec_destroy(Spec * spec)
 {
     int i;
 
-    str_destroy(spec->name);
-    str_destroy(spec->off);
-    str_destroy(spec->on);
-    str_destroy(spec->all);
+    Free(spec->name);
+    Free(spec->off);
+    Free(spec->on);
+    Free(spec->all);
 
     if (spec->type != PMD_DEV) {
 	for (i = 0; i < spec->size; i++)
-	    str_destroy(spec->plugname[i]);
+	    Free(spec->plugname[i]);
 	Free(spec->plugname);
     }
     for (i = 0; i < NUM_SCRIPTS; i++)
@@ -256,7 +253,7 @@ Spec_El *conf_spec_el_create(Script_El_Type type, char *str1, List map)
     default:
 	assert(FALSE);
     }
-    specl->string1 = str_create(str1);
+    specl->string1 = Strdup(str1);
     specl->map = map;
     return specl;
 }
@@ -264,7 +261,7 @@ Spec_El *conf_spec_el_create(Script_El_Type type, char *str1, List map)
 void conf_spec_el_destroy(Spec_El * specl)
 {
     assert(specl->string1 != NULL);
-    str_destroy(specl->string1);
+    Free(specl->string1);
     specl->string1 = NULL;
     if (specl->map != NULL)
 	list_destroy(specl->map);
@@ -314,7 +311,7 @@ Node *conf_node_create(const char *name)
 
     node = (Node *) Malloc(sizeof(Node));
     INIT_MAGIC(node);
-    node->name = str_create(name);
+    node->name = Strdup(name);
     node->p_state = ST_UNKNOWN;
     node->p_dev = NULL;
     node->p_index = NOT_SET;
@@ -326,14 +323,12 @@ Node *conf_node_create(const char *name)
 
 int conf_node_match(Node * node, void *key)
 {
-    if (str_match(node->name, (char *) key))
-	return TRUE;
-    return FALSE;
+    return (strcmp(node->name, (char *) key) == 0);
 }
 
 void conf_node_destroy(Node * node)
 {
-    str_destroy(node->name);
+    Free(node->name);
     Free(node);
 }
 
@@ -362,7 +357,7 @@ Interpretation *conf_interp_create(char *name)
     Interpretation *interp;
 
     interp = (Interpretation *) Malloc(sizeof(Interpretation));
-    interp->plug_name = str_create(name);
+    interp->plug_name = Strdup(name);
     interp->match_pos = NOT_SET;
     interp->val = NULL;
     interp->node = NULL;
@@ -371,14 +366,12 @@ Interpretation *conf_interp_create(char *name)
 
 int conf_interp_match(Interpretation * interp, void *key)
 {
-    if (str_match(interp->plug_name, (char *) key))
-	return TRUE;
-    return FALSE;
+    return (strcmp(interp->plug_name, (char *) key) == 0);
 }
 
 void conf_interp_destroy(Interpretation * interp)
 {
-    str_destroy(interp->plug_name);
+    Free(interp->plug_name);
     Free(interp);
 }
 

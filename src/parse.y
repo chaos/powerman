@@ -429,7 +429,7 @@ static Spec *check_Spec()
 	    current_spec->scripts[i] = list_create((ListDelF) conf_spec_el_destroy);
 	}
     }
-    name = str_get(current_spec->name);
+    name = current_spec->name;
     if( current_spec->type == NO_DEV )
 	err_exit(FALSE, "missing type for specification %s", name);
     if( current_spec->off == NULL )
@@ -487,8 +487,8 @@ static char *makeSpecOff(char *s2)
 {
     if( current_spec->off != NULL )
 	err_exit(FALSE, "off string %s for this specification already seen", 
-			    str_get(current_spec->off));
-    current_spec->off = str_create(s2);
+			    current_spec->off);
+    current_spec->off = Strdup(s2);
     return s2;
 }
 
@@ -496,8 +496,8 @@ static char *makeSpecOn(char *s2)
 {
     if( current_spec->on != NULL )
 	err_exit(FALSE, "on string %s for this specification already seen", 
-    str_get(current_spec->on));
-    current_spec->on = str_create(s2);
+    current_spec->on);
+    current_spec->on = Strdup(s2);
     return s2;
 }
 
@@ -505,8 +505,8 @@ static char *makeSpecAll(char *s2)
 {
     if( current_spec->all != NULL )
 	err_exit(FALSE, "all string %s for this specification already seen", 
-			    str_get(current_spec->all));
-    current_spec->all = str_create(s2);
+			    current_spec->all);
+    current_spec->all = Strdup(s2);
     return s2;
 }
 
@@ -530,7 +530,7 @@ static char *makeSpecSize(char *s2)
     if( size == 0 )
 	current_spec->plugname = NULL;
     else {
-	current_spec->plugname = (String *)Malloc(size * sizeof(String));
+	current_spec->plugname = (char **)Malloc(size * sizeof(char *));
 	for (i = 0; i < size; i++)
 	    current_spec->plugname[i] = NULL;
     }
@@ -721,7 +721,7 @@ static char *makePlugNameLine(char *s2)
 	i++;
     if( i == current_spec->size )
 	err_exit(FALSE, "more than %d Plug Name Lines", current_spec->size);
-    current_spec->plugname[i] = str_create(s2);
+    current_spec->plugname[i] = Strdup(s2);
     return s2;
 }
 
@@ -754,26 +754,26 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
     /* set up the host name and port */
     switch(dev->type) {
 	case TCP_DEV :
-	    dev->devu.tcpd.host = str_create(s4);
-	    dev->devu.tcpd.service = str_create(s5);
+	    dev->devu.tcpd.host = Strdup(s4);
+	    dev->devu.tcpd.service = Strdup(s5);
 	    dev->num_plugs = spec->size;
 	    for (i = 0; i < spec->size; i++) {
-		plug = dev_plug_create(str_get(spec->plugname[i]));
+		plug = dev_plug_create(spec->plugname[i]);
 		list_append(dev->plugs, plug);
 	    }
 	    break;
 	case PMD_DEV :
-	    dev->devu.pmd.host = str_create(s4);
-	    dev->devu.pmd.service = str_create(s5);
+	    dev->devu.pmd.host = Strdup(s4);
+	    dev->devu.pmd.service = Strdup(s5);
 	    break;
 	default :
 	    err_exit(FALSE, "That device type is not implemented yet");
     }
     /* begin transfering info from the Spec to the Device */
-    dev->all = str_copy(spec->all);
+    dev->all = Strdup(spec->all);
     re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
-    Regcomp( &(dev->on_re), str_get(spec->on), cflags);
-    Regcomp( &(dev->off_re), str_get(spec->off), cflags);
+    Regcomp( &(dev->on_re), spec->on, cflags);
+    Regcomp( &(dev->off_re), spec->off, cflags);
     dev->prot = (Protocol *)Malloc(sizeof(Protocol));
     dev->prot->mode = spec->mode;
 	
@@ -800,14 +800,14 @@ static char *makeDevice(char *s2, char *s3, char *s4, char *s5)
 		map = list_create((ListDelF) conf_interp_destroy);
 		map_i = list_iterator_create(specl->map);
 		while( (interp = list_next(map_i)) ) {
-		    new = conf_interp_create(str_get(interp->plug_name));
+		    new = conf_interp_create(interp->plug_name);
 		    new->match_pos = interp->match_pos;
 		    list_append(map, new);
 		}
 		list_iterator_destroy(map_i);
 	    }
-	    script_el = conf_script_el_create(specl->type, str_get(specl->string1), 
-						map, specl->tv);
+	    script_el = conf_script_el_create(specl->type, specl->string1,
+          map, specl->tv);
 	    list_append(dev->prot->scripts[i], script_el);
 	}
     }

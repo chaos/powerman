@@ -50,7 +50,7 @@ typedef struct {
     Script_El_Type type;
     union {
 	struct {
-	    String fmt;		/* printf(fmt, ...) style format string */
+	    char *fmt;		/* printf(fmt, ...) style format string */
 	} send;
 	struct {
 	    regex_t exp;	/* compiled regex */
@@ -77,7 +77,7 @@ typedef struct {
  */
 typedef struct {
     Script_El_Type  type;	/* delay/expect/send */
-    String	    string1;	/* expect string, send fmt */
+    char *string1;	/* expect string, send fmt */
     struct timeval  tv;		/* delay value */
     List	    map;	/* interpretations */
 } Spec_El;
@@ -87,14 +87,14 @@ typedef struct {
  * This data will be copied for each instantiation of a device.
  */
 typedef struct {
-    String	    name;	/* specification name, e.g. "icebox" */
-    Dev_Type	    type;	/* device type, e.g. TCP_DEV */
-    String	    off;	/* off string, e.g. "OFF" */
-    String	    on;		/* on string, e.g. "ON" */
-    String	    all;	/* all string, e.g. "*" */
+    char        *name;	/* specification name, e.g. "icebox" */
+    Dev_Type    type;	/* device type, e.g. TCP_DEV */
+    char        *off;	/* off string, e.g. "OFF" */
+    char        *on;		/* on string, e.g. "ON" */
+    char        *all;	/* all string, e.g. "*" */
     int		    size;	/* number of plugs per device */
     struct timeval  timeout;	/* timeout for this device */
-    String	    *plugname;	/* list of plug names (e.g. "1" thru "10") */
+    char        **plugname;	/* list of plug names (e.g. "1" thru "10") */
     String_Mode	    mode;	/* interp mode, e.g. literal */
     List	    scripts[NUM_SCRIPTS]; /* array of lists of Spec_El's */
 } Spec;
@@ -104,8 +104,8 @@ typedef struct {
  */
 typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } State_Val; /* plug state */
 typedef struct {
-    String	    name;	/* hostname */
-    State_Val	    p_state;	/* plug state, i.e. hard-power status */
+    char        *name;	/* hostname */
+    State_Val	  p_state;	/* plug state, i.e. hard-power status */
     Device	    *p_dev;	/* device used for plug state */
     int		    p_index;	/* port index into plug state device */
     State_Val	    n_state;	/* node state, i.e. soft-power status */
@@ -118,7 +118,7 @@ typedef struct {
  * Interpretation - a Script_El map entry.
  */
 typedef struct {
-    String	    plug_name;	/* plug name e.g. "10" */
+    char      *plug_name;	/* plug name e.g. "10" */
     int		    match_pos;	/* offset into string where match is */
     char	    *val;	/* pointer based on match_pos */
     Node	    *node;	/* where to update matched values */

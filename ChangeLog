@@ -1,4 +1,6 @@
 2002-09-18 behlendorf
+  * Removed string.[ch] and replaced all String structures and functions
+    with equivilant char * replacements.  
   * Parsed hostlists now stored in the action structure and free'd
     when the action is completed.
   * Badly formated hostlists no longer crash the daemon.

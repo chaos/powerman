@@ -32,7 +32,6 @@
 
 #include "powerman.h"
 
-#include "string.h"
 #include "wrappers.h"
 #include "error.h"
 #include "buffer.h"
@@ -164,7 +163,7 @@ void act_destroy(Action * act)
     CHECK_MAGIC(act);
 
     if (act->target != NULL)
-        str_destroy(act->target);
+        Free(act->target);
     act->target = NULL;
     if (act->itr != NULL)
         list_iterator_destroy(act->itr);

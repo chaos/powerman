@@ -38,11 +38,11 @@ typedef struct {
     Client_Status 	write_status;
     int 		seq;		/* command sequence (per client) */
     int 		fd;		/* file desriptor for  the socket */
-    String 		ip;		/* IP address of the client's host */
+    char    *ip;		/* IP address of the client's host */
     unsigned short int 	port;		/* Port of client connection */
-    String 		host;		/* host name of client host */
-    Buffer 		to;		/* out buffer */
-    Buffer 		from;		/* in buffer */
+    char    *host;		/* host name of client host */
+    Buffer 	to;		/* out buffer */
+    Buffer 	from;		/* in buffer */
     MAGIC;
 } Client;
 

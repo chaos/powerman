@@ -84,8 +84,8 @@ typedef enum {
  * An instance of Config is built by process_command_line().
  */
 typedef struct {
-    String host;		/* server hostname */
-    String service;		/* server port name */
+    char *host;		/* server hostname */
+    char *service;		/* server port name */
     int port;			/* server port number */
     int fd;			/* socket open to server */
     command_t com;		/* comment to send to server */
@@ -93,7 +93,7 @@ typedef struct {
     bool verify;		/* after requesting state change, verify it */
     bool noexec;		/* do not request server to do commands */
     hostlist_t targ;		/* target hostname list */
-    List reply;			/* list-o-Strings: reply from server */
+    List reply;			/* list-o-char *'s: reply from server */
 } Config;
 
 static void dump_Conf(Config * conf);
@@ -106,8 +106,8 @@ static List get_Names(int fd);
 static void get_State(int fd, List cluster);
 static List dialog(int fd, const char *str);
 static void process_targets(Config * conf);
-static String glob2regex(String glob);
-static List send_server(Config * conf, String str);
+static char *glob2regex(char *glob);
+static List send_server(Config * conf, char *str);
 static void publish_reply(Config * conf, List reply);
 static void print_readable(Config * conf, List cluster);
 static void print_list(Config * conf, List cluster, State_Val state);
@@ -120,7 +120,7 @@ static void update_Nodes_hard_state(List cluster, List reply);
 static Node *xmake_Node(const char *name);
 static int cmp_Nodes(Node * node1, Node * node2);
 static void xfree_Node(Node * node);
-static bool is_prompt(String targ);
+static bool is_prompt(char *targ);
 
 const char *powerman_license =
     "Copyright (C) 2001-2002 The Regents of the University of California.\n"
@@ -269,8 +269,8 @@ static Config *process_command_line(int argc, char **argv)
 	    break;
 	case 'd':		/* --host */
 	    if (conf->host != NULL)
-		str_destroy(conf->host);
-	    conf->host = str_create(optarg);
+		Free(conf->host);
+	    conf->host = Strdup(optarg);
 	    break;
 	case 'F':		/* --file */
 	    read_Targets(conf, optarg);
@@ -280,8 +280,8 @@ static Config *process_command_line(int argc, char **argv)
 	    /* If not, can you find the named service?  */
 	    /* If not, err_exit()                     */
 	    if (conf->service != NULL)
-		str_destroy(conf->service);
-	    conf->service = str_create(optarg);
+		Free(conf->service);
+	    conf->service = Strdup(optarg);
 	    break;
 	case 'n':		/* --noexec */
 	    conf->noexec = TRUE;
@@ -414,8 +414,7 @@ static void connect_to_server(Config * conf)
 
     assert(conf->host != NULL);
     assert(conf->service != NULL);
-    Getaddrinfo(str_get(conf->host), str_get(conf->service),
-		&hints, &addrinfo);
+    Getaddrinfo(conf->host, conf->service, &hints, &addrinfo);
 
     conf->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
 		      addrinfo->ai_protocol);
@@ -509,9 +508,9 @@ static List dialog(int fd, const char *str)
     /* Review: should be moved to a #define at top of module with comment */
     int limit = 100;
     bool found = FALSE;
-    List reply = list_create((ListDelF) str_destroy);
+    List reply = list_create((ListDelF) Free);
     /* Review: check for NULL reply or use out_of_memory() */
-    String targ;
+    char *targ;
 
     if (debug_telemetry) {
 	if (str)
@@ -549,7 +548,7 @@ static List dialog(int fd, const char *str)
 	    if ((buf[i] == '\r') || (buf[i] == '\n') || (buf[i] == '\0')) {
 		buf[i] = '\0';
 		if (j < i) {
-		    targ = str_create(buf + j);
+		    targ = Strdup(buf + j);
 		    list_append(reply, targ);
 		}
 		j = i + 1;
@@ -561,11 +560,11 @@ static List dialog(int fd, const char *str)
 	err_exit(FALSE, "command \"%s\" failed.", str);
 
     if (debug_telemetry) {
-	String tmpstr;
+	char *tmpstr;
 
 	ListIterator itr = list_iterator_create(reply);
 	while ((tmpstr = list_next(itr)))
-	    printf("S: '%s'\n", str_get(tmpstr));
+	    printf("S: '%s'\n", tmpstr);
 	list_iterator_destroy(itr);
     }
 
@@ -585,60 +584,57 @@ static void process_targets(Config * conf)
     if ((itr = hostlist_iterator_create(conf->targ)) == NULL)
 	err_exit(TRUE, "hostlist_iterator_create");
     while ((host = hostlist_next(itr))) {
-	String targ = str_create(host);
-	String str;
+	char *targ = Strdup(host);
+	char *str;
 	List reply;
 
 	if (conf->regex == TRUE)
 	    str = targ;
 	else {
 	    str = glob2regex(targ);
-	    str_destroy(targ);
+	    Free(targ);
 	}
 	reply = send_server(conf, str);
 	publish_reply(conf, reply);
-	str_destroy(str);
+	Free(str);
 	list_destroy(reply);
     }
     hostlist_iterator_destroy(itr);
 }
 
-/*
- * String source
- */
-static String glob2regex(String glob)
+
+static char *glob2regex(char *glob)
 {
     unsigned char buf[MAX_BUF];
     int i = 0;
-    String regex;
-    unsigned char *g = str_get(glob);
+    char *regex;
 
     /* Review: check that glob really is a legal glob here. 
      * look into fnmatch() */
     /* Review: check for overruns of buf */
     /* Review: check for escape of . or * etc.  ("\." "\*" "\?") */
-    while (*g != '\0') {
-	if (isalnum(*g) || (*g == '-') || (*g == '_')) {
-	    buf[i] = *g;
+    while (*glob != '\0') {
+	if (isalnum(*glob) || (*glob == '-') || (*glob == '_')) {
+	    buf[i] = *glob;
 	    i++;
-	} else if ((*g == '*') || (*g == '?')) {
+	} else if ((*glob == '*') || (*glob == '?')) {
 	    buf[i] = '.';
 	    i++;
-	    buf[i] = *g;
+	    buf[i] = *glob;
 	    i++;
 	} else
-	    err_exit(FALSE, "%c is not a legal character for a host name", *g);
-	g++;
+	    err_exit(FALSE, "%c is not a legal character for a host name", *glob);
+	glob++;
     }
     buf[i] = '\0';
-    regex = str_create(buf);
+    regex = Strdup(buf);
     return regex;
 }
 
 /* 
  * List source
  */
-static List send_server(Config * conf, String str)
+static List send_server(Config * conf, char *str)
 {
     List reply;
     char buf[MAX_BUF];
@@ -647,19 +643,19 @@ static List send_server(Config * conf, String str)
 
     switch (conf->com) {
     case CMD_LISTTARG:
-	res = snprintf(buf, len, GET_NAMES_FMT, str_get(str));
+	res = snprintf(buf, len, GET_NAMES_FMT, str);
 	break;
     case CMD_POWER_ON:
-	res = snprintf(buf, len, DO_POWER_ON_FMT, str_get(str));
+	res = snprintf(buf, len, DO_POWER_ON_FMT, str);
 	break;
     case CMD_POWER_OFF:
-	res = snprintf(buf, len, DO_POWER_OFF_FMT, str_get(str));
+	res = snprintf(buf, len, DO_POWER_OFF_FMT, str);
 	break;
     case CMD_POWER_CYCLE:
-	res = snprintf(buf, len, DO_POWER_CYCLE_FMT, str_get(str));
+	res = snprintf(buf, len, DO_POWER_CYCLE_FMT, str);
 	break;
     case CMD_RESET:
-	res = snprintf(buf, len, DO_RESET_FMT, str_get(str));
+	res = snprintf(buf, len, DO_RESET_FMT, str);
 	break;
     default:
 	assert(FALSE);
@@ -713,15 +709,15 @@ static void print_readable(Config * conf, List cluster)
     while ((node = list_next(itr))) {
 	switch (node->p_state) {
 	case ST_ON:
-	    hostlist_push_host(on, str_get(node->name));
+	    hostlist_push_host(on, node->name);
 	    if (node->n_state != ST_ON)
-		warn_softstate(str_get(node->name));
+		warn_softstate(node->name);
 	    break;
 	case ST_OFF:
-	    hostlist_push_host(off, str_get(node->name));
+	    hostlist_push_host(off, node->name);
 	    break;
 	case ST_UNKNOWN:
-	    hostlist_push_host(unk, str_get(node->name));
+	    hostlist_push_host(unk, node->name);
 	    break;
 	}
     }
@@ -758,22 +754,22 @@ static void print_list(Config * conf, List cluster, State_Val state)
     itr = list_iterator_create(cluster);
     while ((node = list_next(itr))) {
 	if (node->p_state == state)
-	    printf("%s\n", str_get(node->name));
+	    printf("%s\n", node->name);
 	if (node->p_state == ST_ON && node->n_state == ST_OFF)
-	    warn_softstate(str_get(node->name));
+	    warn_softstate(node->name);
     }
     list_iterator_destroy(itr);
 }
 
 static void print_Targets(List targ)
 {
-    String t;
+    char *t;
     ListIterator itr;
 
     assert(targ != NULL);
     itr = list_iterator_create(targ);
     while ((t = list_next(itr)) && !is_prompt(t)) {
-	printf("%s\n", str_get(t));
+	printf("%s\n", t);
     }
     list_iterator_destroy(itr);
 }
@@ -797,24 +793,24 @@ static Config *make_Config(void)
 	if ((port = strchr(env, ':'))) {
 	    *port++ = '\0';
 	    if ((p = atoi(port)) > 0) {
-		conf->service = str_create(port);
+		conf->service = Strdup(port);
 		conf->port = p;
 	    }
 	}
 	if (*env) {
-	    conf->host = str_create(env);
+	    conf->host = Strdup(env);
 	}
     }
     if (conf->host == NULL)
-	conf->host = str_create("localhost");
+	conf->host = Strdup("localhost");
     if ((port = getenv("POWERMAN_PORT")) && (*env)) {
 	if ((p = atoi(port)) > 0) {
-	    conf->service = str_create(port);
+	    conf->service = Strdup(port);
 	    conf->port = p;
 	}
     }
     if (conf->service == NULL) {
-	conf->service = str_create("10101");
+	conf->service = Strdup("10101");
 	conf->port = 10101;
     }
     conf->com = CMD_ERROR;
@@ -830,8 +826,8 @@ static Config *make_Config(void)
  */
 static void free_Config(Config * conf)
 {
-    str_destroy(conf->host);
-    str_destroy(conf->service);
+    Free(conf->host);
+    Free(conf->service);
     hostlist_destroy(conf->targ);
     if (conf->reply != NULL)
 	list_destroy(conf->reply);
@@ -842,12 +838,12 @@ static void append_Nodes(List cluster, List reply)
 {
     Node *node;
     ListIterator itr;
-    String targ;
+    char *targ;
 
     assert(reply != NULL);
     itr = list_iterator_create(reply);
     while ((targ = list_next(itr)) && !is_prompt(targ)) {
-	node = xmake_Node(str_get(targ));
+	node = xmake_Node(targ);
 	list_append(cluster, node);
     }
     list_iterator_destroy(itr);
@@ -864,18 +860,18 @@ static void update_Nodes_soft_state(List cluster, List reply)
     Node *node;
     ListIterator node_i;
     int i = 0;
-    String targ;
+    char *targ;
 
     assert(reply != NULL);
-    targ = list_pop(reply);	/* reply list is always one String */
+    targ = list_pop(reply);	/* reply list is always one char * */
     assert(targ != NULL);
-    assert(!str_isempty(targ));
+    assert(strlen(targ) != 0);
 
     node_i = list_iterator_create(cluster);
     node = list_next(node_i);
-    for (i = 0; i < str_length(targ); i++) {
+    for (i = 0; i < strlen(targ); i++) {
 	assert(node != NULL);
-	switch (str_byte(targ, i)) {
+	switch (targ[i]) {
 	case '0':
 	    node->n_state = ST_OFF;
 	    break;
@@ -904,18 +900,18 @@ static void update_Nodes_hard_state(List cluster, List reply)
     Node *node;
     ListIterator node_i;
     int i = 0;
-    String targ;
+    char *targ;
 
     assert(reply != NULL);
-    targ = list_pop(reply);	/* reply list is always one String */
+    targ = list_pop(reply);	/* reply list is always one char * */
     assert(targ != NULL);
-    assert(!str_isempty(targ));
+    assert(strlen(targ) != 0);
 
     node_i = list_iterator_create(cluster);
     node = list_next(node_i);
-    for (i = 0; i < str_length(targ); i++) {
+    for (i = 0; i < strlen(targ); i++) {
 	assert(node != NULL);
-	switch (str_byte(targ, i)) {
+	switch (targ[i]) {
 	case '0':
 	    node->p_state = ST_OFF;
 	    break;
@@ -941,7 +937,7 @@ static Node *xmake_Node(const char *name)
     Node *node;
 
     node = (Node *) Malloc(sizeof(Node));
-    node->name = str_create(name);
+    node->name = Strdup(name);
     node->n_state = ST_UNKNOWN;
     node->p_state = ST_UNKNOWN;
     return node;
@@ -954,24 +950,24 @@ static int cmp_Nodes(Node * node1, Node * node2)
     assert(node2 != NULL);
     assert(node2->name != NULL);
 
-    return strcmp(str_get(node1->name), str_get(node2->name));
+    return strcmp(node1->name, node2->name);
 }
 
 static void xfree_Node(Node * node)
 {
-    str_destroy(node->name);
+    Free(node->name);
     Free(node);
 }
 
-static bool is_prompt(String targ)
+static bool is_prompt(char *targ)
 {
     int i = 0;
     bool result = FALSE;
 
     assert(targ != NULL);
 
-    for (i = 0; i < str_length(targ); i++) {
-	if (str_byte(targ, i) == PROMPT)
+    for (i = 0; i < strlen(targ); i++) {
+	if (targ[i] == PROMPT)
 	    result = TRUE;
 	i++;
     }

@@ -58,12 +58,12 @@
 
 struct action_struct {
     Client       *client;
-    int          seq;    /* sequence number from client */
-    int          com;    /* one of the PM_* above */
-    ListIterator itr;    /* next place in the script sequence */
-    Script_El    *cur;   /* current place in the script sequence */
-    String       target; /* string version of hostlist */
-    hostlist_t   hl;     /* target hostlist */
+    int          seq;     /* sequence number from client */
+    int          com;     /* one of the PM_* above */
+    ListIterator itr;     /* next place in the script sequence */
+    Script_El    *cur;    /* current place in the script sequence */
+    char         *target; /* string version of hostlist */
+    hostlist_t   hl;      /* target hostlist */
     MAGIC;
 };
 

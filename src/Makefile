@@ -31,7 +31,7 @@ sbindir=        ${exec_prefix}/sbin
 libdir=         ${exec_prefix}/lib
 packagedir=     ${etcdir}/${PACKAGE}
 
-COMMON_OBJS = list.o string.o wrappers.o error.o hostlist.o
+COMMON_OBJS = list.o wrappers.o error.o hostlist.o
 
 SERVER_UTIL = $(COMMON_OBJS) daemon.o util.o buffer.o
 

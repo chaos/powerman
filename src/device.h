@@ -42,7 +42,7 @@
  * Plug
  */
 typedef struct {
-    String	    name;	    /* how the plug is known to the device */
+    char      *name;	    /* how the plug is known to the device */
     regex_t	    name_re;
     Node	    *node;	    
 } Plug;
@@ -51,23 +51,23 @@ typedef struct {
  * Device
  */
 struct device_struct {
-    String	    name;
+    char      *name;
     Spec	    *spec;
-    String	    all;
+    char      *all;
     regex_t	    on_re;
     regex_t	    off_re;
     Dev_Type	    type;
     union {
 	/*TTY_Dev ttyd;*/
 	struct {
-	    String  host;
-	    String  service;
+	    char    *host;
+	    char    *service;
 	} tcpd;
 	/*SNMP_Dev snmpd;*/
 	/*telnet_Dev telnetd;*/
 	struct {
-	    String  host;
-	    String  service;
+	    char    *host;
+	    char    *service;
 	} pmd;
     } devu;
     bool	    loggedin;

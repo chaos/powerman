@@ -43,13 +43,12 @@
 #include "action.h"
 #include "error.h"
 #include "wrappers.h"
-#include "string.h"
 #include "buffer.h"
 #include "util.h"
 #include "hostlist.h"
 
 static void _set_targets(Device * dev, Action * sact);
-static Action *_do_target_copy(Device * dev, Action * sact, String target);
+static Action *_do_target_copy(Device * dev, Action * sact, char *target);
 static void _do_target_some(Device * dev, Action * sact);
 static void _do_reconnect(Device * dev);
 static bool _process_expect(Device * dev);
@@ -57,7 +56,7 @@ static bool _process_send(Device * dev);
 static bool _process_delay(Device * dev);
 static void _do_device_semantics(Device * dev, List map);
 static void _do_pmd_semantics(Device * dev, List map);
-static bool _match_regex(Device * dev, String expect);
+static bool _match_regex(Device * dev, char *expect);
 static void _acttodev(Device * dev, Action * sact);
 static int _match_name(Device * dev, void *key);
 
@@ -138,7 +137,7 @@ static void _buflogfun_to(unsigned char *mem, int len, void *arg)
     Device *dev = (Device *) arg;
     char *str = util_memstr(mem, len);
 
-    printf("S(%s): %s\n", str_get(dev->name), str);
+    printf("S(%s): %s\n", dev->name, str);
     Free(str);
 }
 
@@ -150,7 +149,7 @@ static void _buflogfun_from(unsigned char *mem, int len, void *arg)
     Device *dev = (Device *) arg;
     char *str = util_memstr(mem, len);
 
-    printf("D(%s): %s\n", str_get(dev->name), str);
+    printf("D(%s): %s\n", dev->name, str);
     Free(str);
 }
 
@@ -181,12 +180,10 @@ void dev_nb_connect(Device * dev)
     hints.ai_socktype = SOCK_STREAM;
     switch (dev->type) {
     case TCP_DEV:
-	Getaddrinfo(str_get(dev->devu.tcpd.host),
-		    str_get(dev->devu.tcpd.service), &hints, &addrinfo);
+	Getaddrinfo(dev->devu.tcpd.host, dev->devu.tcpd.service, &hints, &addrinfo);
 	break;
     case PMD_DEV:
-	Getaddrinfo(str_get(dev->devu.pmd.host),
-		    str_get(dev->devu.pmd.service), &hints, &addrinfo);
+	Getaddrinfo(dev->devu.pmd.host, dev->devu.pmd.service, &hints, &addrinfo);
 	break;
     default:
 	err_exit(FALSE, "unknown device type %d", dev->type);
@@ -376,7 +373,7 @@ void _set_targets(Device * dev, Action * sact)
  * the parameters list.  A NULL target means leave the Action's
  * target NULL as well (it comes that way from act_create()).
  */
-Action *_do_target_copy(Device * dev, Action * sact, String target)
+Action *_do_target_copy(Device * dev, Action * sact, char *target)
 {
     Action *act;
 
@@ -385,7 +382,7 @@ Action *_do_target_copy(Device * dev, Action * sact, String target)
     act->seq = sact->seq;
     act->itr = list_iterator_create(dev->prot->scripts[act->com]);
     if (target != NULL)
-	act->target = str_copy(target);
+	act->target = Strdup(target);
     return act;
 }
 
@@ -420,7 +417,7 @@ void _do_target_some(Device * dev, Action * sact)
         }
 
         /* check if plug->node->name matches the target */
-        if (hostlist_find(sact->hl, str_get(plug->node->name)) != -1) {
+        if (hostlist_find(sact->hl, plug->node->name) != -1) {
             any = TRUE;
             act = _do_target_copy(dev, sact, plug->name);
             list_append(new_acts, act);
@@ -471,17 +468,14 @@ void dev_connect(Device * dev)
 	dev->status = DEV_NOT_CONNECTED;
 	buf_clear(dev->to);
 	buf_clear(dev->from);
-	syslog(LOG_INFO,
-	       "Failure attempting to connect to %s: %m\n",
-	       str_get(dev->name));
+	syslog(LOG_INFO, "Failure attempting to connect to %s: %m\n", dev->name);
 	/*
 	 *  Back in the main loop after the update interval has passed,
 	 *  device will attempt another dev_nb_connect().
 	 */
 	return;
     } else if (dev->error) {
-	syslog(LOG_INFO, "Connection to %s re-established\n",
-	       str_get(dev->name));
+	syslog(LOG_INFO, "Connection to %s re-established\n", dev->name);
     }
     dev->error = FALSE;
     dev->status = DEV_CONNECTED;
@@ -504,11 +498,9 @@ void dev_handle_read(Device * dev)
     if ((n < 0) && (errno == EWOULDBLOCK))
 	return;
     if ((n == 0) || ((n < 0) && (errno == ECONNRESET))) {
-	syslog(LOG_ERR, "Device read problem, reconnecting to %s",
-	       str_get(dev->name));
+	syslog(LOG_ERR, "Device read problem, reconnecting to %s", dev->name);
 	if (dev->logit)
-	    printf("Device read problem, reconnecting to: %s\n",
-		   str_get(dev->name));
+	    printf("Device read problem, reconnecting to: %s\n", dev->name);
 	_do_reconnect(dev);
 	return;
     }
@@ -632,7 +624,7 @@ bool _process_expect(Device * dev)
 {
     regex_t *re;
     Action *act = list_peek(dev->acts);
-    String expect;
+    char *expect;
     bool res;
 
     assert(act != NULL);
@@ -647,8 +639,7 @@ bool _process_expect(Device * dev)
 	    int len = buf_peekstr(dev->from, mem, MAX_BUF);
 	    char *str = util_memstr(mem, len);
 
-	    printf("_process_expect(%s): no match: '%s'\n",
-		   str_get(dev->name), str);
+	    printf("_process_expect(%s): no match: '%s'\n", dev->name, str);
 
 	    Free(str);
 	}
@@ -669,10 +660,10 @@ bool _process_expect(Device * dev)
 	else
 	    _do_device_semantics(dev, act->cur->s_or_e.expect.map);
     }
-    str_destroy(expect);
+    Free(expect);
 
     if (dev->logit)
-	printf("_process_expect(%s): match\n", str_get(dev->name));
+	printf("_process_expect(%s): match\n", dev->name);
     return FALSE;
 }
 
@@ -696,12 +687,12 @@ bool _process_send(Device * dev)
     assert(act->cur != NULL);
     assert(act->cur->type == EL_SEND);
 
-    fmt = str_get(act->cur->s_or_e.send.fmt);
+    fmt = act->cur->s_or_e.send.fmt;
 
     if (act->target == NULL)
 	buf_printf(dev->to, fmt);
     else
-	buf_printf(dev->to, fmt, str_get(act->target));
+	buf_printf(dev->to, fmt, act->target);
 
     dev->status |= DEV_SENDING;
 
@@ -723,8 +714,8 @@ bool _process_delay(Device * dev)
     assert(act->cur->type == EL_DELAY);
 
     if (dev->logit)
-	printf("_process_delay(%s): %ld.%-6.6ld \n",
-	       str_get(dev->name), tv.tv_sec, tv.tv_usec);
+        printf("_process_delay(%s): %ld.%-6.6ld \n",
+               dev->name, tv.tv_sec, tv.tv_usec);
 
     Delay(&tv);
 
@@ -901,11 +892,9 @@ void dev_recover(Device * dev)
 
     assert(dev != NULL);
 
-    syslog(LOG_ERR, "Expect timed out, reconnecting to %s",
-	   str_get(dev->name));
+    syslog(LOG_ERR, "Expect timed out, reconnecting to %s", dev->name);
     if (dev->logit)
-	printf("Expect timed out, reconnecting to %s\n",
-	       str_get(dev->name));
+        printf("Expect timed out, reconnecting to %s\n", dev->name);
     while (!list_is_empty(dev->acts))
 	act_del_queuehead(dev->acts);
     plug_i = list_iterator_create(dev->plugs);
@@ -924,7 +913,7 @@ Device *dev_create(const char *name)
 
     dev = (Device *) Malloc(sizeof(Device));
     INIT_MAGIC(dev);
-    dev->name = str_create(name);
+    dev->name = Strdup(name);
     dev->type = NO_DEV;
     dev->loggedin = FALSE;
     dev->error = FALSE;
@@ -952,7 +941,7 @@ Device *dev_create(const char *name)
  */
 static int _match_name(Device * dev, void *key)
 {
-    return (str_match(dev->name, (char *) key));
+    return (strcmp(dev->name, (char *)key) == 0);
 }
 
 
@@ -968,14 +957,14 @@ void dev_destroy(Device * dev)
 {
     CHECK_MAGIC(dev);
 
-    str_destroy(dev->name);
-    str_destroy(dev->all);
+    Free(dev->name);
+    Free(dev->all);
     if (dev->type == TCP_DEV) {
-	str_destroy(dev->devu.tcpd.host);
-	str_destroy(dev->devu.tcpd.service);
+        Free(dev->devu.tcpd.host);
+        Free(dev->devu.tcpd.service);
     } else if (dev->type == PMD_DEV) {
-	str_destroy(dev->devu.pmd.host);
-	str_destroy(dev->devu.pmd.service);
+        Free(dev->devu.pmd.host);
+        Free(dev->devu.pmd.service);
     }
     list_destroy(dev->acts);
     list_destroy(dev->plugs);
@@ -994,7 +983,7 @@ Plug *dev_plug_create(const char *name)
     reg_syntax_t cflags = REG_EXTENDED;
 
     plug = (Plug *) Malloc(sizeof(Plug));
-    plug->name = str_create(name);
+    plug->name = Strdup(name);
     re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
     Regcomp(&(plug->name_re), name, cflags);
     plug->node = NULL;
@@ -1007,16 +996,14 @@ Plug *dev_plug_create(const char *name)
  */
 int dev_plug_match(Plug * plug, void *key)
 {
-    if (str_match(((Plug *) plug)->name, (char *) key))
-	return TRUE;
-    return FALSE;
+    return (strcmp(((Plug *)plug)->name, (char *)key) == 0);
 }
 
 
 void dev_plug_destroy(Plug * plug)
 {
     regfree(&(plug->name_re));
-    str_destroy(plug->name);
+    Free(plug->name);
     Free(plug);
 }
 
@@ -1027,7 +1014,7 @@ void dev_plug_destroy(Plug * plug)
  * goes through and sets all the Interpretation "val" fields, for
  * the semantics functions to later find.
  */
-static bool _match_regex(Device * dev, String expect)
+static bool _match_regex(Device * dev, char *expect)
 {
     Action *act;
     regex_t *re;
@@ -1037,8 +1024,7 @@ static bool _match_regex(Device * dev, String expect)
     int eflags = 0;
     Interpretation *interp;
     ListIterator map_i;
-    char *str = str_get(expect);
-    int len = str_length(expect);
+    int len = strlen(expect);
 
     CHECK_MAGIC(dev);
     act = list_peek(dev->acts);
@@ -1048,7 +1034,7 @@ static bool _match_regex(Device * dev, String expect)
     assert(act->cur->type == EL_EXPECT);
 
     re = &(act->cur->s_or_e.expect.exp);
-    n = Regexec(re, str, nmatch, pmatch, eflags);
+    n = Regexec(re, expect, nmatch, pmatch, eflags);
 
     if (n != REG_NOERROR)
 	return FALSE;
@@ -1082,7 +1068,7 @@ static bool _match_regex(Device * dev, String expect)
 
     if (dev->type == PMD_DEV) {
 	interp = list_peek(act->cur->s_or_e.expect.map);
-	interp->val = str;
+	interp->val = expect;
 	return TRUE;
     }
     map_i = list_iterator_create(act->cur->s_or_e.expect.map);
@@ -1091,7 +1077,7 @@ static bool _match_regex(Device * dev, String expect)
 	       (pmatch[interp->match_pos].rm_so >= 0));
 	assert((pmatch[interp->match_pos].rm_eo < MAX_BUF) &&
 	       (pmatch[interp->match_pos].rm_eo >= 0));
-	interp->val = str + pmatch[interp->match_pos].rm_so;
+	interp->val = expect + pmatch[interp->match_pos].rm_so;
     }
     list_iterator_destroy(map_i);
     return TRUE;
