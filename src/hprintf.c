@@ -40,10 +40,14 @@ char *hvsprintf(const char *fmt, va_list ap)
     char *str = NULL;
 
     do {
+        va_list vacpy;
+
         str = (size == 0) ? Malloc(CHUNKSIZE) : Realloc(str, size+CHUNKSIZE);
         size += CHUNKSIZE;
 
-        len = vsnprintf(str, size, fmt, ap); /* always null terminates */
+        va_copy(vacpy, ap);
+        len = vsnprintf(str, size, fmt, vacpy); /* always null terminates */
+        va_end(vacpy);
     } while (len == -1 || len >= size);
     assert(len == strlen(str));
     return str;

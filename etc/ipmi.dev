@@ -1,6 +1,5 @@
 #
-# ipmi.dev,v 1.1 2003/07/16 19:29:29 garlick Exp
-# /chaos/cvs/powerman/etc/ipmi.dev,v
+# $Id:$
 #
 # IPMI 1.5 in terminal mode
 # Tested on Intel SE7501WV2 motherboard over serial.

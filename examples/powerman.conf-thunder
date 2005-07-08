@@ -1,6 +1,5 @@
 #
 # $Id$
-# $Source$
 #
 # Example of a 1024 node cluster with IPMI power control.
 # The BMC's have IP addresses that map to the "pthunderNNN" names below, however

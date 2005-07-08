@@ -1,7 +1,6 @@
 #!/usr/bin/perl
 #
 # $Id$
-# $Source$
 #
 $maxnodes = $ARGV[0];
 $nodespervpc = 16;

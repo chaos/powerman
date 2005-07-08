@@ -1,6 +1,5 @@
 /*
  * $Id$
- * $Source$
  *
  * Virtual power controller daemon - configuration defined in "vpc.dev".
  * This daemon spawns multiple threads to implement 'num_threads' devices

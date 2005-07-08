@@ -1,6 +1,5 @@
 #
 # $Id$
-# $Source$
 #
 specification "vicebox" {
 	timeout 	100.0

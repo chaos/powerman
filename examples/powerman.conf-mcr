@@ -1,9 +1,10 @@
 #
 #  $Id$
-#  $Source$
 
 # Example of a 1154 node cluster using one type of remote power 
-# controller, the Linux Networx ICE box.
+# controller, the Linux Networx ICE box.  This example is old and
+# does not take advantage of powerman's newer more compact config file
+# syntax features.
 
 # enable tcp wrappers for powermand (off by default)
 tcpwrappers yes

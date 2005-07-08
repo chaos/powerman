@@ -1,6 +1,5 @@
 # 
 # $Id$
-# $Source$
 #
 # This device configuration supports power control via the 
 # 'ipmipower' utility.

@@ -1,3 +1,31 @@
+2005-07-09 Jim Garlick <garlick@llnl.gov>
+
+    * src/hprintf.c: fixed improper va_list handling (originally reported
+    by Thayne H. at LNXI?) that was causing powermand to segfault when
+    the client used -T on a nakoma 64 bit system.
+
+    * etc/apcpdu.dev: New (from Makia Minich)
+
+    * Makefile: Added apcpdu.dev to install target.
+
+    * etc/*, test/*.pl, test/*.c: Remove RCS Source keyword and fix some 
+    instances of Id that got mangled somewhere along the way.
+
+    * contributed/pullizi.tgz: This tarball was corrupt.  Removed for now.
+
+2005-07-08 Jim Garlick <garlick@llnl.gov>
+
+    * : Chris converted from CVS to subversion.  Roughly here are his comments:
+    I did not disable cvs2svn's keyword expansion.  On the plus side, 
+    cvs2svn automatically sets the svn:keywords property on most files,
+    which is the behavior you pro'ly want.  On the down side, tagged releases 
+    are no longer byte-compatible with their former cvs counterparts since 
+    keyword expansion differs slightly under svn; the dollar-Id-dollar 
+    metadata is the same, just in a slightly different format.  I've added 
+    our default hook scripts which requires you enter a commit message, 
+    allows you to modify the svn:log revision property, and prevents you from 
+    modifying anything under a /tags/ dir.
+
 2005-03-22 Albert Chu <chu11@llnl.gov>
 
     * META: Updated for new release.

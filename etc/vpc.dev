@@ -1,6 +1,5 @@
 # 
 # $Id$
-# $Source$
 #
 specification "vpc" {
 	timeout 	60.0
