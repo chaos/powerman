@@ -3,7 +3,11 @@
 #
 # Written by Trent D'Hooge and Makia Minich
 #
-# APC Rack PDU APP
+# Should support the following 24-plug APC Switched Rack PDU models:
+#   AP7930, AP7932
+#   AP7940, AP7941
+#   AP7960, AP7961, AP7968, AP7990, AP7991, AP7998 
+#   AP7951, AP7952, AP7953, AP7954
 #
 # - Firmware: APP v2.6.5 / AOS v2.6.4
 #
@@ -22,7 +26,7 @@ specification "apcpdu" {
 		send "1\r\n"  # device manager menu
 		expect "> "
 		send "3\r\n"  # outlet control/configuration
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 	}
@@ -79,7 +83,7 @@ specification "apcpdu" {
 		setplugstate "21" $1 on="ON" off="OFF"
 		expect "   22- Outlet 22                (ON|OFF)\r\n"
 		setplugstate "22" $1 on="ON" off="OFF"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "   23- Outlet 23                (ON|OFF)\r\n"
 		setplugstate "23" $1 on="ON" off="OFF"
@@ -94,23 +98,23 @@ specification "apcpdu" {
 		expect "> "
 
 		send "7\r\n" # cancel any pending delays
-		expect "ENTER"
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
 		send "1\r\n" # immediate on
-		expect "ENTER"
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
 		send "\033"
 		expect "> "
 		send "\033"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 	}
@@ -121,23 +125,23 @@ specification "apcpdu" {
 		expect "> "
 
 		send "7\r\n" # cancel any pending delays
-		expect "ENTER"
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
-		send "1\r\n" # immediate on
-		expect "ENTER"
+		send "4\r\n" # delayed on
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
 		send "\033"
 		expect "> "
 		send "\033"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 	}
@@ -148,23 +152,23 @@ specification "apcpdu" {
 		expect "> "
 
 		send "7\r\n" # cancel any pending delays
-		expect "ENTER"
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
 		send "2\r\n" # immediate off
-		expect "ENTER"
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
 		send "\033"
 		expect "> "
 		send "\033"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 	}
@@ -175,23 +179,23 @@ specification "apcpdu" {
 		expect "> "
 
 		send "7\r\n" # cancel any pending delays
-		expect "ENTER"
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
-		send "2\r\n" # immediate off
-		expect "ENTER"
+		send "5\r\n" # delayed off
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
 		send "\033"
 		expect "> "
 		send "\033"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 	}
@@ -205,32 +209,32 @@ specification "apcpdu" {
 		expect "> "
 
 		send "7\r\n" # cancel any pending delays
-		expect "ENTER"
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
 		send "2\r\n" # immediate off
-		expect "ENTER"
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
 		delay 2
 
 		send "1\r\n" # immediate on
-		expect "ENTER"
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
 		send "\033"
 		expect "> "
 		send "\033"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 	}
 	script cycle_all {
@@ -240,32 +244,32 @@ specification "apcpdu" {
 		expect "> "
 
 		send "7\r\n" # cancel any pending delays
-		expect "ENTER"
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
-		send "2\r\n" # immediate off
-		expect "ENTER"
+		send "5\r\n" # delayed off
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
 		delay 2
 
-		send "1\r\n" # immediate on
-		expect "ENTER"
+		send "4\r\n" # delayed on
+		expect "to cancel : "
 		send "YES\r\n"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 
 		send "\033"
 		expect "> "
 		send "\033"
-		expect "ENTER"
+		expect "to continue..."
 		send "\r\n"
 		expect "> "
 	}
