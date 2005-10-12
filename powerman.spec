@@ -1,6 +1,6 @@
-Name: 
-Version: 
-Release: 
+Name: powerman
+Version: 1.0.22
+Release: 1
 Summary: PowerMan - Power to the Cluster 
 Group: Applications/System
 License: GPL
