@@ -1,56 +1,8 @@
-PowerMan version 1.0.19 News                                     08 Dec 2003
-
-
-Config file changes:
-
-o Reminder: make these changes before 1.1 is released:
-  1. device entries now specify host and port together, e.g.
-    device "<name>" "<type>" "<host>:<port>"
-
-  2. the following are deprecated and should be removed.
-    begin nodes 
-    end nodes
-    begin global
-    end global
-    client listener port <port>
-
-  3. tcpwrappers now takes an argument yes|no.
-
-o If the plug name is omitted from a node line, the node name is used as
-  the plug name.
-
-o Node lines can use hostlists.  The plug name cannot be listed; if the device
-  has hardwired plug names, assign those in order, otherwise assign node name.
-  Example:
-    node "t[48-63]" "test3"
-
-o It is now possible to have powerman run programs as "coprocesses" and 
-  talk to them via pty's, e.g.:
-    device "test3" "vpc" "/home/garlick/projects/powerman/test/vpcd -f |&"
-
+PowerMan version 1.0.22 News                                     12 Oct 2006
 
 Bugs fixed:
 
-o Login timeouts on baytech RPC-28 (powerman/290)
-
-o Increased ICE box power cycle time from 0.7 sec to 2 sec to resolve
-  problems with LinuxBIOS not resetting properly.
-
-o Serial connections were made non-blocking (blocking in an open would
-  hang powermand).
-
-o Serial devices are now locked to prevent interference from other utilities
-  such as ConMan.
-
-o Workaround for getaddrinfo bug in glibc-2.3.2-27.9 that caused client
-  core dumps under RedHat 9.
-
-o Exponential backoff-retry is enforced for script failures (was just
-  connection attempts).
-
-o Use poll instead of select to remove scaling obstacles.  Able to test up to
-  about 1024 power control devices with 16 plugs each using ptys.
-
+o powerman -T dumps core on x86_64.
 
 Supported RPC's:
 
@@ -61,6 +13,8 @@ o Baytech RPC-3, RPC-3-20NC, RPC-28-30NC
 o WTI NPS, RPS-10
 
 o APC MasterSwitch Plus
+
+o APC 79XX 24-plug Switched Rack PDU
 
 o Rackable Systems Phantom Remote Management Module
 
