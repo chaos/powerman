@@ -68,4 +68,3 @@ clean:
 distclean: clean
 	rm -f *.tgz* *.rpm
 
-include Make-rpm.mk

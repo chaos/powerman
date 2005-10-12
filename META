@@ -1,10 +1,7 @@
 ##
 # $Id$
 ##
-# Metadata for RPM/TAR makefile targets
-##
   Meta:		1
-  Date:		2002-07-17
   Name:		powerman
-  Version:	1.0.21
-# Release:	1
+  Version:	1.0.22
+  Release:	1

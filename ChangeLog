@@ -1,3 +1,9 @@
+2005-10-12 Jim Garlick <garlick@llnl.gov>
+
+    * Makefile, Make-rpm.mk, META: Update for Chris's build script.
+
+    * : tag powerman-1.0.22
+
 2005-09-22 Jim Garlick <garlick@llnl.gov>
 
     * etc/apcpdu.dev: fixed script after debug on Gauss cluster.
