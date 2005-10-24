@@ -18,3 +18,4 @@
 * Work in something to allow error messages when running 'pm -1' and
   similar power control commands.  Currently, on error, powerman will
   always output "Command Successful".
+* Make Powerman genders aware (request from Trent D'Hooge)
