@@ -22,6 +22,10 @@
 #include <signal.h>
 #include <errno.h>
 
+#ifndef PTHREAD_THREADS_MAX
+#define PTHREAD_THREADS_MAX 16384
+#endif
+
 #define MIN_THREADS 1
 #define MAX_THREADS PTHREAD_THREADS_MAX - 2  /* parent + control thread */
 #define NUM_THREADS 8       /* default, can be overridden on command line */
