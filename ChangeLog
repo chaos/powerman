@@ -1,3 +1,7 @@
+2006-02-16 Jim Garlick <garlick@llnl.gov>
+
+    * test/vpcd.c: handle undefined PTHREAD_THREADS_MAX on FC4.
+
 2005-10-12 Jim Garlick <garlick@llnl.gov>
 
     * Makefile, Make-rpm.mk, META: Update for Chris's build script.
