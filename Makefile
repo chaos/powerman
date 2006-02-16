@@ -1,6 +1,5 @@
 PROJECT = powerman
 VERSION = $(shell perl -ne 'print,exit if s/^\s*VERSION:\s*(\S*).*/\1/i' META)
-RELEASE = $(shell perl -ne 'print,exit if s/^\s*RELEASE:\s*(\S*).*/\1/i' META)
 SHELL=   /bin/sh
 MAKE=    /usr/bin/make
 CC=      gcc
@@ -20,7 +19,7 @@ packagedir	=	${etcdir}/${PROJECT}
 all: progs tests
 
 progs : 
-	$(MAKE) -C src VERSION=$(VERSION) RELEASE=$(RELEASE)
+	$(MAKE) -C src VERSION=$(VERSION)
 
 tests : 
 	$(MAKE) -C test

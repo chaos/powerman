@@ -10,11 +10,7 @@ LEX=		/usr/bin/flex
 YACC=		/usr/bin/bison
 
 VERSTR=		$(shell if test -n "$(VERSION)"; then \
-		  if test -n "$(RELEASE)"; then \
-                    echo $(PROJECT)-$(VERSION)-$(RELEASE); \
-                  else \
-                    echo $(PROJECT)-$(VERSION); fi; \
-		else echo development; fi)
+                  echo $(PROJECT)-$(VERSION); else echo development; fi)
 
 DEFS=		-DHAVE_CONFIG_H -DPOWERMAN_VERSION=\"$(VERSTR)\"
 #DEFS+=		-DNDEBUG

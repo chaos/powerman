@@ -2,13 +2,11 @@ Name: powerman
 Version: 1.0.22
 Release: 1
 Summary: PowerMan - Power to the Cluster 
-Group: Applications/System
 License: GPL
-URL: http://www.llnl.gov/linux/powerman/
-
-BuildRoot: %{_tmppath}/%{name}-%{version}
-
-Source0: %{name}-%{version}.tgz
+Group: Applications/System
+Url: http://sourceforge.net/projects/powerman
+Source0: %{name}-%{version}.tar.bz2
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %description
 PowerMan is a tool for manipulating remote power control (RPC) devices from a 
@@ -19,51 +17,68 @@ Expect-like configurability simplifies the addition of new devices.
 %setup
 
 %build
-make VERSION=%{version} RELEASE=%{release}
+make VERSION=%{version}
 
 %install
-rm -rf "$RPM_BUILD_ROOT"
-mkdir -p "$RPM_BUILD_ROOT"
-DESTDIR="$RPM_BUILD_ROOT" make install
+rm -rf $RPM_BUILD_ROOT
+mkdir -p $RPM_BUILD_ROOT
+DESTDIR=$RPM_BUILD_ROOT mandir=%{_mandir} make -e install
 
 %clean
-rm -rf "$RPM_BUILD_ROOT"
+rm -rf $RPM_BUILD_ROOT
 
 %post
-if [ -x /etc/rc.d/init.d/powerman ]; then
-  if /etc/rc.d/init.d/powerman status | grep running >/dev/null 2>&1; then
-    /etc/rc.d/init.d/powerman stop
+if [ -x %{_initrddir}/powerman ]; then
+  if %{_initrddir}/powerman status | grep running >/dev/null 2>&1; then
+    %{_initrddir}/powerman stop
     WASRUNNING=1
   fi
   [ -x /sbin/chkconfig ] && /sbin/chkconfig --del powerman
   [ -x /sbin/chkconfig ] && /sbin/chkconfig --add powerman
   if test x$WASRUNNING = x1; then
-    /etc/rc.d/init.d/powerman start
+    %{_initrddir}/powerman start
   fi
 fi
 
 %preun
 if [ "$1" = 0 ]; then
-  if [ -x /etc/rc.d/init.d/powerman ]; then
+  if [ -x %{_initrddir}/powerman ]; then
     [ -x /sbin/chkconfig ] && /sbin/chkconfig --del powerman
-    if /etc/rc.d/init.d/powerman status | grep running >/dev/null 2>&1; then
-      /etc/rc.d/init.d/powerman stop
+    if %{_initrddir}/powerman status | grep running >/dev/null 2>&1; then
+      %{_initrddir}/powerman stop
     fi
   fi
 fi
 
 %files
 %defattr(0644,root,root)
-%doc ChangeLog DISCLAIMER
-%attr(0755,root,root)/usr/bin/powerman
-%attr(0755,root,root)/usr/bin/pm
-%attr(0755,root,root)/usr/sbin/powermand
+%doc ChangeLog DISCLAIMER COPYING
+%attr(0755,root,root)%{_bindir}/powerman
+%attr(0755,root,root)%{_bindir}/pm
+%attr(0755,root,root)%{_sbindir}/powermand
 %dir %attr(0755,root,root) /etc/powerman
-%dir %attr(0755,root,root) /usr/man/man1
-%dir %attr(0755,root,root) /usr/man/man5
-%dir %attr(0755,root,root) /usr/man/man7
+%dir %attr(0755,root,root) %{_mandir}/man1
+%dir %attr(0755,root,root) %{_mandir}/man5
+%dir %attr(0755,root,root) %{_mandir}/man7
 /etc/powerman/*
-/usr/man/man1/*
-/usr/man/man5/*
-/usr/man/man7/*
-%config(noreplace) %attr(0755,root,root)/etc/rc.d/init.d/powerman
+%{_mandir}/man1/*
+%{_mandir}/man5/*
+%{_mandir}/man7/*
+%config(noreplace) %attr(0755,root,root)%{_initrddir}/powerman
+
+%changelog
+
+* Tue Feb 14 2006 Ben Woodard <woodard@redhat.com> 1.0.22-3
+- Changed /usr/bin to bindir
+- Changed /usr/sbin to sbindir
+- Added COPYING to list of docs.
+- Changed /etc/rc.d/init.d/ to initrddir
+- Changed /usr/man to mandir
+- Added a fully qualified path to the source file.
+- Fixed buildroot
+- Added a patch which should fix a fc4 build problem.
+
+* Thu Feb 09 2006 Ben Woodard <woodard@redhat.com> 1.0.22-2
+- changed the buildroot to match fedora guidlines
+- changed permissions of spec and src files.
+- added changelog to spec file
