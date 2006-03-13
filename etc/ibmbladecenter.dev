@@ -1,0 +1,103 @@
+# 
+# $Id:$
+#
+# ibmbladecenter.dev.  RJG, 11/17/04
+#
+# This device configuration supports control of nodes in an IBM Bladecenter
+# chassis.
+
+specification "ibmbladecenter" {
+	timeout  	15
+
+	script login {
+		expect "username: "
+		send "USERID\r\n"
+		expect "password: "
+		send "PASSW0RD\r\n"
+		expect "system> "
+	}
+	script logout {
+		send "exit\r\n"
+	}
+
+# This is a kludge.  If you ask me why, I'll tell you.  RG.
+	script status_all {
+		send "power -state -T blade\[1\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "1" $1 on="On" off="Off"
+		send "power -state -T blade\[2\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "2" $1 on="On" off="Off"
+		send "power -state -T blade\[3\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "3" $1 on="On" off="Off"
+		send "power -state -T blade\[4\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "4" $1 on="On" off="Off"
+		send "power -state -T blade\[5\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "5" $1 on="On" off="Off"
+		send "power -state -T blade\[6\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "6" $1 on="On" off="Off"
+		send "power -state -T blade\[7\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "7" $1 on="On" off="Off"
+		send "power -state -T blade\[8\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "8" $1 on="On" off="Off"
+		send "power -state -T blade\[9\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "9" $1 on="On" off="Off"
+		send "power -state -T blade\[10\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "10" $1 on="On" off="Off"
+		send "power -state -T blade\[11\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "11" $1 on="On" off="Off"
+		send "power -state -T blade\[12\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "12" $1 on="On" off="Off"
+		send "power -state -T blade\[13\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "13" $1 on="On" off="Off"
+		send "power -state -T blade\[14\]\r\n"
+		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		setplugstate "14" $1 on="On" off="Off"
+	}
+	script on {
+		send "power -on -T blade\[%s\]\r\n"
+		expect "[^\n]*\r\nOK\r\nsystem> "
+
+	}
+	script off {
+		send "power -off -T blade\[%s\]\r\n"
+		expect "[^\n]*\r\nOK\r\nsystem> "
+	}
+
+# bladecenter "cycle" command does not seem to work...
+# Use off, delay, on instead.  RJG, 5/24/05
+#	script cycle {
+#		send "power -cycle -T blade\[%s\]\r\n"
+#		expect "[^\n]*\r\nOK\r\nsystem> "
+#	}
+	script cycle {
+		send "power -off -T blade\[%s\]\r\n"
+		delay 8
+		send "power -on -T blade\[%s\]\r\n"
+		expect "[^\n]*\r\nOK\r\nsystem> "
+	}
+
+# bladecenter "boot" command is supposed to be the equivalent of a reset but
+# does not seem to work...  Use off, delay, on instead.  RJG, 5/24/05
+#	script reset {
+#		send "boot -T blade\[%s\]\r\n"
+#		expect "[^\n]*\r\nOK\r\nsystem> "
+#	}
+	script reset {
+		send "power -off -T blade\[%s\]\r\n"
+		delay 8
+		send "power -on -T blade\[%s\]\r\n"
+		expect "[^\n]*\r\nOK\r\nsystem> "
+	}
+}
