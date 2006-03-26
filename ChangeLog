@@ -4,6 +4,8 @@
 
     * etc/phantom4.dev: get working on early v4.0 module with broken P0|P1.
 
+    * etc/cb-7050.dev: New.
+
 2006-03-13 Jim Garlick <garlick@llnl.gov>
 
     * etc/ibmbladecenter.dev: New, rough cut.

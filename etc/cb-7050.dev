@@ -1,0 +1,94 @@
+#
+# Measurement Computing Corp. CB-7050 digital I/O module
+#
+# We can implement a sort of "laboratory quality" power control with the 
+# CB-7050 as it requires wires protruding from nodes to attach to the module.
+# There are also a few caveats that make this a bit quirky - see below.
+#
+# Important note: CB-7050 data lines are not isolated and share a common
+# ground.  Beware of ground loops!
+#
+# Ref: CB-7000 DIO User's Manual
+# 
+# Notes:
+# - Wire DI[0-6] to some pin on the moboard that is +5 at power on, 0 at off.
+# - Wire D0[0-6] (open collector) to the power switch pin. 
+# - CB-7050 is presumed to be at address 01
+# - CB-7520 RS-232 to RS-485 converter used in testing
+# - DO lines are "open" (0) at power on.  Writing 1 connects the line to gnd.
+# - Since DI7 is n.c. on the CB-7050, plug 7 can be controlled but only
+#   blindly.  State will always be "unknown" and on/off are basically toggles.
+# - [HDAMA] power on delay = 2s, power off delay = 5s.  Tune for yours!
+# - [HDAMA] DO0 on +5 side of power sw; DI0 on +5 side of reset sw.
+# - This would be cleaner if we could call status_all in off|on scripts.
+# - This would be cleaner if we had "whileon|whileoff" (no hard coded delays).
+#
+specification  "cb7050" {
+	timeout 	10.0
+
+	plug name { "0" "1" "2" "3" "4" "5" "6" "7" }
+
+	script login {
+		send "$01M\r"			# verify module name
+		expect "!017050\r"      	#  model 7050
+		send "$012\r"			# verify conf (type,baud,dfmt)
+		expect "!0140..00\r"		#  type=40 baud=?? dfmt=00
+	}
+	script status_all {
+		send "$016\r"			# read digital I/O status
+		expect "!..(.)(.)00\r"		#  $1=DI[4-7] $2=DI[0-3]
+		setplugstate "0" $2 on="1|3|5|7|9|B|D|F" off="0|2|4|6|8|A|C|E"
+		setplugstate "1" $2 on="2|3|6|7|A|B|E|F" off="0|1|4|5|8|9|C|D"
+		setplugstate "2" $2 on="4|5|6|7|C|D|E|F" off="0|1|2|3|8|9|A|B"
+		setplugstate "3" $2 on="8|9|A|B|C|D|E|F" off="0|1|2|3|4|5|6|7"
+		setplugstate "4" $1 on="1|3|5|7|9|B|D|F" off="0|2|4|6|8|A|C|E"
+		setplugstate "5" $1 on="2|3|6|7|A|B|E|F" off="0|1|4|5|8|9|C|D"
+		setplugstate "6" $1 on="4|5|6|7|C|D|E|F" off="0|1|2|3|8|9|A|B"
+		setplugstate "7" $1		# set to unknown
+	}
+	script on {
+		send "$016\r"
+		expect "!..(.)(.)00\r"
+		setplugstate "0" $2 on="1|3|5|7|9|B|D|F" off="0|2|4|6|8|A|C|E"
+		setplugstate "1" $2 on="2|3|6|7|A|B|E|F" off="0|1|4|5|8|9|C|D"
+		setplugstate "2" $2 on="4|5|6|7|C|D|E|F" off="0|1|2|3|8|9|A|B"
+		setplugstate "3" $2 on="8|9|A|B|C|D|E|F" off="0|1|2|3|4|5|6|7"
+		setplugstate "4" $1 on="1|3|5|7|9|B|D|F" off="0|2|4|6|8|A|C|E"
+		setplugstate "5" $1 on="2|3|6|7|A|B|E|F" off="0|1|4|5|8|9|C|D"
+		setplugstate "6" $1 on="4|5|6|7|C|D|E|F" off="0|1|2|3|8|9|A|B"
+		setplugstate "7" $1 off="."	# set to off
+		ifoff {
+			send "#01A%s01\r"	# 0xA0 | bitnum (set)
+			expect ">\r"
+			delay 2			# XXX: tune me for moboard!
+			send "#01A%s00\r"	# 0xA0 | bitnum (clear)
+			expect ">\r"
+		}
+	}		
+	script off {
+		send "$016\r"
+		expect "!..(.)(.)00\r"
+		setplugstate "0" $2 on="1|3|5|7|9|B|D|F" off="0|2|4|6|8|A|C|E"
+		setplugstate "1" $2 on="2|3|6|7|A|B|E|F" off="0|1|4|5|8|9|C|D"
+		setplugstate "2" $2 on="4|5|6|7|C|D|E|F" off="0|1|2|3|8|9|A|B"
+		setplugstate "3" $2 on="8|9|A|B|C|D|E|F" off="0|1|2|3|4|5|6|7"
+		setplugstate "4" $1 on="1|3|5|7|9|B|D|F" off="0|2|4|6|8|A|C|E"
+		setplugstate "5" $1 on="2|3|6|7|A|B|E|F" off="0|1|4|5|8|9|C|D"
+		setplugstate "6" $1 on="4|5|6|7|C|D|E|F" off="0|1|2|3|8|9|A|B"
+		setplugstate "7" $1 on="."	# set to on
+		ifon {
+			send "#01A%s01\r"	# 0xA0 | bitnum (set)
+			expect ">\r"
+			delay 5			# XXX tune me for moboard!
+			send "#01A%s00\r"	# 0xA0 | bitnum (clear)
+			expect ">\r"
+		}
+	}		
+# Evil hack - short init to ground on the module and run pm -f to set 
+# baud rate to 115000 (0A).  If beacon isn't shorted, this will just time out.
+# Power cycle the module after the change.
+	script beacon_on {
+		send "%%0101400A00\r"
+		expect "!01\r"
+	}
+}
