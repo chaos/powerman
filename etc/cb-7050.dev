@@ -2,7 +2,7 @@
 # Measurement Computing Corp. CB-7050 digital I/O module
 #
 # This is "laboratory quality" power control as it requires wires 
-# protruding from nodes.  See additional caveats below.
+# protruding from nodes and some hand tuning of delay values.  
 #
 # Ref: CB-7000 DIO User's Manual
 # 
@@ -13,7 +13,7 @@
 # - Wire D0[0-7] (open collector) to +5 side of power switch header.
 # - Wire the CB-7050 ground to moboard ground (send to reset/power headers).
 # - CB-7050 is presumed to be at address 01
-# - CB-7520 RS-232 to RS-485 converter connects to Cyclades at 115000 baud.
+# - CB-7520 RS-232 to RS-485 converter connects to Cyclades TS at 115000 baud.
 # - DO lines are "open" (0) at power on.  Writing 1 connects the line to gnd.
 # - DI7 is n.c. on the CB-7050. Although plug 7 can be controlled via D07,
 #   power state will always be "unknown" and on/off are effectively toggles.
@@ -89,4 +89,6 @@ specification  "cb7050" {
 		send "%%0101400A00\r"
 		expect "!01\r"
 	}
+#
+# TODO: add support for a CB-7018P at address 02 wired to eight thermocouples.
 }
