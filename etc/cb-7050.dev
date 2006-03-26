@@ -1,25 +1,23 @@
 #
 # Measurement Computing Corp. CB-7050 digital I/O module
 #
-# We can implement a sort of "laboratory quality" power control with the 
-# CB-7050 as it requires wires protruding from nodes to attach to the module.
-# There are also a few caveats that make this a bit quirky - see below.
-#
-# Important note: CB-7050 data lines are not isolated and share a common
-# ground.  Beware of ground loops!
+# This is "laboratory quality" power control as it requires wires 
+# protruding from nodes.  See additional caveats below.
 #
 # Ref: CB-7000 DIO User's Manual
 # 
 # Notes:
-# - Wire DI[0-6] to some pin on the moboard that is +5 at power on, 0 at off.
-# - Wire D0[0-6] (open collector) to the power switch pin. 
+# - Important note: CB-7050 data lines are not isolated and share a common
+#   ground.  Beware of ground loops!
+# - Wire DI[0-7] to +5V side of reset header
+# - Wire D0[0-7] (open collector) to +5 side of power switch header.
+# - Wire the CB-7050 ground to moboard ground (send to reset/power headers).
 # - CB-7050 is presumed to be at address 01
-# - CB-7520 RS-232 to RS-485 converter used in testing
+# - CB-7520 RS-232 to RS-485 converter connects to Cyclades at 115000 baud.
 # - DO lines are "open" (0) at power on.  Writing 1 connects the line to gnd.
-# - Since DI7 is n.c. on the CB-7050, plug 7 can be controlled but only
-#   blindly.  State will always be "unknown" and on/off are basically toggles.
-# - [HDAMA] power on delay = 2s, power off delay = 5s.  Tune for yours!
-# - [HDAMA] DO0 on +5 side of power sw; DI0 on +5 side of reset sw.
+# - DI7 is n.c. on the CB-7050. Although plug 7 can be controlled via D07,
+#   power state will always be "unknown" and on/off are effectively toggles.
+# - [HDAMA] power on delay = 2s, power off delay = 5s.  Tune for your moboard.
 # - This would be cleaner if we could call status_all in off|on scripts.
 # - This would be cleaner if we had "whileon|whileoff" (no hard coded delays).
 #
@@ -84,7 +82,7 @@ specification  "cb7050" {
 			expect ">\r"
 		}
 	}		
-# Evil hack - short init to ground on the module and run pm -f to set 
+# XXX Evil hack - short init* to ground on the module and run pm -f to set 
 # baud rate to 115000 (0A).  If beacon isn't shorted, this will just time out.
 # Power cycle the module after the change.
 	script beacon_on {
