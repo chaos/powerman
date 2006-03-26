@@ -1,10 +1,24 @@
 #
-# $Id:$
+# Rackable Phantom IV module
 #
-# Phantom 4.0
+# Tested with firmware version 4.0
+# 
+# Notes:
+# - Early firmware version doesn't get P0|P1 right, so use the toggle script 
+#   like the phantom III, which still works.
+# - Power commands hold down the power button logic line until power state
+#   change is detected.  If state change is not detected, power will not work.
+#   I0 - sense power state via reset pin
+#   I1 - sense power via J7 pin 1 (connect to some moboard header pin whose
+#   state is +5 at power on, 0 at power off).
+# - Temp command is different than phantom 3 (so scripts cannot be combined)
+# - Baud rate change takes effect after phantom power cycle.
+#   Ax - where x is 1=9600, 2=19200, 3=38400, 4=57600, 5-115200
+# - If phantom power is cycled, it will start up in menu mode.  If already
+#   logged in, powerman commands will time out, reconnect, and fix that
+#   in the login script.
 #
 specification  "phantom4" {
-#	timeout 	5.0
 	timeout 	15.0
 
 	plug name { "1" }
@@ -12,8 +26,6 @@ specification  "phantom4" {
 	script login {
 		send "\036\035"	# enter "shell mode"
 		expect "ok\r"
-#		send "I0"	# use reset pin to sense power status
-#		expect "ok\r"
 	}
 	script status {
 		send "P?\r\n"
@@ -21,19 +33,34 @@ specification  "phantom4" {
 		setplugstate "1" $1 on="1" off="0"
 	}
 	script on {
-		send "P1\r\n"
-		expect "(ok|er)\r"
+		send "P?\r\n"
+		expect "(0|1)\r"
+		setplugstate "1" $1 on="1" off="0"
+		ifoff {
+			send "PT\r\n"
+			expect "ok\r"
+		}
 	}		
 	script off {
-		send "P0\r\n"
-		expect "(ok|er)\r"
+		send "P?\r\n"
+		expect "(0|1)\r"
+		setplugstate "1" $1 on="1" off="0"
+		ifon {
+			send "PT\r\n"
+			expect "ok\r"
+		}
 	}		
 	script cycle {
-		send "P0\r\n"
-		expect "(ok|er)\r"
-		delay 2
-		send "P1\r\n"
-		expect "(ok|er)\r"
+		send "P?\r\n"
+		expect "(0|1)\r"
+		setplugstate "1" $1 on="1" off="0"
+		ifon {
+			send "PT\r\n"
+			expect "ok\r"
+			delay 2
+		}
+		send "PT\r\n"
+		expect "ok\r"
 	}
 	script beacon_on {
 		send "L1\r\n"	# LED on

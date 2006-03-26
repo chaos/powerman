@@ -63,6 +63,18 @@ static baudmap_t baudmap[] = {
     {9600,  B9600}, 
     {19200, B19200}, 
     {38400, B38400},
+#ifdef B57600
+    {57600, B57600},
+#endif
+#ifdef B115200
+    {115200,B115200},
+#endif
+#ifdef B230400
+    {230400,B230400},
+#endif
+#ifdef B460800
+    {460800,B460800},
+#endif
 };
 
 void *serial_create(char *special, char *flags)

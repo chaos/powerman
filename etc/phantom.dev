@@ -1,7 +1,7 @@
 #
-# $Id$
+# Rackable Phantom III
 #
-# Phantom 3.0.2
+# Tested with firmware version 3.0.2.
 #
 specification  "phantom" {
 	timeout 	15.0
