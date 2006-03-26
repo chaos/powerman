@@ -2,14 +2,14 @@
 # Measurement Computing Corp. CB-7050 digital I/O module
 #
 # This is "laboratory quality" power control as it requires wires 
-# protruding from nodes and some hand tuning of delay values.  
+# connected directly to motherboards and some hand tuning of delay values.  
 #
 # Ref: CB-7000 DIO User's Manual
 # 
 # Notes:
 # - Important note: CB-7050 data lines are not isolated and share a common
 #   ground.  Beware of ground loops!
-# - Wire DI[0-7] to +5V side of reset header
+# - Wire DI[0-6] to +5V side of reset header
 # - Wire D0[0-7] (open collector) to +5 side of power switch header.
 # - Wire the CB-7050 ground to moboard ground (send to reset/power headers).
 # - CB-7050 is presumed to be at address 01
@@ -18,7 +18,7 @@
 # - DI7 is n.c. on the CB-7050. Although plug 7 can be controlled via D07,
 #   power state will always be "unknown" and on/off are effectively toggles.
 # - [HDAMA] power on delay = 2s, power off delay = 5s.  Tune for your moboard.
-# - This would be cleaner if we could call status_all in off|on scripts.
+# - This would be cleaner if we could call status_all from off|on scripts.
 # - This would be cleaner if we had "whileon|whileoff" (no hard coded delays).
 #
 specification  "cb7050" {
@@ -90,5 +90,7 @@ specification  "cb7050" {
 		expect "!01\r"
 	}
 #
-# TODO: add support for a CB-7018P at address 02 wired to eight thermocouples.
+# TODO: add support for a CB-7018P at address 02 wired to eight 
+# thermocouples for status_temp support?
+#
 }
