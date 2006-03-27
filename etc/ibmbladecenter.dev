@@ -9,6 +9,8 @@
 specification "ibmbladecenter" {
 	timeout  	15
 
+# Substitute your USERID and PASSWORD here.
+# Escape any % chars as %%.
 	script login {
 		expect "username: "
 		send "USERID\r\n"

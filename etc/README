@@ -1,15 +1,23 @@
-PowerMan device specifications are rather wierd.  For this reason, we suggest 
-that you leave the writing of these scripts to the PowerMan authors.  However, 
-if you insist, here is how they work.  [Note: the authors do not guarantee that
-the PowerMan specification language will not change, however we are open to
-taking on maintenance of scripts submitted by PowerMan users.  We can't 
-guarantee that we'll be able to get hold of a particular model RPC to add
-to our PowerMan test fixture but we'll try if it is a common one].
+1. Introduction
+
+PowerMan device specifications are rather wierd.  For this reason, we 
+suggest that you leave the writing of these scripts to the PowerMan 
+authors.  However, if you insist, here is how they work.  
+
+Note: the authors do not guarantee that the PowerMan specification 
+language will not change, however we are open to taking on maintenance 
+of scripts submitted by PowerMan users.  We can't guarantee that we'll 
+be able to test new releases against all devices but we'll do our best 
+not to break anything.
+
+2. Inclusion from powerman.conf
 
 By convention, device scripts are one device per file and are included 
 as needed from a powerman.conf file, like this:
 
   include "/etc/powerman/icebox3.dev"
+
+3. Specification Block
 
 A device script is surrounded by an outer block:
 
@@ -18,38 +26,158 @@ A device script is surrounded by an outer block:
 	# configuration settings and scripts for individual operations
   }
 
+4. Configuration Settings
+
 The possible configuration settings are:
+
+4.1. Device Script Timeout
 
   # (optional) device script timeout in seconds - applies to each script,
   # the whole thing, not just a particular "expect" for example
   timeout <float>   
+
+4.2. Plug Name List
 
   # (optional) if plug names are static, they should be defined.  Any 
   # reference to a plug name in the powerman.conf must match one of the 
   # defined plug names.  
   plug name { <string list> }
 
+4.3. Ping Period
+
   # (optional) if a ping script is defined, and pingperiod is nonzero, the
   # ping script will be executed periodically, every <float> seconds.
   pingperiod <float>
 
+5. Script Blocks
+
 Script blocks should all be grouped together with no config lines in between.
 Scripts are for performing particular operations such as power on, get power
-status, etc.  Scripts have inputs and outputs depending on <script_name>
-(which is one place where things get pretty kludgey).  Each script block has 
-the form:
+status, etc.  
+
+The various script names are listed below.  Those marked with [*] are called 
+with a plug name "argument", which can be included in a send statements 
+by including a %s (printf style).  
+
+Danger: all the send strings are processed with printf and you can 
+cause powermand to segfault if you include any printf tokens other than 
+the appropriate zero or one %s.
+
+Each script block has the form:
 
   script <script_name> {
 	# statements
   }
 
+5.1. Login/Logout Script
+
+login - Executed immediately on (re-)connect.  
+	If you need to login to the box, do it here.  
+	This is also a good place to descend through a first layer of menus.
+	Caveat: % occurring in passwords must be escaped as %%.  
+	Caveat: occurs outside of client session so cannot be debugged with -T.
+	A trick when debugging is to move this code into the status script
+	temporarily so you can see what is going on.
+
+logout
+	Executed prior to disconnect. 
+	Get device in a state so login script will work 
+	(though hopefully disconnecting will do that too).
+
+5.2. Status Scripts
+
+status_all
+	Obtain plug state for all plugs. 
+	Optional: "status" will be called for each plug if not defined.
+
+status [*]
+	Obtain plug state for one plug.
+
+5.3.. Plug On/Off/Cycle Scripts
+
+Normally these scripts are used to control the actual plug.
+
+on_all
+off_all
+cycle_all
+	Power off|on|cycle all plugs.
+	Optional: "on|off|cycle" will be called for each plug if not defined.
+
+on [*]
+off [*]
+cycle [*]
+	Power off|on|cycle one plug.
+
+5.4. Soft Power Status
+
+Soft Power refers to the "standby state" of the node.
+On means the node is full on.  Off means either the node is powered off
+at the plug or is powered on at the plug and in standby mode.
+This is really only useful on devices that include both a plug relay 
+and a probe into the node attached to a non-standby power source.
+
+status_soft_all
+	Obtain "soft power" state for one plug.
+	Completely optional, and is to status_soft as status_all is to status.
+
+status_soft [*]
+	Obtain "soft power" state for one plug.
+
+5.5. Temperature 
+
+This is the reading from a thermocouple in the node.
+Results are reported as a text string - not interpreted by Powerman 
+beyond any regex chopping done by the script.
+
+status_temp_all
+	Obtain temperature string for all plugs.
+	Completely optional, and is to status_temp as status_all is to status.
+
+status_temp [*]
+	Obtain temperature string for one plug.
+
+5.6. Beacon 
+
+Some RPC's include a way to flash a light on a node to say
+"service me" or whatever.
+
+status_beacon_all
+	Obtain beacon state for all plugs.
+	Completely optional, and is to status_beacon as status_all is to status.
+
+status_beacon [*]
+	Obtain beacon state for one plug.
+
+beacon_on [*]
+beacon_off [*]
+	Turn the beacon associated with plug on|off.
+
+5.7. Reset
+
+Some RPC's have a cable into the node's reset button header.
+This is distinct from "cycle" which does a power off/delay/power on.
+
+reset_all
+	Reset all plugs (like pressing the reset button).
+	Completely optional, and is to reset as on_all is to on.
+reset [*]
+	Reset one plug.
+
+6. Script Statements
+
 Script statements are one of the following:
+
+6.1. Send Statement
 
   # <string> is set to the device
   send <string>
 
+6.2. Delay Statement
+
   # script pauses for <float> seconds
   delay <float>
+
+6.3. Expect Statement
 
   # <string> is converted to a compiled regular expression, which is matched
   # against device input.  The script blocks until the regex is matched or
@@ -58,22 +186,30 @@ Script statements are one of the following:
   # for the first match, $2 for the second match, and so on.
   expect <string>
 
+6.4. Setplugstate Statement
+
   # Set the plug state.  The first argument is the name of the plug.
   # The off and on strings are compiled regexes, which if matched by 
   # <regmatch>, result in the plug state being set to off or on.
   # If no off or on strings are provided, state will be unknown.
   setplugstate <string> <regmatch> off=<string> on=<string>
 
+6.5. Ifon/ifoff Statements
+
   ifon {
 	# statements
   }
+  ifoff {
+	# statements
+  }
+
+6.6. Foreachplug Statement
 
   foreachplug {
 	# statements
   }
 
-______________________
-General config file info:
+7.  General Parser Information
 
 <float>        decimal number - exponent forms not supported
 
@@ -91,7 +227,3 @@ General config file info:
 
 The '#' comment character may appear any where in a line and "comments out"
 text until the end of line.
-
-
-
-
