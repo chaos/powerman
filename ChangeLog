@@ -10,6 +10,8 @@
 
     * man/powerman.dev.5: New.
 
+    * man/powerman.conf.5: Some tidying up.
+
 2006-03-13 Jim Garlick <garlick@llnl.gov>
 
     * etc/ibmbladecenter.dev: New, experimental.
