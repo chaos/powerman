@@ -49,6 +49,8 @@ install: all
 	$(INSTALL) etc/ipmi.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/cyclades-pm8.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/ipmipower.dev            $(DESTDIR)$(packagedir)
+	$(INSTALL) etc/ibmbladecenter.dev       $(DESTDIR)$(packagedir)
+	$(INSTALL) etc/cb-7050.dev              $(DESTDIR)$(packagedir)
 	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/powerman.1	$(DESTDIR)$(mandir)/man1
 	$(INSTALL) -m 644 man/powermand.1	$(DESTDIR)$(mandir)/man1
