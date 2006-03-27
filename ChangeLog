@@ -1,14 +1,16 @@
 2006-03-26 Jim Garlick <garlick@llnl.gov>
 
-    * src/device_serial.c: support baud rates up to B500000 if system does.
+    * src/device_serial.c: support baud rates up to B460800 if system does.
 
-    * etc/phantom4.dev: get working on early v4.0 module with broken P0|P1.
+    * etc/phantom4.dev: fix for early v4.0 firmware with broken P0|P1.
 
-    * etc/cb-7050.dev: New.
+    * etc/cb-7050.dev: New, experimental.
+    
+    * etc/README: Expanded script documentation.
 
 2006-03-13 Jim Garlick <garlick@llnl.gov>
 
-    * etc/ibmbladecenter.dev: New, rough cut.
+    * etc/ibmbladecenter.dev: New, experimental.
 
 2006-02-16 Jim Garlick <garlick@llnl.gov>
 
