@@ -1,3 +1,11 @@
+2006-03-27 Jim Garlick <garlick@llnl.gov>
+
+    * man/powerman.dev.5: New.
+
+    * man/powerman.conf.5: Tidy up.
+
+    * etc/ibmbladecenter.dev: Tidy up.
+
 2006-03-26 Jim Garlick <garlick@llnl.gov>
 
     * src/device_serial.c: support baud rates up to B460800 if system does.
@@ -7,10 +15,6 @@
     * etc/cb-7050.dev: New, experimental.
     
     * etc/README: Removed.
-
-    * man/powerman.dev.5: New.
-
-    * man/powerman.conf.5: Some tidying up.
 
 2006-03-13 Jim Garlick <garlick@llnl.gov>
 

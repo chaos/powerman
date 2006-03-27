@@ -140,10 +140,13 @@ assigned to variables: $1 for the first match, $2 for the second match,
 and so on.  Warning: some implementations of regex(3) silently fail if
 the regular expression exceeds available static storage.
 .TP
-.I "setplugstate <string> <regmatch> off=<string> on=<string>"
-Set the plug state.  The first argument is the name of the plug.
+.I "setplugstate [<string>|<regmatch>] <regmatch> off=<string> on=<string>"
+Set the plug state.  The first argument, if present, is the literal
+plug name or a <regmatch> from the previous expect which contains the 
+plug name.  If omitted, the plug name is presumed to be the script argument.
 The off and on strings are compiled regexes, which if matched by
-<regmatch>, result in the plug state being set to off or on.
+the second argument, result in the plug state being set to off or on.
+Yes we are applying regexes to regmatches!
 If no off or on strings are provided, state will be unknown.
 .TP
 .I "ifoff, ifon"
