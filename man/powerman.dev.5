@@ -1,0 +1,189 @@
+.TH POWERMAN.DEV 1 "Release 1.0" "LLNL" "POWERMAN.DEV"
+
+.SH NAME
+powerman.dev \- PowerMan device specification files
+
+.SH DESCRIPTION
+PowerMan device specifications are rather wierd.  For this reason, we
+suggest that you leave the writing of these scripts to the PowerMan
+authors.  However, if you insist, here is how they work.
+.LP
+Note: the authors do not guarantee that the PowerMan specification
+language will not change, however we are open to taking on maintenance
+of scripts submitted by PowerMan users.  We can't guarantee that we'll
+be able to test new releases against all devices but we'll do our best
+not to break anything.
+.LP
+By convention, device scripts are one device per file and are included
+as needed from a powerman.conf file, like this:
+.IP
+.nf
+include "/etc/powerman/icebox3.dev"
+.fi
+.LP
+A device script is surrounded by an outer block:
+.IP
+.nf
+specification "my_device_name" {
+    # configuration settings 
+    # script blocks
+}
+.fi
+.LP
+The possible configuration settings are:
+.TP 
+.I "timeout <float>"
+(optional) device script timeout in seconds - applies to each script,
+the whole thing, not just a particular "expect".
+.TP 
+.I "plug name { <string list> }"
+(optional) if plug names are static, they should be defined.  Any
+reference to a plug name in the powerman.conf must match one of the
+defined plug names.
+.TP 
+.I "pingperiod <float>"
+(optional) if a ping script is defined, and pingperiod is nonzero, the
+ping script will be executed periodically, every <float> seconds.
+.LP
+Script blocks have the form:
+.IP
+.nf
+script <script_name> {
+    # statements
+}
+.fi
+.LP
+Script blocks should all be grouped together with no config lines in between.
+Scripts are for performing particular operations such as power on, get power
+status, etc.
+The various script names are listed below.  Those marked with [%s] are called
+with a plug name "argument", which can be included in a send statements
+by including a %s (printf style).
+Warning: all the send strings are processed with printf and you can
+cause powermand to segfault if you include any printf tokens other than
+the appropriate zero or one %s.
+.TP 
+.I "login"
+Executed immediately on (re-)connect.
+If you need to login to the box, do it here.
+This is also a good place to descend through a first layer of menus.
+Caveat: % occurring in passwords must be escaped as %%.
+Caveat: occurs outside of client session so cannot be debugged with -T.
+A trick when debugging is to move this code into the status script
+temporarily so you can see what is going on.
+.TP
+.I "logout"
+Executed prior to disconnect.
+Get device in a state so login script will work
+(though hopefully disconnecting will do that too).
+.TP
+.I "status_all, status[%s]"
+Obtain plug state for all plugs or only the specified plug.
+When all plugs of a device are involved in a plug status query,
+the status_all script, if defined, will be called in preference to the 
+status script; otherwise the status script is called for each plug.
+.TP
+.I "on_all, on[%s]" 
+Power on all plugs or the specified plug.
+.TP
+.I "off_all, off[%s]"
+Power off all plugs or the specified plug.
+.TP
+.I "cycle_all, cycle[%s]"
+Power cycle all plugs or the specified plug.
+The intent of this command was to map to the RPC's cycle command; 
+however, device script are increasingly implementing this in terms of
+a power off/delay/power so the off time can be controlled by the script.
+.TP
+.I "status_soft_all, status_soft[%s]"
+Obtain soft power state for all plugs or only the specified plug.
+Soft Power refers to the "standby state" of the node.
+On means the node is powered up.  Off means either the node is powered off
+at the plug or is powered on at the plug and in standby mode.
+This is really only useful on devices that include both a plug relay
+and a probe into the node attached to a non-standby power source.
+.TP
+.I "status_temp_all, status_temp[%s]"
+Obtain temperature reading for all plugs or only the specified plug.
+Temperature is obtained by sampling a thermocouple in the node.
+Results are reported as a text string - not interpreted by Powerman
+beyond any regex chopping done by the script.
+.TP
+.I "status_beacon_all, status_beacon[%s]"
+Obtain beacon state for all plugs or only the specified plug.
+Some RPC's include a way to flash a light on a node.
+.TP
+.I "beacon_on[%s]"
+Flash beacon on the specified plug.
+.TP
+.I "beacon_off[%s]"
+Clear beacon on the specified plug.
+.TP
+.I "reset_all, reset[%s]"
+Reset all plugs or only the specified plug.
+Reset refers to signaling a motherboard reset butten header, not a plug cycle.
+.LP
+Within a script, the following statements can be used:
+.TP
+.I "send <string>"
+Send <string> to the device.
+.TP
+.I "delay <float>"
+Pause script for <float> seconds.
+.TP
+.I "expect <string>"
+<string> is compiled as a regular expression with regcomp(3).  The 
+regular expression is matched against device input.  The script blocks 
+until the regex is matched or the device timeout occurs (in which case the 
+script is aborted).  Upon matching, any parenthesized expressiones are 
+assigned to variables: $1 for the first match, $2 for the second match, 
+and so on.  Warning: some implementations of regex(3) silently fail if
+the regular expression exceeds available static storage.
+.TP
+.I "setplugstate <string> <regmatch> off=<string> on=<string>"
+Set the plug state.  The first argument is the name of the plug.
+The off and on strings are compiled regexes, which if matched by
+<regmatch>, result in the plug state being set to off or on.
+If no off or on strings are provided, state will be unknown.
+.TP
+.I "ifoff, ifon"
+Script statements enclosed in an ifon/ifoff block are conditional
+executed based on the state of the plug passed in as an argument.
+Ifon/ifoff blocks can only be used in single plug scripts that take
+an argument.
+.TP
+.I "foreachplug"
+Script statements enclosed in a foreachplug block are executed iteratively
+with a %s argument defined for each target plug.
+Foreachplug blocks can only be used in all plug scripts that take no
+argument.
+.LP
+Script terminals are  defined as follows:
+.TP
+.I "<float>"
+decimal number - exponent forms not supported
+.TP
+.I "<string>"
+Text surrounded by double quotes.
+May contain C style backslash-escaped characters, including 
+three digit octal values, and most common backslash-escaped
+single character values.
+.TP
+.I "<string list>"
+Multiple <string> values seperated by white space.
+.TP
+.I "<script_name>"
+Name of script (see above).
+.TP
+.I "<regmatch>"
+Results of a parenthesized regular expression match are assigned to
+$1, $2, ... $N.
+
+.SH "FILES"
+/etc/powerman/*.dev
+.SH "ORIGIN"
+Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Linux 
+clusters.  This software is open source and distributed under
+the terms of the Gnu GPL.  
+.SH "SEE ALSO"
+powerman(1), powerman.conf(5), powermand(1), powerman-devices(7)
