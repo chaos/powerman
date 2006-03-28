@@ -1,5 +1,10 @@
 2006-03-27 Jim Garlick <garlick@llnl.gov>
 
+    * etc/powerman.spec: Rework %files section per
+    https://bugzilla.redhat.com/bugzilla/show_bug.cgi?id=180747
+
+2006-03-27 Jim Garlick <garlick@llnl.gov>
+
     * man/powerman.dev.5: New.
 
     * man/powerman.conf.5: Tidy up.
