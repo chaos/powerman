@@ -7,6 +7,7 @@ Group: Applications/System
 Url: http://sourceforge.net/projects/powerman
 Source0: %{name}-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+BuildRequires: tcp_wrappers
 
 %description
 PowerMan is a tool for manipulating remote power control (RPC) devices from a 
@@ -51,20 +52,21 @@ if [ "$1" = 0 ]; then
 fi
 
 %files
-%defattr(0644,root,root)
-%doc ChangeLog DISCLAIMER COPYING
-%attr(0755,root,root)%{_bindir}/powerman
-%attr(0755,root,root)%{_bindir}/pm
-%attr(0755,root,root)%{_sbindir}/powermand
-%dir %attr(0755,root,root) /etc/powerman
-%dir %attr(0755,root,root) %{_mandir}/man1
-%dir %attr(0755,root,root) %{_mandir}/man5
-%dir %attr(0755,root,root) %{_mandir}/man7
-/etc/powerman/*
+%defattr(-,root,root-)
+%doc ChangeLog 
+%doc DISCLAIMER 
+%doc COPYING
+%doc NEWS
+%doc TODO
+%{_bindir}/powerman
+%{_bindir}/pm
+%{_sbindir}/powermand
+%dir %config %{_sysconfdir}/powerman
+%{_sysconfdir}/powerman/*.dev
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man7/*
-%config(noreplace) %attr(0755,root,root)%{_initrddir}/powerman
+%{_initrddir}/powerman
 
 %changelog
 
