@@ -194,6 +194,7 @@ bool serial_connect(Device * dev)
     char parity = 'N';
     int res;
     int fd_settings;
+    int n;
 
     assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_NOT_CONNECTED);
@@ -233,7 +234,8 @@ bool serial_connect(Device * dev)
     }
 
     /* parse the serial flags and set up port accordingly */
-    sscanf(ser->flags, "%d,%d%c%d", &baud, &databits, &parity, &stopbits);
+    n = sscanf(ser->flags, "%d,%d%c%d", &baud, &databits, &parity, &stopbits);
+    assert(n >= 0 && n <= 4); /* 0-4 matches OK (defaults if no match) */
     res = _serial_setup(dev->name, dev->fd, baud, databits, parity, stopbits);
     if (res < 0) {
         Close(dev->fd);

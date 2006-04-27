@@ -2224,11 +2224,11 @@ char *hostlist_next(hostlist_iterator_t i)
 
     len = strlen (i->hr->prefix) + strlen (suffix) + 1;
     buf = malloc (len);
-    
+    if (buf == NULL)
+        out_of_memory("hostlist_next");
     buf[0] = '\0';
     strcat (buf, i->hr->prefix);
     strcat (buf, suffix);
-
     UNLOCK_HOSTLIST(i->hl);
     return (buf);
 }

@@ -194,8 +194,8 @@ static hostlist_t _hostlist_create_validated(Client * c, char *str)
         if (!conf_node_exists(host)) {
             valid = FALSE;
             hostlist_push_host(badhl, host);
-            free(host); /* hostlist_next strdups returned string */
         }
+        free(host); /* hostlist_next strdups returned string */
     }
     if (!valid) {
         char hosts[CP_LINEMAX];
@@ -434,10 +434,9 @@ static void _client_query_status_reply_nointerp(Client * c, bool error)
     if (!hostlist_is_empty(hl)) {
         hostlist_sort(hl);
         n = hostlist_ranged_string(hl, sizeof(tmpstr), tmpstr);
-        hostlist_destroy(hl);
         if (n == -1) {
             _internal_error_response(c); /* truncation */
-            return;
+            goto done;
         }
         _client_printf(c, CP_INFO_XSTATUS, tmpstr, "unknown");
     }
@@ -445,6 +444,8 @@ static void _client_query_status_reply_nointerp(Client * c, bool error)
         _client_printf(c, CP_ERR_QRY_COMPLETE);
     else
         _client_printf(c, CP_RSP_QRY_COMPLETE);
+done:
+    hostlist_destroy(hl);
 }
 
 /*
