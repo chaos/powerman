@@ -1,3 +1,7 @@
+2006-05-30 Jim Garlick <garlick@llnl.gov>
+
+    * : tag powerman-1.0.24
+
 2006-05-25 Jim Garlick <garlick@llnl.gov>
 
     * src/hostlist.[ch]: update to the latest from lsd-tools to
