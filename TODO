@@ -11,11 +11,13 @@
   since would double cluster query latency.  
 * Powermand should execute logoff scripts on devices upon receipt of a signal
   (with timeout).
-* Device timeout should be per expect line
 * Redesign the device language to be more general.
 * Turn off debugging in production release
 * Clean up argument passing into and results out of scripts
 * Work in something to allow error messages when running 'pm -1' and
   similar power control commands.  Currently, on error, powerman will
   always output "Command Successful".
-* Make Powerman genders aware (request from Trent D'Hooge)
+* Make Powerman genders aware [Trent D'Hooge]
+* Generate error if %s appears in script where it is undefined [Adam Bertsch]
+* Device timeout should be per expect line [Brian J. Murrell]
+* Allow %s to appear multiple times [Brian J. Murrell]

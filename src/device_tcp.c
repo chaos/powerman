@@ -242,15 +242,22 @@ static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
     {
     case DO:
         switch (opt) {
-            case TELOPT_SGA:    /* rfc 858 */
-            case TELOPT_TM:     /* rfc 860 */
+            case TELOPT_SGA:            /* rfc 858 - suppress go ahead*/
+            case TELOPT_TM:             /* rfc 860 - timing mark */
                 _telnet_sendopt(dev, WILL, opt);
                 break;
-            case TELOPT_TTYPE:  /* rfc 1091 */
-            case TELOPT_NAWS:   /* rfc 1073 */
+            case TELOPT_TTYPE:          /* rfc 1091 - terminal type */
+            case TELOPT_NAWS:           /* rfc 1073 - window size */
+            /* next three added for gnat powerman/634 - jg */ 
+            case TELOPT_NEW_ENVIRON:    /* environment variables */
+            case TELOPT_XDISPLOC:       /* X display location */
+            case TELOPT_TSPEED:         /* terminal speed */
                 _telnet_sendopt(dev, WONT, opt);
                 break;
             default:
+                err(0, "%s: _telnet_recvopt: ignoring %s %s", dev->name,
+                        TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>", 
+                        TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
                 break;
         }
         break;

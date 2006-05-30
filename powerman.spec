@@ -58,6 +58,9 @@ fi
 %doc COPYING
 %doc NEWS
 %doc TODO
+%doc examples/powerman.conf-mcr
+%doc examples/powerman.conf-small
+%doc examples/powerman.conf-thunder
 %{_bindir}/powerman
 %{_bindir}/pm
 %{_sbindir}/powermand

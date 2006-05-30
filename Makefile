@@ -48,6 +48,7 @@ install: all
 	$(INSTALL) etc/phantom4.dev		$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/ipmi.dev			$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/cyclades-pm8.dev		$(DESTDIR)$(packagedir)
+	$(INSTALL) etc/cyclades-pm10.dev	$(DESTDIR)$(packagedir)
 	$(INSTALL) etc/ipmipower.dev            $(DESTDIR)$(packagedir)
 	$(INSTALL) etc/ibmbladecenter.dev       $(DESTDIR)$(packagedir)
 	$(INSTALL) etc/cb-7050.dev              $(DESTDIR)$(packagedir)

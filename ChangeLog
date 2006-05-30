@@ -1,7 +1,23 @@
+2006-05-25 Jim Garlick <garlick@llnl.gov>
+
+    * src/hostlist.[ch]: update to the latest from lsd-tools to
+    fix case where powerman would not expand [00-26]p.
+
+2006-05-24 Jim Garlick <garlick@llnl.gov>
+
+    * src/device_tcp.c: _telnet_recvopt(): log any ignored option 
+    negotiation requests.  Respond WONT to TELOPT_NEW_ENVIRON, 
+    TELOPT_XDISPLOC, TELOPT_TSPEED to make Digi terminal server in
+    telnet mode happy (gnat powerman/634).
+
+    * powerman.spec: Include examples directory in RPM.
+
+    * etc/cyclades-pm10.dev: New [Trent D'Hooge].
+
 2006-04-26 Jim Garlick <garlick@llnl.gov>
 
     * src/hostlist.c: hostlist_next(): call out_of_memory() on malloc 
-      failure [coverity].
+    failure [coverity].
 
     * src/client.c: always free hostlist_next() result if non-null [coverity].
 
@@ -61,7 +77,7 @@
 2005-07-09 Jim Garlick <garlick@llnl.gov>
 
     * src/hprintf.c: fixed improper va_list handling (originally reported
-    by Thayne H. at LNXI?) that was causing powermand to segfault when
+    by Thayne Harbaugh at LNXI) that was causing powermand to segfault when
     the client used -T on a nakoma 64 bit system.
 
     * etc/apcpdu.dev: New (from Makia Minich)

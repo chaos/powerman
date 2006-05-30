@@ -1,0 +1,126 @@
+#
+# Cyclades PM10 
+#
+specification "pm10" {
+	timeout 	10
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+
+# We may get logged out due to inactivity timeout, so every command is 
+# wrapped in the login/logoff sequence.
+
+	script login {
+		send "exit\r\r" # works whether logged in or not
+		expect "Username:"
+	}
+	script status_all {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
+		send "status 1-10\r"
+		foreachplug {
+			expect "([0-9]+)[[:space:]]+Unlocked (ON|OFF)"
+			setplugstate $1 $2 on="ON" off="OFF"
+		}
+		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
+	}
+	script on {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
+		send "on %s\r"
+		expect "Outlet turned on.\r\n"
+		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
+	}
+	script on_all {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
+		send "on 1-10\r"
+		foreachplug {
+			expect "Outlet turned on.\r\n"
+		}
+		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
+	}
+	script off {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
+		send "off %s\r"
+		expect "Outlet turned off.\r\n"
+		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
+	}
+	script off_all {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
+		send "off 1-10\r"
+		foreachplug {
+			expect "Outlet turned off.\r\n"
+		}
+		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
+	}
+	script cycle {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
+		send "off %s\r"
+		expect "Outlet turned off.\r\n"
+		expect "pm>"
+		delay 2
+		send "on %s\r"
+		expect "Outlet turned on.\r\n"
+		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
+	}
+	script cycle_all {
+		send "admin\r"
+		expect "Password:"
+		send "pm8\r"
+		expect "pm>"
+
+		send "off 1-10\r"
+		foreachplug {
+			expect "Outlet turned off.\r\n"
+		}
+		expect "pm>"
+		delay 2
+		send "on 1-10\r"
+		foreachplug {
+			expect "Outlet turned on.\r\n"
+		}
+		expect "pm>"
+
+		send "exit\r"
+		expect "Username:"
+	}
+}

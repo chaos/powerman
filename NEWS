@@ -1,32 +1,44 @@
-PowerMan version 1.0.23 News                                     16 Feb 2006
+============================================================================
+Release Notes for PowerMan version 1.0.24                        30 May 2006
+============================================================================
 
-This is a very minor release in preparation for Fedora submission.
+* Telnet state machine now works with Digi terminal server in telnet 
+  mode and logs ignored telnet option requests.
 
+* Several powerman.conf examples are now included in the RPM doc area.
 
-PowerMan version 1.0.22 News                                     12 Oct 2005
+* Handle expansion of suffixed host ranges, e.g. "[00-26]p" [Mark Grondona]
 
-Bugs fixed:
+* Fix minor memory leaks and unchecked function return values 
+  found by Coverity.
 
-o powerman -T dumps core on x86_64.
+* New powerman.dev(5) man page documenting device file syntax.
 
-Supported RPC's:
+* Support serial device baud rates up to 460800 baud if system does.
 
-o Linux NetworX ICE Box version 2 and 3
+* Minor tweaks to spec file for Fedora Extras [Ben Woodard].
 
-o Baytech RPC-3, RPC-3-20NC, RPC-28-30NC
+* Fix for broken P0|P1 in Rackable Phantom 4.0 firmware (phantom4.dev).
 
-o WTI NPS, RPS-10
+* Add support for IBM BladeCenter chassis (ibmbladecenter.dev) 
+  [Robin Goldstone].
 
-o APC MasterSwitch Plus
+* Add support for ComputerBoards CB7050 (cb-7050.dev).
 
-o APC 79XX 24-plug Switched Rack PDU
+* Add support for Cyclades PM10 (cyclades-pm10.dev) [Trent D'Hooge].
 
-o Rackable Systems Phantom Remote Management Module
+============================================================================
+Release Notes for PowerMan version 1.0.23                        16 Feb 2006
+============================================================================
 
-o Cyclades PM8, PM8i
+* Fix for compilation on Fedora Core 4 [Ben Woodard].
 
-o IBM x-series H8 service processor (via external 'h8power' utility)
+* Spec file changes for Fedora Extras submission [Ben Woodard].
 
-o IPMI on Intel SE7501WV2 Xeon nodes in terminal mode (serial)
+============================================================================
+PowerMan version 1.0.22                                          12 Oct 2005
+============================================================================
 
-o IPMI on Intel Tiger4 Itanium nodes (via external 'ipmipower' utility)
+* Bug fix for powerman -T dumps core on x86_64 [Thayne Harbaugh]
+
+* Add support for 24-port APC Switched Rack PDU (apcpdu.dev) [Makia Minnich].
