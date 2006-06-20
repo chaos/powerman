@@ -1,3 +1,7 @@
+2006-06-20 Jim Garlick <garlick@llnl.gov>
+
+    * etc/icebox4.dev: New (from Jarod Wilson).
+
 2006-05-30 Jim Garlick <garlick@llnl.gov>
 
     * : tag powerman-1.0.24

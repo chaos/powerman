@@ -1,0 +1,134 @@
+#
+# Linux Networx ICE Box firmware version 4.x
+#
+# For 4.0 B12 or better, 2 sec delays in beacon_on/beacon_off can be
+# commented out.
+#
+
+specification "icebox4" {
+	timeout 	20
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
+
+	script login {
+		expect "V4[^\n]*\r\n"
+		send "auth icebox\r\n"
+		expect "OK\r\n"
+	}
+	script logout {
+		send "q\r\n"
+	}
+	script status_all {
+		send "ps *\r\n"
+		expect "N1:([01]) N2:([01]) N3:([01]) N4:([01]) N5:([01]) N6:([01]) N7:([01]) N8:([01]) N9:([01]) N10:([01])[[:space:]]*\r\n"
+		setplugstate "1" $1 off="0" on="1"
+		setplugstate "2" $2 off="0" on="1"
+		setplugstate "3" $3 off="0" on="1"
+		setplugstate "4" $4 off="0" on="1"
+		setplugstate "5" $5 off="0" on="1"
+		setplugstate "6" $6 off="0" on="1"
+		setplugstate "7" $7 off="0" on="1"
+		setplugstate "8" $8 off="0" on="1"
+		setplugstate "9" $9 off="0" on="1"
+		setplugstate "10" $10 off="0" on="1"
+	}
+	script status_soft_all {
+		send "ns *\r\n"
+		expect "N1:([012]) N2:([012]) N3:([012]) N4:([012]) N5:([012]) N6:([012]) N7:([012]) N8:([012]) N9:([012]) N10:([012])[[:space:]]*\r\n"
+		setplugstate "1" $1 off="0" on="1"
+		setplugstate "2" $2 off="0" on="1"
+		setplugstate "3" $3 off="0" on="1"
+		setplugstate "4" $4 off="0" on="1"
+		setplugstate "5" $5 off="0" on="1"
+		setplugstate "6" $6 off="0" on="1"
+		setplugstate "7" $7 off="0" on="1"
+		setplugstate "8" $8 off="0" on="1"
+		setplugstate "9" $9 off="0" on="1"
+		setplugstate "10" $10 off="0" on="1"
+	}
+	# Assumption: v3 implies that "ts" is deprecated in favor of "is"
+	script status_temp_all {
+                send "is *\r\n"
+                expect "N1:([^ ]+) N2:([^ ]+) N3:([^ ]+) N4:([^ ]+) N5:([^ ]+) N6:([^ ]+) N7:([^ ]+) N8:([^ ]+) N9:([^ ]+) N10:([^ ]+) N11:[^ ]+ N12:[^ ]+[[:space:]]*\r\n"
+                setplugstate "1" $1
+                setplugstate "2" $2
+                setplugstate "3" $3
+                setplugstate "4" $4
+                setplugstate "5" $5
+                setplugstate "6" $6
+                setplugstate "7" $7
+                setplugstate "8" $8
+                setplugstate "9" $9
+                setplugstate "10" $10
+        }
+	script status_beacon_all {
+                send "be *\r\n"
+                expect "N1:([A-Z]+) N2:([A-Z]+) N3:([A-Z]+) N4:([A-Z]+) N5:([A-Z]+) N6:([A-Z]+) N7:([A-Z]+) N8:([A-Z]+) N9:([A-Z]+) N10:([A-Z]+) N11:[A-Z]+ N12:[A-Z]+[[:space:]]*\r\n"
+                setplugstate "1" $1 off="OFF" on="ON"
+                setplugstate "2" $2 off="OFF" on="ON"
+                setplugstate "3" $3 off="OFF" on="ON"
+                setplugstate "4" $4 off="OFF" on="ON"
+                setplugstate "5" $5 off="OFF" on="ON"
+                setplugstate "6" $6 off="OFF" on="ON"
+                setplugstate "7" $7 off="OFF" on="ON"
+                setplugstate "8" $8 off="OFF" on="ON"
+                setplugstate "9" $9 off="OFF" on="ON"
+                setplugstate "10" $10 off="OFF" on="ON"
+        }
+	script on {
+		send "ph %s\r\n"
+		expect "OK\r\n"
+		delay 0.7
+	}
+	script on_all {
+		send "ph *\r\n"
+		expect "OK\r\n"
+		delay 7
+	}
+	script off {
+		send "pl %s\r\n"
+		expect "OK\r\n"
+		delay 0.7
+	}
+	script off_all {
+		send "pl *\r\n"
+		expect "OK\r\n"
+		delay 7
+	}
+	script cycle {
+		send "pl %s\r\n"
+		expect "OK\r\n"
+		delay 2.7
+		send "ph %s\r\n"
+		expect "OK\r\n"
+		delay 0.7
+	}
+	script cycle_all {
+		send "pl *\r\n"
+		expect "OK\r\n"
+		delay 9
+		send "ph *\r\n"
+		expect "OK\r\n"
+		delay 7
+	}
+	script reset {
+		send "rp %s\r\n"
+		expect "OK\r\n"
+		delay 0.7
+	}
+	script reset_all {
+		send "rp *\r\n"
+		expect "OK\r\n"
+		delay 7
+	}
+	script beacon_on {
+		send "be %s on\r\n"
+		expect "OK\r\n"
+		delay 2
+	}
+	script beacon_off {
+		send "be %s off\r\n"
+		expect "OK\r\n"
+		delay 2
+	}
+}
