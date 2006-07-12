@@ -1,10 +1,11 @@
 #
-# $Id:$
+# $Id$
 #
 # Baytech RPC3-20NC
 #
 # Tested the following firmware versions:
 #   RPC3-NC Series (C) 2002 by BayTech F4.00
+#   RPC-3/4(A)DE Series (C) 2004 BayTech F1.08 (req. powerman 1.0.24 telnet)
 # 
 # Note:
 #   Type ";;;;;" to access "network interface module".
@@ -21,8 +22,7 @@ specification "baytech-rpc3-nc" {
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
 
 	script login {
-		send "temp\r\n"
-		expect "Internal Temperature[^C]+C"
+		send "\r\n"
 		expect ">"
 	}
 	script logout {
@@ -30,7 +30,6 @@ specification "baytech-rpc3-nc" {
 	}
 	script status_all {
 		send "status\r\n"
-		expect "Internal Temperature[^C]+C"
 		foreachplug {
 			expect "([0-9]+)[^:]+: (On|Off)"
 			setplugstate $1 $2 on="On" off="Off"

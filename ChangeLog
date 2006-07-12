@@ -1,3 +1,7 @@
+2006-07-12 Jim Garlick <garlick@llnl.gov>
+
+    * etc/baytech-rpc3-nc.dev: slight mods to support newer firmware.
+
 2006-06-20 Jim Garlick <garlick@llnl.gov>
 
     * etc/icebox4.dev: New (from Jarod Wilson).
