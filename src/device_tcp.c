@@ -252,6 +252,9 @@ static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
             case TELOPT_NEW_ENVIRON:    /* environment variables */
             case TELOPT_XDISPLOC:       /* X display location */
             case TELOPT_TSPEED:         /* terminal speed */
+            /* next two added for newer baytechs - jg */
+            case TELOPT_ECHO:           /* echo */
+            case TELOPT_LFLOW:          /* remote flow control */
                 _telnet_sendopt(dev, WONT, opt);
                 break;
             default:

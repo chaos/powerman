@@ -1,3 +1,8 @@
+2006-08-01 Jim Garlick <garlick@llnl.gov>
+
+    * src/device_tcp.c: _telnet_recvopt(): Respond WONT to
+    TELOPT_ECHO and TELOPT_LFLOW sent by newer baytechs.
+
 2006-07-12 Jim Garlick <garlick@llnl.gov>
 
     * etc/baytech-rpc3-nc.dev: slight mods to support newer firmware.
