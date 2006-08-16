@@ -3,40 +3,31 @@
 ####################################################################
 
 PROJECT=	powerman
-SHELL=		/bin/sh
+VERSION=	development
 CC=		gcc
-MAKE=		/usr/bin/make
-LEX=		/usr/bin/flex
-YACC=		/usr/bin/bison
+LEX=		flex
+YACC=		bison
 
-VERSTR=		$(shell if test -n "$(VERSION)"; then \
-                  echo $(PROJECT)-$(VERSION); else echo development; fi)
-
-DEFS=		-DHAVE_CONFIG_H -DPOWERMAN_VERSION=\"$(VERSTR)\"
-#DEFS+=		-DNDEBUG
+DEFS=		-DHAVE_CONFIG_H -DPOWERMAN_VERSION=\"$(VERSION)\"
 CFLAGS= 	-g -Wall $(DEFS) 
 #CFLAGS+=	-pg
+LDADD=		-lfl -lwrap -lnsl -lutil
 
-LIBS=		-lfl -lwrap -lnsl -lutil
-
-COMMON_OBJS = wrappers.o error.o hostlist.o debug.o
-
-SERVER_UTIL = $(COMMON_OBJS) daemon.o cbuf.o hprintf.o argv.o hash.o
-
-SERVER_OBJS = $(SERVER_UTIL) list.o parse_util.o device.o \
-	      powermand.o client.o parse_lex.o parse_tab.o \
-              device_serial.o device_tcp.o device_pipe.o arglist.o pluglist.o
-
-CLIENT_OBJS = $(COMMON_OBJS) powerman.o
+COMMON_OBJS=	wrappers.o error.o hostlist.o debug.o
+SERVER_OBJS=	$(COMMON_OBJS) daemon.o cbuf.o hprintf.o argv.o hash.o \
+		list.o parse_util.o device.o powermand.o client.o \
+		parse_lex.o parse_tab.o device_serial.o device_tcp.o \
+		device_pipe.o arglist.o pluglist.o
+CLIENT_OBJS= 	$(COMMON_OBJS) powerman.o
 
 
 all:  powerman powermand
 
 powermand: $(SERVER_OBJS)
-	$(CC) $(CFLAGS) -o $@ $(SERVER_OBJS) $(LIBS)
+	$(CC) $(CFLAGS) -o $@ $(SERVER_OBJS) $(LDADD)
 
 powerman: $(CLIENT_OBJS)
-	$(CC) -o $@ $(CLIENT_OBJS) $(LIBS)
+	$(CC) -o $@ $(CLIENT_OBJS) $(LDADD)
 
 parse_lex.c: parse.lex
 	$(LEX) -oparse_lex.c parse.lex
@@ -54,15 +45,16 @@ parse_tab.o: parse_tab.c parse_tab.h powerman.h
 	$(CC) $(CFLAGS) -c -o parse_tab.o parse_tab.c
 
 tags: *.[ch]
-	-ctags -e *.[chy] *.lex 2>/dev/null
+	ctags -e *.[chy] *.lex 2>/dev/null
 
 depend:
-	-makedepend -- $(CFLAGS) *.[ch] 2>/dev/null
+	makedepend -- $(CFLAGS) *.[ch] 2>/dev/null
 
 clean:
-	-rm -f *~ *.o .\#* parse_tab.c parse_tab.h parse_lex.c
-	-rm -f powerman powermand
-	-rm -f gmon.out
+	rm -f *~ *.o .\#* 
+	rm -f powerman powermand
+	rm -f parse_tab.c parse_tab.h parse_lex.c
+	rm -f gmon.out
 
 realclean: clean
 	-rm -f cscope*.out tags TAGS

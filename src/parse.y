@@ -664,16 +664,13 @@ static void _parse_hoststr(Device *dev, char *hoststr, char *flagstr)
 
         if (port) {                 /* host='host:port', flags=NULL */
             *port++ = '\0';
-        } else if (flagstr != NULL){/* host='host', flags='port' (deprecated) */
-            port = flagstr;
-            _warnmsg("port number in flags is deprecated");
         } else
             _errormsg("hostname is missing :port");
 
         n = _strtolong(port);       /* verify port number */
         if (n < 1 || n > 65535)
             _errormsg("port number out of range");
-        dev->data           = tcp_create(hoststr, port);
+        dev->data           = tcp_create(hoststr, port, flagstr);
         dev->destroy        = tcp_destroy;
         dev->connect        = tcp_connect;
         dev->disconnect     = tcp_disconnect;

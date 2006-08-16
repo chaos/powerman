@@ -1,3 +1,19 @@
+2006-08-16 Jim Garlick <garlick@llnl.gov>
+
+    * test/vicebox.[ch], test/svicebox.c, etc/vicebox.dev: Removed.
+
+    * scripts/*.sh: Removed (vicebox stuff).
+
+    * Makefile, src/Makefile: Cleanup.
+
+    * src/parse.y, src/device_tcp.c: Support 'quiet' TCP device option
+    which suppresses connect/disconnect/telnet log messages.
+    Undocumented for now (for Douglas Clay at Sandia CA).
+
+    * src/device_tcp.c: Respond WONT to TELOPT_BINARY sent by Cyclades.
+
+    * : tag powerman-1.0.25
+
 2006-08-01 Jim Garlick <garlick@llnl.gov>
 
     * src/device_tcp.c: _telnet_recvopt(): Respond WONT to

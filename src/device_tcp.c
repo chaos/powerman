@@ -61,12 +61,28 @@ typedef struct {
     char *port;
     TelnetState tstate;         /* state of telnet processing */
     unsigned char tcmd;         /* buffered telnet command */
+    bool quiet;                 /* don't report idle timeout messages */
 } TcpDev;
 
 static void _telnet_init(Device *dev);
 static void _telnet_preprocess(Device * dev);
 
-void *tcp_create(char *host, char *port)
+static void _parse_options(TcpDev *tcp, char *flags)
+{
+    char *tmp = Strdup(flags);
+    char *opt = strtok(tmp, ",");
+
+    while (opt) {
+        if (strcmp(opt, "quiet") == 0)
+            tcp->quiet = TRUE;
+        else
+            err_exit(FALSE, "bad device option: %s\n", opt);
+        opt = strtok(NULL, ",");
+    }
+    Free(tmp);
+}
+
+void *tcp_create(char *host, char *port, char *flags)
 {
     TcpDev *tcp = (TcpDev *)Malloc(sizeof(TcpDev));
 
@@ -74,6 +90,9 @@ void *tcp_create(char *host, char *port)
     tcp->port = Strdup(port);
     tcp->tstate = TELNET_NONE;
     tcp->tcmd = 0;
+    tcp->quiet = FALSE;
+    if (flags)
+        _parse_options(tcp, flags);
 
     return (void *)tcp;
 }
@@ -97,8 +116,13 @@ bool tcp_finish_connect(Device * dev)
     int rc;
     int error = 0;
     int len = sizeof(err);
+    TcpDev *tcp;
 
+    assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_CONNECTING);
+
+    tcp = (TcpDev *)dev->data;
+
     rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &error, &len);
     /*
      *  If an error occurred, Berkeley-derived implementations
@@ -110,7 +134,8 @@ bool tcp_finish_connect(Device * dev)
     if (error) {
         err(FALSE, "tcp_finish_connect(%s): %s", dev->name, strerror(error));
     } else {
-        err(FALSE, "tcp_finish_connect(%s): connected", dev->name);
+        if (!tcp->quiet)
+            err(FALSE, "tcp_finish_connect(%s): connected", dev->name);
         dev->connect_state = DEV_CONNECTED;
         dev->stat_successful_connects++;
         _telnet_init(dev);
@@ -165,10 +190,19 @@ bool tcp_connect(Device * dev)
 
     freeaddrinfo(addrinfo);
 
-    err(FALSE, "tcp_connect(%s): %s", dev->name,
-            dev->connect_state == DEV_CONNECTED ? "connected" 
-            : dev->connect_state == DEV_CONNECTING ? "connecting"
-            : "connection refused");
+    switch(dev->connect_state) {
+        case DEV_NOT_CONNECTED:
+            err(FALSE, "tcp_connect(%s): connection refused", dev->name);
+            break;
+        case DEV_CONNECTED:
+            if (!tcp->quiet)
+                err(FALSE, "tcp_connect(%s): connected", dev->name);
+            break;
+        case DEV_CONNECTING:
+            if (!tcp->quiet)
+                err(FALSE, "tcp_connect(%s): connecting", dev->name);
+            break;
+    }
 
     return (dev->connect_state == DEV_CONNECTED);
 }
@@ -178,8 +212,12 @@ bool tcp_connect(Device * dev)
  */
 void tcp_disconnect(Device * dev)
 {
+    TcpDev *tcp; 
+
+    assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_CONNECTING
            || dev->connect_state == DEV_CONNECTED);
+    tcp = (TcpDev *)dev->data;
 
     dbg(DBG_DEVICE, "tcp_disconnect: %s on fd %d", dev->name, dev->fd);
 
@@ -189,7 +227,8 @@ void tcp_disconnect(Device * dev)
         dev->fd = NO_FD;
     }
 
-    err(FALSE, "tcp_disconnect(%s): disconnected", dev->name);
+    if (!tcp->quiet)
+        err(FALSE, "tcp_disconnect(%s): disconnected", dev->name);
 }
 
 void tcp_preprocess(Device *dev)
@@ -235,11 +274,12 @@ static void _telnet_recvcmd(Device *dev, unsigned char cmd)
 
 static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
 {
+    TcpDev *tcp = (TcpDev *)dev->data;
+
     dbg(DBG_TELNET, "%s: _telnet_recvopt: %s %s", dev->name, 
             TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>", 
             TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
-    switch (cmd)
-    {
+    switch (cmd) {
     case DO:
         switch (opt) {
             case TELOPT_SGA:            /* rfc 858 - suppress go ahead*/
@@ -255,12 +295,15 @@ static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
             /* next two added for newer baytechs - jg */
             case TELOPT_ECHO:           /* echo */
             case TELOPT_LFLOW:          /* remote flow control */
+            /* for cyclades */
+            case TELOPT_BINARY:         /* 8-bit data path */
                 _telnet_sendopt(dev, WONT, opt);
                 break;
             default:
-                err(0, "%s: _telnet_recvopt: ignoring %s %s", dev->name,
-                        TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>", 
-                        TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
+                if (!tcp->quiet)
+                    err(0, "%s: _telnet_recvopt: ignoring %s %s", dev->name,
+                            TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>", 
+                            TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
                 break;
         }
         break;

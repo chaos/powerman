@@ -1,7 +1,7 @@
 Name: powerman
-Version: 1.0.22
+Version: 1.0.25
 Release: 1
-Summary: PowerMan - Power to the Cluster 
+Summary: PowerMan - centralized power control for clusters
 License: GPL
 Group: Applications/System
 Url: http://sourceforge.net/projects/powerman
@@ -18,12 +18,13 @@ Expect-like configurability simplifies the addition of new devices.
 %setup
 
 %build
+make clean
 make VERSION=%{version}
 
 %install
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT
-DESTDIR=$RPM_BUILD_ROOT mandir=%{_mandir} make -e install
+DESTDIR=$RPM_BUILD_ROOT mandir=%{_mandir} sbindir=%{_sbindir} bindir=%{_bindir} initrddir=%{_initrddir} make -e install
 
 %clean
 rm -rf $RPM_BUILD_ROOT
