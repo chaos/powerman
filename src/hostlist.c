@@ -1421,6 +1421,10 @@ _push_range_list_with_suffix(hostlist_t hl, char *pfx, char *sfx,
             snprintf (host, 4096, "%s%0*lu%s", pfx, rng->width, j, sfx);
             hr = hostrange_create_single (host);
             hostlist_push_range (hl, hr);
+            /*
+             * hr is copied in hostlist_push_range. Need to free here.
+             */
+            hostrange_destroy (hr);
         }
         rng++;
     }
@@ -2262,8 +2266,7 @@ char *hostlist_next(hostlist_iterator_t i)
         snprintf (suffix, 15, "%0*lu", i->hr->width, i->hr->lo + i->depth);
 
     len = strlen (i->hr->prefix) + strlen (suffix) + 1;
-    buf = malloc (len);
-    if (buf == NULL)
+    if (!(buf = malloc (len)))
         out_of_memory("hostlist_next");
     
     buf[0] = '\0';
