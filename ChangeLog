@@ -1,3 +1,8 @@
+2006-08-22 Jim Garlick <garlick@llnl.gov>
+
+    * src/device.c: handle_read(): log EOF only if DBG_DEVICE, 
+    not unconditionally on stderr.
+
 2006-08-18 Jim Garlick <garlick@llnl.gov>
 
     * src/hostlist.[ch]: update to the latest from lsd-tools to

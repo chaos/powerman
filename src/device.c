@@ -1278,7 +1278,7 @@ static bool _handle_read(Device * dev)
         goto err;
     }
     if (n == 0) {
-        err(FALSE, "read returned EOF on %s", dev->name);
+        dbg(DBG_DEVICE, "read returned EOF on %s", dev->name);
         goto err;
     }
     return FALSE;
