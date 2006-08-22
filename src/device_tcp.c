@@ -295,7 +295,7 @@ static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
             /* next two added for newer baytechs - jg */
             case TELOPT_ECHO:           /* echo */
             case TELOPT_LFLOW:          /* remote flow control */
-            /* for cyclades */
+            /* next one added for cyclades ts - jg */
             case TELOPT_BINARY:         /* 8-bit data path */
                 _telnet_sendopt(dev, WONT, opt);
                 break;
