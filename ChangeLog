@@ -1,3 +1,7 @@
+2006-08-29 Jim Garlick <garlick@llnl.gov>
+
+    * etc/apc7900.dev: New.  [Martin Petereson]
+
 2006-08-22 Jim Garlick <garlick@llnl.gov>
 
     * src/device.c: handle_read(): log EOF only if DBG_DEVICE, 
