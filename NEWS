@@ -1,21 +1,24 @@
-============================================================================
+=========================================================================
 Release Notes for PowerMan version 1.0.26                        
-============================================================================
+=========================================================================
 
 * Support 8-port APC AP7900 and likely AP7901, AP7920, and AP7921.
   [Martin Petersen]
 
-============================================================================
-Release Notes for PowerMan version 1.0.25                        16 Aug 2006
-============================================================================
+* Fix bug in baytech RPC-3 device script introduced in 1.0.25 that caused 
+  some plugs to report power status "unknown".
+
+=========================================================================
+Release Notes for PowerMan version 1.0.25                     16 Aug 2006
+=========================================================================
 
 * Support newer baytech RPC-3 firmware.
 
 * Support icebox v4 [Jarod Wilson]
 
-============================================================================
-Release Notes for PowerMan version 1.0.24                        30 May 2006
-============================================================================
+=========================================================================
+Release Notes for PowerMan version 1.0.24                     30 May 2006
+=========================================================================
 
 * Telnet state machine now works with Digi terminal server in telnet 
   mode and logs ignored telnet option requests.
@@ -42,17 +45,17 @@ Release Notes for PowerMan version 1.0.24                        30 May 2006
 
 * Add support for Cyclades PM10 (cyclades-pm10.dev) [Trent D'Hooge].
 
-============================================================================
-Release Notes for PowerMan version 1.0.23                        16 Feb 2006
-============================================================================
+=========================================================================
+Release Notes for PowerMan version 1.0.23                     16 Feb 2006
+=========================================================================
 
 * Fix for compilation on Fedora Core 4 [Ben Woodard].
 
 * Spec file changes for Fedora Extras submission [Ben Woodard].
 
-============================================================================
-PowerMan version 1.0.22                                          12 Oct 2005
-============================================================================
+=========================================================================
+PowerMan version 1.0.22                                       12 Oct 2005
+=========================================================================
 
 * Bug fix for powerman -T dumps core on x86_64 [Thayne Harbaugh]
 
