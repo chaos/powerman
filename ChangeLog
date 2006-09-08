@@ -1,3 +1,8 @@
+2006-09-08 Jim Garlick <garlick@llnl.gov>
+
+    * etc/baytech-rpc3-nc.dev: tighten up expect script to avoid confusing
+    status of outlet 1 with temperature in status screen on some units.
+
 2006-08-29 Jim Garlick <garlick@llnl.gov>
 
     * etc/apc7900.dev: New.  [Martin Petereson]

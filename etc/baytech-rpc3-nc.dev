@@ -31,7 +31,7 @@ specification "baytech-rpc3-nc" {
 	script status_all {
 		send "status\r\n"
 		foreachplug {
-			expect "([0-9]+)[^:]+: (On|Off)"
+			expect "([0-9]+)[^:0-9]+: (On|Off)"
 			setplugstate $1 $2 on="On" off="Off"
 		}
 		expect ">"
