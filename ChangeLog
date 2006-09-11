@@ -1,3 +1,7 @@
+2006-09-11 Albert Chu <chu11@llnl.gov>
+
+    * etc/ipmipower.dev: Cleaned up regex for all possible outputs. 
+	
 2006-09-08 Jim Garlick <garlick@llnl.gov>
 
     * etc/baytech-rpc3-nc.dev: tighten up expect script to avoid confusing

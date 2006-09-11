@@ -17,7 +17,7 @@ specification "ipmipower" {
 		send "stat\r"
                 expect "stat\r\n"
 		foreachnode {
-			expect "([^\r\n:]*): (on|off|permission\ denied|invalid\ operation|invalid\ authtype|permsgauth\ required|timed\ out|not\ discovered|bad\ connection|out\ of\ resources|bmc\ busy|bmc\ error)\r\n"
+                        expect "([^\r\n:]*): ([[:alnum:]|[:space:]|_]+)\r\n"
 			setplugstate $1 $2 on="^on$" off="^off$"
 		}
 		expect "ipmipower> "
@@ -25,7 +25,7 @@ specification "ipmipower" {
         script status {
                 send "stat %s\r"
                 expect "stat[^\r]*\r\n"
-                expect "([^\r\n:]*): (on|off|permission\ denied|invalid\ operation|invalid\ authtype|permsgauth\ required|timed\ out|not\ discovered|bad\ connection|out\ of\ resources|bmc\ busy|bmc\ error)\r\n"
+                expect "([^\r\n:]*): ([[:alpha:]|[:space:]|_]+)\r\n"
                 setplugstate $1 $2 on="^on$" off="^off$"
                 expect "ipmipower> "
         }
