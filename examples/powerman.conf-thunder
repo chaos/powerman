@@ -6,12 +6,12 @@
 # we want to refer to them by their primary hostnames "thunderNNN".
 # 
 
-# enable tcp wrappers for powermand (off by default)
-tcpwrappers yes
-
 # This device depends on an external program called ipmipower, distributed as
 # part of FreeIPMI (http://www.nongnu.org/freeipmi/).
 include "/etc/powerman/ipmipower.dev"
+
+# enable tcp wrappers for powermand (off by default)
+tcpwrappers yes
 
 # Start 17 copies of ipmipower.  In this particular example, we assume NULL
 # username and password.  We also use the -g option to emulate the same behavior

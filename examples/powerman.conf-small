@@ -4,9 +4,6 @@
 # Example of a small powerman.conf with several different power controllers.
 #
 
-# enable tcp wrappers for powermand (off by default)
-tcpwrappers yes
-
 # include the device specifications that implement dev_types we want below
 include "/etc/powerman/apc.dev"
 include "/etc/powerman/baytech-rpc28-nc.dev"
@@ -17,6 +14,8 @@ include "/etc/powerman/icebox3.dev"
 include "/etc/powerman/wti-rps10.dev"
 include "/etc/powerman/wti.dev"
 
+# enable tcp wrappers for powermand (off by default)
+tcpwrappers yes
 
 # device "<dev_name>"	"<dev_type>"		"<hostname:port>"
 device "apc"		"apc"			"apc-test:23"

@@ -1,3 +1,12 @@
+2006-10-27 Jim Garlick <garlick@llnl.gov>
+
+    * etc/apcold.dev: New. [Zach Brown]
+
+2006-10-25 Jim Garlick <garlick@llnl.gov>
+
+    * examples/*: Move tcpwrappers directive to after includes, otherwise
+    it's a parse error.
+
 2006-09-11 Albert Chu <chu11@llnl.gov>
 
     * etc/ipmipower.dev: Cleaned up regex for all possible outputs. 

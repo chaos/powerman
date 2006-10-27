@@ -1,0 +1,176 @@
+#
+# $Id:$
+#
+# apparently there is an apc interface older than "apc.dev"
+#
+# This talks to:
+#
+#        Model Number      : AP9210       Serial Number     : WA9903036579
+#        Firmware Revision : v1.1.1       Hardware Revision : C4
+#        Manufacture Date  : 01/14/1999
+#
+#
+specification "apcold" {
+	timeout 	10  
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
+
+	script login {
+		expect "\n"
+		expect "User Name : "
+		send "apc\r\n"
+		expect "Password  : "
+		send "apc\r\n"
+		expect "> "
+		send "1\r\n"	# outlet manager menu
+		expect "> "
+	}
+	script logout {
+		send "\033"	# ESC back to control console menu
+		expect "> "
+		send "4\r\n"
+	}
+	script status_all {
+		send "9\r\n"	# master/pdu control
+		expect "> "
+		send "1\r\n"	# control of master pdu
+		foreachplug {
+			expect "([1-8]+):(ON|OFF)[^\n]*\r\n"
+			setplugstate $1 $2 on="ON" off="OFF"
+		}
+		expect "> "
+		send "\033"	# ESC back to master/pdu
+		expect "> "
+		send "\033"	# ESC back to outlet manager menu
+		expect "> "
+	}
+	script on {
+		send "%s\r\n"
+		expect "> "
+		send "1\r\n" # select outlet control
+		expect "> "
+
+		send "1\r\n" # immediate on
+		expect "Enter 'YES' to continue or <ENTER> to cancel : "
+		send "YES\r\n"
+		expect "successfully!\r\n"
+		send "\r\n"
+		expect "> "
+
+		send "\033"	# ESC back to outlet
+		expect "> "
+		send "\033"	# ESC back to outlet manager
+		expect "> "
+	}
+	script on_all {
+		send "9\r\n"
+		expect "> "
+		send "1\r\n" # select outlet control
+		expect "> "
+
+		send "1\r\n" # immediate on
+		expect "Enter 'YES' to continue or <ENTER> to cancel : "
+		send "YES\r\n"
+		expect "successfully!\r\n"
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+	}
+	script off {
+		send "%s\r\n"
+		expect "> "
+		send "1\r\n" # select outlet control
+		expect "> "
+
+		send "2\r\n" # immediate off
+		expect "Enter 'YES' to continue or <ENTER> to cancel : "
+		send "YES\r\n"
+		expect "successfully!\r\n"
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+	}
+	script off_all {
+		send "9\r\n"
+		expect "> "
+		send "1\r\n" # select outlet control
+		expect "> "
+
+		send "2\r\n" # immediate off
+		expect "Enter 'YES' to continue or <ENTER> to cancel : "
+		send "YES\r\n"
+		expect "successfully!\r\n"
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+	}
+# If outlet is initially off, "immediate reboot" (4) will leave it off.
+# This doesn't match PowerMan's semantics for cycle, therefore do explicit
+# immediate off + immediate on.
+	script cycle {
+		send "%s\r\n"
+		expect "> "
+		send "1\r\n" # select outlet control
+		expect "> "
+
+		send "2\r\n" # immediate off
+		expect "Enter 'YES' to continue or <ENTER> to cancel : "
+		send "YES\r\n"
+		expect "successfully!\r\n"
+		send "\r\n"
+		expect "> "
+
+		delay 1 	# 1 is still plenty long
+
+		send "1\r\n" # immediate on
+		expect "Enter 'YES' to continue or <ENTER> to cancel : "
+		send "YES\r\n"
+		expect "successfully!\r\n"
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+	}
+	script cycle_all {
+		send "9\r\n"
+		expect "> "
+		send "1\r\n" # select outlet control
+		expect "> "
+
+		send "2\r\n" # immediate off
+		expect "Enter 'YES' to continue or <ENTER> to cancel : "
+		send "YES\r\n"
+		expect "successfully!\r\n"
+		send "\r\n"
+		expect "> "
+
+		delay 1 	# 1 is still plenty long
+
+		send "1\r\n" # immediate on
+		expect "Enter 'YES' to continue or <ENTER> to cancel : "
+		send "YES\r\n"
+		expect "successfully!\r\n"
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+	}
+}

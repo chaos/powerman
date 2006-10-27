@@ -6,10 +6,10 @@
 # does not take advantage of powerman's newer more compact config file
 # syntax features.
 
+include "/etc/powerman/icebox3.dev"
+
 # enable tcp wrappers for powermand (off by default)
 tcpwrappers yes
-
-include "/etc/powerman/icebox3.dev"
 
 # 10 ports per power controller.
 device "ice-r1-1"  "icebox3" "ice-r1-1:1010"
