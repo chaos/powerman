@@ -21,6 +21,8 @@
     * META, powerman.spec: Update for pre-release.
 
     * : tag powerman-1.0.26-0-pre1
+
+    * NEWS: Updated with ranged support news.
 	
 2006-10-27 Jim Garlick <garlick@llnl.gov>
 

@@ -8,6 +8,8 @@ Release Notes for PowerMan version 1.0.26
 * Fix bug in baytech RPC-3 device script introduced in 1.0.25 that caused 
   some plugs to report power status "unknown".
 
+* Add ranged power control support for faster power control w/ ipmipower.
+
 =========================================================================
 Release Notes for PowerMan version 1.0.25                     16 Aug 2006
 =========================================================================
