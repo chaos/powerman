@@ -18,7 +18,7 @@
 
     * etc/ipmipower.dev: Add ranged scripts.
 
-    * META: Update for pre-release.
+    * META, powerman.spec: Update for pre-release.
 
     * : tag powerman-1.0.26-0-pre1
 	

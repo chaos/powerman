@@ -1,6 +1,6 @@
 Name: powerman
-Version: 1.0.25
-Release: 1
+Version: 1.0.26
+Release: 0.pre1
 Summary: PowerMan - centralized power control for clusters
 License: GPL
 Group: Applications/System
