@@ -129,12 +129,16 @@ status_all                        {   return TOK_STATUS_ALL; }
 status_soft                       {   return TOK_STATUS_SOFT; }
 status_soft_all                   {   return TOK_STATUS_SOFT_ALL; }
 on                                {   return TOK_ON; }
+on_ranged                         {   return TOK_ON_RANGED; }  
 on_all                            {   return TOK_ON_ALL; }
 off                               {   return TOK_OFF; }
+off_ranged                        {   return TOK_OFF_RANGED; }
 off_all                           {   return TOK_OFF_ALL; }
 cycle                             {   return TOK_CYCLE; }
+cycle_ranged                      {   return TOK_CYCLE_RANGED; }
 cycle_all                         {   return TOK_CYCLE_ALL; }
 reset                             {   return TOK_RESET; }
+reset_ranged                      {   return TOK_RESET_RANGED; }
 reset_all                         {   return TOK_RESET_ALL; }
 ping                              {   return TOK_PING; }
 status_temp                       {   return TOK_STATUS_TEMP; }

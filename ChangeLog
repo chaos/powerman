@@ -1,3 +1,23 @@
+2006-11-14 Albert Chu <chu11@llnl.gov>
+
+    Add ranged power control support.
+
+    * src/parse.lex, src/parse.y, src/device.h : Add parsing support
+      for on_range, off_range, cycle_range, and reset_range.
+
+    * src/device.c (_get_ranged_script): New function.
+
+    * src/device.c (_create_action, _create_exec_ctx,
+      _destroy_exec_ctx, _process_ifonoff, _process_send,
+      _process_setplugstate): Rearchitect to support multiple plugs.
+
+    * src/device.c (_enqueue_targetted_actions): Call range script
+    when appropriate.
+
+    * man/powerman.dev.5: Updated appropriately.
+
+    * etc/ipmipower.dev: Add ranged scripts.
+	
 2006-10-27 Jim Garlick <garlick@llnl.gov>
 
     * etc/apcold.dev: New. [Zach Brown]

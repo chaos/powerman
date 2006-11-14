@@ -83,7 +83,7 @@
  * inner block).
  */
 typedef struct {
-    Plug *target;               /* target->name used for send "%s" (NULL=all) */
+    List plugs;                 /* name(s) used for send "%s" (NULL=all) */
     List block;                 /* List of stmts */
     ListIterator stmtitr;       /* next stmt in block */
     Stmt *cur;                  /* current stmt */
@@ -127,10 +127,11 @@ static void _process_action(Device * dev, struct timeval *timeout);
 static bool _timeout(struct timeval *timestamp, struct timeval *timeout,
                      struct timeval *timeleft);
 static int _get_all_script(Device * dev, int com);
+static int _get_ranged_script(Device * dev, int com);
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
                             ActionCB complete_fun, VerbosePrintf vpf_fun,
                             int client_id, ArgList arglist);
-static Action *_create_action(Device * dev, int com, Plug *target,
+static Action *_create_action(Device * dev, int com, List plugs,
                               ActionCB complete_fun, VerbosePrintf vpf_fun,
                               int client_id, ArgList arglist);
 static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
@@ -246,14 +247,14 @@ static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[])
     return str;
 }
 
-static ExecCtx *_create_exec_ctx(Device *dev, List block, Plug *target)
+static ExecCtx *_create_exec_ctx(Device *dev, List block, List plugs)
 {
     ExecCtx *new = (ExecCtx *)Malloc(sizeof(ExecCtx));
 
     new->stmtitr = list_iterator_create(block);
     new->cur = list_next(new->stmtitr); 
     new->block = block;
-    new->target = target;
+    new->plugs = plugs;
     new->plugitr = NULL;
     new->processing = FALSE;
 
@@ -266,7 +267,9 @@ static void _destroy_exec_ctx(ExecCtx *e)
         list_iterator_destroy(e->stmtitr);
     e->stmtitr = NULL;
     e->cur = NULL;
-    e->target = NULL;
+    if (e->plugs)
+        list_destroy(e->plugs);
+    e->plugs = NULL;
     Free(e);
 }
 
@@ -289,7 +292,7 @@ static void _rewind_action(Action *act)
     }
 }
 
-static Action *_create_action(Device * dev, int com, Plug *target,
+static Action *_create_action(Device * dev, int com, List plugs,
                               ActionCB complete_fun, VerbosePrintf vpf_fun,
                               int client_id, ArgList arglist)
 {
@@ -305,7 +308,7 @@ static Action *_create_action(Device * dev, int com, Plug *target,
     act->client_id = client_id;
 
     act->exec = list_create((ListDelF)_destroy_exec_ctx);
-    e = _create_exec_ctx(dev, dev->scripts[act->com], target);
+    e = _create_exec_ctx(dev, dev->scripts[act->com], plugs);
     list_push(act->exec, e);
 
     act->errnum = ACT_ESUCCESS;
@@ -614,6 +617,34 @@ static int _get_all_script(Device * dev, int com)
     return new;
 }
 
+/* return "ranged" version of script if defined else -1 */
+static int _get_ranged_script(Device * dev, int com)
+{
+    int new = -1;
+
+    switch (com) {
+    case PM_POWER_ON:
+        if (dev->scripts[PM_POWER_ON_RANGED])
+            new = PM_POWER_ON_RANGED;
+        break;
+    case PM_POWER_OFF:
+        if (dev->scripts[PM_POWER_OFF_RANGED])
+            new = PM_POWER_OFF_RANGED;
+        break;
+    case PM_POWER_CYCLE:
+        if (dev->scripts[PM_POWER_CYCLE_RANGED])
+            new = PM_POWER_CYCLE_RANGED;
+        break;
+    case PM_RESET:
+        if (dev->scripts[PM_RESET_RANGED])
+            new = PM_RESET_RANGED;
+        break;
+    default:
+        break;
+    }
+    return new;
+}
+
 static bool _is_query_action(int com)
 {
     switch (com) {
@@ -644,8 +675,13 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
     PlugListIterator itr;
     int count = 0;
     Action *act;
+    List ranged_plugs = NULL;
+    int used_ranged_plugs = 0;
 
     assert(hl != NULL);
+
+    if (!(ranged_plugs = list_create((ListDelF)NULL)))
+        goto cleanup;
 
     itr = pluglist_iterator_create(dev->plugs);
     while ((plug = pluglist_next(itr))) {
@@ -655,14 +691,28 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
             all = FALSE;
             continue;
         }
+
         /* check if node name for plug matches the target */
         if (hostlist_find(hl, plug->node) == -1) {
             all = FALSE;
             continue;
         }
+
+        if (!list_append(ranged_plugs, plug))
+            goto cleanup;
+
         /* append action to 'new_acts' */
         if (dev->scripts[com] != NULL) { /* maybe we only have _ALL... */
-            act = _create_action(dev, com, plug, complete_fun, vpf_fun,
+            List plugs;
+
+            if (!(plugs = list_create((ListDelF)NULL)))
+                goto cleanup;
+            if (!list_append(plugs, plug)) {
+                list_destroy(plugs);
+                goto cleanup;
+            }
+
+            act = _create_action(dev, com, plugs, complete_fun, vpf_fun,
                         client_id, arglist);
             list_append(new_acts, act);
         }
@@ -683,7 +733,23 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
         }
     }
 
-    /* _ALL wasn't appropriate or wasn't defined so do one action per plug */
+    /* _ALL wasn't appropriate, try a ranged input
+     */
+    if (!count && list_count(ranged_plugs) > 1) {
+        int ncom;
+        /* _RANGED script available - use that */
+        if ((ncom = _get_ranged_script(dev, com)) != -1) {
+            act = _create_action(dev, ncom, ranged_plugs, complete_fun, 
+                                 vpf_fun, client_id, arglist);
+            list_append(dev->acts, act);
+            used_ranged_plugs++;
+            count++;
+        }
+    }
+
+    /* _ALL or _RANGE wasn't appropriate or wasn't defined so do one
+     *  action per plug 
+     */
     if (count == 0) {
         while ((act = list_pop(new_acts))) {
             list_append(dev->acts, act);
@@ -691,8 +757,10 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
         }
     }
 
+cleanup:
     list_destroy(new_acts);
-
+    if (!used_ranged_plugs)
+        list_destroy(ranged_plugs);
     return count;
 }
 
@@ -925,7 +993,16 @@ static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
 
     /* plug list not exhausted? start a new execution context for this block */
     if (plug != NULL) {
-        new = _create_exec_ctx(dev, e->cur->u.foreach.stmts, plug);
+        List plugs;
+
+        if (!(plugs = list_create((ListDelF)NULL)))
+            goto cleanup;
+        if (!list_append(plugs, plug)) {
+            list_destroy(plugs);
+            goto cleanup;
+        }
+
+        new = _create_exec_ctx(dev, e->cur->u.foreach.stmts, plugs);
         list_push(act->exec, new);
     } else {
         pluglist_iterator_destroy(e->plugitr);
@@ -933,7 +1010,7 @@ static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
     }
 
     /* we won't be called again if we don't push a new context */
-
+ cleanup:
     return finished;
 }
 
@@ -949,8 +1026,9 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
         bool condition = FALSE;
         ExecCtx *new;
       
-        if (e->target) {
-            Arg *arg = arglist_find(act->arglist, e->target->node);
+        if (e->plugs && list_count(e->plugs) > 0) {
+            Plug *plug = list_peek(e->plugs);
+            Arg *arg = arglist_find(act->arglist, plug->node);
 
             if (arg)
                 state = arg->state;
@@ -966,12 +1044,37 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
 
         /* condition met? start a new execution context for this block */
         if (condition) {
+            List plugs;
+            ListIterator itr;
+            Plug *plug;
+
             e->processing = TRUE;
-            new = _create_exec_ctx(dev, e->cur->u.ifonoff.stmts, e->target);
+
+            /* achu: previous context's plugs could get destroy,
+             * so must copy plugs to a new list.
+             */
+            if (!(plugs = list_create((ListDelF)NULL)))
+                goto cleanup;
+            if (!(itr = list_iterator_create(e->plugs))) {
+                list_destroy(plugs);
+                goto cleanup;
+            }
+
+            while ((plug = list_next(itr))) {
+                if (!list_append(plugs, plug)) {
+                    list_destroy(plugs);
+                    list_iterator_destroy(itr);
+                    goto cleanup;
+                }
+            }
+
+            new = _create_exec_ctx(dev, e->cur->u.ifonoff.stmts, plugs);
             list_push(act->exec, new);
+            list_iterator_destroy(itr);
         } 
     } 
 
+ cleanup:
     return finished;
 }
 
@@ -1019,8 +1122,11 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
         plug_name = Strdup(e->cur->u.setplugstate.plug_name);
     if (!plug_name)                         /* regex match */
         plug_name = _copy_pmatch(dev, e->cur->u.setplugstate.plug_mp);
-    if (!plug_name && (e->target && e->target->name != NULL))
-        plug_name = Strdup(e->target->name);/* use action target */
+    if (!plug_name && (e->plugs && list_count(e->plugs) > 0)) {
+        Plug *plug = list_peek(e->plugs);
+        if (plug->name)
+            plug_name = Strdup(plug->name);/* use action target */
+    }
     /* if no plug name, do nothing */
 
     if (plug_name) {
@@ -1096,25 +1202,74 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
     /* first time through? */
     if (!e->processing) {
         int dropped = 0;
-        char *str = hsprintf(e->cur->u.send.fmt, e->target ? 
-                (e->target->name ? e->target->name : "[unresolved]") : 0);
-        int written = cbuf_write(dev->to, str, strlen(str), &dropped);
+        int written;
+        char *str = NULL;
 
-        if (written < 0)
-            err(TRUE, "_process_send(%s): cbuf_write returned %d", 
-                    dev->name, written);
-        else if (dropped > 0)
-            err(FALSE, "_process_send(%s): buffer overrun, %d dropped", 
-                    dev->name, dropped);
-        else {
-            char *memstr = dbg_memstr(str, strlen(str));
+        if (e->plugs && list_count(e->plugs) > 0) {
+            if (list_count(e->plugs) > 1) {
+                char names[CP_LINEMAX];
+                ListIterator itr = NULL;
+                hostlist_t hl = NULL;
+                Plug *plug;
 
-            if (act->vpf_fun)
-                act->vpf_fun(act->client_id, "send(%s): '%s'", 
-                        dev->name, memstr);
-            Free(memstr);
+                if (!(hl = hostlist_create(NULL))) {
+                    err(TRUE, "_process_send(%s): hostlist_create", dev->name);
+                    goto range_cleanup;
+                }
+                
+                if (!(itr = list_iterator_create(e->plugs))) {
+                    err(TRUE, "_process_send(%s): list_iterator_create", dev->name);
+                    goto range_cleanup;
+                }
+
+                while ((plug = list_next(itr))) {
+                    if (!hostlist_push(hl, plug->name)) {
+                        err(TRUE, "_process_send(%s): hostlist_push", dev->name);
+                        goto range_cleanup;
+                    }
+                }
+
+                hostlist_sort(hl);
+                if (hostlist_ranged_string(hl, CP_LINEMAX, names) < 0) {
+                    err(TRUE, "_process_send(%s): hostlist_ranged_string", dev->name);
+                    goto range_cleanup;
+                }
+
+                str = hsprintf(e->cur->u.send.fmt, names);
+            range_cleanup:
+                if (itr)
+                    list_iterator_destroy(itr);
+                if (hl)
+                    hostlist_destroy(hl);
+            }
+            else {
+                Plug *plug = list_peek(e->plugs);
+                str = hsprintf(e->cur->u.send.fmt, (plug->name ? plug->name : "[unresolved]"));
+            }
         }
-        assert(written < 0 || (dropped == strlen(str) - written));
+        else
+            str = hsprintf(e->cur->u.send.fmt, NULL);
+
+        if (str) {
+            written = cbuf_write(dev->to, str, strlen(str), &dropped);
+
+            if (written < 0)
+                err(TRUE, "_process_send(%s): cbuf_write returned %d", 
+                    dev->name, written);
+            else if (dropped > 0)
+                err(FALSE, "_process_send(%s): buffer overrun, %d dropped", 
+                    dev->name, dropped);
+            else {
+                char *memstr = dbg_memstr(str, strlen(str));
+
+                if (act->vpf_fun)
+                    act->vpf_fun(act->client_id, "send(%s): '%s'", 
+                                 dev->name, memstr);
+                Free(memstr);
+            }
+            assert(written < 0 || (dropped == strlen(str) - written));
+        }
+
         e->processing = TRUE;
       
         Free(str);

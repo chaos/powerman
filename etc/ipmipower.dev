@@ -33,11 +33,19 @@ specification "ipmipower" {
 		send "on %s\r"
 		expect "ipmipower> "
 	}
+	script on_ranged {
+		send "on %s\r"
+		expect "ipmipower> "
+	}
 	script on_all {
 		send "on\r"
 		expect "ipmipower> "
 	}
 	script off {
+		send "off %s\r"
+		expect "ipmipower> "
+	}
+	script off_ranged {
 		send "off %s\r"
 		expect "ipmipower> "
 	}
@@ -49,11 +57,19 @@ specification "ipmipower" {
 		send "cycle %s\r"
 		expect "ipmipower> "
 	}
+	script cycle_ranged {
+		send "cycle %s\r"
+		expect "ipmipower> "
+	}
 	script cycle_all {
 		send "cycle\r"
 		expect "ipmipower> "
 	}
 	script reset {
+		send "reset %s\r"
+		expect "ipmipower> "
+	}
+	script reset_ranged {
 		send "reset %s\r"
 		expect "ipmipower> "
 	}

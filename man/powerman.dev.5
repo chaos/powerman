@@ -83,14 +83,14 @@ When all plugs of a device are involved in a plug status query,
 the status_all script, if defined, will be called in preference to the 
 status script; otherwise the status script is called for each plug.
 .TP
-.I "on_all, on[%s]" 
-Power on all plugs or the specified plug.
+.I "on_all, on_range[%s], on[%s]" 
+Power on all plugs, a range of plugs, or the specified plug.
 .TP
-.I "off_all, off[%s]"
-Power off all plugs or the specified plug.
+.I "off_all, off_range[%s], off[%s]"
+Power off all plugs, a range of plugs, or the specified plug.
 .TP
-.I "cycle_all, cycle[%s]"
-Power cycle all plugs or the specified plug.
+.I "cycle_all, cycle_range[%s], cycle[%s]"
+Power cycle all plugs, a range of plugs, or the specified plug.
 The intent of this command was to map to the RPC's cycle command; 
 however, device script are increasingly implementing this in terms of
 a power off/delay/power so the off time can be controlled by the script.
@@ -119,8 +119,8 @@ Flash beacon on the specified plug.
 .I "beacon_off[%s]"
 Clear beacon on the specified plug.
 .TP
-.I "reset_all, reset[%s]"
-Reset all plugs or only the specified plug.
+.I "reset_all, reset_range[%s], reset[%s]"
+Reset all plugs, a range of plugs, or only the specified plug.
 Reset refers to signaling a motherboard reset butten header, not a plug cycle.
 .LP
 Within a script, the following statements can be used:

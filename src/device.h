@@ -33,30 +33,34 @@
 #include "arglist.h"
 
 /* Indices into script array */
-#define PM_LOG_IN           0
-#define PM_LOG_OUT          1
-#define PM_STATUS_PLUGS     2
-#define PM_STATUS_PLUGS_ALL 3
-#define PM_STATUS_NODES     4
-#define PM_STATUS_NODES_ALL 5
-#define PM_PING             6
-#define PM_POWER_ON         7
-#define PM_POWER_ON_ALL     8
-#define PM_POWER_OFF        9
-#define PM_POWER_OFF_ALL    10
-#define PM_POWER_CYCLE      11
-#define PM_POWER_CYCLE_ALL  12
-#define PM_RESET            13
-#define PM_RESET_ALL        14
-#define PM_STATUS_TEMP      15
-#define PM_STATUS_TEMP_ALL  16
-#define PM_STATUS_BEACON    17
-#define PM_STATUS_BEACON_ALL 18
-#define PM_BEACON_ON        19
-#define PM_BEACON_OFF       20
-#define PM_RESOLVE          21
+#define PM_LOG_IN             0
+#define PM_LOG_OUT            1
+#define PM_STATUS_PLUGS       2
+#define PM_STATUS_PLUGS_ALL   3
+#define PM_STATUS_NODES       4
+#define PM_STATUS_NODES_ALL   5
+#define PM_PING               6
+#define PM_POWER_ON           7
+#define PM_POWER_ON_RANGED    8
+#define PM_POWER_ON_ALL       9
+#define PM_POWER_OFF          10
+#define PM_POWER_OFF_RANGED   11
+#define PM_POWER_OFF_ALL      12
+#define PM_POWER_CYCLE        13
+#define PM_POWER_CYCLE_RANGED 14
+#define PM_POWER_CYCLE_ALL    15
+#define PM_RESET              16
+#define PM_RESET_RANGED       17
+#define PM_RESET_ALL          18
+#define PM_STATUS_TEMP        19
+#define PM_STATUS_TEMP_ALL    20
+#define PM_STATUS_BEACON      21
+#define PM_STATUS_BEACON_ALL  22
+#define PM_BEACON_ON          23
+#define PM_BEACON_OFF         24
+#define PM_RESOLVE            25
 /* count of scripts above */
-#define NUM_SCRIPTS         22
+#define NUM_SCRIPTS           26
 
 #define INTERP_MAGIC 0x13434550
 typedef struct {

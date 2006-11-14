@@ -120,8 +120,9 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 %token TOK_LOGIN TOK_LOGOUT TOK_STATUS TOK_STATUS_ALL
 %token TOK_STATUS_SOFT TOK_STATUS_SOFT_ALL TOK_STATUS_TEMP TOK_STATUS_TEMP_ALL
 %token TOK_STATUS_BEACON TOK_STATUS_BEACON_ALL TOK_BEACON_ON TOK_BEACON_OFF
-%token TOK_ON TOK_ON_ALL TOK_OFF TOK_OFF_ALL TOK_CYCLE TOK_CYCLE_ALL TOK_RESET
-%token TOK_RESET_ALL TOK_PING TOK_SPEC 
+%token TOK_ON TOK_ON_RANGED TOK_ON_ALL TOK_OFF TOK_OFF_RANGED TOK_OFF_ALL 
+%token TOK_CYCLE TOK_CYCLE_RANGED TOK_CYCLE_ALL 
+%token TOK_RESET TOK_RESET_RANGED TOK_RESET_ALL TOK_PING TOK_SPEC 
 
 /* script statements */
 %token TOK_EXPECT TOK_SETPLUGSTATE TOK_SEND TOK_DELAY
@@ -275,18 +276,26 @@ spec_script     : TOK_SCRIPT TOK_LOGIN stmt_block {
     makeScript(PM_BEACON_OFF, (List)$3);
 }               | TOK_SCRIPT TOK_ON stmt_block {
     makeScript(PM_POWER_ON, (List)$3);
+}               | TOK_SCRIPT TOK_ON_RANGED stmt_block {
+    makeScript(PM_POWER_ON_RANGED, (List)$3);
 }               | TOK_SCRIPT TOK_ON_ALL stmt_block {
     makeScript(PM_POWER_ON_ALL, (List)$3);
 }               | TOK_SCRIPT TOK_OFF stmt_block {
     makeScript(PM_POWER_OFF, (List)$3);
+}               | TOK_SCRIPT TOK_OFF_RANGED stmt_block {
+    makeScript(PM_POWER_OFF_RANGED, (List)$3);
 }               | TOK_SCRIPT TOK_OFF_ALL stmt_block {
     makeScript(PM_POWER_OFF_ALL, (List)$3);
 }               | TOK_SCRIPT TOK_CYCLE stmt_block {
     makeScript(PM_POWER_CYCLE, (List)$3);
+}               | TOK_SCRIPT TOK_CYCLE_RANGED stmt_block {
+    makeScript(PM_POWER_CYCLE_RANGED, (List)$3);
 }               | TOK_SCRIPT TOK_CYCLE_ALL stmt_block {
     makeScript(PM_POWER_CYCLE_ALL, (List)$3);
 }               | TOK_SCRIPT TOK_RESET stmt_block {
     makeScript(PM_RESET, (List)$3);
+}               | TOK_SCRIPT TOK_RESET_RANGED stmt_block {
+    makeScript(PM_RESET_RANGED, (List)$3);
 }               | TOK_SCRIPT TOK_RESET_ALL stmt_block {
     makeScript(PM_RESET_ALL, (List)$3);
 }               | TOK_SCRIPT TOK_PING stmt_block {
