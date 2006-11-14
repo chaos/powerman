@@ -17,6 +17,10 @@
     * man/powerman.dev.5: Updated appropriately.
 
     * etc/ipmipower.dev: Add ranged scripts.
+
+    * META: Update for pre-release.
+
+    * : tag powerman-1.0.26-pre1
 	
 2006-10-27 Jim Garlick <garlick@llnl.gov>
 
