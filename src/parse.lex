@@ -195,6 +195,13 @@ include                        BEGIN(lex_incl);
 
 %%
 
+/* Provide yywrap() to avoid need to link to -lfl */
+int
+yywrap()
+{
+  return 1;
+}
+
 int
 scanner_line(void)
 {

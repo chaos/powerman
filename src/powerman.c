@@ -24,6 +24,10 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
+
 #define _GNU_SOURCE             /* for dprintf */
 #include <stdio.h>
 #include <string.h>
@@ -34,14 +38,29 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <libgen.h>
+#include <sys/types.h>
+#include <dirent.h>
 
 #include "powerman.h"
+#include "powerman_options.h"
 #include "wrappers.h"
 #include "error.h"
 #include "hostlist.h"
+#include "list.h"
 #include "client_proto.h"
 #include "debug.h"
+#if !WITH_STATIC_MODULES
+#include "ltdl.h"
+#endif /* !WITH_STATIC_MODULES */
 
+#if WITH_STATIC_MODULES
+static void _load_one_module(struct powerman_options_module_info *module_info);
+#else  /* !WITH_STATIC_MODULES */
+static void _load_one_module(char *module_path);
+static void _load_options_modules_in_dir(char *search_dir);
+#endif /* !WITH_STATIC_MODULES */
+static void _load_options_modules(void);
+static void _unload_options_modules(void);
 static void _connect_to_server(char *host, char *port);
 static void _disconnect_from_server(void);
 static void _usage(void);
@@ -55,8 +74,43 @@ static void _process_version(void);
 
 static int server_fd = -1;
 
+#define POWERMAN_OPTIONS_LEN       128
+#define POWERMAN_LONG_OPTIONS_LEN  64
+#define POWERMAN_MAXPATHLEN        256
+
+#define POWERMAN_MODULE_SIGNATURE  "powerman_options_"
+#define POWERMAN_MODULE_INFO_SYM   "powerman_module_info"
+#define POWERMAN_MODULE_DEVEL_DIR  POWERMAN_MODULE_BUILDDIR "/.libs"
+
+struct powerman_module_loadinfo {
+#if !WITH_STATIC_MODULES
+  lt_dlhandle handle;
+#endif /* !WITH_STATIC_MODULES */
+  struct powerman_options_module_info *module_info;
+  char options_towatch[POWERMAN_OPTIONS_LEN];
+  char options_processed[POWERMAN_OPTIONS_LEN];
+};
+
+static List modules_list = NULL;
+static ListIterator modules_list_itr = NULL;
+
+#if WITH_STATIC_MODULES
+extern struct powerman_options_module_info genders_module_info;
+
+struct powerman_options_module_info *static_modules[] =
+  {
+#if WITH_GENDERS
+    &genders_module_info,
+#endif /* WITH_GENDERS */
+    NULL
+  };
+#endif /* WITH_STATIC_MODULES */
+
 #define OPT_STRING "01crlqfubntLd:VDvxT"
-static const struct option long_options[] = {
+static char soptions[POWERMAN_OPTIONS_LEN + 1];
+
+#if HAVE_GETOPT_LONG
+static struct option loptions[POWERMAN_LONG_OPTIONS_LEN+1] = {
     {"on", no_argument, 0, '1'},
     {"off", no_argument, 0, '0'},
     {"cycle", no_argument, 0, 'c'},
@@ -76,8 +130,8 @@ static const struct option long_options[] = {
     {"exprange", no_argument, 0, 'x'},
     {0, 0, 0, 0}
 };
-
-static const struct option *longopts = long_options;
+static int loptions_len = 17;
+#endif /* HAVE_GETOPT_LONG */
 
 int main(int argc, char **argv)
 {
@@ -96,6 +150,7 @@ int main(int argc, char **argv)
     char *host = NULL;
     bool telemetry = FALSE;
     bool exprange = FALSE;
+    int used_option;
 
     prog = basename(argv[0]);
     err_init(prog);
@@ -105,11 +160,76 @@ int main(int argc, char **argv)
     else if (strcmp(prog, "off") == 0)
         cmd = CMD_OFF;
 
+    memset(soptions, '\0', POWERMAN_OPTIONS_LEN + 1);
+    strncpy(soptions, OPT_STRING, POWERMAN_OPTIONS_LEN);
+
+    _load_options_modules();
+
+    /* Build up acceptable options to parse */
+    if (modules_list_itr) {
+        struct powerman_module_loadinfo *loadinfoPtr;
+
+        list_iterator_reset(modules_list_itr);
+        while ((loadinfoPtr = list_next(modules_list_itr))) {
+            struct powerman_option *optionsPtr = loadinfoPtr->module_info->options;
+
+            while (optionsPtr->option) {
+                char opt = optionsPtr->option;
+
+                /* run out of space?  Then that's all the user gets */
+                if (strlen(loadinfoPtr->options_towatch) >= POWERMAN_OPTIONS_LEN)
+                    break;
+
+                if (!strchr(soptions, optionsPtr->option)) {
+
+                    /* run out of space?  Then that's all the user gets 
+                     * -1 to account for possible ':'
+                     */
+                    if (strlen(soptions) >= (POWERMAN_OPTIONS_LEN - 1))
+                        break;
+
+#if HAVE_GETOPT_LONG
+                    if (loptions_len >= POWERMAN_LONG_OPTIONS_LEN)
+                        break;
+#endif /* HAVE_GETOPT_LONG */
+
+                    strncat(loadinfoPtr->options_towatch, &opt, 1);
+                    strncat(soptions, &opt, 1);
+                    if (optionsPtr->option_arg) {
+                        opt = ':';
+                        strncat(soptions, &opt, 1);
+                    }
+
+#if HAVE_GETOPT_LONG
+                    if (optionsPtr->option_long)
+                      {
+                        loptions[loptions_len].name = optionsPtr->option_long;
+                        if (optionsPtr->option_arg)
+                          loptions[loptions_len].has_arg = 1;
+                        else
+                          loptions[loptions_len].has_arg = 0;
+                        loptions[loptions_len].flag = NULL;
+                        loptions[loptions_len].val = optionsPtr->option;
+                        
+                        loptions_len++;
+                        loptions[loptions_len].name = NULL;
+                        loptions[loptions_len].has_arg = 0;
+                        loptions[loptions_len].flag = NULL;
+                        loptions[loptions_len].val = 0;
+                      }
+#endif /* HAVE_GETOPT_LONG */
+                }
+
+                optionsPtr++;
+            }
+        }
+    }
+
     /*
      * Parse options.
      */
     opterr = 0;
-    while ((c = getopt_long(argc, argv, OPT_STRING, longopts,
+    while ((c = getopt_long(argc, argv, soptions, loptions,
                         &longindex)) != -1) {
         switch (c) {
         case 'l':              /* --list */
@@ -168,6 +288,32 @@ int main(int argc, char **argv)
             exprange = TRUE;
             break;
         default:
+            used_option = 0;
+
+            if (modules_list_itr) {
+                struct powerman_module_loadinfo *loadinfoPtr;
+
+                list_iterator_reset(modules_list_itr);
+                while ((loadinfoPtr = list_next(modules_list_itr))) {
+                    char temp;
+
+                    if (strchr(loadinfoPtr->options_towatch, c)) {
+                        if ((*loadinfoPtr->module_info->process_option)(c, optarg) < 0)
+                            err_exit(FALSE, "process_option failure");
+                    }
+
+                    temp = c;
+                    strncat(loadinfoPtr->options_processed, &temp, 1);
+                    used_option++;
+                    break;
+                }
+            }
+
+            if (used_option)
+                break;
+            /* else fall through */
+
+        case '?':
             _usage();
             /*NOTREACHED*/
             break;
@@ -176,6 +322,42 @@ int main(int argc, char **argv)
 
     if (cmd == CMD_NONE)
         _usage();
+
+    /* get nodenames if desired */
+    if (modules_list_itr) {
+        struct powerman_module_loadinfo *loadinfoPtr;
+        int break_flag = 0;
+
+        list_iterator_reset(modules_list_itr);
+
+        while ((loadinfoPtr = list_next(modules_list_itr)) && !break_flag) {
+            struct powerman_option *optionsPtr = loadinfoPtr->module_info->options;
+            while (optionsPtr->option) {
+              
+                if (optionsPtr->option_type == POWERMAN_OPTION_TYPE_GET_NODES
+                    && strchr(loadinfoPtr->options_processed, optionsPtr->option)) {
+                    char buf[CP_LINEMAX];
+                    
+                    if (!(*loadinfoPtr->module_info->get_nodes)(buf, CP_LINEMAX)) {
+                        if (!have_targets) {
+                            if ((targets = hostlist_create(NULL)) == NULL)
+                                err_exit(FALSE, "hostlist error");
+                            have_targets = TRUE;
+                        }
+                      
+                        if (!hostlist_push(targets, buf))
+                            err_exit(FALSE, "hostlist_push");
+
+                        break_flag++;
+                        break;
+                    }
+                }
+
+                optionsPtr++;
+            }
+        }
+
+    }
 
     /* remaining arguments used to build a single hostlist argument */
     while (optind < argc) {
@@ -189,6 +371,7 @@ int main(int argc, char **argv)
         optind++;
     }
     if (have_targets) {
+        hostlist_uniq(targets);
         hostlist_sort(targets);
         if (hostlist_ranged_string(targets, sizeof(targstr), targstr) == -1)
             err_exit(FALSE, "hostlist error");
@@ -317,8 +500,181 @@ int main(int argc, char **argv)
 
 done:
     _disconnect_from_server();
-
+    _unload_options_modules();
+    
     exit(res);
+}
+
+static void
+#if WITH_STATIC_MODULES
+_load_one_module(struct powerman_options_module_info *module_info)
+#else  /* !WITH_STATIC_MODULES */
+_load_one_module(char *module_path)
+#endif /* !WITH_STATIC_MODULES */
+{
+    struct powerman_module_loadinfo *loadinfo;
+    struct powerman_module_loadinfo *loadinfoPtr;
+    struct powerman_option *optionsPtr;
+    ListIterator itr = NULL;
+
+#if WITH_STATIC_MODULES
+    assert(module_info && modules_list);
+#else  /* !WITH_STATIC_MODULES */
+    assert(module_path && modules_list);
+#endif /* !WITH_STATIC_MODULES */
+
+    if (!(loadinfo = malloc(sizeof(struct powerman_module_loadinfo))))
+        err_exit(TRUE, "malloc");
+    memset(loadinfo, '\0', sizeof(struct powerman_module_loadinfo));
+
+#if WITH_STATIC_MODULES
+    loadinfo->module_info = module_info;
+#else  /* !WITH_STATIC_MODULES */
+    if (!(loadinfo->handle = lt_dlopen(module_path)))
+        goto cleanup;
+
+    if (!(loadinfo->module_info = lt_dlsym(loadinfo->handle, POWERMAN_MODULE_INFO_SYM)))
+        goto cleanup;
+#endif /* !WITH_STATIC_MODULES */
+
+    if (!loadinfo->module_info->module_name
+        || !loadinfo->module_info->options
+        || !loadinfo->module_info->setup
+        || !loadinfo->module_info->cleanup
+        || !loadinfo->module_info->process_option
+        || !loadinfo->module_info->get_nodes)
+        goto cleanup;
+    
+    optionsPtr = loadinfo->module_info->options;
+    while (optionsPtr->option) {
+        /* Only one option type supported for now, maybe more in the future */
+        if (optionsPtr->option_type != POWERMAN_OPTION_TYPE_GET_NODES)
+            goto cleanup;
+        optionsPtr++;
+    }
+
+    if (list_count(modules_list) > 0) {
+        char *module_name;
+
+        if (!(itr = list_iterator_create(modules_list)))
+            err_exit(TRUE, "list_iterator_create");
+
+        module_name = loadinfo->module_info->module_name;
+        while ((loadinfoPtr = list_next(itr))) {
+            if (!strcmp(loadinfoPtr->module_info->module_name, module_name))
+                goto cleanup;           /* module already loaded */
+        }
+    }
+    
+    if ((*loadinfo->module_info->setup)() < 0)
+        goto cleanup;
+
+    if (!list_append(modules_list, loadinfo))
+        err_exit(TRUE, "list_append");
+
+    if (itr)
+        list_iterator_destroy(itr);
+    return;
+
+ cleanup:
+#if !WITH_STATIC_MODULES
+    if (loadinfo) {
+        if (loadinfo->handle)
+            lt_dlclose(loadinfo->handle);
+    }
+#endif /* !WITH_STATIC_MODULES */
+    if (itr)
+        list_iterator_destroy(itr);
+    return;
+}
+
+#if !WITH_STATIC_MODULES
+static void 
+_load_options_modules_in_dir(char *search_dir)
+{
+  DIR *dir;
+  struct dirent *dirent;
+
+  assert(search_dir);
+
+  /* Can't open the directory? we assume it doesn't exit, so its not
+   * an error.
+   */
+  if (!(dir = opendir(search_dir)))
+    return;
+
+  while ((dirent = readdir(dir))) {
+      char *ptr = strstr(dirent->d_name, POWERMAN_MODULE_SIGNATURE);
+
+      if (ptr && ptr == &dirent->d_name[0]) {
+          char filebuf[POWERMAN_MAXPATHLEN+1];
+          char *filename = dirent->d_name;
+
+          /* Don't bother unless its a shared object file. */
+          ptr = strchr(filename, '.');
+          if (!ptr || strcmp(ptr, ".so"))
+            continue;
+
+          memset(filebuf, '\0', POWERMAN_MAXPATHLEN+1);
+          snprintf(filebuf, POWERMAN_MAXPATHLEN, "%s/%s", search_dir, filename);
+
+          _load_one_module(filebuf);
+      }
+  }
+}
+#endif /* !WITH_STATIC_MODULES */
+
+static void
+_delete_powerman_module_loadinfo(void *x)
+{
+    struct powerman_module_loadinfo *info = (struct powerman_module_loadinfo *)x;
+
+    (*info->module_info->cleanup)();
+#if !WITH_STATIC_MODULES
+    lt_dlclose(info->handle);
+#endif /* !WITH_STATIC_MODULES */
+}
+
+static void 
+_load_options_modules(void)
+{
+#if WITH_STATIC_MODULES
+  struct powerman_options_module_info **infoPtr;
+#else  /* !WITH_STATIC_MODULES */
+    if (lt_dlinit() != 0)
+        err_exit(FALSE, "lt_dlinit: %s", lt_dlerror());
+#endif /* !WITH_STATIC_MODULES */
+
+    if (!(modules_list = list_create((ListDelF)_delete_powerman_module_loadinfo)))
+        err_exit(TRUE, "list_create");
+
+#if WITH_STATIC_MODULES
+    infoPtr = &static_modules[0];
+    while (*infoPtr) {
+      _load_one_module(*infoPtr);
+      infoPtr++;
+    }
+#else  /* !WITH_STATIC_MODULES */
+#ifndef NDEBUG
+    _load_options_modules_in_dir(POWERMAN_MODULE_DEVEL_DIR);
+#endif /* !NDEBUG */
+    _load_options_modules_in_dir(POWERMAN_MODULE_DIR);
+#endif /* !WITH_STATIC_MODULES */
+
+    if (list_count(modules_list) > 0) {
+        if (!(modules_list_itr = list_iterator_create(modules_list)))
+            err_exit(TRUE, "list_iterator_create");
+    }
+}
+
+static void
+_unload_options_modules(void)
+{
+    list_destroy(modules_list);
+    modules_list = NULL;
+#if !WITH_STATIC_MODULES
+    lt_dlexit();
+#endif /* !WITH_STATIC_MODULES */
 }
 
 /*
@@ -337,6 +693,27 @@ static void _usage(void)
  "-D --device    Report device status  -T --telemetry Show device telemetry\n"
  "-x --exprange  Expand host ranges\n"
   );
+
+    if (modules_list_itr) {
+        struct powerman_module_loadinfo *loadinfoPtr;
+
+        list_iterator_reset(modules_list_itr);
+        while ((loadinfoPtr = list_next(modules_list_itr))) {
+            struct powerman_option *optionsPtr = loadinfoPtr->module_info->options;
+            while (optionsPtr->option) {
+                if (optionsPtr->option_long) 
+                    printf("-%c --%-9.9s %s\n", 
+                           optionsPtr->option, 
+                           optionsPtr->option_long,
+                           optionsPtr->description);
+                else
+                    printf("-%c             %s\n", 
+                           optionsPtr->option, 
+                           optionsPtr->description);
+                optionsPtr++;
+            }
+        }
+    }
     exit(1);
 }
 

@@ -24,6 +24,10 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
+
 /* Primary entry points to this module are:
  *
  * initialization - dev_init() and dev_fini() are called from powermand.

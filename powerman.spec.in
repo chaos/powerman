@@ -1,6 +1,6 @@
-Name: powerman
-Version: 1.0.26
-Release: 0.pre1
+Name: @PROJECT@
+Version: @VERSION@
+Release: @RELEASE@
 Summary: PowerMan - centralized power control for clusters
 License: GPL
 Group: Applications/System
@@ -14,17 +14,25 @@ PowerMan is a tool for manipulating remote power control (RPC) devices from a
 central location. Several RPC varieties are supported natively by PowerMan and 
 Expect-like configurability simplifies the addition of new devices.
 
+%package genders
+Summary: genders module
+Group: System Environment/Base
+Requires: genders
+%description genders
+Genders module
+
 %prep
 %setup
 
 %build
-make clean
-make VERSION=%{version}
+%configure --program-prefix=%{?_program_prefix:%{_program_prefix}} \
+           %{?_with_genders} \
+           %{?_without_genders}
+make
 
 %install
 rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT
-DESTDIR=$RPM_BUILD_ROOT mandir=%{_mandir} sbindir=%{_sbindir} bindir=%{_bindir} initrddir=%{_initrddir} make -e install
+DESTDIR=$RPM_BUILD_ROOT make install
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -66,11 +74,19 @@ fi
 %{_bindir}/pm
 %{_sbindir}/powermand
 %dir %config %{_sysconfdir}/powerman
+%dir %{_libdir}/powerman
 %{_sysconfdir}/powerman/*.dev
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man7/*
+%{_mandir}/man8/*
 %{_initrddir}/powerman
+
+%if %{?_with_genders:1}%{!?_with_genders:0}
+%files genders
+%defattr(-,root,root)
+%{_libdir}/powerman/powerman_options_genders.*
+%endif
 
 %changelog
 
