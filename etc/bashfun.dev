@@ -1,0 +1,36 @@
+# Here's an example of how to start bash as a coprocess from powerman
+# and get it to execute commands for you.  powerman.conf should contain:
+#
+#   include "/etc/powerman/bashfun.dev"
+#   device "bf0" "bashfun" "/bin/bash |&"
+#   node "b1" "bf0" "1"
+#
+specification  "bashfun" {
+	timeout 5
+
+	plug name { "1" }
+ 
+	script login {
+		expect "[^#]*# "
+		send "unset PROMPT_COMMAND\n"
+		expect "[^#]*# "
+		send "export PS1=\"# \"\n"
+		expect "[^#]*# "
+		expect "[^#]*# "
+		send "echo off >/tmp/state\n"
+		expect "[^#]*# "
+	}
+	script status {
+		send "cat /tmp/state\n"
+		expect "(off|on)[^#]*# "
+		setplugstate "1" $1 on="on" off="off"
+	}
+	script on {
+		send "echo on >/tmp/state\n"
+		expect "[^#]*# "
+	}
+	script off {
+		send "echo off >/tmp/state\n"
+		expect "[^#]*# "
+	}
+}
