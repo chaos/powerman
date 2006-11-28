@@ -1,3 +1,10 @@
+2006-11-27 Jim Garlick <garlick@llnl.gov>
+
+    * etc/baytech-rpc3-nc.dev: Fix status_all regex.
+
+    * etc/baytech-rpc28-nc.dev: Bring over changes from rpc3-nc in
+      anticipation of new firmware.
+
 2006-11-14 Albert Chu <chu11@llnl.gov>
 
     Add ranged power control support.

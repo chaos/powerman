@@ -1,5 +1,5 @@
 #
-# $Id:$
+# $Id$
 # 
 # Baytech RPC28-30NC 
 #
@@ -28,9 +28,8 @@ specification "baytech-rpc28-nc" {
 		send "\r\n"
 		expect ">"
 		send "status\r\n"
-		expect "Internal Temperature[^C]+C"
 		foreachplug {
-			expect "([0-9]+)[^:]+: (On|Off)"
+			expect "Outlet  ([0-9]+)[^:0-9]+: (On|Off)"
 			setplugstate $1 $2 on="On" off="Off"
 		}
 		expect ">"
