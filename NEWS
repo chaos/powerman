@@ -5,8 +5,8 @@ Release Notes for PowerMan version 1.0.26
 * Support 8-port APC AP7900 and likely AP7901, AP7920, and AP7921.
   [Martin Petersen]
 
-* Fix bug in baytech RPC-3 device script introduced in 1.0.25 that caused 
-  some plugs to report power status "unknown".
+* Work around a bug that causes baytech rpc3's to resturn some plugs
+  as status "unknown" on login timeout/reconnect.
 
 * Add ranged power control support for faster power control w/ ipmipower.
 
