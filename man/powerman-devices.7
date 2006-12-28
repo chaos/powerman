@@ -151,5 +151,35 @@ Run factory_defaults command.
 .P
 The PM8 can run in a mode where it can be daisy chained from a Cyclades
 terminal server.  This mode is not yet supported by PowerMan.
+.SH "IPMI (via Ipmipower)"
+Supports IPMI based power control via FreeIPMI's 
+.B Ipmipower.
+
+Due to implementation differences between IPMI and traditional remote
+power control devices, some power control operations in
+.B Powerman
+may not seem to work properly.  On some IPMI systems, power control 
+operations may return prior to the operation completing, making it look as though
+power control operations have failed.  In addition, some power control
+operations such as cycle and reset may not function if the machine is already
+powered on.
+  
+In order to get around these issues, it is recommended that the user configure
+.B ipmipower 
+with the --on-if-off, --wait-until-on, and --wait-until-off options.  With these
+options set,
+.B ipmipower
+will behave more like traditional remote power control devices.
+
+In order to hide IPMI usernames and passwords from
+.B ps(1), 
+it is also recommended that
+.B Ipmipower
+the username and password (and at your discretion, the above options)
+be configured using the ipmipower configuration file and not in the
+powerman.conf file.  Please see
+.B ipmipower.conf(5)
+for more information.
+
 .SH "SEE ALSO"
 powerman(1), powermand(1), powerman.conf(5)
