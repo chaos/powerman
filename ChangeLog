@@ -1,3 +1,7 @@
+2007-01-07 Jim Garlick <garlick@llnl.gov>
+
+    * etc/baytech-rpc28-nc.dev : Fix problem problem with plugs >= 10.
+
 2006-12-28 Albert Chu <chu11@llnl.gov>
 
     * man/powerman-devices.7: Add information about ipmipower.
