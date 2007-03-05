@@ -25,6 +25,8 @@ make VERSION=%{version}
 rm -rf $RPM_BUILD_ROOT
 mkdir -p $RPM_BUILD_ROOT
 DESTDIR=$RPM_BUILD_ROOT mandir=%{_mandir} sbindir=%{_sbindir} bindir=%{_bindir} initrddir=%{_initrddir} make -e install
+mkdir -p $RPM_BUILD_ROOT%{_libdir}/stonith/plugins/external
+cp scripts/stonith-powerman $RPM_BUILD_ROOT%{_libdir}/stonith/plugins/external/powerman
 
 %clean
 rm -rf $RPM_BUILD_ROOT

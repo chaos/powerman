@@ -1,0 +1,148 @@
+#!/bin/bash 
+#
+# External heartbeat STONITH module for powerman
+# (install as /usr/%{libdir}/stonith/plugins/external/powerman)
+#
+# XXX Note on excess paranoia:  Presumably heartbeat will verify any on|off 
+# operations by following it with a status operation, but we do the same
+# thing internally just to be sure, retrying once per second for 60 seconds
+# until we get the intended result.
+#
+# XXX Note on error handling:
+# We exit 1 on most errors.  This could be confused with a power-on result
+# from the status query.  It is unknown whether heartbeat takes note of
+# the exit value on other operations.
+#
+
+declare -r path_powerman=/usr/bin/powerman
+declare -r prog=stonith-powerman
+declare -r retry_secs=5
+declare -r reset_delay_secs=2
+
+die()
+{
+    echo "${prog}: $*" >&2
+    exit 1
+}
+
+warn()
+{
+    echo "${prog}: $*" >&2
+}
+
+usage()
+{
+    echo "Usage: ${prog} gethosts|on|off|reset|status|getconfignames|getinfo-devid|getinfo-devname|getinfo-devdescr|getinfo-xml host" >&2
+    exit 1
+}
+
+# Power host on
+power_on()
+{
+    local secs=${retry_secs}
+    local stat
+
+    while [ $secs -gt 0 ]; do
+        ${path_powerman} -1 $1 >/dev/null
+        stat=$(${path_powerman} -qx $1 | cut -d: -f2 | sed 's/[ ]*//')
+        if [ "${stat}" = "on" ]; then
+            return 
+        fi
+        sleep 1
+        secs=$((secs - 1))
+    done
+    die "power_on $1 timed out"
+}
+
+# Power host off
+power_off()
+{
+    local secs=${retry_secs}
+    local stat
+
+    while [ $secs -gt 0 ]; do
+        ${path_powerman} -0 $1 >/dev/null
+        stat=$(${path_powerman} -qx $1 | cut -d: -f2 | sed 's/[ ]*//')
+        if [ "${stat}" = "off" ]; then
+            return 
+        fi
+        sleep 1
+        secs=$((secs - 1))
+    done
+    die "power_off $1 timed out"
+}
+
+# Get host status
+power_status()
+{
+    local secs=${retry_secs}
+    local stat
+
+    while [ $secs -gt 0 ]; do
+        stat=$(${path_powerman} -qx $1 | cut -d: -f2 | sed 's/[ ]*//')
+        if [ "${stat}" = "off" ]; then
+            exit 1
+        fi
+        if [ "${stat}" = "on" ]; then
+            exit 0
+        fi
+        sleep 1
+        secs=$((secs - 1))
+    done
+    die "get_status timed out"
+}
+
+# Get host list
+power_hostlist()
+{
+    ${path_powerman} -lx
+}
+
+[ $# = 1 ] || [ $# = 2 ] || usage
+case $1 in
+    gethosts)
+        power_hostlist
+        ;;
+    on)
+        [ $# = 2 ] || usage
+        power_on $2
+        ;;
+    off)
+        [ $# = 2 ] || usage
+        power_off $2
+        ;;
+    reset)
+        [ $# = 2 ] || usage
+        power_off $2
+        sleep ${reset_delay_secs}
+        power_on $2
+        ;;
+    status)
+        [ $# = 2 ] || usage
+        power_status $2
+        ;;
+    getconfignames)
+        ;;
+    getinfo-devid)
+        echo "PowerMan STONITH device"
+        ;;
+    getinfo-devname)
+        echo "PowerMan STONITH device"
+        ;;
+    getinfo-devdescr)
+        echo "PowerMan STONITH device"
+        ;;
+    getinfo-url)
+        echo "http://sourceforge.net/projects/powerman"
+        ;;
+    getinfo-xml)
+        # XXX don't need any parameters, so XML is empty
+        ;;
+    *)
+        usage
+        ;;
+esac
+
+exit 0
+
+# vi:tabstop=4 shiftwidth=4 expandtab

@@ -1,3 +1,10 @@
+2007-03-05 Jim Garlick <garlick@llnl.gov>
+
+    * scripts/stonith-powerman : New for heartbeat package.
+
+    * etc/powerman.spec : Install stonith-powerman into the location
+    where heartbeat expects it.
+
 2007-01-07 Jim Garlick <garlick@llnl.gov>
 
     * etc/baytech-rpc28-nc.dev : Fix problem problem with plugs >= 10.
