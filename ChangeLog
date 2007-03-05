@@ -5,6 +5,10 @@
     * etc/powerman.spec : Install stonith-powerman into the location
     where heartbeat expects it.
 
+    * scripts/build : Added copy of Chris's build script.
+
+    * Makefile : Added testrpm target.
+
 2007-01-07 Jim Garlick <garlick@llnl.gov>
 
     * etc/baytech-rpc28-nc.dev : Fix problem problem with plugs >= 10.

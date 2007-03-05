@@ -35,3 +35,6 @@ install: all
 
 distclean: clean
 	rm -f *.rpm *.bz2
+
+testrpm:
+	scripts/build --snapshot .

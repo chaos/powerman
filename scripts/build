@@ -1,0 +1,742 @@
+#!/usr/bin/perl -w
+
+###############################################################################
+# $Id: build 598 2006-02-14 19:06:43Z dun $
+###############################################################################
+# Copyright (C) 2005-2006 The Regents of the University of California.
+# Produced at Lawrence Livermore National Laboratory.
+# Written by Chris Dunlap <cdunlap@llnl.gov>.
+#
+# This is free software; you can redistribute it and/or modify it under
+# the terms of the GNU General Public License (version 2) as published
+# by the Free Software Foundation.
+#
+# This is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301  USA.
+###############################################################################
+
+use strict;
+use File::Basename qw/ basename /;
+use File::Path qw/ rmtree /;
+use Getopt::Long qw/ :config gnu_getopt ignore_case /;
+use POSIX;
+
+
+###############################################################################
+# MAIN
+###############################################################################
+
+my $progname = basename $0;
+my $revision = '$Revision: 598 $';
+my %conf;
+my %prog;
+my %meta;
+my @copy;
+
+&parse_cmdline ();
+&check_prog ();
+&copy_source ();
+
+if ($conf{source_type} =~ /^(svn|cvs|dir)$/) {
+    &parse_metadata ();
+    &rewrite_metadata ();
+    &create_names ();
+    &exec_pre ();
+    &rewrite_specfile ();
+    &build_tar ();
+}
+if ( ($conf{source_type} =~ /^(svn|cvs|dir)$/
+        && defined $conf{tar} && defined $conf{spec})
+  || ($conf{source_type} eq "tar" && defined $conf{tar})
+  || ($conf{source_type} eq "srpm" && defined $conf{srpm}) )
+{
+    &build_rpm ();
+    &sign_rpm ();
+}
+&copy_files ();
+&clean_up ();
+exit 0;
+
+
+###############################################################################
+
+sub parse_cmdline
+{
+    my $err;
+    $conf{quiet} = 0;
+    $conf{verbose} = 0;
+    $conf{destination} = getcwd;
+    $conf{revision} = 'HEAD';
+    $conf{help} = 1 if ! scalar @ARGV;
+
+    my $rc = GetOptions (\%conf,
+        'help|h|?',
+        'license|L',
+        'version|V',
+        'quiet|q!',
+        'verbose|v+',
+        'source|src|s=s',
+        'revision|r=s',
+        'destination|dst|d=s',
+        'nodestination|nodst|D',
+        'project_name|project-name|prjname|pn=s',
+        'project_version|project-version|prjver|pv=s',
+        'project_release|project-release|prjrel|pr=s',
+        'source_dir|source-dir|srcdir|sd=s',
+        'snapshot!',
+        'clean!',
+        'pre_exec|pre-exec=s',
+        'rpm_args|rpm-args=s',
+        'sign!',
+        'with=s@',
+        'without=s@',
+    );
+    &display_help () if defined $conf{help} || !$rc;
+    &display_license () if defined $conf{license};
+    &display_version () if defined $conf{version};
+
+    foreach (@{$conf{with}}) {
+        &error ("invalid argument for \"--with\" option: $_")
+            unless /^(bzip2|gzip|compress|cat)$/;
+    }
+    foreach (@{$conf{without}}) {
+        &error ("invalid argument for \"--without\" option: $_")
+            unless /^(bzip2|gzip|compress)$/;
+    }
+    $conf{source} = pop @ARGV if @ARGV == 1;
+    &error ("no source was specified")
+        unless defined $conf{source};
+    $conf{destination} = &fix_path ($conf{destination}, getcwd);
+
+    $conf{source_type} = &query_source_type ($conf{source});
+    foreach (qw/ project_name project_version project_release
+                 source_dir snapshot pre_exec /) {
+        if (defined $conf{$_} && $conf{source_type} !~ /^(svn|cvs|dir)$/) {
+            &info ("ignoring \"--$_\" option with $conf{source_type} source");
+            delete $conf{$_};
+        }
+    }
+    $conf{build_time} = time;
+    my $name = (getpwuid $<)[0];
+    my $now = strftime "%Y%m%d-%H%M%S", localtime $conf{build_time};
+    $conf{tmpdir} = ($ENV{TMPDIR} || "/tmp") . "/$progname-$name-$now-$$";
+    rmtree ($conf{tmpdir}, 0, 0);
+    &mkdirp ("$conf{tmpdir}", 0700, \$err)
+        or &error ("cannot create directory [$err]: $!");
+
+    $conf{meta} = "META";
+    $conf{rpmdir} = "rpm";
+    $conf{srcdir} = "$progname-src.$$";
+
+    &print_table (\%conf, "Configuration") if $conf{verbose} > 1;
+}
+
+
+sub display_help
+{
+    my $optwidth = 25;
+
+    print "Usage: $0 [OPTIONS]\n";
+    print "\n";
+    printf "  %-${optwidth}s %s\n", "-h, --help",
+        "Display this help";
+    printf "  %-${optwidth}s %s\n", "-L, --license",
+        "Display license information";
+    printf "  %-${optwidth}s %s\n", "-V, --version",
+        "Display version information";
+    print "\n";
+    printf "  %-${optwidth}s %s\n", "-q, --quiet",
+        "Be quiet, suppressing informational messages";
+    printf "  %-${optwidth}s %s\n", "-v, --verbose",
+        "Be increasingly verbose";
+    print "\n";
+    printf "  %-${optwidth}s %s\n", "-s, --source=STRING",
+        "Specify the source to the build";
+    printf "  %-${optwidth}s %s\n", "-r, --revision=STRING",
+        "Specify the svn/cvs revision [HEAD]";
+    printf "  %-${optwidth}s %s\n", "-d, --destination=STRING",
+        "Specify the directory for the build output [.]";
+    printf "  %-${optwidth}s %s\n", "-D, --nodestination",
+        "Discard the build output";
+    print "\n";
+    printf "  %-${optwidth}s %s\n", "--project-name=STRING",
+        "Specify the project name";
+    printf "  %-${optwidth}s %s\n", "--project-version=STRING",
+        "Specify the project version";
+    printf "  %-${optwidth}s %s\n", "--project-release=STRING",
+        "Specify the project release";
+    printf "  %-${optwidth}s %s\n", "--source-dir=STRING",
+        "Specify the name of the top-level source directory";
+    printf "  %-${optwidth}s %s\n", "--snapshot/nosnapshot",
+        "Mark/Unmark the build as a snapshot release";
+    printf "  %-${optwidth}s %s\n", "--clean/noclean",
+        "Remove/Retain the build directory [clean if no err]";
+    print "\n";
+    printf "  %-${optwidth}s %s\n", "--pre-exec=STRING",
+        "Specify script to exec from copied srcdir root";
+    printf "  %-${optwidth}s %s\n", "--rpm-args=STRING",
+        "Specify additional args for the rpm build command";
+    printf "  %-${optwidth}s %s\n", "--sign/nosign",
+        "Sign/DoNotSign built rpms [sign if gpg key defined]";
+    printf "  %-${optwidth}s %s\n", "--with/without=STRING",
+        "Enable/Disable an auxiliary option";
+    print "\n";
+    print "  The \"auxiliary\" options are: bzip2, gzip, compress.\n";
+    print "\n";
+    print "  The \"source\" option supports the following types:\n";
+    print "    - svn url (eg, https://host/path/proj/trunk/)\n";
+    print "    - cvs repo:proj (eg, :ext:host:/path:proj)\n";
+    print "    - source rpm (eg, foo-3.2-1.src.rpm)\n";
+    print "    - tar having top-level spec file\n";
+    print "    - directory\n";
+    print "\n";
+    exit 0;
+}
+
+
+sub display_license
+{
+    print "Copyright (C) 2005-2006";
+    print " The Regents of the University of California.\n";
+    print "Produced at Lawrence Livermore National Laboratory.\n";
+    print "Written by Chris Dunlap <cdunlap\@llnl.gov>.\n";
+    print "\n";
+    print "This is free software; you can redistribute it and/or modify it\n";
+    print "under the terms of the GNU General Public License (version 2)\n";
+    print "as published by the Free Software Foundation.\n";
+    print "\n";
+    exit 0;
+}
+
+
+sub display_version
+{
+    my $rev = $revision;
+    $rev = 0 unless $rev =~ s/\$Revision:\s*(\d+)\s*\$/$1/;
+    print "$progname (r$rev)\n";
+    exit 0;
+}
+
+
+sub print_table
+{
+    my ($table_r, $title) = @_;
+    print "$title:\n" if defined $title;
+    foreach (sort keys %$table_r) {
+        my $val;
+        if (ref $$table_r{$_} eq "ARRAY") {
+            next if scalar @{$$table_r{$_}} == 0;
+            $val = join ",", @{$$table_r{$_}};
+        }
+        else {
+            $val = $$table_r{$_};
+        }
+        printf "  %-16s= [%s]\n", $_, $val;
+    }
+    print "\n";
+}
+
+
+sub error
+{
+    my $msg = join "", @_;
+    print STDERR "$progname: Error: \u$msg\n";
+    $conf{clean} = 0 unless defined $conf{clean};
+    &clean_up ();
+    exit 1;
+}
+
+
+sub info
+{
+    my $msg = join "", @_;
+    print "$progname: \u$msg\n" unless $conf{quiet};
+}
+
+
+###############################################################################
+
+sub check_prog
+{
+    my ($file, $dir);
+    foreach $file qw/ svn cvs bzip2 gzip compress tar rpmbuild rpm tee cat / {
+        foreach $dir (split ':', $ENV{PATH}) {
+            $prog{$file} = "$dir/$file", last if -x "$dir/$file";
+        }
+    }
+    $prog{_rpm} = $prog{rpmbuild} || $prog{rpm};
+    delete $prog{_rpm} unless defined $prog{_rpm};
+
+    $prog{bzip2} .= " -9" if defined $prog{bzip2};
+    $prog{gzip} .= " -9" if defined $prog{gzip};
+
+    foreach (@{$conf{without}}) {
+        delete $prog{$_} if /^(bzip2|gzip|compress)$/;
+    }
+    foreach (@{$conf{with}}) {
+        $prog{_zip} = $prog{$_} if /^(bzip2|gzip|compress|cat)$/ && $prog{$_};
+    }
+    foreach (qw/ bzip2 gzip compress /) {
+        $prog{_zip} = $prog{$_} if !$prog{_zip} && $prog{$_};
+    }
+    delete $prog{_zip} if $prog{_zip} eq $prog{cat};
+    &print_table (\%prog, "Executables") if $conf{verbose} > 2;
+}
+
+
+sub copy_source
+{
+    my $mask = umask 022;
+
+    if ($conf{source_type} eq "svn") {
+        &error ("executable [svn] command not found in path")
+            unless defined $prog{svn};
+        my $cmd = "$prog{svn} export";
+        $cmd .= " --quiet" unless $conf{verbose};
+        $cmd .= " --revision $conf{revision} $conf{source}";
+        $cmd .= " $conf{tmpdir}/$conf{srcdir}";
+        &info ("exporting svn project [$conf{source}]");
+        !system $cmd
+            or &error ("cannot export svn project [$conf{source}]");
+    }
+    elsif ($conf{source_type} eq "cvs") {
+        &error ("executable [cvs] command not found in path")
+            unless defined $prog{cvs};
+        (my $cvs_root = $conf{source}) =~ s/(^.+):([^:]+$)/$1/;
+        (my $cvs_proj = $conf{source}) =~ s/(^.+):([^:]+$)/$2/;
+        my $cmd = "cd $conf{tmpdir} && $prog{cvs} -d $cvs_root";
+        $cmd .= " -Q" unless $conf{verbose};
+        $cmd .= " export -kv -r $conf{revision} -d $conf{srcdir} $cvs_proj";
+        &info ("exporting cvs project [$cvs_proj]");
+        !system $cmd
+            or &error ("cannot export cvs project [$cvs_proj]",
+                " from root [$cvs_root]");
+    }
+    elsif ($conf{source_type} eq "dir") {
+        my $err;
+        &info ("copying directory [$conf{source}]");
+        &copy ("$conf{source}", "$conf{tmpdir}/$conf{srcdir}", \$err)
+            or &error ("cannot copy directory [$conf{source}]: $err");
+    }
+    elsif ($conf{source_type} eq "tar") {
+        my $err;
+        &info ("copying tar [$conf{source}]");
+        &copy ("$conf{source}", "$conf{tmpdir}", \$err)
+            or &error ("cannot copy file [$conf{source}]: $err");
+        $conf{tar} = basename $conf{source};
+    }
+    elsif ($conf{source_type} eq "srpm") {
+        my $err;
+        &info ("copying srpm [$conf{source}]");
+        &copy ("$conf{source}", "$conf{tmpdir}", \$err)
+            or &error ("cannot copy file [$conf{source}]: $err");
+        $conf{srpm} = basename $conf{source};
+    }
+    else {
+        &error ("cannot extract source [$conf{source}]: unsupported type");
+    }
+    umask $mask;
+}
+
+
+sub parse_metadata
+{
+    &parse_file (\%meta, "$conf{tmpdir}/$conf{srcdir}/$conf{meta}")
+        or &info ("cannot open $conf{meta}: $!");
+
+    $meta{name} = $meta{name} || $meta{project} || $meta{package};
+    foreach (qw/ name project package /) {
+        delete $meta{$_} unless defined $meta{$_};
+    }
+    unless (defined $conf{snapshot}) {
+        if ($conf{source_type} eq "svn" && $conf{source} !~ m#/tags/#) {
+            $conf{snapshot} = 1;
+        }
+        elsif ($conf{source_type} eq "cvs" &&
+                ($conf{revision} eq 'HEAD' ||
+                 $conf{revision} =~ m#\bbranch\b#i)) {
+            $conf{snapshot} = 1;
+        }
+        elsif ($conf{source_type} eq "dir") {
+            $conf{snapshot} = 1;
+        }
+        else {
+            $conf{snapshot} = 0;
+        }
+    }
+    if ($conf{snapshot}) {
+        $meta{date} = strftime "%Y-%m-%d", localtime $conf{build_time};
+        $meta{release} = strftime "%y%m%d%H%M", localtime $conf{build_time};
+        &info ("marking snapshot release [$meta{release}]");
+    }
+    $meta{name} = $conf{project_name} if defined $conf{project_name};
+    $meta{version} = $conf{project_version} if defined $conf{project_version};
+    $meta{release} = $conf{project_release} if defined $conf{project_release};
+    &print_table (\%meta, "Metadata") if $conf{verbose} > 1;
+
+    &error ("project name is undefined") unless defined $meta{name};
+    &error ("project version is undefined") unless defined $meta{version};
+}
+
+
+sub rewrite_metadata
+{
+    my $maxlen = 0;
+    foreach (keys %meta) {
+        $maxlen = length if length > $maxlen;
+    }
+    open META, "> $conf{tmpdir}/$conf{srcdir}/$conf{meta}"
+        or &error ("cannot create $conf{meta}: $!");
+
+    foreach (sort keys %meta) {
+        print META "  $_:", ' ' x ($maxlen + 2 - length), "$meta{$_}\n";
+    }
+    close META
+        or &error ("cannot close $conf{meta}: $!");
+}
+
+
+sub create_names
+{
+    my $name;
+
+    if (defined $conf{source_dir}) {
+        $name = $conf{source_dir};
+    }
+    else {
+        $name = "$meta{name}-$meta{version}";
+        $name .= "-$meta{release}"
+            if defined $meta{release} && $meta{release} ne "1";
+    }
+    rename "$conf{tmpdir}/$conf{srcdir}", "$conf{tmpdir}/$name"
+        or &error ("cannot rename [$conf{srcdir}] to [$name]: $!");
+    $conf{srcdir} = $name;
+    &info ("building [$name]");
+
+    my $suffix = "tar";
+    if (!defined $prog{_zip}) {}
+    elsif ($prog{_zip} =~ m#/bzip2\b#) { $suffix .= ".bz2" }
+    elsif ($prog{_zip} =~ m#/gzip\b#) { $suffix .= ".gz" }
+    elsif ($prog{_zip} =~ m#/compress\b#) { $suffix .= ".Z" }
+    $conf{tar} = "$name.$suffix";
+}
+
+
+sub rewrite_specfile
+{
+    my @specs = glob "$conf{tmpdir}/$conf{srcdir}/*.spec";
+    my $numspecs = scalar @specs;
+
+    if ($numspecs == 0) {
+        &info ("cannot create rpm since no spec file was found");
+        return;
+    }
+    elsif ($numspecs > 1) {
+        &info ("cannot create rpm since $numspecs spec files were found");
+        return;
+    }
+    $conf{spec} = basename shift @specs;
+
+    my $old_spec = "$conf{tmpdir}/$conf{srcdir}/$conf{spec}";
+    my $new_spec = "$old_spec.$$";
+    open OLD, "< $old_spec"
+        or &error ("cannot read [$old_spec]: $!");
+    open NEW, "> $new_spec"
+        or &error ("cannot create [$new_spec]: $!");
+    while (<OLD>) {
+        s/(^\s*name:[ \t]*).*/$1$meta{name}/i;
+        s/(^\s*version:[ \t]*).*/$1$meta{version}/i;
+        s/(^\s*release:[ \t]*).*/$1$meta{release}/i if defined $meta{release};
+        s/(^\s*source0?:[ \t]*).*/$1$conf{tar}/i;
+        s/(\s+-n\s+\S+)//g if /^\s*%setup\b/;
+        s/(^\s*%setup\b.*)/$1 -n $conf{srcdir}/;
+        print NEW;
+    }
+    close NEW
+        or &error ("cannot close [$new_spec]: $!");
+    close OLD
+        or &error ("cannot close [$old_spec]: $!");
+    rename "$new_spec", "$old_spec"
+        or &error ("cannot rename [$new_spec] to [$old_spec]: $!");
+}
+
+
+sub exec_pre
+{
+    return unless defined $conf{pre_exec};
+    &info ("executing \"pre\" script");
+
+    $ENV{BUILD_SRC_ROOT} = "$conf{tmpdir}/$conf{srcdir}";
+    my $cmd = "cd \"\$BUILD_SRC_ROOT\" && $conf{pre_exec}";
+    my $rc = &exec_cmd ($cmd, "pre");
+    &error ("execution of \"pre\" script failed with error=$rc") if $rc != 0;
+}
+
+
+sub build_tar
+{
+    &info ("creating [$conf{tar}]");
+    &error ("executable [tar] command not found in path")
+        unless defined $prog{tar};
+
+    my $cmd = "cd $conf{tmpdir} && $prog{tar} -c";
+    $cmd .= " -v" if $conf{verbose};
+    $cmd .= " -f - $conf{srcdir}";
+    $cmd .= " | $prog{_zip}" if defined $prog{_zip};
+    $cmd .= " > $conf{tar}";
+    $cmd = "( $cmd ) 2>&1";
+
+    my $rc = &exec_cmd ($cmd, "tar");
+    &error ("cannot create [$conf{tar}]") if $rc != 0;
+
+    push @copy, "$conf{tmpdir}/$conf{tar}";
+}
+
+
+sub build_rpm
+{
+    &error ("internal: &build_rpm found both tar and srpm")
+        if defined $conf{tar} && defined $conf{srpm};
+
+    &info ("creating rpms");
+    &error ("executable [rpm] command not found in path")
+        unless defined $prog{_rpm};
+
+    my $err;
+    my $rpmdir = "$conf{tmpdir}/$conf{rpmdir}";
+    foreach (qw/ BUILD RPMS SOURCES SPECS SRPMS TMP /) {
+        &mkdirp ("$rpmdir/$_", 0700, \$err)
+            or &error ("cannot create directory [$err]: $!");
+    }
+    my $cmd = "$prog{_rpm}";
+    $cmd .= " --define \"_tmppath $rpmdir/TMP\"";
+    $cmd .= " --define \"_topdir $rpmdir\"";
+    $cmd .= " $conf{rpm_args}" if defined $conf{rpm_args};
+    $cmd .= " -ta $conf{tmpdir}/$conf{tar}" if defined $conf{tar};
+    $cmd .= " --rebuild $conf{tmpdir}/$conf{srpm}" if defined $conf{srpm};
+
+    my $rc = &exec_cmd ($cmd, "rpm");
+    &error ("cannot create rpm") if $rc != 0;
+
+    foreach (glob "$rpmdir/RPMS/*/* $rpmdir/SRPMS/*") {
+        push @copy, "$_";
+    }
+}
+
+
+sub sign_rpm
+{
+    return if defined $conf{sign} && !$conf{sign};
+    my ($signature, $gpg_name);
+
+    &error ("executable [rpm] command not found in path")
+        unless defined $prog{rpm};
+    open RPMRC, "$prog{rpm} --showrc |"
+        or &error ("cannot exec \"rpm --showrc\": $!");
+    while (<RPMRC>) {
+        $signature = $1 if /^[^:]+:\s*_signature\s+(\S+)/;
+        $gpg_name = $1 if /^[^:]+:\s*_gpg_name\s+(\S+)/;
+    }
+    close RPMRC
+        or &error ("cannot close \"rpm --showrc\": $!");
+
+    unless (defined $signature && $signature eq "gpg") {
+        &info ("cannot sign rpms:",
+            " [\%_signature] rpm macro not set to \"gpg\"")
+            if defined $conf{sign} && $conf{sign};
+        return;
+    }
+    unless (defined $gpg_name) {
+        &info ("cannot sign rpms:",
+            " [\%_gpg_name] rpm macro not defined")
+            if defined $conf{sign} && $conf{sign};
+        return;
+    }
+    &info ("signing rpms with name [$gpg_name]");
+    my $rpmdir = "$conf{tmpdir}/$conf{rpmdir}";
+    my $cmd = "$prog{rpm} --resign $rpmdir/RPMS/*/* $rpmdir/SRPMS/*";
+    my $err = `$cmd 2>&1 1>/dev/null`;
+    unless ($? == 0) {
+        chomp ($err);
+        &info ("cannot sign rpms: $err");
+        return;
+    }
+    &info ("successfully signed rpms");
+}
+
+
+sub copy_files
+{
+    return if defined $conf{nodestination};
+    return if scalar @copy == 0;
+
+    my $err;
+    &mkdirp ($conf{destination}, 0700, \$err)
+        or &error ("cannot create directory [$err]: $!");
+
+    foreach my $file (@copy) {
+        &copy ($file, $conf{destination}, \$err)
+            or &error ("cannot copy [$file]: $err");
+        $file = basename $file;
+        &info ("copied [$file]");
+    }
+}
+
+
+sub clean_up
+{
+    return unless defined $conf{tmpdir};
+    if (!defined $conf{clean} || $conf{clean}) {
+        rmtree ($conf{tmpdir}, 0, 0);
+    }
+    elsif (!$conf{quiet}) {
+        &info ("retaining build directory [$conf{tmpdir}]");
+    }
+}
+
+
+###############################################################################
+
+sub parse_file
+{
+    my ($hash_r, $file, $delim) = @_;
+    $delim = ":" unless defined $delim;
+
+    open FILE, "< $file"
+        or return undef;
+    while (<FILE>) {
+        chomp;                                          # remove newline
+        s/^((?:[^'"#]*(?:(['"])[^\2]*\2)*)*)#.*/$1/;    # remove comments
+        s/^\s+//;                                       # remove leading space
+        s/\s+$//;                                       # remove trailing space
+        next unless length;                             # skip blank lines
+        if (my ($key, $op, $val) = /^\s*(\w+)\s*(\S+)\s*(.*)/) {
+            $key =~ tr/A-Z/a-z/;                        # lowercase keys
+            $val =~ s/^(['"])(.*)\1$/$2/;               # remove value quotes
+            $op = '=' if $op eq ':';                    # also allow key:val
+            if ($op eq '=' || ($op eq '+=' && !exists $$hash_r{$key})) {
+                $$hash_r{$key} = $val;
+            }
+            elsif ($op eq '+=') {
+                $$hash_r{$key} .= "${delim}${val}";
+            };
+        }
+    }
+    close FILE;
+    return 1;
+}
+
+
+sub fix_path
+{
+    my ($path, $root) = @_;
+    my ($home);
+    return undef unless defined ($path);
+
+    $path =~ s#^~#$ENV{'HOME'}#         # process ~
+        if $path =~ m#^~(/.*)?$#;
+    $path =~ s#^~\w+#$home#             # process ~user
+        if $path =~ m#^~(\w+)# && defined ($home = (getpwnam($1))[7]);
+    $path = "$root/$path"               # prepend root if path is relative
+        if defined $root && $path =~ m#^[^/]#;
+    $path =~ s#(.*[^/])/+$#$1#;         # remove trailing '/'s
+    $path =~ s#/+#/#g;                  # remove consecutive '/'s
+    return $path;
+}
+
+
+sub query_source_type
+{
+    my ($src) = @_;
+
+    return "svn"
+        if $src =~ m#^(?:file|https?|svn(\+[a-z]+)?)://#;
+    return "cvs"
+        if $src =~ /^:(?:ext|fork|local|[gkp]?server):.*:[^:]+$/;
+    return "dir"
+        if -d $src;
+    return "tar"
+        if -f _ && $src =~ /\.(?:tar(?:\.(?:Z|gz|bz2))?|t[agb]z)$/;
+    return "srpm"
+        if -f _ && $src =~ /\.src\.rpm$/;
+    return "unknown";
+}
+
+
+sub mkdirp
+{
+    my ($path, $mode, $err_r) = @_;
+    $path = getcwd . "/$path" unless $path =~ m#^/#;
+    $mode = 0777 unless defined ($mode);
+
+    my $dir;
+    my @dirs = split m#/+#, $path;
+    shift @dirs;
+    foreach (@dirs) {
+        $dir .= "/$_";
+        next if -d $dir;
+        unless (mkdir $dir, $mode) {
+            $$err_r = $dir if defined $err_r;
+            return 0;
+        }
+    }
+    return 1;
+}
+
+
+sub copy
+{
+    my ($src, $dst, $err_r) = @_;
+    my $cp = "/bin/cp";
+    my $err = `$cp -pR $src $dst 2>&1 1>/dev/null`;
+
+    if ($? != 0) {
+        if (defined $err_r) {
+            $err =~ s/^$cp: +(.)/\U$1/;
+            $err =~ s/`([^']*)'/[$1]/g;
+            $err =~ s/\n.*//s;
+            $$err_r = $err;
+        }
+        return 0;
+    }
+    return 1;
+}
+
+
+sub exec_cmd
+{
+    my ($cmd, $file) = @_;
+    my $status = "$conf{tmpdir}/$file.status";
+    my $log = "$conf{tmpdir}/$file.log";
+
+    $cmd = "( $cmd ; echo \$? > $status )";
+    $cmd .= $conf{verbose} && defined $prog{tee}
+        ? " 2>&1 | $prog{tee} $log"
+        : " 1>$log 2>&1";
+
+    my $rc = system $cmd;
+    if ($rc == 0) {
+        open FILE, "< $status"
+            or &error ("cannot open [$status]: $!");
+        chomp ($rc = <FILE>);
+        close FILE
+            or &error ("cannot close [$status]: $!");
+    }
+    if ($rc != 0 && !$conf{verbose} && !$conf{quiet}) {
+        open FILE, "< $log"
+            or &error ("cannot open [$log]: $!");
+        print <FILE>;
+        close FILE
+            or &error ("cannot close [$log]: $!");
+    }
+    return $rc;
+}
+
+
+###############################################################################

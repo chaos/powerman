@@ -73,6 +73,7 @@ fi
 %{_mandir}/man5/*
 %{_mandir}/man7/*
 %{_initrddir}/powerman
+%{_libdir}/stonith/plugins/external/powerman
 
 %changelog
 
