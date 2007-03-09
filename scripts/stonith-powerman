@@ -10,7 +10,7 @@
 # intended result.
 #
 # Error handling:
-# We exit 1 on most errors.  This could be confused with a power=on result
+# We exit 1 on most errors.  This could be confused with a power=off result
 # from the status query.  It is unknown whether heartbeat takes note of
 # the exit value on other operations.
 #
@@ -105,6 +105,10 @@ power_hostlist()
 {
     ${path_powerman} ${pmopts} -lx
 }
+
+##
+## MAIN
+##
 
 [ $# = 1 ] || [ $# = 2 ] || usage
 
