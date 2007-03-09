@@ -3,16 +3,17 @@
 # External heartbeat STONITH module for powerman
 # (install as /usr/%{libdir}/stonith/plugins/external/powerman)
 #
+# This script is a first pass based on documentation here:
+#   http://www.linux-ha.org/ExternalStonithPlugins
+# FIXME: update this comment after we test with heartbeat.  The docs above
+# are a little vague (to me).
+#
 # Excess paranoia:  
 # Presumably heartbeat will verify any on|off operation by following it 
-# with a status operation, but we do the same thing internally just to 
-# be sure, retrying once per second for 60 seconds until we get the 
-# intended result.
-#
-# Error handling:
-# We exit 1 on most errors.  This could be confused with a power=off result
-# from the status query.  It is unknown whether heartbeat takes note of
-# the exit value on other operations.
+# with a status operation, but since the exit codes for 'status' are chosen
+# such that off (1) can be confused with an error, we make sure the off 
+# command does the best it can - retrying 60 times (once per second),
+# bailing with an exit code of 1 if it fails.
 #
 # Config file:
 # If the powerman daemon is running on a different node, you must create
