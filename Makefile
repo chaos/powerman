@@ -1,3 +1,9 @@
+SVNURL        := https://eris.llnl.gov/svn/powerman
+VERSION       := $(shell awk '/[Vv]ersion:/ {print $$2}' META)
+RELEASE       := $(shell awk '/[Rr]elease:/ {print $$2}' META)
+TRUNKURL      := $(SVNURL)/trunk
+TAGURL        := $(SVNURL)/tags/powerman-$(VERSION)
+
 MAKE=    	make
 INSTALL= 	/usr/bin/install
 mkinstalldirs=	./aux/mkinstalldirs
@@ -7,8 +13,6 @@ sbindir=	/usr/sbin
 mandir=		/usr/share/man
 packagedir=	/etc/powerman
 initrddir=	/etc/rc.d/init.d
-
-VERSION = $(shell perl -ne 'print,exit if s/^\s*VERSION:\s*(\S*).*/\1/i' META)
 
 all clean: 
 	(cd src && $(MAKE) $@ VERSION=$(VERSION))
@@ -36,5 +40,19 @@ install: all
 distclean: clean
 	rm -f *.rpm *.bz2
 
-testrpm:
-	scripts/build --snapshot .
+check-vars:
+	@echo "Release:  powerman-$(VERSION)"
+	@echo "Trunk:    $(TRUNKURL)"
+	@echo "Tag:      $(TAGURL)"
+
+rpms-working: check-vars
+	@scripts/build --snapshot .
+
+rpms-trunk: check-vars
+	@scripts/build --snapshot $(TRUNKURL)
+
+rpms-release: check-vars
+	@scripts/build --nosnapshot $(TAGURL)
+
+tagrel:
+	svn copy $(TRUNKURL) $(TAGURL)
