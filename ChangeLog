@@ -1,3 +1,8 @@
+2007-05-07 Jim Garlick <garlick@llnl.gov>
+
+	* etc/apcpdu.dev : Raise cycle and cycle_all delays from 2 sec to 3 sec
+	to see if it addresses problems on prism cluster.
+
 2007-04-24 Jim Garlick <garlick@llnl.gov>
 
 	* Makefile : Added rpms-working, rpms-trunk, rpms-release, tagrel 
