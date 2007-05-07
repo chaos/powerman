@@ -1,7 +1,11 @@
 #!/usr/bin/perl -w
 
+# JG - modified for lustre 
+# - call rpmbuild -tb instead of -ta
+# - drop tarball from build products @copy
+
 ###############################################################################
-# $Id: build 598 2006-02-14 19:06:43Z dun $
+# $Id: build 624 2006-02-24 02:08:55Z dun $
 ###############################################################################
 # Copyright (C) 2005-2006 The Regents of the University of California.
 # Produced at Lawrence Livermore National Laboratory.
@@ -22,7 +26,9 @@
 ###############################################################################
 
 use strict;
-use File::Basename qw/ basename /;
+use File::Basename qw/ basename dirname /;
+use File::Copy;
+use File::Find;
 use File::Path qw/ rmtree /;
 use Getopt::Long qw/ :config gnu_getopt ignore_case /;
 use POSIX;
@@ -33,7 +39,8 @@ use POSIX;
 ###############################################################################
 
 my $progname = basename $0;
-my $revision = '$Revision: 598 $';
+my $revision = '$Revision: 624 $';
+my $mask = umask 022;
 my %conf;
 my %prog;
 my %meta;
@@ -109,7 +116,7 @@ sub parse_cmdline
         &error ("invalid argument for \"--without\" option: $_")
             unless /^(bzip2|gzip|compress)$/;
     }
-    $conf{source} = pop @ARGV if @ARGV == 1;
+    $conf{source} = shift @ARGV if @ARGV == 1;
     &error ("no source was specified")
         unless defined $conf{source};
     $conf{destination} = &fix_path ($conf{destination}, getcwd);
@@ -128,7 +135,7 @@ sub parse_cmdline
     $conf{tmpdir} = ($ENV{TMPDIR} || "/tmp") . "/$progname-$name-$now-$$";
     rmtree ($conf{tmpdir}, 0, 0);
     &mkdirp ("$conf{tmpdir}", 0700, \$err)
-        or &error ("cannot create directory [$err]: $!");
+        or &error ($err);
 
     $conf{meta} = "META";
     $conf{rpmdir} = "rpm";
@@ -292,8 +299,6 @@ sub check_prog
 
 sub copy_source
 {
-    my $mask = umask 022;
-
     if ($conf{source_type} eq "svn") {
         &error ("executable [svn] command not found in path")
             unless defined $prog{svn};
@@ -321,27 +326,26 @@ sub copy_source
     elsif ($conf{source_type} eq "dir") {
         my $err;
         &info ("copying directory [$conf{source}]");
-        &copy ("$conf{source}", "$conf{tmpdir}/$conf{srcdir}", \$err)
-            or &error ("cannot copy directory [$conf{source}]: $err");
+        &cptree ("$conf{source}", "$conf{tmpdir}/$conf{srcdir}", \$err)
+            or &error ($err);
     }
     elsif ($conf{source_type} eq "tar") {
         my $err;
         &info ("copying tar [$conf{source}]");
-        &copy ("$conf{source}", "$conf{tmpdir}", \$err)
-            or &error ("cannot copy file [$conf{source}]: $err");
+        &cptree ("$conf{source}", "$conf{tmpdir}", \$err)
+            or &error ($err);
         $conf{tar} = basename $conf{source};
     }
     elsif ($conf{source_type} eq "srpm") {
         my $err;
         &info ("copying srpm [$conf{source}]");
-        &copy ("$conf{source}", "$conf{tmpdir}", \$err)
-            or &error ("cannot copy file [$conf{source}]: $err");
+        &cptree ("$conf{source}", "$conf{tmpdir}", \$err)
+            or &error ($err);
         $conf{srpm} = basename $conf{source};
     }
     else {
         &error ("cannot extract source [$conf{source}]: unsupported type");
     }
-    umask $mask;
 }
 
 
@@ -388,17 +392,22 @@ sub parse_metadata
 sub rewrite_metadata
 {
     my $maxlen = 0;
+    my $meta = "$conf{tmpdir}/$conf{srcdir}/$conf{meta}";
+
     foreach (keys %meta) {
         $maxlen = length if length > $maxlen;
     }
-    open META, "> $conf{tmpdir}/$conf{srcdir}/$conf{meta}"
-        or &error ("cannot create $conf{meta}: $!");
-
+    my ($atime, $mtime) = (stat $meta)[8,9]
+        or &error ("cannot stat [$meta]: $!");
+    open META, "> $meta"
+        or &error ("cannot create [$meta]: $!");
     foreach (sort keys %meta) {
         print META "  $_:", ' ' x ($maxlen + 2 - length), "$meta{$_}\n";
     }
     close META
-        or &error ("cannot close $conf{meta}: $!");
+        or &error ("cannot close [$meta]: $!");
+    utime $atime, $mtime, $meta
+        or &error ("cannot utime [$meta]: $!");
 }
 
 
@@ -445,6 +454,8 @@ sub rewrite_specfile
 
     my $old_spec = "$conf{tmpdir}/$conf{srcdir}/$conf{spec}";
     my $new_spec = "$old_spec.$$";
+    my ($atime, $mtime) = (stat $old_spec)[8,9]
+        or &error ("cannot stat [$old_spec]: $!");
     open OLD, "< $old_spec"
         or &error ("cannot read [$old_spec]: $!");
     open NEW, "> $new_spec"
@@ -453,15 +464,17 @@ sub rewrite_specfile
         s/(^\s*name:[ \t]*).*/$1$meta{name}/i;
         s/(^\s*version:[ \t]*).*/$1$meta{version}/i;
         s/(^\s*release:[ \t]*).*/$1$meta{release}/i if defined $meta{release};
-        s/(^\s*source0?:[ \t]*).*/$1$conf{tar}/i;
+        s/(^\s*source0?:[ \t]*(.*\/)?).*/$1$conf{tar}/i;
         s/(\s+-n\s+\S+)//g if /^\s*%setup\b/;
         s/(^\s*%setup\b.*)/$1 -n $conf{srcdir}/;
         print NEW;
     }
-    close NEW
-        or &error ("cannot close [$new_spec]: $!");
     close OLD
         or &error ("cannot close [$old_spec]: $!");
+    close NEW
+        or &error ("cannot close [$new_spec]: $!");
+    utime $atime, $mtime, $new_spec
+        or &error ("cannot utime [$new_spec]: $!");
     rename "$new_spec", "$old_spec"
         or &error ("cannot rename [$new_spec] to [$old_spec]: $!");
 }
@@ -495,7 +508,7 @@ sub build_tar
     my $rc = &exec_cmd ($cmd, "tar");
     &error ("cannot create [$conf{tar}]") if $rc != 0;
 
-    push @copy, "$conf{tmpdir}/$conf{tar}";
+    #push @copy, "$conf{tmpdir}/$conf{tar}";
 }
 
 
@@ -512,13 +525,13 @@ sub build_rpm
     my $rpmdir = "$conf{tmpdir}/$conf{rpmdir}";
     foreach (qw/ BUILD RPMS SOURCES SPECS SRPMS TMP /) {
         &mkdirp ("$rpmdir/$_", 0700, \$err)
-            or &error ("cannot create directory [$err]: $!");
+            or &error ($err);
     }
     my $cmd = "$prog{_rpm}";
     $cmd .= " --define \"_tmppath $rpmdir/TMP\"";
     $cmd .= " --define \"_topdir $rpmdir\"";
     $cmd .= " $conf{rpm_args}" if defined $conf{rpm_args};
-    $cmd .= " -ta $conf{tmpdir}/$conf{tar}" if defined $conf{tar};
+    $cmd .= " -tb $conf{tmpdir}/$conf{tar}" if defined $conf{tar};
     $cmd .= " --rebuild $conf{tmpdir}/$conf{srpm}" if defined $conf{srpm};
 
     my $rc = &exec_cmd ($cmd, "rpm");
@@ -578,12 +591,14 @@ sub copy_files
 
     my $err;
     &mkdirp ($conf{destination}, 0700, \$err)
-        or &error ("cannot create directory [$err]: $!");
+        or &error ($err);
 
     foreach my $file (@copy) {
-        &copy ($file, $conf{destination}, \$err)
-            or &error ("cannot copy [$file]: $err");
+        &cptree ($file, $conf{destination}, \$err)
+            or &error ($err);
         $file = basename $file;
+        chmod 0444, "$conf{destination}/$file"
+            or &error ("cannot chmod [$conf{destination}/$file]: $!");
         &info ("copied [$file]");
     }
 }
@@ -645,7 +660,7 @@ sub fix_path
         if $path =~ m#^~(\w+)# && defined ($home = (getpwnam($1))[7]);
     $path = "$root/$path"               # prepend root if path is relative
         if defined $root && $path =~ m#^[^/]#;
-    $path =~ s#(.*[^/])/+$#$1#;         # remove trailing '/'s
+    $path =~ s#/+$##;                   # remove trailing '/'s
     $path =~ s#/+#/#g;                  # remove consecutive '/'s
     return $path;
 }
@@ -682,7 +697,7 @@ sub mkdirp
         $dir .= "/$_";
         next if -d $dir;
         unless (mkdir $dir, $mode) {
-            $$err_r = $dir if defined $err_r;
+            $$err_r = "cannot mkdir [$dir]: $!" if defined $err_r;
             return 0;
         }
     }
@@ -690,19 +705,78 @@ sub mkdirp
 }
 
 
-sub copy
+sub cptree
 {
     my ($src, $dst, $err_r) = @_;
-    my $cp = "/bin/cp";
-    my $err = `$cp -pR $src $dst 2>&1 1>/dev/null`;
+    my ($srcdir, $srcbase, $srcpath, $dstdir, $dstbase, $dstpath);
+    my (%findopts, $err);
 
-    if ($? != 0) {
-        if (defined $err_r) {
-            $err =~ s/^$cp: +(.)/\U$1/;
-            $err =~ s/`([^']*)'/[$1]/g;
-            $err =~ s/\n.*//s;
-            $$err_r = $err;
+    unless (-e $src) {
+        $$err_r = "cannot find source [$src]" if defined $err_r;
+        return 0;
+    }
+    $dst = &fix_path ($dst, getcwd);
+    $srcdir = dirname $src;
+    $srcbase = basename $src;
+    $srcpath = $srcdir . ($srcdir eq "/" ? "" : "/") . $srcbase;
+    $dstdir = -d $dst ? $dst : dirname $dst;
+    $dstbase = -d _ ? $srcbase : basename $dst;
+    $dstpath = $dstdir . ($dstdir eq "/" ? "" : "/") . $dstbase;
+
+    &mkdirp ($dstdir, 0755, $err_r)
+        or return 0;
+
+    $findopts{"wanted"} = sub {
+        my ($name, $mode, $atime, $mtime);
+
+        $name = $File::Find::name;
+        $name =~ s#^$srcpath($|/)#$dstpath$1#;
+
+        if (!(($mode, $atime, $mtime) = (stat $_)[2,8,9])) {
+            $err = "cannot stat [$File::Find::name]: $!" unless defined $err;
         }
+        elsif (-d _) {
+            if (not mkdir $name, 0755) {
+                $err = "cannot mkdir [$name]: $!" unless defined $err;
+            }
+            elsif (not chmod 0755, $name) {
+                $err = "cannot chmod [$name]: $!" unless defined $err;
+            }
+        }
+        else {
+            $mode &= 07755;
+            $mode |= 044 if -r _;
+            $mode |= 011 if -x _;
+            if (not copy $_, $name) {
+                $err = "cannot copy [$name]: $!" unless defined $err;
+            }
+            elsif (not chmod $mode, $name) {
+                $err = "cannot chmod [$name]: $!" unless defined $err;
+            }
+            elsif (not utime $atime, $mtime, $name) {
+                $err = "cannot utime [$name]: $!" unless defined $err;
+            }
+        }
+    };
+
+    $findopts{"postprocess"} = sub {
+        my ($name, $atime, $mtime);
+
+        $name = $File::Find::dir;
+        $name =~ s#^$srcpath($|/)#$dstpath$1#;
+
+        if (!(($atime,$mtime) = (stat ".")[8,9])) {
+            $err = "cannot stat [$File::Find::dir]: $!" unless defined $err;
+        }
+        elsif (not utime $atime, $mtime, $name) {
+            $err = "cannot utime [$name]: $!" unless defined $err;
+        }
+    };
+
+    find \%findopts, $srcpath;
+
+    if (defined $err) {
+        $$err_r = $err;
         return 0;
     }
     return 1;
