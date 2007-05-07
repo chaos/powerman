@@ -3,6 +3,8 @@
 	* etc/*.dev : Raise cycle and cycle_all delays from 2 sec to 4 sec
 	to accomodate power supplies that take a while to bleed off.
 
+	* : tag powerman-1.0.28
+
 2007-04-24 Jim Garlick <garlick@llnl.gov>
 
 	* Makefile : Added rpms-working, rpms-trunk, rpms-release, tagrel 
