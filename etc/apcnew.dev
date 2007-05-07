@@ -123,7 +123,7 @@ specification "apcnew" {
 		send "\r\n"
 		expect "> "
 
-		delay 2
+		delay 4
 
 		send "1\r\n" # immediate on
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "
@@ -157,7 +157,7 @@ specification "apcnew" {
 		send "\r\n"
 		expect "> "
 
-		delay 2
+		delay 4
 
 		send "1\r\n" # immediate on
 		expect "Enter 'YES' to continue or <ENTER> to cancel : "

@@ -1,5 +1,5 @@
 #
-# $Id:$
+# $Id$
 #
 # Cyclades PM8/PM8i s/w v. 1.0.9a
 #
@@ -96,7 +96,9 @@ specification "pm8" {
 		send "off %s\r"
 		expect "Outlet turned off.\r\n"
 		expect "pm>"
-		delay 2
+
+		delay 4
+
 		send "on %s\r"
 		expect "Outlet turned on.\r\n"
 		expect "pm>"
@@ -115,7 +117,9 @@ specification "pm8" {
 			expect "Outlet turned off.\r\n"
 		}
 		expect "pm>"
-		delay 2
+
+		delay 4
+
 		send "on 1-8\r"
 		foreachplug {
 			expect "Outlet turned on.\r\n"

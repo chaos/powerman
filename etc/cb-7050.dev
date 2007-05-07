@@ -58,7 +58,7 @@ specification  "cb7050" {
 		ifoff {
 			send "#01A%s01\r"	# 0xA0 | bitnum (set)
 			expect ">\r"
-			delay 2			# XXX: tune me for moboard!
+			delay 4			# XXX: tune me for moboard!
 			send "#01A%s00\r"	# 0xA0 | bitnum (clear)
 			expect ">\r"
 		}

@@ -222,7 +222,7 @@ specification "apcpdu" {
 		send "\r\n"
 		expect "> "
 
-		delay 3
+		delay 4
 
 		send "1\r\n" # immediate on
 		expect "to cancel : "
@@ -257,7 +257,7 @@ specification "apcpdu" {
 		send "\r\n"
 		expect "> "
 
-		delay 3
+		delay 4
 
 		send "4\r\n" # delayed on
 		expect "to cancel : "

@@ -63,14 +63,14 @@ specification "baytech-rpc3-nc" {
 	script cycle {
 		send "off %s\r\n"
 		expect ">"
-		delay 2
+		delay 4
 		send "on %s\r\n"
 		expect ">"
 	}
 	script cycle_all {
 		send "off 0\r\n"
 		expect ">"
-		delay 2
+		delay 4
 		send "on 0\r\n"
 		expect ">"
 	}

@@ -1,5 +1,5 @@
 #
-# $Id:$
+# $Id$
 #
 # IPMI 1.5 in terminal mode
 # Tested on Intel SE7501WV2 motherboard over serial.
@@ -47,7 +47,9 @@ specification  "ipmi" {
 	script cycle {
 		send "[SYS POWER OFF]\r"
 		expect "\\[OK\\]\r\n"
-		delay 2.0
+
+		delay 4
+
 		send "[SYS POWER ON]\r"
 		expect "\\[OK\\]\r\n"
 	}

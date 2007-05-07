@@ -81,7 +81,7 @@ specification "icebox" {
 	script cycle {
 		send "pl %s\r\n"
 		expect "OK\r\n"
-		delay 2.7
+		delay 4
 		send "ph %s\r\n"
 		expect "OK\r\n"
 		delay 0.7

@@ -66,7 +66,7 @@ specification "baytech-rpc28-nc" {
 		expect ">"
 		send "off %s\r\n"
 		expect ">"
-		delay 2
+		delay 4
 		send "on %s\r\n"
 		expect ">"
 	}
@@ -75,7 +75,7 @@ specification "baytech-rpc28-nc" {
 		expect ">"
 		send "off 0\r\n"
 		expect ">"
-		delay 2
+		delay 4
 		send "on 0\r\n"
 		expect ">"
 	}

@@ -1,5 +1,5 @@
 #
-# $Id:$
+# $Id$
 #
 # Linux Networx ICE Box firmware version 3.x
 #
@@ -99,7 +99,7 @@ specification "icebox3" {
 	script cycle {
 		send "pl %s\r\n"
 		expect "OK\r\n"
-		delay 2.7
+		delay 4
 		send "ph %s\r\n"
 		expect "OK\r\n"
 		delay 0.7

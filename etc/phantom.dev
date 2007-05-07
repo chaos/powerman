@@ -43,7 +43,7 @@ specification  "phantom" {
 			send "PT\r\n"
 			expect "ok\r"
 		}
-		delay 2
+		delay 4
 		send "PT\r\n"
 		expect "ok\r"
 	}
