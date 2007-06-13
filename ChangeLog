@@ -1,3 +1,7 @@
+2007-06-13 Jim Garlick <garlick@llnl.gov>
+
+	* scripts/build : Build .src.rpm and append %{?dist} to Release.
+
 2007-05-07 Jim Garlick <garlick@llnl.gov>
 
 	* etc/*.dev : Raise cycle and cycle_all delays from 2 sec to 4 sec
