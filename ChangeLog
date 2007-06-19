@@ -1,3 +1,7 @@
+2007-06-19 Jim Garlick <garlick@llnl.gov>
+
+	* powerman.spec : Add flex to BuildRequires.
+
 2007-06-13 Jim Garlick <garlick@llnl.gov>
 
 	* scripts/build : Build .src.rpm and append %{?dist} to Release.
