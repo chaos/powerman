@@ -1,3 +1,9 @@
+2007-09-06 Albert Chu <chu11@llnl.gov>
+
+	* etc/ipmipower.dev: Modify cycle/reset to use off and on.
+
+	* man/powerman-devices.7: Adjust text appropriately for changes.
+	
 2007-06-19 Jim Garlick <garlick@llnl.gov>
 
 	* powerman.spec : Add flex to BuildRequires.
