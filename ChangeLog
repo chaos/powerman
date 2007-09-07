@@ -4,6 +4,8 @@
 
 	* man/powerman-devices.7: Adjust text appropriately for changes.
 	
+	* : tag powerman-1.0.29
+
 2007-06-19 Jim Garlick <garlick@llnl.gov>
 
 	* powerman.spec : Add flex to BuildRequires.
