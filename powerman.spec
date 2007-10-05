@@ -1,13 +1,13 @@
-Name: powerman
-Version: 1.0.26
-Release: 0.pre1
+Name: 
+Version: 
+Release: 
 Summary: PowerMan - centralized power control for clusters
 License: GPL
 Group: Applications/System
 Url: http://sourceforge.net/projects/powerman
 Source0: %{name}-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: tcp_wrappers, flex
+BuildRequires: tcp_wrappers, flex, bison
 
 %description
 PowerMan is a tool for manipulating remote power control (RPC) devices from a 
