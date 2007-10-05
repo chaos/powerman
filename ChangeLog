@@ -4,6 +4,8 @@
 
 	* src/parse.lex : Consider \r to be white space.
 
+	* : tag powerman-1.0.30
+
 2007-09-06 Albert Chu <chu11@llnl.gov>
 
 	* etc/ipmipower.dev: Modify cycle/reset to use off and on.
