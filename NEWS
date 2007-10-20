@@ -1,4 +1,20 @@
 =========================================================================
+Release Notes for PowerMan version 1.0.31                     20 Oct 2007
+=========================================================================
+
+(Includes changes in 1.0.29 and 1.0.30)
+
+* Support SUN ILOM inline with serial console, i.e.
+  device "ilom25" "ilom-inline" "/usr/bin/conman -Q -j ilc25 |&"
+
+* Handle config files with embedded carriage returns [Trent D'Hooge
+  and Todd Heer].
+
+* Ipmipower device script tuning [Al Chu].
+
+* Minor build/packaging tweaks for building under mock, etc.
+
+=========================================================================
 Release Notes for PowerMan version 1.0.28                     07 May 2007
 =========================================================================
 

@@ -40,19 +40,5 @@ install: all
 distclean: clean
 	rm -f *.rpm *.bz2
 
-check-vars:
-	@echo "Release:  powerman-$(VERSION)"
-	@echo "Trunk:    $(TRUNKURL)"
-	@echo "Tag:      $(TAGURL)"
-
-rpms-working: check-vars
-	@scripts/build --snapshot .
-
-rpms-trunk: check-vars
-	@scripts/build --snapshot $(TRUNKURL)
-
-rpms-release: check-vars
-	@scripts/build --nosnapshot $(TAGURL)
-
 tagrel:
 	svn copy $(TRUNKURL) $(TAGURL)

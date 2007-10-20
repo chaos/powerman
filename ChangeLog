@@ -1,3 +1,13 @@
+2007-10-20 Jim Garlick <garlick@llnl.gov>
+
+	* etc/ilom-inline.dev : Add support for Sun ILOM over system console.
+
+	* man/powerman-devices.7 : Fix typo in cyclades section.
+
+	* scripts/build : Remove, also rpm targets in Makefile.
+
+	* : tag powerman-1.0.31
+
 2007-10-05 Jim Garlick <garlick@llnl.gov>
 
 	* powerman.spec : Add BuildRequries for bison.
