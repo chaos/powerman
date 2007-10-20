@@ -1,7 +1,8 @@
 #
-# Sun ILOM 
+# Sun ILOM sharing serial port with system console, e.g.
+#   device "ilom25" "ilom-inline" "/usr/bin/conman -Q -j ilc25 |&"
 #
-specification  "ilom" {
+specification  "ilom-inline" {
 	timeout 	60
 
 	plug name { "1" }
