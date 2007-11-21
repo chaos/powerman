@@ -1,3 +1,7 @@
+2007-11-21 Jim Garlick <garlick@llnl.gov>
+
+	* etc/apcpdu3.dev : New apc variant for new firmware [Trent D'Hooge]
+
 2007-10-20 Jim Garlick <garlick@llnl.gov>
 
 	* etc/ilom-inline.dev : Add support for Sun ILOM over system console.
