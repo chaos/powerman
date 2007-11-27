@@ -19,15 +19,19 @@ SERVER_OBJS=	$(COMMON_OBJS) daemon.o cbuf.o hprintf.o argv.o hash.o \
 		parse_lex.o parse_tab.o device_serial.o device_tcp.o \
 		device_pipe.o arglist.o pluglist.o
 CLIENT_OBJS= 	$(COMMON_OBJS) powerman.o
+HTTP_OBJS=	$(COMMON_OBJS) httppower.o argv.o
 
 
-all:  powerman powermand
+all:  powerman powermand #httppower
 
 powermand: $(SERVER_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(SERVER_OBJS) $(LDADD)
 
 powerman: $(CLIENT_OBJS)
 	$(CC) -o $@ $(CLIENT_OBJS) $(LDADD)
+
+httppower: $(HTTP_OBJS)
+	$(CC) -o $@ $(HTTP_OBJS) -lcurl -lreadline -ltermcap
 
 parse_lex.c: parse.lex
 	$(LEX) -oparse_lex.c parse.lex
@@ -52,7 +56,7 @@ depend:
 
 clean:
 	rm -f *~ *.o .\#* 
-	rm -f powerman powermand
+	rm -f powerman powermand httppower
 	rm -f parse_tab.c parse_tab.h parse_lex.c
 	rm -f gmon.out
 

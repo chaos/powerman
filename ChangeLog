@@ -1,3 +1,7 @@
+2007-11-26 Jim Garlick <garlick@llnl.gov>
+
+	* src/httppower.c : Beginning of httppower daemon.
+
 2007-11-21 Jim Garlick <garlick@llnl.gov>
 
 	* etc/apcpdu3.dev : New apc variant for new firmware [Trent D'Hooge]
