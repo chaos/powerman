@@ -1,6 +1,9 @@
 2007-11-26 Jim Garlick <garlick@llnl.gov>
 
-	* src/httppower.c : Beginning of httppower daemon.
+	* src/httppower.c : New httppower daemon for HTTP based power controllers.
+
+	* etc/dli-lpc.dev : Support for Data Loggers, Inc. "Lite Power 
+	Controller" model.
 
 2007-11-21 Jim Garlick <garlick@llnl.gov>
 

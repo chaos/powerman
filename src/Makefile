@@ -22,7 +22,7 @@ CLIENT_OBJS= 	$(COMMON_OBJS) powerman.o
 HTTP_OBJS=	$(COMMON_OBJS) httppower.o argv.o
 
 
-all:  powerman powermand #httppower
+all:  powerman powermand httppower
 
 powermand: $(SERVER_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(SERVER_OBJS) $(LDADD)

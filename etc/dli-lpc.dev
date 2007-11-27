@@ -1,0 +1,49 @@
+specification "dli-lpc" {
+	timeout 	30
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
+
+	script login {
+		expect "httppower> "
+		send "auth admin:admin\n"
+		expect "httppower> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status_all {
+		send "get\n"
+		expect "Controller: Lite Power Controller"
+		foreachplug {
+			expect "Outlet ([1-8]+)[^O]*(ON|OFF)"
+                        setplugstate $1 $2 on="ON" off="OFF"
+                }
+		expect "httppower> "
+	}
+	script on {
+		send "post outlet %s=ON\n"
+		expect "httppower> "
+	}
+	script off {
+		send "post outlet %s=OFF\n"
+		expect "httppower> "
+	}
+	script cycle {
+		send "post outlet %s=OFF\n"
+		expect "httppower> "
+		delay 4
+		send "post outlet %s=ON\n"
+		expect "httppower> "
+	}
+	script cycle_all {
+		foreachplug {
+			send "post outlet %s=OFF\n"
+			expect "httppower> "
+		}
+		delay 4
+		foreachplug {
+			send "post outlet %s=ON\n"
+			expect "httppower> "
+		}
+	}
+}

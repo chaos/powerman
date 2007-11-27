@@ -7,7 +7,7 @@ Group: Applications/System
 Url: http://sourceforge.net/projects/powerman
 Source0: %{name}-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: tcp_wrappers, flex, bison
+BuildRequires: tcp_wrappers-devel, flex, bison, curl-devel
 
 %description
 PowerMan is a tool for manipulating remote power control (RPC) devices from a 
@@ -67,6 +67,7 @@ fi
 %{_bindir}/powerman
 %{_bindir}/pm
 %{_sbindir}/powermand
+%{_sbindir}/httppower
 %dir %config %{_sysconfdir}/powerman
 %{_sysconfdir}/powerman/*.dev
 %{_mandir}/man1/*

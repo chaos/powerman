@@ -24,6 +24,7 @@ install: all
 	ln -s powerman				$(DESTDIR)$(bindir)/pm
 	$(mkinstalldirs) 			$(DESTDIR)$(sbindir)
 	$(INSTALL) src/powermand		$(DESTDIR)$(sbindir)
+	$(INSTALL) src/httppower		$(DESTDIR)$(sbindir)
 	$(mkinstalldirs)			$(DESTDIR)$(packagedir)
 	$(INSTALL) -m 644 etc/*.dev		$(DESTDIR)$(packagedir)
 	$(mkinstalldirs)			$(DESTDIR)$(mandir)/man1
