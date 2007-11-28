@@ -1,4 +1,15 @@
 =========================================================================
+Release Notes for PowerMan version 1.0.32                     28 Nov 2007
+=========================================================================
+
+* Support for Digital Loggers, Inc. power controllers.
+
+* Added httppower utility for interfacing to power controllers that are
+  exclusively web-based.
+
+* Support for new apc firmware (apcpdu3.dev) [Trent D'Hooge]
+
+=========================================================================
 Release Notes for PowerMan version 1.0.31                     20 Oct 2007
 =========================================================================
 

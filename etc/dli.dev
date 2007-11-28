@@ -6,7 +6,7 @@
 #
 # Powerman.conf should look something like this:
 #   include "/etc/powerman/dli.dev"
-#   device "lpc" "dli" "/usr/sbin/httppower -u http://lpc |&"
+#   device "lpc" "dli" "/usr/sbin/httppower -u http://192.168.0.100 |&"
 #   node "p[1-8]" "lpc" "[1-8]"
 # 
 specification "dli" {
