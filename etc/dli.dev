@@ -1,4 +1,15 @@
-specification "dli-lpc" {
+# Support for 8-port Digital Loggers, Inc. models:
+#
+#   www.digital-loggers.com/lpc.html
+#   www.digital-loggers.com/epcr2.html
+#   www.digital-loggers.com/din.html
+#
+# Powerman.conf should look something like this:
+#   include "/etc/powerman/dli.dev"
+#   device "lpc" "dli" "/usr/sbin/httppower -u http://lpc |&"
+#   node "p[1-8]" "lpc" "[1-8]"
+# 
+specification "dli" {
 	timeout 	30
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
@@ -13,7 +24,7 @@ specification "dli-lpc" {
 	}
 	script status_all {
 		send "get\n"
-		expect "Controller: Lite Power Controller"
+		expect "Controller:"
 		foreachplug {
 			expect "Outlet ([1-8]+)[^O]*(ON|OFF)"
                         setplugstate $1 $2 on="ON" off="OFF"

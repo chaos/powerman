@@ -2,8 +2,7 @@
 
 	* src/httppower.c : New httppower daemon for HTTP based power controllers.
 
-	* etc/dli-lpc.dev : Support for Data Loggers, Inc. "Lite Power 
-	Controller" model.
+	* etc/dli.dev : Support for Data Loggers, Inc. power controllers.
 
 2007-11-21 Jim Garlick <garlick@llnl.gov>
 
