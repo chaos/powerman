@@ -1,0 +1,57 @@
+# 
+# swpdu.dev,v 1.0 2007/11/07 23:50:34 kolee APPRO
+# /etc/powerman/swpdu.dev,v
+#
+specification "swpdu" {
+	timeout 	20.0
+	plug name {
+			"1" "2" "3" "4" "5" "6" "7" "8"
+			"9" "10" "11" "12" "13" "14" "15" "16"
+			"17" "18" "19" "20" "21" "22" "23" "24"
+			"25" "26" "27" "28" "29" "30" "31" "32"
+			"33" "34" "35" "36" "37" "38" "39" "40"
+			"41" "42" "43" "44" "45" "46" "47" "48"
+			}
+	script ping {
+		send "\r\n"
+		expect "swpdu> "
+	}
+	script login {
+#		expect "Password:"
+#		send "111111\r\n"
+		send "\r\n"
+		expect "swpdu> "
+		send "exprange on\r\n"
+		expect "swpdu> "
+	}
+	script logout {
+		send "exprange off\r\n"
+		expect "swpdu> "
+	}
+	script status_all {
+		send "status\r\n"
+		foreachplug {
+			expect "port([0-9]+)[^\n]*(on|off|unknown|^n)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "swpdu> "
+	}
+	script status {
+		send "status %s\r\n"
+		expect "port([0-9]+)[^\n]*(on|off|unknown|^n)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "swpdu> "
+	}
+	script on {
+		send "on %s\r\n"
+		expect "swpdu> "
+	}
+	script off {
+		send "off %s\r\n"
+		expect "swpdu> "
+	}
+	script cycle {
+		send "cycle %s\r\n"
+		expect "swpdu> "
+	}
+}

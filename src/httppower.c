@@ -125,6 +125,8 @@ void auth(CURL *h, char **av)
         printf("Usage: auth user:passwd\n");
         return;
     }
+    if (userpwd)
+        Free(userpwd);
     userpwd = Strdup(av[0]);
     curl_easy_setopt(h, CURLOPT_USERPWD, userpwd);
     curl_easy_setopt(h, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);

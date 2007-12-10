@@ -1,3 +1,12 @@
+2007-12-10 Jim Garlick <garlick@llnl.gov>
+
+	* etc/swpdu.dev : New, for APPRO PDU. [Trent D'Hooge]
+
+2007-12-04 Jim Garlick <garlick@llnl.gov>
+
+	* etc/apcpdu3.dev : Make query response tolerant of configurable 
+	plug name strings [Trent D'Hooge]
+
 2007-11-26 Jim Garlick <garlick@llnl.gov>
 
 	* src/httppower.c : New httppower daemon for HTTP based power controllers.

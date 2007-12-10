@@ -1,19 +1,5 @@
-###########################################################################
-# $URL: svn+ssh://tdhooge@tyche.llnl.gov/var/svn/dist/powerman/apcpdu.v3.3.3.dev $
-# $Author: tdhooge $
-# $Date: 2007-11-13 11:40:12 -0800 (Tue, 13 Nov 2007) $
-# $Rev: 7325 $
-###########################################################################
 #
-# $Id:$
-#
-# Written by Trent D'Hooge and Makia Minich
-#
-# Should support the following 24-plug APC Switched Rack PDU models:
-#   AP7930, AP7932
-#   AP7940, AP7941
-#   AP7960, AP7961, AP7968, AP7990, AP7991, AP7998 
-#   AP7951, AP7952, AP7953, AP7954
+# Derived from apcpdu.dev, but updated for new firmware
 #
 # - Firmware: APP v3.3.3 / AOS v3.3.4
 #
@@ -47,55 +33,56 @@ specification "apcpdu3" {
 	}
 	script status_all {
 		send "\r\n"  # refresh
-		expect "1- Outlet 1                 (ON|OFF)\r\n"
+
+		expect "1-.*(ON|OFF)\r\n"
 		setplugstate "1" $1 on="ON" off="OFF"
-		expect "    2- Outlet 2                 (ON|OFF)\r\n"
+		expect "2-.*(ON|OFF)\r\n"
 		setplugstate "2" $1 on="ON" off="OFF"
-		expect "    3- Outlet 3                 (ON|OFF)\r\n"
+		expect "3-.*(ON|OFF)\r\n"
 		setplugstate "3" $1 on="ON" off="OFF"
-		expect "    4- Outlet 4                 (ON|OFF)\r\n"
+		expect "4-.*(ON|OFF)\r\n"
 		setplugstate "4" $1 on="ON" off="OFF"
-		expect "    5- Outlet 5                 (ON|OFF)\r\n"
+		expect "5-.*(ON|OFF)\r\n"
 		setplugstate "5" $1 on="ON" off="OFF"
-		expect "    6- Outlet 6                 (ON|OFF)\r\n"
+		expect "6-.*(ON|OFF)\r\n"
 		setplugstate "6" $1 on="ON" off="OFF"
-		expect "    7- Outlet 7                 (ON|OFF)\r\n"
+		expect "7-.*(ON|OFF)\r\n"
 		setplugstate "7" $1 on="ON" off="OFF"
-		expect "    8- Outlet 8                 (ON|OFF)\r\n"
+		expect "8-.*(ON|OFF)\r\n"
 		setplugstate "8" $1 on="ON" off="OFF"
-		expect "    9- Outlet 9                 (ON|OFF)\r\n"
+		expect "9-.*(ON|OFF)\r\n"
 		setplugstate "9" $1 on="ON" off="OFF"
-		expect "   10- Outlet 10                (ON|OFF)\r\n"
+		expect "10-.*(ON|OFF)\r\n"
 		setplugstate "10" $1 on="ON" off="OFF"
-		expect "   11- Outlet 11                (ON|OFF)\r\n"
+		expect "11-.*(ON|OFF)\r\n"
 		setplugstate "11" $1 on="ON" off="OFF"
-		expect "   12- Outlet 12                (ON|OFF)\r\n"
+		expect "12-.*(ON|OFF)\r\n"
 		setplugstate "12" $1 on="ON" off="OFF"
-		expect "   13- Outlet 13                (ON|OFF)\r\n"
+		expect "13-.*(ON|OFF)\r\n"
 		setplugstate "13" $1 on="ON" off="OFF"
-		expect "   14- Outlet 14                (ON|OFF)\r\n"
+		expect "14-.*(ON|OFF)\r\n"
 		setplugstate "14" $1 on="ON" off="OFF"
-		expect "   15- Outlet 15                (ON|OFF)\r\n"
+		expect "15-.*(ON|OFF)\r\n"
 		setplugstate "15" $1 on="ON" off="OFF"
-		expect "   16- Outlet 16                (ON|OFF)\r\n"
+		expect "16-.*(ON|OFF)\r\n"
 		setplugstate "16" $1 on="ON" off="OFF"
-		expect "   17- Outlet 17                (ON|OFF)\r\n"
+		expect "17-.*(ON|OFF)\r\n"
 		setplugstate "17" $1 on="ON" off="OFF"
-		expect "   18- Outlet 18                (ON|OFF)\r\n"
+		expect "18-.*(ON|OFF)\r\n"
 		setplugstate "18" $1 on="ON" off="OFF"
-		expect "   19- Outlet 19                (ON|OFF)\r\n"
+		expect "19-.*(ON|OFF)\r\n"
 		setplugstate "19" $1 on="ON" off="OFF"
-		expect "   20- Outlet 20                (ON|OFF)\r\n"
+		expect "20-.*(ON|OFF)\r\n"
 		setplugstate "20" $1 on="ON" off="OFF"
-		expect "   21- Outlet 21                (ON|OFF)\r\n"
+		expect "21-.*(ON|OFF)\r\n"
 		setplugstate "21" $1 on="ON" off="OFF"
-		expect "   22- Outlet 22                (ON|OFF)\r\n"
+		expect "22-.*(ON|OFF)\r\n"
 		setplugstate "22" $1 on="ON" off="OFF"
 		expect "to continue..."
 		send "\r\n"
-		expect "   23- Outlet 23                (ON|OFF)\r\n"
+		expect "23-.*(ON|OFF)\r\n"
 		setplugstate "23" $1 on="ON" off="OFF"
-		expect "   24- Outlet 24                (ON|OFF)\r\n"
+		expect "24-.*(ON|OFF)\r\n"
 		setplugstate "24" $1 on="ON" off="OFF"
 		expect "> "
 	}
