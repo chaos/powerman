@@ -1,3 +1,7 @@
+2008-01-24 Jim Garlick <garlick@llnl.gov>
+
+	* : tag powerman-1.0.32
+
 2007-12-10 Jim Garlick <garlick@llnl.gov>
 
 	* etc/swpdu.dev : New, for APPRO PDU. [Trent D'Hooge]
