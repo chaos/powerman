@@ -1,7 +1,8 @@
 2008-01-24 Jim Garlick <garlick@llnl.gov>
 
-	* powerman.spec : Change BuildRequires from tcp_wrappers-devel to
-	tcp_wrappers for RHEL 5.
+	* powerman.spec : BuildRequires changes:
+	- change tcp_wrappers-devel to tcp_wrappers for RHEL 5
+	- add readline-devel
 
 	* : tag powerman-1.0.32
 
