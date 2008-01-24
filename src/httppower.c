@@ -208,7 +208,7 @@ main(int argc, char *argv[])
     if ((h = curl_easy_init()) == NULL)
         err_exit(FALSE, "curl_easy_init failed");
 
-    curl_easy_setopt(h, CURLOPT_TIMEOUT_MS, 5000);
+    curl_easy_setopt(h, CURLOPT_TIMEOUT, 5);
     curl_easy_setopt(h, CURLOPT_ERRORBUFFER, errbuf);
     curl_easy_setopt(h, CURLOPT_FAILONERROR, 1);
 
