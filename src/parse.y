@@ -37,6 +37,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <unistd.h>
+#include <limits.h>
 
 #include "powerman.h"
 #include "list.h"

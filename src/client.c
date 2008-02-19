@@ -31,6 +31,7 @@
 #include <syslog.h>
 #include <stdarg.h>
 #include <stdlib.h>
+#include <limits.h>
 
 #include <arpa/inet.h>
 #include <tcpd.h>

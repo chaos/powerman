@@ -34,6 +34,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <libgen.h>
+#include <limits.h>
 
 #include "powerman.h"
 #include "wrappers.h"

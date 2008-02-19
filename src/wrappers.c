@@ -29,6 +29,7 @@
 #include "config.h"
 #endif
 
+#define _GNU_SOURCE     /* needed for regex.h */
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
@@ -38,6 +39,8 @@
 #include <stdlib.h>
 #include <sys/socket.h>
 #include <stdio.h>
+#include <limits.h>
+#include <regex.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #if HAVE_POLL

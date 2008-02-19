@@ -1,3 +1,8 @@
+2008-02-19 Jim Garlick <garlick@llnl.gov>
+
+	* src/client.c, parse.y, powerman.c, powermand.c, wrappers.c : Change 
+	a few #includes for gcc 4.3/Fedora 9. [Jarod Wilson]
+
 2008-01-24 Jim Garlick <garlick@llnl.gov>
 
 	* powerman.spec : BuildRequires changes:
