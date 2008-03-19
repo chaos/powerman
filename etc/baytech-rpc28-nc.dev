@@ -13,70 +13,50 @@ specification "baytech-rpc28-nc" {
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" 
 		    "12" "13" "14" "15" "16" "17" "18" "19" "20" }
 
-# Note: we may get logged off due to inactivity timeout.
-# Repeat login sequence before each command - it works regardless of state
 	script login {
-		send "\r\n"
-		expect ">"
+		send "\r"
+		delay 0.2
+		expect ">$"
 	}
 	script logout {
-		send "\r\n"
-		expect ">"
-		send "exit\r\n"
+		send "exit\r"
 	}
 	script status_all {
-		send "\r\n"
-		expect ">"
-		send "status\r\n"
+		send "status\r"
 		foreachplug {
 			expect "Outlet[ ]+([0-9]+)[^:0-9]+: (On|Off)"
 			setplugstate $1 $2 on="On" off="Off"
 		}
-		expect ">"
+		expect ">$"
 	}
 	script on {
-		send "\r\n"
-		expect ">"
-		send "on %s\r\n"
-		expect ">"
+		send "on %s\r"
+		expect ">$"
 	}
 	script on_all {
-		send "\r\n"
-		expect ">"
-		send "on 0\r\n"
-		expect ">"
+		send "on 0\r"
+		expect ">$"
 	}
 	script off {
-		send "\r\n"
-		expect ">"
-		send "off %s\r\n"
-		expect ">"
+		send "off %s\r"
+		expect ">$"
 	}
 	script off_all {
-		send "\r\n"
-		expect ">"
-		send "off 0\r\n"
-		expect ">"
+		send "off 0\r"
+		expect ">$"
 	}
-# If outlet is initially off, "reboot" will leave it off.
-# This doesn't match PowerMan's semantics for cycle, so explicitly power
-# off then on.
 	script cycle {
-		send "\r\n"
-		expect ">"
-		send "off %s\r\n"
-		expect ">"
+		send "off %s\r"
+		expect ">$"
 		delay 4
-		send "on %s\r\n"
-		expect ">"
+		send "on %s\r"
+		expect ">$"
 	}
 	script cycle_all {
-		send "\r\n"
-		expect ">"
-		send "off 0\r\n"
-		expect ">"
+		send "off 0\r"
+		expect ">$"
 		delay 4
-		send "on 0\r\n"
-		expect ">"
+		send "on 0\r"
+		expect ">$"
 	}
 }

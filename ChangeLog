@@ -1,3 +1,17 @@
+2008-03-19 Jim Garlick <garlick@llnl.gov>
+
+	* etc/ibmbladecenter.dev : Clean up:
+	- Simplify some regexes and delete commented out, non-working code.
+	- Add delays to account for settling time after on/off commands.
+	- Add command to login script to disable telnet session timeout.
+	- Tested with "Advanced Management Module".
+
+	* etc/baytech-rpc28-nc.dev : Clean up:
+	- Fix problem problem with initial command failing (serial RPC-28A)
+	  by adding delay and "end of buffer" prompt matching.
+	- Use \r not \r\n for line termination.
+	- Drop "login for each command" hack.
+
 2008-02-19 Jim Garlick <garlick@llnl.gov>
 
 	* src/client.c, parse.y, powerman.c, powermand.c, wrappers.c : Change 
