@@ -19,9 +19,15 @@ specification "baytech-rpc28-nc" {
 		expect ">$"
 	}
 	script logout {
+		send "\r"
+		delay 0.2
+		expect ">$"
 		send "exit\r"
 	}
 	script status_all {
+		send "\r"
+		delay 0.2
+		expect ">$"
 		send "status\r"
 		foreachplug {
 			expect "Outlet[ ]+([0-9]+)[^:0-9]+: (On|Off)"
@@ -30,22 +36,37 @@ specification "baytech-rpc28-nc" {
 		expect ">$"
 	}
 	script on {
+		send "\r"
+		delay 0.2
+		expect ">$"
 		send "on %s\r"
 		expect ">$"
 	}
 	script on_all {
+		send "\r"
+		delay 0.2
+		expect ">$"
 		send "on 0\r"
 		expect ">$"
 	}
 	script off {
+		send "\r"
+		delay 0.2
+		expect ">$"
 		send "off %s\r"
 		expect ">$"
 	}
 	script off_all {
+		send "\r"
+		delay 0.2
+		expect ">$"
 		send "off 0\r"
 		expect ">$"
 	}
 	script cycle {
+		send "\r"
+		delay 0.2
+		expect ">$"
 		send "off %s\r"
 		expect ">$"
 		delay 4
@@ -53,6 +74,9 @@ specification "baytech-rpc28-nc" {
 		expect ">$"
 	}
 	script cycle_all {
+		send "\r"
+		delay 0.2
+		expect ">$"
 		send "off 0\r"
 		expect ">$"
 		delay 4

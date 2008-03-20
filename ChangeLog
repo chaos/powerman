@@ -10,7 +10,6 @@
 	- Fix problem problem with initial command failing (serial RPC-28A)
 	  by adding delay and "end of buffer" prompt matching.
 	- Use \r not \r\n for line termination.
-	- Drop "login for each command" hack.
 
 2008-02-19 Jim Garlick <garlick@llnl.gov>
 
