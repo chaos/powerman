@@ -38,6 +38,7 @@
 #include <stdlib.h>
 #include <assert.h>
 #include <libgen.h>
+#include <limits.h>
 #include <sys/types.h>
 #include <dirent.h>
 

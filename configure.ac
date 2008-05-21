@@ -85,6 +85,8 @@ AC_CHECK_FUNCS( \
 )
 AC_FORKPTY
 AC_WRAP
+AC_CURL
+AC_READLINE
 AC_CHECK_FUNC([poll], AC_DEFINE([HAVE_POLL], [1], [Define that you will use poll()]))
 
 # for list.c, cbuf.c, hostlist.c, and wrappers.c */

@@ -79,7 +79,7 @@ bin_PROGRAMS = powerman
 powerman_SOURCES = \
 	powerman.c \
 	$(LTDL_SOURCE_FILES) \
-	$(COMMON_SOURCE)
+	$(COMMON_SOURCE) 
 
 powerman_CFLAGS = \
 	-DPOWERMAN_VERSION=\"$(VERSION)\" \
@@ -101,7 +101,13 @@ sbin_PROGRAMS = powermand httppower
 
 httppower_SOURCES = \
 	httppower.c \
-	argv.c
+	argv.c \
+	error.c \
+	wrappers.c
+
+httppower_LDADD = \
+	$(LIBCURL) \
+	$(LIBREADLINE)
 
 powermand_SOURCES = \
 	arglist.c \

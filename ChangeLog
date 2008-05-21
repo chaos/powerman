@@ -7,7 +7,14 @@
 
 	* src/Makefile.am : Add httppower from trunk.
 
+	* config/ac_curl.m4, config/ac_readline.m4 : Added for httppower.
+
 	* src/parse.lex : Update white space rule from trunk.
+
+	* src/parse.y, src/wrappers.c, src/client.c, src/powerman.c,
+	src/powermand.c : Include limits.h.
+
+	* src/wrappers.c : Include regex.h with _GNU_SOURCE.
 
 2006-11-16 Jim Garlick <garlick@llnl.gov>
 

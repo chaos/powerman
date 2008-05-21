@@ -39,6 +39,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <assert.h>
+#include <limits.h>
 
 #include "powerman.h"
 #include "list.h"
