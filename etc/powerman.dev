@@ -14,12 +14,10 @@ specification "powerman" {
 	script logout {
 		send "quit\r\n"
 	}
-	script status_all {
-		send "status\r\n"
-		foreachplug {
-			expect "303 ([^:]+): (off|on|unknown)\r\n"
-			setplugstate $1 $2 off="off" on="on"
-		}
+	script status {
+		send "status %s\r\n"
+		expect "303 ([^:]+): (off|on|unknown)\r\n"
+		setplugstate $1 $2 off="off" on="on"
 		expect "powerman> "
 	}
 	script on {

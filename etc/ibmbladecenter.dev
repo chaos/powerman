@@ -1,58 +1,48 @@
-# 
-# $Id:$
 #
-# ibmbladecenter.dev.  RJG, 11/17/04
+# Originally ibmbladecenter.dev.  RJG, 11/17/04
 #
-# This device configuration supports control of nodes in an IBM Bladecenter
-# chassis.
-
+# Ref: Command-Line Interface Reference Guide for
+#  IBM BladeCenter Management Module, BladeCenter T Management Module,
+#  Advanced Management Module, BladeCenter T Advanced Management Module.
+#
 specification "ibmbladecenter" {
 	timeout  	15
-	plug name { "1" "2" "3" "4" "5" "6" "7" 
-                    "8" "9" "10" "11" "12" "13" "14" "15" }
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" 
+                    "10" "11" "12" "13" "14" "15" }
 
-# Substitute your USERID and PASSWORD here.
-# Escape any % chars as %%.
 	script login {
 		expect "username: "
 		send "USERID\r\n"
 		expect "password: "
 		send "PASSW0RD\r\n"
 		expect "system> "
+		send "telnetcfg -t 0 -T mm[1]\r\n"
+		expect "OK\r\nsystem> "
 	}
 	script logout {
 		send "exit\r\n"
 	}
 	script status {
 		send "power -state -T blade\[%s\]\r\n"
-		expect "[^\n]*\r\n(On|Off)\r\nsystem> "	
+		expect "(On|Off)\r\nsystem> "	
 		setplugstate $1 on="On" off="Off"
 	}
 	script on {
 		send "power -on -T blade\[%s\]\r\n"
-		expect "[^\n]*\r\nOK\r\nsystem> "
-
+		delay 1 # settling time
+		expect "OK\r\nsystem> "
 	}
 	script off {
 		send "power -off -T blade\[%s\]\r\n"
-		expect "[^\n]*\r\nOK\r\nsystem> "
+		delay 5 # settling time
+		expect "OK\r\nsystem> "
 	}
-
 	script cycle {
-# bladecenter "cycle" command does not seem to work RJG, 5/24/05
-#		send "power -cycle -T blade\[%s\]\r\n"
-#		expect "[^\n]*\r\nOK\r\nsystem> "
-
 		send "power -off -T blade\[%s\]\r\n"
-		delay 8
+		expect "OK\r\nsystem> "
+		delay 5 # settling time
+		delay 4
 		send "power -on -T blade\[%s\]\r\n"
-		expect "[^\n]*\r\nOK\r\nsystem> "
+		expect "OK\r\nsystem> "
 	}
-
-# bladecenter "boot" command is supposed to be the equivalent of a reset but
-# does not seem to work.  RJG, 5/24/05
-#	script reset {
-#		send "boot -T blade\[%s\]\r\n"
-#		expect "[^\n]*\r\nOK\r\nsystem> "
-#	}
 }

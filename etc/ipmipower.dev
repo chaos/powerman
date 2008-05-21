@@ -4,6 +4,10 @@
 # This device configuration supports power control via the 
 # 'ipmipower' utility.
 #
+# some IPMI devices require some time for the firmware to
+# reload/re-settle itself after a power-off.  A delay of 5 seconds
+# seems to work fine pretty well.
+#
 specification "ipmipower" {
 	timeout  	60
 
@@ -54,27 +58,45 @@ specification "ipmipower" {
 		expect "ipmipower> "
 	}
 	script cycle {
-		send "cycle %s\r"
+		send "off %s\r"
+		expect "ipmipower> "
+		delay 5
+		send "on %s\r"
 		expect "ipmipower> "
 	}
 	script cycle_ranged {
-		send "cycle %s\r"
+		send "off %s\r"
+		expect "ipmipower> "
+		delay 5
+		send "on %s\r"
 		expect "ipmipower> "
 	}
 	script cycle_all {
-		send "cycle\r"
+		send "off\r"
+		expect "ipmipower> "
+		delay 5
+		send "on\r"
 		expect "ipmipower> "
 	}
 	script reset {
-		send "reset %s\r"
+		send "off %s\r"
+		expect "ipmipower> "
+		delay 5
+		send "on %s\r"
 		expect "ipmipower> "
 	}
 	script reset_ranged {
-		send "reset %s\r"
+		send "off %s\r"
+		expect "ipmipower> "
+		delay 5
+		send "on %s\r"
 		expect "ipmipower> "
 	}
 	script reset_all {
-		send "reset\r"
+		send "off\r"
+		expect "ipmipower> "
+		delay 5
+		send "on\r"
 		expect "ipmipower> "
 	}
 }

@@ -29,9 +29,14 @@ specification "baytech-rpc3-nc" {
 		send "exit\r\n"
 	}
 	script status_all {
+		# XXX this works around bug where foreachplug
+		# counter doesn't reset when script restarts after reconnect
+		send "\r\n"
+		expect ">"
+		# XXX end workaround
 		send "status\r\n"
 		foreachplug {
-			expect "([0-9]+)[^:0-9]+: (On|Off)"
+			expect "Outlet  ([0-9]+)[^:0-9]+: (On|Off)"
 			setplugstate $1 $2 on="On" off="Off"
 		}
 		expect ">"
@@ -58,14 +63,14 @@ specification "baytech-rpc3-nc" {
 	script cycle {
 		send "off %s\r\n"
 		expect ">"
-		delay 2
+		delay 4
 		send "on %s\r\n"
 		expect ">"
 	}
 	script cycle_all {
 		send "off 0\r\n"
 		expect ">"
-		delay 2
+		delay 4
 		send "on 0\r\n"
 		expect ">"
 	}

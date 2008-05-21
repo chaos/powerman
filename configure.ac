@@ -24,6 +24,7 @@ AM_MAINTAINER_MODE
 # Checks for programs.
 ##
 AC_PROG_CC
+AM_PROG_CC_C_O
 AC_PROG_LN_S
 AC_LIBTOOL_DLOPEN
 AC_PROG_LIBTOOL
@@ -94,7 +95,6 @@ AC_DEFINE(WITH_LSD_NOMEM_ERROR_FUNC, 1, [Define lsd_fatal_error])
 # Epilogue.
 ##
 AC_CONFIG_FILES( \
-  powerman.spec \
   Makefile \
   etc/Makefile \
   man/Makefile \

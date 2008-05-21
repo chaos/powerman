@@ -1,8 +1,4 @@
 #!/bin/sh
-##
-# $Id: autogen.sh,v 1.1.1.1 2004/07/02 22:31:29 achu Exp $
-##
-
 echo "running aclocal ... "
 aclocal -I config
 echo "running libtoolize ... "

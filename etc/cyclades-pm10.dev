@@ -94,7 +94,9 @@ specification "pm10" {
 		send "off %s\r"
 		expect "Outlet turned off.\r\n"
 		expect "pm>"
-		delay 2
+
+		delay 4
+
 		send "on %s\r"
 		expect "Outlet turned on.\r\n"
 		expect "pm>"
@@ -113,7 +115,9 @@ specification "pm10" {
 			expect "Outlet turned off.\r\n"
 		}
 		expect "pm>"
-		delay 2
+
+		delay 4
+
 		send "on 1-10\r"
 		foreachplug {
 			expect "Outlet turned on.\r\n"

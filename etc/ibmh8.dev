@@ -52,14 +52,18 @@ specification "ibmh8" {
 	script cycle {
 		send "off %s\r"
 		expect "h8power> "
-		delay 2
+
+		delay 4
+
 		send "on %s\r"
 		expect "h8power> "
 	}
 	script cycle_all {
 		send "off\r"
 		expect "h8power> "
-		delay 2
+
+		delay 4
+
 		send "on\r"
 		expect "h8power> "
 	}

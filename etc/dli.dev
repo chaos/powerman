@@ -1,0 +1,60 @@
+# Support for 8-port Digital Loggers, Inc. models:
+#
+#   www.digital-loggers.com/lpc.html
+#   www.digital-loggers.com/epcr2.html
+#   www.digital-loggers.com/din.html
+#
+# Powerman.conf should look something like this:
+#   include "/etc/powerman/dli.dev"
+#   device "lpc" "dli" "/usr/sbin/httppower -u http://192.168.0.100 |&"
+#   node "p[1-8]" "lpc" "[1-8]"
+# 
+specification "dli" {
+	timeout 	30
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
+
+	script login {
+		expect "httppower> "
+		send "auth admin:admin\n"
+		expect "httppower> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status_all {
+		send "get\n"
+		expect "Controller:"
+		foreachplug {
+			expect "Outlet ([1-8]+)[^O]*(ON|OFF)"
+                        setplugstate $1 $2 on="ON" off="OFF"
+                }
+		expect "httppower> "
+	}
+	script on {
+		send "post outlet %s=ON\n"
+		expect "httppower> "
+	}
+	script off {
+		send "post outlet %s=OFF\n"
+		expect "httppower> "
+	}
+	script cycle {
+		send "post outlet %s=OFF\n"
+		expect "httppower> "
+		delay 4
+		send "post outlet %s=ON\n"
+		expect "httppower> "
+	}
+	script cycle_all {
+		foreachplug {
+			send "post outlet %s=OFF\n"
+			expect "httppower> "
+		}
+		delay 4
+		foreachplug {
+			send "post outlet %s=ON\n"
+			expect "httppower> "
+		}
+	}
+}
