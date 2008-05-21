@@ -63,7 +63,7 @@ static List line_ptrs;
 
 #[^\n]*\n { linenum[include_stack_ptr]++; }  
 
-[ \t]+ {  /* Eat up white space */ }
+[ \t\r]+ {  /* Eat up white space */ }
 
 [\n]   {  linenum[include_stack_ptr]++; }
 

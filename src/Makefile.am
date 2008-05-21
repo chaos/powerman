@@ -92,12 +92,16 @@ powerman_LDFLAGS = \
 	$(LTDL_LIBS)
 
 #
-# Powermand
+# Powermand, httppower
 #
 
 BUILT_SOURCES = parse_lex.c parse_tab.c
 
-sbin_PROGRAMS = powermand
+sbin_PROGRAMS = powermand httppower
+
+httppower_SOURCES = \
+	httppower.c \
+	argv.c
 
 powermand_SOURCES = \
 	arglist.c \

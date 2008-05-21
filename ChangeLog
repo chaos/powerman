@@ -5,6 +5,10 @@
 	* htdocs, src/httpower.c, scripts/stonith-powerman, 
 	man/powerman-devices.7, etc/*.dev, NEWS : Copied from trunk.
 
+	* src/Makefile.am : Add httppower from trunk.
+
+	* src/parse.lex : Update white space rule from trunk.
+
 2006-11-16 Jim Garlick <garlick@llnl.gov>
 
 	* ChangeLog : Start over for 2.0 branch.  Old moved to ChangeLog-1.0.
