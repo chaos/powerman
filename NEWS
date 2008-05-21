@@ -1,12 +1,56 @@
 =========================================================================
-Release Notes for PowerMan version 1.0.26                        
+Release Notes for PowerMan version 1.0.32                     24 Jan 2008
+=========================================================================
+
+* Support for new apc firmware (apcpdu3.dev) [Trent D'Hooge]
+
+* Added httppower utility for interfacing to power controllers that are
+  exclusively web-based.
+
+* Support for Digital Loggers, Inc. power controllers.
+
+* Support for APPRO power controller.
+
+=========================================================================
+Release Notes for PowerMan version 1.0.31                     20 Oct 2007
+=========================================================================
+
+(Includes changes in 1.0.29 and 1.0.30)
+
+* Support SUN ILOM inline with serial console, i.e.
+  device "ilom25" "ilom-inline" "/usr/bin/conman -Q -j ilc25 |&"
+
+* Handle config files with embedded carriage returns [Trent D'Hooge
+  and Todd Heer].
+
+* Ipmipower device script tuning [Al Chu].
+
+* Minor build/packaging tweaks for building under mock, etc.
+
+=========================================================================
+Release Notes for PowerMan version 1.0.28                     07 May 2007
+=========================================================================
+
+* Increase "cycle" delays from 2s to 4s on all devices that implement
+  cycle as an explicit on,delay,off.
+
+=========================================================================
+Release Notes for PowerMan version 1.0.27                     24 Apr 2007
+=========================================================================
+
+* Add heartbeat stonith module.
+
+* Fix bug in baytech-rpc28-nc device support that affected plugs > 10.
+
+=========================================================================
+Release Notes for PowerMan version 1.0.26                     21 Dec 2006
 =========================================================================
 
 * Support 8-port APC AP7900 and likely AP7901, AP7920, and AP7921.
   [Martin Petersen]
 
-* Fix bug in baytech RPC-3 device script introduced in 1.0.25 that caused 
-  some plugs to report power status "unknown".
+* Work around a bug that causes baytech rpc3's to resturn some plugs
+  as status "unknown" on login timeout/reconnect.
 
 * Add ranged power control support for faster power control w/ ipmipower.
 

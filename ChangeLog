@@ -1,3 +1,10 @@
+2008-05-21 Jim Garlick <garlick@llnl.gov>
+
+	* ChangeLog-1.0 : Updated to reflect trunk (1.0.32+)
+
+	* htdocs, src/httpower.c, scripts/stonith-powerman, 
+	man/powerman-devices.7, etc/*.dev, NEWS : Copied from trunk.
+
 2006-11-16 Jim Garlick <garlick@llnl.gov>
 
 	* ChangeLog : Start over for 2.0 branch.  Old moved to ChangeLog-1.0.
@@ -25,3 +32,5 @@
 	src/powerman.c, man/powerman.1.in: Add module support and -g support.
 
 	* powerman.spec.in: Update with genders module.
+
+	* : branched at 1.0.26+
