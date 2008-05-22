@@ -25,6 +25,12 @@
 	* config/ac_wrap.m4, src/parse_util.c, src/client.c : 
 	Make tcp_wrappers optional.
 
+	* man/powerman.1.in, config/ac_debug.m4, config/ac_genders.m4,
+	config/ac_static_modules.m4, config/ac_powerman_module_dir.m4, 
+	configure.ac, src/Makefile.am, src/powerman.c, src/ltdl.[ch], 
+	src/powerman_options.h, src/powerman_options_genders.c :
+	Drop modules, genders support (temporarily?) to focus on portability.
+
 2006-11-16 Jim Garlick <garlick@llnl.gov>
 
 	* ChangeLog : Start over for 2.0 branch.  Old moved to ChangeLog-1.0.
