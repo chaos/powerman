@@ -46,7 +46,7 @@ COMMON_SOURCE = \
 
 powerman_SOURCES = powerman.c $(COMMON_SOURCE)
 
-powerman_LDADD = $(LIBFORKPTY)
+powerman_LDADD = $(LIBGENDERS) $(LIBFORKPTY)
 
 if WITH_HTTPPOWER
 httppower_SOURCES = httppower.c $(COMMON_SOURCE)

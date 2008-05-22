@@ -78,6 +78,9 @@
 /* Version number of package */
 #undef VERSION
 
+/* Define if you have genders. */
+#undef WITH_GENDERS
+
 /* Define lsd_fatal_error */
 #undef WITH_LSD_FATAL_ERROR_FUNC
 

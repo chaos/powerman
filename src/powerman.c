@@ -32,6 +32,9 @@
 #if HAVE_GETOPT_H
 #include <getopt.h>
 #endif
+#if WITH_GENDERS
+#include <genders.h>
+#endif
 #include <unistd.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -59,8 +62,10 @@ static void _process_version(void);
 
 static int server_fd = -1;
 
-#define OPT_STRING "01crlqfubntLd:VDvxT"
-static const struct option long_options[] = {
+#define OPTIONS "01crlqfubntLd:VDvxT"
+#if HAVE_GETOPT_LONG
+#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
+static const struct option longopts[] = {
     {"on", no_argument, 0, '1'},
     {"off", no_argument, 0, '0'},
     {"cycle", no_argument, 0, 'c'},
@@ -80,13 +85,13 @@ static const struct option long_options[] = {
     {"exprange", no_argument, 0, 'x'},
     {0, 0, 0, 0}
 };
-
-static const struct option *longopts = long_options;
+#else
+#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
+#endif
 
 int main(int argc, char **argv)
 {
     int c;
-    int longindex;
     hostlist_t targets = NULL;
     bool have_targets = FALSE;
     char targstr[CP_LINEMAX];
@@ -113,8 +118,7 @@ int main(int argc, char **argv)
      * Parse options.
      */
     opterr = 0;
-    while ((c = getopt_long(argc, argv, OPT_STRING, longopts,
-                        &longindex)) != -1) {
+    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
         case 'l':              /* --list */
             cmd = CMD_LIST;

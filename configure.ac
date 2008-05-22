@@ -53,10 +53,11 @@ AC_TYPE_UID_T
 AC_C_CONST
 
 ##
-# Check for httppower
+# Check for httppower, genders
 ##
 AC_HTTPPOWER
 AM_CONDITIONAL(WITH_HTTPPOWER, [test "$ac_with_httppower" = "yes"])
+AC_GENDERS
 
 ##
 # Checks for library functions.

@@ -9,6 +9,11 @@
 
 	* autoconf.ac : Require flex as scaner is (currently) flex specific.
 
+	* autoconf.ac, config/ac_genders.m4, src/Makefile.am : Add genders
+	support.
+
+	* src/powerman.c, src/powermand.c : Handle missing getopt_long().
+
 2008-05-21 Jim Garlick <garlick@llnl.gov>
 
 	* ChangeLog-1.0 : Updated to reflect trunk (1.0.32+)

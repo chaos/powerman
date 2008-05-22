@@ -60,8 +60,10 @@ static void _noop_handler(int signum);
 static void _exit_handler(int signum);
 static void _select_loop(void);
 
-#define OPT_STRING "c:fhd:V"
-static const struct option long_options[] = {
+#define OPTIONS "c:fhd:V"
+#if HAVE_GETOPT_LONG
+#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
+static const struct option longopts[] = {
     {"conf", required_argument, 0, 'c'},
     {"foreground", no_argument, 0, 'f'},
     {"help", no_argument, 0, 'h'},
@@ -69,13 +71,13 @@ static const struct option long_options[] = {
     {"version", no_argument, 0, 'V'},
     {0, 0, 0, 0}
 };
-
-static const struct option *longopts = long_options;
+#else
+#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
+#endif
 
 int main(int argc, char **argv)
 {
     int c;
-    int lindex;
     char *config_filename = NULL;
     bool daemonize = TRUE;
 
@@ -85,8 +87,7 @@ int main(int argc, char **argv)
     cli_init();
 
     /* parse command line options */
-    while ((c = getopt_long(argc, argv, OPT_STRING, longopts,
-                        &lindex)) != -1) {
+    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
         case 'c':               /* --conf */
             if (config_filename != NULL) {

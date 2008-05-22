@@ -20,7 +20,7 @@ Expect-like configurability simplifies the addition of new devices.
 %setup
 
 %build
-%configure --with-httppower
+%configure --with-httppower --with-genders
 make
 
 %install
