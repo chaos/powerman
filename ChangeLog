@@ -2,22 +2,19 @@
 
 	* ChangeLog-1.0 : Updated to reflect trunk (1.0.32+)
 
-	* htdocs, src/httpower.c, scripts/stonith-powerman, 
-	man/powerman-devices.7, etc/*.dev, NEWS : Updated [port from trunk].
+	* htdocs, scripts/stonith-powerman, man/powerman-devices.7, 
+	etc/*.dev, NEWS : Updated [copy from trunk].
 
-	* src/Makefile.am : Add httppower [port from trunk].
-
-	* config/ac_curl.m4, config/ac_readline.m4 : Added for httppower.
+	* config/ac_curl.m4, config/ac_readline.m4, config/ac_httppower.m4,
+	src/Makefile.am, src/httppower.c : Support httppower [port from trunk].
 
 	* src/parse.lex : Update white space rule [port from trunk].
 
 	* src/parse.y, src/wrappers.c, src/client.c, src/powerman.c,
 	src/powermand.c : Include limits.h. [port from trunk].
 
-	* src/wrappers.c : Include regex.h with _GNU_SOURCE [port from trunk].
-	
-	* config/ac_forkpty.m4, src/device_pipe.c : Make forkpty optional
-	during configuration but an #error if missing (for now) in the code.
+	* config/ac_forkpty.m4, src/device_pipe.c, src/wrappers.[ch] :
+	Provide substitute forkpty() if missing (via Forkpty() wrapper).
 
 	* src/client.c, src/powerman.c, src/powermand.c, Makefile.am :
 	Stop defining POWERMAN_VERSION in CFLAGS and use VERSION from config.h.
@@ -34,9 +31,8 @@
 	* src/device.c, src/debug.[ch], src/wrappers.[ch], src/device_tcp.c :
 	Fix compiler warnings.
 
-	* src/wrappers.h : Added timersub(), timeradd() for solaris.
-
-	* src/wrappers.[ch] : Add Forkpty() and Dprintf() for solaris.
+	* src/wrappers.[ch] : Add Dprintf() wrapper to avoid glibc dependency.
+	Add timersub() and timeradd() if undefined.
 
 2006-11-16 Jim Garlick <garlick@llnl.gov>
 
