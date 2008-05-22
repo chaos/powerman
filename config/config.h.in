@@ -3,9 +3,6 @@
 /* Define if you have libcurl */
 #undef HAVE_CURL
 
-/* Define to 1 if you have the <fcntl.h> header file. */
-#undef HAVE_FCNTL_H
-
 /* Define if you have forkpty */
 #undef HAVE_FORKPTY
 
@@ -33,32 +30,11 @@
 /* Define to 1 if you have the <stdlib.h> header file. */
 #undef HAVE_STDLIB_H
 
-/* Define to 1 if you have the `strchr' function. */
-#undef HAVE_STRCHR
-
-/* Define to 1 if you have the `strcmp' function. */
-#undef HAVE_STRCMP
-
-/* Define to 1 if you have the `strcpy' function. */
-#undef HAVE_STRCPY
-
 /* Define to 1 if you have the <strings.h> header file. */
 #undef HAVE_STRINGS_H
 
 /* Define to 1 if you have the <string.h> header file. */
 #undef HAVE_STRING_H
-
-/* Define to 1 if you have the `strlen' function. */
-#undef HAVE_STRLEN
-
-/* Define to 1 if you have the `strsep' function. */
-#undef HAVE_STRSEP
-
-/* Define to 1 if you have the `strspn' function. */
-#undef HAVE_STRSPN
-
-/* Define to 1 if you have the `strtok_r' function. */
-#undef HAVE_STRTOK_R
 
 /* Define to 1 if you have the <sys/stat.h> header file. */
 #undef HAVE_SYS_STAT_H

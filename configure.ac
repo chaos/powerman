@@ -39,10 +39,7 @@ AM_CONDITIONAL(WITH_GNU_LD, test "$with_gnu_ld" = "yes")
 ##
 AC_HEADER_STDC
 AC_CHECK_HEADERS( \
-  fcntl.h \
-  unistd.h \
   getopt.h \
-  string.h \
 )
 
 ##
@@ -62,15 +59,10 @@ AM_CONDITIONAL(WITH_HTTPPOWER, [test "$ac_with_httppower" = "yes"])
 # Checks for library functions.
 ##
 AC_CHECK_FUNCS( \
-  strcmp \
-  strlen \
-  strcpy \
-  strchr \
-  strsep \
-  strspn \
-  strtok_r \
   getopt_long \
 )
+AC_SEARCH_LIBS([bind],[socket])
+AC_SEARCH_LIBS([gethostbyaddr],[nsl])
 AC_FORKPTY
 AC_WRAP
 AC_CHECK_FUNC([poll], AC_DEFINE([HAVE_POLL], [1], [Define if you have poll]))

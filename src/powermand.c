@@ -31,8 +31,9 @@
 #include <errno.h>
 #include <sys/time.h>
 #include <time.h>
-#define _GNU_SOURCE
+#if HAVE_GETOPT_H
 #include <getopt.h>
+#endif
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
@@ -211,7 +212,7 @@ static void _select_loop(void)
         dev_post_poll(pfd, &tmout);
     }
     /*NOTREACHED*/
-    PollfdDestroy(pfd);
+    /*PollfdDestroy(pfd);*/
 }
 
 static void _noop_handler(int signum)

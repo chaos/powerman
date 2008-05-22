@@ -38,7 +38,9 @@
 #include <limits.h>
 
 #include <arpa/inet.h>
+#if HAVE_TCP_WRAPPERS
 #include <tcpd.h>
+#endif
 #include <stdio.h>
 #include <fcntl.h>
 

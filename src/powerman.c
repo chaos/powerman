@@ -27,11 +27,11 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-#define _GNU_SOURCE             /* for dprintf */
 #include <stdio.h>
 #include <string.h>
-#define _GNU_SOURCE
+#if HAVE_GETOPT_H
 #include <getopt.h>
+#endif
 #include <unistd.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -220,7 +220,7 @@ int main(int argc, char **argv)
     _connect_to_server(host ? host : DFLT_HOSTNAME, port ? port : DFLT_PORT);
 
     if (telemetry) {
-        dprintf(server_fd, CP_TELEMETRY CP_EOL);
+        Dprintf(server_fd, CP_TELEMETRY CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         if (res != 0)
@@ -228,7 +228,7 @@ int main(int argc, char **argv)
     }
 
     if (exprange) {
-        dprintf(server_fd, CP_EXPRANGE CP_EOL);
+        Dprintf(server_fd, CP_EXPRANGE CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         if (res != 0)
@@ -240,77 +240,77 @@ int main(int argc, char **argv)
      */
     switch (cmd) {
     case CMD_LIST:
-        dprintf(server_fd, CP_NODES CP_EOL);
+        Dprintf(server_fd, CP_NODES CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_QUERY:
         if (have_targets)
-            dprintf(server_fd, CP_STATUS CP_EOL, targstr);
+            Dprintf(server_fd, CP_STATUS CP_EOL, targstr);
         else
-            dprintf(server_fd, CP_STATUS_ALL CP_EOL);
+            Dprintf(server_fd, CP_STATUS_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_ON:
-        dprintf(server_fd, CP_ON CP_EOL, targstr);
+        Dprintf(server_fd, CP_ON CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_OFF:
-        dprintf(server_fd, CP_OFF CP_EOL, targstr);
+        Dprintf(server_fd, CP_OFF CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_RESET:
-        dprintf(server_fd, CP_RESET CP_EOL, targstr);
+        Dprintf(server_fd, CP_RESET CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_CYCLE:
-        dprintf(server_fd, CP_CYCLE CP_EOL, targstr);
+        Dprintf(server_fd, CP_CYCLE CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_FLASH:
-        dprintf(server_fd, CP_BEACON_ON CP_EOL, targstr);
+        Dprintf(server_fd, CP_BEACON_ON CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_UNFLASH:
-        dprintf(server_fd, CP_BEACON_OFF CP_EOL, targstr);
+        Dprintf(server_fd, CP_BEACON_OFF CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_BEACON:
         if (have_targets)
-            dprintf(server_fd, CP_BEACON CP_EOL, targstr);
+            Dprintf(server_fd, CP_BEACON CP_EOL, targstr);
         else
-            dprintf(server_fd, CP_BEACON_ALL CP_EOL);
+            Dprintf(server_fd, CP_BEACON_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_TEMP:
         if (have_targets)
-            dprintf(server_fd, CP_TEMP CP_EOL, targstr);
+            Dprintf(server_fd, CP_TEMP CP_EOL, targstr);
         else
-            dprintf(server_fd, CP_TEMP_ALL CP_EOL);
+            Dprintf(server_fd, CP_TEMP_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_NODE:
         if (have_targets)
-            dprintf(server_fd, CP_SOFT CP_EOL, targstr);
+            Dprintf(server_fd, CP_SOFT CP_EOL, targstr);
         else
-            dprintf(server_fd, CP_SOFT_ALL CP_EOL);
+            Dprintf(server_fd, CP_SOFT_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_DEVICE:
         if (have_targets)
-            dprintf(server_fd, CP_DEVICE CP_EOL, targstr);
+            Dprintf(server_fd, CP_DEVICE CP_EOL, targstr);
         else
-            dprintf(server_fd, CP_DEVICE_ALL CP_EOL);
+            Dprintf(server_fd, CP_DEVICE_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
@@ -401,7 +401,7 @@ static void _connect_to_server(char *host, char *port)
 
 static void _disconnect_from_server(void)
 {
-    dprintf(server_fd, CP_QUIT CP_EOL);
+    Dprintf(server_fd, CP_QUIT CP_EOL);
     _expect(CP_RSP_QUIT);
 }
 

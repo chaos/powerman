@@ -118,7 +118,7 @@ bool tcp_finish_connect(Device * dev)
 {
     int rc;
     int error = 0;
-    socklen_t len = sizeof(err);
+    socklen_t len = sizeof(error);
     TcpDev *tcp;
 
     assert(dev->magic == DEV_MAGIC);

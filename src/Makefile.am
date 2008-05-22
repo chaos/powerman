@@ -44,6 +44,8 @@ COMMON_SOURCE = \
 
 powerman_SOURCES = powerman.c $(COMMON_SOURCE)
 
+powerman_LDADD = $(LIBFORKPTY)
+
 if WITH_HTTPPOWER
 httppower_SOURCES = \
 	httppower.c \
@@ -52,9 +54,7 @@ httppower_SOURCES = \
 	argv.c \
 	wrappers.c
 
-httppower_LDADD = \
-	$(LIBCURL) \
-	$(LIBREADLINE)
+httppower_LDADD = $(LIBCURL) $(LIBREADLINE)
 endif
 
 powermand_SOURCES = \
@@ -76,9 +76,7 @@ powermand_SOURCES = \
 	powermand.c \
 	$(COMMON_SOURCE)
 
-powermand_LDADD = \
-	$(LIBWRAP) \
-	$(LIBFORKPTY)
+powermand_LDADD = $(LIBWRAP) $(LIBFORKPTY)
 
 BUILT_SOURCES = parse_lex.c parse_tab.c
 

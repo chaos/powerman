@@ -29,7 +29,7 @@
 #include "config.h"
 #endif
 
-#define _GNU_SOURCE /* needed for regex.h */
+#define _GNU_SOURCE /* for vdprintf */
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
@@ -43,9 +43,13 @@
 #include <regex.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#if HAVE_FORKPTY
+#include <pty.h>
+#endif
 #if HAVE_POLL
 #include <sys/poll.h>
 #endif
+#include <stdarg.h>
 
 #include "wrappers.h"
 #include "cbuf.h"
@@ -461,7 +465,7 @@ void Free(void *ptr)
 
         assert(p[0] == MALLOC_MAGIC);   /* magic cookie still there? */
         size = p[1];
-        assert(_checkfill(ptr + size, MALLOC_PAD_FILL, MALLOC_PAD_SIZE));
+        assert(_checkfill((char*)ptr + size, MALLOC_PAD_FILL, MALLOC_PAD_SIZE));
         memset(p, 0, 2*sizeof(int) + size + MALLOC_PAD_SIZE);
 #ifndef NDEBUG
         memory_alloc -= size;
@@ -615,6 +619,10 @@ static void _str_subst(char *s1, int len, const char *s2, const char *s3)
     }
 }
 
+#ifndef REG_NOERROR
+#define REG_NOERROR 0
+#endif
+
 void Regcomp(regex_t * preg, const char *regex, int cflags)
 {
     char buf[MAX_REG_BUF];
@@ -647,8 +655,6 @@ Regexec(const regex_t * preg, const char *string,
     int n;
     char buf[MAX_REG_BUF];
 
-    /* Review: undocumented, is it needed? */
-    re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
     Strncpy(buf, string, MAX_REG_BUF);
     n = regexec(preg, buf, nmatch, pmatch, eflags);
     return n;
@@ -715,6 +721,28 @@ pid_t Waitpid(pid_t pid, int *status, int options)
     }
 
     return n;
+}
+
+int Dprintf(int fd, const char *format, ...)
+{
+    va_list ap;
+    int n;
+
+    va_start(ap, format);
+    n = vdprintf(fd, format, ap);
+    va_end(ap);
+    return n;
+}
+
+pid_t Forkpty(int *amaster, char *name, int len)
+{
+    pid_t pid;
+
+    pid = forkpty(amaster, name, NULL, NULL);
+    if (pid > 0) { /* XXX */
+        assert(strlen(name) < len);
+    }
+    return pid;
 }
 
 

@@ -76,7 +76,7 @@ am__objects_1 = debug.$(OBJEXT) error.$(OBJEXT) hostlist.$(OBJEXT) \
 	list.$(OBJEXT) wrappers.$(OBJEXT)
 am_powerman_OBJECTS = powerman.$(OBJEXT) $(am__objects_1)
 powerman_OBJECTS = $(am_powerman_OBJECTS)
-powerman_LDADD = $(LDADD)
+powerman_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_powermand_OBJECTS = arglist.$(OBJEXT) argv.$(OBJEXT) cbuf.$(OBJEXT) \
 	client.$(OBJEXT) daemon.$(OBJEXT) device.$(OBJEXT) \
 	device_pipe.$(OBJEXT) device_serial.$(OBJEXT) \
@@ -234,6 +234,7 @@ COMMON_SOURCE = \
 	wrappers.c
 
 powerman_SOURCES = powerman.c $(COMMON_SOURCE)
+powerman_LDADD = $(LIBFORKPTY)
 @WITH_HTTPPOWER_TRUE@httppower_SOURCES = \
 @WITH_HTTPPOWER_TRUE@	httppower.c \
 @WITH_HTTPPOWER_TRUE@	debug.c \
@@ -241,10 +242,7 @@ powerman_SOURCES = powerman.c $(COMMON_SOURCE)
 @WITH_HTTPPOWER_TRUE@	argv.c \
 @WITH_HTTPPOWER_TRUE@	wrappers.c
 
-@WITH_HTTPPOWER_TRUE@httppower_LDADD = \
-@WITH_HTTPPOWER_TRUE@	$(LIBCURL) \
-@WITH_HTTPPOWER_TRUE@	$(LIBREADLINE)
-
+@WITH_HTTPPOWER_TRUE@httppower_LDADD = $(LIBCURL) $(LIBREADLINE)
 powermand_SOURCES = \
 	arglist.c \
 	argv.c \
@@ -264,10 +262,7 @@ powermand_SOURCES = \
 	powermand.c \
 	$(COMMON_SOURCE)
 
-powermand_LDADD = \
-	$(LIBWRAP) \
-	$(LIBFORKPTY)
-
+powermand_LDADD = $(LIBWRAP) $(LIBFORKPTY)
 BUILT_SOURCES = parse_lex.c parse_tab.c
 CLEANFILES = parse_tab.c parse_tab.h parse_lex.c
 EXTRA_DIST = parse.lex parse.y

@@ -536,7 +536,7 @@ static void destroyInterp(Interp *i)
 
 static List copyInterpList(List il)
 {
-    reg_syntax_t cflags = REG_EXTENDED | REG_NOSUB;
+    int cflags = REG_EXTENDED | REG_NOSUB;
     ListIterator itr;
     Interp *ip, *icpy;
     List new = list_create((ListDelF) destroyInterp);
@@ -594,7 +594,7 @@ static Stmt *makeStmt(PreStmt *p)
 {
     Stmt *stmt;
     PreStmt *subp;
-    reg_syntax_t cflags = REG_EXTENDED;
+    int cflags = REG_EXTENDED;
     ListIterator itr;
 
     assert(p->magic == PRESTMT_MAGIC);
