@@ -786,7 +786,7 @@ static void _create_client(void)
 {
     Client *c;
     struct sockaddr_in saddr;
-    int saddr_size = sizeof(struct sockaddr_in);
+    socklen_t saddr_size = sizeof(struct sockaddr_in);
     int fd_settings;
     struct hostent *hent;
     char buf[64];

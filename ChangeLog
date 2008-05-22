@@ -31,6 +31,9 @@
 	src/powerman_options.h, src/powerman_options_genders.c :
 	Drop modules, genders support (temporarily?) to focus on portability.
 
+	* src/device.c, src/debug.[ch], src/wrappers.[ch], src/device_tcp.c :
+	Fix compiler warnings.
+
 2006-11-16 Jim Garlick <garlick@llnl.gov>
 
 	* ChangeLog : Start over for 2.0 branch.  Old moved to ChangeLog-1.0.

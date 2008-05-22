@@ -206,30 +206,31 @@ struct Pollfd {
 int
 Poll(Pollfd_t pfd, struct timeval *tv)
 {
-    struct timeval tv_cpy, start, end, delta;
+    struct timeval tv_cpy, *tvp = NULL; 
+    struct timeval start, end, delta;
     int n;
 
     if (tv) {
         tv_cpy = *tv;
         Gettimeofday(&start, NULL);
-    }
+        tvp = &tv_cpy;
+    } 
 
     /* repeat poll if interrupted */
     do {
 #if HAVE_POLL
-        int tv_msec = tv ? tv_cpy.tv_sec * 1000 + tv_cpy.tv_usec / 1000 : -1;
+        int tv_msec = tvp ? tvp->tv_sec * 1000 + tvp->tv_usec / 1000 : -1;
 
         n = poll(pfd->ufds, pfd->nfds, tv_msec);
 #else
-        n = select(pfd->maxfd + 1, &pfd->rset, &pfd->wset, NULL, 
-                tv ? &tv_cpy : NULL);
+        n = select(pfd->maxfd + 1, &pfd->rset, &pfd->wset, NULL, tvp);
 #endif
         if (n < 0 && errno != EINTR)
             lsd_fatal_error(__FILE__, __LINE__, "select");
         if (n < 0 && tv != NULL) {
             Gettimeofday(&end, NULL);
-            timersub(&end, &start, &delta);     /* delta = end-start */
-            timersub(tv, &delta, &tv_cpy);      /* tv_cpy = tv-delta */
+            timersub(&end, &start, &delta);     /* delta = end - start */
+            timersub(tv, &delta, tvp);          /* *tvp = tv - delta */
         }
     } while (n < 0);
     return n;
@@ -325,8 +326,9 @@ char *
 PollfdStr(Pollfd_t pfd, char *str, int len)
 {
     int i;
+#if HAVE_POLL
     int maxfd = -1;
-
+#endif
     assert(pfd->magic == POLLFD_MAGIC);
 #if HAVE_POLL
     memset(str, '.', len);
@@ -394,7 +396,7 @@ PollfdRevents(Pollfd_t pfd, int fd)
 #define MALLOC_PAD_FILL 0x55
 
 #ifndef NDEBUG
-static int _checkfill(unsigned char *buf, unsigned char fill, int size)
+static int _checkfill(char *buf, unsigned char fill, int size)
 {
     while (size-- > 0)
         if (buf[size] != fill)
@@ -516,7 +518,7 @@ int Connect(int fd, struct sockaddr *addr, socklen_t addrlen)
     return n;
 }
 
-int Read(int fd, unsigned char *p, int max)
+int Read(int fd, char *p, int max)
 {
     int n;
 
@@ -528,7 +530,7 @@ int Read(int fd, unsigned char *p, int max)
     return n;
 }
 
-int Write(int fd, unsigned char *p, int max)
+int Write(int fd, char *p, int max)
 {
     int n;
 

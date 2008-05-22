@@ -122,11 +122,11 @@ char *dbg_tvstr(struct timeval *tv, char *str, int len)
  *  len (IN) number of characters to convert
  *  RETURN   string (caller must free)
  */
-unsigned char *dbg_memstr(unsigned char *mem, int len)
+char *dbg_memstr(char *mem, int len)
 {
     int i, j;
     int strsize = len * 4;      /* worst case */
-    unsigned char *str = Malloc(strsize + 1);
+    char *str = Malloc(strsize + 1);
 
     for (i = j = 0; i < len; i++) {
         switch (mem[i]) {
