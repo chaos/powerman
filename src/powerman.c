@@ -49,6 +49,9 @@
 #include "client_proto.h"
 #include "debug.h"
 
+#if WITH_GENDERS
+static void _push_genders_hosts(hostlist_t targets, char *s);
+#endif
 static void _connect_to_server(char *host, char *port);
 static void _disconnect_from_server(void);
 static void _usage(void);
@@ -62,28 +65,29 @@ static void _process_version(void);
 
 static int server_fd = -1;
 
-#define OPTIONS "01crlqfubntLd:VDvxT"
+#define OPTIONS "01crlqfubntLd:VDvxTg"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
-    {"on", no_argument, 0, '1'},
-    {"off", no_argument, 0, '0'},
-    {"cycle", no_argument, 0, 'c'},
-    {"reset", no_argument, 0, 'r'},
-    {"list", no_argument, 0, 'l'},
-    {"query", no_argument, 0, 'q'},
-    {"flash", no_argument, 0, 'f'},
-    {"unflash", no_argument, 0, 'u'},
-    {"beacon", no_argument, 0, 'b'},
-    {"node", no_argument, 0, 'n'},
-    {"temp", no_argument, 0, 't'},
-    {"license", no_argument, 0, 'L'},
-    {"destination", required_argument, 0, 'd'},
-    {"version", no_argument, 0, 'V'},
-    {"device", no_argument, 0, 'D'},
-    {"telemetry", no_argument, 0, 'T'},
-    {"exprange", no_argument, 0, 'x'},
-    {0, 0, 0, 0}
+    {"on",          no_argument,        0, '1'},
+    {"off",         no_argument,        0, '0'},
+    {"cycle",       no_argument,        0, 'c'},
+    {"reset",       no_argument,        0, 'r'},
+    {"list",        no_argument,        0, 'l'},
+    {"query",       no_argument,        0, 'q'},
+    {"flash",       no_argument,        0, 'f'},
+    {"unflash",     no_argument,        0, 'u'},
+    {"beacon",      no_argument,        0, 'b'},
+    {"node",        no_argument,        0, 'n'},
+    {"temp",        no_argument,        0, 't'},
+    {"license",     no_argument,        0, 'L'},
+    {"destination", required_argument,  0, 'd'},
+    {"version",     no_argument,        0, 'V'},
+    {"device",      no_argument,        0, 'D'},
+    {"telemetry",   no_argument,        0, 'T'},
+    {"exprange",    no_argument,        0, 'x'},
+    {"genders",     no_argument,        0, 'g'},
+    {0, 0, 0, 0},
 };
 #else
 #define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
@@ -105,6 +109,7 @@ int main(int argc, char **argv)
     char *host = NULL;
     bool telemetry = FALSE;
     bool exprange = FALSE;
+    bool genders = FALSE;
 
     prog = basename(argv[0]);
     err_init(prog);
@@ -175,6 +180,9 @@ int main(int argc, char **argv)
         case 'x':              /* --exprange */
             exprange = TRUE;
             break;
+        case 'g':              /* --genders */
+            genders = TRUE;
+            break;
         default:
             _usage();
             /*NOTREACHED*/
@@ -192,8 +200,16 @@ int main(int argc, char **argv)
                 err_exit(FALSE, "hostlist error");
             have_targets = TRUE;
         }
-        if (hostlist_push(targets, argv[optind]) == 0)
-            err_exit(FALSE, "hostlist error");
+        if (genders) {
+#if WITH_GENDERS
+            _push_genders_hosts(targets, argv[optind]);
+#else
+            err_exit(FALSE, "not configured with genders support");
+#endif
+        } else {
+            if (hostlist_push(targets, argv[optind]) == 0)
+                err_exit(FALSE, "hostlist error");
+        }
         optind++;
     }
     if (have_targets) {
@@ -343,7 +359,7 @@ static void _usage(void)
  "-b --beacon    Query beacon status   -n --node      Query node status\n"
  "-t --temp      Query temperature     -V --version   Report powerman version\n"
  "-D --device    Report device status  -T --telemetry Show device telemetry\n"
- "-x --exprange  Expand host ranges\n"
+ "-x --exprange  Expand host ranges    -g --genders   TARGETS is genders expr\n"
   );
     exit(1);
 }
@@ -365,6 +381,33 @@ static void _license(void)
  "the Free Software Foundation.\n");
     exit(1);
 }
+
+#if WITH_GENDERS
+static void _push_genders_hosts(hostlist_t targets, char *s)
+{
+    genders_t g;
+    char **nodes;
+    int len, n, i;
+
+    if (strlen(s) == 0)
+        return;
+    if (!(g = genders_handle_create()))
+        err_exit(FALSE, "genders_handle_create failed");
+    if (genders_load_data(g, NULL) < 0)
+        err_exit(FALSE, "genders_load_data: %s", genders_errormsg(g));
+    if ((len = genders_nodelist_create(g, &nodes)) < 0)
+        err_exit(FALSE, "genders_nodelist_create: %s", genders_errormsg(g));
+    if ((n = genders_query(g, nodes, len, s)) < 0)
+        err_exit(FALSE, "genders_query: %s", genders_errormsg(g));
+    genders_handle_destroy(g);
+    if (n == 0)
+        err_exit(FALSE, "genders expression did not match any nodes");
+    for (i = 0; i < n; i++) {
+        if (!hostlist_push(targets, nodes[i]))
+            err_exit(FALSE, "hostlist error");
+    }
+}
+#endif
 
 /*
  * Display powerman version and exit.
