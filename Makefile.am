@@ -6,4 +6,4 @@
 
 SUBDIRS = etc man scripts src
 
-EXTRA_DIST = autogen.sh DISCLAIMER META 
+EXTRA_DIST = DISCLAIMER META 

@@ -741,7 +741,7 @@ static void _license(void)
  */
 static void _version(void)
 {
-    printf("%s\n", POWERMAN_VERSION);
+    printf("%s\n", VERSION);
     exit(1);
 }
 
@@ -849,9 +849,9 @@ static void _process_version(void)
     _getline(buf, CP_LINEMAX);
     if (sscanf(buf, CP_VERSION, vers) != 1)
         err_exit(FALSE, "unexpected response from server");
-    if (strcmp(vers, POWERMAN_VERSION) != 0)
+    if (strcmp(vers, VERSION) != 0)
         err(FALSE, "warning: server version (%s) != client (%s)",
-                vers, POWERMAN_VERSION);
+                vers, VERSION);
 }
 
 static int _process_response(void)

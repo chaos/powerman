@@ -162,7 +162,7 @@ static void _usage(char *prog)
 
 static void _version(void)
 {
-    printf("%s\n", POWERMAN_VERSION);
+    printf("%s\n", VERSION);
     exit(0);
 }
 

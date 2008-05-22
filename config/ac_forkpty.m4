@@ -27,8 +27,8 @@ AC_DEFUN([AC_FORKPTY],
     fi
   fi
 
-  if test "$ac_have_forkpty" = "no"; then
-    AC_MSG_ERROR([forkpty function required!])    
+  if test "$ac_have_forkpty" = "yes"; then
+    AC_DEFINE([HAVE_FORKPTY], [1], [Define if you have forkpty])
   fi
 
   AC_SUBST(LIBFORKPTY)

@@ -24,7 +24,7 @@ AM_MAINTAINER_MODE
 # Checks for programs.
 ##
 AC_PROG_CC
-AM_PROG_CC_C_O
+# AM_PROG_CC_C_O
 AC_PROG_LN_S
 AC_LIBTOOL_DLOPEN
 AC_PROG_LIBTOOL
@@ -71,6 +71,12 @@ AC_GENDERS
 AM_CONDITIONAL(WITH_GENDERS, [test "$ac_with_genders" = "yes"])
 
 ##
+# Check for httppower
+##
+AC_HTTPPOWER
+AM_CONDITIONAL(WITH_HTTPPOWER, [test "$ac_with_httppower" = "yes"])
+
+##
 # Checks for library functions.
 ##
 AC_CHECK_FUNCS( \
@@ -85,9 +91,9 @@ AC_CHECK_FUNCS( \
 )
 AC_FORKPTY
 AC_WRAP
-AC_CURL
+AC_CHECK_FUNC([poll], AC_DEFINE([HAVE_POLL], [1], [Define if you have poll]))
 AC_READLINE
-AC_CHECK_FUNC([poll], AC_DEFINE([HAVE_POLL], [1], [Define that you will use poll()]))
+AC_CURL
 
 # for list.c, cbuf.c, hostlist.c, and wrappers.c */
 AC_DEFINE(WITH_LSD_FATAL_ERROR_FUNC, 1, [Define lsd_fatal_error])
@@ -98,11 +104,11 @@ AC_DEFINE(WITH_LSD_NOMEM_ERROR_FUNC, 1, [Define lsd_fatal_error])
 ##
 AC_CONFIG_FILES( \
   Makefile \
+  src/Makefile \
   etc/Makefile \
   man/Makefile \
   man/powerman.1 \
   scripts/Makefile \
-  src/Makefile \
 )
 AC_OUTPUT
 

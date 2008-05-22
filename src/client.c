@@ -104,10 +104,11 @@ static void _destroy_client(Client * c);
 static void _create_client(void);
 static void _act_finish(int client_id, ActError acterr, const char *fmt, ...);
 static void _telemetry_printf(int client_id, const char *fmt, ...);
-
+#if HAVE_TCP_WRAPPERS
 /* tcp wrappers support */
 extern int hosts_ctl(char *daemon, char *client_name, char *client_addr,
                      char *client_user);
+#endif
 int allow_severity = LOG_INFO;  /* logging level for accepted reqs */
 int deny_severity = LOG_WARNING;        /* logging level for rejected reqs */
 
@@ -824,7 +825,7 @@ static void _create_client(void)
     } else {
         c->host = Strdup(hent->h_name);
     }
-
+#if HAVE_TCP_WRAPPERS
     /* get authorization from tcp wrappers */
     if (conf_get_use_tcp_wrappers()) {
         if (!hosts_ctl(DAEMON_NAME,
@@ -836,6 +837,7 @@ static void _create_client(void)
             return;
         }
     }
+#endif
 
     /* create I/O buffers */
     c->to = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
@@ -853,7 +855,7 @@ static void _create_client(void)
         c->port, c->fd);
 
     /* prompt the client */
-    _client_printf(c, CP_VERSION, POWERMAN_VERSION);
+    _client_printf(c, CP_VERSION, VERSION);
     _client_printf(c, CP_PROMPT);
 }
 

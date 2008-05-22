@@ -20,8 +20,7 @@ AC_DEFUN([AC_CURL],
 
   if test "$ac_have_curl" = "yes"; then
     LIBCURL="-lcurl"
-  else
-    AC_MSG_ERROR([libcurl required for this package])
+    AC_DEFINE([HAVE_CURL], [1], [Define if you have libcurl])
   fi        
 
   AC_SUBST(LIBCURL)

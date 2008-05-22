@@ -24,10 +24,6 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif /* HAVE_CONFIG_H */
-
 /* Args used to be stored in a List, but gprof showed that very large 
  * configurations spent a lot of time doing linear search of arg list for 
  * each arg->state update.  The List was traded for a hash, but as we still
@@ -36,6 +32,9 @@
  * 'iterator' interface.
  */
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
 #include <errno.h>
 #include <sys/time.h>
 #include <time.h>

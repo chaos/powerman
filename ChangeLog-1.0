@@ -1,8 +1,8 @@
 2008-04-25 Jim Garlick <garlick@llnl.gov>
 
 	* etc/powerman.dev : Remove status_all, add status.   This is slower
-	but unless all hosts are entered into both powerman.conf files, status_all
-	doesn't work.
+	but unless all hosts are entered into both powerman.conf files, 
+	status_all doesn't work.
 
 2008-03-19 Jim Garlick <garlick@llnl.gov>
 

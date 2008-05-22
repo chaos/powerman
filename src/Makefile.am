@@ -82,7 +82,6 @@ powerman_SOURCES = \
 	$(COMMON_SOURCE) 
 
 powerman_CFLAGS = \
-	-DPOWERMAN_VERSION=\"$(VERSION)\" \
 	-DPOWERMAN_MODULE_BUILDDIR=\"$(powerman_module_builddir)\"
 
 powerman_LDADD = \
@@ -97,7 +96,13 @@ powerman_LDFLAGS = \
 
 BUILT_SOURCES = parse_lex.c parse_tab.c
 
-sbin_PROGRAMS = powermand httppower
+if WITH_HTTPPOWER
+HTTPPOWER = httppower
+else
+HTTPPOWER =
+endif
+
+sbin_PROGRAMS = powermand $(HTTPPOWER)
 
 httppower_SOURCES = \
 	httppower.c \
@@ -127,9 +132,6 @@ powermand_SOURCES = \
 	pluglist.c \
 	powermand.c \
 	$(COMMON_SOURCE)
-
-powermand_CFLAGS = \
-	-DPOWERMAN_VERSION=\"$(VERSION)\"
 
 powermand_LDADD = \
 	$(LIBWRAP) \

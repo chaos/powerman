@@ -21,8 +21,7 @@ AC_DEFUN([AC_READLINE],
 
   if test "$ac_have_readline" = "yes"; then
     LIBREADLINE="-lreadline -lcurses"
-  else
-    AC_MSG_ERROR([libreadline required for this package])
+    AC_DEFINE([HAVE_READLINE], [1], [Define if you have libreadline])
   fi        
 
   AC_SUBST(LIBREADLINE)

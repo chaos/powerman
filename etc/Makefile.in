@@ -43,6 +43,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_debug.m4 \
 	$(top_srcdir)/config/ac_forkpty.m4 \
 	$(top_srcdir)/config/ac_genders.m4 \
+	$(top_srcdir)/config/ac_httppower.m4 \
 	$(top_srcdir)/config/ac_meta.m4 \
 	$(top_srcdir)/config/ac_powerman_module_dir.m4 \
 	$(top_srcdir)/config/ac_readline.m4 \
@@ -136,6 +137,8 @@ WITH_GENDERS_FALSE = @WITH_GENDERS_FALSE@
 WITH_GENDERS_TRUE = @WITH_GENDERS_TRUE@
 WITH_GNU_LD_FALSE = @WITH_GNU_LD_FALSE@
 WITH_GNU_LD_TRUE = @WITH_GNU_LD_TRUE@
+WITH_HTTPPOWER_FALSE = @WITH_HTTPPOWER_FALSE@
+WITH_HTTPPOWER_TRUE = @WITH_HTTPPOWER_TRUE@
 WITH_STATIC_MODULES = @WITH_STATIC_MODULES@
 WITH_STATIC_MODULES_FALSE = @WITH_STATIC_MODULES_FALSE@
 WITH_STATIC_MODULES_TRUE = @WITH_STATIC_MODULES_TRUE@

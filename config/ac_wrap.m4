@@ -20,8 +20,7 @@ AC_DEFUN([AC_WRAP],
 
   if test "$ac_have_wrap" = "yes"; then
     LIBWRAP="-lwrap"
-  else
-    AC_MSG_ERROR([libwrap required for this package])
+    AC_DEFINE([HAVE_TCP_WRAPPERS], [1], [Define if you have tcp wrappers])
   fi        
 
   AC_SUBST(LIBWRAP)

@@ -33,6 +33,9 @@
 /* Define to 1 if you have the <ctype.h> header file. */
 #undef HAVE_CTYPE_H
 
+/* Define if you have libcurl */
+#undef HAVE_CURL
+
 /* Define to 1 if you have the <dirent.h> header file, and it defines `DIR'.
    */
 #undef HAVE_DIRENT_H
@@ -63,6 +66,9 @@
 
 /* Define to 1 if you have the <fcntl.h> header file. */
 #undef HAVE_FCNTL_H
+
+/* Define if you have forkpty */
+#undef HAVE_FORKPTY
 
 /* Define to 1 if you have the <getopt.h> header file. */
 #undef HAVE_GETOPT_H
@@ -100,7 +106,7 @@
 /* Define to 1 if you have the `opendir' function. */
 #undef HAVE_OPENDIR
 
-/* Define that you will use poll() */
+/* Define if you have poll */
 #undef HAVE_POLL
 
 /* Define if libtool can extract symbol lists from object files. */
@@ -108,6 +114,9 @@
 
 /* Define to 1 if you have the `readdir' function. */
 #undef HAVE_READDIR
+
+/* Define if you have libreadline */
+#undef HAVE_READLINE
 
 /* Define to 1 if you have the `rindex' function. */
 #undef HAVE_RINDEX
@@ -171,6 +180,9 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
+/* Define if you have tcp wrappers */
+#undef HAVE_TCP_WRAPPERS
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
@@ -196,9 +208,6 @@
 
 /* Define if dlsym() requires a leading underscore in symbol names. */
 #undef NEED_USCORE
-
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE

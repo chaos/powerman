@@ -95,7 +95,11 @@ bool pipe_connect(Device * dev)
     assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
+#if HAVE_FORKPTY
     pid = forkpty(&fd, ptyname, NULL, NULL);
+#else
+#error Need forkpty function
+#endif
     if (pid > 0) {
         assert(strlen(ptyname) < sizeof(ptyname));
     }

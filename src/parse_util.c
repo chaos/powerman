@@ -189,6 +189,10 @@ bool conf_get_use_tcp_wrappers(void)
 
 void conf_set_use_tcp_wrappers(bool val)
 {
+#if ! HAVE_TCP_WRAPPERS
+    if (val == TRUE)
+        err_exit(FALSE, "powerman was not built with tcp_wrapper support");
+#endif
     conf_use_tcp_wrap = val;
 }
 
