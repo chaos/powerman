@@ -1,7 +1,7 @@
 2008-05-22 Jim Garlick <garlick@llnl.gov>
 
 	* parse_tab.y, parse_lex.l, Makefile.am : Use default automake
-	rules for lex/yacc.
+	rules for lex/yacc and rename files so they fit.
 
 2008-05-21 Jim Garlick <garlick@llnl.gov>
 
