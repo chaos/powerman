@@ -30,7 +30,7 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-/* N.B. must define YYSTYPE before including ioa_tab.h or type will be int. */
+/* N.B. must define YYSTYPE before including parse_tab.h or type will be int. */
 #define YYSTYPE char *
 #include <string.h>
 #include <stdio.h>
