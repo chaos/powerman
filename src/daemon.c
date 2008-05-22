@@ -26,7 +26,7 @@
 
 #if HAVE_CONFIG_H
 #include "config.h"
-#endif /* HAVE_CONFIG_H */
+#endif
 
 #include <syslog.h>
 #include <limits.h>

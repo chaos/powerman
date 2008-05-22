@@ -26,19 +26,19 @@
 
 #if HAVE_CONFIG_H
 #include "config.h"
-#endif /* HAVE_CONFIG_H */
+#endif
 #include <stdio.h>
 #include <libgen.h>
 #if HAVE_CURL
 #include <curl/curl.h>
 #else
-#error Right now we really need curl support!
+#error httppower needs curl support!
 #endif
 #if HAVE_READLINE
 #include <readline/readline.h>
 #include <readline/history.h>
 #else
-#error Right now we really need readline support!
+#error httppower needs readline support!
 #endif
 #include <getopt.h>
 #include <string.h>

@@ -25,10 +25,6 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif /* HAVE_CONFIG_H */
-
 /*
  * Implement connect/disconnect/preprocess methods for tcp/telnet devices.
  *
@@ -39,6 +35,9 @@
  * telnet machine running.
  */
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
 #include <errno.h>
 #include <fcntl.h>
 #include <ctype.h>

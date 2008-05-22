@@ -24,15 +24,14 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#if HAVE_CONFIG_H
-#include "config.h"
-#endif /* HAVE_CONFIG_H */
-
 /*
  * Implement connect/disconnect device methods for pipes.
  * Well it started out as a pipe, now actually it's a "coprocess" on a pty.
  */
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -42,9 +41,11 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#if HAVE_FORKPTY
 #include <pty.h>
-
-
+#else
+#error powerman needs forkpty function
+#endif
 #include "powerman.h"
 #include "parse_util.h"
 #include "wrappers.h"
@@ -95,11 +96,7 @@ bool pipe_connect(Device * dev)
     assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
-#if HAVE_FORKPTY
     pid = forkpty(&fd, ptyname, NULL, NULL);
-#else
-#error Need forkpty function
-#endif
     if (pid > 0) {
         assert(strlen(ptyname) < sizeof(ptyname));
     }

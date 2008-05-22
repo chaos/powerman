@@ -28,8 +28,8 @@ Genders module
 
 %build
 %configure --program-prefix=%{?_program_prefix:%{_program_prefix}} \
-           %{?_with_genders} \
-           %{?_without_genders}
+           %{?_with_genders} %{?_without_genders} \
+	   --with-httppower
 make
 
 %install
