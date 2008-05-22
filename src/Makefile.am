@@ -4,13 +4,14 @@
 ## Process this file with automake to produce Makefile.in.
 ##*****************************************************************************
 
-powerman_module_builddir=`cd $(top_builddir)/src && pwd`
+AM_CFLAGS = @GCCWARN@
 
-if !WITH_STATIC_MODULES
-LTDL_LIBS = $(LIBADD_DL)
-LTDL_HEADER_FILES = ltdl.h
-LTDL_SOURCE_FILES = ltdl.c
+if WITH_HTTPPOWER
+HTTPPOWER = httppower
 endif
+
+bin_PROGRAMS = powerman
+sbin_PROGRAMS = powermand $(HTTPPOWER)
 
 noinst_HEADERS = \
 	arglist.h \
@@ -29,11 +30,9 @@ noinst_HEADERS = \
 	hostlist.h \
 	hprintf.h \
 	list.h \
-	$(LTDL_HEADER_FILES) \
 	parse_util.h \
 	pluglist.h \
 	powerman.h \
-	powerman_options.h \
 	wrappers.h
 
 COMMON_SOURCE = \
@@ -43,67 +42,9 @@ COMMON_SOURCE = \
 	list.c \
 	wrappers.c
 
-#
-# Powerman Modules
-#
-
-MODULES_FLAGS = -module -avoid-version
-
-if WITH_GENDERS
-GENDERS_OPTIONS_MODULE = powerman_options_genders.la	
-GENDERS_OPTIONS_STATIC_SOURCES = powerman_options_genders.c
-GENDERS_OPTIONS_STATIC_LIBS = $(GENDERS_LIBS)
-endif
-
-if WITH_STATIC_MODULES
-noinst_LTLIBRARIES = libstaticmodules.la
-STATIC_MODULE_LIBS = libstaticmodules.la
-else
-powermanmodulelibdir = $(POWERMAN_MODULE_DIR)
-powermanmodulelib_LTLIBRARIES = $(GENDERS_OPTIONS_MODULE)
-endif
-
-powerman_options_genders_la_SOURCES = powerman_options_genders.c \
-				      hostlist.c
-powerman_options_genders_la_LDFLAGS = $(MODULES_FLAGS) $(GENDERS_LIBS)
-
-libstaticmodules_la_SOURCES = $(GENDERS_OPTIONS_STATIC_SOURCES)
-libstaticmodules_la_LDFLAGS = $(GENDERS_OPTIONS_STATIC_LIBS)
-
-#
-# Powerman
-#
-
-bin_PROGRAMS = powerman
-
-powerman_SOURCES = \
-	powerman.c \
-	$(LTDL_SOURCE_FILES) \
-	$(COMMON_SOURCE)
-
-powerman_CFLAGS = \
-	-DPOWERMAN_MODULE_BUILDDIR=\"$(powerman_module_builddir)\"
-
-powerman_LDADD = \
-	$(STATIC_MODULE_LIBS)
-
-powerman_LDFLAGS = \
-	$(LTDL_LIBS)
-
-#
-# Powermand, httppower
-#
-
-BUILT_SOURCES = parse_lex.c parse_tab.c
+powerman_SOURCES = powerman.c $(COMMON_SOURCE)
 
 if WITH_HTTPPOWER
-HTTPPOWER = httppower
-else
-HTTPPOWER =
-endif
-
-sbin_PROGRAMS = powermand $(HTTPPOWER)
-
 httppower_SOURCES = \
 	httppower.c \
 	argv.c \
@@ -113,6 +54,7 @@ httppower_SOURCES = \
 httppower_LDADD = \
 	$(LIBCURL) \
 	$(LIBREADLINE)
+endif
 
 powermand_SOURCES = \
 	arglist.c \
@@ -133,11 +75,11 @@ powermand_SOURCES = \
 	powermand.c \
 	$(COMMON_SOURCE)
 
-powermand_CFLAGS = 
-
 powermand_LDADD = \
 	$(LIBWRAP) \
 	$(LIBFORKPTY)
+
+BUILT_SOURCES = parse_lex.c parse_tab.c
 
 parse_lex.c: $(srcdir)/parse.lex
 	$(LEX) -oparse_lex.c parse.lex

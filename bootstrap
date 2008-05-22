@@ -1,8 +1,8 @@
 #!/bin/sh
 echo "running aclocal ... "
 aclocal -I config
-echo "running libtoolize ... "
-libtoolize --automake --copy 
+#echo "running libtoolize ... "
+#libtoolize --automake --copy 
 echo "running autoheader ... "
 autoheader
 echo "running automake ... "

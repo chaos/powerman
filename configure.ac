@@ -24,16 +24,15 @@ AM_MAINTAINER_MODE
 # Checks for programs.
 ##
 AC_PROG_CC
-# AM_PROG_CC_C_O
+if test "$GCC" = yes; then
+  GCCWARN="-Wall"
+  AC_SUBST([GCCWARN])
+fi
 AC_PROG_LN_S
-AC_LIBTOOL_DLOPEN
-AC_PROG_LIBTOOL
 AC_PROG_MAKE_SET
 AM_PROG_LEX
 AC_PROG_YACC
 AM_CONDITIONAL(WITH_GNU_LD, test "$with_gnu_ld" = "yes")
-AC_DEBUG
-AC_LIB_LTDL
 
 ##
 # Checks for header files.
@@ -50,25 +49,8 @@ AC_CHECK_HEADERS( \
 # Checks for typedefs, structures, and compiler characteristics.
 ##
 AC_C_BIGENDIAN
-AC_C_CONST
 AC_TYPE_UID_T
-
-##
-# Check for static module compilation
-##
-AC_STATIC_MODULES
-AM_CONDITIONAL(WITH_STATIC_MODULES, [test "$ac_with_static_modules" = "yes"])
-
-##
-# Module Directory
-##
-AC_POWERMAN_MODULE_DIR
-
-##
-# Check for genders
-##
-AC_GENDERS
-AM_CONDITIONAL(WITH_GENDERS, [test "$ac_with_genders" = "yes"])
+AC_C_CONST
 
 ##
 # Check for httppower
