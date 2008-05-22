@@ -38,7 +38,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-bin_PROGRAMS = powerman$(EXEEXT)
+bin_PROGRAMS = powerman$(EXEEXT) pm$(EXEEXT)
 sbin_PROGRAMS = powermand$(EXEEXT) $(am__EXEEXT_1)
 subdir = src
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
@@ -60,14 +60,18 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 @WITH_HTTPPOWER_TRUE@am__EXEEXT_1 = httppower$(EXEEXT)
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS) $(sbin_PROGRAMS)
-am__httppower_SOURCES_DIST = httppower.c argv.c error.c wrappers.c
+am__httppower_SOURCES_DIST = httppower.c debug.c error.c argv.c \
+	wrappers.c
 @WITH_HTTPPOWER_TRUE@am_httppower_OBJECTS = httppower.$(OBJEXT) \
-@WITH_HTTPPOWER_TRUE@	argv.$(OBJEXT) error.$(OBJEXT) \
-@WITH_HTTPPOWER_TRUE@	wrappers.$(OBJEXT)
+@WITH_HTTPPOWER_TRUE@	debug.$(OBJEXT) error.$(OBJEXT) \
+@WITH_HTTPPOWER_TRUE@	argv.$(OBJEXT) wrappers.$(OBJEXT)
 httppower_OBJECTS = $(am_httppower_OBJECTS)
 am__DEPENDENCIES_1 =
 @WITH_HTTPPOWER_TRUE@httppower_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 @WITH_HTTPPOWER_TRUE@	$(am__DEPENDENCIES_1)
+pm_SOURCES = pm.c
+pm_OBJECTS = pm.$(OBJEXT)
+pm_LDADD = $(LDADD)
 am__objects_1 = debug.$(OBJEXT) error.$(OBJEXT) hostlist.$(OBJEXT) \
 	list.$(OBJEXT) wrappers.$(OBJEXT)
 am_powerman_OBJECTS = powerman.$(OBJEXT) $(am__objects_1)
@@ -88,9 +92,9 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(httppower_SOURCES) $(powerman_SOURCES) \
+SOURCES = $(httppower_SOURCES) pm.c $(powerman_SOURCES) \
 	$(powermand_SOURCES)
-DIST_SOURCES = $(am__httppower_SOURCES_DIST) $(powerman_SOURCES) \
+DIST_SOURCES = $(am__httppower_SOURCES_DIST) pm.c $(powerman_SOURCES) \
 	$(powermand_SOURCES)
 HEADERS = $(noinst_HEADERS)
 ETAGS = etags
@@ -232,8 +236,9 @@ COMMON_SOURCE = \
 powerman_SOURCES = powerman.c $(COMMON_SOURCE)
 @WITH_HTTPPOWER_TRUE@httppower_SOURCES = \
 @WITH_HTTPPOWER_TRUE@	httppower.c \
-@WITH_HTTPPOWER_TRUE@	argv.c \
+@WITH_HTTPPOWER_TRUE@	debug.c \
 @WITH_HTTPPOWER_TRUE@	error.c \
+@WITH_HTTPPOWER_TRUE@	argv.c \
 @WITH_HTTPPOWER_TRUE@	wrappers.c
 
 @WITH_HTTPPOWER_TRUE@httppower_LDADD = \
@@ -382,6 +387,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_tab.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pluglist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/powerman.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/powermand.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wrappers.Po@am__quote@
@@ -575,6 +581,9 @@ uninstall-am: uninstall-binPROGRAMS uninstall-info-am \
 	uninstall-am uninstall-binPROGRAMS uninstall-info-am \
 	uninstall-sbinPROGRAMS
 
+
+pm: powerman
+	$(LN_S) powerman pm
 
 parse_lex.c: $(srcdir)/parse.lex
 	$(LEX) -oparse_lex.c parse.lex

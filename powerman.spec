@@ -9,27 +9,18 @@ Url: http://sourceforge.net/projects/powerman
 Source0: %{name}-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 BuildRequires: tcp_wrappers
-# BuildRequires: flex, bison, curl-devel, readline-devel
+BuildRequires: flex, bison, curl-devel, readline-devel, ncurses-devel
 
 %description
 PowerMan is a tool for manipulating remote power control (RPC) devices from a 
 central location. Several RPC varieties are supported natively by PowerMan and 
 Expect-like configurability simplifies the addition of new devices.
 
-%package genders
-Summary: genders module
-Group: System Environment/Base
-Requires: genders
-%description genders
-Genders module
-
 %prep
 %setup
 
 %build
-%configure --program-prefix=%{?_program_prefix:%{_program_prefix}} \
-           %{?_with_genders} %{?_without_genders} \
-	   --with-httppower
+%configure --with-httppower
 make
 
 %install
@@ -77,19 +68,12 @@ fi
 %{_sbindir}/powermand
 %{_sbindir}/httppower
 %dir %config %{_sysconfdir}/powerman
-%dir %{_libdir}/powerman
 %{_sysconfdir}/powerman/*.dev
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man7/*
 %{_mandir}/man8/*
 %{_initrddir}/powerman
-
-%if %{?_with_genders:1}%{!?_with_genders:0}
-%files genders
-%defattr(-,root,root)
-%{_libdir}/powerman/powerman_options_genders.*
-%endif
 
 %changelog
 

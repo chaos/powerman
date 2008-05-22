@@ -155,31 +155,38 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-EXTRA_DIST = \
-	apc.dev \
+DEVFILES = \
 	apc7900.dev \
+	apc.dev \
 	apcnew.dev \
+	apcold.dev \
+	apcpdu3.dev \
 	apcpdu.dev \
+	bashfun.dev \
 	baytech.dev \
 	baytech-rpc28-nc.dev \
 	baytech-rpc3-nc.dev \
 	cb-7050.dev \
-	cyclades-pm8.dev \
 	cyclades-pm10.dev \
+	cyclades-pm8.dev \
+	dli.dev \
 	ibmbladecenter.dev \
 	ibmh8.dev \
 	icebox.dev \
 	icebox3.dev \
 	icebox4.dev \
+	ilom-inline.dev \
 	ipmi.dev \
 	ipmipower.dev \
-	phantom.dev \
 	phantom4.dev \
+	phantom.dev \
 	powerman.dev \
+	swpdu.dev \
 	vpc.dev \
 	wti.dev \
 	wti-rps10.dev
 
+EXTRA_DIST = $(DEVFILES)
 all: all-am
 
 .SUFFIXES:
@@ -333,30 +340,11 @@ uninstall-am: uninstall-info-am uninstall-local
 
 
 install-data-local:
-	$(top_srcdir)/config/install-sh -m 755 -d $(DESTDIR)/$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/apc.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/apc7900.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/apcnew.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/apcpdu.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/baytech.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/baytech-rpc28-nc.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/baytech-rpc3-nc.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/cb-7050.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/cyclades-pm8.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/cyclades-pm10.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/ibmbladecenter.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/ibmh8.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/icebox.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/icebox3.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/icebox4.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/ipmi.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/ipmipower.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/phantom.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/phantom4.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/powerman.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/vpc.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/wti.dev $(DESTDIR)$(sysconfdir)/powerman
-	$(top_srcdir)/config/install-sh -m 644 $(srcdir)/wti-rps10.dev $(DESTDIR)$(sysconfdir)/powerman
+	$(top_srcdir)/config/install-sh -m 755 -d \
+	  $(DESTDIR)/$(sysconfdir)/powerman
+	for file in $(DEVFILES); do \
+		$(top_srcdir)/config/install-sh -m 644 $(srcdir)/$$file $(DESTDIR)$(sysconfdir)/powerman; \
+	done
 
 uninstall-local:
 	$(RM) -f $(DESTDIR)$(sysconfdir)/powerman

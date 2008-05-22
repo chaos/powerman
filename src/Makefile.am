@@ -10,7 +10,7 @@ if WITH_HTTPPOWER
 HTTPPOWER = httppower
 endif
 
-bin_PROGRAMS = powerman
+bin_PROGRAMS = powerman pm
 sbin_PROGRAMS = powermand $(HTTPPOWER)
 
 noinst_HEADERS = \
@@ -47,8 +47,9 @@ powerman_SOURCES = powerman.c $(COMMON_SOURCE)
 if WITH_HTTPPOWER
 httppower_SOURCES = \
 	httppower.c \
-	argv.c \
+	debug.c \
 	error.c \
+	argv.c \
 	wrappers.c
 
 httppower_LDADD = \
@@ -80,6 +81,9 @@ powermand_LDADD = \
 	$(LIBFORKPTY)
 
 BUILT_SOURCES = parse_lex.c parse_tab.c
+
+pm: powerman
+	$(LN_S) powerman pm
 
 parse_lex.c: $(srcdir)/parse.lex
 	$(LEX) -oparse_lex.c parse.lex
