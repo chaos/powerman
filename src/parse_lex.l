@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  $Id$
+ *  $Id: parse.lex 868 2008-05-21 21:17:04Z garlick $
  *****************************************************************************
  *  Copyright (C) 2001-2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -28,6 +28,9 @@
 %x lex_incl lex_str
 
 %{
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
 /* N.B. must define YYSTYPE before including ioa_tab.h or type will be int. */
 #define YYSTYPE char *
 #include <string.h>

@@ -27,7 +27,7 @@
 %{
 #if HAVE_CONFIG_H
 #include "config.h"
-#endif /* HAVE_CONFIG_H */
+#endif
 #define YYSTYPE char *  /*  The generic type returned by all parse matches */
 #undef YYDEBUG          /* no debug code plese */
 #include <sys/stat.h>

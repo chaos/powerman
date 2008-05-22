@@ -1,3 +1,8 @@
+2008-05-22 Jim Garlick <garlick@llnl.gov>
+
+	* parse_tab.y, parse_lex.l, Makefile.am : Use default automake
+	rules for lex/yacc.
+
 2008-05-21 Jim Garlick <garlick@llnl.gov>
 
 	* ChangeLog-1.0 : Updated to reflect trunk (1.0.32+)

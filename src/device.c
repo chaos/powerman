@@ -976,7 +976,7 @@ static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
 {
     bool finished = TRUE;
     ExecCtx *new;
-    Plug *plug;
+    Plug *plug = NULL;
 
     /* we store a plug iterator in the ExecCtx */
     if (e->plugitr == NULL)  

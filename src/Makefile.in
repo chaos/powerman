@@ -42,7 +42,7 @@ bin_PROGRAMS = powerman$(EXEEXT) pm$(EXEEXT)
 sbin_PROGRAMS = powermand$(EXEEXT) $(am__EXEEXT_1)
 subdir = src
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
-	$(srcdir)/Makefile.in
+	$(srcdir)/Makefile.in parse_lex.c parse_tab.c parse_tab.h
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_forkpty.m4 \
@@ -92,6 +92,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
+LEXCOMPILE = $(LEX) $(LFLAGS) $(AM_LFLAGS)
+YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
 SOURCES = $(httppower_SOURCES) pm.c $(powerman_SOURCES) \
 	$(powermand_SOURCES)
 DIST_SOURCES = $(am__httppower_SOURCES_DIST) pm.c $(powerman_SOURCES) \
@@ -249,22 +251,31 @@ powermand_SOURCES = \
 	device_serial.c \
 	device_tcp.c \
 	hash.c \
-	parse_lex.c \
-	parse_tab.c \
+	parse_lex.l \
+	parse_tab.y \
 	parse_util.c \
 	pluglist.c \
 	powermand.c \
 	$(COMMON_SOURCE)
 
 powermand_LDADD = $(LIBWRAP) $(LIBFORKPTY)
-BUILT_SOURCES = parse_lex.c parse_tab.c
+AM_YFLAGS = -d
+BUILT_SOURCES = parse_lex.c parse_tab.c parse_tab.h
+
+#parse_lex.c: $(srcdir)/parse.lex
+#	$(LEX) -oparse_lex.c parse.lex
+
+# Including fix for annoying "yyval used uninitialized" warning
+#parse_tab.c: $(srcdir)/parse.y
+#	$(YACC) -d -oparse_tab.c parse.y
+#	sed s/YYSTYPE\ yyval/YYSTYPE\ yyval\ =\ NULL/ $(srcdir)/parse_tab.c > $(srcdir)/foo.c
+#	mv $(srcdir)/foo.c $(srcdir)/parse_tab.c
 CLEANFILES = parse_tab.c parse_tab.h parse_lex.c
-EXTRA_DIST = parse.lex parse.y
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .o .obj
+.SUFFIXES: .c .l .o .obj .y
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -346,6 +357,11 @@ httppower$(EXEEXT): $(httppower_OBJECTS) $(httppower_DEPENDENCIES)
 powerman$(EXEEXT): $(powerman_OBJECTS) $(powerman_DEPENDENCIES) 
 	@rm -f powerman$(EXEEXT)
 	$(LINK) $(powerman_LDFLAGS) $(powerman_OBJECTS) $(powerman_LDADD) $(LIBS)
+parse_tab.h: parse_tab.c
+	@if test ! -f $@; then \
+	  rm -f parse_tab.c; \
+	  $(MAKE) parse_tab.c; \
+	else :; fi
 powermand$(EXEEXT): $(powermand_OBJECTS) $(powermand_DEPENDENCIES) 
 	@rm -f powermand$(EXEEXT)
 	$(LINK) $(powermand_LDFLAGS) $(powermand_OBJECTS) $(powermand_LDADD) $(LIBS)
@@ -394,6 +410,32 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(COMPILE) -c `$(CYGPATH_W) '$<'`
+
+.l.c:
+	$(LEXCOMPILE) $<
+	sed '/^#/ s|$(LEX_OUTPUT_ROOT)\.c|$@|' $(LEX_OUTPUT_ROOT).c >$@
+	rm -f $(LEX_OUTPUT_ROOT).c
+
+.y.c:
+	$(YACCCOMPILE) $<
+	if test -f y.tab.h; then \
+	  to=`echo "$*_H" | sed \
+                -e 'y/abcdefghijklmnopqrstuvwxyz/ABCDEFGHIJKLMNOPQRSTUVWXYZ/' \
+                -e 's/[^ABCDEFGHIJKLMNOPQRSTUVWXYZ]/_/g'`; \
+	  sed -e "/^#/!b" -e "s/Y_TAB_H/$$to/g" -e "s|y\.tab\.h|$*.h|" \
+            y.tab.h >$*.ht; \
+	  rm -f y.tab.h; \
+	  if cmp -s $*.ht $*.h; then \
+	    rm -f $*.ht ;\
+	  else \
+	    mv $*.ht $*.h; \
+	  fi; \
+	fi
+	if test -f y.output; then \
+	  mv y.output $*.output; \
+	fi
+	sed '/^#/ s|y\.tab\.c|$@|' y.tab.c >$@t && mv $@t $@
+	rm -f y.tab.c
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
@@ -505,6 +547,9 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-rm -f parse_lex.c
+	-rm -f parse_tab.c
+	-rm -f parse_tab.h
 	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
@@ -574,14 +619,7 @@ uninstall-am: uninstall-binPROGRAMS uninstall-info-am \
 pm: powerman
 	$(LN_S) powerman pm
 
-parse_lex.c: $(srcdir)/parse.lex
-	$(LEX) -oparse_lex.c parse.lex
-
-# Including fix for annoying "yyval used uninitialized" warning
-parse_tab.c: $(srcdir)/parse.y
-	$(YACC) -d -oparse_tab.c parse.y
-	sed s/YYSTYPE\ yyval/YYSTYPE\ yyval\ =\ NULL/ $(srcdir)/parse_tab.c > $(srcdir)/foo.c
-	mv $(srcdir)/foo.c $(srcdir)/parse_tab.c
+# EXTRA_DIST = parse.lex parse.y
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

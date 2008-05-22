@@ -64,8 +64,8 @@ powermand_SOURCES = \
 	device_serial.c \
 	device_tcp.c \
 	hash.c \
-	parse_lex.c \
-	parse_tab.c \
+	parse_lex.l \
+	parse_tab.y \
 	parse_util.c \
 	pluglist.c \
 	powermand.c \
@@ -73,20 +73,13 @@ powermand_SOURCES = \
 
 powermand_LDADD = $(LIBWRAP) $(LIBFORKPTY)
 
-BUILT_SOURCES = parse_lex.c parse_tab.c
+AM_YFLAGS = -d
+
+BUILT_SOURCES = parse_lex.c parse_tab.c parse_tab.h
 
 pm: powerman
 	$(LN_S) powerman pm
 
-parse_lex.c: $(srcdir)/parse.lex
-	$(LEX) -oparse_lex.c parse.lex
-
-# Including fix for annoying "yyval used uninitialized" warning
-parse_tab.c: $(srcdir)/parse.y
-	$(YACC) -d -oparse_tab.c parse.y
-	sed s/YYSTYPE\ yyval/YYSTYPE\ yyval\ =\ NULL/ $(srcdir)/parse_tab.c > $(srcdir)/foo.c
-	mv $(srcdir)/foo.c $(srcdir)/parse_tab.c
-
 CLEANFILES = parse_tab.c parse_tab.h parse_lex.c
 
-EXTRA_DIST = parse.lex parse.y
+# EXTRA_DIST = parse.lex parse.y
