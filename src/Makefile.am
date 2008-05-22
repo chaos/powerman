@@ -79,7 +79,7 @@ bin_PROGRAMS = powerman
 powerman_SOURCES = \
 	powerman.c \
 	$(LTDL_SOURCE_FILES) \
-	$(COMMON_SOURCE) 
+	$(COMMON_SOURCE)
 
 powerman_CFLAGS = \
 	-DPOWERMAN_MODULE_BUILDDIR=\"$(powerman_module_builddir)\"
@@ -132,6 +132,8 @@ powermand_SOURCES = \
 	pluglist.c \
 	powermand.c \
 	$(COMMON_SOURCE)
+
+powermand_CFLAGS = 
 
 powermand_LDADD = \
 	$(LIBWRAP) \

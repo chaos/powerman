@@ -40,7 +40,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = powerman$(EXEEXT)
-sbin_PROGRAMS = powermand$(EXEEXT) httppower$(EXEEXT)
+sbin_PROGRAMS = powermand$(EXEEXT) $(am__EXEEXT_1)
 subdir = src
 DIST_COMMON = $(am__noinst_HEADERS_DIST) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -49,6 +49,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_debug.m4 \
 	$(top_srcdir)/config/ac_forkpty.m4 \
 	$(top_srcdir)/config/ac_genders.m4 \
+	$(top_srcdir)/config/ac_httppower.m4 \
 	$(top_srcdir)/config/ac_meta.m4 \
 	$(top_srcdir)/config/ac_powerman_module_dir.m4 \
 	$(top_srcdir)/config/ac_readline.m4 \
@@ -84,6 +85,7 @@ powerman_options_genders_la_OBJECTS =  \
 @WITH_GENDERS_TRUE@@WITH_STATIC_MODULES_FALSE@	-rpath \
 @WITH_GENDERS_TRUE@@WITH_STATIC_MODULES_FALSE@	$(powermanmodulelibdir)
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
+@WITH_HTTPPOWER_TRUE@am__EXEEXT_1 = httppower$(EXEEXT)
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS) $(sbin_PROGRAMS)
 am_httppower_OBJECTS = httppower.$(OBJEXT) argv.$(OBJEXT) \
@@ -223,6 +225,8 @@ WITH_GENDERS_FALSE = @WITH_GENDERS_FALSE@
 WITH_GENDERS_TRUE = @WITH_GENDERS_TRUE@
 WITH_GNU_LD_FALSE = @WITH_GNU_LD_FALSE@
 WITH_GNU_LD_TRUE = @WITH_GNU_LD_TRUE@
+WITH_HTTPPOWER_FALSE = @WITH_HTTPPOWER_FALSE@
+WITH_HTTPPOWER_TRUE = @WITH_HTTPPOWER_TRUE@
 WITH_STATIC_MODULES = @WITH_STATIC_MODULES@
 WITH_STATIC_MODULES_FALSE = @WITH_STATIC_MODULES_FALSE@
 WITH_STATIC_MODULES_TRUE = @WITH_STATIC_MODULES_TRUE@
@@ -330,10 +334,9 @@ libstaticmodules_la_LDFLAGS = $(GENDERS_OPTIONS_STATIC_LIBS)
 powerman_SOURCES = \
 	powerman.c \
 	$(LTDL_SOURCE_FILES) \
-	$(COMMON_SOURCE) 
+	$(COMMON_SOURCE)
 
 powerman_CFLAGS = \
-	-DPOWERMAN_VERSION=\"$(VERSION)\" \
 	-DPOWERMAN_MODULE_BUILDDIR=\"$(powerman_module_builddir)\"
 
 powerman_LDADD = \
@@ -347,6 +350,8 @@ powerman_LDFLAGS = \
 # Powermand, httppower
 #
 BUILT_SOURCES = parse_lex.c parse_tab.c
+@WITH_HTTPPOWER_FALSE@HTTPPOWER = 
+@WITH_HTTPPOWER_TRUE@HTTPPOWER = httppower
 httppower_SOURCES = \
 	httppower.c \
 	argv.c \
@@ -376,9 +381,7 @@ powermand_SOURCES = \
 	powermand.c \
 	$(COMMON_SOURCE)
 
-powermand_CFLAGS = \
-	-DPOWERMAN_VERSION=\"$(VERSION)\"
-
+powermand_CFLAGS = 
 powermand_LDADD = \
 	$(LIBWRAP) \
 	$(LIBFORKPTY)
