@@ -34,7 +34,9 @@
 	* src/device.c, src/debug.[ch], src/wrappers.[ch], src/device_tcp.c :
 	Fix compiler warnings.
 
-	* src/wrappers.c : Added timersub() for solaris.
+	* src/wrappers.h : Added timersub(), timeradd() for solaris.
+
+	* src/wrappers.[ch] : Add Forkpty() and Dprintf() for solaris.
 
 2006-11-16 Jim Garlick <garlick@llnl.gov>
 

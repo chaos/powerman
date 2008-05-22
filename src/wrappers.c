@@ -29,7 +29,6 @@
 #include "config.h"
 #endif
 
-#define _GNU_SOURCE /* for vdprintf */
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
@@ -45,6 +44,11 @@
 #include <sys/wait.h>
 #if HAVE_FORKPTY
 #include <pty.h>
+#else
+#include <sys/ioctl.h>  /* XXX solaris specific includes! */
+#include <sys/stream.h> 
+#include <sys/stropts.h> 
+#include <sys/syscall.h>
 #endif
 #if HAVE_POLL
 #include <sys/poll.h>
@@ -54,6 +58,7 @@
 #include "wrappers.h"
 #include "cbuf.h"
 #include "error.h"
+#include "hprintf.h"
 
 #define MAX_REG_BUF 64000
 
@@ -725,23 +730,94 @@ pid_t Waitpid(pid_t pid, int *status, int options)
 
 int Dprintf(int fd, const char *format, ...)
 {
+    char *str, *p;
     va_list ap;
-    int n;
+    int n, rc;
 
     va_start(ap, format);
-    n = vdprintf(fd, format, ap);
+    str = hvsprintf(format, ap);
     va_end(ap);
+
+    p = str;
+    n = strlen(p);
+    rc = 0;
+    do {
+        rc = Write(fd, str, n);
+        if (rc < 0)
+            return rc;
+        n -= rc;
+        p += rc;
+    } while (n > 0);
+    Free(str);
+    
     return n;
 }
+
 
 pid_t Forkpty(int *amaster, char *name, int len)
 {
     pid_t pid;
 
+#if HAVE_FORKPTY
     pid = forkpty(amaster, name, NULL, NULL);
     if (pid > 0) { /* XXX */
         assert(strlen(name) < len);
     }
+#else
+    /* this code initially borrowed from 
+     *  http://bugs.mysql.com/bug.php?id=22429
+     * XXX solaris specific!
+     * XXX need to lose controlling tty with setsid() ?
+     */
+    int master, slave; 
+    char *slave_name; 
+   
+    master = open("/dev/ptmx", O_RDWR); 
+    if (master < 0) 
+        return -1; 
+    if (grantpt (master) < 0) { 
+        close (master); 
+        return -1; 
+    } 
+    if (unlockpt (master) < 0) { 
+        close (master); 
+        return -1; 
+    } 
+    slave_name = ptsname (master); 
+    if (slave_name == NULL) { 
+        close (master); 
+        return -1; 
+    } 
+    slave = open (slave_name, O_RDWR); 
+    if (slave < 0) { 
+        close (master); 
+        return -1; 
+    } 
+    if (ioctl (slave, I_PUSH, "ptem") < 0 
+      || ioctl (slave, I_PUSH, "ldterm") < 0) { 
+        close (slave); 
+        close (master); 
+        return -1; 
+    } 
+    if (amaster) 
+        *amaster = master; 
+    if (name) 
+        strncpy (name, slave_name, len); 
+    pid = fork (); 
+    switch (pid) { 
+        case -1: /* Error */ 
+            return -1; 
+        case 0: /* Child */ 
+            close (master); 
+            dup2 (slave, STDIN_FILENO); 
+            dup2 (slave, STDOUT_FILENO); 
+            dup2 (slave, STDERR_FILENO); 
+            return 0; 
+        default: /* Parent */ 
+            close (slave); 
+            break;
+    } 
+#endif
     return pid;
 }
 

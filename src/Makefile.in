@@ -60,11 +60,13 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 @WITH_HTTPPOWER_TRUE@am__EXEEXT_1 = httppower$(EXEEXT)
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS) $(sbin_PROGRAMS)
-am__httppower_SOURCES_DIST = httppower.c debug.c error.c argv.c \
-	wrappers.c
+am__httppower_SOURCES_DIST = httppower.c debug.c error.c hostlist.c \
+	list.c hprintf.c argv.c wrappers.c
+am__objects_1 = debug.$(OBJEXT) error.$(OBJEXT) hostlist.$(OBJEXT) \
+	list.$(OBJEXT) hprintf.$(OBJEXT) argv.$(OBJEXT) \
+	wrappers.$(OBJEXT)
 @WITH_HTTPPOWER_TRUE@am_httppower_OBJECTS = httppower.$(OBJEXT) \
-@WITH_HTTPPOWER_TRUE@	debug.$(OBJEXT) error.$(OBJEXT) \
-@WITH_HTTPPOWER_TRUE@	argv.$(OBJEXT) wrappers.$(OBJEXT)
+@WITH_HTTPPOWER_TRUE@	$(am__objects_1)
 httppower_OBJECTS = $(am_httppower_OBJECTS)
 am__DEPENDENCIES_1 =
 @WITH_HTTPPOWER_TRUE@httppower_DEPENDENCIES = $(am__DEPENDENCIES_1) \
@@ -72,17 +74,15 @@ am__DEPENDENCIES_1 =
 pm_SOURCES = pm.c
 pm_OBJECTS = pm.$(OBJEXT)
 pm_LDADD = $(LDADD)
-am__objects_1 = debug.$(OBJEXT) error.$(OBJEXT) hostlist.$(OBJEXT) \
-	list.$(OBJEXT) wrappers.$(OBJEXT)
 am_powerman_OBJECTS = powerman.$(OBJEXT) $(am__objects_1)
 powerman_OBJECTS = $(am_powerman_OBJECTS)
 powerman_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_powermand_OBJECTS = arglist.$(OBJEXT) argv.$(OBJEXT) cbuf.$(OBJEXT) \
+am_powermand_OBJECTS = arglist.$(OBJEXT) cbuf.$(OBJEXT) \
 	client.$(OBJEXT) daemon.$(OBJEXT) device.$(OBJEXT) \
 	device_pipe.$(OBJEXT) device_serial.$(OBJEXT) \
-	device_tcp.$(OBJEXT) hash.$(OBJEXT) hprintf.$(OBJEXT) \
-	parse_lex.$(OBJEXT) parse_tab.$(OBJEXT) parse_util.$(OBJEXT) \
-	pluglist.$(OBJEXT) powermand.$(OBJEXT) $(am__objects_1)
+	device_tcp.$(OBJEXT) hash.$(OBJEXT) parse_lex.$(OBJEXT) \
+	parse_tab.$(OBJEXT) parse_util.$(OBJEXT) pluglist.$(OBJEXT) \
+	powermand.$(OBJEXT) $(am__objects_1)
 powermand_OBJECTS = $(am_powermand_OBJECTS)
 powermand_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/config
@@ -231,21 +231,16 @@ COMMON_SOURCE = \
 	error.c \
 	hostlist.c \
 	list.c \
+	hprintf.c \
+	argv.c \
 	wrappers.c
 
 powerman_SOURCES = powerman.c $(COMMON_SOURCE)
 powerman_LDADD = $(LIBFORKPTY)
-@WITH_HTTPPOWER_TRUE@httppower_SOURCES = \
-@WITH_HTTPPOWER_TRUE@	httppower.c \
-@WITH_HTTPPOWER_TRUE@	debug.c \
-@WITH_HTTPPOWER_TRUE@	error.c \
-@WITH_HTTPPOWER_TRUE@	argv.c \
-@WITH_HTTPPOWER_TRUE@	wrappers.c
-
+@WITH_HTTPPOWER_TRUE@httppower_SOURCES = httppower.c $(COMMON_SOURCE)
 @WITH_HTTPPOWER_TRUE@httppower_LDADD = $(LIBCURL) $(LIBREADLINE)
 powermand_SOURCES = \
 	arglist.c \
-	argv.c \
 	cbuf.c \
 	client.c \
 	daemon.c \
@@ -254,7 +249,6 @@ powermand_SOURCES = \
 	device_serial.c \
 	device_tcp.c \
 	hash.c \
-	hprintf.c \
 	parse_lex.c \
 	parse_tab.c \
 	parse_util.c \

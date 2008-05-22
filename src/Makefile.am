@@ -40,6 +40,8 @@ COMMON_SOURCE = \
 	error.c \
 	hostlist.c \
 	list.c \
+	hprintf.c \
+	argv.c \
 	wrappers.c
 
 powerman_SOURCES = powerman.c $(COMMON_SOURCE)
@@ -47,19 +49,13 @@ powerman_SOURCES = powerman.c $(COMMON_SOURCE)
 powerman_LDADD = $(LIBFORKPTY)
 
 if WITH_HTTPPOWER
-httppower_SOURCES = \
-	httppower.c \
-	debug.c \
-	error.c \
-	argv.c \
-	wrappers.c
+httppower_SOURCES = httppower.c $(COMMON_SOURCE)
 
 httppower_LDADD = $(LIBCURL) $(LIBREADLINE)
 endif
 
 powermand_SOURCES = \
 	arglist.c \
-	argv.c \
 	cbuf.c \
 	client.c \
 	daemon.c \
@@ -68,7 +64,6 @@ powermand_SOURCES = \
 	device_serial.c \
 	device_tcp.c \
 	hash.c \
-	hprintf.c \
 	parse_lex.c \
 	parse_tab.c \
 	parse_util.c \
