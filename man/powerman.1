@@ -111,19 +111,6 @@ Useful for debugging device scripts.
 .TP
 .I "-x, --exprange"
 Expand host ranges in query responses.
-.if @MANPAGE_GENDERS@ \{
-.TP
-.I "-g query"
-Specify targets by genders query.  Genders queries will query the
-genders database for the union, intersection, difference, or
-complement of genders attributes and values.  The set operation union
-is represented by two pipe symbols ('||'), intersection by two
-ampersand symbols ('&&'), difference by two minus symbols ('--'), and
-complement by a tilde ('~').  Parentheses may be used to change the
-order of operations. See the nodeattr(1) manpage for examples of
-genders queries.
-\}
-
 .SH "TARGET SPECIFICATION"
 .B powerman
 target hostnames may be specified as comma separated or space separated

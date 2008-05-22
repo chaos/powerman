@@ -5170,7 +5170,7 @@ _ACEOF
 ##
 # Epilogue.
 ##
-                                                            ac_config_files="$ac_config_files Makefile src/Makefile etc/Makefile man/Makefile man/powerman.1 scripts/Makefile"
+                                                  ac_config_files="$ac_config_files Makefile src/Makefile etc/Makefile man/Makefile scripts/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -5746,7 +5746,6 @@ do
   "src/Makefile" ) CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
   "etc/Makefile" ) CONFIG_FILES="$CONFIG_FILES etc/Makefile" ;;
   "man/Makefile" ) CONFIG_FILES="$CONFIG_FILES man/Makefile" ;;
-  "man/powerman.1" ) CONFIG_FILES="$CONFIG_FILES man/powerman.1" ;;
   "scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES scripts/Makefile" ;;
   "depfiles" ) CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
   "config/config.h" ) CONFIG_HEADERS="$CONFIG_HEADERS config/config.h" ;;

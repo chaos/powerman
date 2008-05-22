@@ -89,7 +89,6 @@ AC_CONFIG_FILES( \
   src/Makefile \
   etc/Makefile \
   man/Makefile \
-  man/powerman.1 \
   scripts/Makefile \
 )
 AC_OUTPUT
