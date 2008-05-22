@@ -760,7 +760,7 @@ pid_t Forkpty(int *amaster, char *name, int len)
 
 #if HAVE_FORKPTY
     pid = forkpty(amaster, name, NULL, NULL);
-    if (pid > 0) { /* XXX */
+    if (pid > 0) { /* XXX forkpty takes no len parameter */
         assert(strlen(name) < len);
     }
 #else
