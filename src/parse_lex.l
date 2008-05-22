@@ -23,7 +23,6 @@
  *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
-/* Lex Definitions */
 
 %x lex_incl lex_str
 
@@ -55,6 +54,7 @@ static char *string_buf_ptr;
 static List line_ptrs;
 
 %}
+
 /* Lex Options */
 %option nounput
 
@@ -104,18 +104,39 @@ static List line_ptrs;
         yylval[len] = '\0';
         return TOK_STRING_VAL; 
     }
-    "\\a"             *string_buf_ptr++ = '\a';
-    "\\b"             *string_buf_ptr++ = '\b';
-    "\\e"             *string_buf_ptr++ = '\e';
-    "\\f"             *string_buf_ptr++ = '\f';
-    "\\n"             *string_buf_ptr++ = '\n';
-    "\\r"             *string_buf_ptr++ = '\r';
-    "\\t"             *string_buf_ptr++ = '\t';
-    "\\v"             *string_buf_ptr++ = '\v';
-    "\n"              yyerror();
-    \\[0-9][0-9][0-9] *string_buf_ptr++ = strtol(&yytext[1], NULL, 8);
-    \\(.|\n)          *string_buf_ptr++ = yytext[1];
-
+    "\\a" {
+        *string_buf_ptr++ = '\a';
+    }
+    "\\b" {
+        *string_buf_ptr++ = '\b';
+    }
+    "\\e" {
+        *string_buf_ptr++ = '\e';
+    }
+    "\\f" {
+        *string_buf_ptr++ = '\f';
+    }
+    "\\n" {
+        *string_buf_ptr++ = '\n';
+    }
+    "\\r" {
+        *string_buf_ptr++ = '\r';
+    }
+    "\\t" {
+        *string_buf_ptr++ = '\t';
+    }
+    "\\v" {
+        *string_buf_ptr++ = '\v';
+    }
+    "\n" {
+        yyerror();
+    }
+    \\[0-9][0-9][0-9] {
+        *string_buf_ptr++ = strtol(&yytext[1], NULL, 8);
+    }
+    \\(.|\n) {
+        *string_buf_ptr++ = yytext[1];
+    }
     [^\\\n\"]+ {
         char *yptr = yytext;
     
@@ -214,14 +235,13 @@ include         BEGIN(lex_incl);
     }
 }
 
-. {   
-    /* perhaps I should replace this with a call to yyerror() */
+. {
     return TOK_UNRECOGNIZED; 
 }
 
 %%
 
-/* Provide yywrap() to avoid need to link to -lfl */
+/* provide yywrap() to avoid need to link to -lfl */
 int
 yywrap()
 {

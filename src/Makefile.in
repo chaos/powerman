@@ -261,15 +261,6 @@ powermand_SOURCES = \
 powermand_LDADD = $(LIBWRAP) $(LIBFORKPTY)
 AM_YFLAGS = -d
 BUILT_SOURCES = parse_lex.c parse_tab.c parse_tab.h
-
-#parse_lex.c: $(srcdir)/parse.lex
-#	$(LEX) -oparse_lex.c parse.lex
-
-# Including fix for annoying "yyval used uninitialized" warning
-#parse_tab.c: $(srcdir)/parse.y
-#	$(YACC) -d -oparse_tab.c parse.y
-#	sed s/YYSTYPE\ yyval/YYSTYPE\ yyval\ =\ NULL/ $(srcdir)/parse_tab.c > $(srcdir)/foo.c
-#	mv $(srcdir)/foo.c $(srcdir)/parse_tab.c
 CLEANFILES = parse_tab.c parse_tab.h parse_lex.c
 all: $(BUILT_SOURCES)
 	$(MAKE) $(AM_MAKEFLAGS) all-am

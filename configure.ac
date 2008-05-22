@@ -31,6 +31,9 @@ fi
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AM_PROG_LEX
+if test "$LEX" != "flex"; then
+  AC_ERROR([lex won't cut it, I need flex])
+fi
 AC_PROG_YACC
 AM_CONDITIONAL(WITH_GNU_LD, test "$with_gnu_ld" = "yes")
 
