@@ -64,19 +64,35 @@ static List line_ptrs;
     /* yyin gets initialized in parse.y */
 %}
 
-#[^\n]*\n { linenum[include_stack_ptr]++; }  
+#[^\n]*\n { 
+    linenum[include_stack_ptr]++;
+}
 
-[ \t\r]+ {  /* Eat up white space */ }
+[ \t\r]+ {
+    /* Eat up white space */
+}
 
-[\n]   {  linenum[include_stack_ptr]++; }
+[\n]   {
+    linenum[include_stack_ptr]++;
+}
 
-([0-9]+)|([0-9]+"."[0-9]*)|("."[0-9]+)  { yylval = yytext; return TOK_NUMERIC_VAL; }
+([0-9]+)|([0-9]+"."[0-9]*)|("."[0-9]+)  { 
+    yylval = yytext;
+    return TOK_NUMERIC_VAL; 
+}
 
-\$  { return TOK_MATCHPOS; }
+\$ { 
+    return TOK_MATCHPOS;
+}
 
-\"                             string_buf_ptr = string_buf; BEGIN(lex_str);
+\" {
+    string_buf_ptr = string_buf;
+    BEGIN(lex_str);
+}
+
 <lex_str>{ 
-    \"                           {   /* end of string */
+    \" {   
+        /* end of string */
         int len;
 
         BEGIN(INITIAL); 
@@ -87,83 +103,88 @@ static List line_ptrs;
         strncpy(yylval, string_buf, len);
         yylval[len] = '\0';
         return TOK_STRING_VAL; 
-}
-    "\\a"                         *string_buf_ptr++ = '\a';
-    "\\b"                         *string_buf_ptr++ = '\b';
-    "\\e"                         *string_buf_ptr++ = '\e';
-    "\\f"                         *string_buf_ptr++ = '\f';
-    "\\n"                         *string_buf_ptr++ = '\n';
-    "\\r"                         *string_buf_ptr++ = '\r';
-    "\\t"                         *string_buf_ptr++ = '\t';
-    "\\v"                         *string_buf_ptr++ = '\v';
-    "\n"                          yyerror();
-    \\[0-9][0-9][0-9]             *string_buf_ptr++ =  strtol(&yytext[1], NULL, 8);
-    \\(.|\n)                      *string_buf_ptr++ = yytext[1];
-    [^\\\n\"]+               {
+    }
+    "\\a"             *string_buf_ptr++ = '\a';
+    "\\b"             *string_buf_ptr++ = '\b';
+    "\\e"             *string_buf_ptr++ = '\e';
+    "\\f"             *string_buf_ptr++ = '\f';
+    "\\n"             *string_buf_ptr++ = '\n';
+    "\\r"             *string_buf_ptr++ = '\r';
+    "\\t"             *string_buf_ptr++ = '\t';
+    "\\v"             *string_buf_ptr++ = '\v';
+    "\n"              yyerror();
+    \\[0-9][0-9][0-9] *string_buf_ptr++ = strtol(&yytext[1], NULL, 8);
+    \\(.|\n)          *string_buf_ptr++ = yytext[1];
+
+    [^\\\n\"]+ {
         char *yptr = yytext;
     
         while ( *yptr )
             *string_buf_ptr++ = *yptr++;
     }
 }
-client[ \t]+listener[ \t]+port    {   return TOK_OLD_PORT;      /* old */ }
-begin[ \t]+global                 {   return TOK_B_GLOBAL;      /* old */ }
-end[ \t]+global                   {   return TOK_E_GLOBAL;      /* old */ }
-begin[ \t]+nodes                  {   return TOK_B_NODES;       /* old */ }
-end[ \t]+nodes                    {   return TOK_E_NODES;       /* old */ }
 
-port                              {   return TOK_PORT ; }
-tcpwrappers                       {   return TOK_TCP_WRAPPERS; }
-timeout                           {   return TOK_DEV_TIMEOUT; }
-pingperiod                        {   return TOK_PING_PERIOD; }
-specification                     {   return TOK_SPEC; }
-expect                            {   return TOK_EXPECT; }
-setplugstate                      {   return TOK_SETPLUGSTATE; }
-foreachnode                       {   return TOK_FOREACHNODE; }
-foreachplug                       {   return TOK_FOREACHPLUG; }
-ifoff                             {   return TOK_IFOFF; }
-ifon                              {   return TOK_IFON; }
-send                              {   return TOK_SEND; }
-delay                             {   return TOK_DELAY; }
-login                             {   return TOK_LOGIN; }
-logout                            {   return TOK_LOGOUT; }
-status                            {   return TOK_STATUS; }
-status_all                        {   return TOK_STATUS_ALL; }
-status_soft                       {   return TOK_STATUS_SOFT; }
-status_soft_all                   {   return TOK_STATUS_SOFT_ALL; }
-on                                {   return TOK_ON; }
-on_ranged                         {   return TOK_ON_RANGED; }  
-on_all                            {   return TOK_ON_ALL; }
-off                               {   return TOK_OFF; }
-off_ranged                        {   return TOK_OFF_RANGED; }
-off_all                           {   return TOK_OFF_ALL; }
-cycle                             {   return TOK_CYCLE; }
-cycle_ranged                      {   return TOK_CYCLE_RANGED; }
-cycle_all                         {   return TOK_CYCLE_ALL; }
-reset                             {   return TOK_RESET; }
-reset_ranged                      {   return TOK_RESET_RANGED; }
-reset_all                         {   return TOK_RESET_ALL; }
-ping                              {   return TOK_PING; }
-status_temp                       {   return TOK_STATUS_TEMP; }
-status_temp_all                   {   return TOK_STATUS_TEMP_ALL; }
-status_beacon                     {   return TOK_STATUS_BEACON; }
-status_beacon_all                 {   return TOK_STATUS_BEACON_ALL; }
-beacon_on                         {   return TOK_BEACON_ON; }
-beacon_off                        {   return TOK_BEACON_OFF; }
-device                            {   return TOK_DEVICE; }
-plug[ \t]+name                    {   return TOK_PLUG_NAME; }
-node                              {   return TOK_NODE; }
-yes                               {   return TOK_YES; }
-no                                {   return TOK_NO; }
-\{                                {   return TOK_BEGIN; }
-\}                                {   return TOK_END; }
-=                                 {   return TOK_EQUALS; }
-script                            {   return TOK_SCRIPT; }
-alias                             {   return TOK_ALIAS; }
-include                        BEGIN(lex_incl);
-<lex_incl>[ \t]*             {    /* eat white space */ }
-<lex_incl>[\n]               { linenum[include_stack_ptr]++; }
-<lex_incl>[^ \t\n]+                { /* got include file name */
+port            return TOK_PORT;
+tcpwrappers     return TOK_TCP_WRAPPERS;
+timeout         return TOK_DEV_TIMEOUT;
+pingperiod      return TOK_PING_PERIOD;
+specification   return TOK_SPEC;
+expect          return TOK_EXPECT;
+setplugstate    return TOK_SETPLUGSTATE;
+foreachnode     return TOK_FOREACHNODE;
+foreachplug     return TOK_FOREACHPLUG;
+ifoff           return TOK_IFOFF;
+ifon            return TOK_IFON;
+send            return TOK_SEND;
+delay           return TOK_DELAY;
+login           return TOK_LOGIN;
+logout          return TOK_LOGOUT;
+status          return TOK_STATUS;
+status_all      return TOK_STATUS_ALL;
+status_soft     return TOK_STATUS_SOFT;
+status_soft_all return TOK_STATUS_SOFT_ALL;
+on              return TOK_ON;
+on_ranged       return TOK_ON_RANGED;
+on_all          return TOK_ON_ALL;
+off             return TOK_OFF;
+off_ranged      return TOK_OFF_RANGED;
+off_all         return TOK_OFF_ALL;
+cycle           return TOK_CYCLE;
+cycle_ranged    return TOK_CYCLE_RANGED;
+cycle_all       return TOK_CYCLE_ALL;
+reset           return TOK_RESET;
+reset_ranged    return TOK_RESET_RANGED;
+reset_all       return TOK_RESET_ALL;
+ping            return TOK_PING;
+status_temp     return TOK_STATUS_TEMP;
+status_temp_all return TOK_STATUS_TEMP_ALL;
+status_beacon   return TOK_STATUS_BEACON;
+status_beacon_all return TOK_STATUS_BEACON_ALL;
+beacon_on       return TOK_BEACON_ON;
+beacon_off      return TOK_BEACON_OFF;
+device          return TOK_DEVICE;
+plug[ \t]+name  return TOK_PLUG_NAME;
+node            return TOK_NODE;
+yes             return TOK_YES;
+no              return TOK_NO;
+\{              return TOK_BEGIN;
+\}              return TOK_END;
+=               return TOK_EQUALS;
+script          return TOK_SCRIPT;
+alias           return TOK_ALIAS;
+
+include         BEGIN(lex_incl);
+
+<lex_incl>[ \t]* {
+    /* eat white space */
+}
+
+<lex_incl>[\n] { 
+    linenum[include_stack_ptr]++;
+}
+
+<lex_incl>[^ \t\n]+ {
+    /* got include file name */
     int len;
     
     len = strlen(yytext);
@@ -182,7 +203,8 @@ include                        BEGIN(lex_incl);
     yy_switch_to_buffer( yy_create_buffer( yyin, YY_BUF_SIZE ) );
     BEGIN(INITIAL);
 }
-<<EOF>>                        {
+
+<<EOF>> {
     if (include_stack_ptr == 0) {
         yyterminate();
     } else {
@@ -191,8 +213,9 @@ include                        BEGIN(lex_incl);
         yy_switch_to_buffer( include_stack[--include_stack_ptr] );
     }
 }
-.                              {   
-/* perhaps I should replace this with a call to yyerror() */
+
+. {   
+    /* perhaps I should replace this with a call to yyerror() */
     return TOK_UNRECOGNIZED; 
 }
 
@@ -202,7 +225,7 @@ include                        BEGIN(lex_incl);
 int
 yywrap()
 {
-  return 1;
+    return 1;
 }
 
 int

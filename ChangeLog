@@ -3,6 +3,10 @@
 	* parse_tab.y, parse_lex.l, Makefile.am : Use default automake
 	rules for lex/yacc and rename files so they fit.
 
+	* parse_tab.y, parse_lex.l : Removed deprecated config file syntax,
+	which emitted warnings since 1.0.16 (Jan 2002).  Reformatted some
+	lex code for readability.
+
 2008-05-21 Jim Garlick <garlick@llnl.gov>
 
 	* ChangeLog-1.0 : Updated to reflect trunk (1.0.32+)
