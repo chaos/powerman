@@ -42,10 +42,15 @@
 #include <regex.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#if HAVE_FORKPTY
+#if HAVE_PTY_H
 #include <pty.h>
-#else
-#include <sys/ioctl.h>  /* XXX solaris specific includes! */
+#endif
+#if HAVE_UTIL_H
+#include <util.h>
+#endif
+#if ! HAVE_FORKPTY
+/* XXX the non-forkpty case has only been tried on Solaris */
+#include <sys/ioctl.h>  
 #include <sys/stream.h> 
 #include <sys/stropts.h> 
 #include <sys/syscall.h>

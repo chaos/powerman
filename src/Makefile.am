@@ -55,6 +55,7 @@ httppower_LDADD = $(LIBCURL) $(LIBREADLINE)
 endif
 
 powermand_SOURCES = \
+	powermand.c \
 	arglist.c \
 	cbuf.c \
 	client.c \
@@ -68,7 +69,6 @@ powermand_SOURCES = \
 	parse_tab.y \
 	parse_util.c \
 	pluglist.c \
-	powermand.c \
 	$(COMMON_SOURCE)
 
 powermand_LDADD = $(LIBWRAP) $(LIBFORKPTY)

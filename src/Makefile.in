@@ -78,12 +78,12 @@ pm_LDADD = $(LDADD)
 am_powerman_OBJECTS = powerman.$(OBJEXT) $(am__objects_1)
 powerman_OBJECTS = $(am_powerman_OBJECTS)
 powerman_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
-am_powermand_OBJECTS = arglist.$(OBJEXT) cbuf.$(OBJEXT) \
-	client.$(OBJEXT) daemon.$(OBJEXT) device.$(OBJEXT) \
-	device_pipe.$(OBJEXT) device_serial.$(OBJEXT) \
+am_powermand_OBJECTS = powermand.$(OBJEXT) arglist.$(OBJEXT) \
+	cbuf.$(OBJEXT) client.$(OBJEXT) daemon.$(OBJEXT) \
+	device.$(OBJEXT) device_pipe.$(OBJEXT) device_serial.$(OBJEXT) \
 	device_tcp.$(OBJEXT) hash.$(OBJEXT) parse_lex.$(OBJEXT) \
 	parse_tab.$(OBJEXT) parse_util.$(OBJEXT) pluglist.$(OBJEXT) \
-	powermand.$(OBJEXT) $(am__objects_1)
+	$(am__objects_1)
 powermand_OBJECTS = $(am_powermand_OBJECTS)
 powermand_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/config
@@ -244,6 +244,7 @@ powerman_LDADD = $(LIBGENDERS) $(LIBFORKPTY)
 @WITH_HTTPPOWER_TRUE@httppower_SOURCES = httppower.c $(COMMON_SOURCE)
 @WITH_HTTPPOWER_TRUE@httppower_LDADD = $(LIBCURL) $(LIBREADLINE)
 powermand_SOURCES = \
+	powermand.c \
 	arglist.c \
 	cbuf.c \
 	client.c \
@@ -257,7 +258,6 @@ powermand_SOURCES = \
 	parse_tab.y \
 	parse_util.c \
 	pluglist.c \
-	powermand.c \
 	$(COMMON_SOURCE)
 
 powermand_LDADD = $(LIBWRAP) $(LIBFORKPTY)

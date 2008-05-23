@@ -29,6 +29,7 @@ AC_DEFUN([AC_FORKPTY],
 
   if test "$ac_have_forkpty" = "yes"; then
     AC_DEFINE([HAVE_FORKPTY], [1], [Define if you have forkpty])
+    AC_CHECK_HEADERS( pty.h util.h )
   fi
 
   AC_SUBST(LIBFORKPTY)

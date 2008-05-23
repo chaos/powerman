@@ -22,6 +22,7 @@ AC_DEFUN([AC_GENDERS],
 
   if test "$ac_have_genders" = "yes"; then
      AC_DEFINE([WITH_GENDERS], [1], [Define if you have genders.])
+     AC_CHECK_HEADERS( genders.h )
      LIBGENDERS="-lgenders"
      ac_with_genders=yes
   else

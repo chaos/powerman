@@ -32,7 +32,7 @@
 #if HAVE_GETOPT_H
 #include <getopt.h>
 #endif
-#if WITH_GENDERS
+#if HAVE_GENDERS_H
 #include <genders.h>
 #endif
 #include <unistd.h>

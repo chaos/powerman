@@ -6,6 +6,9 @@
 /* Define if you have forkpty */
 #undef HAVE_FORKPTY
 
+/* Define to 1 if you have the <genders.h> header file. */
+#undef HAVE_GENDERS_H
+
 /* Define to 1 if you have the <getopt.h> header file. */
 #undef HAVE_GETOPT_H
 
@@ -20,6 +23,9 @@
 
 /* Define if you have poll */
 #undef HAVE_POLL
+
+/* Define to 1 if you have the <pty.h> header file. */
+#undef HAVE_PTY_H
 
 /* Define if you have libreadline */
 #undef HAVE_READLINE
@@ -47,6 +53,9 @@
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define to 1 if you have the <util.h> header file. */
+#undef HAVE_UTIL_H
 
 /* Name of package */
 #undef PACKAGE
