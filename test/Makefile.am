@@ -6,7 +6,7 @@ TESTS_ENVIRONMENT += "PATH_POWERMAND=$(top_builddir)/src/powermand"
 TESTS_ENVIRONMENT += "PATH_ETC=$(top_builddir)/etc"
 TESTS = t00 t01 t02 t03 t04 t05
 
-CLEANFILES = *.out *.err *.diff
+CLEANFILES = *.out *.err *.diff *.conf
 
 common_sources = \
         $(top_srcdir)/src/wrappers.c \

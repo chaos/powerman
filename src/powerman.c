@@ -41,7 +41,6 @@
 #include <assert.h>
 #include <libgen.h>
 #include <limits.h>
-#include <termios.h>
 
 #include "powerman.h"
 #include "wrappers.h"
@@ -431,15 +430,6 @@ static void _version(void)
     exit(1);
 }
 
-static void _make_tty_raw(void)
-{
-    struct termios tio;
-
-    tcgetattr(STDIN_FILENO, &tio);
-    cfmakeraw(&tio);
-    tcsetattr(STDIN_FILENO, TCSANOW, &tio);
-}
-
 /*
  * Set up connection to server and get to the command prompt.
  */
@@ -463,7 +453,7 @@ static void _connect_to_server(char *host, char *port,
                 err_exit(TRUE, "forkpty error");
             case 0: /* child */
                 Dup2(saved_stderr, STDERR_FILENO);
-                _make_tty_raw();
+                Makeraw(STDIN_FILENO);
                 Execv(server_path, argv);
                 /*NOTREACHED*/
             default: /* parent */ 

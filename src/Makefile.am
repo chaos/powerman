@@ -75,11 +75,5 @@ powermand_LDADD = $(LIBWRAP) $(LIBFORKPTY)
 
 AM_YFLAGS = -d
 
-BUILT_SOURCES = parse_lex.c parse_tab.c parse_tab.h
-
 pm: powerman
 	$(LN_S) powerman pm
-
-CLEANFILES = parse_tab.c parse_tab.h parse_lex.c
-
-# EXTRA_DIST = parse.lex parse.y

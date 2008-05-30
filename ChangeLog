@@ -14,6 +14,10 @@
 
 	* test/* : Add integrated tests.
 
+	* configure.ac, src/Makefile.am, src/parse_* : Disable fatal 
+	configure error if flex is not found.  Check in lex/yacc build 
+	products so powerman can be built without those.
+
 2008-05-23 Jim Garlick <garlick@llnl.gov>
 
 	* autoconf.ac, src/powerman.c : Use HAVE_GENDERS_H for <genders.h>.

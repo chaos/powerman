@@ -117,6 +117,7 @@ void Execv(const char *path, char *const argv[]);
 pid_t Waitpid(pid_t pid, int *status, int options);
 
 int Dprintf(int fd, const char *format, ...);
+void Makeraw(int fd);
 pid_t Forkpty(int *amaster, char *name, int len);
 
 /* borrowed from glibc <sys/time.h> */

@@ -31,9 +31,6 @@ fi
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AM_PROG_LEX
-if test "$LEX" != "flex"; then
-  AC_ERROR([lex won't cut it, I need flex])
-fi
 AC_PROG_YACC
 AM_CONDITIONAL(WITH_GNU_LD, test "$with_gnu_ld" = "yes")
 
@@ -64,6 +61,7 @@ AC_GENDERS
 ##
 AC_CHECK_FUNCS( \
   getopt_long \
+  cfmakeraw
 )
 AC_SEARCH_LIBS([bind],[socket])
 AC_SEARCH_LIBS([gethostbyaddr],[nsl])

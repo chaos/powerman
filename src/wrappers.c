@@ -42,6 +42,7 @@
 #include <regex.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#include <termios.h>
 #if HAVE_PTY_H
 #include <pty.h>
 #endif
@@ -758,6 +759,27 @@ int Dprintf(int fd, const char *format, ...)
     return n;
 }
 
+void Makeraw(int fd)
+{
+    struct termios tio;
+
+    if (tcgetattr(fd, &tio) < 0)
+        lsd_fatal_error(__FILE__, __LINE__, "tcgetattr");
+#if HAVE_CFMAKERAW
+    cfmakeraw(&tio);
+#else
+    /* Stevens: Adv. Prog. in the UNIX Env.  1ed p.345 */
+    tio.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
+    tio.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXON);
+    tio.c_cflag &= ~(CSIZE | PARENB);
+    tio.c_cflag |= CS8;
+    tio.c_oflag &= ~(OPOST);
+    tio.c_cc[VMIN] = 1;
+    tio.c_cc[VTIME] = 0;
+#endif
+    if (tcsetattr(fd, TCSANOW, &tio) < 0)
+        lsd_fatal_error(__FILE__, __LINE__, "tcsetattr");
+}
 
 pid_t Forkpty(int *amaster, char *name, int len)
 {

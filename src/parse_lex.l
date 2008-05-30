@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id: parse.lex 868 2008-05-21 21:17:04Z garlick $
  *****************************************************************************
- *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton (uselton2@llnl.gov>
  *  UCRL-CODE-2002-008.

@@ -262,10 +262,7 @@ powermand_SOURCES = \
 
 powermand_LDADD = $(LIBWRAP) $(LIBFORKPTY)
 AM_YFLAGS = -d
-BUILT_SOURCES = parse_lex.c parse_tab.c parse_tab.h
-CLEANFILES = parse_tab.c parse_tab.h parse_lex.c
-all: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) all-am
+all: all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .l .o .obj .y
@@ -507,15 +504,13 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-check: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) check-am
+check: check-am
 all-am: Makefile $(PROGRAMS) $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
-install: $(BUILT_SOURCES)
-	$(MAKE) $(AM_MAKEFLAGS) install-am
+install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -532,7 +527,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -543,7 +537,6 @@ maintainer-clean-generic:
 	-rm -f parse_lex.c
 	-rm -f parse_tab.c
 	-rm -f parse_tab.h
-	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
 clean-am: clean-binPROGRAMS clean-generic clean-sbinPROGRAMS \
@@ -611,8 +604,6 @@ uninstall-am: uninstall-binPROGRAMS uninstall-info-am \
 
 pm: powerman
 	$(LN_S) powerman pm
-
-# EXTRA_DIST = parse.lex parse.y
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
