@@ -41,6 +41,7 @@
 #include <assert.h>
 #include <libgen.h>
 #include <limits.h>
+#include <termios.h>
 
 #include "powerman.h"
 #include "wrappers.h"
@@ -48,11 +49,13 @@
 #include "hostlist.h"
 #include "client_proto.h"
 #include "debug.h"
+#include "argv.h"
 
 #if WITH_GENDERS
 static void _push_genders_hosts(hostlist_t targets, char *s);
 #endif
-static void _connect_to_server(char *host, char *port);
+static void _connect_to_server(char *host, char *port, 
+                               char *server_path, char *config_path);
 static void _disconnect_from_server(void);
 static void _usage(void);
 static void _license(void);
@@ -65,7 +68,7 @@ static void _process_version(void);
 
 static int server_fd = -1;
 
-#define OPTIONS "01crlqfubntLd:VDvxTg"
+#define OPTIONS "01crlqfubntLd:VDvxTgS:C:"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
@@ -87,6 +90,8 @@ static const struct option longopts[] = {
     {"telemetry",   no_argument,        0, 'T'},
     {"exprange",    no_argument,        0, 'x'},
     {"genders",     no_argument,        0, 'g'},
+    {"server-path", required_argument,  0, 'S'},
+    {"config-path", required_argument,  0, 'C'},
     {0, 0, 0, 0},
 };
 #else
@@ -105,11 +110,13 @@ int main(int argc, char **argv)
         CMD_QUERY, CMD_FLASH, CMD_UNFLASH, CMD_BEACON, CMD_TEMP, CMD_NODE,
         CMD_DEVICE
     } cmd = CMD_NONE;
-    char *port = NULL;
-    char *host = NULL;
+    char *port = DFLT_PORT;
+    char *host = DFLT_HOSTNAME;
     bool telemetry = FALSE;
     bool exprange = FALSE;
     bool genders = FALSE;
+    char *server_path = NULL;
+    char *config_path = "/etc/powerman/powerman.conf"; /* FIXME */
 
     prog = basename(argv[0]);
     err_init(prog);
@@ -183,6 +190,12 @@ int main(int argc, char **argv)
         case 'g':              /* --genders */
             genders = TRUE;
             break;
+        case 'S':              /* --server-path */
+            server_path = optarg;
+            break;
+        case 'C':              /* --config-path */
+            config_path = optarg;
+            break;
         default:
             _usage();
             /*NOTREACHED*/
@@ -237,7 +250,7 @@ int main(int argc, char **argv)
         break;
     }
 
-    _connect_to_server(host ? host : DFLT_HOSTNAME, port ? port : DFLT_PORT);
+    _connect_to_server(host, port, server_path, config_path);
 
     if (telemetry) {
         Dprintf(server_fd, CP_TELEMETRY CP_EOL);
@@ -418,29 +431,62 @@ static void _version(void)
     exit(1);
 }
 
+static void _make_tty_raw(void)
+{
+    struct termios tio;
+
+    tcgetattr(STDIN_FILENO, &tio);
+    cfmakeraw(&tio);
+    tcsetattr(STDIN_FILENO, TCSANOW, &tio);
+}
+
 /*
  * Set up connection to server and get to the command prompt.
  */
 
-static void _connect_to_server(char *host, char *port)
+static void _connect_to_server(char *host, char *port, 
+                               char *server_path, char *config_path)
 {
     struct addrinfo hints, *addrinfo;
+    char cmd[128];
+    char **argv;
+    pid_t pid;
 
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_flags = AI_CANONNAME;
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
+    if (server_path) {
+        int saved_stderr = dup(STDERR_FILENO);
 
-    Getaddrinfo(host, port, &hints, &addrinfo);
+        snprintf(cmd, sizeof(cmd), "powermand -sRf -c %s", config_path);
+        argv = argv_create(cmd, "");
+        pid = Forkpty(&server_fd, NULL, 0);
+        switch (pid) {
+            case -1:
+                err_exit(TRUE, "forkpty error");
+            case 0: /* child */
+                Dup2(saved_stderr, STDERR_FILENO);
+                _make_tty_raw();
+                Execv(server_path, argv);
+                /*NOTREACHED*/
+            default: /* parent */ 
+                break;
+        }
+        argv_destroy(argv);
+    } else {
+        memset(&hints, 0, sizeof(struct addrinfo));
+        hints.ai_flags = AI_CANONNAME;
+        hints.ai_family = AF_INET;
+        hints.ai_socktype = SOCK_STREAM;
 
-    server_fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
-                       addrinfo->ai_protocol);
+        Getaddrinfo(host, port, &hints, &addrinfo);
 
-    if (Connect(server_fd, addrinfo->ai_addr, addrinfo->ai_addrlen) < 0) {
-        /* EINPROGRESS (not possible) | ECONNREFUSED */
-        err_exit(TRUE, "powermand");
+        server_fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
+                           addrinfo->ai_protocol);
+
+        if (Connect(server_fd, addrinfo->ai_addr, addrinfo->ai_addrlen) < 0) {
+            /* EINPROGRESS (not possible) | ECONNREFUSED */
+            err_exit(TRUE, "powermand");
+        }
+        freeaddrinfo(addrinfo);
     }
-    freeaddrinfo(addrinfo);
 
     _process_version();
     _expect(CP_PROMPT);

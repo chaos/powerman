@@ -36,6 +36,7 @@
 #include <stdarg.h>
 #include <stdlib.h>
 #include <limits.h>
+#include <unistd.h>
 
 #include <arpa/inet.h>
 #if HAVE_TCP_WRAPPERS
@@ -75,7 +76,8 @@ typedef struct {
 #define CLI_MAGIC    0xdadadada
 typedef struct {
     int magic;
-    int fd;                     /* file desriptor for  the socket */
+    int fd;                     /* file desriptor for the socket */
+    int ofd;                    /* separate output file descriptor (if used) */
     char *ip;                   /* IP address of the client's host */
     unsigned short int port;    /* Port of client connection */
     char *host;                 /* host name of client host */
@@ -85,6 +87,7 @@ typedef struct {
     int client_id;              /* client identifier */
     bool telemetry;             /* client wants telemetry debugging info */
     bool exprange;              /* client wants host ranges expanded */
+    bool client_quit;           /* set true after client quit command */
 } Client;
 
 /* prototypes for internal functions */
@@ -103,7 +106,8 @@ static void _handle_input(Client *c);
 static char *_strip_whitespace(char *str);
 static void _parse_input(Client * c, char *input);
 static void _destroy_client(Client * c);
-static void _create_client(void);
+static void _create_client_socket(void);
+static void _create_client_stdio(void);
 static void _act_finish(int client_id, ActError acterr, const char *fmt, ...);
 static void _telemetry_printf(int client_id, const char *fmt, ...);
 #if HAVE_TCP_WRAPPERS
@@ -112,10 +116,11 @@ extern int hosts_ctl(char *daemon, char *client_name, char *client_addr,
                      char *client_user);
 #endif
 int allow_severity = LOG_INFO;  /* logging level for accepted reqs */
-int deny_severity = LOG_WARNING;        /* logging level for rejected reqs */
+int deny_severity = LOG_WARNING;/* logging level for rejected reqs */
 
 static int listen_fd = NO_FD;   /* powermand listen socket */
 static List cli_clients = NULL; /* list of clients */
+static bool server_done = FALSE;/* true when stdio client exits */
 
 static int cli_id_seq = 1;      /* range 1...INT_MAX */
 #define _next_cli_id() \
@@ -560,7 +565,7 @@ static void _parse_input(Client * c, char *input)
     } else if (!strncasecmp(str, CP_QUIT, strlen(CP_QUIT))) {
         _client_printf(c, CP_RSP_QUIT);                 /* quit */
         _handle_write(c);
-        goto done;
+        c->client_quit = TRUE;
     } else if (sscanf(str, CP_ON, arg1) == 1) {         /* on hostlist */
         cmd = _create_command(c, PM_POWER_ON, arg1);
     } else if (sscanf(str, CP_OFF, arg1) == 1) {        /* off hostlist */
@@ -614,12 +619,8 @@ static void _parse_input(Client * c, char *input)
     }
 
     /* reissue prompt if we didn't queue up any device actions */
-    if (cmd == NULL)
+    if (cmd == NULL && !c->client_quit)
         _client_printf(c, CP_PROMPT);
-    return;
-done:
-    Close(c->fd);
-    c->fd = NO_FD;
 }
 
 /*
@@ -709,9 +710,14 @@ static void _destroy_client(Client *c)
     assert(c->magic == CLI_MAGIC);
 
     if (c->fd != NO_FD) {
+        dbg(DBG_CLIENT, "_destroy_client: closing fd %d", c->fd);
         Close(c->fd);
         c->fd = NO_FD;
-        dbg(DBG_CLIENT, "_destroy_client: closing fd %d", c->fd);
+    }
+    if (c->ofd != NO_FD) {
+        dbg(DBG_CLIENT, "_destroy_client: closing fd %d", c->ofd);
+        Close(c->ofd);
+        c->ofd = NO_FD;
     }
     if (c->to)
         cbuf_destroy(c->to);
@@ -724,6 +730,8 @@ static void _destroy_client(Client *c)
     if (c->host)
         Free(c->host);
     Free(c);
+    if (listen_fd == NO_FD)
+        server_done = TRUE;
 }
 
 /* helper for _find_client */
@@ -740,11 +748,10 @@ static Client *_find_client(int seq)
     return list_find_first(cli_clients, (ListFindF) _match_client, &seq);
 }
 
-
 /*
  * Begin listening for clients on powermand's socket.
  */
-void cli_listen(void)
+static void _listen_client(void)
 {
     struct sockaddr_in saddr;
     int saddr_size = sizeof(struct sockaddr_in);
@@ -780,11 +787,7 @@ void cli_listen(void)
     dbg(DBG_CLIENT, "listening");
 }
 
-
-/*
- * Create a new client.
- */
-static void _create_client(void)
+static void _create_client_socket(void)
 {
     Client *c;
     struct sockaddr_in saddr;
@@ -802,6 +805,8 @@ static void _create_client(void)
     c->client_id = _next_cli_id();
     c->telemetry = FALSE;
     c->exprange = FALSE;
+    c->ofd = NO_FD;
+    c->client_quit = FALSE;
 
     c->fd = Accept(listen_fd, &saddr, &saddr_size);
     /* client died after it initiated connect and before we could accept */
@@ -861,6 +866,40 @@ static void _create_client(void)
     _client_printf(c, CP_PROMPT);
 }
 
+static void _create_client_stdio(void)
+{
+    Client *c;
+    int fd_settings;
+
+    /* create client data structure */
+    c = (Client *) Malloc(sizeof(Client));
+    c->magic = CLI_MAGIC;
+    c->cmd = NULL;
+    c->client_id = _next_cli_id();
+    c->telemetry = FALSE;
+    c->exprange = FALSE;
+    c->client_quit = FALSE;
+    c->fd = STDIN_FILENO;
+    c->ofd = STDOUT_FILENO;
+    c->host = Strdup("localhost");
+    c->ip = Strdup("127.0.0.1"); /* XXX lies */
+    c->port = 0;
+    c->to = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
+    c->from = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
+
+    fd_settings = Fcntl(STDIN_FILENO, F_GETFL, 0);
+    Fcntl(STDIN_FILENO, F_SETFL, fd_settings | O_NONBLOCK);
+    fd_settings = Fcntl(STDOUT_FILENO, F_GETFL, 0);
+    Fcntl(STDOUT_FILENO, F_SETFL, fd_settings | O_NONBLOCK);
+
+    /* append to the list of clients */
+    list_append(cli_clients, c);
+
+    /* prompt the client */
+    _client_printf(c, CP_VERSION, VERSION);
+    _client_printf(c, CP_PROMPT);
+}
+
 /* 
  * select(2) read handler for the client 
  */
@@ -872,19 +911,17 @@ static void _handle_read(Client * c)
     assert(c->magic == CLI_MAGIC);
     n = cbuf_write_from_fd(c->from, c->fd, -1, &dropped);
     if (n < 0) {
+        c->client_quit = TRUE;
         err(TRUE, "client read error");
-        goto err;
+        return;
     }
     if (n == 0) {
+        c->client_quit = TRUE;
         err(FALSE, "client read returned EOF");
-        goto err;
+        return;
     }
     if (dropped != 0)
         err(FALSE, "dropped %d bytes of client input", dropped);
-    return;
-err:
-    Close(c->fd);
-    c->fd = NO_FD;
 }
 
 /* 
@@ -893,13 +930,13 @@ err:
 static void _handle_write(Client * c)
 {
     int n;
+    int *ofd = c->ofd != NO_FD ? &c->ofd : &c->fd;
 
     assert(c->magic == CLI_MAGIC);
-    n = cbuf_read_to_fd(c->to, c->fd, -1);
+    n = cbuf_read_to_fd(c->to, *ofd, -1);
     if (n < 0) {
         err(TRUE, "write error on client");
-        Close(c->fd);
-        c->fd = NO_FD;
+        c->client_quit = TRUE;
     }
 }
 
@@ -938,8 +975,12 @@ void cli_pre_poll(Pollfd_t pfd)
         PollfdSet(pfd, client->fd, POLLIN);
 
         /* need to be in the write set if we are sending anything */
-        if (!cbuf_is_empty(client->to))
-            PollfdSet(pfd, client->fd, POLLOUT);
+        if (!cbuf_is_empty(client->to)) {
+            if (client->ofd != NO_FD)
+                PollfdSet(pfd, client->ofd, POLLOUT);
+            else
+                PollfdSet(pfd, client->fd, POLLOUT);
+        }
     }
     list_iterator_destroy(itr);
 }
@@ -952,35 +993,52 @@ void cli_post_poll(Pollfd_t pfd)
     ListIterator itr;
     Client *c;
 
-    if (PollfdRevents(pfd, listen_fd) & POLLIN)
-        _create_client();
+    if (listen_fd != NO_FD && PollfdRevents(pfd, listen_fd) & POLLIN)
+        _create_client_socket();
 
     itr = list_iterator_create(cli_clients);
     while ((c = list_next(itr))) {
-        short flags = c->fd != NO_FD ? PollfdRevents(pfd, c->fd) : 0;
+        if (c->fd != NO_FD) {
+            short flags = PollfdRevents(pfd, c->fd);
 
-        if (flags & POLLERR)
-            err(FALSE, "client poll: error");
-        if (flags & POLLHUP)
-            err(FALSE, "client poll: hangup");
-        if (flags & POLLNVAL)
-            err(FALSE, "client poll: fd not open");
-        if (flags & (POLLERR | POLLHUP | POLLNVAL)) {
-            Close(c->fd);
-            c->fd = NO_FD;
+            if (flags & POLLERR)
+                err(FALSE, "client poll: error");
+            if (flags & POLLHUP)
+                err(FALSE, "client poll: hangup");
+            if (flags & POLLNVAL)
+                err(FALSE, "client poll: fd not open");
+            if (flags & (POLLERR | POLLHUP | POLLNVAL))
+                goto client_dead;
+            if ((flags & POLLIN))
+                _handle_read(c);
+            if ((flags & POLLOUT))
+                _handle_write(c);
+        }
+        if (c->ofd != NO_FD) {
+            short flags = PollfdRevents(pfd, c->ofd);
+
+            if (flags & POLLERR)
+                err(FALSE, "client poll: error");
+            if (flags & POLLHUP)
+                err(FALSE, "client poll: hangup");
+            if (flags & POLLNVAL)
+                err(FALSE, "client poll: fd not open");
+            if (flags & (POLLERR | POLLHUP | POLLNVAL))
+                goto client_dead;
+            if (c->fd == NO_FD)
+                goto client_dead;
+            if ((flags & POLLOUT))
+                _handle_write(c);
         }
 
-        if (c->fd != NO_FD && (flags & POLLIN))
-            _handle_read(c);
+        _handle_input(c);
 
-        if (c->fd != NO_FD && (flags & POLLOUT))
-            _handle_write(c);
+        if (c->client_quit)
+            goto client_dead;
+        continue;
 
-        if (c->fd != NO_FD)
-            _handle_input(c);
-
-        if (c->fd == NO_FD)
-            list_delete(itr);
+client_dead:
+        list_delete(itr);
     }
     list_iterator_destroy(itr);
 }
@@ -989,6 +1047,19 @@ void cli_post_poll(Pollfd_t pfd)
 int cli_listen_fd(void)
 {
     return listen_fd;
+}
+
+bool cli_server_done(void)
+{
+    return server_done;
+}
+
+void cli_start(bool use_stdio)
+{
+    if (use_stdio)
+        _create_client_stdio();
+    else
+        _listen_client();
 }
 
 /*

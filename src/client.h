@@ -30,8 +30,9 @@
 void cli_init(void);
 void cli_fini(void);
 
-void cli_listen(void);
+void cli_start(bool use_stdio);
 int cli_listen_fd(void);
+bool cli_server_done(void);
 
 void cli_post_poll(Pollfd_t pfd);
 void cli_pre_poll(Pollfd_t pfd);

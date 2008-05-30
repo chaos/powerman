@@ -1,3 +1,15 @@
+2008-05-30 Jim Garlick <garlick@llnl.gov>
+
+	* src/client.c : Allow instantiation with a single stdin/stdout
+	client which causes daemon to terminate when it goes away.
+
+	* src/powermand.c : Add --stdio and --force-notroot options.
+
+	* src/powerman.c : Add --server-path and --config-path options
+	which allow client and server to run together as coprocesses.
+
+	* src/wrappers.c : Allow NULL ptyname argument to Forkpty().
+
 2008-05-23 Jim Garlick <garlick@llnl.gov>
 
 	* autoconf.ac, src/powerman.c : Use HAVE_GENDERS_H for <genders.h>.

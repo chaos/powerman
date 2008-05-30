@@ -60,15 +60,17 @@ static void _noop_handler(int signum);
 static void _exit_handler(int signum);
 static void _select_loop(void);
 
-#define OPTIONS "c:fhd:V"
+#define OPTIONS "c:fhd:VsR"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
-    {"conf", required_argument, 0, 'c'},
-    {"foreground", no_argument, 0, 'f'},
-    {"help", no_argument, 0, 'h'},
-    {"debug", required_argument, 0, 'd'},
-    {"version", no_argument, 0, 'V'},
+    {"conf",            required_argument,  0, 'c'},
+    {"foreground",      no_argument,        0, 'f'},
+    {"help",            no_argument,        0, 'h'},
+    {"debug",           required_argument,  0, 'd'},
+    {"version",         no_argument,        0, 'V'},
+    {"stdio",           no_argument,        0, 's'},
+    {"force-notroot",   no_argument,        0, 'R'},
     {0, 0, 0, 0}
 };
 #else
@@ -80,6 +82,8 @@ int main(int argc, char **argv)
     int c;
     char *config_filename = NULL;
     bool daemonize = TRUE;
+    bool use_stdio = FALSE;
+    bool force_notroot = FALSE;
 
     /* initialize various modules */
     err_init(argv[0]);
@@ -89,18 +93,18 @@ int main(int argc, char **argv)
     /* parse command line options */
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
-        case 'c':               /* --conf */
+        case 'c': /* --conf */
             if (config_filename != NULL) {
                 _usage(argv[0]);
                 /*NOTREACHED*/
             }
             config_filename = Strdup(optarg);
             break;
-        case 'f':               /* --foreground */
+        case 'f': /* --foreground */
             daemonize = FALSE;
             break;
 #ifndef NDEBUG
-        case 'd':               /* --debug */
+        case 'd': /* --debug */
             {
                 unsigned long val = strtol(optarg, NULL, 0);
 
@@ -111,11 +115,17 @@ int main(int argc, char **argv)
             }
             break;
 #endif
-        case 'V':               /* --version */
+        case 'V': /* --version */
             _version();
             /*NOTREACHED*/
             break;
-        case 'h':               /* --help */
+        case 's': /* --stdio */
+            use_stdio = TRUE;
+            break;
+        case 'R': /* --force-notroot */
+            force_notroot = TRUE;
+            break;
+        case 'h': /* --help */
         default:
             _usage(argv[0]);
             /*NOTREACHED*/
@@ -123,8 +133,11 @@ int main(int argc, char **argv)
         }
     }
 
+    if (use_stdio && daemonize)
+        err_exit(FALSE, "--stdio should only be used with --foreground");
+
     /* need root for ability to chown ptys, etc */
-    if (geteuid() != 0)
+    if (!force_notroot && geteuid() != 0)
         err_exit(FALSE, "must be root");
 
     Signal(SIGHUP, _noop_handler);
@@ -138,8 +151,7 @@ int main(int argc, char **argv)
     if (config_filename != NULL)
         Free(config_filename);
 
-    /* initialize listener */
-    cli_listen();
+    cli_start(use_stdio);
 
     if (daemonize)
         daemon_init(); /* closes all fd's except client listen port */
@@ -147,7 +159,6 @@ int main(int argc, char **argv)
     /* We now have a socket at listener fd running in listen mode */
     /* and a file descriptor for communicating with each device */
     _select_loop();
-     /*NOTREACHED*/ 
     return 0;
 }
 
@@ -159,6 +170,8 @@ static void _usage(char *prog)
     printf("  -d --debug <mask>      Set debug mask [0]\n");
     printf("  -f --foreground        Don't daemonize\n");
     printf("  -V --version           Report powerman version\n");
+    printf("  -s --stdio             Talk to client on stdin/stdout\n");
+    printf("  -R --force-notroot     Allow powermand to run as non-root\n");
     exit(0);
 }
 
@@ -211,9 +224,11 @@ static void _select_loop(void)
          */
         cli_post_poll(pfd);
         dev_post_poll(pfd, &tmout);
+
+        if (cli_server_done())
+            break;
     }
-    /*NOTREACHED*/
-    /*PollfdDestroy(pfd);*/
+    PollfdDestroy(pfd);
 }
 
 static void _noop_handler(int signum)
