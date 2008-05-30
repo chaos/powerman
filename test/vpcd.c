@@ -8,10 +8,11 @@
  * multiple power control devices. 
  */
 
-#define _GNU_SOURCE             /* for dprintf */
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <stdio.h>
 #include <pthread.h>
-#define _GNU_SOURCE
 #include <getopt.h>
 #include <unistd.h>
 #include <stdlib.h>
@@ -21,6 +22,7 @@
 #include <string.h>
 #include <signal.h>
 #include <errno.h>
+#include "wrappers.h"
 
 #ifndef PTHREAD_THREADS_MAX
 #define PTHREAD_THREADS_MAX 16384
@@ -96,7 +98,7 @@ static void _spew(int fd, int linenum)
     memcpy(buf, SPEW + linenum, strlen(SPEW) - linenum);
     memcpy(buf + strlen(SPEW) - linenum, SPEW, linenum);
     buf[strlen(SPEW)] = '\0';
-    dprintf(fd, "%s\n", buf);
+    Dprintf(fd, "%s\n", buf);
 }
 
 /*
@@ -117,7 +119,7 @@ static void _prompt_loop(int num, int rfd, int wfd)
             pause();
         }
 
-        dprintf(wfd, "%d vpc> ", seq);   /* prompt */
+        Dprintf(wfd, "%d vpc> ", seq);   /* prompt */
         res = _dgets(buf, sizeof(buf), rfd);
         if (res == -2) {
             fprintf(stderr, "%d: read returned EOF\n", num);
@@ -131,7 +133,7 @@ static void _prompt_loop(int num, int rfd, int wfd)
             continue;
         if (strcmp(buf, "logoff") == 0) {       /* logoff */
             fprintf(stderr, "%d: logoff\n", num);
-            dprintf(wfd, "%d OK\n", seq);
+            Dprintf(wfd, "%d OK\n", seq);
             dev[num].logged_in = 0;
             break;
         }
@@ -141,13 +143,13 @@ static void _prompt_loop(int num, int rfd, int wfd)
             goto ok;
         }
         if (!dev[num].logged_in) {
-            dprintf(wfd, "%d Please login\n", seq);
+            Dprintf(wfd, "%d Please login\n", seq);
             continue;
         }
 
         if (strcmp(buf, "stat") == 0) { /* stat */
             for (i = 0; i < NUM_PLUGS; i++)
-                dprintf(wfd, "plug %d: %s\n", i,
+                Dprintf(wfd, "plug %d: %s\n", i,
                         dev[num].plug[i] ? "ON" : "OFF");
             fprintf(stderr, "%d: stat\n", num);
             goto ok;
@@ -157,9 +159,9 @@ static void _prompt_loop(int num, int rfd, int wfd)
                 if (opt_soft_off && num == 0 && i == 0) {
                     fprintf(stderr, 
                             "vpcd: stat_soft forced OFF for vpcd0 plug 0\n");
-                    dprintf(wfd, "plug %d: %s\n", i, "OFF");
+                    Dprintf(wfd, "plug %d: %s\n", i, "OFF");
                 } else
-                    dprintf(wfd, "plug %d: %s\n", i,
+                    Dprintf(wfd, "plug %d: %s\n", i,
                             dev[num].plug[i] ? "ON" : "OFF");
             }
             fprintf(stderr, "%d: stat_soft\n", num);
@@ -167,7 +169,7 @@ static void _prompt_loop(int num, int rfd, int wfd)
         }
         if (sscanf(buf, "spew %d", &n1) == 1) { /* spew <linecount> */
             if (n1 <= 0) {
-                dprintf(wfd, "%d BADVAL: %d\n", seq, n1);
+                Dprintf(wfd, "%d BADVAL: %d\n", seq, n1);
                 continue;
             }
             for (i = 0; i < n1; i++)
@@ -177,7 +179,7 @@ static void _prompt_loop(int num, int rfd, int wfd)
         }
         if (sscanf(buf, "on %d", &n1) == 1) {   /* on <plugnum> */
             if (n1 < 0 || n1 >= NUM_PLUGS) {
-                dprintf(wfd, "%d BADVAL: %d\n", seq, n1);
+                Dprintf(wfd, "%d BADVAL: %d\n", seq, n1);
                 continue;
             }
             printf("%d: on %d\n", num, n1);
@@ -194,7 +196,7 @@ static void _prompt_loop(int num, int rfd, int wfd)
         }
         if (sscanf(buf, "off %d", &n1) == 1) {  /* off <plugnum> */
             if (n1 < 0 || n1 >= NUM_PLUGS) {
-                dprintf(wfd, "%d BADVAL: %d\n", seq, n1);
+                Dprintf(wfd, "%d BADVAL: %d\n", seq, n1);
                 continue;
             }
             dev[num].plug[n1] = 0;
@@ -203,7 +205,7 @@ static void _prompt_loop(int num, int rfd, int wfd)
         }
         if (sscanf(buf, "toggle %d", &n1) == 1) {  /* toggle <plugnum> */
             if (n1 < 0 || n1 >= NUM_PLUGS) {
-                dprintf(wfd, "%d BADVAL: %d\n", seq, n1);
+                Dprintf(wfd, "%d BADVAL: %d\n", seq, n1);
                 continue;
             }
             dev[num].plug[n1] = dev[num].plug[n1] == 0 ? 1 : 0;
@@ -229,10 +231,10 @@ static void _prompt_loop(int num, int rfd, int wfd)
             goto ok;
         }
       unknown:
-        dprintf(wfd, "%d UNKNOWN: %s\n", seq, buf);
+        Dprintf(wfd, "%d UNKNOWN: %s\n", seq, buf);
         continue;
       ok:
-        dprintf(wfd, "%d OK\n", seq);
+        Dprintf(wfd, "%d OK\n", seq);
     }
 }
 

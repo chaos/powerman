@@ -59,9 +59,9 @@ am_tpl_OBJECTS = tpl.$(OBJEXT) $(am__objects_1)
 tpl_OBJECTS = $(am_tpl_OBJECTS)
 am__DEPENDENCIES_1 =
 tpl_DEPENDENCIES = $(am__DEPENDENCIES_1)
-am_vpcd_OBJECTS = vpcd.$(OBJEXT)
+am_vpcd_OBJECTS = vpcd.$(OBJEXT) $(am__objects_1)
 vpcd_OBJECTS = $(am_vpcd_OBJECTS)
-vpcd_DEPENDENCIES =
+vpcd_DEPENDENCIES = $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/config
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -181,7 +181,7 @@ TESTS_ENVIRONMENT = env "PATH_POWERMAN=$(top_builddir)/src/powerman" \
 	"PATH_POWERMAND=$(top_builddir)/src/powermand" \
 	"PATH_ETC=$(top_builddir)/etc"
 TESTS = t00 t01 t02 t03 t04 t05
-CLEANFILES = *.out *.diff
+CLEANFILES = *.out *.err *.diff
 common_sources = \
         $(top_srcdir)/src/wrappers.c \
         $(top_srcdir)/src/error.c \
@@ -192,8 +192,8 @@ common_sources = \
         $(top_srcdir)/src/hprintf.c
 
 AM_CFLAGS = -I$(top_srcdir)/src
-vpcd_SOURCES = vpcd.c
-vpcd_LDADD = -lpthread
+vpcd_SOURCES = vpcd.c $(common_sources)
+vpcd_LDADD = $(LIBFORKPTY) -lpthread
 tpl_SOURCES = tpl.c $(common_sources)
 tpl_LDADD = $(LIBFORKPTY)
 all: all-am

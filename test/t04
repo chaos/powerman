@@ -3,9 +3,5 @@
 ./mkconf.pl 1024 $PATH_ETC >t04.conf || exit 1
 
 $PATH_POWERMAN -S $PATH_POWERMAND -C t04.conf -q >t04.out 2>t04.err || exit 1
-diff t04.out t04.exp >t04.diff || exit 1
-
-sort t04.err |sed 's!opened on .*$!!' >t04.err2
-rm -f t04.err
-mv t04.err2 t04.err
-diff t04.err t04.eexp >t04.ediff
+test `wc -l t04.err` = 64 || exit 1
+diff t04.out t04.exp >t04.diff
