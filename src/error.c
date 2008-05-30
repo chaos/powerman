@@ -28,6 +28,9 @@
  * Somewhat like the sys_err() of Stevens, "UNIX Network Programming."
  */
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <string.h>
 #include <assert.h>
 #include <errno.h>

@@ -95,8 +95,8 @@ void Free(void *ptr);
 char *Strdup(const char *str);
 int Accept(int fd, struct sockaddr_in *addr, socklen_t * addrlen);
 int Connect(int fd, struct sockaddr *addr, socklen_t addrlen);
-int Read(int fd, unsigned char *p, int max);
-int Write(int fd, unsigned char *p, int max);
+int Read(int fd, char *p, int max);
+int Write(int fd, char *p, int max);
 int Open(char *str, int flags, int mode);
 int Close(int fd);
 int Getaddrinfo(char *host, char *service, struct addrinfo *hints,
@@ -115,6 +115,35 @@ void Pipe(int filedes[2]);
 void Dup2(int oldfd, int newfd);
 void Execv(const char *path, char *const argv[]);
 pid_t Waitpid(pid_t pid, int *status, int options);
+
+int Dprintf(int fd, const char *format, ...);
+pid_t Forkpty(int *amaster, char *name, int len);
+
+/* borrowed from glibc <sys/time.h> */
+#ifndef timeradd
+# define timeradd(a, b, result)                                               \
+  do {                                                                        \
+    (result)->tv_sec = (a)->tv_sec + (b)->tv_sec;                             \
+    (result)->tv_usec = (a)->tv_usec + (b)->tv_usec;                          \
+    if ((result)->tv_usec >= 1000000)                                         \
+      {                                                                       \
+        ++(result)->tv_sec;                                                   \
+        (result)->tv_usec -= 1000000;                                         \
+      }                                                                       \
+  } while (0)
+#endif
+#ifndef timersub
+# define timersub(a, b, result)                                               \
+  do {                                                                        \
+    (result)->tv_sec = (a)->tv_sec - (b)->tv_sec;                             \
+    (result)->tv_usec = (a)->tv_usec - (b)->tv_usec;                          \
+    if ((result)->tv_usec < 0) {                                              \
+      --(result)->tv_sec;                                                     \
+      (result)->tv_usec += 1000000;                                           \
+    }                                                                         \
+  } while (0)
+#endif
+
 
 #endif                          /* WRAPPERS_H */
 

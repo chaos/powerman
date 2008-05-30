@@ -53,6 +53,10 @@
  * - client pulls out plug names & stats for --device response
  */
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <errno.h>
 #include <sys/time.h>
 #include <time.h>
@@ -138,8 +142,8 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
                                       ActionCB complete_fun, 
                                       VerbosePrintf vpf_fun,
                                       int client_id, ArgList arglist);
-static unsigned char *_findregex(regex_t * re, unsigned char *str,
-                                 int len, size_t nm, regmatch_t pm[]);
+static char *_findregex(regex_t * re, char *str, int len, 
+                        size_t nm, regmatch_t pm[]);
 static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[]);
 static bool _command_needs_device(Device * dev, hostlist_t hl);
 static void _enqueue_ping(Device * dev, struct timeval *timeout);
@@ -180,7 +184,7 @@ static void _dbg_actions(Device * dev)
  *  RETURN    pointer to char following the last char of the match,
  *            or if pm = NULL, the first char of str;  NULL if no match
  */
-static unsigned char *_findregex(regex_t * re, unsigned char *str, int len,
+static char *_findregex(regex_t * re, char *str, int len,
         size_t nm, regmatch_t pm[])
 {
     int n;
@@ -214,8 +218,8 @@ static unsigned char *_findregex(regex_t * re, unsigned char *str, int len,
  */
 static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[])
 {
-    unsigned char *str = Malloc(MAX_DEV_BUF + 1);
-    unsigned char *match_end;
+    char *str = Malloc(MAX_DEV_BUF + 1);
+    char *match_end;
     int bytes_peeked = cbuf_peek(b, str, MAX_DEV_BUF);
     int i, dropped;
 
@@ -852,7 +856,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 act->errnum = ACT_EEXPFAIL;
 
             if (act->vpf_fun) {
-                static unsigned char mem[MAX_DEV_BUF];
+                static char mem[MAX_DEV_BUF];
                 int len = cbuf_peek(dev->from, mem, MAX_DEV_BUF);
                 char *memstr = dbg_memstr(mem, len);
     
@@ -972,7 +976,7 @@ static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
 {
     bool finished = TRUE;
     ExecCtx *new;
-    Plug *plug;
+    Plug *plug = NULL;
 
     /* we store a plug iterator in the ExecCtx */
     if (e->plugitr == NULL)  

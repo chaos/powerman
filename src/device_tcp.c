@@ -35,6 +35,9 @@
  * telnet machine running.
  */
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif /* HAVE_CONFIG_H */
 #include <errno.h>
 #include <fcntl.h>
 #include <ctype.h>
@@ -115,7 +118,7 @@ bool tcp_finish_connect(Device * dev)
 {
     int rc;
     int error = 0;
-    int len = sizeof(err);
+    socklen_t len = sizeof(error);
     TcpDev *tcp;
 
     assert(dev->magic == DEV_MAGIC);
@@ -236,7 +239,7 @@ void tcp_preprocess(Device *dev)
     _telnet_preprocess(dev);
 }
 
-static void _telnet_sendopt(Device *dev, unsigned char cmd, unsigned char opt)
+static void _telnet_sendopt(Device *dev, int cmd, int opt)
 {
     unsigned char str[] = { IAC, cmd, opt };
     int n;
@@ -265,14 +268,14 @@ static void _telnet_sendcmd(Device *dev, unsigned char cmd)
 }
 #endif
 
-static void _telnet_recvcmd(Device *dev, unsigned char cmd)
+static void _telnet_recvcmd(Device *dev, int cmd)
 {
     dbg(DBG_TELNET, "%s: _telnet_recvcmd: %s", dev->name, 
             TELCMD_OK(cmd) ?  TELCMD(cmd) : "<unknown>");
 }
 
 
-static void _telnet_recvopt(Device *dev, unsigned char cmd, unsigned char opt)
+static void _telnet_recvopt(Device *dev, int cmd, int opt)
 {
     TcpDev *tcp = (TcpDev *)dev->data;
 

@@ -29,6 +29,9 @@
  * Well it started out as a pipe, now actually it's a "coprocess" on a pty.
  */
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <errno.h>
 #include <fcntl.h>
 #include <string.h>
@@ -38,9 +41,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/wait.h>
-#include <pty.h>
-
-
+#include <signal.h>
 #include "powerman.h"
 #include "parse_util.h"
 #include "wrappers.h"
@@ -86,16 +87,12 @@ bool pipe_connect(Device * dev)
     int fd;
     pid_t pid;
     PipeDev *pd = (PipeDev *)dev->data;
-    char ptyname[64]; /* XXX forkpty doesn't have a 'len' parameter */
+    char ptyname[64];
 
     assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
-    pid = forkpty(&fd, ptyname, NULL, NULL);
-    if (pid > 0) {
-        assert(strlen(ptyname) < sizeof(ptyname));
-    }
-
+    pid = Forkpty(&fd, ptyname, sizeof(ptyname));
     if (pid < 0) {
         err(FALSE, "_pipe_connect(%s): forkpty error", dev->name);
     } else if (pid == 0) {      /* child */

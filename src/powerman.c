@@ -24,11 +24,17 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#define _GNU_SOURCE             /* for dprintf */
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <stdio.h>
 #include <string.h>
-#define _GNU_SOURCE
+#if HAVE_GETOPT_H
 #include <getopt.h>
+#endif
+#if HAVE_GENDERS_H
+#include <genders.h>
+#endif
 #include <unistd.h>
 #include <ctype.h>
 #include <stdlib.h>
@@ -43,6 +49,9 @@
 #include "client_proto.h"
 #include "debug.h"
 
+#if WITH_GENDERS
+static void _push_genders_hosts(hostlist_t targets, char *s);
+#endif
 static void _connect_to_server(char *host, char *port);
 static void _disconnect_from_server(void);
 static void _usage(void);
@@ -56,34 +65,37 @@ static void _process_version(void);
 
 static int server_fd = -1;
 
-#define OPT_STRING "01crlqfubntLd:VDvxT"
-static const struct option long_options[] = {
-    {"on", no_argument, 0, '1'},
-    {"off", no_argument, 0, '0'},
-    {"cycle", no_argument, 0, 'c'},
-    {"reset", no_argument, 0, 'r'},
-    {"list", no_argument, 0, 'l'},
-    {"query", no_argument, 0, 'q'},
-    {"flash", no_argument, 0, 'f'},
-    {"unflash", no_argument, 0, 'u'},
-    {"beacon", no_argument, 0, 'b'},
-    {"node", no_argument, 0, 'n'},
-    {"temp", no_argument, 0, 't'},
-    {"license", no_argument, 0, 'L'},
-    {"destination", required_argument, 0, 'd'},
-    {"version", no_argument, 0, 'V'},
-    {"device", no_argument, 0, 'D'},
-    {"telemetry", no_argument, 0, 'T'},
-    {"exprange", no_argument, 0, 'x'},
-    {0, 0, 0, 0}
+#define OPTIONS "01crlqfubntLd:VDvxTg"
+#if HAVE_GETOPT_LONG
+#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
+static const struct option longopts[] = {
+    {"on",          no_argument,        0, '1'},
+    {"off",         no_argument,        0, '0'},
+    {"cycle",       no_argument,        0, 'c'},
+    {"reset",       no_argument,        0, 'r'},
+    {"list",        no_argument,        0, 'l'},
+    {"query",       no_argument,        0, 'q'},
+    {"flash",       no_argument,        0, 'f'},
+    {"unflash",     no_argument,        0, 'u'},
+    {"beacon",      no_argument,        0, 'b'},
+    {"node",        no_argument,        0, 'n'},
+    {"temp",        no_argument,        0, 't'},
+    {"license",     no_argument,        0, 'L'},
+    {"destination", required_argument,  0, 'd'},
+    {"version",     no_argument,        0, 'V'},
+    {"device",      no_argument,        0, 'D'},
+    {"telemetry",   no_argument,        0, 'T'},
+    {"exprange",    no_argument,        0, 'x'},
+    {"genders",     no_argument,        0, 'g'},
+    {0, 0, 0, 0},
 };
-
-static const struct option *longopts = long_options;
+#else
+#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
+#endif
 
 int main(int argc, char **argv)
 {
     int c;
-    int longindex;
     hostlist_t targets = NULL;
     bool have_targets = FALSE;
     char targstr[CP_LINEMAX];
@@ -97,6 +109,7 @@ int main(int argc, char **argv)
     char *host = NULL;
     bool telemetry = FALSE;
     bool exprange = FALSE;
+    bool genders = FALSE;
 
     prog = basename(argv[0]);
     err_init(prog);
@@ -110,8 +123,7 @@ int main(int argc, char **argv)
      * Parse options.
      */
     opterr = 0;
-    while ((c = getopt_long(argc, argv, OPT_STRING, longopts,
-                        &longindex)) != -1) {
+    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
         case 'l':              /* --list */
             cmd = CMD_LIST;
@@ -168,6 +180,9 @@ int main(int argc, char **argv)
         case 'x':              /* --exprange */
             exprange = TRUE;
             break;
+        case 'g':              /* --genders */
+            genders = TRUE;
+            break;
         default:
             _usage();
             /*NOTREACHED*/
@@ -185,8 +200,16 @@ int main(int argc, char **argv)
                 err_exit(FALSE, "hostlist error");
             have_targets = TRUE;
         }
-        if (hostlist_push(targets, argv[optind]) == 0)
-            err_exit(FALSE, "hostlist error");
+        if (genders) {
+#if WITH_GENDERS
+            _push_genders_hosts(targets, argv[optind]);
+#else
+            err_exit(FALSE, "not configured with genders support");
+#endif
+        } else {
+            if (hostlist_push(targets, argv[optind]) == 0)
+                err_exit(FALSE, "hostlist error");
+        }
         optind++;
     }
     if (have_targets) {
@@ -217,7 +240,7 @@ int main(int argc, char **argv)
     _connect_to_server(host ? host : DFLT_HOSTNAME, port ? port : DFLT_PORT);
 
     if (telemetry) {
-        dprintf(server_fd, CP_TELEMETRY CP_EOL);
+        Dprintf(server_fd, CP_TELEMETRY CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         if (res != 0)
@@ -225,7 +248,7 @@ int main(int argc, char **argv)
     }
 
     if (exprange) {
-        dprintf(server_fd, CP_EXPRANGE CP_EOL);
+        Dprintf(server_fd, CP_EXPRANGE CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         if (res != 0)
@@ -237,77 +260,77 @@ int main(int argc, char **argv)
      */
     switch (cmd) {
     case CMD_LIST:
-        dprintf(server_fd, CP_NODES CP_EOL);
+        Dprintf(server_fd, CP_NODES CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_QUERY:
         if (have_targets)
-            dprintf(server_fd, CP_STATUS CP_EOL, targstr);
+            Dprintf(server_fd, CP_STATUS CP_EOL, targstr);
         else
-            dprintf(server_fd, CP_STATUS_ALL CP_EOL);
+            Dprintf(server_fd, CP_STATUS_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_ON:
-        dprintf(server_fd, CP_ON CP_EOL, targstr);
+        Dprintf(server_fd, CP_ON CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_OFF:
-        dprintf(server_fd, CP_OFF CP_EOL, targstr);
+        Dprintf(server_fd, CP_OFF CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_RESET:
-        dprintf(server_fd, CP_RESET CP_EOL, targstr);
+        Dprintf(server_fd, CP_RESET CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_CYCLE:
-        dprintf(server_fd, CP_CYCLE CP_EOL, targstr);
+        Dprintf(server_fd, CP_CYCLE CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_FLASH:
-        dprintf(server_fd, CP_BEACON_ON CP_EOL, targstr);
+        Dprintf(server_fd, CP_BEACON_ON CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_UNFLASH:
-        dprintf(server_fd, CP_BEACON_OFF CP_EOL, targstr);
+        Dprintf(server_fd, CP_BEACON_OFF CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_BEACON:
         if (have_targets)
-            dprintf(server_fd, CP_BEACON CP_EOL, targstr);
+            Dprintf(server_fd, CP_BEACON CP_EOL, targstr);
         else
-            dprintf(server_fd, CP_BEACON_ALL CP_EOL);
+            Dprintf(server_fd, CP_BEACON_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_TEMP:
         if (have_targets)
-            dprintf(server_fd, CP_TEMP CP_EOL, targstr);
+            Dprintf(server_fd, CP_TEMP CP_EOL, targstr);
         else
-            dprintf(server_fd, CP_TEMP_ALL CP_EOL);
+            Dprintf(server_fd, CP_TEMP_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_NODE:
         if (have_targets)
-            dprintf(server_fd, CP_SOFT CP_EOL, targstr);
+            Dprintf(server_fd, CP_SOFT CP_EOL, targstr);
         else
-            dprintf(server_fd, CP_SOFT_ALL CP_EOL);
+            Dprintf(server_fd, CP_SOFT_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_DEVICE:
         if (have_targets)
-            dprintf(server_fd, CP_DEVICE CP_EOL, targstr);
+            Dprintf(server_fd, CP_DEVICE CP_EOL, targstr);
         else
-            dprintf(server_fd, CP_DEVICE_ALL CP_EOL);
+            Dprintf(server_fd, CP_DEVICE_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
@@ -336,7 +359,7 @@ static void _usage(void)
  "-b --beacon    Query beacon status   -n --node      Query node status\n"
  "-t --temp      Query temperature     -V --version   Report powerman version\n"
  "-D --device    Report device status  -T --telemetry Show device telemetry\n"
- "-x --exprange  Expand host ranges\n"
+ "-x --exprange  Expand host ranges    -g --genders   TARGETS is genders expr\n"
   );
     exit(1);
 }
@@ -359,12 +382,39 @@ static void _license(void)
     exit(1);
 }
 
+#if WITH_GENDERS
+static void _push_genders_hosts(hostlist_t targets, char *s)
+{
+    genders_t g;
+    char **nodes;
+    int len, n, i;
+
+    if (strlen(s) == 0)
+        return;
+    if (!(g = genders_handle_create()))
+        err_exit(FALSE, "genders_handle_create failed");
+    if (genders_load_data(g, NULL) < 0)
+        err_exit(FALSE, "genders_load_data: %s", genders_errormsg(g));
+    if ((len = genders_nodelist_create(g, &nodes)) < 0)
+        err_exit(FALSE, "genders_nodelist_create: %s", genders_errormsg(g));
+    if ((n = genders_query(g, nodes, len, s)) < 0)
+        err_exit(FALSE, "genders_query: %s", genders_errormsg(g));
+    genders_handle_destroy(g);
+    if (n == 0)
+        err_exit(FALSE, "genders expression did not match any nodes");
+    for (i = 0; i < n; i++) {
+        if (!hostlist_push(targets, nodes[i]))
+            err_exit(FALSE, "hostlist error");
+    }
+}
+#endif
+
 /*
  * Display powerman version and exit.
  */
 static void _version(void)
 {
-    printf("%s\n", POWERMAN_VERSION);
+    printf("%s\n", VERSION);
     exit(1);
 }
 
@@ -398,7 +448,7 @@ static void _connect_to_server(char *host, char *port)
 
 static void _disconnect_from_server(void)
 {
-    dprintf(server_fd, CP_QUIT CP_EOL);
+    Dprintf(server_fd, CP_QUIT CP_EOL);
     _expect(CP_RSP_QUIT);
 }
 
@@ -472,9 +522,9 @@ static void _process_version(void)
     _getline(buf, CP_LINEMAX);
     if (sscanf(buf, CP_VERSION, vers) != 1)
         err_exit(FALSE, "unexpected response from server");
-    if (strcmp(vers, POWERMAN_VERSION) != 0)
+    if (strcmp(vers, VERSION) != 0)
         err(FALSE, "warning: server version (%s) != client (%s)",
-                vers, POWERMAN_VERSION);
+                vers, VERSION);
 }
 
 static int _process_response(void)

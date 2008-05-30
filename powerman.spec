@@ -1,13 +1,15 @@
 Name: 
-Version: 
-Release: 
+Version:
+Release:
+
 Summary: PowerMan - centralized power control for clusters
 License: GPL
 Group: Applications/System
 Url: http://sourceforge.net/projects/powerman
 Source0: %{name}-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-BuildRequires: tcp_wrappers, flex, bison, curl-devel, readline-devel
+BuildRequires: tcp_wrappers
+BuildRequires: flex, bison, curl-devel, readline-devel, ncurses-devel
 
 %description
 PowerMan is a tool for manipulating remote power control (RPC) devices from a 
@@ -18,15 +20,12 @@ Expect-like configurability simplifies the addition of new devices.
 %setup
 
 %build
-make clean
-make VERSION=%{version}
+%configure --with-httppower --with-genders
+make
 
 %install
 rm -rf $RPM_BUILD_ROOT
-mkdir -p $RPM_BUILD_ROOT
-DESTDIR=$RPM_BUILD_ROOT mandir=%{_mandir} sbindir=%{_sbindir} bindir=%{_bindir} initrddir=%{_initrddir} make -e install
-mkdir -p $RPM_BUILD_ROOT%{_libdir}/stonith/plugins/external
-cp scripts/stonith-powerman $RPM_BUILD_ROOT%{_libdir}/stonith/plugins/external/powerman
+make install DESTDIR=$RPM_BUILD_ROOT 
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -73,8 +72,8 @@ fi
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man7/*
+%{_mandir}/man8/*
 %{_initrddir}/powerman
-%{_libdir}/stonith/plugins/external/powerman
 
 %changelog
 

@@ -25,7 +25,9 @@
 \*****************************************************************************/
 
 %{
-
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
 #define YYSTYPE char *  /*  The generic type returned by all parse matches */
 #undef YYDEBUG          /* no debug code plese */
 #include <sys/stat.h>
@@ -141,9 +143,6 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 %token TOK_MATCHPOS TOK_STRING_VAL TOK_NUMERIC_VAL TOK_YES TOK_NO
 %token TOK_BEGIN TOK_END TOK_UNRECOGNIZED TOK_EQUALS
 
-/* deprecated in 1.0.16 */
-%token TOK_B_NODES TOK_E_NODES TOK_B_GLOBAL TOK_E_GLOBAL TOK_OLD_PORT
-
 %%
 /* Grammar Rules for the powerman.conf config file */
 
@@ -161,17 +160,6 @@ config_item     : client_port
                 | device
                 | node
                 | alias
-                | deprecated
-;
-deprecated      : TOK_B_NODES   { 
-    _warnmsg("'begin nodes' no longer needed"); 
-}               | TOK_E_NODES   { 
-    _warnmsg("'end nodes' no longer needed"); 
-}               | TOK_B_GLOBAL  { 
-    _warnmsg("'begin global' no longer needed"); 
-}               | TOK_E_GLOBAL  { 
-    _warnmsg("'end global' no longer needed"); 
-} 
 ;
 TCP_wrappers    : TOK_TCP_WRAPPERS         { 
     _warnmsg("'tcpwrappers' without yes|no"); 
@@ -183,9 +171,6 @@ TCP_wrappers    : TOK_TCP_WRAPPERS         {
 }
 ;
 client_port     : TOK_PORT TOK_NUMERIC_VAL {
-    makeClientPort($2);
-}               | TOK_OLD_PORT TOK_NUMERIC_VAL {
-    _warnmsg("'client listener' not needed");
     makeClientPort($2);
 }
 ;
@@ -534,7 +519,7 @@ static void destroyInterp(Interp *i)
 
 static List copyInterpList(List il)
 {
-    reg_syntax_t cflags = REG_EXTENDED | REG_NOSUB;
+    int cflags = REG_EXTENDED | REG_NOSUB;
     ListIterator itr;
     Interp *ip, *icpy;
     List new = list_create((ListDelF) destroyInterp);
@@ -592,7 +577,7 @@ static Stmt *makeStmt(PreStmt *p)
 {
     Stmt *stmt;
     PreStmt *subp;
-    reg_syntax_t cflags = REG_EXTENDED;
+    int cflags = REG_EXTENDED;
     ListIterator itr;
 
     assert(p->magic == PRESTMT_MAGIC);

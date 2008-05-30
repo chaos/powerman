@@ -23,11 +23,23 @@
  *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
+
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <stdio.h>
 #include <libgen.h>
+#if HAVE_CURL
 #include <curl/curl.h>
+#else
+#error httppower needs curl support!
+#endif
+#if HAVE_READLINE
 #include <readline/readline.h>
 #include <readline/history.h>
+#else
+#error httppower needs readline support!
+#endif
 #include <getopt.h>
 #include <string.h>
 #include <stdlib.h>
@@ -163,7 +175,6 @@ void shell(CURL *h)
 
     /* disable readline file name completion */
     /*rl_bind_key ('\t', rl_insert); */
-
     while (rc == 0 && (line = readline("httppower> "))) {
         if (strlen(line) > 0) {
             add_history(line);

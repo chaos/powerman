@@ -25,11 +25,10 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#ifdef HAVE_CONFIG_H
+#if HAVE_CONFIG_H
 #include "config.h"
 #endif
 
-#define _GNU_SOURCE     /* needed for regex.h */
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
@@ -43,13 +42,28 @@
 #include <regex.h>
 #include <sys/types.h>
 #include <sys/wait.h>
+#if HAVE_PTY_H
+#include <pty.h>
+#endif
+#if HAVE_UTIL_H
+#include <util.h>
+#endif
+#if ! HAVE_FORKPTY
+/* XXX the non-forkpty case has only been tried on Solaris */
+#include <sys/ioctl.h>  
+#include <sys/stream.h> 
+#include <sys/stropts.h> 
+#include <sys/syscall.h>
+#endif
 #if HAVE_POLL
 #include <sys/poll.h>
 #endif
+#include <stdarg.h>
 
 #include "wrappers.h"
 #include "cbuf.h"
 #include "error.h"
+#include "hprintf.h"
 
 #define MAX_REG_BUF 64000
 
@@ -206,30 +220,31 @@ struct Pollfd {
 int
 Poll(Pollfd_t pfd, struct timeval *tv)
 {
-    struct timeval tv_cpy, start, end, delta;
+    struct timeval tv_cpy, *tvp = NULL; 
+    struct timeval start, end, delta;
     int n;
 
     if (tv) {
         tv_cpy = *tv;
         Gettimeofday(&start, NULL);
-    }
+        tvp = &tv_cpy;
+    } 
 
     /* repeat poll if interrupted */
     do {
 #if HAVE_POLL
-        int tv_msec = tv ? tv_cpy.tv_sec * 1000 + tv_cpy.tv_usec / 1000 : -1;
+        int tv_msec = tvp ? tvp->tv_sec * 1000 + tvp->tv_usec / 1000 : -1;
 
         n = poll(pfd->ufds, pfd->nfds, tv_msec);
 #else
-        n = select(pfd->maxfd + 1, &pfd->rset, &pfd->wset, NULL, 
-                tv ? &tv_cpy : NULL);
+        n = select(pfd->maxfd + 1, &pfd->rset, &pfd->wset, NULL, tvp);
 #endif
         if (n < 0 && errno != EINTR)
             lsd_fatal_error(__FILE__, __LINE__, "select");
         if (n < 0 && tv != NULL) {
             Gettimeofday(&end, NULL);
-            timersub(&end, &start, &delta);     /* delta = end-start */
-            timersub(tv, &delta, &tv_cpy);      /* tv_cpy = tv-delta */
+            timersub(&end, &start, &delta);     /* delta = end - start */
+            timersub(tv, &delta, tvp);          /* *tvp = tv - delta */
         }
     } while (n < 0);
     return n;
@@ -325,8 +340,9 @@ char *
 PollfdStr(Pollfd_t pfd, char *str, int len)
 {
     int i;
+#if HAVE_POLL
     int maxfd = -1;
-
+#endif
     assert(pfd->magic == POLLFD_MAGIC);
 #if HAVE_POLL
     memset(str, '.', len);
@@ -394,7 +410,7 @@ PollfdRevents(Pollfd_t pfd, int fd)
 #define MALLOC_PAD_FILL 0x55
 
 #ifndef NDEBUG
-static int _checkfill(unsigned char *buf, unsigned char fill, int size)
+static int _checkfill(char *buf, unsigned char fill, int size)
 {
     while (size-- > 0)
         if (buf[size] != fill)
@@ -459,7 +475,7 @@ void Free(void *ptr)
 
         assert(p[0] == MALLOC_MAGIC);   /* magic cookie still there? */
         size = p[1];
-        assert(_checkfill(ptr + size, MALLOC_PAD_FILL, MALLOC_PAD_SIZE));
+        assert(_checkfill((char*)ptr + size, MALLOC_PAD_FILL, MALLOC_PAD_SIZE));
         memset(p, 0, 2*sizeof(int) + size + MALLOC_PAD_SIZE);
 #ifndef NDEBUG
         memory_alloc -= size;
@@ -516,7 +532,7 @@ int Connect(int fd, struct sockaddr *addr, socklen_t addrlen)
     return n;
 }
 
-int Read(int fd, unsigned char *p, int max)
+int Read(int fd, char *p, int max)
 {
     int n;
 
@@ -528,7 +544,7 @@ int Read(int fd, unsigned char *p, int max)
     return n;
 }
 
-int Write(int fd, unsigned char *p, int max)
+int Write(int fd, char *p, int max)
 {
     int n;
 
@@ -613,6 +629,10 @@ static void _str_subst(char *s1, int len, const char *s2, const char *s3)
     }
 }
 
+#ifndef REG_NOERROR
+#define REG_NOERROR 0
+#endif
+
 void Regcomp(regex_t * preg, const char *regex, int cflags)
 {
     char buf[MAX_REG_BUF];
@@ -645,8 +665,6 @@ Regexec(const regex_t * preg, const char *string,
     int n;
     char buf[MAX_REG_BUF];
 
-    /* Review: undocumented, is it needed? */
-    re_syntax_options = RE_SYNTAX_POSIX_EXTENDED;
     Strncpy(buf, string, MAX_REG_BUF);
     n = regexec(preg, buf, nmatch, pmatch, eflags);
     return n;
@@ -713,6 +731,99 @@ pid_t Waitpid(pid_t pid, int *status, int options)
     }
 
     return n;
+}
+
+int Dprintf(int fd, const char *format, ...)
+{
+    char *str, *p;
+    va_list ap;
+    int n, rc;
+
+    va_start(ap, format);
+    str = hvsprintf(format, ap);
+    va_end(ap);
+
+    p = str;
+    n = strlen(p);
+    rc = 0;
+    do {
+        rc = Write(fd, str, n);
+        if (rc < 0)
+            return rc;
+        n -= rc;
+        p += rc;
+    } while (n > 0);
+    Free(str);
+    
+    return n;
+}
+
+
+pid_t Forkpty(int *amaster, char *name, int len)
+{
+    pid_t pid;
+
+#if HAVE_FORKPTY
+    pid = forkpty(amaster, name, NULL, NULL);
+    if (pid > 0) { /* XXX forkpty takes no len parameter */
+        assert(strlen(name) < len);
+    }
+#else
+    /* this code initially borrowed from 
+     *  http://bugs.mysql.com/bug.php?id=22429
+     * XXX solaris specific!
+     * XXX need to lose controlling tty with setsid() ?
+     */
+    int master, slave; 
+    char *slave_name; 
+   
+    master = open("/dev/ptmx", O_RDWR); 
+    if (master < 0) 
+        return -1; 
+    if (grantpt (master) < 0) { 
+        close (master); 
+        return -1; 
+    } 
+    if (unlockpt (master) < 0) { 
+        close (master); 
+        return -1; 
+    } 
+    slave_name = ptsname (master); 
+    if (slave_name == NULL) { 
+        close (master); 
+        return -1; 
+    } 
+    slave = open (slave_name, O_RDWR); 
+    if (slave < 0) { 
+        close (master); 
+        return -1; 
+    } 
+    if (ioctl (slave, I_PUSH, "ptem") < 0 
+      || ioctl (slave, I_PUSH, "ldterm") < 0) { 
+        close (slave); 
+        close (master); 
+        return -1; 
+    } 
+    if (amaster) 
+        *amaster = master; 
+    if (name) 
+        strncpy (name, slave_name, len); 
+    pid = fork (); 
+    switch (pid) { 
+        case -1: /* Error */ 
+            return -1; 
+        case 0: /* Child */ 
+            close (master); 
+            dup2 (slave, STDIN_FILENO); 
+            dup2 (slave, STDOUT_FILENO); 
+            dup2 (slave, STDERR_FILENO); 
+            return 0; 
+        default: /* Parent */ 
+            close (slave); 
+            break;
+    } 
+#endif
+    return pid;
 }
 
 

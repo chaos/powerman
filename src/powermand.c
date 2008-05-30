@@ -24,11 +24,16 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
+
 #include <errno.h>
 #include <sys/time.h>
 #include <time.h>
-#define _GNU_SOURCE
+#if HAVE_GETOPT_H
 #include <getopt.h>
+#endif
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
@@ -55,8 +60,10 @@ static void _noop_handler(int signum);
 static void _exit_handler(int signum);
 static void _select_loop(void);
 
-#define OPT_STRING "c:fhd:V"
-static const struct option long_options[] = {
+#define OPTIONS "c:fhd:V"
+#if HAVE_GETOPT_LONG
+#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
+static const struct option longopts[] = {
     {"conf", required_argument, 0, 'c'},
     {"foreground", no_argument, 0, 'f'},
     {"help", no_argument, 0, 'h'},
@@ -64,13 +71,13 @@ static const struct option long_options[] = {
     {"version", no_argument, 0, 'V'},
     {0, 0, 0, 0}
 };
-
-static const struct option *longopts = long_options;
+#else
+#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
+#endif
 
 int main(int argc, char **argv)
 {
     int c;
-    int lindex;
     char *config_filename = NULL;
     bool daemonize = TRUE;
 
@@ -80,8 +87,7 @@ int main(int argc, char **argv)
     cli_init();
 
     /* parse command line options */
-    while ((c = getopt_long(argc, argv, OPT_STRING, longopts,
-                        &lindex)) != -1) {
+    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
         case 'c':               /* --conf */
             if (config_filename != NULL) {
@@ -158,7 +164,7 @@ static void _usage(char *prog)
 
 static void _version(void)
 {
-    printf("%s\n", POWERMAN_VERSION);
+    printf("%s\n", VERSION);
     exit(0);
 }
 
@@ -207,7 +213,7 @@ static void _select_loop(void)
         dev_post_poll(pfd, &tmout);
     }
     /*NOTREACHED*/
-    PollfdDestroy(pfd);
+    /*PollfdDestroy(pfd);*/
 }
 
 static void _noop_handler(int signum)
