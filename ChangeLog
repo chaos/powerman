@@ -12,6 +12,8 @@
 
 	* src/error.c : Removed file::line from lsd error messages.
 
+	* test/Makefile.am, test/t00, test/t00.exp : Add test framework.
+
 2008-05-23 Jim Garlick <garlick@llnl.gov>
 
 	* autoconf.ac, src/powerman.c : Use HAVE_GENDERS_H for <genders.h>.

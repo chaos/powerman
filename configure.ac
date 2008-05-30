@@ -86,6 +86,7 @@ AC_CONFIG_FILES( \
   etc/Makefile \
   man/Makefile \
   scripts/Makefile \
+  test/Makefile \
 )
 AC_OUTPUT
 

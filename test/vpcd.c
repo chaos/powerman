@@ -37,6 +37,7 @@ typedef struct {
     pthread_attr_t attr;
     pthread_t thd;
     int logged_in;
+    int n;
 } vpcdev_t;
 
 static int num_threads = NUM_THREADS;
@@ -274,7 +275,8 @@ static int _vpc_listen(int port)
  */
 static void *_vpc_thread(void *arg)
 {
-    int my_threadnum = (int) arg;
+    vpcdev_t *vdev = (vpcdev_t *)arg;
+    int my_threadnum = vdev->n;
     int my_port = BASE_PORT + my_threadnum;
     int listen_fd;
 
@@ -284,7 +286,7 @@ static void *_vpc_thread(void *arg)
     while (1) {
         char tmpstr[128];
         struct sockaddr_in saddr;
-        int saddr_size = sizeof(struct sockaddr_in);
+        unsigned int saddr_size = sizeof(struct sockaddr_in);
         int fd;
 
         if ((fd = accept(listen_fd, &saddr, &saddr_size)) < 0) {
@@ -313,7 +315,8 @@ static void _start_threads(void)
         }
         pthread_attr_init(&dev[i].attr);
         pthread_attr_setdetachstate(&dev[i].attr, PTHREAD_CREATE_DETACHED);
-        n = pthread_create(&dev[i].thd, &dev[i].attr, _vpc_thread, (void *) i);
+        dev[i].n = i;
+        n = pthread_create(&dev[i].thd, &dev[i].attr, _vpc_thread, &dev[i]);
         if (n != 0) {
             fprintf(stderr, "pthread_create error: %s\n", strerror(n));
             exit(1);

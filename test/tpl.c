@@ -85,6 +85,7 @@ int main(int argc, char *argv[])
 			fprintf(stderr, "more plugs than nodes\n");
 			break;
 		case EPL_SUCCESS: 
+			break;
 	}
 
 	if (findplug) {
