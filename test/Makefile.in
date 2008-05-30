@@ -178,8 +178,9 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 TESTS_ENVIRONMENT = env "PATH_POWERMAN=$(top_builddir)/src/powerman" \
-	"PATH_POWERMAND=$(top_builddir)/src/powermand"
-TESTS = t00
+	"PATH_POWERMAND=$(top_builddir)/src/powermand" \
+	"PATH_ETC=$(top_builddir)/etc"
+TESTS = t00 t01 t02 t03 t04 t05
 CLEANFILES = *.out *.diff
 common_sources = \
         $(top_srcdir)/src/wrappers.c \

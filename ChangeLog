@@ -12,7 +12,7 @@
 
 	* src/error.c : Removed file::line from lsd error messages.
 
-	* test/Makefile.am, test/t00, test/t00.exp : Add test framework.
+	* test/* : Add integrated tests.
 
 2008-05-23 Jim Garlick <garlick@llnl.gov>
 

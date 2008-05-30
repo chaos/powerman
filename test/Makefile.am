@@ -3,9 +3,10 @@ check_PROGRAMS = tpl vpcd
 TESTS_ENVIRONMENT = env 
 TESTS_ENVIRONMENT += "PATH_POWERMAN=$(top_builddir)/src/powerman"
 TESTS_ENVIRONMENT += "PATH_POWERMAND=$(top_builddir)/src/powermand"
-TESTS = t00
+TESTS_ENVIRONMENT += "PATH_ETC=$(top_builddir)/etc"
+TESTS = t00 t01 t02 t03 t04 t05
 
-CLEANFILES = *.out *.diff
+CLEANFILES = *.out *.err *.diff
 
 common_sources = \
         $(top_srcdir)/src/wrappers.c \
