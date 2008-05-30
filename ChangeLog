@@ -10,6 +10,8 @@
 
 	* src/wrappers.c : Allow NULL ptyname argument to Forkpty().
 
+	* src/error.c : Removed file::line from lsd error messages.
+
 2008-05-23 Jim Garlick <garlick@llnl.gov>
 
 	* autoconf.ac, src/powerman.c : Use HAVE_GENDERS_H for <genders.h>.

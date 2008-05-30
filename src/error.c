@@ -45,7 +45,7 @@
 #include "wrappers.h"
 #include "debug.h"
 
-static char *err_prog = NULL;   /* basename of calling program */
+static char *err_prog = NULL;           /* basename of calling program */
 static bool err_ttyvalid = TRUE;        /* use stderr until told otherwise */
 
 #define ERROR_BUFLEN 1024
@@ -118,13 +118,12 @@ void err(bool errno_valid, const char *fmt, ...)
 
 void lsd_fatal_error(char *file, int line, char *mesg)
 {
-    err_exit(FALSE, "fatal error: %s: %s::%d: %s", mesg, file, line, 
-strerror(errno));
+    err_exit(TRUE, "%s", mesg);
 }
 
 void *lsd_nomem_error(char *file, int line, char *mesg)
 {
-    err_exit(FALSE, "out of memory: %s: %s::%d", mesg, file, line);
+    err_exit(FALSE, "%s: out of memory", mesg);
     /*NOTREACHED*/
     return NULL;
 }
