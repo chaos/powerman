@@ -70,7 +70,7 @@ char *hsprintf(const char *fmt, ...)
     return str;
 }
 
-int xdprintf(int fd, const char *format, ...)
+int hfdprintf(int fd, const char *format, ...)
 {
     char *str, *p;
     va_list ap;

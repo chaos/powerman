@@ -100,7 +100,7 @@ static void _spew(int fd, int linenum)
     memcpy(buf, SPEW + linenum, strlen(SPEW) - linenum);
     memcpy(buf + strlen(SPEW) - linenum, SPEW, linenum);
     buf[strlen(SPEW)] = '\0';
-    xdprintf(fd, "%s\n", buf);
+    hfdprintf(fd, "%s\n", buf);
 }
 
 /*
@@ -121,7 +121,7 @@ static void _prompt_loop(int num, int rfd, int wfd)
             pause();
         }
 
-        xdprintf(wfd, "%d vpc> ", seq);   /* prompt */
+        hfdprintf(wfd, "%d vpc> ", seq);   /* prompt */
         res = _dgets(buf, sizeof(buf), rfd);
         if (res == -2) {
             fprintf(stderr, "%d: read returned EOF\n", num);
@@ -135,7 +135,7 @@ static void _prompt_loop(int num, int rfd, int wfd)
             continue;
         if (strcmp(buf, "logoff") == 0) {       /* logoff */
             fprintf(stderr, "%d: logoff\n", num);
-            xdprintf(wfd, "%d OK\n", seq);
+            hfdprintf(wfd, "%d OK\n", seq);
             dev[num].logged_in = 0;
             break;
         }
@@ -145,13 +145,13 @@ static void _prompt_loop(int num, int rfd, int wfd)
             goto ok;
         }
         if (!dev[num].logged_in) {
-            xdprintf(wfd, "%d Please login\n", seq);
+            hfdprintf(wfd, "%d Please login\n", seq);
             continue;
         }
 
         if (strcmp(buf, "stat") == 0) { /* stat */
             for (i = 0; i < NUM_PLUGS; i++)
-                xdprintf(wfd, "plug %d: %s\n", i,
+                hfdprintf(wfd, "plug %d: %s\n", i,
                         dev[num].plug[i] ? "ON" : "OFF");
             fprintf(stderr, "%d: stat\n", num);
             goto ok;
@@ -161,9 +161,9 @@ static void _prompt_loop(int num, int rfd, int wfd)
                 if (opt_soft_off && num == 0 && i == 0) {
                     fprintf(stderr, 
                             "vpcd: stat_soft forced OFF for vpcd0 plug 0\n");
-                    xdprintf(wfd, "plug %d: %s\n", i, "OFF");
+                    hfdprintf(wfd, "plug %d: %s\n", i, "OFF");
                 } else
-                    xdprintf(wfd, "plug %d: %s\n", i,
+                    hfdprintf(wfd, "plug %d: %s\n", i,
                             dev[num].plug[i] ? "ON" : "OFF");
             }
             fprintf(stderr, "%d: stat_soft\n", num);
@@ -171,7 +171,7 @@ static void _prompt_loop(int num, int rfd, int wfd)
         }
         if (sscanf(buf, "spew %d", &n1) == 1) { /* spew <linecount> */
             if (n1 <= 0) {
-                xdprintf(wfd, "%d BADVAL: %d\n", seq, n1);
+                hfdprintf(wfd, "%d BADVAL: %d\n", seq, n1);
                 continue;
             }
             for (i = 0; i < n1; i++)
@@ -181,7 +181,7 @@ static void _prompt_loop(int num, int rfd, int wfd)
         }
         if (sscanf(buf, "on %d", &n1) == 1) {   /* on <plugnum> */
             if (n1 < 0 || n1 >= NUM_PLUGS) {
-                xdprintf(wfd, "%d BADVAL: %d\n", seq, n1);
+                hfdprintf(wfd, "%d BADVAL: %d\n", seq, n1);
                 continue;
             }
             printf("%d: on %d\n", num, n1);
@@ -198,7 +198,7 @@ static void _prompt_loop(int num, int rfd, int wfd)
         }
         if (sscanf(buf, "off %d", &n1) == 1) {  /* off <plugnum> */
             if (n1 < 0 || n1 >= NUM_PLUGS) {
-                xdprintf(wfd, "%d BADVAL: %d\n", seq, n1);
+                hfdprintf(wfd, "%d BADVAL: %d\n", seq, n1);
                 continue;
             }
             dev[num].plug[n1] = 0;
@@ -207,7 +207,7 @@ static void _prompt_loop(int num, int rfd, int wfd)
         }
         if (sscanf(buf, "toggle %d", &n1) == 1) {  /* toggle <plugnum> */
             if (n1 < 0 || n1 >= NUM_PLUGS) {
-                xdprintf(wfd, "%d BADVAL: %d\n", seq, n1);
+                hfdprintf(wfd, "%d BADVAL: %d\n", seq, n1);
                 continue;
             }
             dev[num].plug[n1] = dev[num].plug[n1] == 0 ? 1 : 0;
@@ -233,10 +233,10 @@ static void _prompt_loop(int num, int rfd, int wfd)
             goto ok;
         }
       unknown:
-        xdprintf(wfd, "%d UNKNOWN: %s\n", seq, buf);
+        hfdprintf(wfd, "%d UNKNOWN: %s\n", seq, buf);
         continue;
       ok:
-        xdprintf(wfd, "%d OK\n", seq);
+        hfdprintf(wfd, "%d OK\n", seq);
     }
 }
 

@@ -18,7 +18,8 @@
 	configure error if flex is not found.  Check in lex/yacc build 
 	products so powerman can be built without those.
 
-	* src/*, test/* : Refactoring and renaming of wrapped functions.
+	* wrappers.[ch] : Many wrappers dropped, others renamed and
+	split off to x*.[ch] files.
 
 2008-05-23 Jim Garlick <garlick@llnl.gov>
 

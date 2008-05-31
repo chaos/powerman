@@ -37,8 +37,7 @@
 
 #include "error.h"
 #include "xregex.h"
-
-#define MAX_REG_BUF 64000
+#include "xmalloc.h"
 
 /* 
  * Substitute all occurrences of s2 with s3 in s1, 
@@ -63,25 +62,22 @@ static void _str_subst(char *s1, int len, const char *s2, const char *s3)
 
 void xregcomp(regex_t * preg, const char *regex, int cflags)
 {
-    char buf[MAX_REG_BUF];
+    char *cpy;
     int n;
 
     assert(regex != NULL);
-    assert(strlen(regex) < sizeof(buf));
-
-    snprintf(buf, sizeof(buf), "%s", regex);
 
     /* convert backslash-prefixed special characters in regex to value */
-    _str_subst(buf, MAX_REG_BUF, "\\r", "\r");
-    _str_subst(buf, MAX_REG_BUF, "\\n", "\n");
+    cpy = xstrdup(regex);
+    _str_subst(cpy, strlen(cpy) + 1, "\\r", "\r");
+    _str_subst(cpy, strlen(cpy) + 1, "\\n", "\n");
+    n = regcomp(preg, cpy, cflags);
+    xfree(cpy);
 
-    /*
-     * N.B.
-     * The buffer space available in a compiled RegEx expression is only 
-     * 256 bytes.  A long or complicated RegEx will exceed this space and 
-     * cause the library call to silently fail.
+    /* N.B.  The buffer space available in a compiled RegEx expression is 
+     * only 256 bytes.  A long or complicated RegEx will exceed this space 
+     * and cause the library call to silently fail.
      */
-    n = regcomp(preg, buf, cflags);
     if (n != REG_NOERROR)
         err_exit(FALSE, "regcomp failed");
 }
@@ -91,10 +87,11 @@ xregexec(const regex_t * preg, const char *string,
         size_t nmatch, regmatch_t pmatch[], int eflags)
 {
     int n;
-    char buf[MAX_REG_BUF];
+    char *cpy;
 
-    snprintf(buf, sizeof(buf), "%s", string);
-    n = regexec(preg, buf, nmatch, pmatch, eflags);
+    cpy = xstrdup(string); /* FIXME: why do we make cpy here? */
+    n = regexec(preg, cpy , nmatch, pmatch, eflags);
+    xfree(cpy);
     return n;
 }
 
