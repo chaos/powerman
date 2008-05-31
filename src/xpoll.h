@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  $Id$
+ *  $Id: wrappers.h 911 2008-05-30 20:26:33Z garlick $
  *****************************************************************************
  *  Copyright (C) 2001-2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -25,16 +25,36 @@
 \*****************************************************************************/
 
 
-#ifndef WRAPPERS_H
-#define WRAPPERS_H
+#ifndef POWERMAN_POLL_H
+#define POWERMAN_POLL_H
 
-int Read(int fd, char *p, int max);
-int Write(int fd, char *p, int max);
+typedef struct xpollfd *xpollfd_t;
 
-typedef void Sigfunc(int);
-Sigfunc *Signal(int signo, Sigfunc * func);
+int         xpoll(xpollfd_t pfd, struct timeval *timeout);
+xpollfd_t   xpollfd_create(void);
+void        xpollfd_destroy(xpollfd_t pfd);
+void        xpollfd_zero(xpollfd_t pfd);
+void        xpollfd_set(xpollfd_t pfd, int fd, short events);
+short       xpollfd_revents(xpollfd_t pfd, int fd);
+char       *xpollfd_str(xpollfd_t pfd, char *str, int len);
 
-#endif                          /* WRAPPERS_H */
+#ifndef POLLIN
+#define POLLIN      1
+#endif
+#ifndef POLLOUT
+#define POLLOUT     2
+#endif
+#ifndef POLLHUP
+#define POLLHUP     4
+#endif
+#ifndef POLLERR
+#define POLLERR     8
+#endif
+#ifndef POLLNVAL
+#define POLLNVAL    16
+#endif
+
+#endif                          /* POWERMAN_POLL_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

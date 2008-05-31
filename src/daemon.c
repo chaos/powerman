@@ -39,10 +39,12 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <assert.h>
+#include <time.h>
 
 #include "powerman.h"
 
 #include "wrappers.h"
+#include "xpoll.h"
 #include "error.h"
 #include "daemon.h"
 #include "client.h"
@@ -58,8 +60,14 @@ void daemon_init(void)
     time_t t = time(NULL);
     int res;
 
-    if (Fork() != 0)
-        exit(0);                /* parent terminates */
+    switch (fork()) {
+        case -1:
+            err_exit(TRUE, "fork");
+        case 0: /* child */
+            break;
+        default: /* parent */
+            exit(0);           
+    }
 
     /* 1st child continues */
     /* Review: setsid may fail with -1, EPERM */
@@ -68,8 +76,14 @@ void daemon_init(void)
 
     Signal(SIGHUP, SIG_IGN);
 
-    if (Fork() != 0)
-        exit(0);                /* 1st child terminates */
+    switch(fork()) {
+        case -1:
+            err_exit(TRUE, "fork");
+        case 0: /* child */
+            break;
+        default: /* parent */
+            exit(0);
+    }
 
     /* 2nd child continues */
 
@@ -80,7 +94,7 @@ void daemon_init(void)
     /* clear our file mode creation mask */
     umask(0);
 
-    /* Close fd's */
+    /* close fd's */
     for (i = 0; i < 256; i++) {
         if (i != cli_listen_fd())
             close(i);               /* ignore errors */

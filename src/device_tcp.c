@@ -42,7 +42,10 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <string.h>
+#include <unistd.h>
 #include <sys/socket.h>
+#include <sys/types.h>
+#include <netdb.h>
 #include <assert.h>
 #define TELOPTS
 #define TELCMDS
@@ -51,12 +54,17 @@
 #include "powerman.h"
 #include "list.h"
 #include "parse_util.h"
-#include "wrappers.h"
+#include "xmalloc.h"
+#include "xpoll.h"
 #include "pluglist.h"
 #include "device.h"
 #include "error.h"
 #include "debug.h"
 #include "device_tcp.h"
+
+#ifndef HAVE_SOCKLEN_T
+typedef int socklen_t;                  /* socklen_t is uint32_t in Posix.1g */
+#endif /* !HAVE_SOCKLEN_T */
 
 typedef enum { TELNET_NONE, TELNET_CMD, TELNET_OPT } TelnetState;
 typedef struct {
@@ -72,7 +80,7 @@ static void _telnet_preprocess(Device * dev);
 
 static void _parse_options(TcpDev *tcp, char *flags)
 {
-    char *tmp = Strdup(flags);
+    char *tmp = xstrdup(flags);
     char *opt = strtok(tmp, ",");
 
     while (opt) {
@@ -82,15 +90,15 @@ static void _parse_options(TcpDev *tcp, char *flags)
             err_exit(FALSE, "bad device option: %s\n", opt);
         opt = strtok(NULL, ",");
     }
-    Free(tmp);
+    xfree(tmp);
 }
 
 void *tcp_create(char *host, char *port, char *flags)
 {
-    TcpDev *tcp = (TcpDev *)Malloc(sizeof(TcpDev));
+    TcpDev *tcp = (TcpDev *)xmalloc(sizeof(TcpDev));
 
-    tcp->host = Strdup(host);
-    tcp->port = Strdup(port);
+    tcp->host = xstrdup(host);
+    tcp->port = xstrdup(port);
     tcp->tstate = TELNET_NONE;
     tcp->tcmd = 0;
     tcp->quiet = FALSE;
@@ -105,10 +113,10 @@ void tcp_destroy(void *data)
     TcpDev *tcp = (TcpDev *)data;
 
     if (tcp->host)
-        Free(tcp->host);
+        xfree(tcp->host);
     if (tcp->port)
-        Free(tcp->port);
-    Free(tcp);
+        xfree(tcp->port);
+    xfree(tcp);
 }
 
 /*
@@ -155,8 +163,9 @@ bool tcp_connect(Device * dev)
 {
     TcpDev *tcp;
     struct addrinfo hints, *addrinfo;
-    int sock_opt;
+    int opt;
     int fd_settings;
+    int n;
 
     assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_NOT_CONNECTED);
@@ -169,27 +178,34 @@ bool tcp_connect(Device * dev)
     hints.ai_flags = AI_CANONNAME;
     hints.ai_family = AF_INET;
     hints.ai_socktype = SOCK_STREAM;
-    Getaddrinfo(tcp->host, tcp->port, &hints, &addrinfo);
+    if ((n = getaddrinfo(tcp->host, tcp->port, &hints, &addrinfo)) != 0)
+        err_exit(FALSE, "getaddrinfo %s: %s", tcp->host, gai_strerror(n));
 
-    dev->fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
+    dev->fd = socket(addrinfo->ai_family, addrinfo->ai_socktype,
                      addrinfo->ai_protocol);
+    if (dev->fd < 0)
+        err_exit(TRUE, "socket");
 
     dbg(DBG_DEVICE, "tcp_connect: %s on fd %d", dev->name, dev->fd);
 
     /* set up and initiate a non-blocking connect */
+    opt = 1;
+    if (setsockopt(dev->fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+        err_exit(TRUE, "setsockopt SO_REUSEADDR");
 
-    sock_opt = 1;
-    Setsockopt(dev->fd, SOL_SOCKET, SO_REUSEADDR,
-               &(sock_opt), sizeof(sock_opt));
-    fd_settings = Fcntl(dev->fd, F_GETFL, 0);
-    Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
+    fd_settings = fcntl(dev->fd, F_GETFL, 0);
+    if (fd_settings < 0)
+        err_exit(TRUE, "fcntl F_GETFL");
+    if (fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK) < 0)
+        err_exit(TRUE, "fcntl F_SETFL");
 
-    /* Connect - 0 = connected, -1 implies EINPROGRESS | ECONNREFUSED */
     dev->connect_state = DEV_CONNECTING;
-    if (Connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen) >= 0)
+    if (connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen) >= 0)
         tcp_finish_connect(dev);
     else if (errno == ECONNREFUSED)
         dev->connect_state = DEV_NOT_CONNECTED;
+    else
+        err_exit(TRUE, "connect");
 
     freeaddrinfo(addrinfo);
 
@@ -226,7 +242,8 @@ void tcp_disconnect(Device * dev)
 
     /* close socket if open */
     if (dev->fd >= 0) {
-        Close(dev->fd);
+        if (close(dev->fd) < 0)
+            err(TRUE, "tcp_disconnect: %s close fd %d", dev->name, dev->fd);
         dev->fd = NO_FD;
     }
 

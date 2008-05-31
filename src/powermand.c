@@ -43,9 +43,11 @@
 #include <limits.h>
 
 #include "powerman.h"
+#include "wrappers.h"
 #include "list.h"
 #include "parse_util.h"
-#include "wrappers.h"
+#include "xmalloc.h"
+#include "xpoll.h"
 #include "pluglist.h"
 #include "device.h"
 #include "daemon.h"
@@ -98,7 +100,7 @@ int main(int argc, char **argv)
                 _usage(argv[0]);
                 /*NOTREACHED*/
             }
-            config_filename = Strdup(optarg);
+            config_filename = xstrdup(optarg);
             break;
         case 'f': /* --foreground */
             daemonize = FALSE;
@@ -149,7 +151,7 @@ int main(int argc, char **argv)
     conf_init(config_filename ? config_filename : DFLT_CONFIG_FILE);
 
     if (config_filename != NULL)
-        Free(config_filename);
+        xfree(config_filename);
 
     cli_start(use_stdio);
 
@@ -184,7 +186,7 @@ static void _version(void)
 static void _select_loop(void)
 {
     struct timeval tmout;
-    Pollfd_t pfd = PollfdCreate();
+    xpollfd_t pfd = xpollfd_create();
 
     timerclear(&tmout);
 
@@ -200,7 +202,7 @@ static void _select_loop(void)
 #endif
         int n;
 
-        PollfdZero(pfd);
+        xpollfd_zero(pfd);
 
         cli_pre_poll(pfd);
         dev_pre_poll(pfd);
@@ -210,12 +212,12 @@ static void _select_loop(void)
             t = tmout.tv_sec + (float)tmout.tv_usec/1000000;
         dbg(DBG_POLL, "pre-poll timeout %.2fs", t);
 #endif
-        n = Poll(pfd, timerisset(&tmout) ? &tmout : NULL);
+        n = xpoll(pfd, timerisset(&tmout) ? &tmout : NULL);
         timerclear(&tmout);
 
 #ifndef NDEBUG
         dbg(DBG_POLL, "post-poll revents [%s]=%d", 
-                PollfdStr(pfd, tmpstr, sizeof(tmpstr)), n);
+                xpollfd_str(pfd, tmpstr, sizeof(tmpstr)), n);
 #endif
         /* 
          * Process activity on client and device fd's.
@@ -228,7 +230,7 @@ static void _select_loop(void)
         if (cli_server_done())
             break;
     }
-    PollfdDestroy(pfd);
+    xpollfd_destroy(pfd);
 }
 
 static void _noop_handler(int signum)

@@ -34,6 +34,8 @@ char *hvsprintf(const char *fmt, va_list ap);
  */
 char *hsprintf(const char *fmt, ...);
 
+int xdprintf(int fd, const char *format, ...);
+
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab
  */

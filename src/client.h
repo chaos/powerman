@@ -34,8 +34,8 @@ void cli_start(bool use_stdio);
 int cli_listen_fd(void);
 bool cli_server_done(void);
 
-void cli_post_poll(Pollfd_t pfd);
-void cli_pre_poll(Pollfd_t pfd);
+void cli_post_poll(xpollfd_t pfd);
+void cli_pre_poll(xpollfd_t pfd);
 
 #endif                          /* CLIENT_H */
 

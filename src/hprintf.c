@@ -34,7 +34,7 @@
 #include <assert.h>
 #include <string.h>
 
-#include "wrappers.h"
+#include "xmalloc.h"
 #include "hprintf.h"
 
 #define CHUNKSIZE 80
@@ -46,7 +46,7 @@ char *hvsprintf(const char *fmt, va_list ap)
     do {
         va_list vacpy;
 
-        str = (size == 0) ? Malloc(CHUNKSIZE) : Realloc(str, size+CHUNKSIZE);
+        str = (size == 0) ? xmalloc(CHUNKSIZE) : xrealloc(str, size+CHUNKSIZE);
         size += CHUNKSIZE;
 
         va_copy(vacpy, ap);
@@ -68,6 +68,32 @@ char *hsprintf(const char *fmt, ...)
 
     return str;
 }
+
+int xdprintf(int fd, const char *format, ...)
+{
+    char *str, *p;
+    va_list ap;
+    int n, rc;
+
+    va_start(ap, format);
+    str = hvsprintf(format, ap);
+    va_end(ap);
+
+    p = str;
+    n = strlen(p);
+    rc = 0;
+    do {
+        rc = Write(fd, str, n);
+        if (rc < 0)
+            return rc;
+        n -= rc;
+        p += rc;
+    } while (n > 0);
+    xfree(str);
+
+    return n;
+}
+
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

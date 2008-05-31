@@ -12,6 +12,7 @@
 #include "wrappers.h"
 #include "hostlist.h"
 #include "error.h"
+#include "xmalloc.h"
 
 void usage(void)
 {
@@ -55,11 +56,11 @@ int main(int argc, char *argv[])
 	if (hwplugs) {
 		hostlist_t hl = hostlist_create(hwplugs);
 		hostlist_iterator_t itr = hostlist_iterator_create(hl);
-		List l = list_create((ListDelF)Free);
+		List l = list_create((ListDelF)xfree);
 		char *plug;
 
 		while ((plug = hostlist_next(itr)))
-			list_append(l, Strdup(plug));
+			list_append(l, xstrdup(plug));
 
 		hostlist_iterator_destroy(itr);
 		hostlist_destroy(hl);

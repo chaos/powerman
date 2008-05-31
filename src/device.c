@@ -67,11 +67,19 @@
 #include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
+#if HAVE_POLL_H
+#include <poll.h>
+#endif
+#if HAVE_SYS_SELECT_H
+#include <sys/select.h>
+#endif
 
 #include "powerman.h"
 #include "list.h"
 #include "parse_util.h"
-#include "wrappers.h"
+#include "xpoll.h"
+#include "xmalloc.h"
+#include "xregex.h"
 #include "pluglist.h"
 #include "device.h"
 #include "error.h"
@@ -81,6 +89,7 @@
 #include "client_proto.h"
 #include "hprintf.h"
 #include "arglist.h"
+#include "timeradd.h"
 
 /* ExecCtx's are the state for the execution of a block of statements.
  * They are stacked on the Action (new ExecCtx pushed when executing an
@@ -191,7 +200,7 @@ static char *_findregex(regex_t * re, char *str, int len,
     int eflags = 0;
     char *res = NULL;
 
-    n = Regexec(re, str, nm, pm, eflags);
+    n = xregexec(re, str, nm, pm, eflags);
     if (n != REG_NOMATCH) {
         if (nm > 0) {
             assert(pm[0].rm_eo <= len);
@@ -218,7 +227,7 @@ static char *_findregex(regex_t * re, char *str, int len,
  */
 static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[])
 {
-    char *str = Malloc(MAX_DEV_BUF + 1);
+    char *str = xmalloc(MAX_DEV_BUF + 1);
     char *match_end;
     int bytes_peeked = cbuf_peek(b, str, MAX_DEV_BUF);
     int i, dropped;
@@ -226,7 +235,7 @@ static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[])
     if (bytes_peeked <= 0) {            /* FIXME: any -1 handling needed? */
         if (bytes_peeked < 0)
             err(TRUE, "_getregex_buf: cbuf_peek returned %d", bytes_peeked);
-        Free(str);
+        xfree(str);
         return NULL;
     }
     assert(bytes_peeked <= MAX_DEV_BUF);
@@ -238,7 +247,7 @@ static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[])
     str[bytes_peeked] = '\0';           /* null terminate result */
     match_end = _findregex(re, str, bytes_peeked, nm, pm);
     if (match_end == NULL) {
-        Free(str);
+        xfree(str);
         return NULL;
     }
     assert(match_end - str <= strlen(str));
@@ -253,7 +262,7 @@ static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[])
 
 static ExecCtx *_create_exec_ctx(Device *dev, List block, List plugs)
 {
-    ExecCtx *new = (ExecCtx *)Malloc(sizeof(ExecCtx));
+    ExecCtx *new = (ExecCtx *)xmalloc(sizeof(ExecCtx));
 
     new->stmtitr = list_iterator_create(block);
     new->cur = list_next(new->stmtitr); 
@@ -274,7 +283,7 @@ static void _destroy_exec_ctx(ExecCtx *e)
     if (e->plugs)
         list_destroy(e->plugs);
     e->plugs = NULL;
-    Free(e);
+    xfree(e);
 }
 
 static void _rewind_action(Action *act)
@@ -304,7 +313,7 @@ static Action *_create_action(Device * dev, int com, List plugs,
     ExecCtx *e;
 
     dbg(DBG_ACTION, "_create_action: %d", com);
-    act = (Action *) Malloc(sizeof(Action));
+    act = (Action *) xmalloc(sizeof(Action));
     act->magic = ACT_MAGIC;
     act->com = com;
     act->complete_fun = complete_fun;
@@ -332,7 +341,7 @@ static void _destroy_action(Action * act)
     if (act->arglist)
         arglist_unlink(act->arglist);
     act->arglist = NULL;
-    Free(act);
+    xfree(act);
 }
 
 /* initialize this module */
@@ -377,7 +386,8 @@ static bool _timeout(struct timeval *time_stamp, struct timeval *timeout,
     /* limit = time_stamp + timeout */
     timeradd(time_stamp, timeout, &limit);
 
-    Gettimeofday(&now, NULL);
+    if (gettimeofday(&now, NULL) < 0)
+        err_exit(TRUE, "gettimeofday");
 
     if (timercmp(&now, &limit, >))      /* if now > limit */
         result = TRUE;
@@ -431,7 +441,8 @@ static bool _connect(Device * dev)
 
     assert(dev->connect != NULL);
 
-    Gettimeofday(&dev->last_retry, NULL);
+    if (gettimeofday(&dev->last_retry, NULL) < 0)
+        err_exit(TRUE, "gettimeofday");
     dev->retry_count++;
 
     connected = dev->connect(dev);
@@ -844,7 +855,8 @@ static void _process_action(Device * dev, struct timeval *timeout)
 
         /* initialize timeout (action is brand new) */
         if (!timerisset(&act->time_stamp))
-            Gettimeofday(&act->time_stamp, NULL);
+            if (gettimeofday(&act->time_stamp, NULL) < 0)
+                err_exit(TRUE, "gettimeofday");
 
         /* timeout exceeded? */
         if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
@@ -866,7 +878,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 else
                     act->vpf_fun(act->client_id, "recv(%s): '%s'",
                             dev->name, memstr);
-                Free(memstr);
+                xfree(memstr);
             }
 
         /* not connected but timeout not yet exceeded */
@@ -1105,7 +1117,7 @@ static char *_copy_pmatch(Device *dev, int mp)
     if (m.rm_eo - m.rm_so <= 0)
         return NULL;    /* match is zero length */
 
-    new = Malloc(m.rm_eo - m.rm_so + 1);
+    new = xmalloc(m.rm_eo - m.rm_so + 1);
     memcpy(new, dev->matchstr + m.rm_so, m.rm_eo - m.rm_so);
     new[m.rm_eo - m.rm_so] = '\0';
     
@@ -1123,13 +1135,13 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
      * (implying target plug name).
      */
     if (e->cur->u.setplugstate.plug_name)    /* literal */
-        plug_name = Strdup(e->cur->u.setplugstate.plug_name);
+        plug_name = xstrdup(e->cur->u.setplugstate.plug_name);
     if (!plug_name)                         /* regex match */
         plug_name = _copy_pmatch(dev, e->cur->u.setplugstate.plug_mp);
     if (!plug_name && (e->plugs && list_count(e->plugs) > 0)) {
         Plug *plug = list_peek(e->plugs);
         if (plug->name)
-            plug_name = Strdup(plug->name);/* use action target */
+            plug_name = xstrdup(plug->name);/* use action target */
     }
     /* if no plug name, do nothing */
 
@@ -1145,7 +1157,7 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
 
             itr = list_iterator_create(e->cur->u.setplugstate.interps);
             while ((i = list_next(itr))) {
-                if (Regexec(i->re, str, 0, NULL, 0) != REG_NOMATCH) {
+                if (xregexec(i->re, str, 0, NULL, 0) != REG_NOMATCH) {
                     state = i->state;
                     break;
                 }
@@ -1155,14 +1167,14 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
             if ((arg = arglist_find(act->arglist, plug->node))) {
                 arg->state = state;
                 if (arg->val) 
-                    Free(arg->val);
-                arg->val = Strdup(str);
+                    xfree(arg->val);
+                arg->val = xstrdup(str);
             }
         } 
         if (str)
-            Free(str);
+            xfree(str);
         /* if no match, do nothing */
-        Free(plug_name); 
+        xfree(plug_name); 
     }
 
     return finished;
@@ -1182,7 +1194,7 @@ static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
 
     /* Free previously cached expect match string */
     if (dev->matchstr) {
-        Free(dev->matchstr);
+        xfree(dev->matchstr);
         dev->matchstr = NULL;
     }
 
@@ -1192,7 +1204,7 @@ static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
             char *memstr = dbg_memstr(dev->matchstr, strlen(dev->matchstr));
 
             act->vpf_fun(act->client_id, "recv(%s): '%s'", dev->name, memstr);
-            Free(memstr);
+            xfree(memstr);
         }
         finished = TRUE;
     } 
@@ -1269,14 +1281,14 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
                 if (act->vpf_fun)
                     act->vpf_fun(act->client_id, "send(%s): '%s'", 
                                  dev->name, memstr);
-                Free(memstr);
+                xfree(memstr);
             }
             assert(written < 0 || (dropped == strlen(str) - written));
         }
 
         e->processing = TRUE;
       
-        Free(str);
+        xfree(str);
     }
 
     if (cbuf_is_empty(dev->to)) {           /* finished! */
@@ -1302,7 +1314,8 @@ static bool _process_delay(Device *dev, Action *act, ExecCtx *e,
             act->vpf_fun(act->client_id, "delay(%s): %ld.%-6.6ld", dev->name, 
                     delay.tv_sec, delay.tv_usec);
         e->processing = TRUE;
-        Gettimeofday(&act->delay_start, NULL);
+        if (gettimeofday(&act->delay_start, NULL) < 0)
+            err_exit(TRUE, "gettimeofday");
     }
 
     /* timeout expired? */
@@ -1320,9 +1333,9 @@ Device *dev_create(const char *name)
     Device *dev;
     int i;
 
-    dev = (Device *) Malloc(sizeof(Device));
+    dev = (Device *) xmalloc(sizeof(Device));
     dev->magic = DEV_MAGIC;
-    dev->name = Strdup(name);
+    dev->name = xstrdup(name);
     dev->connect_state = DEV_NOT_CONNECTED;
     dev->fd = NO_FD;
     dev->acts = list_create((ListDelF) _destroy_action);
@@ -1368,8 +1381,8 @@ void dev_destroy(Device * dev)
     assert(dev->magic == DEV_MAGIC);
     dev->magic = 0;
 
-    Free(dev->name);
-    Free(dev->specname);
+    xfree(dev->name);
+    xfree(dev->specname);
     if (dev->data) {
         assert(dev->destroy != NULL);
         dev->destroy(dev->data);
@@ -1384,8 +1397,8 @@ void dev_destroy(Device * dev)
     cbuf_destroy(dev->to);
     cbuf_destroy(dev->from);
     if (dev->matchstr)
-        Free(dev->matchstr);
-    Free(dev);
+        xfree(dev->matchstr);
+    xfree(dev);
 }
 
 static void _enqueue_ping(Device * dev, struct timeval *timeout)
@@ -1395,7 +1408,8 @@ static void _enqueue_ping(Device * dev, struct timeval *timeout)
     if (dev->scripts[PM_PING] != NULL && timerisset(&dev->ping_period)) {
         if (_timeout(&dev->last_ping, &dev->ping_period, &timeleft)) {
             _enqueue_actions(dev, PM_PING, NULL, NULL, NULL, 0, NULL);
-            Gettimeofday(&dev->last_ping, NULL);
+            if (gettimeofday(&dev->last_ping, NULL) < 0)
+                err_exit(TRUE, "gettimeofday");
             dbg(DBG_ACTION, "%s: enqeuuing ping", dev->name);
         } else
             _update_timeout(timeout, &timeleft);
@@ -1518,7 +1532,7 @@ ioerr:
 /*
  * Called before poll to ready pfd.
  */
-void dev_pre_poll(Pollfd_t pfd)
+void dev_pre_poll(xpollfd_t pfd)
 {
     Device *dev;
     ListIterator itr;
@@ -1545,7 +1559,7 @@ void dev_pre_poll(Pollfd_t pfd)
         if (dev->connect_state == DEV_CONNECTING)
             flags |= POLLOUT;
 
-        PollfdSet(pfd, dev->fd, flags);
+        xpollfd_set(pfd, dev->fd, flags);
     }
     list_iterator_destroy(itr);
 }
@@ -1553,14 +1567,14 @@ void dev_pre_poll(Pollfd_t pfd)
 /* 
  * Called after select to process ready file descriptors, timeouts, etc.
  */
-void dev_post_poll(Pollfd_t pfd, struct timeval *timeout)
+void dev_post_poll(xpollfd_t pfd, struct timeval *timeout)
 {
     Device *dev;
     ListIterator itr;
 
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
-        short flags = dev->fd != NO_FD ? PollfdRevents(pfd, dev->fd) : 0;
+        short flags = dev->fd != NO_FD ? xpollfd_revents(pfd, dev->fd) : 0;
         bool ioerr = FALSE;
 
         /* A device is "ready", e.g. it can be read/written or has an error */

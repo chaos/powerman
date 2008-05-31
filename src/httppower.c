@@ -44,7 +44,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "wrappers.h"
+#include "xmalloc.h"
 #include "error.h"
 #include "argv.h"
 
@@ -73,12 +73,12 @@ _make_url(char *str)
     char *myurl = NULL;
 
     if (str && url) {
-        myurl = Malloc(strlen(url) + strlen(str) + 2);
+        myurl = xmalloc(strlen(url) + strlen(str) + 2);
         sprintf(myurl, "%s/%s", url, str);
     } else if (str && !url) {
-        myurl = Strdup(str);
+        myurl = xstrdup(str);
     } else if (!str && url) {
-        myurl = Strdup(url);
+        myurl = xstrdup(url);
     }
     return myurl;
 }
@@ -86,7 +86,7 @@ _make_url(char *str)
 void post(CURL *h, char **av)
 {
     char *myurl = _make_url(av[0]);
-    char *postdata = av[1] ? Strdup(av[1]) : NULL;
+    char *postdata = av[1] ? xstrdup(av[1]) : NULL;
 
     if (postdata && myurl) {
         curl_easy_setopt(h, CURLOPT_URL, myurl);
@@ -99,9 +99,9 @@ void post(CURL *h, char **av)
         printf("Nothing to post!\n");
 
     if (myurl)
-        Free(myurl);
+        xfree(myurl);
     if (postdata)
-        Free(postdata);
+        xfree(postdata);
 }
 
 void get(CURL *h, char **av)
@@ -117,7 +117,7 @@ void get(CURL *h, char **av)
         printf("Nothing to get!\n");
 
     if (myurl)
-        Free(myurl);
+        xfree(myurl);
 }
 
 void seturl(CURL *h, char **av)
@@ -127,8 +127,8 @@ void seturl(CURL *h, char **av)
         return;
     }
     if (url)
-        Free(url);
-    url = Strdup(av[0]);
+        xfree(url);
+    url = xstrdup(av[0]);
 }
 
 void auth(CURL *h, char **av)
@@ -138,8 +138,8 @@ void auth(CURL *h, char **av)
         return;
     }
     if (userpwd)
-        Free(userpwd);
-    userpwd = Strdup(av[0]);
+        xfree(userpwd);
+    userpwd = xstrdup(av[0]);
     curl_easy_setopt(h, CURLOPT_USERPWD, userpwd);
     curl_easy_setopt(h, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
 }
@@ -204,7 +204,7 @@ main(int argc, char *argv[])
     while ((c = getopt_long(argc, argv, OPTIONS, longopts, NULL)) != EOF) {
         switch (c) {
             case 'u': /* --url */
-                url = Strdup(optarg);
+                url = xstrdup(optarg);
                 break;
             default:
                 usage();
@@ -227,9 +227,9 @@ main(int argc, char *argv[])
 
     curl_easy_cleanup(h);    	
     if (userpwd)
-        Free(userpwd);
+        xfree(userpwd);
     if (url)
-        Free(url);
+        xfree(url);
     exit(0);
 }
 

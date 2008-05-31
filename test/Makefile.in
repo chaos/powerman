@@ -54,7 +54,7 @@ CONFIG_HEADER = $(top_builddir)/config/config.h
 CONFIG_CLEAN_FILES =
 am__objects_1 = wrappers.$(OBJEXT) error.$(OBJEXT) debug.$(OBJEXT) \
 	pluglist.$(OBJEXT) hostlist.$(OBJEXT) list.$(OBJEXT) \
-	hprintf.$(OBJEXT)
+	hprintf.$(OBJEXT) xmalloc.$(OBJEXT)
 am_tpl_OBJECTS = tpl.$(OBJEXT) $(am__objects_1)
 tpl_OBJECTS = $(am_tpl_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -183,13 +183,14 @@ TESTS_ENVIRONMENT = env "PATH_POWERMAN=$(top_builddir)/src/powerman" \
 TESTS = t00 t01 t02 t03 t04 t05
 CLEANFILES = *.out *.err *.diff *.conf
 common_sources = \
-        $(top_srcdir)/src/wrappers.c \
-        $(top_srcdir)/src/error.c \
-        $(top_srcdir)/src/debug.c \
-        $(top_srcdir)/src/pluglist.c \
-        $(top_srcdir)/src/hostlist.c \
-        $(top_srcdir)/src/list.c \
-        $(top_srcdir)/src/hprintf.c
+	$(top_srcdir)/src/wrappers.c \
+	$(top_srcdir)/src/error.c \
+	$(top_srcdir)/src/debug.c \
+	$(top_srcdir)/src/pluglist.c \
+	$(top_srcdir)/src/hostlist.c \
+	$(top_srcdir)/src/list.c \
+	$(top_srcdir)/src/hprintf.c \
+	$(top_srcdir)/src/xmalloc.c
 
 AM_CFLAGS = -I$(top_srcdir)/src
 vpcd_SOURCES = vpcd.c $(common_sources)
@@ -254,6 +255,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tpl.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpcd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wrappers.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xmalloc.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -366,6 +368,20 @@ hprintf.obj: $(top_srcdir)/src/hprintf.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/hprintf.c' object='hprintf.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hprintf.obj `if test -f '$(top_srcdir)/src/hprintf.c'; then $(CYGPATH_W) '$(top_srcdir)/src/hprintf.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/hprintf.c'; fi`
+
+xmalloc.o: $(top_srcdir)/src/xmalloc.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xmalloc.o -MD -MP -MF "$(DEPDIR)/xmalloc.Tpo" -c -o xmalloc.o `test -f '$(top_srcdir)/src/xmalloc.c' || echo '$(srcdir)/'`$(top_srcdir)/src/xmalloc.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/xmalloc.Tpo" "$(DEPDIR)/xmalloc.Po"; else rm -f "$(DEPDIR)/xmalloc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/xmalloc.c' object='xmalloc.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xmalloc.o `test -f '$(top_srcdir)/src/xmalloc.c' || echo '$(srcdir)/'`$(top_srcdir)/src/xmalloc.c
+
+xmalloc.obj: $(top_srcdir)/src/xmalloc.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xmalloc.obj -MD -MP -MF "$(DEPDIR)/xmalloc.Tpo" -c -o xmalloc.obj `if test -f '$(top_srcdir)/src/xmalloc.c'; then $(CYGPATH_W) '$(top_srcdir)/src/xmalloc.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/xmalloc.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/xmalloc.Tpo" "$(DEPDIR)/xmalloc.Po"; else rm -f "$(DEPDIR)/xmalloc.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/xmalloc.c' object='xmalloc.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xmalloc.obj `if test -f '$(top_srcdir)/src/xmalloc.c'; then $(CYGPATH_W) '$(top_srcdir)/src/xmalloc.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/xmalloc.c'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

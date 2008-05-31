@@ -41,7 +41,8 @@
 
 #include "powerman.h"
 #include "parse_util.h"
-#include "wrappers.h"
+#include "xpoll.h"
+#include "xmalloc.h"
 #include "pluglist.h"
 #include "device.h"
 #include "device_serial.h"
@@ -82,10 +83,10 @@ static baudmap_t baudmap[] = {
 
 void *serial_create(char *special, char *flags)
 {
-    SerialDev *ser = (SerialDev *)Malloc(sizeof(SerialDev));
+    SerialDev *ser = (SerialDev *)xmalloc(sizeof(SerialDev));
 
-    ser->special = Strdup(special);
-    ser->flags = Strdup(flags);
+    ser->special = xstrdup(special);
+    ser->flags = xstrdup(flags);
 
     return (void *)ser;
 }
@@ -95,10 +96,10 @@ void serial_destroy(void *data)
     SerialDev *ser = (SerialDev *)data;
 
     if (ser->special)
-        Free(ser->special);
+        xfree(ser->special);
     if (ser->flags)
-        Free(ser->flags);
-    Free(ser);
+        xfree(ser->flags);
+    xfree(ser);
 }
 
 /* Set up serial port: 0 on success, <0 on error */
@@ -110,7 +111,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
     int i;
     res = tcgetattr(fd, &tio);
     if (res < 0) {
-        err(TRUE, "%s: error getting serial attributes\n", devname);
+        err(TRUE, "%s: error getting serial attributes", devname);
         return -1;
     }
 
@@ -123,7 +124,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
         }
     }
     if (res < 0) {
-        err(FALSE, "%s: error setting baud rate to %d\n", devname, baud);
+        err(FALSE, "%s: error setting baud rate to %d", devname, baud);
         return -1;
     }
 
@@ -137,8 +138,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
             tio.c_cflag |= CS8;
             break;
         default:
-            err(FALSE, "%s: error setting data bits to %d\n", 
-                    devname, databits);
+            err(FALSE, "%s: error setting data bits to %d", devname, databits);
             return -1;
     }
 
@@ -150,8 +150,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
             tio.c_cflag |= CSTOPB;
             break;
         default:
-            err(FALSE, "%s: error setting stop bits to %d\n", 
-                    devname, stopbits);
+            err(FALSE, "%s: error setting stop bits to %d", devname, stopbits);
             return -1;
     }
 
@@ -171,8 +170,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
             tio.c_cflag |= PARODD;
             break;
         default:
-            err(FALSE, "%s: error setting parity to %c\n", 
-                    devname, parity);
+            err(FALSE, "%s: error setting parity to %c", devname, parity);
             return -1;
     }
 
@@ -181,7 +179,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
 
 
     if (tcsetattr(fd, TCSANOW, &tio) < 0) {
-        err(TRUE, "%s: error setting serial attributes\n", devname);
+        err(TRUE, "%s: error setting serial attributes", devname);
         return -1;
     }
     return 0;
@@ -207,13 +205,11 @@ bool serial_connect(Device * dev)
 
     dev->fd = open(ser->special, O_RDWR | O_NONBLOCK | O_NOCTTY);
     if (dev->fd < 0) {
-        err(TRUE, "_serial_connect(%s): open %s\n", dev->name);
+        err(TRUE, "_serial_connect(%s): open %s", dev->name, ser->special);
         goto out;
     }
     if (!isatty(dev->fd)) {
-        err(FALSE, "_serial_connect(%s): not a tty\n", dev->name);
-        Close(dev->fd);
-        dev->fd = -1;
+        err(FALSE, "_serial_connect(%s): not a tty", dev->name);
         goto out;
     }
     /*  [lifted from conman] According to the UNIX Programming FAQ v1.37
@@ -223,16 +219,21 @@ bool serial_connect(Device * dev)
      *    open on a tty will affect subsequent read()s.
      *    Play it safe and be explicit!
      */
-    fd_settings = Fcntl(dev->fd, F_GETFL, 0);
-    Fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK);
+    fd_settings = fcntl(dev->fd, F_GETFL, 0);
+    if (fd_settings < 0) {
+        err(TRUE, "fcntl F_GETFL");
+        goto out;
+    }
+    if (fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK) < 0) {
+        err(TRUE, "fcntl F_SETFL");
+        goto out;
+    }
 
     /* Conman takes an fcntl F_WRLCK on serial devices.
      * Powerman should respect conman's locks and vice-versa.
      */
     if (lockf(dev->fd, F_TLOCK, 0) < 0) {
         err(TRUE, "_serial_connect(%s): could not lock device\n", dev->name);
-        Close(dev->fd);
-        dev->fd = -1;
         goto out;
     }
 
@@ -240,18 +241,22 @@ bool serial_connect(Device * dev)
     n = sscanf(ser->flags, "%d,%d%c%d", &baud, &databits, &parity, &stopbits);
     assert(n >= 0 && n <= 4); /* 0-4 matches OK (defaults if no match) */
     res = _serial_setup(dev->name, dev->fd, baud, databits, parity, stopbits);
-    if (res < 0) {
-        Close(dev->fd);
-        dev->fd = -1;
+    if (res < 0)
         goto out;
-    }
 
     dev->connect_state = DEV_CONNECTED;
     dev->stat_successful_connects++;
 
     err(FALSE, "_serial_connect(%s): opened", dev->name);
+    return TRUE;
+
 out: 
-    return (dev->connect_state == DEV_CONNECTED);
+    if (dev->fd >= 0) {
+        if (close(dev->fd) < 0)
+            err(TRUE, "_serial_connect(%s): close", dev->name);
+        dev->fd = NO_FD;
+    }
+    return FALSE;
 }
 
 
@@ -265,7 +270,8 @@ void serial_disconnect(Device * dev)
 
     /* close device if open */
     if (dev->fd >= 0) {
-        Close(dev->fd);
+        if (close(dev->fd) < 0)
+            err(TRUE, "_serial_disconnect(%s): close", dev->name);
         dev->fd = NO_FD;
     }
 

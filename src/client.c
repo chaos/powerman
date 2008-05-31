@@ -37,16 +37,24 @@
 #include <stdlib.h>
 #include <limits.h>
 #include <unistd.h>
-
 #include <arpa/inet.h>
+#include <sys/socket.h>
+#include <netdb.h>
 #if HAVE_TCP_WRAPPERS
 #include <tcpd.h>
+#endif
+#if HAVE_POLL_H
+#include <poll.h>
+#endif
+#if HAVE_SYS_SELECT_H
+#include <sys/select.h>
 #endif
 #include <stdio.h>
 #include <fcntl.h>
 
 #include "powerman.h"
-#include "wrappers.h"
+#include "xmalloc.h"
+#include "xpoll.h"
 #include "list.h"
 #include "parse_util.h"
 #include "client.h"
@@ -59,6 +67,10 @@
 #include "device.h"
 #include "hprintf.h"
 #include "arglist.h"
+
+#ifndef HAVE_SOCKLEN_T
+typedef int socklen_t;                  /* socklen_t is uint32_t in Posix.1g */
+#endif /* !HAVE_SOCKLEN_T */
 
 #define LISTEN_BACKLOG    5
 
@@ -150,7 +162,7 @@ static void _client_printf(Client *c, const char *fmt, ...)
         err(FALSE, "_client_printf: cbuf_write dropped %d chars", dropped);
 
     /* Free the tmp string */
-    Free(str);
+    xfree(str);
 }
 
 /*
@@ -467,7 +479,7 @@ done:
  */
 static Command *_create_command(Client * c, int com, char *arg1)
 {
-    Command *cmd = (Command *) Malloc(sizeof(Command));
+    Command *cmd = (Command *) xmalloc(sizeof(Command));
 
     cmd->com = com;
     cmd->error = FALSE;
@@ -516,7 +528,7 @@ static void _destroy_command(Command * cmd)
         hostlist_destroy(cmd->hl);
     if (cmd->arglist)
         arglist_unlink(cmd->arglist);
-    Free(cmd);
+    xfree(cmd);
 }
 
 /* helper for _parse_input that deletes leading & trailing whitespace */
@@ -637,7 +649,7 @@ static void _telemetry_printf(int client_id, const char *fmt, ...)
         str = hvsprintf(fmt, ap);
         va_end(ap);
         _client_printf(c, CP_INFO_TELEMETRY, str);
-        Free(str);
+        xfree(str);
     }
 }
 
@@ -662,7 +674,7 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
         str = hvsprintf(fmt, ap);
         va_end(ap);
         _client_printf(c, CP_INFO_ACTERROR, str);
-        Free(str);
+        xfree(str);
 
         c->cmd->error = TRUE;       /* when done say "completed with errors" */
     }
@@ -711,12 +723,14 @@ static void _destroy_client(Client *c)
 
     if (c->fd != NO_FD) {
         dbg(DBG_CLIENT, "_destroy_client: closing fd %d", c->fd);
-        Close(c->fd);
+        if (close(c->fd) < 0)
+            err(TRUE, "close fd %d", c->fd);
         c->fd = NO_FD;
     }
     if (c->ofd != NO_FD) {
         dbg(DBG_CLIENT, "_destroy_client: closing fd %d", c->ofd);
-        Close(c->ofd);
+        if (close(c->ofd) < 0)
+            err(TRUE, "close fd %d", c->ofd);
         c->ofd = NO_FD;
     }
     if (c->to)
@@ -726,10 +740,10 @@ static void _destroy_client(Client *c)
     if (c->cmd)
         _destroy_command(c->cmd);
     if (c->ip)
-        Free(c->ip);
+        xfree(c->ip);
     if (c->host)
-        Free(c->host);
-    Free(c);
+        xfree(c->host);
+    xfree(c);
     if (listen_fd == NO_FD)
         server_done = TRUE;
 }
@@ -753,36 +767,43 @@ static Client *_find_client(int seq)
  */
 static void _listen_client(void)
 {
-    struct sockaddr_in saddr;
-    int saddr_size = sizeof(struct sockaddr_in);
-    int sock_opt;
+    struct sockaddr_in addr;
     int fd_settings;
+    int opt;
     unsigned short listen_port;
+
+    listen_fd = socket(PF_INET, SOCK_STREAM, 0);
+    if (listen_fd < 0)
+        err_exit(TRUE, "socket");
 
     /* 
      * "All TCP servers should specify [the SO_REUSEADDR] socket option ..."
      *                                                  - Stevens, UNP p194 
      */
-    listen_fd = Socket(PF_INET, SOCK_STREAM, 0);
+    opt = 1;
+    if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
+        err_exit(TRUE, "setsockopt SO_REUSEADDR");
 
-    sock_opt = 1;
-    Setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &sock_opt,
-               sizeof(sock_opt));
     /* 
      *   A client could abort before a ready connection is accepted.  "The fix
      * for this problem is to:  1.  Always set a listening socket nonblocking
      * if we use select ..."                            - Stevens, UNP p424
      */
-    fd_settings = Fcntl(listen_fd, F_GETFL, 0);
-    Fcntl(listen_fd, F_SETFL, fd_settings | O_NONBLOCK);
+    fd_settings = fcntl(listen_fd, F_GETFL, 0);
+    if (fd_settings < 0)
+        err_exit(TRUE, "fcntl F_GETFL");
+    if (fcntl(listen_fd, F_SETFL, fd_settings | O_NONBLOCK) < 0)
+        err_exit(TRUE, "fcntl F_SETFL");
 
-    saddr.sin_family = AF_INET;
+    addr.sin_family = AF_INET;
     listen_port = conf_get_listen_port();
-    saddr.sin_port = htons(listen_port);
-    saddr.sin_addr.s_addr = INADDR_ANY;
-    Bind(listen_fd, &saddr, saddr_size);
+    addr.sin_port = htons(listen_port);
+    addr.sin_addr.s_addr = INADDR_ANY;
+    if (bind(listen_fd, (struct sockaddr *) &addr, sizeof(addr)) < 0)
+        err_exit(TRUE, "bind");
 
-    Listen(listen_fd, LISTEN_BACKLOG);
+    if (listen(listen_fd, LISTEN_BACKLOG) < 0)
+        err_exit(TRUE, "listen");
 
     dbg(DBG_CLIENT, "listening");
 }
@@ -790,14 +811,14 @@ static void _listen_client(void)
 static void _create_client_socket(void)
 {
     Client *c;
-    struct sockaddr_in saddr;
-    socklen_t saddr_size = sizeof(struct sockaddr_in);
+    struct sockaddr_in addr;
+    socklen_t addr_size = sizeof(struct sockaddr_in);
     int fd_settings;
     struct hostent *hent;
     char buf[64];
 
     /* create client data structure */
-    c = (Client *) Malloc(sizeof(Client));
+    c = (Client *) xmalloc(sizeof(Client));
     c->magic = CLI_MAGIC;
     c->to = NULL;
     c->from = NULL;
@@ -808,29 +829,35 @@ static void _create_client_socket(void)
     c->ofd = NO_FD;
     c->client_quit = FALSE;
 
-    c->fd = Accept(listen_fd, &saddr, &saddr_size);
-    /* client died after it initiated connect and before we could accept */
-    if (c->fd < 0) {
-        _destroy_client(c);
-        err(TRUE, "_create_client: accept");
-        return;
+    c->fd = accept(listen_fd, (struct sockaddr *) &addr, &addr_size);
+    if (c->fd < 0){ 
+        /* client died after it initiated connect and before we could accept 
+         * Ref. Stevens, UNP p424 
+         */
+        if (errno == EWOULDBLOCK || errno == ECONNABORTED 
+                                 || errno == EPROTO || errno == EINTR) {
+            _destroy_client(c);
+            err(TRUE, "_create_client: accept");
+            return;
+        }
+        err_exit(TRUE, "accept");
     }
 
     /* get c->ip */
-    if (inet_ntop(AF_INET, &saddr.sin_addr, buf, sizeof(buf)) == NULL) {
+    if (inet_ntop(AF_INET, &addr.sin_addr, buf, sizeof(buf)) == NULL) {
         _destroy_client(c);
         err(TRUE, "_create_client: inet_ntop");
         return;
     }
-    c->ip = Strdup(buf);
-    c->port = ntohs(saddr.sin_port);
+    c->ip = xstrdup(buf);
+    c->port = ntohs(addr.sin_port);
 
     /* get c->host */
-    if ((hent = gethostbyaddr((const char *) &saddr.sin_addr,
+    if ((hent = gethostbyaddr((const char *) &addr.sin_addr,
                               sizeof(struct in_addr), AF_INET)) == NULL) {
         err(FALSE, "_create_client: gethostbyaddr failed");
     } else {
-        c->host = Strdup(hent->h_name);
+        c->host = xstrdup(hent->h_name);
     }
 #if HAVE_TCP_WRAPPERS
     /* get authorization from tcp wrappers */
@@ -851,8 +878,11 @@ static void _create_client_socket(void)
     c->from = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
 
     /* mark fd as non-blocking */
-    fd_settings = Fcntl(c->fd, F_GETFL, 0);
-    Fcntl(c->fd, F_SETFL, fd_settings | O_NONBLOCK);
+    fd_settings = fcntl(c->fd, F_GETFL, 0);
+    if (fd_settings < 0)
+        err_exit(TRUE, "fcntl F_GETFL");
+    if (fcntl(c->fd, F_SETFL, fd_settings | O_NONBLOCK) < 0)
+        err_exit(TRUE, "fcntl F_SETFL");
 
     /* append to the list of clients */
     list_append(cli_clients, c);
@@ -872,7 +902,7 @@ static void _create_client_stdio(void)
     int fd_settings;
 
     /* create client data structure */
-    c = (Client *) Malloc(sizeof(Client));
+    c = (Client *) xmalloc(sizeof(Client));
     c->magic = CLI_MAGIC;
     c->cmd = NULL;
     c->client_id = _next_cli_id();
@@ -881,16 +911,22 @@ static void _create_client_stdio(void)
     c->client_quit = FALSE;
     c->fd = STDIN_FILENO;
     c->ofd = STDOUT_FILENO;
-    c->host = Strdup("localhost");
-    c->ip = Strdup("127.0.0.1"); /* XXX lies */
+    c->host = xstrdup("localhost");
+    c->ip = xstrdup("127.0.0.1"); /* XXX lies */
     c->port = 0;
     c->to = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
     c->from = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
 
-    fd_settings = Fcntl(STDIN_FILENO, F_GETFL, 0);
-    Fcntl(STDIN_FILENO, F_SETFL, fd_settings | O_NONBLOCK);
-    fd_settings = Fcntl(STDOUT_FILENO, F_GETFL, 0);
-    Fcntl(STDOUT_FILENO, F_SETFL, fd_settings | O_NONBLOCK);
+    fd_settings = fcntl(STDIN_FILENO, F_GETFL, 0);
+    if (fd_settings < 0)
+        err_exit(TRUE, "fcntl F_GETFL");
+    if (fcntl(STDIN_FILENO, F_SETFL, fd_settings | O_NONBLOCK) < 0)
+        err_exit(TRUE, "fcntl F_SETFL");
+    fd_settings = fcntl(STDOUT_FILENO, F_GETFL, 0);
+    if (fd_settings < 0)
+        err_exit(TRUE, "fcntl F_GETFL");
+    if (fcntl(STDOUT_FILENO, F_SETFL, fd_settings | O_NONBLOCK) < 0)
+        err_exit(TRUE, "fcntl F_SETFL");
 
     /* append to the list of clients */
     list_append(cli_clients, c);
@@ -954,14 +990,14 @@ static void _handle_input(Client *c)
 /*
  * Prep rset/wset/maxfd for the main poll call.
  */
-void cli_pre_poll(Pollfd_t pfd)
+void cli_pre_poll(xpollfd_t pfd)
 {
     ListIterator itr;
     Client *client;
 
     if (listen_fd != NO_FD) {
         assert(listen_fd >= 0);
-        PollfdSet(pfd, listen_fd, POLLIN);
+        xpollfd_set(pfd, listen_fd, POLLIN);
     }
 
     itr = list_iterator_create(cli_clients);
@@ -972,14 +1008,14 @@ void cli_pre_poll(Pollfd_t pfd)
         /* always set read set bits so select will unblock if the
          * connection is dropped.
          */
-        PollfdSet(pfd, client->fd, POLLIN);
+        xpollfd_set(pfd, client->fd, POLLIN);
 
         /* need to be in the write set if we are sending anything */
         if (!cbuf_is_empty(client->to)) {
             if (client->ofd != NO_FD)
-                PollfdSet(pfd, client->ofd, POLLOUT);
+                xpollfd_set(pfd, client->ofd, POLLOUT);
             else
-                PollfdSet(pfd, client->fd, POLLOUT);
+                xpollfd_set(pfd, client->fd, POLLOUT);
         }
     }
     list_iterator_destroy(itr);
@@ -988,18 +1024,18 @@ void cli_pre_poll(Pollfd_t pfd)
 /* 
  * Handle any client activity (new connection or read/write).
  */
-void cli_post_poll(Pollfd_t pfd)
+void cli_post_poll(xpollfd_t pfd)
 {
     ListIterator itr;
     Client *c;
 
-    if (listen_fd != NO_FD && PollfdRevents(pfd, listen_fd) & POLLIN)
+    if (listen_fd != NO_FD && xpollfd_revents(pfd, listen_fd) & POLLIN)
         _create_client_socket();
 
     itr = list_iterator_create(cli_clients);
     while ((c = list_next(itr))) {
         if (c->fd != NO_FD) {
-            short flags = PollfdRevents(pfd, c->fd);
+            short flags = xpollfd_revents(pfd, c->fd);
 
             if (flags & POLLERR)
                 err(FALSE, "client poll: error");
@@ -1015,7 +1051,7 @@ void cli_post_poll(Pollfd_t pfd)
                 _handle_write(c);
         }
         if (c->ofd != NO_FD) {
-            short flags = PollfdRevents(pfd, c->ofd);
+            short flags = xpollfd_revents(pfd, c->ofd);
 
             if (flags & POLLERR)
                 err(FALSE, "client poll: error");

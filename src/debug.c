@@ -36,9 +36,10 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <ctype.h>
+#include <time.h>
 
 #include "powerman.h"           /* for bool type */
-#include "wrappers.h"
+#include "xmalloc.h"
 #include "debug.h"
 
 #define DBG_BUFLEN 1024
@@ -126,7 +127,7 @@ char *dbg_memstr(char *mem, int len)
 {
     int i, j;
     int strsize = len * 4;      /* worst case */
-    char *str = Malloc(strsize + 1);
+    char *str = xmalloc(strsize + 1);
 
     for (i = j = 0; i < len; i++) {
         switch (mem[i]) {

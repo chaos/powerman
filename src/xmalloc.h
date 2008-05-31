@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  $Id$
+ *  $Id: wrappers.h 911 2008-05-30 20:26:33Z garlick $
  *****************************************************************************
  *  Copyright (C) 2001-2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -25,16 +25,16 @@
 \*****************************************************************************/
 
 
-#ifndef WRAPPERS_H
-#define WRAPPERS_H
+#ifndef POWERMAN_MALLOC_H
+#define POWERMAN_MALLOC_H
 
-int Read(int fd, char *p, int max);
-int Write(int fd, char *p, int max);
+char *xmalloc(int size);
+char *xrealloc(char *item, int newsize);
+void xfree(void *ptr);
+char *xstrdup(const char *str);
+int xmemory(void);
 
-typedef void Sigfunc(int);
-Sigfunc *Signal(int signo, Sigfunc * func);
-
-#endif                          /* WRAPPERS_H */
+#endif  /* POWERMAN_MALLOC_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

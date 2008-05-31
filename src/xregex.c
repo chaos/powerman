@@ -1,10 +1,9 @@
 /*****************************************************************************\
- *  $Id$
+ *  $Id: wrappers.c 911 2008-05-30 20:26:33Z garlick $
  *****************************************************************************
  *  Copyright (C) 2001-2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton <uselton2@llnl.gov>
- *  Select/Poll wrap and Malloc debug added by Jim Garlick <garlick@llnl.gov>
  *  UCRL-CODE-2002-008.
  *  
  *  This file is part of PowerMan, a remote power management program.
@@ -32,69 +31,72 @@
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
-#include <unistd.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <sys/socket.h>
 #include <stdio.h>
-#include <limits.h>
 #include <sys/types.h>
-#include <sys/wait.h>
-#include <stdarg.h>
+#include <regex.h>
 
 #include "wrappers.h"
 #include "error.h"
-#include "hprintf.h"
+#include "xregex.h"
 
 #define MAX_REG_BUF 64000
 
-int Read(int fd, char *p, int max)
+/* 
+ * Substitute all occurrences of s2 with s3 in s1, 
+ * e.g. _str_subst(str, "\\r", "\r") 
+ */
+static void _str_subst(char *s1, int len, const char *s2, const char *s3)
 {
-    int n;
+    int s2len = strlen(s2);
+    int s3len = strlen(s3);
+    char *p;
 
-    do {
-        n = read(fd, p, max);
-    } while (n < 0 && errno == EINTR);
-    if (n < 0 && errno != EWOULDBLOCK && errno != ECONNRESET)
-        err_exit(TRUE, "read");
-    return n;
-}
-
-int Write(int fd, char *p, int max)
-{
-    int n;
-
-    do {
-        n = write(fd, p, max);
-    } while (n < 0 && errno == EINTR);
-    if (n < 0 && errno != EAGAIN && errno != ECONNRESET && errno != EPIPE)
-        err_exit(TRUE, "write");
-    return n;
-}
-
-Sigfunc *Signal(int signo, Sigfunc * func)
-{
-    struct sigaction act, oact;
-    int n;
-
-    act.sa_handler = func;
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = 0;
-    if (signo == SIGALRM) {
-#ifdef  SA_INTERRUPT
-        act.sa_flags |= SA_INTERRUPT;   /* SunOS 4.x */
-#endif
-    } else {
-#ifdef  SA_RESTART
-        act.sa_flags |= SA_RESTART;     /* SVR4, 44BSD */
-#endif
+    while ((p = strstr(s1, s2)) != NULL) {
+        assert(strlen(s1) + (s3len - s2len) + 1 <= len);
+        memmove(p + s3len, p + s2len, strlen(p + s2len) + 1);
+        memcpy(p, s3, s3len);
     }
-    n = sigaction(signo, &act, &oact);
-    if (n < 0)
-        err_exit(TRUE, "sigaction");
+}
 
-    return (oact.sa_handler);
+#ifndef REG_NOERROR
+#define REG_NOERROR 0
+#endif
+
+void xregcomp(regex_t * preg, const char *regex, int cflags)
+{
+    char buf[MAX_REG_BUF];
+    int n;
+
+    assert(regex != NULL);
+    assert(strlen(regex) < sizeof(buf));
+
+    snprintf(buf, sizeof(buf), "%s", regex);
+
+    /* convert backslash-prefixed special characters in regex to value */
+    _str_subst(buf, MAX_REG_BUF, "\\r", "\r");
+    _str_subst(buf, MAX_REG_BUF, "\\n", "\n");
+
+    /*
+     * N.B.
+     * The buffer space available in a compiled RegEx expression is only 
+     * 256 bytes.  A long or complicated RegEx will exceed this space and 
+     * cause the library call to silently fail.
+     */
+    n = regcomp(preg, buf, cflags);
+    if (n != REG_NOERROR)
+        err_exit(FALSE, "regcomp failed");
+}
+
+int
+xregexec(const regex_t * preg, const char *string,
+        size_t nmatch, regmatch_t pmatch[], int eflags)
+{
+    int n;
+    char buf[MAX_REG_BUF];
+
+    snprintf(buf, sizeof(buf), "%s", string);
+    n = regexec(preg, buf, nmatch, pmatch, eflags);
+    return n;
 }
 
 /*

@@ -42,8 +42,8 @@
 #include "powerman.h"
 #include "list.h"
 #include "error.h"
-#include "wrappers.h"
 #include "debug.h"
+#include "xmalloc.h"
 
 static char *err_prog = NULL;           /* basename of calling program */
 static bool err_ttyvalid = TRUE;        /* use stderr until told otherwise */
@@ -100,7 +100,7 @@ void err_exit(bool errno_valid, const char *fmt, ...)
     va_start(ap, fmt);
     _verr(errno_valid, fmt, ap);
     va_end(ap);
-    dbg(DBG_MEMORY, "err_exit: memory not reclaimed: %d\n", Memory());
+    dbg(DBG_MEMORY, "err_exit: memory not reclaimed: %d\n", xmemory());
     exit(1);
 }
 

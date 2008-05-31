@@ -42,7 +42,8 @@
 #include "error.h"
 #include "list.h"
 #include "parse_util.h"
-#include "wrappers.h"
+#include "xmalloc.h"
+#include "xpoll.h"
 #include "pluglist.h"
 #include "device.h"
 #include "client.h"
@@ -253,10 +254,10 @@ void conf_exp_aliases(hostlist_t hl)
 static void _alias_destroy(alias_t *a)
 {
     if (a->name)
-        Free(a->name);
+        xfree(a->name);
     if (a->hl)
         hostlist_destroy(a->hl);
-    Free(a);
+    xfree(a);
 }
 
 static alias_t *_alias_create(char *name, char *hosts)
@@ -264,8 +265,8 @@ static alias_t *_alias_create(char *name, char *hosts)
     alias_t *a = NULL;
 
     if (!list_find_first(conf_aliases, (ListFindF) _alias_match, name)) {
-        a = (alias_t *)Malloc(sizeof(alias_t));
-        a->name= Strdup(name);
+        a = (alias_t *)xmalloc(sizeof(alias_t));
+        a->name= xstrdup(name);
         a->hl = hostlist_create(hosts);
         if (a->hl == NULL) {
             _alias_destroy(a);

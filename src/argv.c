@@ -27,10 +27,12 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <sys/types.h>
 #include <ctype.h>
 #include <string.h>
 #include <assert.h>
-#include "wrappers.h"
+
+#include "xmalloc.h"
 #include "argv.h"
 
 /* make a copy of the first word in str and advance str past it */
@@ -49,7 +51,7 @@ static char *_nextargv(char **strp, char *ignore)
     len = str - word;
 
     if (len > 0) {
-        cpy = (char *)Malloc(len + 1);
+        cpy = (char *)xmalloc(len + 1);
         memcpy(cpy, word, len);
         cpy[len] = '\0';
     }
@@ -81,7 +83,7 @@ static int _sizeargv(char *str, char *ignore)
 char **argv_create(char *cmdline, char *ignore)
 {
     int argc = _sizeargv(cmdline, ignore);
-    char **argv = (char **)Malloc(sizeof(char *) * (argc + 1));
+    char **argv = (char **)xmalloc(sizeof(char *) * (argc + 1));
     int i;
 
     for (i = 0; i < argc; i++) {
@@ -100,8 +102,8 @@ void argv_destroy(char **argv)
     int i;
 
     for (i = 0; argv[i] != NULL; i++)
-        Free((void *)argv[i]);
-    Free((void *)argv);
+        xfree((void *)argv[i]);
+    xfree((void *)argv);
 }
 
 /*

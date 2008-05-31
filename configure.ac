@@ -40,6 +40,8 @@ AM_CONDITIONAL(WITH_GNU_LD, test "$with_gnu_ld" = "yes")
 AC_HEADER_STDC
 AC_CHECK_HEADERS( \
   getopt.h \
+  poll.h \
+  sys/select.h \
 )
 
 ##
@@ -48,6 +50,7 @@ AC_CHECK_HEADERS( \
 AC_C_BIGENDIAN
 AC_TYPE_UID_T
 AC_C_CONST
+AC_CHECK_TYPES(socklen_t, [], [], [#include <sys/socket.h>])
 
 ##
 # Check for httppower, genders

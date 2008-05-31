@@ -45,6 +45,9 @@
 #include "list.h"
 #include "parse_util.h"
 #include "wrappers.h"
+#include "xmalloc.h"
+#include "xpoll.h"
+#include "xregex.h"
 #include "pluglist.h"
 #include "device.h"
 #include "device_serial.h"
@@ -220,11 +223,11 @@ spec_ping_period: TOK_PING_PERIOD TOK_NUMERIC_VAL {
 }
 ;
 string_list     : string_list TOK_STRING_VAL {
-    list_append((List)$1, Strdup($2)); 
+    list_append((List)$1, xstrdup($2)); 
     $$ = $1; 
 }               | TOK_STRING_VAL {
-    $$ = (char *)list_create((ListDelF)Free);
-    list_append((List)$$, Strdup($1)); 
+    $$ = (char *)list_create((ListDelF)xfree);
+    list_append((List)$$, xstrdup($1)); 
 }
 ;
 spec_plug_list  : TOK_PLUG_NAME TOK_BEGIN string_list TOK_END {
@@ -391,14 +394,14 @@ static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
 {
     PreStmt *new;
 
-    new = (PreStmt *) Malloc(sizeof(PreStmt));
+    new = (PreStmt *) xmalloc(sizeof(PreStmt));
 
     new->magic = PRESTMT_MAGIC;
     new->type = type;
     new->mp1 = mp1str ? _strtolong(mp1str) : -1;
     new->mp2 = mp2str ? _strtolong(mp2str) : -1;
     if (str)
-        new->str = Strdup(str);
+        new->str = xstrdup(str);
     if (tvstr)
         _doubletotv(&new->tv, _strtodouble(tvstr));
     new->prestmts = prestmts;
@@ -412,7 +415,7 @@ static void destroyPreStmt(PreStmt *p)
     assert(p->magic == PRESTMT_MAGIC);
     p->magic = 0;
     if (p->str)
-        Free(p->str);
+        xfree(p->str);
     p->str = NULL;
     if (p->prestmts)
         list_destroy(p->prestmts);
@@ -420,7 +423,7 @@ static void destroyPreStmt(PreStmt *p)
     if (p->interps)
         list_destroy(p->interps);
     p->interps = NULL;
-    Free(p);
+    xfree(p);
 }
 
 static void _clear_current_spec(void)
@@ -437,7 +440,7 @@ static void _clear_current_spec(void)
 
 static Spec *_copy_current_spec(void)
 {
-    Spec *new = (Spec *) Malloc(sizeof(Spec));
+    Spec *new = (Spec *) xmalloc(sizeof(Spec));
     int i;
 
     *new = current_spec;
@@ -451,7 +454,7 @@ static Spec *makeSpec(char *name)
 {
     Spec *spec;
 
-    current_spec.name = Strdup(name);
+    current_spec.name = xstrdup(name);
 
     /* FIXME: check for manditory scripts here?  what are they? */
 
@@ -467,13 +470,13 @@ static void destroySpec(Spec * spec)
     int i;
 
     if (spec->name)
-        Free(spec->name);
+        xfree(spec->name);
     if (spec->plugs)
         list_destroy(spec->plugs);
     for (i = 0; i < NUM_SCRIPTS; i++)
         if (spec->prescripts[i])
             list_destroy(spec->prescripts[i]);
-    Free(spec);
+    xfree(spec);
 }
 
 static int matchSpec(Spec * spec, void *key)
@@ -495,10 +498,10 @@ static void makeScript(int com, List stmts)
 
 static Interp *makeInterp(InterpState state, char *str)
 {
-    Interp *new = (Interp *)Malloc(sizeof(Interp));
+    Interp *new = (Interp *)xmalloc(sizeof(Interp));
 
     new->magic = INTERP_MAGIC; 
-    new->str = Strdup(str); 
+    new->str = xstrdup(str); 
     new->re = NULL;  /* defer compilation until copyInterpList */
     new->state = state;
 
@@ -509,12 +512,12 @@ static void destroyInterp(Interp *i)
 {
     assert(i->magic == INTERP_MAGIC);
     i->magic = 0;
-    Free(i->str);
+    xfree(i->str);
     if (i->re) {
         regfree(i->re);
-        Free(i->re);
+        xfree(i->re);
     }
-    Free(i);
+    xfree(i);
 }
 
 static List copyInterpList(List il)
@@ -530,8 +533,8 @@ static List copyInterpList(List il)
         while((ip = list_next(itr))) {
             assert(ip->magic == INTERP_MAGIC);
             icpy = makeInterp(ip->state, ip->str);
-            icpy->re = (regex_t *)Malloc(sizeof(regex_t));
-            Regcomp(icpy->re, icpy->str, cflags);
+            icpy->re = (regex_t *)xmalloc(sizeof(regex_t));
+            xregcomp(icpy->re, icpy->str, cflags);
             assert(icpy->magic == INTERP_MAGIC);
             list_append(new, icpy);
         }
@@ -551,7 +554,7 @@ static void destroyStmt(Stmt *stmt)
 
     switch (stmt->type) {
     case STMT_SEND:
-        Free(stmt->u.send.fmt);
+        xfree(stmt->u.send.fmt);
         break;
     case STMT_EXPECT:
         regfree(&stmt->u.expect.exp);
@@ -570,7 +573,7 @@ static void destroyStmt(Stmt *stmt)
     default:
         break;
     }
-    Free(stmt);
+    xfree(stmt);
 }
 
 static Stmt *makeStmt(PreStmt *p)
@@ -581,19 +584,19 @@ static Stmt *makeStmt(PreStmt *p)
     ListIterator itr;
 
     assert(p->magic == PRESTMT_MAGIC);
-    stmt = (Stmt *) Malloc(sizeof(Stmt));
+    stmt = (Stmt *) xmalloc(sizeof(Stmt));
     stmt->type = p->type;
     switch (p->type) {
     case STMT_SEND:
-        stmt->u.send.fmt = Strdup(p->str);
+        stmt->u.send.fmt = xstrdup(p->str);
         break;
     case STMT_EXPECT:
-        Regcomp(&stmt->u.expect.exp, p->str, cflags);
+        xregcomp(&stmt->u.expect.exp, p->str, cflags);
         break;
     case STMT_SETPLUGSTATE:
         stmt->u.setplugstate.stat_mp = p->mp2;
         if (p->str)
-            stmt->u.setplugstate.plug_name = Strdup(p->str);
+            stmt->u.setplugstate.plug_name = xstrdup(p->str);
         else
             stmt->u.setplugstate.plug_mp = p->mp1;
         stmt->u.setplugstate.interps = copyInterpList(p->interps);
@@ -689,7 +692,7 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
 
     /* make the Device */
     dev = dev_create(devstr);
-    dev->specname = Strdup(specstr);
+    dev->specname = xstrdup(specstr);
     dev->timeout = spec->timeout;
     dev->ping_period = spec->ping_period;
 

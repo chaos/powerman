@@ -40,6 +40,7 @@
 #include "powerman.h"
 #include "list.h"
 #include "wrappers.h"
+#include "xmalloc.h"
 #include "error.h"
 #include "parse_util.h"
 extern void yyerror();
@@ -98,7 +99,7 @@ static List line_ptrs;
         BEGIN(INITIAL); 
         *string_buf_ptr = '\0';
         len = strlen(string_buf);
-        yylval = Malloc(len + 1);
+        yylval = xmalloc(len + 1);
         list_append(line_ptrs, yylval);
         strncpy(yylval, string_buf, len);
         yylval[len] = '\0';
@@ -219,7 +220,7 @@ include         BEGIN(lex_incl);
     yyin = fopen( yytext + 1, "r" );
     if ( yyin == NULL )
         err_exit(TRUE, "%s", yytext + 1);
-    filename[include_stack_ptr] = Strdup(yytext + 1);
+    filename[include_stack_ptr] = xstrdup(yytext + 1);
     
     yy_switch_to_buffer( yy_create_buffer( yyin, YY_BUF_SIZE ) );
     BEGIN(INITIAL);
@@ -257,7 +258,7 @@ scanner_line(void)
 void
 scanner_line_destroy(char *ptr)
 {
-  Free(ptr);
+  xfree(ptr);
 }
 
 char *
@@ -275,7 +276,7 @@ scanner_init(char *filename0)
         linenum[i] = 1;
         filename[i] = NULL;
     }
-    filename[0] = Strdup(filename0);
+    filename[0] = xstrdup(filename0);
     line_ptrs = list_create((ListDelF)scanner_line_destroy);
 }
 
@@ -286,7 +287,7 @@ scanner_fini(void)
 
     for (i = 0; i < MAX_INCLUDE_DEPTH; i++) {
         if (filename[i] != NULL)
-            Free(filename[i]);
+            xfree(filename[i]);
     }
 
   list_destroy(line_ptrs);

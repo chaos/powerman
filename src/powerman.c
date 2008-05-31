@@ -41,6 +41,10 @@
 #include <assert.h>
 #include <libgen.h>
 #include <limits.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <stdarg.h>
 
 #include "powerman.h"
 #include "wrappers.h"
@@ -49,6 +53,8 @@
 #include "client_proto.h"
 #include "debug.h"
 #include "argv.h"
+#include "xpty.h"
+#include "hprintf.h"
 
 #if WITH_GENDERS
 static void _push_genders_hosts(hostlist_t targets, char *s);
@@ -252,7 +258,7 @@ int main(int argc, char **argv)
     _connect_to_server(host, port, server_path, config_path);
 
     if (telemetry) {
-        Dprintf(server_fd, CP_TELEMETRY CP_EOL);
+        xdprintf(server_fd, CP_TELEMETRY CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         if (res != 0)
@@ -260,7 +266,7 @@ int main(int argc, char **argv)
     }
 
     if (exprange) {
-        Dprintf(server_fd, CP_EXPRANGE CP_EOL);
+        xdprintf(server_fd, CP_EXPRANGE CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         if (res != 0)
@@ -272,77 +278,77 @@ int main(int argc, char **argv)
      */
     switch (cmd) {
     case CMD_LIST:
-        Dprintf(server_fd, CP_NODES CP_EOL);
+        xdprintf(server_fd, CP_NODES CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_QUERY:
         if (have_targets)
-            Dprintf(server_fd, CP_STATUS CP_EOL, targstr);
+            xdprintf(server_fd, CP_STATUS CP_EOL, targstr);
         else
-            Dprintf(server_fd, CP_STATUS_ALL CP_EOL);
+            xdprintf(server_fd, CP_STATUS_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_ON:
-        Dprintf(server_fd, CP_ON CP_EOL, targstr);
+        xdprintf(server_fd, CP_ON CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_OFF:
-        Dprintf(server_fd, CP_OFF CP_EOL, targstr);
+        xdprintf(server_fd, CP_OFF CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_RESET:
-        Dprintf(server_fd, CP_RESET CP_EOL, targstr);
+        xdprintf(server_fd, CP_RESET CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_CYCLE:
-        Dprintf(server_fd, CP_CYCLE CP_EOL, targstr);
+        xdprintf(server_fd, CP_CYCLE CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_FLASH:
-        Dprintf(server_fd, CP_BEACON_ON CP_EOL, targstr);
+        xdprintf(server_fd, CP_BEACON_ON CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_UNFLASH:
-        Dprintf(server_fd, CP_BEACON_OFF CP_EOL, targstr);
+        xdprintf(server_fd, CP_BEACON_OFF CP_EOL, targstr);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_BEACON:
         if (have_targets)
-            Dprintf(server_fd, CP_BEACON CP_EOL, targstr);
+            xdprintf(server_fd, CP_BEACON CP_EOL, targstr);
         else
-            Dprintf(server_fd, CP_BEACON_ALL CP_EOL);
+            xdprintf(server_fd, CP_BEACON_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_TEMP:
         if (have_targets)
-            Dprintf(server_fd, CP_TEMP CP_EOL, targstr);
+            xdprintf(server_fd, CP_TEMP CP_EOL, targstr);
         else
-            Dprintf(server_fd, CP_TEMP_ALL CP_EOL);
+            xdprintf(server_fd, CP_TEMP_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_NODE:
         if (have_targets)
-            Dprintf(server_fd, CP_SOFT CP_EOL, targstr);
+            xdprintf(server_fd, CP_SOFT CP_EOL, targstr);
         else
-            Dprintf(server_fd, CP_SOFT_ALL CP_EOL);
+            xdprintf(server_fd, CP_SOFT_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
     case CMD_DEVICE:
         if (have_targets)
-            Dprintf(server_fd, CP_DEVICE CP_EOL, targstr);
+            xdprintf(server_fd, CP_DEVICE CP_EOL, targstr);
         else
-            Dprintf(server_fd, CP_DEVICE_ALL CP_EOL);
+            xdprintf(server_fd, CP_DEVICE_ALL CP_EOL);
         res = _process_response();
         _expect(CP_PROMPT);
         break;
@@ -441,21 +447,26 @@ static void _connect_to_server(char *host, char *port,
     char cmd[128];
     char **argv;
     pid_t pid;
+    int n;
 
     if (server_path) {
-        int saved_stderr = dup(STDERR_FILENO);
+        int saved_stderr;
 
+        saved_stderr = dup(STDERR_FILENO);
+        if (saved_stderr < 0)
+            err_exit(TRUE, "dup stderr");
         snprintf(cmd, sizeof(cmd), "powermand -sRf -c %s", config_path);
         argv = argv_create(cmd, "");
-        pid = Forkpty(&server_fd, NULL, 0);
+        pid = xforkpty(&server_fd, NULL, 0);
         switch (pid) {
             case -1:
                 err_exit(TRUE, "forkpty error");
             case 0: /* child */
-                Dup2(saved_stderr, STDERR_FILENO);
-                Makeraw(STDIN_FILENO);
-                Execv(server_path, argv);
-                /*NOTREACHED*/
+                if (dup2(saved_stderr, STDERR_FILENO) < 0)
+                    err_exit(TRUE, "dup2 stderr");
+                xcfmakeraw(STDIN_FILENO);
+                execv(server_path, argv);
+                err_exit(TRUE, "exec %s", server_path);
             default: /* parent */ 
                 break;
         }
@@ -466,15 +477,16 @@ static void _connect_to_server(char *host, char *port,
         hints.ai_family = AF_INET;
         hints.ai_socktype = SOCK_STREAM;
 
-        Getaddrinfo(host, port, &hints, &addrinfo);
+        if ((n = getaddrinfo(host, port, &hints, &addrinfo)) != 0)
+            err_exit(FALSE, "getaddrinfo %s: %s", host, gai_strerror(n));
 
-        server_fd = Socket(addrinfo->ai_family, addrinfo->ai_socktype,
+        server_fd = socket(addrinfo->ai_family, addrinfo->ai_socktype,
                            addrinfo->ai_protocol);
+        if (server_fd < 0)
+            err_exit(TRUE, "socket");
 
-        if (Connect(server_fd, addrinfo->ai_addr, addrinfo->ai_addrlen) < 0) {
-            /* EINPROGRESS (not possible) | ECONNREFUSED */
-            err_exit(TRUE, "powermand");
-        }
+        if (connect(server_fd, addrinfo->ai_addr, addrinfo->ai_addrlen) < 0)
+            err_exit(TRUE, "connect");
         freeaddrinfo(addrinfo);
     }
 
@@ -484,7 +496,7 @@ static void _connect_to_server(char *host, char *port,
 
 static void _disconnect_from_server(void)
 {
-    Dprintf(server_fd, CP_QUIT CP_EOL);
+    xdprintf(server_fd, CP_QUIT CP_EOL);
     _expect(CP_RSP_QUIT);
 }
 

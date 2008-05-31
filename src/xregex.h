@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  $Id$
+ *  $Id: wrappers.h 911 2008-05-30 20:26:33Z garlick $
  *****************************************************************************
  *  Copyright (C) 2001-2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -25,16 +25,14 @@
 \*****************************************************************************/
 
 
-#ifndef WRAPPERS_H
-#define WRAPPERS_H
+#ifndef POWERMAN_XREGEX_H
+#define POWERMAN_XREGEX_H
 
-int Read(int fd, char *p, int max);
-int Write(int fd, char *p, int max);
+void xregcomp(regex_t * preg, const char *regex, int cflags);
+int xregexec(const regex_t * preg, const char *string,
+             size_t nmatch, regmatch_t pmatch[], int eflags);
 
-typedef void Sigfunc(int);
-Sigfunc *Signal(int signo, Sigfunc * func);
-
-#endif                          /* WRAPPERS_H */
+#endif /* POWERMAN_XREGEX_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

@@ -42,15 +42,19 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <signal.h>
+
 #include "powerman.h"
 #include "parse_util.h"
 #include "wrappers.h"
+#include "xmalloc.h"
+#include "xpoll.h"
 #include "pluglist.h"
 #include "device.h"
 #include "device_pipe.h"
 #include "error.h"
 #include "debug.h"
 #include "argv.h"
+#include "xpty.h"
 
 typedef struct {
     char **argv;
@@ -63,7 +67,7 @@ typedef struct {
  */
 void *pipe_create(char *cmdline, char *flags)
 {
-    PipeDev *pd = (PipeDev *)Malloc(sizeof(PipeDev));
+    PipeDev *pd = (PipeDev *)xmalloc(sizeof(PipeDev));
 
     pd->argv = argv_create(cmdline, "|&");
     pd->cpid = -1;
@@ -78,7 +82,7 @@ void pipe_destroy(void *data)
     PipeDev *pd = (PipeDev *)data;
 
     argv_destroy(pd->argv);
-    Free(pd);
+    xfree(pd);
 }
 
 /* Start the coprocess using forkpty(3).  */
@@ -92,18 +96,20 @@ bool pipe_connect(Device * dev)
     assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
-    pid = Forkpty(&fd, ptyname, sizeof(ptyname));
+    pid = xforkpty(&fd, ptyname, sizeof(ptyname));
     if (pid < 0) {
         err(FALSE, "_pipe_connect(%s): forkpty error", dev->name);
     } else if (pid == 0) {      /* child */
-        Execv(pd->argv[0], pd->argv);
-        /*NOTREACHED*/
-
+        execv(pd->argv[0], pd->argv);
+        err_exit(TRUE, "exec %s", pd->argv[0]);
     } else {                    /* parent */
         int flags;
 
-        flags = Fcntl(fd, F_GETFL, 0);
-        Fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+        flags = fcntl(fd, F_GETFL, 0);
+        if (flags < 0)
+            err_exit(TRUE, "fcntl F_GETFL");
+        if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
+            err_exit(TRUE, "fcntl F_SETFL");
 
         dev->fd = fd;
 
@@ -130,7 +136,8 @@ void pipe_disconnect(Device * dev)
     dbg(DBG_DEVICE, "_pipe_disconnect: %s on fd %d", dev->name, dev->fd);
 
     if (dev->fd >= 0) {
-        Close(dev->fd);
+        if (close(dev->fd) < 0)
+            err(TRUE, "_pipe_disconnect: %s close fd %d", dev->name, dev->fd);
         dev->fd = NO_FD;
     }
 
@@ -139,7 +146,8 @@ void pipe_disconnect(Device * dev)
         int wstat;
 
         kill(pd->cpid, SIGTERM); /* ignore errors */
-        Waitpid(pd->cpid, &wstat, 0);
+        if (waitpid(pd->cpid, &wstat, 0) < 0)
+            err(TRUE, "_pipe_disconnect(%s): wait", dev->name);
         if (WIFEXITED(wstat)) {
             err(FALSE, "_pipe_disconnect(%s): %s exited with status %d", 
                     dev->name, pd->argv[0], WEXITSTATUS(wstat));

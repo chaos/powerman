@@ -174,8 +174,8 @@ void dev_destroy(Device * dev);
 Device *dev_findbyname(char *name);
 List dev_getdevices(void);
 
-void dev_pre_poll(Pollfd_t pfd);
-void dev_post_poll(Pollfd_t pfd, struct timeval *tv);
+void dev_pre_poll(xpollfd_t pfd);
+void dev_post_poll(xpollfd_t pfd, struct timeval *tv);
 
 #endif                          /* DEVICE_H */
 

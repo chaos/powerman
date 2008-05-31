@@ -33,7 +33,12 @@ noinst_HEADERS = \
 	parse_util.h \
 	pluglist.h \
 	powerman.h \
-	wrappers.h
+	wrappers.h \
+	xpoll.h \
+	xmalloc.h \
+	xregex.h \
+	timeradd.h \
+	xpty.h
 
 COMMON_SOURCE = \
 	debug.c \
@@ -42,7 +47,11 @@ COMMON_SOURCE = \
 	list.c \
 	hprintf.c \
 	argv.c \
-	wrappers.c
+	wrappers.c \
+	xpoll.c \
+	xmalloc.c \
+	xregex.c \
+	xpty.c
 
 powerman_SOURCES = powerman.c $(COMMON_SOURCE)
 

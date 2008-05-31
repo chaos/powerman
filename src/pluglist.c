@@ -42,7 +42,7 @@
 
 #include "powerman.h"
 #include "list.h"
-#include "wrappers.h"
+#include "xmalloc.h"
 #include "hostlist.h"
 #include "pluglist.h"
 
@@ -62,11 +62,11 @@ struct pluglist {
 
 static Plug *_create_plug(char *name)
 {
-    Plug *plug = (Plug *) Malloc(sizeof(Plug));
+    Plug *plug = (Plug *) xmalloc(sizeof(Plug));
 
     assert(name != NULL);
 
-    plug->name = Strdup(name);
+    plug->name = xstrdup(name);
     plug->node = NULL;
     
     return plug;
@@ -76,15 +76,15 @@ static void _destroy_plug(Plug *plug)
 {
     assert(plug != NULL);
 
-    Free(plug->name);
+    xfree(plug->name);
     if (plug->node)
-        Free(plug->node);
-    Free(plug);
+        xfree(plug->node);
+    xfree(plug);
 }
 
 PlugList pluglist_create(List plugnames)
 {
-    PlugList pl = (PlugList) Malloc(sizeof(struct pluglist));
+    PlugList pl = (PlugList) xmalloc(sizeof(struct pluglist));
 
     pl->magic = PLUGLIST_MAGIC;
     pl->pluglist = list_create((ListDelF)_destroy_plug);
@@ -112,7 +112,7 @@ void pluglist_destroy(PlugList pl)
 
     pl->magic = 0;
     list_destroy(pl->pluglist);
-    Free(pl);
+    xfree(pl);
 }
 
 static Plug *_pluglist_find_any(PlugList pl, char *name)
@@ -149,7 +149,7 @@ static pl_err_t _pluglist_map_one(PlugList pl, char *node, char *name)
         res = EPL_DUPPLUG;
         goto err;
     }
-    plug->node = Strdup(node);
+    plug->node = xstrdup(node);
 err:
     return res;
 }
@@ -165,7 +165,7 @@ static pl_err_t _pluglist_map_next(PlugList pl, char *node)
     pitr = pluglist_iterator_create(pl);
     while ((plug = pluglist_next(pitr))) {
         if (plug->node == NULL) {
-            plug->node = Strdup(node);
+            plug->node = xstrdup(node);
             res = EPL_SUCCESS;
             break;
         }
@@ -243,7 +243,7 @@ pl_err_t pluglist_map(PlugList pl, char *nodelist, char *pluglist)
 
 PlugListIterator pluglist_iterator_create(PlugList pl)
 {
-    PlugListIterator itr = (PlugListIterator)Malloc(sizeof(struct pluglist_iterator));
+    PlugListIterator itr = (PlugListIterator)xmalloc(sizeof(struct pluglist_iterator));
 
     itr->magic = PLUGLISTITR_MAGIC;
     itr->itr = list_iterator_create(pl->pluglist);
@@ -257,7 +257,7 @@ void pluglist_iterator_destroy(PlugListIterator itr)
     assert(itr->magic == PLUGLISTITR_MAGIC);
     itr->magic = 0;
     list_iterator_destroy(itr->itr);
-    Free(itr);
+    xfree(itr);
 }
 
 Plug *pluglist_next(PlugListIterator itr)

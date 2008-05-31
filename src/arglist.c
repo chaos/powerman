@@ -49,7 +49,7 @@
 
 #include "powerman.h"
 #include "list.h"
-#include "wrappers.h"
+#include "xmalloc.h"
 #include "hostlist.h"
 #include "hash.h"
 #include "arglist.h"
@@ -69,17 +69,17 @@ static void _destroy_arg(Arg * arg)
 {
     assert(arg != NULL);
     assert(arg->node != NULL);
-    Free(arg->node);
+    xfree(arg->node);
     if (arg->val)
-        Free(arg->val);
-    Free(arg);
+        xfree(arg->val);
+    xfree(arg);
 }
 
 static Arg *_create_arg(char *node)
 {
-    Arg *arg = (Arg *) Malloc(sizeof(Arg));
+    Arg *arg = (Arg *) xmalloc(sizeof(Arg));
 
-    arg->node = Strdup(node);
+    arg->node = xstrdup(node);
     arg->state = ST_UNKNOWN;
     arg->val = NULL;
     
@@ -88,7 +88,7 @@ static Arg *_create_arg(char *node)
 
 ArgList arglist_create(hostlist_t hl)
 {
-    ArgList new = (ArgList) Malloc(sizeof(struct arglist));
+    ArgList new = (ArgList) xmalloc(sizeof(struct arglist));
     hostlist_iterator_t itr;
     char *node;
     int hash_size;
@@ -119,7 +119,7 @@ void arglist_unlink(ArgList arglist)
     if (--arglist->refcount == 0) {
         hash_destroy(arglist->args);
         hostlist_destroy(arglist->hl);
-        Free(arglist);
+        xfree(arglist);
     }
 }
 
@@ -142,7 +142,7 @@ Arg *arglist_find(ArgList arglist, char *node)
 
 ArgListIterator arglist_iterator_create(ArgList arglist)
 {
-    ArgListIterator itr = (ArgListIterator)Malloc(sizeof(struct arglist_iterator));
+    ArgListIterator itr = (ArgListIterator)xmalloc(sizeof(struct arglist_iterator));
 
     itr->arglist = arglist;
     itr->itr = hostlist_iterator_create(arglist->hl);
@@ -153,7 +153,7 @@ ArgListIterator arglist_iterator_create(ArgList arglist)
 void arglist_iterator_destroy(ArgListIterator itr)
 {
     hostlist_iterator_destroy(itr->itr);
-    Free(itr);
+    xfree(itr);
 }
 
 Arg *arglist_next(ArgListIterator itr)
