@@ -9,7 +9,7 @@ TESTS = t00 t01 t02 t03 t04 t05
 CLEANFILES = *.out *.err *.diff *.conf
 
 common_sources = \
-	$(top_srcdir)/src/wrappers.c \
+	$(top_srcdir)/src/xread.c \
 	$(top_srcdir)/src/error.c \
 	$(top_srcdir)/src/debug.c \
 	$(top_srcdir)/src/pluglist.c \

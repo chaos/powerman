@@ -575,7 +575,6 @@ char *yytext;
 #include "parse_tab.h"
 #include "powerman.h"
 #include "list.h"
-#include "wrappers.h"
 #include "xmalloc.h"
 #include "error.h"
 #include "parse_util.h"
@@ -592,7 +591,7 @@ static List line_ptrs;
 
 /* Lex Options */
 #define YY_NO_UNPUT 1
-#line 596 "parse_lex.c"
+#line 595 "parse_lex.c"
 
 /* Macros after this point can all be overridden by user definitions in
  * section 1.
@@ -743,14 +742,14 @@ YY_DECL
 	register char *yy_cp = NULL, *yy_bp = NULL;
 	register int yy_act;
 
-#line 62 "parse_lex.l"
+#line 61 "parse_lex.l"
 
 
 
     /* yyin gets initialized in parse.y */
 
 
-#line 754 "parse_lex.c"
+#line 753 "parse_lex.c"
 
 	if ( yy_init )
 		{
@@ -835,28 +834,28 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 68 "parse_lex.l"
+#line 67 "parse_lex.l"
 { 
     linenum[include_stack_ptr]++;
 }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 72 "parse_lex.l"
+#line 71 "parse_lex.l"
 {
     /* Eat up white space */
 }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 76 "parse_lex.l"
+#line 75 "parse_lex.l"
 {
     linenum[include_stack_ptr]++;
 }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 80 "parse_lex.l"
+#line 79 "parse_lex.l"
 { 
     yylval = yytext;
     return TOK_NUMERIC_VAL; 
@@ -864,14 +863,14 @@ YY_RULE_SETUP
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 85 "parse_lex.l"
+#line 84 "parse_lex.l"
 { 
     return TOK_MATCHPOS;
 }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 89 "parse_lex.l"
+#line 88 "parse_lex.l"
 {
     string_buf_ptr = string_buf;
     BEGIN(lex_str);
@@ -880,7 +879,7 @@ YY_RULE_SETUP
 
 case 7:
 YY_RULE_SETUP
-#line 95 "parse_lex.l"
+#line 94 "parse_lex.l"
 {   
         /* end of string */
         int len;
@@ -897,84 +896,84 @@ YY_RULE_SETUP
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 108 "parse_lex.l"
+#line 107 "parse_lex.l"
 {
         *string_buf_ptr++ = '\a';
     }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 111 "parse_lex.l"
+#line 110 "parse_lex.l"
 {
         *string_buf_ptr++ = '\b';
     }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 114 "parse_lex.l"
+#line 113 "parse_lex.l"
 {
         *string_buf_ptr++ = '\e';
     }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 117 "parse_lex.l"
+#line 116 "parse_lex.l"
 {
         *string_buf_ptr++ = '\f';
     }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 120 "parse_lex.l"
+#line 119 "parse_lex.l"
 {
         *string_buf_ptr++ = '\n';
     }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 123 "parse_lex.l"
+#line 122 "parse_lex.l"
 {
         *string_buf_ptr++ = '\r';
     }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 126 "parse_lex.l"
+#line 125 "parse_lex.l"
 {
         *string_buf_ptr++ = '\t';
     }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 129 "parse_lex.l"
+#line 128 "parse_lex.l"
 {
         *string_buf_ptr++ = '\v';
     }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 132 "parse_lex.l"
+#line 131 "parse_lex.l"
 {
         yyerror();
     }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 135 "parse_lex.l"
+#line 134 "parse_lex.l"
 {
         *string_buf_ptr++ = strtol(&yytext[1], NULL, 8);
     }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 138 "parse_lex.l"
+#line 137 "parse_lex.l"
 {
         *string_buf_ptr++ = yytext[1];
     }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 141 "parse_lex.l"
+#line 140 "parse_lex.l"
 {
         char *yptr = yytext;
     
@@ -985,266 +984,266 @@ YY_RULE_SETUP
 
 case 20:
 YY_RULE_SETUP
-#line 149 "parse_lex.l"
+#line 148 "parse_lex.l"
 return TOK_PORT;
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 150 "parse_lex.l"
+#line 149 "parse_lex.l"
 return TOK_TCP_WRAPPERS;
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 151 "parse_lex.l"
+#line 150 "parse_lex.l"
 return TOK_DEV_TIMEOUT;
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 152 "parse_lex.l"
+#line 151 "parse_lex.l"
 return TOK_PING_PERIOD;
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 153 "parse_lex.l"
+#line 152 "parse_lex.l"
 return TOK_SPEC;
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 154 "parse_lex.l"
+#line 153 "parse_lex.l"
 return TOK_EXPECT;
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 155 "parse_lex.l"
+#line 154 "parse_lex.l"
 return TOK_SETPLUGSTATE;
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 156 "parse_lex.l"
+#line 155 "parse_lex.l"
 return TOK_FOREACHNODE;
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 157 "parse_lex.l"
+#line 156 "parse_lex.l"
 return TOK_FOREACHPLUG;
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 158 "parse_lex.l"
+#line 157 "parse_lex.l"
 return TOK_IFOFF;
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 159 "parse_lex.l"
+#line 158 "parse_lex.l"
 return TOK_IFON;
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 160 "parse_lex.l"
+#line 159 "parse_lex.l"
 return TOK_SEND;
 	YY_BREAK
 case 32:
 YY_RULE_SETUP
-#line 161 "parse_lex.l"
+#line 160 "parse_lex.l"
 return TOK_DELAY;
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 162 "parse_lex.l"
+#line 161 "parse_lex.l"
 return TOK_LOGIN;
 	YY_BREAK
 case 34:
 YY_RULE_SETUP
-#line 163 "parse_lex.l"
+#line 162 "parse_lex.l"
 return TOK_LOGOUT;
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 164 "parse_lex.l"
+#line 163 "parse_lex.l"
 return TOK_STATUS;
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 165 "parse_lex.l"
+#line 164 "parse_lex.l"
 return TOK_STATUS_ALL;
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 166 "parse_lex.l"
+#line 165 "parse_lex.l"
 return TOK_STATUS_SOFT;
 	YY_BREAK
 case 38:
 YY_RULE_SETUP
-#line 167 "parse_lex.l"
+#line 166 "parse_lex.l"
 return TOK_STATUS_SOFT_ALL;
 	YY_BREAK
 case 39:
 YY_RULE_SETUP
-#line 168 "parse_lex.l"
+#line 167 "parse_lex.l"
 return TOK_ON;
 	YY_BREAK
 case 40:
 YY_RULE_SETUP
-#line 169 "parse_lex.l"
+#line 168 "parse_lex.l"
 return TOK_ON_RANGED;
 	YY_BREAK
 case 41:
 YY_RULE_SETUP
-#line 170 "parse_lex.l"
+#line 169 "parse_lex.l"
 return TOK_ON_ALL;
 	YY_BREAK
 case 42:
 YY_RULE_SETUP
-#line 171 "parse_lex.l"
+#line 170 "parse_lex.l"
 return TOK_OFF;
 	YY_BREAK
 case 43:
 YY_RULE_SETUP
-#line 172 "parse_lex.l"
+#line 171 "parse_lex.l"
 return TOK_OFF_RANGED;
 	YY_BREAK
 case 44:
 YY_RULE_SETUP
-#line 173 "parse_lex.l"
+#line 172 "parse_lex.l"
 return TOK_OFF_ALL;
 	YY_BREAK
 case 45:
 YY_RULE_SETUP
-#line 174 "parse_lex.l"
+#line 173 "parse_lex.l"
 return TOK_CYCLE;
 	YY_BREAK
 case 46:
 YY_RULE_SETUP
-#line 175 "parse_lex.l"
+#line 174 "parse_lex.l"
 return TOK_CYCLE_RANGED;
 	YY_BREAK
 case 47:
 YY_RULE_SETUP
-#line 176 "parse_lex.l"
+#line 175 "parse_lex.l"
 return TOK_CYCLE_ALL;
 	YY_BREAK
 case 48:
 YY_RULE_SETUP
-#line 177 "parse_lex.l"
+#line 176 "parse_lex.l"
 return TOK_RESET;
 	YY_BREAK
 case 49:
 YY_RULE_SETUP
-#line 178 "parse_lex.l"
+#line 177 "parse_lex.l"
 return TOK_RESET_RANGED;
 	YY_BREAK
 case 50:
 YY_RULE_SETUP
-#line 179 "parse_lex.l"
+#line 178 "parse_lex.l"
 return TOK_RESET_ALL;
 	YY_BREAK
 case 51:
 YY_RULE_SETUP
-#line 180 "parse_lex.l"
+#line 179 "parse_lex.l"
 return TOK_PING;
 	YY_BREAK
 case 52:
 YY_RULE_SETUP
-#line 181 "parse_lex.l"
+#line 180 "parse_lex.l"
 return TOK_STATUS_TEMP;
 	YY_BREAK
 case 53:
 YY_RULE_SETUP
-#line 182 "parse_lex.l"
+#line 181 "parse_lex.l"
 return TOK_STATUS_TEMP_ALL;
 	YY_BREAK
 case 54:
 YY_RULE_SETUP
-#line 183 "parse_lex.l"
+#line 182 "parse_lex.l"
 return TOK_STATUS_BEACON;
 	YY_BREAK
 case 55:
 YY_RULE_SETUP
-#line 184 "parse_lex.l"
+#line 183 "parse_lex.l"
 return TOK_STATUS_BEACON_ALL;
 	YY_BREAK
 case 56:
 YY_RULE_SETUP
-#line 185 "parse_lex.l"
+#line 184 "parse_lex.l"
 return TOK_BEACON_ON;
 	YY_BREAK
 case 57:
 YY_RULE_SETUP
-#line 186 "parse_lex.l"
+#line 185 "parse_lex.l"
 return TOK_BEACON_OFF;
 	YY_BREAK
 case 58:
 YY_RULE_SETUP
-#line 187 "parse_lex.l"
+#line 186 "parse_lex.l"
 return TOK_DEVICE;
 	YY_BREAK
 case 59:
 YY_RULE_SETUP
-#line 188 "parse_lex.l"
+#line 187 "parse_lex.l"
 return TOK_PLUG_NAME;
 	YY_BREAK
 case 60:
 YY_RULE_SETUP
-#line 189 "parse_lex.l"
+#line 188 "parse_lex.l"
 return TOK_NODE;
 	YY_BREAK
 case 61:
 YY_RULE_SETUP
-#line 190 "parse_lex.l"
+#line 189 "parse_lex.l"
 return TOK_YES;
 	YY_BREAK
 case 62:
 YY_RULE_SETUP
-#line 191 "parse_lex.l"
+#line 190 "parse_lex.l"
 return TOK_NO;
 	YY_BREAK
 case 63:
 YY_RULE_SETUP
-#line 192 "parse_lex.l"
+#line 191 "parse_lex.l"
 return TOK_BEGIN;
 	YY_BREAK
 case 64:
 YY_RULE_SETUP
-#line 193 "parse_lex.l"
+#line 192 "parse_lex.l"
 return TOK_END;
 	YY_BREAK
 case 65:
 YY_RULE_SETUP
-#line 194 "parse_lex.l"
+#line 193 "parse_lex.l"
 return TOK_EQUALS;
 	YY_BREAK
 case 66:
 YY_RULE_SETUP
-#line 195 "parse_lex.l"
+#line 194 "parse_lex.l"
 return TOK_SCRIPT;
 	YY_BREAK
 case 67:
 YY_RULE_SETUP
-#line 196 "parse_lex.l"
+#line 195 "parse_lex.l"
 return TOK_ALIAS;
 	YY_BREAK
 case 68:
 YY_RULE_SETUP
-#line 198 "parse_lex.l"
+#line 197 "parse_lex.l"
 BEGIN(lex_incl);
 	YY_BREAK
 case 69:
 YY_RULE_SETUP
-#line 200 "parse_lex.l"
+#line 199 "parse_lex.l"
 {
     /* eat white space */
 }
 	YY_BREAK
 case 70:
 YY_RULE_SETUP
-#line 204 "parse_lex.l"
+#line 203 "parse_lex.l"
 { 
     linenum[include_stack_ptr]++;
 }
 	YY_BREAK
 case 71:
 YY_RULE_SETUP
-#line 208 "parse_lex.l"
+#line 207 "parse_lex.l"
 {
     /* got include file name */
     int len;
@@ -1269,7 +1268,7 @@ YY_RULE_SETUP
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(lex_incl):
 case YY_STATE_EOF(lex_str):
-#line 229 "parse_lex.l"
+#line 228 "parse_lex.l"
 {
     if (include_stack_ptr == 0) {
         yyterminate();
@@ -1282,17 +1281,17 @@ case YY_STATE_EOF(lex_str):
 	YY_BREAK
 case 72:
 YY_RULE_SETUP
-#line 239 "parse_lex.l"
+#line 238 "parse_lex.l"
 {
     return TOK_UNRECOGNIZED; 
 }
 	YY_BREAK
 case 73:
 YY_RULE_SETUP
-#line 243 "parse_lex.l"
+#line 242 "parse_lex.l"
 ECHO;
 	YY_BREAK
-#line 1296 "parse_lex.c"
+#line 1295 "parse_lex.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2172,7 +2171,7 @@ int main()
 	return 0;
 	}
 #endif
-#line 243 "parse_lex.l"
+#line 242 "parse_lex.l"
 
 
 /* provide yywrap() to avoid need to link to -lfl */

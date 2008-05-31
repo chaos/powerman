@@ -9,7 +9,6 @@
 
 #include "list.h"
 #include "pluglist.h"
-#include "wrappers.h"
 #include "hostlist.h"
 #include "error.h"
 #include "xmalloc.h"

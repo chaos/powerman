@@ -39,7 +39,6 @@
 #include "parse_tab.h"
 #include "powerman.h"
 #include "list.h"
-#include "wrappers.h"
 #include "xmalloc.h"
 #include "error.h"
 #include "parse_util.h"

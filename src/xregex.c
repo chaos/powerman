@@ -35,7 +35,6 @@
 #include <sys/types.h>
 #include <regex.h>
 
-#include "wrappers.h"
 #include "error.h"
 #include "xregex.h"
 

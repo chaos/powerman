@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  $Id$
+ *  $Id: wrappers.h 912 2008-05-31 01:28:46Z garlick $
  *****************************************************************************
  *  Copyright (C) 2001-2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -25,16 +25,13 @@
 \*****************************************************************************/
 
 
-#ifndef WRAPPERS_H
-#define WRAPPERS_H
+#ifndef POWERMAN_XSIGNAL_H
+#define POWERMAN_XSIGNAL_H
 
-int Read(int fd, char *p, int max);
-int Write(int fd, char *p, int max);
+typedef void xsigfunc(int);
+xsigfunc *xsignal(int signo, xsigfunc * func);
 
-typedef void Sigfunc(int);
-Sigfunc *Signal(int signo, Sigfunc * func);
-
-#endif                          /* WRAPPERS_H */
+#endif /* POWERMAN_XSIGNAL_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

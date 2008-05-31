@@ -45,7 +45,6 @@
 
 #include "powerman.h"
 #include "parse_util.h"
-#include "wrappers.h"
 #include "xmalloc.h"
 #include "xpoll.h"
 #include "pluglist.h"

@@ -36,7 +36,7 @@
 
 #include "xmalloc.h"
 #include "hprintf.h"
-#include "wrappers.h"
+#include "xread.h"
 
 #define CHUNKSIZE 80
 char *hvsprintf(const char *fmt, va_list ap)
@@ -84,7 +84,7 @@ int xdprintf(int fd, const char *format, ...)
     n = strlen(p);
     rc = 0;
     do {
-        rc = Write(fd, str, n);
+        rc = xwrite(fd, str, n);
         if (rc < 0)
             return rc;
         n -= rc;

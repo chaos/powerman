@@ -207,7 +207,6 @@
 #include "powerman.h"
 #include "list.h"
 #include "parse_util.h"
-#include "wrappers.h"
 #include "xmalloc.h"
 #include "xpoll.h"
 #include "xregex.h"
@@ -316,7 +315,7 @@ typedef int YYSTYPE;
 
 
 /* Line 216 of yacc.c.  */
-#line 320 "parse_tab.c"
+#line 319 "parse_tab.c"
 
 #ifdef short
 # undef short
@@ -638,15 +637,15 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   152,   152,   158,   159,   161,   162,   163,   164,   165,
-     167,   170,   172,   176,   180,   183,   187,   189,   193,   200,
-     201,   203,   209,   210,   212,   213,   214,   215,   217,   221,
-     225,   228,   233,   239,   240,   242,   244,   246,   248,   250,
-     252,   254,   256,   258,   260,   262,   264,   266,   268,   270,
-     272,   274,   276,   278,   280,   282,   284,   286,   288,   290,
-     294,   298,   301,   306,   308,   310,   312,   314,   317,   319,
-     321,   323,   325,   328,   331,   334,   339,   342,   347,   349,
-     353
+       0,   151,   151,   157,   158,   160,   161,   162,   163,   164,
+     166,   169,   171,   175,   179,   182,   186,   188,   192,   199,
+     200,   202,   208,   209,   211,   212,   213,   214,   216,   220,
+     224,   227,   232,   238,   239,   241,   243,   245,   247,   249,
+     251,   253,   255,   257,   259,   261,   263,   265,   267,   269,
+     271,   273,   275,   277,   279,   281,   283,   285,   287,   289,
+     293,   297,   300,   305,   307,   309,   311,   313,   316,   318,
+     320,   322,   324,   327,   330,   333,   338,   341,   346,   348,
+     352
 };
 #endif
 
@@ -1655,7 +1654,7 @@ yyreduce:
   switch (yyn)
     {
         case 10:
-#line 167 "parse_tab.y"
+#line 166 "parse_tab.y"
     { 
     _warnmsg("'tcpwrappers' without yes|no"); 
     conf_set_use_tcp_wrappers(TRUE);
@@ -1663,84 +1662,84 @@ yyreduce:
     break;
 
   case 11:
-#line 170 "parse_tab.y"
+#line 169 "parse_tab.y"
     { 
     conf_set_use_tcp_wrappers(TRUE);
 }
     break;
 
   case 12:
-#line 172 "parse_tab.y"
+#line 171 "parse_tab.y"
     { 
     conf_set_use_tcp_wrappers(FALSE);
 }
     break;
 
   case 13:
-#line 176 "parse_tab.y"
+#line 175 "parse_tab.y"
     {
     makeClientPort((yyvsp[(2) - (2)]));
 }
     break;
 
   case 14:
-#line 181 "parse_tab.y"
+#line 180 "parse_tab.y"
     {
     makeDevice((yyvsp[(2) - (5)]), (yyvsp[(3) - (5)]), (yyvsp[(4) - (5)]), (yyvsp[(5) - (5)]));
 }
     break;
 
   case 15:
-#line 183 "parse_tab.y"
+#line 182 "parse_tab.y"
     {
     makeDevice((yyvsp[(2) - (4)]), (yyvsp[(3) - (4)]), (yyvsp[(4) - (4)]), NULL);
 }
     break;
 
   case 16:
-#line 187 "parse_tab.y"
+#line 186 "parse_tab.y"
     {
     makeNode((yyvsp[(2) - (4)]), (yyvsp[(3) - (4)]), (yyvsp[(4) - (4)]));
 }
     break;
 
   case 17:
-#line 189 "parse_tab.y"
+#line 188 "parse_tab.y"
     {
     makeNode((yyvsp[(2) - (3)]), (yyvsp[(3) - (3)]), NULL);
 }
     break;
 
   case 18:
-#line 193 "parse_tab.y"
+#line 192 "parse_tab.y"
     {
     makeAlias((yyvsp[(2) - (3)]), (yyvsp[(3) - (3)]));
 }
     break;
 
   case 21:
-#line 205 "parse_tab.y"
+#line 204 "parse_tab.y"
     {
     makeSpec((yyvsp[(2) - (5)]));
 }
     break;
 
   case 28:
-#line 217 "parse_tab.y"
+#line 216 "parse_tab.y"
     {
     _doubletotv(&current_spec.timeout, _strtodouble((yyvsp[(2) - (2)])));
 }
     break;
 
   case 29:
-#line 221 "parse_tab.y"
+#line 220 "parse_tab.y"
     {
     _doubletotv(&current_spec.ping_period, _strtodouble((yyvsp[(2) - (2)])));
 }
     break;
 
   case 30:
-#line 225 "parse_tab.y"
+#line 224 "parse_tab.y"
     {
     list_append((List)(yyvsp[(1) - (2)]), xstrdup((yyvsp[(2) - (2)]))); 
     (yyval) = (yyvsp[(1) - (2)]); 
@@ -1748,7 +1747,7 @@ yyreduce:
     break;
 
   case 31:
-#line 228 "parse_tab.y"
+#line 227 "parse_tab.y"
     {
     (yyval) = (char *)list_create((ListDelF)xfree);
     list_append((List)(yyval), xstrdup((yyvsp[(1) - (1)]))); 
@@ -1756,7 +1755,7 @@ yyreduce:
     break;
 
   case 32:
-#line 233 "parse_tab.y"
+#line 232 "parse_tab.y"
     {
     if (current_spec.plugs != NULL)
         _errormsg("duplicate plug list");
@@ -1765,189 +1764,189 @@ yyreduce:
     break;
 
   case 35:
-#line 242 "parse_tab.y"
+#line 241 "parse_tab.y"
     {
     makeScript(PM_LOG_IN, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 36:
-#line 244 "parse_tab.y"
+#line 243 "parse_tab.y"
     {
     makeScript(PM_LOG_OUT, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 37:
-#line 246 "parse_tab.y"
+#line 245 "parse_tab.y"
     {
     makeScript(PM_STATUS_PLUGS, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 38:
-#line 248 "parse_tab.y"
+#line 247 "parse_tab.y"
     {
     makeScript(PM_STATUS_PLUGS_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 39:
-#line 250 "parse_tab.y"
+#line 249 "parse_tab.y"
     {
     makeScript(PM_STATUS_NODES, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 40:
-#line 252 "parse_tab.y"
+#line 251 "parse_tab.y"
     {
     makeScript(PM_STATUS_NODES_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 41:
-#line 254 "parse_tab.y"
+#line 253 "parse_tab.y"
     {
     makeScript(PM_STATUS_TEMP, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 42:
-#line 256 "parse_tab.y"
+#line 255 "parse_tab.y"
     {
     makeScript(PM_STATUS_TEMP_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 43:
-#line 258 "parse_tab.y"
+#line 257 "parse_tab.y"
     {
     makeScript(PM_STATUS_BEACON, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 44:
-#line 260 "parse_tab.y"
+#line 259 "parse_tab.y"
     {
     makeScript(PM_STATUS_BEACON_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 45:
-#line 262 "parse_tab.y"
+#line 261 "parse_tab.y"
     {
     makeScript(PM_BEACON_ON, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 46:
-#line 264 "parse_tab.y"
+#line 263 "parse_tab.y"
     {
     makeScript(PM_BEACON_OFF, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 47:
-#line 266 "parse_tab.y"
+#line 265 "parse_tab.y"
     {
     makeScript(PM_POWER_ON, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 48:
-#line 268 "parse_tab.y"
+#line 267 "parse_tab.y"
     {
     makeScript(PM_POWER_ON_RANGED, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 49:
-#line 270 "parse_tab.y"
+#line 269 "parse_tab.y"
     {
     makeScript(PM_POWER_ON_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 50:
-#line 272 "parse_tab.y"
+#line 271 "parse_tab.y"
     {
     makeScript(PM_POWER_OFF, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 51:
-#line 274 "parse_tab.y"
+#line 273 "parse_tab.y"
     {
     makeScript(PM_POWER_OFF_RANGED, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 52:
-#line 276 "parse_tab.y"
+#line 275 "parse_tab.y"
     {
     makeScript(PM_POWER_OFF_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 53:
-#line 278 "parse_tab.y"
+#line 277 "parse_tab.y"
     {
     makeScript(PM_POWER_CYCLE, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 54:
-#line 280 "parse_tab.y"
+#line 279 "parse_tab.y"
     {
     makeScript(PM_POWER_CYCLE_RANGED, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 55:
-#line 282 "parse_tab.y"
+#line 281 "parse_tab.y"
     {
     makeScript(PM_POWER_CYCLE_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 56:
-#line 284 "parse_tab.y"
+#line 283 "parse_tab.y"
     {
     makeScript(PM_RESET, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 57:
-#line 286 "parse_tab.y"
+#line 285 "parse_tab.y"
     {
     makeScript(PM_RESET_RANGED, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 58:
-#line 288 "parse_tab.y"
+#line 287 "parse_tab.y"
     {
     makeScript(PM_RESET_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 59:
-#line 290 "parse_tab.y"
+#line 289 "parse_tab.y"
     {
     makeScript(PM_PING, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 60:
-#line 294 "parse_tab.y"
+#line 293 "parse_tab.y"
     {
     (yyval) = (yyvsp[(2) - (3)]);
 }
     break;
 
   case 61:
-#line 298 "parse_tab.y"
+#line 297 "parse_tab.y"
     { 
     list_append((List)(yyvsp[(1) - (2)]), (yyvsp[(2) - (2)])); 
     (yyval) = (yyvsp[(1) - (2)]); 
@@ -1955,7 +1954,7 @@ yyreduce:
     break;
 
   case 62:
-#line 301 "parse_tab.y"
+#line 300 "parse_tab.y"
     { 
     (yyval) = (char *)list_create((ListDelF)destroyPreStmt);
     list_append((List)(yyval), (yyvsp[(1) - (1)])); 
@@ -1963,35 +1962,35 @@ yyreduce:
     break;
 
   case 63:
-#line 306 "parse_tab.y"
+#line 305 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_EXPECT, (yyvsp[(2) - (2)]), NULL, NULL, NULL, NULL, NULL);
 }
     break;
 
   case 64:
-#line 308 "parse_tab.y"
+#line 307 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SEND, (yyvsp[(2) - (2)]), NULL, NULL, NULL, NULL, NULL);
 }
     break;
 
   case 65:
-#line 310 "parse_tab.y"
+#line 309 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_DELAY, NULL, (yyvsp[(2) - (2)]), NULL, NULL, NULL, NULL);
 }
     break;
 
   case 66:
-#line 312 "parse_tab.y"
+#line 311 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SETPLUGSTATE, (yyvsp[(2) - (3)]), NULL, NULL, (yyvsp[(3) - (3)]), NULL, NULL);
 }
     break;
 
   case 67:
-#line 314 "parse_tab.y"
+#line 313 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SETPLUGSTATE, (yyvsp[(2) - (4)]), NULL, NULL, (yyvsp[(3) - (4)]), NULL,
                              (List)(yyvsp[(4) - (4)]));
@@ -1999,35 +1998,35 @@ yyreduce:
     break;
 
   case 68:
-#line 317 "parse_tab.y"
+#line 316 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, (yyvsp[(2) - (3)]), (yyvsp[(3) - (3)]), NULL, NULL);
 }
     break;
 
   case 69:
-#line 319 "parse_tab.y"
+#line 318 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, (yyvsp[(2) - (4)]), (yyvsp[(3) - (4)]), NULL,(List)(yyvsp[(4) - (4)]));
 }
     break;
 
   case 70:
-#line 321 "parse_tab.y"
+#line 320 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL, (yyvsp[(2) - (2)]), NULL, NULL);
 }
     break;
 
   case 71:
-#line 323 "parse_tab.y"
+#line 322 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL,(yyvsp[(2) - (3)]),NULL,(List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 72:
-#line 325 "parse_tab.y"
+#line 324 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_FOREACHNODE, NULL, NULL, NULL, NULL, 
                              (List)(yyvsp[(2) - (2)]), NULL);
@@ -2035,7 +2034,7 @@ yyreduce:
     break;
 
   case 73:
-#line 328 "parse_tab.y"
+#line 327 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_FOREACHPLUG, NULL, NULL, NULL, NULL, 
                              (List)(yyvsp[(2) - (2)]), NULL);
@@ -2043,7 +2042,7 @@ yyreduce:
     break;
 
   case 74:
-#line 331 "parse_tab.y"
+#line 330 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_IFOFF, NULL, NULL, NULL, NULL, 
                              (List)(yyvsp[(2) - (2)]), NULL);
@@ -2051,7 +2050,7 @@ yyreduce:
     break;
 
   case 75:
-#line 334 "parse_tab.y"
+#line 333 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_IFON, NULL, NULL, NULL, NULL, 
                              (List)(yyvsp[(2) - (2)]), NULL);
@@ -2059,7 +2058,7 @@ yyreduce:
     break;
 
   case 76:
-#line 339 "parse_tab.y"
+#line 338 "parse_tab.y"
     { 
     list_append((List)(yyvsp[(1) - (2)]), (yyvsp[(2) - (2)])); 
     (yyval) = (yyvsp[(1) - (2)]); 
@@ -2067,7 +2066,7 @@ yyreduce:
     break;
 
   case 77:
-#line 342 "parse_tab.y"
+#line 341 "parse_tab.y"
     { 
     (yyval) = (char *)list_create((ListDelF)destroyInterp);
     list_append((List)(yyval), (yyvsp[(1) - (1)])); 
@@ -2075,21 +2074,21 @@ yyreduce:
     break;
 
   case 78:
-#line 347 "parse_tab.y"
+#line 346 "parse_tab.y"
     {
     (yyval) = (char *)makeInterp(ST_ON, (yyvsp[(3) - (3)]));
 }
     break;
 
   case 79:
-#line 349 "parse_tab.y"
+#line 348 "parse_tab.y"
     {
     (yyval) = (char *)makeInterp(ST_OFF, (yyvsp[(3) - (3)]));
 }
     break;
 
   case 80:
-#line 353 "parse_tab.y"
+#line 352 "parse_tab.y"
     {
     (yyval) = (yyvsp[(2) - (2)]);
 }
@@ -2097,7 +2096,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 2101 "parse_tab.c"
+#line 2100 "parse_tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2311,7 +2310,7 @@ yyreturn:
 }
 
 
-#line 357 "parse_tab.y"
+#line 356 "parse_tab.y"
 
 
 void scanner_init(char *filename);

@@ -47,7 +47,7 @@
 #include <stdarg.h>
 
 #include "powerman.h"
-#include "wrappers.h"
+#include "xread.h"
 #include "error.h"
 #include "hostlist.h"
 #include "client_proto.h"
@@ -526,7 +526,7 @@ static bool _supress(int num)
 static void _getline(char *buf, int size)
 {
     while (size > 1) {          /* leave room for terminating null */
-        if (Read(server_fd, buf, 1) <= 0)
+        if (xread(server_fd, buf, 1) <= 0)
             err_exit(TRUE, "lost connection with server");
         if (*buf == '\r')
             continue;
@@ -598,7 +598,7 @@ static void _expect(char *str)
 
     assert(len < sizeof(buf));
     do {
-        res = Read(server_fd, p, len);
+        res = xread(server_fd, p, len);
         if (res < 0)
             err_exit(TRUE, "lost connection with server");
         p += res;

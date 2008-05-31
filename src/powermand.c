@@ -43,11 +43,11 @@
 #include <limits.h>
 
 #include "powerman.h"
-#include "wrappers.h"
 #include "list.h"
 #include "parse_util.h"
 #include "xmalloc.h"
 #include "xpoll.h"
+#include "xsignal.h"
 #include "pluglist.h"
 #include "device.h"
 #include "daemon.h"
@@ -142,10 +142,10 @@ int main(int argc, char **argv)
     if (!force_notroot && geteuid() != 0)
         err_exit(FALSE, "must be root");
 
-    Signal(SIGHUP, _noop_handler);
-    Signal(SIGTERM, _exit_handler);
-    Signal(SIGINT, _exit_handler);
-    Signal(SIGPIPE, SIG_IGN);
+    xsignal(SIGHUP, _noop_handler);
+    xsignal(SIGTERM, _exit_handler);
+    xsignal(SIGINT, _exit_handler);
+    xsignal(SIGPIPE, SIG_IGN);
 
     /* parses config file */
     conf_init(config_filename ? config_filename : DFLT_CONFIG_FILE);

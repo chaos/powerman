@@ -62,12 +62,12 @@ binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(bin_PROGRAMS) $(sbin_PROGRAMS)
 am__httppower_SOURCES_DIST = httppower.c debug.c error.c hostlist.c \
-	list.c hprintf.c argv.c wrappers.c xpoll.c xmalloc.c xregex.c \
-	xpty.c
+	list.c hprintf.c argv.c xread.c xpoll.c xmalloc.c xregex.c \
+	xpty.c xsignal.c
 am__objects_1 = debug.$(OBJEXT) error.$(OBJEXT) hostlist.$(OBJEXT) \
 	list.$(OBJEXT) hprintf.$(OBJEXT) argv.$(OBJEXT) \
-	wrappers.$(OBJEXT) xpoll.$(OBJEXT) xmalloc.$(OBJEXT) \
-	xregex.$(OBJEXT) xpty.$(OBJEXT)
+	xread.$(OBJEXT) xpoll.$(OBJEXT) xmalloc.$(OBJEXT) \
+	xregex.$(OBJEXT) xpty.$(OBJEXT) xsignal.$(OBJEXT)
 @WITH_HTTPPOWER_TRUE@am_httppower_OBJECTS = httppower.$(OBJEXT) \
 @WITH_HTTPPOWER_TRUE@	$(am__objects_1)
 httppower_OBJECTS = $(am_httppower_OBJECTS)
@@ -230,12 +230,13 @@ noinst_HEADERS = \
 	parse_util.h \
 	pluglist.h \
 	powerman.h \
-	wrappers.h \
+	xread.h \
 	xpoll.h \
 	xmalloc.h \
 	xregex.h \
 	timeradd.h \
-	xpty.h
+	xpty.h \
+	xsignal.h
 
 COMMON_SOURCE = \
 	debug.c \
@@ -244,11 +245,12 @@ COMMON_SOURCE = \
 	list.c \
 	hprintf.c \
 	argv.c \
-	wrappers.c \
+	xread.c \
 	xpoll.c \
 	xmalloc.c \
 	xregex.c \
-	xpty.c
+	xpty.c \
+	xsignal.c
 
 powerman_SOURCES = powerman.c $(COMMON_SOURCE)
 powerman_LDADD = $(LIBGENDERS) $(LIBFORKPTY)
@@ -396,11 +398,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/powerman.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/powermand.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/wrappers.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xmalloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xpoll.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xpty.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xread.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xregex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xsignal.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

@@ -42,9 +42,8 @@
 #include <time.h>
 
 #include "powerman.h"
-
-#include "wrappers.h"
 #include "xpoll.h"
+#include "xsignal.h"
 #include "error.h"
 #include "daemon.h"
 #include "client.h"
@@ -74,7 +73,7 @@ void daemon_init(void)
     if (setsid() < 0)           /* become session leader */
         err_exit(TRUE, "setsid");
 
-    Signal(SIGHUP, SIG_IGN);
+    xsignal(SIGHUP, SIG_IGN);
 
     switch(fork()) {
         case -1:

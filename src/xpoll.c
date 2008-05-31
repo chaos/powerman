@@ -41,7 +41,6 @@
 #include <assert.h>
 
 #include "timeradd.h"
-#include "wrappers.h"
 #include "xmalloc.h"
 #include "error.h"
 #include "xpoll.h"

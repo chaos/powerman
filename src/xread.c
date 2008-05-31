@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  $Id$
+ *  $Id: wrappers.c 912 2008-05-31 01:28:46Z garlick $
  *****************************************************************************
  *  Copyright (C) 2001-2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -29,27 +29,15 @@
 #include "config.h"
 #endif
 
-#include <string.h>
 #include <errno.h>
 #include <assert.h>
 #include <unistd.h>
-#include <signal.h>
-#include <fcntl.h>
-#include <stdlib.h>
-#include <sys/socket.h>
-#include <stdio.h>
-#include <limits.h>
-#include <sys/types.h>
-#include <sys/wait.h>
 #include <stdarg.h>
 
-#include "wrappers.h"
+#include "xread.h"
 #include "error.h"
-#include "hprintf.h"
 
-#define MAX_REG_BUF 64000
-
-int Read(int fd, char *p, int max)
+int xread(int fd, char *p, int max)
 {
     int n;
 
@@ -61,7 +49,7 @@ int Read(int fd, char *p, int max)
     return n;
 }
 
-int Write(int fd, char *p, int max)
+int xwrite(int fd, char *p, int max)
 {
     int n;
 
@@ -71,30 +59,6 @@ int Write(int fd, char *p, int max)
     if (n < 0 && errno != EAGAIN && errno != ECONNRESET && errno != EPIPE)
         err_exit(TRUE, "write");
     return n;
-}
-
-Sigfunc *Signal(int signo, Sigfunc * func)
-{
-    struct sigaction act, oact;
-    int n;
-
-    act.sa_handler = func;
-    sigemptyset(&act.sa_mask);
-    act.sa_flags = 0;
-    if (signo == SIGALRM) {
-#ifdef  SA_INTERRUPT
-        act.sa_flags |= SA_INTERRUPT;   /* SunOS 4.x */
-#endif
-    } else {
-#ifdef  SA_RESTART
-        act.sa_flags |= SA_RESTART;     /* SVR4, 44BSD */
-#endif
-    }
-    n = sigaction(signo, &act, &oact);
-    if (n < 0)
-        err_exit(TRUE, "sigaction");
-
-    return (oact.sa_handler);
 }
 
 /*
