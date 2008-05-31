@@ -67,12 +67,6 @@
 #include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
-#if HAVE_POLL_H
-#include <poll.h>
-#endif
-#if HAVE_SYS_SELECT_H
-#include <sys/select.h>
-#endif
 
 #include "powerman.h"
 #include "list.h"
@@ -1489,20 +1483,20 @@ _handle_ready_device(Device *dev, short flags)
     assert(dev->fd != NO_FD);
 
     /* error cases (won't get here with select - only poll) */
-    if (flags & POLLHUP) {
+    if (flags & XPOLLHUP) {
         err(FALSE, "%s: poll: hangup", dev->name);
         goto ioerr;
     }
-    if (flags & POLLERR) {
+    if (flags & XPOLLERR) {
         err(FALSE, "%s: poll: error", dev->name);
         goto ioerr;
     }
-    if (flags & POLLNVAL) {
+    if (flags & XPOLLNVAL) {
         err(FALSE, "%s: poll: fd not open", dev->name);
         goto ioerr;
     }
     /* ready for writing */
-    if (flags & POLLOUT) {
+    if (flags & XPOLLOUT) {
         if (dev->connect_state == DEV_CONNECTING) {
             assert(dev->finish_connect != NULL);
             if (!dev->finish_connect(dev))
@@ -1517,7 +1511,7 @@ _handle_ready_device(Device *dev, short flags)
         }
     }
     /* ready for reading */
-    if (flags & POLLIN) {
+    if (flags & XPOLLIN) {
         if (_handle_read(dev))
             goto ioerr;
         if (dev->preprocess != NULL)
@@ -1547,17 +1541,17 @@ void dev_pre_poll(xpollfd_t pfd)
         /* always set read set bits so select will unblock if the 
          * connection is dropped.
          */
-        flags |= POLLIN;
+        flags |= XPOLLIN;
 
         /* need to be in the write set if we are sending anything */
         if (dev->connect_state == DEV_CONNECTED) {
             if (!cbuf_is_empty(dev->to))
-                flags |= POLLOUT;
+                flags |= XPOLLOUT;
         }
 
         /* descriptor will become writable after a connect */
         if (dev->connect_state == DEV_CONNECTING)
-            flags |= POLLOUT;
+            flags |= XPOLLOUT;
 
         xpollfd_set(pfd, dev->fd, flags);
     }

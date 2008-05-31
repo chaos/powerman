@@ -43,12 +43,6 @@
 #if HAVE_TCP_WRAPPERS
 #include <tcpd.h>
 #endif
-#if HAVE_POLL_H
-#include <poll.h>
-#endif
-#if HAVE_SYS_SELECT_H
-#include <sys/select.h>
-#endif
 #include <stdio.h>
 #include <fcntl.h>
 
@@ -997,7 +991,7 @@ void cli_pre_poll(xpollfd_t pfd)
 
     if (listen_fd != NO_FD) {
         assert(listen_fd >= 0);
-        xpollfd_set(pfd, listen_fd, POLLIN);
+        xpollfd_set(pfd, listen_fd, XPOLLIN);
     }
 
     itr = list_iterator_create(cli_clients);
@@ -1008,14 +1002,14 @@ void cli_pre_poll(xpollfd_t pfd)
         /* always set read set bits so select will unblock if the
          * connection is dropped.
          */
-        xpollfd_set(pfd, client->fd, POLLIN);
+        xpollfd_set(pfd, client->fd, XPOLLIN);
 
         /* need to be in the write set if we are sending anything */
         if (!cbuf_is_empty(client->to)) {
             if (client->ofd != NO_FD)
-                xpollfd_set(pfd, client->ofd, POLLOUT);
+                xpollfd_set(pfd, client->ofd, XPOLLOUT);
             else
-                xpollfd_set(pfd, client->fd, POLLOUT);
+                xpollfd_set(pfd, client->fd, XPOLLOUT);
         }
     }
     list_iterator_destroy(itr);
@@ -1029,7 +1023,7 @@ void cli_post_poll(xpollfd_t pfd)
     ListIterator itr;
     Client *c;
 
-    if (listen_fd != NO_FD && xpollfd_revents(pfd, listen_fd) & POLLIN)
+    if (listen_fd != NO_FD && xpollfd_revents(pfd, listen_fd) & XPOLLIN)
         _create_client_socket();
 
     itr = list_iterator_create(cli_clients);
@@ -1037,33 +1031,33 @@ void cli_post_poll(xpollfd_t pfd)
         if (c->fd != NO_FD) {
             short flags = xpollfd_revents(pfd, c->fd);
 
-            if (flags & POLLERR)
+            if (flags & XPOLLERR)
                 err(FALSE, "client poll: error");
-            if (flags & POLLHUP)
+            if (flags & XPOLLHUP)
                 err(FALSE, "client poll: hangup");
-            if (flags & POLLNVAL)
+            if (flags & XPOLLNVAL)
                 err(FALSE, "client poll: fd not open");
-            if (flags & (POLLERR | POLLHUP | POLLNVAL))
+            if (flags & (XPOLLERR | XPOLLHUP | XPOLLNVAL))
                 goto client_dead;
-            if ((flags & POLLIN))
+            if ((flags & XPOLLIN))
                 _handle_read(c);
-            if ((flags & POLLOUT))
+            if ((flags & XPOLLOUT))
                 _handle_write(c);
         }
         if (c->ofd != NO_FD) {
             short flags = xpollfd_revents(pfd, c->ofd);
 
-            if (flags & POLLERR)
+            if (flags & XPOLLERR)
                 err(FALSE, "client poll: error");
-            if (flags & POLLHUP)
+            if (flags & XPOLLHUP)
                 err(FALSE, "client poll: hangup");
-            if (flags & POLLNVAL)
+            if (flags & XPOLLNVAL)
                 err(FALSE, "client poll: fd not open");
-            if (flags & (POLLERR | POLLHUP | POLLNVAL))
+            if (flags & (XPOLLERR | XPOLLHUP | XPOLLNVAL))
                 goto client_dead;
             if (c->fd == NO_FD)
                 goto client_dead;
-            if ((flags & POLLOUT))
+            if ((flags & XPOLLOUT))
                 _handle_write(c);
         }
 

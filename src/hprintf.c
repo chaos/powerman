@@ -36,6 +36,7 @@
 
 #include "xmalloc.h"
 #include "hprintf.h"
+#include "wrappers.h"
 
 #define CHUNKSIZE 80
 char *hvsprintf(const char *fmt, va_list ap)

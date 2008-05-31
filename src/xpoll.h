@@ -38,21 +38,11 @@ void        xpollfd_set(xpollfd_t pfd, int fd, short events);
 short       xpollfd_revents(xpollfd_t pfd, int fd);
 char       *xpollfd_str(xpollfd_t pfd, char *str, int len);
 
-#ifndef POLLIN
-#define POLLIN      1
-#endif
-#ifndef POLLOUT
-#define POLLOUT     2
-#endif
-#ifndef POLLHUP
-#define POLLHUP     4
-#endif
-#ifndef POLLERR
-#define POLLERR     8
-#endif
-#ifndef POLLNVAL
-#define POLLNVAL    16
-#endif
+#define XPOLLIN      1
+#define XPOLLOUT     2
+#define XPOLLHUP     4
+#define XPOLLERR     8
+#define XPOLLNVAL    16
 
 #endif                          /* POWERMAN_POLL_H */
 
