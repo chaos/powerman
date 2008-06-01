@@ -2,10 +2,6 @@
  * $Id$
  *
  * Virtual power controller daemon - configuration defined in "vpc.dev".
- * This daemon spawns multiple threads to implement 'num_threads' devices
- * listening on consecutive ports starting at BASE_PORT.  Activity
- * is logged to stderr.  This is a vehicle for testing powerman against
- * multiple power control devices. 
  */
 
 #ifdef HAVE_CONFIG_H
@@ -13,7 +9,9 @@
 #endif
 #include <stdio.h>
 #include <pthread.h>
+#if HAVE_GETOPT_H
 #include <getopt.h>
+#endif
 #include <unistd.h>
 #include <stdlib.h>
 #include <arpa/inet.h>
@@ -26,15 +24,8 @@
 
 #include "hprintf.h"
 
-#ifndef PTHREAD_THREADS_MAX
-#define PTHREAD_THREADS_MAX 16384
-#endif
-
-#define MIN_THREADS 1
-#define MAX_THREADS PTHREAD_THREADS_MAX - 2  /* parent + control thread */
-#define NUM_THREADS 8       /* default, can be overridden on command line */
-#define BASE_PORT   8080
 #define NUM_PLUGS   16
+#define NUM_DEVICES 1
 
 typedef struct {
     int plug[NUM_PLUGS];
@@ -43,8 +34,6 @@ typedef struct {
     int logged_in;
     int n;
 } vpcdev_t;
-
-static int num_threads = NUM_THREADS;
 
 static vpcdev_t *dev;
 
@@ -273,93 +262,29 @@ static int _vpc_listen(int port)
     return fd;
 }
 
-/*
- * A virtual power controller thread.
- * Accept one connection, process it to completion, repeat...
- */
-static void *_vpc_thread(void *arg)
-{
-    vpcdev_t *vdev = (vpcdev_t *)arg;
-    int my_threadnum = vdev->n;
-    int my_port = BASE_PORT + my_threadnum;
-    int listen_fd;
-
-    fprintf(stderr, "%d: starting on port %d\n", my_threadnum, my_port);
-    listen_fd = _vpc_listen(my_port);
-
-    while (1) {
-        char tmpstr[128];
-        struct sockaddr_in saddr;
-        unsigned int saddr_size = sizeof(struct sockaddr_in);
-        int fd;
-
-        fd = accept(listen_fd, (struct sockaddr *)&saddr, &saddr_size);
-        if (fd < 0) {
-            perror("accept");
-            exit(1);
-        }
-        if (!inet_ntop(AF_INET, &saddr.sin_addr, tmpstr, sizeof(tmpstr))) {
-            perror("inet_ntop");
-            exit(1);
-        }
-        fprintf(stderr, "%d: accept from %s\n", my_threadnum, tmpstr);
-        _prompt_loop(my_threadnum, fd, fd);
-        close(fd);
-    }
-    return NULL;
-}
-
-static void _start_threads(void)
-{
-    int i, n;
-
-    for (i = 0; i < num_threads; i++) {
-        if (opt_off_rpc && i == 0) {
-            fprintf(stderr, "vpcd: not starting vpcd%d\n", i);
-            continue;
-        }
-        pthread_attr_init(&dev[i].attr);
-        pthread_attr_setdetachstate(&dev[i].attr, PTHREAD_CREATE_DETACHED);
-        dev[i].n = i;
-        n = pthread_create(&dev[i].thd, &dev[i].attr, _vpc_thread, &dev[i]);
-        if (n != 0) {
-            fprintf(stderr, "pthread_create error: %s\n", strerror(n));
-            exit(1);
-        }
-    }
-    if (pause() < 0) {
-        perror("pause");
-        exit(1);
-    }
-}
-
-static void _start_foreground(void)
-{
-    _prompt_loop(0, 0, 1);
-}
-
-#define OPT_STR "dbhosfn:"
-static const struct option long_options[] = {
-    {"foreground", no_argument, 0, 'f'},
+#define OPTIONS "dbhos"
+#if HAVE_GETOPT_LONG
+#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
+static const struct option longopts[] = {
     {"drop_command", no_argument, 0, 'd'},
     {"bad_response", no_argument, 0, 'b'},
     {"hung_rpc", no_argument, 0, 'h'},
     {"off_rpc", no_argument, 0, 'o'},
     {"soft_off", no_argument, 0, 's'},
-    {"num_threads", required_argument, 0, 'n'},
     {0, 0, 0, 0}
 };
-static const struct option *longopts = long_options;
+#else
+#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
+#endif
 
 static void _usage(void)
 {
     fprintf(stderr, "Usage: vpcd [one option]\n"
-            "--num_threads        number of devices to simulate\n"
-            "--drop_command       drop response to first \"on\" command\n"
-            "--bad_response       respond to first \"on\" command with UNKNOWN\n"
-            "--hung_rpc           vpc0 is unresponsive after connect\n"
-            "--off_rpc            vpc0 is not started\n"
-            "--soft_off           vpc0 plug 0 soft status forced to OFF\n");
+         "--drop_command       drop response to first \"on\" command\n"
+         "--bad_response       respond to first \"on\" command with UNKNOWN\n"
+         "--hung_rpc           vpc0 is unresponsive after connect\n"
+         "--off_rpc            vpc0 is not started\n"
+         "--soft_off           vpc0 plug 0 soft status forced to OFF\n");
     exit(1);
 }
 
@@ -371,15 +296,11 @@ static void _usage(void)
 int main(int argc, char *argv[])
 {
     int c;
-    int longindex;
     int optcount = 0;
 
     opterr = 0;
-    while ((c = getopt_long(argc, argv, OPT_STR, longopts, &longindex)) != -1) {
+    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
-        case 'f':              /* --foreground (run one instance on stdin/out */
-            opt_foreground++;
-            break;
         case 'd':              /* --drop_command (drop first "on" command) */
             opt_drop_command++;
             optcount++;
@@ -400,14 +321,6 @@ int main(int argc, char *argv[])
             opt_soft_off++;
             optcount++;
             break;
-        case 'n':              /* --num_threads n */
-            num_threads = strtol(optarg, NULL, 0);
-            if (num_threads < MIN_THREADS || num_threads > MAX_THREADS) {
-                fprintf(stderr, "num_threads value out of range (%d-%d)\n",
-                        MIN_THREADS, MAX_THREADS);
-                exit(1);
-            }
-            break;
         default:
             _usage();
         }
@@ -420,17 +333,14 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    dev = malloc(sizeof(vpcdev_t) * num_threads);
+    dev = malloc(sizeof(vpcdev_t) * NUM_DEVICES);
     if (dev == NULL) {
         fprintf(stderr, "out of memory\n");
         exit(1);
     }
-    memset(dev, 0, sizeof(vpcdev_t) * num_threads);
+    memset(dev, 0, sizeof(vpcdev_t) * NUM_DEVICES);
 
-    if (opt_foreground)
-        _start_foreground();
-    else
-        _start_threads();
+    _prompt_loop(0, 0, 1);
         
     fprintf(stderr, "exiting \n");
     exit(0);

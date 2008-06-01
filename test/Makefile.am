@@ -22,7 +22,7 @@ common_sources = \
 AM_CFLAGS = -I$(top_srcdir)/src
 
 vpcd_SOURCES = vpcd.c $(common_sources)
-vpcd_LDADD = $(LIBFORKPTY) -lpthread
+vpcd_LDADD = $(LIBFORKPTY)
 
 tpl_SOURCES = tpl.c $(common_sources)
 tpl_LDADD = $(LIBFORKPTY)

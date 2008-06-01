@@ -11,7 +11,7 @@ print "include \"$devpath/vpc.dev\"\n";
 for ($i = 0; $i < $devs; $i++) {
 	$m = $i * $nodespervpc;
 	$n = $m + $nodespervpc - 1;
-	print "device \"test$i\" \"vpc\" \"./vpcd -f |&\"\n";
+	print "device \"test$i\" \"vpc\" \"./vpcd |&\"\n";
 	print "node \"t[$m-$n]\" \"test$i\"\n";
 }
 

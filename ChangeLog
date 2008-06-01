@@ -11,6 +11,8 @@
 
 	* test/tregex.c, test/t05, test/t05.exp : Added tests for xregex.c.
 
+	* test/vpcd.c : Remove pthreads support.
+
 2008-05-30 Jim Garlick <garlick@llnl.gov>
 
 	* src/client.c : Allow instantiation with a single stdin/stdout
