@@ -42,6 +42,7 @@ AC_CHECK_HEADERS( \
   getopt.h \
   poll.h \
   sys/select.h \
+  sys/syscall.h \
 )
 
 ##

@@ -38,6 +38,7 @@
 #include <unistd.h>
 #include <stdio.h>
 #include <termios.h>
+#include <sys/time.h>
 
 #include "xtypes.h"
 #include "cbuf.h"

@@ -50,6 +50,7 @@
 #define TELOPTS
 #define TELCMDS
 #include <arpa/telnet.h>
+#include <sys/time.h>
 
 #include "list.h"
 #include "hostlist.h"

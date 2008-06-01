@@ -107,15 +107,6 @@ void dbg_wrapped(unsigned long channel, const char *fmt, ...)
 }
 
 /*
- * Utility function to turn a struct timeval into a string.
- */
-char *dbg_tvstr(struct timeval *tv, char *str, int len)
-{
-    snprintf(str, len, "%ld.%-6.6ld", tv->tv_sec, tv->tv_usec);
-    return str;
-}
-
-/*
  * Convert memory to string, turning non-printable character into "C" 
  * representation.  
  *  mem (IN) target memory

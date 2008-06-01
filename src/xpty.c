@@ -28,8 +28,12 @@
 #include "config.h"
 #endif
 #include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <unistd.h>
 #include <termios.h>
 #include <string.h>
+#include <stdlib.h>
 #if HAVE_PTY_H
 #include <pty.h>
 #endif
@@ -40,7 +44,9 @@
 #include <sys/ioctl.h>  
 #include <sys/stream.h> 
 #include <sys/stropts.h> 
+#if HAVE_SYS_SYSCALL_H
 #include <sys/syscall.h>
+#endif
 #endif
 #include <stdio.h>
 #include <assert.h>
@@ -48,6 +54,16 @@
 #include "xtypes.h"
 #include "xpty.h"
 #include "error.h"
+
+#ifndef STDIN_FILENO
+#define STDIN_FILENO 0
+#endif
+#ifndef STDOUT_FILENO
+#define STDOUT_FILENO 1
+#endif
+#ifndef STDERR_FILENO
+#define STDERR_FILENO 2
+#endif
 
 void xcfmakeraw(int fd)
 {
