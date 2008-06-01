@@ -64,7 +64,7 @@
 #include "pluglist.h"
 #include "hprintf.h"
 #include "arglist.h"
-//#include "device_private.h"
+#include "device_private.h"
 #include "powerman.h"
 
 #ifndef HAVE_SOCKLEN_T

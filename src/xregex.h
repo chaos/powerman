@@ -75,6 +75,7 @@ int xregex_match_strlen(xregex_match_t xm);
 
 /* Retrieve a copy of the subexpression match specified by 'index',
  * or NULL if no match.   The caller must free with xfree().
+ * index == 0 is the whole match, index > 0 is substring matches.
  * This function must be called only after xregex_exec().
  */
 char *xregex_match_sub_strdup(xregex_match_t xm, int index);

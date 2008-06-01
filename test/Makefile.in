@@ -36,7 +36,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-check_PROGRAMS = tpl$(EXEEXT) vpcd$(EXEEXT)
+check_PROGRAMS = tpl$(EXEEXT) vpcd$(EXEEXT) tregex$(EXEEXT)
 subdir = test
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -54,11 +54,14 @@ CONFIG_HEADER = $(top_builddir)/config/config.h
 CONFIG_CLEAN_FILES =
 am__objects_1 = xread.$(OBJEXT) error.$(OBJEXT) debug.$(OBJEXT) \
 	pluglist.$(OBJEXT) hostlist.$(OBJEXT) list.$(OBJEXT) \
-	hprintf.$(OBJEXT) xmalloc.$(OBJEXT)
+	hprintf.$(OBJEXT) xregex.$(OBJEXT) xmalloc.$(OBJEXT)
 am_tpl_OBJECTS = tpl.$(OBJEXT) $(am__objects_1)
 tpl_OBJECTS = $(am_tpl_OBJECTS)
 am__DEPENDENCIES_1 =
 tpl_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am_tregex_OBJECTS = tregex.$(OBJEXT) $(am__objects_1)
+tregex_OBJECTS = $(am_tregex_OBJECTS)
+tregex_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_vpcd_OBJECTS = vpcd.$(OBJEXT) $(am__objects_1)
 vpcd_OBJECTS = $(am_vpcd_OBJECTS)
 vpcd_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -69,8 +72,8 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(tpl_SOURCES) $(vpcd_SOURCES)
-DIST_SOURCES = $(tpl_SOURCES) $(vpcd_SOURCES)
+SOURCES = $(tpl_SOURCES) $(tregex_SOURCES) $(vpcd_SOURCES)
+DIST_SOURCES = $(tpl_SOURCES) $(tregex_SOURCES) $(vpcd_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -190,6 +193,7 @@ common_sources = \
 	$(top_srcdir)/src/hostlist.c \
 	$(top_srcdir)/src/list.c \
 	$(top_srcdir)/src/hprintf.c \
+	$(top_srcdir)/src/xregex.c \
 	$(top_srcdir)/src/xmalloc.c
 
 AM_CFLAGS = -I$(top_srcdir)/src
@@ -197,6 +201,8 @@ vpcd_SOURCES = vpcd.c $(common_sources)
 vpcd_LDADD = $(LIBFORKPTY) -lpthread
 tpl_SOURCES = tpl.c $(common_sources)
 tpl_LDADD = $(LIBFORKPTY)
+tregex_SOURCES = tregex.c $(common_sources)
+tregex_LDADD = $(LIBFORKPTY)
 all: all-am
 
 .SUFFIXES:
@@ -236,6 +242,9 @@ clean-checkPROGRAMS:
 tpl$(EXEEXT): $(tpl_OBJECTS) $(tpl_DEPENDENCIES) 
 	@rm -f tpl$(EXEEXT)
 	$(LINK) $(tpl_LDFLAGS) $(tpl_OBJECTS) $(tpl_LDADD) $(LIBS)
+tregex$(EXEEXT): $(tregex_OBJECTS) $(tregex_DEPENDENCIES) 
+	@rm -f tregex$(EXEEXT)
+	$(LINK) $(tregex_LDFLAGS) $(tregex_OBJECTS) $(tregex_LDADD) $(LIBS)
 vpcd$(EXEEXT): $(vpcd_OBJECTS) $(vpcd_DEPENDENCIES) 
 	@rm -f vpcd$(EXEEXT)
 	$(LINK) $(vpcd_LDFLAGS) $(vpcd_OBJECTS) $(vpcd_LDADD) $(LIBS)
@@ -253,9 +262,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pluglist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tpl.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tregex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpcd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xmalloc.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xread.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xregex.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \
@@ -368,6 +379,20 @@ hprintf.obj: $(top_srcdir)/src/hprintf.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/hprintf.c' object='hprintf.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hprintf.obj `if test -f '$(top_srcdir)/src/hprintf.c'; then $(CYGPATH_W) '$(top_srcdir)/src/hprintf.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/hprintf.c'; fi`
+
+xregex.o: $(top_srcdir)/src/xregex.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xregex.o -MD -MP -MF "$(DEPDIR)/xregex.Tpo" -c -o xregex.o `test -f '$(top_srcdir)/src/xregex.c' || echo '$(srcdir)/'`$(top_srcdir)/src/xregex.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/xregex.Tpo" "$(DEPDIR)/xregex.Po"; else rm -f "$(DEPDIR)/xregex.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/xregex.c' object='xregex.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xregex.o `test -f '$(top_srcdir)/src/xregex.c' || echo '$(srcdir)/'`$(top_srcdir)/src/xregex.c
+
+xregex.obj: $(top_srcdir)/src/xregex.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xregex.obj -MD -MP -MF "$(DEPDIR)/xregex.Tpo" -c -o xregex.obj `if test -f '$(top_srcdir)/src/xregex.c'; then $(CYGPATH_W) '$(top_srcdir)/src/xregex.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/xregex.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/xregex.Tpo" "$(DEPDIR)/xregex.Po"; else rm -f "$(DEPDIR)/xregex.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/xregex.c' object='xregex.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xregex.obj `if test -f '$(top_srcdir)/src/xregex.c'; then $(CYGPATH_W) '$(top_srcdir)/src/xregex.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/xregex.c'; fi`
 
 xmalloc.o: $(top_srcdir)/src/xmalloc.c
 @am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xmalloc.o -MD -MP -MF "$(DEPDIR)/xmalloc.Tpo" -c -o xmalloc.o `test -f '$(top_srcdir)/src/xmalloc.c' || echo '$(srcdir)/'`$(top_srcdir)/src/xmalloc.c; \

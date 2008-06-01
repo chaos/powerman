@@ -1,4 +1,4 @@
-check_PROGRAMS = tpl vpcd
+check_PROGRAMS = tpl vpcd tregex
 
 TESTS_ENVIRONMENT = env 
 TESTS_ENVIRONMENT += "PATH_POWERMAN=$(top_builddir)/src/powerman"
@@ -16,6 +16,7 @@ common_sources = \
 	$(top_srcdir)/src/hostlist.c \
 	$(top_srcdir)/src/list.c \
 	$(top_srcdir)/src/hprintf.c \
+	$(top_srcdir)/src/xregex.c \
 	$(top_srcdir)/src/xmalloc.c
 
 AM_CFLAGS = -I$(top_srcdir)/src
@@ -25,3 +26,6 @@ vpcd_LDADD = $(LIBFORKPTY) -lpthread
 
 tpl_SOURCES = tpl.c $(common_sources)
 tpl_LDADD = $(LIBFORKPTY)
+
+tregex_SOURCES = tregex.c $(common_sources)
+tregex_LDADD = $(LIBFORKPTY)

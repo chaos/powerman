@@ -156,6 +156,7 @@ int main(int argc, char **argv)
 
     cli_start(use_stdio);
 
+
     if (daemonize) {
         daemon_init(cli_listen_fd(), ROOT_DIR, DAEMON_NAME); 
         err_notty();
@@ -200,10 +201,6 @@ static void _select_loop(void)
     dev_initial_connect();
 
     while (1) {
-#ifndef NDEBUG
-        static char tmpstr[8192];
-        float t = 0.0;
-#endif
         int n;
 
         xpollfd_zero(pfd);
@@ -211,18 +208,9 @@ static void _select_loop(void)
         cli_pre_poll(pfd);
         dev_pre_poll(pfd);
 
-#ifndef NDEBUG
-        if (timerisset(&tmout))
-            t = tmout.tv_sec + (float)tmout.tv_usec/1000000;
-        dbg(DBG_POLL, "pre-poll timeout %.2fs", t);
-#endif
         n = xpoll(pfd, timerisset(&tmout) ? &tmout : NULL);
         timerclear(&tmout);
 
-#ifndef NDEBUG
-        dbg(DBG_POLL, "post-poll revents [%s]=%d", 
-                xpollfd_str(pfd, tmpstr, sizeof(tmpstr)), n);
-#endif
         /* 
          * Process activity on client and device fd's.
          * If a device requires a timeout, for example to reconnect or
