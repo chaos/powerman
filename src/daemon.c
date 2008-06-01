@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id$
  *****************************************************************************
- *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton <uselton2@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -27,7 +27,6 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-
 #include <syslog.h>
 #include <limits.h>
 #include <errno.h>
@@ -39,25 +38,16 @@
 #include <sys/stat.h>
 #include <stdio.h>
 #include <assert.h>
-#include <time.h>
 
-#include "powerman.h"
-#include "xpoll.h"
+#include "xtypes.h"
 #include "xsignal.h"
 #include "error.h"
 #include "daemon.h"
-#include "client.h"
-#include "debug.h"
-
-#define TMPSTR_LEN 80
 
 /* Review: if NDEBUG turn off core generation */
-void daemon_init(void)
+void daemon_init(int skipfd, char *rootdir, char *name)
 {
     int i;
-    char buf[TMPSTR_LEN];
-    time_t t = time(NULL);
-    int res;
 
     switch (fork()) {
         case -1:
@@ -67,10 +57,10 @@ void daemon_init(void)
         default: /* parent */
             exit(0);           
     }
-
     /* 1st child continues */
-    /* Review: setsid may fail with -1, EPERM */
-    if (setsid() < 0)           /* become session leader */
+
+    /* become session leader */
+    if (setsid() < 0)
         err_exit(TRUE, "setsid");
 
     xsignal(SIGHUP, SIG_IGN);
@@ -83,30 +73,24 @@ void daemon_init(void)
         default: /* parent */
             exit(0);
     }
-
     /* 2nd child continues */
 
     /* change working directory */
-    if (chdir(ROOT_DIR) < 0)
-        err_exit(TRUE, "chdir %s", ROOT_DIR);
+    if (chdir(rootdir) < 0)
+        err_exit(TRUE, "chdir %s", rootdir);
 
     /* clear our file mode creation mask */
     umask(0);
 
     /* close fd's */
     for (i = 0; i < 256; i++) {
-        if (i != cli_listen_fd())
+        if (i != skipfd)
             close(i);               /* ignore errors */
     }
 
     /* Init syslog */
-    /* Review: check for truncation */
-    res = snprintf(buf, sizeof(buf), "Started %s", ctime(&t));
-    assert(res != -1 && res <= sizeof(buf));
-    openlog(DAEMON_NAME, LOG_NDELAY | LOG_PID, LOG_DAEMON);
-    err_notty();                /* tell err_exit that stderr is no good */
-    dbg_notty();                /* tell dbg that stderr is no good */
-    syslog(LOG_NOTICE, buf);
+    openlog(name, LOG_NDELAY | LOG_PID, LOG_DAEMON);
+    syslog(LOG_NOTICE, "started");
 }
 
 /*

@@ -43,12 +43,17 @@
 #include <sys/wait.h>
 #include <signal.h>
 
-#include "powerman.h"
+#include "hostlist.h"
+#include "list.h"
+#include "cbuf.h"
+#include "xtypes.h"
 #include "parse_util.h"
 #include "xmalloc.h"
 #include "xpoll.h"
 #include "pluglist.h"
-#include "device.h"
+#include "arglist.h"
+#include "xregex.h"
+#include "device_private.h"
 #include "device_pipe.h"
 #include "error.h"
 #include "debug.h"

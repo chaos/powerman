@@ -51,13 +51,17 @@
 #define TELCMDS
 #include <arpa/telnet.h>
 
-#include "powerman.h"
 #include "list.h"
+#include "hostlist.h"
+#include "cbuf.h"
+#include "xtypes.h"
 #include "parse_util.h"
 #include "xmalloc.h"
 #include "xpoll.h"
 #include "pluglist.h"
-#include "device.h"
+#include "arglist.h"
+#include "xregex.h"
+#include "device_private.h"
 #include "error.h"
 #include "debug.h"
 #include "device_tcp.h"

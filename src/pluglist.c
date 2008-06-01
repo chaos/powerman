@@ -40,7 +40,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "powerman.h"
+#include "xtypes.h"
 #include "list.h"
 #include "xmalloc.h"
 #include "hostlist.h"

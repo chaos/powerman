@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id$
  *****************************************************************************
- *  Copyright (C) 2004 The Regents of the University of California.
+ *  Copyright (C) 2004-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Jim Garlick <garlick@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -24,15 +24,13 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#ifndef PM_PLUGLIST_H
+#define PM_PLUGLIST_H
+
 /*
  * Pluglists are used to map node names to plug names within a given device
  * context.
  */
-
-#ifndef PLUGLIST_H
-#define PLUGLIST_H
-
-#include "powerman.h"
 
 typedef struct {
     char *name;                 /* how the plug is known to the device */
@@ -75,7 +73,7 @@ PlugListIterator  pluglist_iterator_create(PlugList pl);
 void              pluglist_iterator_destroy(PlugListIterator itr);
 Plug *            pluglist_next(PlugListIterator itr);
 
-#endif
+#endif /* PM_PLUGLIST_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

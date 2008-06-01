@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id$
  *****************************************************************************
- *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton <uselton2@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -27,7 +27,6 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif 
-
 #include <string.h>
 #include <assert.h>
 #include <errno.h>
@@ -38,18 +37,18 @@
 #include <ctype.h>
 #include <time.h>
 
-#include "powerman.h"           /* for bool type */
+#include "xtypes.h"
 #include "xmalloc.h"
 #include "debug.h"
 
 #define DBG_BUFLEN 1024
 
 static unsigned long dbg_channel_mask = 0;
-static bool dbg_ttyvalid = 1;
+static bool dbg_ttyvalid = TRUE;
 
 void dbg_notty(void)
 {
-    dbg_ttyvalid = 0;
+    dbg_ttyvalid = FALSE;
 }
 
 void dbg_setmask(unsigned long mask)
@@ -87,7 +86,7 @@ static char *_time(void)
 /*
  * Report message on stdout/syslog if dbg_channel_mask permits.
  */
-void _dbg(unsigned long channel, const char *fmt, ...)
+void dbg_wrapped(unsigned long channel, const char *fmt, ...)
 {
     va_list ap;
 

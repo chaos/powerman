@@ -1,9 +1,9 @@
 /*****************************************************************************\
- *  $Id: wrappers.h 911 2008-05-30 20:26:33Z garlick $
+ *  $Id: arglist.h 689 2004-02-20 16:51:06Z garlick $
  *****************************************************************************
- *  Copyright (C) 2001-2008 The Regents of the University of California.
+ *  Copyright (C) 2004-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
- *  Written by Andrew Uselton <uselton2@llnl.gov>
+ *  Written by Jim Garlick <garlick@llnl.gov>
  *  UCRL-CODE-2002-008.
  *  
  *  This file is part of PowerMan, a remote power management program.
@@ -24,17 +24,9 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#ifndef PM_XMALLOC_H
-#define PM_XMALLOC_H
+#ifndef PM_XTYPES_H
+#define PM_XTYPES_H
 
-char *xmalloc(int size);
-char *xrealloc(char *item, int newsize);
-void xfree(void *ptr);
-char *xstrdup(const char *str);
-int xmemory(void);
+typedef enum { FALSE = 0, TRUE = 1 } bool;
 
-#endif /* PM_XMALLOC_H */
-
-/*
- * vi:tabstop=4 shiftwidth=4 expandtab
- */
+#endif

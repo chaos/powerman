@@ -40,20 +40,24 @@
 #include <ctype.h>
 #include <unistd.h>
 #include <limits.h>
+#include <string.h>
+#include <sys/time.h>
 
-#include "powerman.h"
 #include "list.h"
-#include "parse_util.h"
+#include "cbuf.h"
+#include "hostlist.h"
+#include "xtypes.h"
 #include "xmalloc.h"
 #include "xpoll.h"
 #include "xregex.h"
 #include "pluglist.h"
-#include "device.h"
+#include "arglist.h"
+#include "device_private.h"
 #include "device_serial.h"
 #include "device_pipe.h"
 #include "device_tcp.h"
+#include "parse_util.h"
 #include "error.h"
-#include "string.h"
 
 /*
  * A PreScript is a list of PreStmts.
@@ -501,7 +505,7 @@ static Interp *makeInterp(InterpState state, char *str)
 
     new->magic = INTERP_MAGIC; 
     new->str = xstrdup(str); 
-    new->re = NULL;  /* defer compilation until copyInterpList */
+    new->re = xregex_create();
     new->state = state;
 
     return new;
@@ -512,16 +516,12 @@ static void destroyInterp(Interp *i)
     assert(i->magic == INTERP_MAGIC);
     i->magic = 0;
     xfree(i->str);
-    if (i->re) {
-        regfree(i->re);
-        xfree(i->re);
-    }
+    xregex_destroy(i->re);
     xfree(i);
 }
 
 static List copyInterpList(List il)
 {
-    int cflags = REG_EXTENDED | REG_NOSUB;
     ListIterator itr;
     Interp *ip, *icpy;
     List new = list_create((ListDelF) destroyInterp);
@@ -532,8 +532,7 @@ static List copyInterpList(List il)
         while((ip = list_next(itr))) {
             assert(ip->magic == INTERP_MAGIC);
             icpy = makeInterp(ip->state, ip->str);
-            icpy->re = (regex_t *)xmalloc(sizeof(regex_t));
-            xregcomp(icpy->re, icpy->str, cflags);
+            xregex_compile(icpy->re, icpy->str, FALSE);
             assert(icpy->magic == INTERP_MAGIC);
             list_append(new, icpy);
         }
@@ -556,7 +555,7 @@ static void destroyStmt(Stmt *stmt)
         xfree(stmt->u.send.fmt);
         break;
     case STMT_EXPECT:
-        regfree(&stmt->u.expect.exp);
+        xregex_destroy(stmt->u.expect.exp);
         break;
     case STMT_DELAY:
         break;
@@ -579,7 +578,6 @@ static Stmt *makeStmt(PreStmt *p)
 {
     Stmt *stmt;
     PreStmt *subp;
-    int cflags = REG_EXTENDED;
     ListIterator itr;
 
     assert(p->magic == PRESTMT_MAGIC);
@@ -590,7 +588,8 @@ static Stmt *makeStmt(PreStmt *p)
         stmt->u.send.fmt = xstrdup(p->str);
         break;
     case STMT_EXPECT:
-        xregcomp(&stmt->u.expect.exp, p->str, cflags);
+        stmt->u.expect.exp = xregex_create(); 
+        xregex_compile(stmt->u.expect.exp, p->str, TRUE);
         break;
     case STMT_SETPLUGSTATE:
         stmt->u.setplugstate.stat_mp = p->mp2;

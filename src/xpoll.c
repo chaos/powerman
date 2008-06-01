@@ -40,10 +40,15 @@
 #endif
 #include <assert.h>
 
-#include "timeradd.h"
+#include "xtime.h"
+#include "xtypes.h"
 #include "xmalloc.h"
 #include "error.h"
 #include "xpoll.h"
+
+#ifndef MAX
+#define MAX(x, y) (((x) > (y))? (x) : (y))
+#endif
 
 #define XPOLLFD_ALLOC_CHUNK  16
 

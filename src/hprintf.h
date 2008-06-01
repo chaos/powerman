@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id$
  *****************************************************************************
- *  Copyright (C) 2003 The Regents of the University of California.
+ *  Copyright (C) 2003-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Jim Garlick <garlick@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -24,6 +24,9 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#ifndef PM_HPRINTF_H
+#define PM_HPRINTF_H
+
 /* A vsprintf-like function that allocates the string on the heap and ensures
  * that no truncation occurs.  The caller must Free() the resulting string.
  */
@@ -35,6 +38,8 @@ char *hvsprintf(const char *fmt, va_list ap);
 char *hsprintf(const char *fmt, ...);
 
 int hfdprintf(int fd, const char *format, ...);
+
+#endif /* PM_HPRINTF_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

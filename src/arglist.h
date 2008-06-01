@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id$
  *****************************************************************************
- *  Copyright (C) 2004 The Regents of the University of California.
+ *  Copyright (C) 2004-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Jim Garlick <garlick@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -29,10 +29,10 @@
  * script, and then to pass the result back to the client.
  */
 
-#ifndef ARGLIST_H
-#define ARGLIST_H
+#ifndef PM_ARGLIST_H
+#define PM_ARGLIST_H
 
-#include "powerman.h"
+typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } InterpState;
 
 typedef struct {
     char *node;                 /* node name (in) */
@@ -68,7 +68,7 @@ ArgListIterator  arglist_iterator_create(ArgList arglist);
 void             arglist_iterator_destroy(ArgListIterator itr);
 Arg *            arglist_next(ArgListIterator itr);
 
-#endif
+#endif /* PM_ARGLIST_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

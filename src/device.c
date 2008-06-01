@@ -68,22 +68,24 @@
 #include <unistd.h>
 #include <stdio.h>
 
-#include "powerman.h"
 #include "list.h"
+#include "hostlist.h"
+#include "cbuf.h"
+#include "xtypes.h"
 #include "parse_util.h"
 #include "xpoll.h"
 #include "xmalloc.h"
 #include "xregex.h"
 #include "pluglist.h"
 #include "device.h"
+#include "arglist.h"
+#include "device_private.h"
 #include "error.h"
-#include "cbuf.h"
-#include "hostlist.h"
 #include "debug.h"
 #include "client_proto.h"
 #include "hprintf.h"
-#include "arglist.h"
-#include "timeradd.h"
+#include "xtime.h"
+#include "powerman.h"
 
 /* ExecCtx's are the state for the execution of a block of statements.
  * They are stacked on the Action (new ExecCtx pushed when executing an
@@ -145,9 +147,7 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
                                       ActionCB complete_fun, 
                                       VerbosePrintf vpf_fun,
                                       int client_id, ArgList arglist);
-static char *_findregex(regex_t * re, char *str, int len, 
-                        size_t nm, regmatch_t pm[]);
-static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[]);
+static char *_getregex_buf(cbuf_t b, xregex_t re, xregex_match_t xm);
 static bool _command_needs_device(Device * dev, hostlist_t hl);
 static void _enqueue_ping(Device * dev, struct timeval *timeout);
 static void _enqueue_login(Device *dev);
@@ -157,7 +157,6 @@ static bool _reconnect(Device * dev, struct timeval *timeout);
 static bool _time_to_reconnect(Device * dev, struct timeval *timeout);
 
 static List dev_devices = NULL;
-
 
 static void _dbg_actions(Device * dev)
 {
@@ -177,33 +176,14 @@ static void _dbg_actions(Device * dev)
     dbg(DBG_ACTION, "%s: %s", dev->name, tmpstr);
 }
 
-/* 
- * Find regular expression in string.
- *  re (IN)   regular expression
- *  str (IN)  where to look for regular expression
- *  len (IN)  number of chars in str to search
- *  nm (IN)   number of elem in pm array (can be 0)
- *  pm (OUT)  filled with subexpression matches (can be NULL)
- *  RETURN    pointer to char following the last char of the match,
- *            or if pm = NULL, the first char of str;  NULL if no match
- */
-static char *_findregex(regex_t * re, char *str, int len,
-        size_t nm, regmatch_t pm[])
+static void _memtrans(char *m, int len, char from, char to)
 {
-    int n;
-    int eflags = 0;
-    char *res = NULL;
+    int i;
 
-    n = xregexec(re, str, nm, pm, eflags);
-    if (n != REG_NOMATCH) {
-        if (nm > 0) {
-            assert(pm[0].rm_eo <= len);
-            res = str + pm[0].rm_eo;
-        } else
-            res = str;
+    for (i = 0; i < len; i++) {
+        if (m[i] == from)
+            m[i] = to;
     }
-    
-    return res;
 }
 
 /*
@@ -213,19 +193,18 @@ static char *_findregex(regex_t * re, char *str, int len,
  * NOTE: embedded \0 chars are converted to \377 because libc regex 
  * functions would treat these as string terminators.  As a result, 
  * \0 chars cannot be matched explicitly.
- *  b (IN)  buffer to apply regex to
- *  re (IN) regular expression
- *  nm (IN)   number of elem in pm array (can be 0)
- *  pm (OUT)  filled with subexpression matches (can be NULL)
+ *  b (IN)   buffer to apply regex to
+ *  re (IN)  regular expression
+ *  xm (OUT) subexpression matches
  *  RETURN  String match (caller must free) or NULL if no match
  */
-static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[])
+static char *_getregex_buf(cbuf_t b, xregex_t re, xregex_match_t xm)
 {
-    char *str = xmalloc(MAX_DEV_BUF + 1);
-    char *match_end;
-    int bytes_peeked = cbuf_peek(b, str, MAX_DEV_BUF);
-    int i, dropped;
+    int bytes_peeked, dropped, matchlen;
+    char *str;
 
+    str = xmalloc(MAX_DEV_BUF + 1);
+    bytes_peeked = cbuf_peek(b, str, MAX_DEV_BUF);
     if (bytes_peeked <= 0) {            /* FIXME: any -1 handling needed? */
         if (bytes_peeked < 0)
             err(TRUE, "_getregex_buf: cbuf_peek returned %d", bytes_peeked);
@@ -233,22 +212,15 @@ static char *_getregex_buf(cbuf_t b, regex_t * re, size_t nm, regmatch_t pm[])
         return NULL;
     }
     assert(bytes_peeked <= MAX_DEV_BUF);
-    for (i = 0; i < bytes_peeked; i++) {/* convert embedded \0 to \377 */
-        if (str[i] == '\0') {
-            str[i] = '\377';
-        }
-    }
-    str[bytes_peeked] = '\0';           /* null terminate result */
-    match_end = _findregex(re, str, bytes_peeked, nm, pm);
-    if (match_end == NULL) {
+    _memtrans(str, bytes_peeked, '\0', '\377');
+    str[bytes_peeked] = '\0';
+    if (!xregex_exec(re, str, xm)) {
         xfree(str);
         return NULL;
     }
-    assert(match_end - str <= strlen(str));
-    *match_end = '\0';
-                                        /* match: consume that much buffer */
-    dropped = cbuf_drop(b, match_end - str);
-    if (dropped != match_end - str)
+    matchlen = xregex_match_strlen(xm);
+    dropped = cbuf_drop(b, matchlen);
+    if (dropped != matchlen)
         err((dropped < 0), "_getregex_buf: cbuf_drop returned %d", dropped);
 
     return str;
@@ -1088,36 +1060,6 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
     return finished;
 }
 
-/* Make a copy of a device's cached subexpression match, referenced by
- * 'mp' match position, or NULL if no match.  Caller must free the result.
- */
-static char *_copy_pmatch(Device *dev, int mp)
-{
-    char *new;
-    regmatch_t m; 
-
-    if (!dev->matchstr) /* no previous match */
-        return NULL;
-    if (mp < 0 || mp >= (sizeof(dev->pmatch) / sizeof(regmatch_t)))
-        return NULL;    /* match position is out of range */
-
-    m = dev->pmatch[mp];
-
-    if (m.rm_so >= strlen(dev->matchstr) || m.rm_so < 0)
-        return NULL;    /* start pointer is out of range */
-                        /* NOTE: will be -1 if subexpression did not match */
-    if (m.rm_eo > strlen(dev->matchstr) || m.rm_eo < 0)
-        return NULL;    /* end pointer is out of range */
-    if (m.rm_eo - m.rm_so <= 0)
-        return NULL;    /* match is zero length */
-
-    new = xmalloc(m.rm_eo - m.rm_so + 1);
-    memcpy(new, dev->matchstr + m.rm_so, m.rm_eo - m.rm_so);
-    new[m.rm_eo - m.rm_so] = '\0';
-    
-    return new;
-}
-
 static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
 {
     bool finished = TRUE;
@@ -1131,7 +1073,8 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
     if (e->cur->u.setplugstate.plug_name)    /* literal */
         plug_name = xstrdup(e->cur->u.setplugstate.plug_name);
     if (!plug_name)                         /* regex match */
-        plug_name = _copy_pmatch(dev, e->cur->u.setplugstate.plug_mp);
+        plug_name = xregex_match_sub_strdup(dev->xmatch, 
+                                            e->cur->u.setplugstate.plug_mp);
     if (!plug_name && (e->plugs && list_count(e->plugs) > 0)) {
         Plug *plug = list_peek(e->plugs);
         if (plug->name)
@@ -1140,7 +1083,8 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
     /* if no plug name, do nothing */
 
     if (plug_name) {
-        char *str = _copy_pmatch(dev, e->cur->u.setplugstate.stat_mp);
+        char *str = xregex_match_sub_strdup(dev->xmatch, 
+                                            e->cur->u.setplugstate.stat_mp);
         Plug *plug = pluglist_find(dev->plugs, plug_name);
 
         if (str && plug && plug->node) {
@@ -1151,7 +1095,7 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
 
             itr = list_iterator_create(e->cur->u.setplugstate.interps);
             while ((i = list_next(itr))) {
-                if (xregexec(i->re, str, 0, NULL, 0) != REG_NOMATCH) {
+                if (xregex_exec(i->re, str, NULL)) {
                     state = i->state;
                     break;
                 }
@@ -1177,28 +1121,18 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
 /* return TRUE if expect is finished */
 static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
 {
-    regex_t *re;
     bool finished = FALSE;
-    size_t nm;
-    regmatch_t *pm;
 
-    re = &e->cur->u.expect.exp;
-    pm = dev->pmatch;
-    nm = sizeof(dev->pmatch) / sizeof(regmatch_t);
-
-    /* Free previously cached expect match string */
-    if (dev->matchstr) {
-        xfree(dev->matchstr);
-        dev->matchstr = NULL;
-    }
-
-    /* Match? */
-    if ((dev->matchstr = _getregex_buf(dev->from, re, nm, pm))) {
+    xregex_match_recycle(dev->xmatch);
+    if ((_getregex_buf(dev->from, e->cur->u.expect.exp, dev->xmatch))) {
         if (act->vpf_fun) {
-            char *memstr = dbg_memstr(dev->matchstr, strlen(dev->matchstr));
+            char *matchstr = xregex_match_strdup(dev->xmatch);
+            char *memstr = dbg_memstr(matchstr, strlen(matchstr));
 
             act->vpf_fun(act->client_id, "recv(%s): '%s'", dev->name, memstr);
+
             xfree(memstr);
+            xfree(matchstr);
         }
         finished = TRUE;
     } 
@@ -1333,7 +1267,7 @@ Device *dev_create(const char *name)
     dev->connect_state = DEV_NOT_CONNECTED;
     dev->fd = NO_FD;
     dev->acts = list_create((ListDelF) _destroy_action);
-    dev->matchstr = NULL;
+    dev->xmatch = xregex_match_create(MAX_MATCH_POS);
     dev->data = NULL;
 
     timerclear(&dev->timeout);
@@ -1390,8 +1324,7 @@ void dev_destroy(Device * dev)
 
     cbuf_destroy(dev->to);
     cbuf_destroy(dev->from);
-    if (dev->matchstr)
-        xfree(dev->matchstr);
+    xregex_match_destroy(dev->xmatch);
     xfree(dev);
 }
 

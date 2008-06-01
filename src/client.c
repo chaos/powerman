@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id$
  *****************************************************************************
- *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton <uselton2@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -24,10 +24,13 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+/* This is the component of the server that deals with clients.
+ * The client itself is contained in powerman.c.
+ */
+
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
@@ -46,21 +49,23 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-#include "powerman.h"
+#include "xtypes.h"
 #include "xmalloc.h"
 #include "xpoll.h"
+#include "xregex.h"
+#include "hostlist.h"
 #include "list.h"
 #include "parse_util.h"
 #include "client.h"
 #include "cbuf.h"
 #include "error.h"
-#include "hostlist.h"
 #include "client_proto.h"
 #include "debug.h"
 #include "pluglist.h"
-#include "device.h"
 #include "hprintf.h"
 #include "arglist.h"
+//#include "device_private.h"
+#include "powerman.h"
 
 #ifndef HAVE_SOCKLEN_T
 typedef int socklen_t;                  /* socklen_t is uint32_t in Posix.1g */
@@ -356,7 +361,6 @@ static void _client_query_device_reply(Client * c, char *arg)
         list_iterator_destroy(itr);
     }
     _client_printf(c, CP_RSP_QRY_COMPLETE);
-
 }
 
 /* 

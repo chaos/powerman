@@ -1,3 +1,14 @@
+2008-06-01 Jim Garlick <garlick@llnl.gov>
+
+	* src/regex.c : Rework.
+
+	* src/device.c, src/parse_tab.y : Rework regex calls.
+
+	* src/device_private.h : Extract from device.h the stuff that 
+	should not be exposed to powermand.c.
+
+	* : More general cleanup of header files, copyright block, etc..
+
 2008-05-30 Jim Garlick <garlick@llnl.gov>
 
 	* src/client.c : Allow instantiation with a single stdin/stdout

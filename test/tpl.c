@@ -8,6 +8,7 @@
 #include <libgen.h>
 
 #include "list.h"
+#include "xtypes.h"
 #include "pluglist.h"
 #include "hostlist.h"
 #include "error.h"

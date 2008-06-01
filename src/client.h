@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id$
  *****************************************************************************
- *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton <uselton2@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -24,8 +24,8 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#ifndef CLIENT_H
-#define CLIENT_H
+#ifndef PM_CLIENT_H
+#define PM_CLIENT_H
 
 void cli_init(void);
 void cli_fini(void);
@@ -37,7 +37,7 @@ bool cli_server_done(void);
 void cli_post_poll(xpollfd_t pfd);
 void cli_pre_poll(xpollfd_t pfd);
 
-#endif                          /* CLIENT_H */
+#endif /* PM_CLIENT_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

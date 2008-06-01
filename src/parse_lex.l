@@ -36,8 +36,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#include "hostlist.h"
 #include "parse_tab.h"
-#include "powerman.h"
+#include "xtypes.h"
 #include "list.h"
 #include "xmalloc.h"
 #include "error.h"

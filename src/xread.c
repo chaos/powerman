@@ -28,13 +28,13 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-
 #include <errno.h>
 #include <assert.h>
 #include <unistd.h>
 #include <stdarg.h>
 
 #include "xread.h"
+#include "xtypes.h"
 #include "error.h"
 
 int xread(int fd, char *p, int max)

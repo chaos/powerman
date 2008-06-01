@@ -24,16 +24,8 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#ifndef PARSE_UTIL_H
-#define PARSE_UTIL_H
-
-#include <regex.h>
-#include <sys/time.h>
-#include <sys/types.h>
-
-#include "list.h"
-#include "hostlist.h"
-#include "string.h"
+#ifndef PM_PARSE_UTIL_H
+#define PM_PARSE_UTIL_H
 
 void conf_init(char *filename);
 void conf_fini(void);
@@ -51,7 +43,7 @@ void conf_set_listen_port(int val);
 void conf_exp_aliases(hostlist_t hl);
 bool conf_add_alias(char *name, char *hosts);
 
-#endif                          /* PARSE_UTIL_H */
+#endif  /* PM_PARSE_UTIL_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

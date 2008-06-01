@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id$
  *****************************************************************************
- *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton <uselton2@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -24,19 +24,8 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#ifndef POWERMAN_H
-#define POWERMAN_H
-
-typedef enum { FALSE = 0, TRUE = 1 } bool;
-
-#define NO_FD           (-1)
-
-#ifndef MAX
-#  define MAX(x, y) (((x) > (y))? (x) : (y))
-#endif                          /* MAX */
-#ifndef MIN
-#  define MIN(x, y) (((x) < (y))? (x) : (y))
-#endif                          /* MIN */
+#ifndef PM_POWERMAN_H
+#define PM_POWERMAN_H
 
 #define DAEMON_NAME   		"powermand"
 #define PID_FILE_NAME 		"/var/run/powerman/powerman.pid"
@@ -47,9 +36,7 @@ typedef enum { FALSE = 0, TRUE = 1 } bool;
 #define DFLT_PORT           "10101"
 #define DFLT_HOSTNAME       "localhost"
 
-typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } InterpState;
-
-#endif                          /* POWERMAN_H */
+#endif /* PM_POWERMAN_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

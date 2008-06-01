@@ -1,9 +1,13 @@
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <signal.h>
 
+#include "xtypes.h"
 #include "error.h"
 #include "xsignal.h"
 
-xsigfunc *xsignal(int signo, xsigfunc * func)
+xsigfunc_t *xsignal(int signo, xsigfunc_t *func)
 {
     struct sigaction act, oact;
     int n;

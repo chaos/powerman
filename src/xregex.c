@@ -1,9 +1,9 @@
 /*****************************************************************************\
  *  $Id: wrappers.c 911 2008-05-30 20:26:33Z garlick $
  *****************************************************************************
- *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
- *  Written by Andrew Uselton <uselton2@llnl.gov>
+ *  Written by Jim Garlick <garlick@llnl.gov>
  *  UCRL-CODE-2002-008.
  *  
  *  This file is part of PowerMan, a remote power management program.
@@ -27,7 +27,6 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
@@ -35,15 +34,56 @@
 #include <sys/types.h>
 #include <regex.h>
 
+#include "xtypes.h"
 #include "error.h"
 #include "xregex.h"
 #include "xmalloc.h"
 
-/* 
- * Substitute all occurrences of s2 with s3 in s1, 
+#define XREGEX_MAGIC 0x3456aaaa
+struct xregex_struct {
+    int         xr_magic;
+    int         xr_cflags;
+    regex_t    *xr_regex; 
+};
+#define XREGEX_MATCH_MAGIC 0x3456aaba
+struct xregex_match_struct {
+    int         xm_magic;
+    int         xm_nmatch;
+    regmatch_t *xm_pmatch;
+    char       *xm_str;
+    int         xm_matchlen;
+    int         xm_result;
+    bool        xm_used;
+};
+
+xregex_t 
+xregex_create(void)
+{
+    xregex_t xrp = (xregex_t)xmalloc(sizeof(struct xregex_struct));
+
+    xrp->xr_magic = XREGEX_MAGIC;
+    xrp->xr_regex = NULL;
+
+    return xrp;
+}
+
+void 
+xregex_destroy(xregex_t xrp)
+{
+    assert(xrp->xr_magic == XREGEX_MAGIC);
+    if (xrp->xr_regex) {
+        regfree(xrp->xr_regex);
+        xfree(xrp->xr_regex);
+    }
+    xrp->xr_magic = 0;
+    xfree(xrp);
+}
+
+/* Substitute all occurrences of s2 with s3 in s1, 
  * e.g. _str_subst(str, "\\r", "\r") 
  */
-static void _str_subst(char *s1, int len, const char *s2, const char *s3)
+static void 
+_str_subst(char *s1, int len, const char *s2, const char *s3)
 {
     int s2len = strlen(s2);
     int s3len = strlen(s3);
@@ -56,43 +96,155 @@ static void _str_subst(char *s1, int len, const char *s2, const char *s3)
     }
 }
 
-#ifndef REG_NOERROR
-#define REG_NOERROR 0
-#endif
-
-void xregcomp(regex_t * preg, const char *regex, int cflags)
+/* N.B.  The buffer space available in a compiled RegEx expression is 
+ * only 256 bytes.  A long or complicated RegEx will exceed this space 
+ * and cause the library call to silently fail.
+ */
+void 
+xregex_compile(xregex_t xrp, const char *regex, bool withsub)
 {
+    char tmpstr[256];
     char *cpy;
     int n;
 
     assert(regex != NULL);
+    assert(xrp->xr_magic == XREGEX_MAGIC);
+    assert(xrp->xr_regex == NULL);
+
+    xrp->xr_regex = (regex_t *)xmalloc(sizeof(regex_t));
+    xrp->xr_cflags = REG_EXTENDED;
+    if (!withsub)
+        xrp->xr_cflags |= REG_NOSUB;
 
     /* convert backslash-prefixed special characters in regex to value */
     cpy = xstrdup(regex);
     _str_subst(cpy, strlen(cpy) + 1, "\\r", "\r");
     _str_subst(cpy, strlen(cpy) + 1, "\\n", "\n");
-    n = regcomp(preg, cpy, cflags);
+    n = regcomp(xrp->xr_regex, cpy, xrp->xr_cflags);
     xfree(cpy);
 
-    /* N.B.  The buffer space available in a compiled RegEx expression is 
-     * only 256 bytes.  A long or complicated RegEx will exceed this space 
-     * and cause the library call to silently fail.
-     */
-    if (n != REG_NOERROR)
-        err_exit(FALSE, "regcomp failed");
+    if (n != 0) {
+        regerror(n, xrp->xr_regex, tmpstr, sizeof(tmpstr));
+        err_exit(FALSE, "regcomp failed: %s", tmpstr);
+    }
+}
+
+bool 
+xregex_exec(xregex_t xrp, const char *s, xregex_match_t xm)
+{
+    int res, i;
+
+    assert(xrp->xr_magic == XREGEX_MAGIC);
+    assert(xrp->xr_regex != NULL);
+    if (xm != NULL) {
+        assert(!(xrp->xr_cflags & REG_NOSUB));
+        assert(xm->xm_magic == XREGEX_MATCH_MAGIC);
+        assert(xm->xm_used == FALSE);
+    }
+
+    res = regexec(xrp->xr_regex, s, xm ? xm->xm_nmatch : 0, 
+                                    xm ? xm->xm_pmatch : NULL, 0);
+    if (xm != NULL) {
+        xm->xm_result = res;
+        xm->xm_used = TRUE;
+        if (res == 0) {
+            if (xm->xm_str)
+                xfree(xm->xm_str);
+            xm->xm_str = xstrdup(s);
+            for (i = 0; i < xm->xm_nmatch; i++) {
+                if (xm->xm_matchlen < xm->xm_pmatch[i].rm_eo)
+                    xm->xm_matchlen = xm->xm_pmatch[i].rm_eo;
+            }
+        }
+    }
+    return res == 0 ? TRUE : FALSE;
+}
+
+xregex_match_t 
+xregex_match_create(int nmatch)
+{
+    xregex_match_t xm;
+
+    xm = (xregex_match_t)xmalloc(sizeof(struct xregex_match_struct));
+    xm->xm_magic = XREGEX_MATCH_MAGIC;
+    xm->xm_nmatch = nmatch;
+    xm->xm_pmatch = (regmatch_t *)xmalloc(sizeof(regmatch_t) * nmatch);
+    xm->xm_str = NULL;
+    xm->xm_matchlen = 0;
+    xm->xm_result = -1;
+    xm->xm_used = FALSE;
+    return xm;
+}
+
+void 
+xregex_match_destroy(xregex_match_t xm)
+{
+    assert(xm->xm_magic == XREGEX_MATCH_MAGIC);
+
+    xfree(xm->xm_pmatch);
+    if (xm->xm_str)
+        xfree(xm->xm_str);
+    xm->xm_magic = 0;
+    xfree(xm);
+}
+
+void
+xregex_match_recycle(xregex_match_t xm)
+{
+    if (xm->xm_str) {
+        xfree(xm->xm_str);
+        xm->xm_str = NULL;
+    }
+    xm->xm_matchlen = 0;
+    xm->xm_result = -1;
+    xm->xm_used = FALSE;
+}
+
+char *
+xregex_match_strdup(xregex_match_t xm)
+{
+    char *s = NULL;
+
+    assert(xm->xm_magic == XREGEX_MATCH_MAGIC);
+    assert(xm->xm_used);
+  
+    if (xm->xm_result == 0) {
+        s = (char *)xmalloc(xm->xm_matchlen + 1);
+        assert(xm->xm_str != NULL);
+        memcpy(s, xm->xm_str, xm->xm_matchlen);
+        s[xm->xm_matchlen] = '\0';
+    }
+    return s;
 }
 
 int
-xregexec(const regex_t * preg, const char *string,
-        size_t nmatch, regmatch_t pmatch[], int eflags)
+xregex_match_strlen(xregex_match_t xm)
 {
-    int n;
-    char *cpy;
+    assert(xm->xm_magic == XREGEX_MATCH_MAGIC);
+    assert(xm->xm_used);
 
-    cpy = xstrdup(string); /* FIXME: why do we make cpy here? */
-    n = regexec(preg, cpy , nmatch, pmatch, eflags);
-    xfree(cpy);
-    return n;
+    return xm->xm_matchlen;
+}
+
+char *
+xregex_match_sub_strdup(xregex_match_t xm, int i)
+{
+    char *s = NULL;
+
+    assert(xm->xm_magic == XREGEX_MATCH_MAGIC);
+    assert(xm->xm_used);
+    assert(i >= 0 && i < xm->xm_nmatch);
+  
+    if (xm->xm_result == 0 && xm->xm_pmatch[i].rm_so != -1) {
+        regmatch_t m = xm->xm_pmatch[i];
+
+        assert(xm->xm_str != NULL);
+        assert(m.rm_so < m.rm_eo);
+        s = xmalloc(m.rm_eo - m.rm_so + 1);
+        memcpy(s, xm->xm_str + m.rm_so, m.rm_eo - m.rm_so);
+        s[m.rm_eo - m.rm_so] = '\0';
+    }
+    return s;
 }
 
 /*

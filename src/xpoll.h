@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id: wrappers.h 911 2008-05-30 20:26:33Z garlick $
  *****************************************************************************
- *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton <uselton2@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -24,9 +24,8 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-
-#ifndef POWERMAN_POLL_H
-#define POWERMAN_POLL_H
+#ifndef PM_XPOLL_H
+#define PM_XPOLL_H
 
 typedef struct xpollfd *xpollfd_t;
 
@@ -44,7 +43,7 @@ char       *xpollfd_str(xpollfd_t pfd, char *str, int len);
 #define XPOLLERR     8
 #define XPOLLNVAL    16
 
-#endif                          /* POWERMAN_POLL_H */
+#endif /* PM_XPOLL_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

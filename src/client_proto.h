@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id$
  *****************************************************************************
- *  Copyright (C) 2002 The Regents of the University of California.
+ *  Copyright (C) 2002-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Jim Garlick <garlick@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -24,8 +24,8 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#ifndef CLIENT_PROTO_H
-#define CLIENT_PROTO_H
+#ifndef PM_CLIENT_PROTO_H
+#define PM_CLIENT_PROTO_H
 
 /*
  * Line oriented request/response protocol for powerman daemon.
@@ -128,7 +128,7 @@
 #define CP_INFO_XNODES      "307 %s"                                CP_EOL
 #define CP_INFO_ACTERROR    "308 %s"                                CP_EOL
 
-#endif                          /* CLIENT_PROTO_H */
+#endif  /* PM_CLIENT_PROTO_H */
 
 /* 
  * vi:tabstop=4 shiftwidth=4 expandtab 

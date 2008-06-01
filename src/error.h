@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id$
  *****************************************************************************
- *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton <uselton2@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -24,10 +24,8 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-#ifndef EXIT_ERROR_H
-#define EXIT_ERROR_H
-
-#include "powerman.h"           /* for bool typedef */
+#ifndef PM_ERROR_H
+#define PM_ERROR_H
 
 void err_init(char *prog);
 void err_notty(void);
@@ -37,7 +35,7 @@ void err(bool errno_valid, const char *fmt, ...);
 void lsd_fatal_error(char *file, int line, char *mesg);
 void *lsd_nomem_error(char *file, int line, char *mesg);
 
-#endif                          /* EXIT_ERROR_H */
+#endif /* PM_ERROR_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

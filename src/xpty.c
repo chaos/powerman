@@ -27,7 +27,6 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-
 #include <sys/types.h>
 #include <termios.h>
 #include <string.h>
@@ -38,7 +37,6 @@
 #include <util.h>
 #endif
 #if ! HAVE_FORKPTY
-/* XXX the non-forkpty case has only been tried on Solaris */
 #include <sys/ioctl.h>  
 #include <sys/stream.h> 
 #include <sys/stropts.h> 
@@ -47,6 +45,7 @@
 #include <stdio.h>
 #include <assert.h>
 
+#include "xtypes.h"
 #include "xpty.h"
 #include "error.h"
 

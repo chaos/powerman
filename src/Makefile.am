@@ -37,7 +37,8 @@ noinst_HEADERS = \
 	xpoll.h \
 	xmalloc.h \
 	xregex.h \
-	timeradd.h \
+	xtime.h \
+	xtypes.h \
 	xpty.h \
 	xsignal.h
 

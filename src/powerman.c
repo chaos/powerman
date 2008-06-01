@@ -47,6 +47,7 @@
 #include <stdarg.h>
 
 #include "powerman.h"
+#include "xtypes.h"
 #include "xread.h"
 #include "error.h"
 #include "hostlist.h"

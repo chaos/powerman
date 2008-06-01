@@ -38,15 +38,16 @@
 #include <assert.h>
 #include <stdio.h>
 
-#include "powerman.h"
-#include "error.h"
 #include "list.h"
+#include "hostlist.h"
+#include "xtypes.h"
+#include "error.h"
 #include "parse_util.h"
 #include "xmalloc.h"
 #include "xpoll.h"
 #include "pluglist.h"
-#include "device.h"
 #include "client.h"
+#include "powerman.h"
 
 typedef struct {
     char *name;

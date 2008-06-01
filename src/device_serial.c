@@ -39,12 +39,17 @@
 #include <stdio.h>
 #include <termios.h>
 
-#include "powerman.h"
+#include "xtypes.h"
+#include "cbuf.h"
+#include "hostlist.h"
+#include "list.h"
 #include "parse_util.h"
 #include "xpoll.h"
 #include "xmalloc.h"
 #include "pluglist.h"
-#include "device.h"
+#include "arglist.h"
+#include "xregex.h"
+#include "device_private.h"
 #include "device_serial.h"
 #include "error.h"
 #include "debug.h"

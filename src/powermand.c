@@ -43,7 +43,9 @@
 #include <limits.h>
 
 #include "powerman.h"
+#include "xtypes.h"
 #include "list.h"
+#include "hostlist.h"
 #include "parse_util.h"
 #include "xmalloc.h"
 #include "xpoll.h"
@@ -147,7 +149,6 @@ int main(int argc, char **argv)
     xsignal(SIGINT, _exit_handler);
     xsignal(SIGPIPE, SIG_IGN);
 
-    /* parses config file */
     conf_init(config_filename ? config_filename : DFLT_CONFIG_FILE);
 
     if (config_filename != NULL)
@@ -155,8 +156,11 @@ int main(int argc, char **argv)
 
     cli_start(use_stdio);
 
-    if (daemonize)
-        daemon_init(); /* closes all fd's except client listen port */
+    if (daemonize) {
+        daemon_init(cli_listen_fd(), ROOT_DIR, DAEMON_NAME); 
+        err_notty();
+        dbg_notty();
+    }
 
     /* We now have a socket at listener fd running in listen mode */
     /* and a file descriptor for communicating with each device */

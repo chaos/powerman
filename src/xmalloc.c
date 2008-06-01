@@ -28,12 +28,12 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-
 #include <string.h>
 #include <errno.h>
 #include <assert.h>
 #include <stdlib.h>
 
+#include "xtypes.h"
 #include "xmalloc.h"
 #include "error.h"
 

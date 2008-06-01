@@ -24,6 +24,9 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#ifndef PM_ARGV_H
+#define PM_ARGV_H
+
 /* Create a NULL-terminated argv array suitable for passing to execv()
  * from 'cmdline' string.  Characters in the 'ignore' set are treated as white
  * space.  Caller must free with argv_destroy().
@@ -33,3 +36,5 @@ char **argv_create(char *cmdline, char *ignore);
 /* Destroy an argv array created by argv_create.
  */
 void argv_destroy(char **argv);
+
+#endif /* PM_ARGV_H */
