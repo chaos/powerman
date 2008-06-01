@@ -9,6 +9,8 @@
 
 	* : More general cleanup of header files, copyright block, etc..
 
+	* test/tregex.c, test/t05, test/t05.exp : Added tests for xregex.c.
+
 2008-05-30 Jim Garlick <garlick@llnl.gov>
 
 	* src/client.c : Allow instantiation with a single stdin/stdout
