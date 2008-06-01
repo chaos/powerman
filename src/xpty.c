@@ -55,16 +55,6 @@
 #include "xpty.h"
 #include "error.h"
 
-#ifndef STDIN_FILENO
-#define STDIN_FILENO 0
-#endif
-#ifndef STDOUT_FILENO
-#define STDOUT_FILENO 1
-#endif
-#ifndef STDERR_FILENO
-#define STDERR_FILENO 2
-#endif
-
 void xcfmakeraw(int fd)
 {
     struct termios tio;
@@ -97,14 +87,13 @@ pid_t xforkpty(int *amaster, char *name, int len)
         assert(strlen(name) < len);
     }
 #else
-    /* this code initially borrowed from 
+#if HAVE__DEV_PTMX 
+    /* solaris style - this code initially borrowed from 
      *  http://bugs.mysql.com/bug.php?id=22429
-     * XXX solaris specific!
-     * XXX need to lose controlling tty with setsid() ?
      */
     int master, slave; 
     char *slave_name; 
-   
+  
     master = open("/dev/ptmx", O_RDWR); 
     if (master < 0) 
         return -1; 
@@ -132,6 +121,35 @@ pid_t xforkpty(int *amaster, char *name, int len)
         close (master); 
         return -1; 
     } 
+#elif HAVE__DEV_PTC
+    /* aix style */
+    int master, slave; 
+    char *slave_name; 
+
+    master = open("/dev/ptc", O_RDWR); 
+    if (master < 0) 
+        return -1; 
+    if (grantpt (master) < 0) { 
+        close (master); 
+        return -1; 
+    } 
+    if (unlockpt (master) < 0) { 
+        close (master); 
+        return -1; 
+    } 
+    slave_name = ptsname (master); 
+    if (slave_name == NULL) { 
+        close (master); 
+        return -1; 
+    } 
+    slave = open (slave_name, O_RDWR); 
+    if (slave < 0) { 
+        close (master); 
+        return -1; 
+    } 
+#else
+#error unknown pty master device path
+#endif
     if (amaster) 
         *amaster = master; 
     if (name) 
@@ -151,6 +169,7 @@ pid_t xforkpty(int *amaster, char *name, int len)
             break;
     } 
 #endif
+    /* XXX setsid() needed? */
     return pid;
 }
 

@@ -125,9 +125,9 @@ static void _telemetry_printf(int client_id, const char *fmt, ...);
 /* tcp wrappers support */
 extern int hosts_ctl(char *daemon, char *client_name, char *client_addr,
                      char *client_user);
-#endif
 int allow_severity = LOG_INFO;  /* logging level for accepted reqs */
 int deny_severity = LOG_WARNING;/* logging level for rejected reqs */
+#endif
 
 static int listen_fd = NO_FD;   /* powermand listen socket */
 static List cli_clients = NULL; /* list of clients */

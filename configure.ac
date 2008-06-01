@@ -35,6 +35,12 @@ AC_PROG_YACC
 AM_CONDITIONAL(WITH_GNU_LD, test "$with_gnu_ld" = "yes")
 
 ##
+#
+##
+AC_CHECK_FILES(/dev/ptmx)
+AC_CHECK_FILES(/dev/ptc)
+
+##
 # Checks for header files.
 ##
 AC_HEADER_STDC

@@ -72,6 +72,12 @@
 /* Define to 1 if you have the <util.h> header file. */
 #undef HAVE_UTIL_H
 
+/* Define to 1 if you have the file `AC_File'. */
+#undef HAVE__DEV_PTC
+
+/* Define to 1 if you have the file `AC_File'. */
+#undef HAVE__DEV_PTMX
+
 /* Name of package */
 #undef PACKAGE
 

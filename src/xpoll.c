@@ -27,6 +27,12 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
+/* Force select on darwin as poll can't be used on devices.
+ * FIXME: This should be a more sophisticated configure-time test.
+ */
+#if defined(__APPLE__) && defined(HAVE_POLL)
+#undef HAVE_POLL
+#endif
 #include <string.h>
 #include <errno.h>
 #include <sys/time.h>
@@ -66,6 +72,7 @@ struct xpollfd {
 #endif
 };
 
+#if HAVE_POLL
 static short 
 xflag2flag(short x)
 {
@@ -103,6 +110,7 @@ flag2xflag(short f)
 
     return x;
 }
+#endif
 
 /* a null tv means no timeout (could block forever) */
 int

@@ -144,18 +144,19 @@ int main(int argc, char **argv)
     if (!force_notroot && geteuid() != 0)
         err_exit(FALSE, "must be root");
 
-    xsignal(SIGHUP, _noop_handler);
-    xsignal(SIGTERM, _exit_handler);
-    xsignal(SIGINT, _exit_handler);
-    xsignal(SIGPIPE, SIG_IGN);
-
     conf_init(config_filename ? config_filename : DFLT_CONFIG_FILE);
 
     if (config_filename != NULL)
         xfree(config_filename);
 
-    cli_start(use_stdio);
+    if (!use_stdio) {
+        xsignal(SIGHUP, _noop_handler);
+        xsignal(SIGTERM, _exit_handler);
+        xsignal(SIGINT, _exit_handler);
+        xsignal(SIGPIPE, SIG_IGN);
+    }
 
+    cli_start(use_stdio);
 
     if (daemonize) {
         daemon_init(cli_listen_fd(), ROOT_DIR, DAEMON_NAME); 
