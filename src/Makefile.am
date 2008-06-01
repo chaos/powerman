@@ -63,7 +63,7 @@ powerman_LDADD = $(LIBGENDERS) $(LIBFORKPTY)
 if WITH_HTTPPOWER
 httppower_SOURCES = httppower.c $(COMMON_SOURCE)
 
-httppower_LDADD = $(LIBCURL) $(LIBREADLINE)
+httppower_LDADD = $(LIBCURL) $(LIBREADLINE) $(LIBFORKPTY)
 endif
 
 powermand_SOURCES = \

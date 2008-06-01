@@ -73,6 +73,7 @@ am__objects_1 = debug.$(OBJEXT) error.$(OBJEXT) hostlist.$(OBJEXT) \
 httppower_OBJECTS = $(am_httppower_OBJECTS)
 am__DEPENDENCIES_1 =
 @WITH_HTTPPOWER_TRUE@httppower_DEPENDENCIES = $(am__DEPENDENCIES_1) \
+@WITH_HTTPPOWER_TRUE@	$(am__DEPENDENCIES_1) \
 @WITH_HTTPPOWER_TRUE@	$(am__DEPENDENCIES_1)
 pm_SOURCES = pm.c
 pm_OBJECTS = pm.$(OBJEXT)
@@ -256,7 +257,7 @@ COMMON_SOURCE = \
 powerman_SOURCES = powerman.c $(COMMON_SOURCE)
 powerman_LDADD = $(LIBGENDERS) $(LIBFORKPTY)
 @WITH_HTTPPOWER_TRUE@httppower_SOURCES = httppower.c $(COMMON_SOURCE)
-@WITH_HTTPPOWER_TRUE@httppower_LDADD = $(LIBCURL) $(LIBREADLINE)
+@WITH_HTTPPOWER_TRUE@httppower_LDADD = $(LIBCURL) $(LIBREADLINE) $(LIBFORKPTY)
 powermand_SOURCES = \
 	powermand.c \
 	arglist.c \

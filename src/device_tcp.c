@@ -208,7 +208,7 @@ bool tcp_connect(Device * dev)
         tcp_finish_connect(dev);
     else if (errno == ECONNREFUSED)
         dev->connect_state = DEV_NOT_CONNECTED;
-    else
+    else if (errno != EINPROGRESS)
         err_exit(TRUE, "connect");
 
     freeaddrinfo(addrinfo);

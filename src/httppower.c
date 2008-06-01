@@ -44,6 +44,7 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "xtypes.h"
 #include "xmalloc.h"
 #include "error.h"
 #include "argv.h"

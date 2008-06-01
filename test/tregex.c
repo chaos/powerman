@@ -40,6 +40,8 @@ main(int argc, char *argv[])
 	xfree(s);
 	s = xregex_match_sub_strdup(rm, 3);
 	assert(s == NULL);
+	s = xregex_match_sub_strdup(rm, -1); /* powerman actually does this! */
+	assert(s == NULL);
 	s = xregex_match_strdup(rm);
 	assert(strcmp(s, "xxxfoo1bar2") == 0);
 	assert(xregex_match_strlen(rm) == strlen(s));

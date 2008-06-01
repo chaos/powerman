@@ -233,9 +233,8 @@ xregex_match_sub_strdup(xregex_match_t xm, int i)
 
     assert(xm->xm_magic == XREGEX_MATCH_MAGIC);
     assert(xm->xm_used);
-    assert(i >= 0);
   
-    if (xm->xm_result == 0 && i < xm->xm_nmatch 
+    if (xm->xm_result == 0 && i >= 0 && i < xm->xm_nmatch 
                            && xm->xm_pmatch[i].rm_so != -1) {
         regmatch_t m = xm->xm_pmatch[i];
 
