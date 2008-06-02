@@ -8,11 +8,20 @@ Group: Applications/System
 Url: http://sourceforge.net/projects/powerman
 Source0: %{name}-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-%if 0%{?ch4}
-BuildRequires: tcp_wrappers
-BuildRequires: flex, bison, curl-devel, readline-devel, ncurses-devel
-%endif
 
+%define _with_httppower 1
+%define _with_genders 1
+%define _with_tcp_wrappers 1
+
+%if 0%{?_with_tcp_wrappers}
+BuildRequires: tcp_wrappers
+%endif
+%if 0%{?_with_genders}
+BuildRequires: genders
+%endif
+%if 0%{?_with_httppower}
+BuildRequires: curl-devel, readline-devel, ncurses-devel
+%endif
 
 %description
 PowerMan is a tool for manipulating remote power control (RPC) devices from a 
@@ -23,12 +32,10 @@ Expect-like configurability simplifies the addition of new devices.
 %setup
 
 %build
-# N.B. --program-prefix="" needed on AIX
-%if 0%{?ch4}
-%configure --program-prefix="" --with-httppower --with-genders
-%else
-%configure --program-prefix=""
-%endif
+%configure \
+  %{?_with_genders: --with-genders} \
+  %{?_with_httppower: --with-httppower} \
+  --program-prefix=%{?_program_prefix:%{_program_prefix}}
 make
 
 %install
@@ -36,34 +43,30 @@ rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT 
 
 %clean
-rm -rf $RPM_BUILD_ROOT
+rm -rf $RPM_BUILD_ROO
 
 %post
-%if 0%{?_initrddir}
-if [ -x %{_initrddir}/powerman ]; then
-  if %{_initrddir}/powerman status | grep running >/dev/null 2>&1; then
-    %{_initrddir}/powerman stop
+if [ -x %{_sysconfdir}/init.d/powerman ]; then
+  if %{_sysconfdir}/init.d/powerman status | grep running >/dev/null 2>&1; then
+    %{_sysconfdir}/init.d/powerman stop
     WASRUNNING=1
   fi
   [ -x /sbin/chkconfig ] && /sbin/chkconfig --del powerman
   [ -x /sbin/chkconfig ] && /sbin/chkconfig --add powerman
   if test x$WASRUNNING = x1; then
-    %{_initrddir}/powerman start
+    %{_sysconfdir}/init.d/powerman start
   fi
 fi
-%endif
 
 %preun
-%if 0%{?_initrddir}
 if [ "$1" = 0 ]; then
-  if [ -x %{_initrddir}/powerman ]; then
+  if [ -x %{_sysconfdir}/init.d/powerman ]; then
     [ -x /sbin/chkconfig ] && /sbin/chkconfig --del powerman
-    if %{_initrddir}/powerman status | grep running >/dev/null 2>&1; then
-      %{_initrddir}/powerman stop
+    if %{_sysconfdir}/init.d/powerman status | grep running >/dev/null 2>&1; then
+      %{_sysconfdir}/init.d/powerman stop
     fi
   fi
 fi
-%endif
 
 %files
 %defattr(-,root,root,-)
@@ -78,7 +81,7 @@ fi
 %{_bindir}/powerman
 %{_bindir}/pm
 %{_sbindir}/powermand
-%if 0%{?ch4}
+%if 0%{?_with_httppower}
 %{_sbindir}/httppower
 %endif
 %dir %config %{_sysconfdir}/powerman
@@ -87,9 +90,7 @@ fi
 %{_mandir}/man5/*
 %{_mandir}/man7/*
 %{_mandir}/man8/*
-%if 0%{?_initrddir}
-%{_initrddir}/powerman
-%endif
+%{_sysconfdir}/init.d/powerman
 
 %changelog
 
