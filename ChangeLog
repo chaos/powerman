@@ -1,5 +1,7 @@
 2008-06-02 Jim Garlick <garlick@llnl.gov>
 
+	* : tag powerman-2.0
+
 	* src/xregex.c : Allow main expression match information to be
 	obtained.
 
