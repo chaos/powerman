@@ -36,8 +36,8 @@ DEVFILES = \
 	wti-rps10.dev
 
 install-data-local:
-	$(top_srcdir)/config/install-sh -m 755 -d \
-	  $(DESTDIR)/$(sysconfdir)/powerman
+	-$(top_srcdir)/config/mkinstalldirs -m 755 \
+		$(DESTDIR)/$(sysconfdir)/powerman
 	for file in $(DEVFILES); do \
 		$(top_srcdir)/config/install-sh -m 644 $(srcdir)/$$file $(DESTDIR)$(sysconfdir)/powerman; \
 	done

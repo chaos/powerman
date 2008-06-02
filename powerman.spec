@@ -13,6 +13,7 @@ BuildRequires: tcp_wrappers
 BuildRequires: flex, bison, curl-devel, readline-devel, ncurses-devel
 %endif
 
+
 %description
 PowerMan is a tool for manipulating remote power control (RPC) devices from a 
 central location. Several RPC varieties are supported natively by PowerMan and 
@@ -38,6 +39,7 @@ make install DESTDIR=$RPM_BUILD_ROOT
 rm -rf $RPM_BUILD_ROOT
 
 %post
+%if 0%{?_initrddir}
 if [ -x %{_initrddir}/powerman ]; then
   if %{_initrddir}/powerman status | grep running >/dev/null 2>&1; then
     %{_initrddir}/powerman stop
@@ -49,8 +51,10 @@ if [ -x %{_initrddir}/powerman ]; then
     %{_initrddir}/powerman start
   fi
 fi
+%endif
 
 %preun
+%if 0%{?_initrddir}
 if [ "$1" = 0 ]; then
   if [ -x %{_initrddir}/powerman ]; then
     [ -x /sbin/chkconfig ] && /sbin/chkconfig --del powerman
@@ -59,6 +63,7 @@ if [ "$1" = 0 ]; then
     fi
   fi
 fi
+%endif
 
 %files
 %defattr(-,root,root,-)
@@ -73,14 +78,18 @@ fi
 %{_bindir}/powerman
 %{_bindir}/pm
 %{_sbindir}/powermand
+%if 0%{?ch4}
 %{_sbindir}/httppower
+%endif
 %dir %config %{_sysconfdir}/powerman
 %{_sysconfdir}/powerman/*.dev
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man7/*
 %{_mandir}/man8/*
+%if 0%{?_initrddir}
 %{_initrddir}/powerman
+%endif
 
 %changelog
 

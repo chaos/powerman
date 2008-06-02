@@ -5,8 +5,10 @@
 ##*****************************************************************************
 
 install-data-local:
-	$(top_srcdir)/config/install-sh -m 755 -d $(DESTDIR)/$(sysconfdir)/rc.d/init.d
-	$(top_srcdir)/config/install-sh -m 755 $(srcdir)/powerman.init $(DESTDIR)$(sysconfdir)/rc.d/init.d/powerman
+	-$(top_srcdir)/config/mkinstalldirs -m 755 \
+		$(DESTDIR)$(sysconfdir)/rc.d/init.d
+	$(top_srcdir)/config/install-sh -m 755 $(srcdir)/powerman.init \
+		$(DESTDIR)$(sysconfdir)/rc.d/init.d/powerman
 
 uninstall-local:
 	$(RM) $(DESTDIR)$(sysconfdir)/init.d/powerman
