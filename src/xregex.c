@@ -51,7 +51,6 @@ struct xregex_match_struct {
     int         xm_nmatch;
     regmatch_t *xm_pmatch;
     char       *xm_str;
-    int         xm_matchlen;
     int         xm_result;
     bool        xm_used;
 };
@@ -132,12 +131,11 @@ xregex_compile(xregex_t xrp, const char *regex, bool withsub)
 bool 
 xregex_exec(xregex_t xrp, const char *s, xregex_match_t xm)
 {
-    int res, i;
+    int res;
 
     assert(xrp->xr_magic == XREGEX_MAGIC);
     assert(xrp->xr_regex != NULL);
     if (xm != NULL) {
-        assert(!(xrp->xr_cflags & REG_NOSUB));
         assert(xm->xm_magic == XREGEX_MATCH_MAGIC);
         assert(xm->xm_used == FALSE);
     }
@@ -151,10 +149,6 @@ xregex_exec(xregex_t xrp, const char *s, xregex_match_t xm)
             if (xm->xm_str)
                 xfree(xm->xm_str);
             xm->xm_str = xstrdup(s);
-            for (i = 0; i < xm->xm_nmatch; i++) {
-                if (xm->xm_matchlen < xm->xm_pmatch[i].rm_eo)
-                    xm->xm_matchlen = xm->xm_pmatch[i].rm_eo;
-            }
         }
     }
     return res == 0 ? TRUE : FALSE;
@@ -170,7 +164,6 @@ xregex_match_create(int nmatch)
     xm->xm_nmatch = nmatch + 1;
     xm->xm_pmatch = (regmatch_t *)xmalloc(sizeof(regmatch_t) * (nmatch + 1));
     xm->xm_str = NULL;
-    xm->xm_matchlen = 0;
     xm->xm_result = -1;
     xm->xm_used = FALSE;
     return xm;
@@ -195,7 +188,6 @@ xregex_match_recycle(xregex_match_t xm)
         xfree(xm->xm_str);
         xm->xm_str = NULL;
     }
-    xm->xm_matchlen = 0;
     xm->xm_result = -1;
     xm->xm_used = FALSE;
 }
@@ -209,10 +201,10 @@ xregex_match_strdup(xregex_match_t xm)
     assert(xm->xm_used);
   
     if (xm->xm_result == 0) {
-        s = (char *)xmalloc(xm->xm_matchlen + 1);
+        s = (char *)xmalloc(xm->xm_pmatch[0].rm_eo + 1);
         assert(xm->xm_str != NULL);
-        memcpy(s, xm->xm_str, xm->xm_matchlen);
-        s[xm->xm_matchlen] = '\0';
+        memcpy(s, xm->xm_str, xm->xm_pmatch[0].rm_eo);
+        s[xm->xm_pmatch[0].rm_eo] = '\0';
     }
     return s;
 }
@@ -223,7 +215,7 @@ xregex_match_strlen(xregex_match_t xm)
     assert(xm->xm_magic == XREGEX_MATCH_MAGIC);
     assert(xm->xm_used);
 
-    return xm->xm_matchlen;
+    return xm->xm_pmatch[0].rm_eo;
 }
 
 char *

@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id$
  *****************************************************************************
- *  Copyright (C) 2003 The Regents of the University of California.
+ *  Copyright (C) 2003-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Jim Garlick <garlick@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -102,7 +102,7 @@ bool pipe_connect(Device * dev)
 
     pid = xforkpty(&fd, ptyname, sizeof(ptyname));
     if (pid < 0) {
-        err(FALSE, "_pipe_connect(%s): forkpty error", dev->name);
+        err_exit(TRUE, "_pipe_connect(%s): forkpty error", dev->name);
     } else if (pid == 0) {      /* child */
         execv(pd->argv[0], pd->argv);
         err_exit(TRUE, "exec %s", pd->argv[0]);

@@ -1,6 +1,15 @@
+2008-06-02 Jim Garlick <garlick@llnl.gov>
+
+	* src/xregex.c : Allow main expression match information to be
+	obtained.
+
+	* src/device_pipe.c : Make forkpty() error fatal.
+
+	* src/xpty.c : Call err_exit() not lsd_fatal_error() on error.
+
 2008-06-01 Jim Garlick <garlick@llnl.gov>
 
-	* src/regex.c : Rework.
+	* src/xregex.c : Rework.
 
 	* src/device.c, src/parse_tab.y : Rework regex calls.
 

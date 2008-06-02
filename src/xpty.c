@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id: wrappers.c 911 2008-05-30 20:26:33Z garlick $
  *****************************************************************************
- *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton <uselton2@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -60,7 +60,7 @@ void xcfmakeraw(int fd)
     struct termios tio;
 
     if (tcgetattr(fd, &tio) < 0)
-        lsd_fatal_error(__FILE__, __LINE__, "tcgetattr");
+        err_exit(TRUE, "xcfmakeraw: tcgetattr");
 #if HAVE_CFMAKERAW
     cfmakeraw(&tio);
 #else
@@ -74,7 +74,7 @@ void xcfmakeraw(int fd)
     tio.c_cc[VTIME] = 0;
 #endif
     if (tcsetattr(fd, TCSANOW, &tio) < 0)
-        lsd_fatal_error(__FILE__, __LINE__, "tcsetattr");
+        err_exit(TRUE, "xcfmakeraw: tcsetattr");
 }
 
 pid_t xforkpty(int *amaster, char *name, int len)

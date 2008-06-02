@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id: wrappers.c 911 2008-05-30 20:26:33Z garlick $
  *****************************************************************************
- *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton <uselton2@llnl.gov>
  *  UCRL-CODE-2002-008.
@@ -27,8 +27,8 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
-/* Force select on darwin as poll can't be used on devices.
- * FIXME: This should be a more sophisticated configure-time test.
+/* Force select() on darwin as poll() can't be used on devices (e.g. ptys)
+ * FIXME: This should be a configure-time test.
  */
 #if defined(__APPLE__) && defined(HAVE_POLL)
 #undef HAVE_POLL

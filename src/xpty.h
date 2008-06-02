@@ -27,7 +27,10 @@
 #ifndef PM_XPTY_H
 #define PM_XPTY_H
 
+/* Configure the tty associated with 'fd' in raw mode.
+ */
 void xcfmakeraw(int fd);
+
 pid_t xforkpty(int *amaster, char *name, int len);
 
 #endif /* PM_XPTY_H */

@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  $Id$
  *****************************************************************************
- *  Copyright (C) 2001-2002 The Regents of the University of California.
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton <uselton2@llnl.gov>
  *  Modularlization and telnet engine added by Jim Garlick <garlick@llnl.gov>
@@ -142,7 +142,7 @@ bool tcp_finish_connect(Device * dev)
     rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &error, &len);
     /*
      *  If an error occurred, Berkeley-derived implementations
-     *    return 0 with the pending error in 'err'.  But Solaris
+     *    return 0 with the pending error in 'error'.  But Solaris
      *    returns -1 with the pending error in 'errno'.  -dun
      */
     if (rc < 0)

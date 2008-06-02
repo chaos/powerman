@@ -27,7 +27,14 @@
 #ifndef PM_XREAD_H
 #define PM_XREAD_H
 
+/* Read function that handles EINTR internally and terminates on all
+ * other errors except EWOULDBLOCK and ECONNRESET.
+ */
 int xread(int fd, char *p, int max);
+
+/* Write function that handles EINTR internally and terminates on all
+ * other errors except EPIPE, EWOULDBLOCK, and ECONNRESET.
+ */
 int xwrite(int fd, char *p, int max);
 
 #endif /* PM_XREAD_H */
