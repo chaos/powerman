@@ -8,8 +8,10 @@ Group: Applications/System
 Url: http://sourceforge.net/projects/powerman
 Source0: %{name}-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
+%if 0%{?ch4}
 BuildRequires: tcp_wrappers
 BuildRequires: flex, bison, curl-devel, readline-devel, ncurses-devel
+%endif
 
 %description
 PowerMan is a tool for manipulating remote power control (RPC) devices from a 
