@@ -21,7 +21,11 @@ Expect-like configurability simplifies the addition of new devices.
 
 %build
 # N.B. --program-prefix="" needed on AIX
-%configure --with-httppower --with-genders --program-prefix=""
+%if 0%{?ch4}
+%configure --program-prefix="" --with-httppower --with-genders
+%else
+%configure --program-prefix=""
+%endif
 make
 
 %install
