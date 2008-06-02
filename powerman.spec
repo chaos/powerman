@@ -9,9 +9,11 @@ Url: http://sourceforge.net/projects/powerman
 Source0: %{name}-%{version}.tar.bz2
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
+%if 0%{?ch4}
 %define _with_httppower 1
 %define _with_genders 1
 %define _with_tcp_wrappers 1
+%endif
 
 %if 0%{?_with_tcp_wrappers}
 BuildRequires: tcp_wrappers
