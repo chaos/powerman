@@ -144,10 +144,12 @@ int main(int argc, char **argv)
     if (!force_notroot && geteuid() != 0)
         err_exit(FALSE, "must be root");
 
-    conf_init(config_filename ? config_filename : DFLT_CONFIG_FILE);
-
-    if (config_filename != NULL)
-        xfree(config_filename);
+    if (!config_filename) {
+        config_filename = xmalloc(strlen(CONFIG_DIR) + strlen(CONFIG_FILE) + 2);
+        sprintf(config_filename, "%s/%s", CONFIG_DIR, CONFIG_FILE);
+    }
+    conf_init(config_filename);
+    xfree(config_filename);
 
     if (!use_stdio) {
         xsignal(SIGHUP, _noop_handler);
@@ -159,7 +161,7 @@ int main(int argc, char **argv)
     cli_start(use_stdio);
 
     if (daemonize) {
-        daemon_init(cli_listen_fd(), ROOT_DIR, DAEMON_NAME); 
+        daemon_init(cli_listen_fd(), CONFIG_DIR, DAEMON_NAME); 
         err_notty();
         dbg_notty();
     }
@@ -173,8 +175,7 @@ int main(int argc, char **argv)
 static void _usage(char *prog)
 {
     printf("Usage: %s [OPTIONS]\n", prog);
-    printf("  -c --conf <filename>   Specify config file path [%s]\n",
-           DFLT_CONFIG_FILE);
+    printf("  -c --conf <filename>   Specify config file path\n");
     printf("  -d --debug <mask>      Set debug mask [0]\n");
     printf("  -f --foreground        Don't daemonize\n");
     printf("  -V --version           Report powerman version\n");
