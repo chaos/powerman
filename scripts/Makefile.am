@@ -5,7 +5,7 @@
 ##*****************************************************************************
 
 install-data-local:
-	-$(top_srcdir)/config/mkinstalldirs -m 755 \
+	-$(top_srcdir)/config/install-sh 755 -d \
 		$(DESTDIR)$(sysconfdir)/init.d
 	$(top_srcdir)/config/install-sh -m 755 $(srcdir)/powerman.init \
 		$(DESTDIR)$(sysconfdir)/init.d/powerman

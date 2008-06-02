@@ -48,7 +48,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_wrap.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
-mkinstalldirs = $(SHELL) $(top_srcdir)/config/mkinstalldirs
+mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config/config.h
 CONFIG_CLEAN_FILES =
 SOURCES =
@@ -313,7 +313,7 @@ uninstall-am: uninstall-info-am uninstall-local
 
 
 install-data-local:
-	-$(top_srcdir)/config/mkinstalldirs -m 755 \
+	-$(top_srcdir)/config/install-sh 755 -d \
 		$(DESTDIR)$(sysconfdir)/init.d
 	$(top_srcdir)/config/install-sh -m 755 $(srcdir)/powerman.init \
 		$(DESTDIR)$(sysconfdir)/init.d/powerman
