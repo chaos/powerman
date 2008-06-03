@@ -115,7 +115,6 @@ xregex_compile(xregex_t xrp, const char *regex, bool withsub)
     if (!withsub)
         xrp->xr_cflags |= REG_NOSUB;
 
-    /* convert backslash-prefixed special characters in regex to value */
     cpy = xstrdup(regex);
     _str_subst(cpy, strlen(cpy) + 1, "\\r", "\r");
     _str_subst(cpy, strlen(cpy) + 1, "\\n", "\n");

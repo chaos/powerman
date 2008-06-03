@@ -56,6 +56,7 @@ main(int argc, char *argv[])
 	assert(s == NULL);
 
 	xregex_match_recycle(rm);
+
 	assert(xregex_exec(re, "xxxfoo1bar2yyy", rm) == TRUE);
 	s = xregex_match_sub_strdup(rm, 0);
 	assert(s != NULL);
@@ -75,6 +76,13 @@ main(int argc, char *argv[])
 	xfree(s);
 
 	xregex_match_destroy(rm);
+	xregex_destroy(re);
+
+	/* verify that \\n and \\r are converted into \r and \r */
+	re = xregex_create();
+	xregex_compile(re, "foo\\r\\n", FALSE);
+	assert(xregex_exec(re, "foo\\r\\n", NULL) == FALSE);
+	assert(xregex_exec(re, "foo\r\n", NULL) == TRUE);
 	xregex_destroy(re);
 
 	exit(0);
