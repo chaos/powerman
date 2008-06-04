@@ -4,9 +4,9 @@ TESTS_ENVIRONMENT = env
 TESTS_ENVIRONMENT += "PATH_POWERMAN=$(top_builddir)/src/powerman"
 TESTS_ENVIRONMENT += "PATH_POWERMAND=$(top_builddir)/src/powermand"
 TESTS_ENVIRONMENT += "PATH_ETC=$(top_builddir)/etc"
-TESTS = t00 t01 t02 t03 t04 t05
+TESTS = t00 t01 t02 t03 t04 t05 t06
 
-CLEANFILES = *.out *.err *.diff *.conf
+CLEANFILES = *.out *.err *.diff t04.conf t06.conf
 
 common_sources = \
 	$(top_srcdir)/src/xread.c \

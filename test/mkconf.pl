@@ -3,11 +3,10 @@
 # $Id$
 #
 $maxnodes = $ARGV[0];
-$devpath = $ARGV[1];
 $nodespervpc = 16;
 $devs = $maxnodes / $nodespervpc;
 
-print "include \"$devpath/vpc.dev\"\n";
+print "include \"vpc.dev\"\n";
 for ($i = 0; $i < $devs; $i++) {
 	$m = $i * $nodespervpc;
 	$n = $m + $nodespervpc - 1;

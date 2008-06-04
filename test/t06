@@ -1,8 +1,8 @@
 #!/bin/sh
-TEST=t04
+TEST=t06
 
-./mkconf.pl 16 >$TEST.conf || exit 1
+./mkconf.pl 1024 >$TEST.conf || exit 1
 
 $PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf -q >$TEST.out 2>$TEST.err || exit 1
-test `wc -l <$TEST.err` = 1 || exit 1
+test `wc -l <$TEST.err` = 64 || exit 1
 diff $TEST.out $TEST.exp >$TEST.diff

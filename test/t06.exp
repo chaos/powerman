@@ -1,3 +1,3 @@
 on:      
-off:     t[0-15]
+off:     t[0-1023]
 unknown: 

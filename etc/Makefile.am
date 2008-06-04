@@ -31,7 +31,6 @@ DEVFILES = \
 	phantom.dev \
 	powerman.dev \
 	swpdu.dev \
-	vpc.dev \
 	wti.dev \
 	wti-rps10.dev
 
