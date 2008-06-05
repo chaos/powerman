@@ -1,8 +1,28 @@
-/*
- * $Id$
- *
- * vpcd - virtual power controller daemon
- */
+/*****************************************************************************\
+ *  $Id$
+ *****************************************************************************
+ *  Copyright (C) 2001-2008 The Regents of the University of California.
+ *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
+ *  Written by Andrew Uselton <uselton2@llnl.gov>
+ *  UCRL-CODE-2002-008.
+ *  
+ *  This file is part of PowerMan, a remote power management program.
+ *  For details, see <http://www.llnl.gov/linux/powerman/>.
+ *  
+ *  PowerMan is free software; you can redistribute it and/or modify it under
+ *  the terms of the GNU General Public License as published by the Free
+ *  Software Foundation; either version 2 of the License, or (at your option)
+ *  any later version.
+ *  
+ *  PowerMan is distributed in the hope that it will be useful, but WITHOUT 
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
+ *  for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License along
+ *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
+ *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+\*****************************************************************************/
 
 #ifdef HAVE_CONFIG_H
 #include "config.h"
@@ -27,6 +47,16 @@ static int plug[NUM_PLUGS];
 static int logged_in = 0;
 
 static char *prog;
+
+#define OPTIONS ""
+#if HAVE_GETOPT_LONG
+#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
+static const struct option longopts[] = {
+    {0, 0, 0, 0},
+};
+#else
+#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
+#endif
 
 static void _noop_handler(int signum)
 {
@@ -148,6 +178,12 @@ static void _prompt_loop(void)
     }
 }
 
+static void usage(void)
+{
+    fprintf(stderr, "Usage: %s\n", prog);
+    exit(1);
+}
+
 /*
  * Start 'num_threads' power controllers on consecutive ports starting at
  * BASE_PORT.  Pause waiting for a signal.  Does not daemonize and logs to
@@ -155,9 +191,18 @@ static void _prompt_loop(void)
  */
 int main(int argc, char *argv[])
 {
-    int i;
+    int i, c;
 
     prog = basename(argv[0]);
+
+    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
+        switch (c) {
+            default:
+                usage();
+        }
+    }
+    if (optind < argc)
+        usage();
 
     if (signal(SIGPIPE, _noop_handler) == SIG_ERR) {
         perror("signal");
