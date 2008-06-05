@@ -1,6 +1,7 @@
 #!/bin/sh
 # 64 vpcd instances, 1024 nodes, query status
-TEST=t06
+# This time no _all commands (so query will be 1024 distinct commands)
+TEST=t07
 $PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf -q >$TEST.out 2>$TEST.err
 test $? = 0 || exit 1
 diff $TEST.out $TEST.exp >$TEST.diff

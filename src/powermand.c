@@ -151,12 +151,10 @@ int main(int argc, char **argv)
     conf_init(config_filename);
     xfree(config_filename);
 
-    if (!use_stdio) {
-        xsignal(SIGHUP, _noop_handler);
-        xsignal(SIGTERM, _exit_handler);
-        xsignal(SIGINT, _exit_handler);
-        xsignal(SIGPIPE, SIG_IGN);
-    }
+    xsignal(SIGHUP, _noop_handler);
+    xsignal(SIGTERM, _exit_handler);
+    xsignal(SIGINT, _exit_handler);
+    xsignal(SIGPIPE, SIG_IGN);
 
     cli_start(use_stdio);
 

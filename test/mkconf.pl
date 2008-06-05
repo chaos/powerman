@@ -1,7 +1,9 @@
 #!/usr/bin/perl
 #
-# $Id$
+# Usage: mkconf.pl plugcount 
 #
+# Builds a powerman.conf file for a vpc config for plugcount plugs.
+
 $maxnodes = $ARGV[0];
 $nodespervpc = 16;
 $devs = $maxnodes / $nodespervpc;

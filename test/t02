@@ -1,4 +1,4 @@
 #!/bin/sh
-
-./tpl -p1,2,3,4,5,6 foo[11-15] [1-5] >t02.out 2>&1 || exit 1
-diff t02.out t02.exp >t02.diff
+TEST=t02
+./tpl -p1,2,3,4,5,6 foo[11-15] [1-5] >$TEST.out 2>&1 || exit 1
+diff $TEST.out $TEST.exp >$TEST.diff

@@ -1,0 +1,22 @@
+send(test0): 'stat\r\n'
+recv(test0): '\r\n1 vpc> 2 vpc> stat\r\n\r\nplug 0: OFF'
+recv(test0): '\r\nplug 1: OFF'
+recv(test0): '\r\nplug 2: OFF'
+recv(test0): '\r\nplug 3: OFF'
+recv(test0): '\r\nplug 4: OFF'
+recv(test0): '\r\nplug 5: OFF'
+recv(test0): '\r\nplug 6: OFF'
+recv(test0): '\r\nplug 7: OFF'
+recv(test0): '\r\nplug 8: OFF'
+recv(test0): '\r\nplug 9: OFF'
+recv(test0): '\r\nplug 10: OFF'
+recv(test0): '\r\nplug 11: OFF'
+recv(test0): '\r\nplug 12: OFF'
+recv(test0): '\r\nplug 13: OFF'
+recv(test0): '\r\nplug 14: OFF'
+recv(test0): '\r\nplug 15: OFF'
+recv(test0): '\r\n2 OK'
+recv(test0): '\r\n3 vpc> '
+on:      
+off:     t[0-15]
+unknown: 

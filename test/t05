@@ -1,4 +1,4 @@
 #!/bin/sh
-
-./tregex >t05.out 2>&1 || exit 1
-diff t05.out t05.exp >t05.diff
+TEST=t05
+./tregex >$TEST.out 2>&1 || exit 1
+diff $TEST.out $TEST.exp >$TEST.diff
