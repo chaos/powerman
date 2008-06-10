@@ -1,0 +1,7 @@
+#!/bin/sh
+# 1 vpcd instance, 16 nodes, query status
+# Add longer 'spew' to status 
+TEST=t10
+$PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf -T -q >$TEST.out 2>$TEST.err
+test $? = 0 || exit 1
+diff $TEST.out $TEST.exp >$TEST.diff

@@ -1,6 +1,4 @@
 #!/bin/sh
-# single vpc instance, query state of 16 nodes
 TEST=t04
-$PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf -q >$TEST.out 2>$TEST.err
-test $? = 0 || exit 1
-diff $TEST.out $TEST.exp >$TEST.diff
+./targv >$TEST.out 2>&1 || exit 1
+diff $TEST.out $TEST.exp >$TEST.diff 

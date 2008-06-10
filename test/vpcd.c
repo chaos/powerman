@@ -65,13 +65,14 @@ static void _noop_handler(int signum)
 
 /*
  * Lptest-like spewage to test buffering/select stuff.
- * This seems to wedge telnet if more than a few hundred lines are sent.
  */
 #define SPEW \
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]"
 static void _spew(int linenum)
 {
     char buf[80];
+
+    linenum = linenum % strlen(SPEW);
 
     memcpy(buf, SPEW + linenum, strlen(SPEW) - linenum);
     memcpy(buf + strlen(SPEW) - linenum, SPEW, linenum);
@@ -113,12 +114,15 @@ static void _prompt_loop(void)
             printf("%d Please login\n", seq);
             continue;
         }
-        if (strcmp(buf, "stat") == 0) {         /* stat */
-            for (i = 0; i < NUM_PLUGS; i++)
-                printf("plug %d: %s\n", i, plug[i] ? "ON" : "OFF");
+        if (sscanf(buf, "stat %d", &n1) == 1) {  /* stat <plugnum> */
+            if (n1 < 0 || n1 >= NUM_PLUGS) {
+                printf("%d BADVAL: %d\n", seq, n1);
+                continue;
+            }
+            printf("plug %d: %s\n", n1, plug[n1] ? "ON" : "OFF");
             goto ok;
         }
-        if (strcmp(buf, "stat_soft") == 0) {    /* stat_soft */
+        if (strcmp(buf, "stat *") == 0) {         /* stat * */
             for (i = 0; i < NUM_PLUGS; i++)
                 printf("plug %d: %s\n", i, plug[i] ? "ON" : "OFF");
             goto ok;
@@ -148,15 +152,7 @@ static void _prompt_loop(void)
             plug[n1] = 0;
             goto ok;
         }
-        if (sscanf(buf, "toggle %d", &n1) == 1) {  /* toggle <plugnum> */
-            if (n1 < 0 || n1 >= NUM_PLUGS) {
-                printf("%d BADVAL: %d\n", seq, n1);
-                continue;
-            }
-            plug[n1] = plug[n1] == 0 ? 1 : 0;
-            goto ok;
-        }
-        if (strcmp(buf, "on *") == 0) { /* on * */
+        if (strcmp(buf, "on *") == 0) {         /* on * */
             for (i = 0; i < NUM_PLUGS; i++)
                 plug[i] = 1;
             goto ok;
@@ -164,11 +160,6 @@ static void _prompt_loop(void)
         if (strcmp(buf, "off *") == 0) {        /* off * */
             for (i = 0; i < NUM_PLUGS; i++)
                 plug[i] = 0;
-            goto ok;
-        }
-        if (strcmp(buf, "toggle *") == 0) {
-            for (i = 0; i < NUM_PLUGS; i++)
-                plug[i] = plug[i] == 0 ? 1 : 0;
             goto ok;
         }
         printf("%d UNKNOWN: %s\n", seq, buf);

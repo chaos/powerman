@@ -1,5 +1,5 @@
-send(test0): 'stat\r\n'
-recv(test0): '\r\n1 vpc> 2 vpc> stat\r\n\r\nplug 0: OFF'
+send(test0): 'stat *\r\n'
+recv(test0): '\r\n1 vpc> 2 vpc> stat *\r\n\r\nplug 0: OFF'
 recv(test0): '\r\nplug 1: OFF'
 recv(test0): '\r\nplug 2: OFF'
 recv(test0): '\r\nplug 3: OFF'

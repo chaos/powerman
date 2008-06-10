@@ -77,6 +77,27 @@ static int _sizeargv(char *str, char *ignore)
     return count;
 }
 
+int argv_length(char **argv)
+{
+    int i = 0;
+
+    while (argv[i] != NULL)
+        i++;
+
+    return i;
+}
+
+char **argv_append(char **argv, char *s)
+{
+    int argc = argv_length(argv) + 1;
+
+    argv = (char **)xrealloc((char *)argv, sizeof(char *) * (argc + 1));
+    argv[argc - 1] = xstrdup(s);
+    argv[argc] = NULL;
+
+    return argv; 
+}
+
 /* Create a null-terminated argv array given a command line.
  * Characters in the 'ignore' set are treated like white space. 
  */

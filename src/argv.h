@@ -37,4 +37,13 @@ char **argv_create(char *cmdline, char *ignore);
  */
 void argv_destroy(char **argv);
 
+/* Return the number of elements in the argv array (less the NULL terminator).
+ */
+int argv_length(char **argv);
+
+/* Expand an argv array by one slot and add an entry.
+ */
+char **argv_append(char **argv, char *s);
+
+
 #endif /* PM_ARGV_H */

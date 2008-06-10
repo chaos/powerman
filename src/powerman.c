@@ -47,6 +47,7 @@
 #include <stdarg.h>
 
 #include "powerman.h"
+#include "xmalloc.h"
 #include "xtypes.h"
 #include "xread.h"
 #include "error.h"
@@ -56,6 +57,16 @@
 #include "argv.h"
 #include "xpty.h"
 #include "hprintf.h"
+#include "argv.h"
+#include "list.h"
+
+#define CMD_MAGIC 0x5565aafd
+typedef struct {
+    int magic;
+    char *fmt;
+    char **argv;
+    char *sendstr;
+} cmd_t;
 
 #if WITH_GENDERS
 static void _push_genders_hosts(hostlist_t targets, char *s);
@@ -71,33 +82,39 @@ static int _process_line(void);
 static void _expect(char *str);
 static int _process_response(void);
 static void _process_version(void);
+static void _cmd_create(List cl, char *fmt, char *arg);
+static void _cmd_destroy(cmd_t *cp);
+static void _cmd_append(cmd_t *cp, char *arg);
+static void _cmd_prepare(cmd_t *cp, bool genders);
+static int _cmd_execute(cmd_t *cp, int fd);
 
 static int server_fd = -1;
+static char *prog;
 
-#define OPTIONS "01crlqfubntLd:VDvxTgS:C:"
+#define OPTIONS "0:1:c:r:lq::f:u:b:n:t::D::vxTgd:S:C:VL"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
-    {"on",          no_argument,        0, '1'},
-    {"off",         no_argument,        0, '0'},
-    {"cycle",       no_argument,        0, 'c'},
-    {"reset",       no_argument,        0, 'r'},
+    {"on",          required_argument,  0, '1'},
+    {"off",         required_argument,  0, '0'},
+    {"cycle",       required_argument,  0, 'c'},
+    {"reset",       required_argument,  0, 'r'},
     {"list",        no_argument,        0, 'l'},
-    {"query",       no_argument,        0, 'q'},
-    {"flash",       no_argument,        0, 'f'},
-    {"unflash",     no_argument,        0, 'u'},
-    {"beacon",      no_argument,        0, 'b'},
-    {"node",        no_argument,        0, 'n'},
-    {"temp",        no_argument,        0, 't'},
-    {"license",     no_argument,        0, 'L'},
-    {"destination", required_argument,  0, 'd'},
-    {"version",     no_argument,        0, 'V'},
-    {"device",      no_argument,        0, 'D'},
+    {"query",       optional_argument,  0, 'q'},
+    {"flash",       required_argument,  0, 'f'},
+    {"unflash",     required_argument,  0, 'u'},
+    {"beacon",      required_argument,  0, 'b'},
+    {"node",        required_argument,  0, 'n'},
+    {"temp",        optional_argument,  0, 't'},
+    {"device",      optional_argument,  0, 'D'},
     {"telemetry",   no_argument,        0, 'T'},
     {"exprange",    no_argument,        0, 'x'},
     {"genders",     no_argument,        0, 'g'},
+    {"server-host", required_argument,  0, 'd'},
     {"server-path", required_argument,  0, 'S'},
     {"config-path", required_argument,  0, 'C'},
+    {"version",     no_argument,        0, 'V'},
+    {"license",     no_argument,        0, 'L'},
     {0, 0, 0, 0},
 };
 #else
@@ -107,15 +124,7 @@ static const struct option longopts[] = {
 int main(int argc, char **argv)
 {
     int c;
-    hostlist_t targets = NULL;
-    bool have_targets = FALSE;
-    char targstr[CP_LINEMAX];
     int res = 0;
-    char *prog;
-    enum { CMD_NONE, CMD_ON, CMD_OFF, CMD_LIST, CMD_CYCLE, CMD_RESET,
-        CMD_QUERY, CMD_FLASH, CMD_UNFLASH, CMD_BEACON, CMD_TEMP, CMD_NODE,
-        CMD_DEVICE
-    } cmd = CMD_NONE;
     char *port = DFLT_PORT;
     char *host = DFLT_HOSTNAME;
     bool telemetry = FALSE;
@@ -123,58 +132,56 @@ int main(int argc, char **argv)
     bool genders = FALSE;
     char *server_path = NULL;
     char *config_path = "/etc/powerman/powerman.conf"; /* FIXME */
+    List commands;  /* list-o-cmd_t's */
+    ListIterator itr;
+    cmd_t *cp; 
 
     prog = basename(argv[0]);
     err_init(prog);
+    commands = list_create((ListDelF)_cmd_destroy);
 
-    if (strcmp(prog, "on") == 0)
-        cmd = CMD_ON;
-    else if (strcmp(prog, "off") == 0)
-        cmd = CMD_OFF;
-
-    /*
-     * Parse options.
+    /* Parse options.
      */
     opterr = 0;
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
         case 'l':              /* --list */
-            cmd = CMD_LIST;
+            _cmd_create(commands, CP_NODES, NULL);
             break;
         case '1':              /* --on */
-            cmd = CMD_ON;
+            _cmd_create(commands, CP_ON, optarg);
             break;
         case '0':              /* --off */
-            cmd = CMD_OFF;
+            _cmd_create(commands, CP_OFF, optarg);
             break;
         case 'c':              /* --cycle */
-            cmd = CMD_CYCLE;
+            _cmd_create(commands, CP_CYCLE, optarg);
             break;
         case 'r':              /* --reset */
-            cmd = CMD_RESET;
+            _cmd_create(commands, CP_RESET, optarg);
             break;
         case 'q':              /* --query */
-            cmd = CMD_QUERY;
+            _cmd_create(commands, optarg ? CP_STATUS : CP_STATUS_ALL, optarg);
             break;
         case 'f':              /* --flash */
-            cmd = CMD_FLASH;
+            _cmd_create(commands, CP_BEACON_ON, optarg);
             break;
         case 'u':              /* --unflash */
-            cmd = CMD_UNFLASH;
+            _cmd_create(commands, CP_BEACON_OFF, optarg);
             break;
         case 'b':              /* --beacon */
-            cmd = CMD_BEACON;
+            _cmd_create(commands, optarg ? CP_BEACON : CP_BEACON_ALL, optarg);
             break;
         case 'n':              /* --node */
-            cmd = CMD_NODE;
+            _cmd_create(commands, optarg ? CP_SOFT : CP_SOFT_ALL, optarg);
             break;
         case 't':              /* --temp */
-            cmd = CMD_TEMP;
+            _cmd_create(commands, optarg ? CP_TEMP : CP_TEMP_ALL, optarg);
             break;
         case 'D':              /* --device */
-            cmd = CMD_DEVICE;
+            _cmd_create(commands, optarg ? CP_DEVICE : CP_DEVICE_ALL, optarg);
             break;
-        case 'd':              /* --destination host[:port] */
+        case 'd':              /* --server-host host[:port] */
             if ((port = strchr(optarg, ':')))
                 *port++ = '\0';  
             host = optarg;
@@ -194,7 +201,11 @@ int main(int argc, char **argv)
             exprange = TRUE;
             break;
         case 'g':              /* --genders */
+#if WITH_GENDERS
             genders = TRUE;
+#else
+            err_exit(FALSE, "not configured with genders support");
+#endif
             break;
         case 'S':              /* --server-path */
             server_path = optarg;
@@ -208,56 +219,32 @@ int main(int argc, char **argv)
             break;
         }
     }
-
-    if (cmd == CMD_NONE)
+    if (list_is_empty(commands))
         _usage();
 
-    /* remaining arguments used to build a single hostlist argument */
-    while (optind < argc) {
-        if (!have_targets) {
-            if ((targets = hostlist_create(NULL)) == NULL)
-                err_exit(FALSE, "hostlist error");
-            have_targets = TRUE;
+    /* For backwards compat with powerman 2.0 and earlier,
+     * if there is only one command, any additional arguments are more targets.
+     */
+    if (optind < argc) {
+        if (list_count(commands) > 1)
+            err_exit(FALSE, "error: multiple commands + dangling target args");
+        cp = list_peek(commands); 
+        while (optind < argc) {
+            _cmd_append(cp, argv[optind]);
+            optind++;
         }
-        if (genders) {
-#if WITH_GENDERS
-            _push_genders_hosts(targets, argv[optind]);
-#else
-            err_exit(FALSE, "not configured with genders support");
-#endif
-        } else {
-            if (hostlist_push(targets, argv[optind]) == 0)
-                err_exit(FALSE, "hostlist error");
-        }
-        optind++;
-    }
-    if (have_targets) {
-        hostlist_sort(targets);
-        if (hostlist_ranged_string(targets, sizeof(targstr), targstr) == -1)
-            err_exit(FALSE, "hostlist error");
     }
 
-    /* verify a few option requirements */
-    switch (cmd) {
-    case CMD_LIST:
-        if (have_targets)
-            err_exit(FALSE, "option does not accept targets");
-        break;
-    case CMD_ON:
-    case CMD_OFF:
-    case CMD_RESET:
-    case CMD_CYCLE:
-    case CMD_FLASH:
-    case CMD_UNFLASH:
-        if (!have_targets)
-            err_exit(FALSE, "option requires targets");
-        break;
-    default:
-        break;
-    }
+    /* Prepare commands for processing.
+     */
+    itr = list_iterator_create(commands);
+    while ((cp = list_next(itr)))
+        _cmd_prepare(cp, genders);
+    list_iterator_destroy(itr);
 
+    /* Establish connection to server and negotiate server side options.
+     */
     _connect_to_server(host, port, server_path, config_path);
-
     if (telemetry) {
         hfdprintf(server_fd, CP_TELEMETRY CP_EOL);
         res = _process_response();
@@ -265,7 +252,6 @@ int main(int argc, char **argv)
         if (res != 0)
             goto done;
     }
-
     if (exprange) {
         hfdprintf(server_fd, CP_EXPRANGE CP_EOL);
         res = _process_response();
@@ -277,86 +263,13 @@ int main(int argc, char **argv)
     /*
      * Execute the commands.
      */
-    switch (cmd) {
-    case CMD_LIST:
-        hfdprintf(server_fd, CP_NODES CP_EOL);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        break;
-    case CMD_QUERY:
-        if (have_targets)
-            hfdprintf(server_fd, CP_STATUS CP_EOL, targstr);
-        else
-            hfdprintf(server_fd, CP_STATUS_ALL CP_EOL);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        break;
-    case CMD_ON:
-        hfdprintf(server_fd, CP_ON CP_EOL, targstr);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        break;
-    case CMD_OFF:
-        hfdprintf(server_fd, CP_OFF CP_EOL, targstr);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        break;
-    case CMD_RESET:
-        hfdprintf(server_fd, CP_RESET CP_EOL, targstr);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        break;
-    case CMD_CYCLE:
-        hfdprintf(server_fd, CP_CYCLE CP_EOL, targstr);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        break;
-    case CMD_FLASH:
-        hfdprintf(server_fd, CP_BEACON_ON CP_EOL, targstr);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        break;
-    case CMD_UNFLASH:
-        hfdprintf(server_fd, CP_BEACON_OFF CP_EOL, targstr);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        break;
-    case CMD_BEACON:
-        if (have_targets)
-            hfdprintf(server_fd, CP_BEACON CP_EOL, targstr);
-        else
-            hfdprintf(server_fd, CP_BEACON_ALL CP_EOL);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        break;
-    case CMD_TEMP:
-        if (have_targets)
-            hfdprintf(server_fd, CP_TEMP CP_EOL, targstr);
-        else
-            hfdprintf(server_fd, CP_TEMP_ALL CP_EOL);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        break;
-    case CMD_NODE:
-        if (have_targets)
-            hfdprintf(server_fd, CP_SOFT CP_EOL, targstr);
-        else
-            hfdprintf(server_fd, CP_SOFT_ALL CP_EOL);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        break;
-    case CMD_DEVICE:
-        if (have_targets)
-            hfdprintf(server_fd, CP_DEVICE CP_EOL, targstr);
-        else
-            hfdprintf(server_fd, CP_DEVICE_ALL CP_EOL);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        break;
-    case CMD_NONE:
-    default:
-        _usage();
+    itr = list_iterator_create(commands);
+    while ((cp = list_next(itr))) {
+        res = _cmd_execute(cp, server_fd);
+        if (res != 0)
+            break;
     }
+    list_iterator_destroy(itr);
 
 done:
     _disconnect_from_server();
@@ -364,33 +277,24 @@ done:
     exit(res);
 }
 
-/*
- * Display powerman usage and exit.
+/* Display powerman usage and exit.
  */
 static void _usage(void)
 {
-    printf("Usage: %s [OPTIONS] [TARGETS]\n", "powerman");
-    printf(
- "-1 --on        Power on targets      -0 --off       Power off targets\n"
- "-q --query     Query plug status     -l --list      List available targets\n"
- "-c --cycle     Power cycle targets   -r --reset     Reset targets\n"
- "-f --flash     Turn beacon on        -u --unflash   Turn beacon off\n"
- "-b --beacon    Query beacon status   -n --node      Query node status\n"
- "-t --temp      Query temperature     -V --version   Report powerman version\n"
- "-D --device    Report device status  -T --telemetry Show device telemetry\n"
- "-x --exprange  Expand host ranges    -g --genders   TARGETS is genders expr\n"
-  );
+    printf("Usage: %s [OPTIONS]\n", prog);
+    printf("-1,--on targets        Power on targets\n");
+    printf("-0,--off targets       Power off targets\n");
+    printf("-c,--cycle targets     Power cycle targets\n");
+    printf("-q,--query [targets]   Query power state of all/specified targets\n");
     exit(1);
 }
 
-
-/*
- * Display powerman license and exit.
+/* Display powerman license and exit.
  */
 static void _license(void)
 {
     printf(
- "Copyright (C) 2001-2002 The Regents of the University of California.\n"
+ "Copyright (C) 2001-2008 The Regents of the University of California.\n"
  "Produced at Lawrence Livermore National Laboratory.\n"
  "Written by Andrew Uselton <uselton2@llnl.gov>.\n"
  "http://www.llnl.gov/linux/powerman/\n"
@@ -398,6 +302,14 @@ static void _license(void)
  "PowerMan is free software; you can redistribute it and/or modify it\n"
  "under the terms of the GNU General Public License as published by\n"
  "the Free Software Foundation.\n");
+    exit(1);
+}
+
+/* Display powerman version and exit.
+ */
+static void _version(void)
+{
+    printf("%s\n", VERSION);
     exit(1);
 }
 
@@ -428,19 +340,82 @@ static void _push_genders_hosts(hostlist_t targets, char *s)
 }
 #endif
 
-/*
- * Display powerman version and exit.
- */
-static void _version(void)
+static void _cmd_create(List cl, char *fmt, char *arg)
 {
-    printf("%s\n", VERSION);
-    exit(1);
+    cmd_t *cp = (cmd_t *)xmalloc(sizeof(cmd_t));
+
+    cp->magic = CMD_MAGIC;
+    cp->fmt = fmt;
+    cp->argv = NULL;
+    cp->sendstr = NULL;
+    if (arg)
+        cp->argv = argv_create(arg, "");
+    list_append(cl, cp);
 }
 
-/*
- * Set up connection to server and get to the command prompt.
- */
+static void _cmd_destroy(cmd_t *cp)
+{
+    assert(cp->magic == CMD_MAGIC);
 
+    cp->magic = 0;
+    if (cp->sendstr)
+        xfree(cp->sendstr);
+    if (cp->argv)
+        argv_destroy(cp->argv);
+    xfree(cp);
+}
+
+static void _cmd_append(cmd_t *cp, char *arg)
+{
+    assert(cp->magic == CMD_MAGIC);
+    assert(cp->argv != NULL);
+    argv_append(cp->argv, arg);
+}
+
+static void _cmd_prepare(cmd_t *cp, bool genders)
+{
+    assert(cp->magic == CMD_MAGIC);
+    assert(cp->sendstr == NULL);
+
+    if (cp->argv) {
+        hostlist_t hl = hostlist_create(NULL);
+        char tmpstr[CP_LINEMAX];
+        int i;
+
+        for (i = 0; i < argv_length(cp->argv); i++) {
+            if (genders) {
+#if WITH_GENDERS
+                _push_genders_hosts(hl, cp->argv[i]);
+#endif
+            } else {
+                if (hostlist_push(hl, cp->argv[i]) == 0)
+                    err_exit(FALSE, "hostlist error");
+            }
+        }
+        if (hostlist_ranged_string(hl, sizeof(tmpstr), tmpstr) == -1)
+            err_exit(FALSE, "hostlist error");
+        hostlist_destroy(hl);
+        cp->sendstr = hsprintf(cp->fmt, tmpstr);
+    } else
+        cp->sendstr = xstrdup(cp->fmt);
+}
+
+static int _cmd_execute(cmd_t *cp, int fd)
+{
+    int res;
+
+    assert(cp->magic == CMD_MAGIC);
+    assert(cp->sendstr != NULL);
+
+    hfdprintf(fd, "%s%s", cp->sendstr, CP_EOL);
+    res = _process_response();
+    _expect(CP_PROMPT);
+
+    return res;
+}
+
+/* Set up connection to server and get to the command prompt.
+ */
 static void _connect_to_server(char *host, char *port, 
                                char *server_path, char *config_path)
 {

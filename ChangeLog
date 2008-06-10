@@ -1,3 +1,17 @@
+2008-06-09 Jim Garlick <garlick@llnl.gov>
+
+	* src/powerman.c : Cleanup:
+	- rename --destination option to --server-host
+	- deprecate "off" and "on" program name support
+	- abbreviate usage() message to only the most common options
+	- allow multiple commands to be run
+
+	* src/argv.c : Added argv_length(), argv_append().
+
+	* test/targv.c : Sanity check for argv.c.
+
+	* test/* : Tests that exercise the work above.
+
 2008-06-04 Jim Garlick <garlick@llnl.gov>
 
 	* src/powermand.c : Fix signal handling in test (coprocess) mode.
