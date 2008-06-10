@@ -41,8 +41,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
+#include <stdarg.h>
 
-#include "powerman.h"
 #include "xtypes.h"
 #include "list.h"
 #include "hostlist.h"
@@ -56,6 +56,8 @@
 #include "client.h"
 #include "error.h"
 #include "debug.h"
+#include "hprintf.h"
+#include "powerman.h"
 
 /* prototypes */
 static void _usage(char *prog);
@@ -98,11 +100,8 @@ int main(int argc, char **argv)
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
         case 'c': /* --conf */
-            if (config_filename != NULL) {
-                _usage(argv[0]);
-                /*NOTREACHED*/
-            }
-            config_filename = xstrdup(optarg);
+            if (!config_filename)
+                config_filename = xstrdup(optarg);
             break;
         case 'f': /* --foreground */
             daemonize = FALSE;
@@ -144,10 +143,9 @@ int main(int argc, char **argv)
     if (!force_notroot && geteuid() != 0)
         err_exit(FALSE, "must be root");
 
-    if (!config_filename) {
-        config_filename = xmalloc(strlen(CONFIG_DIR) + strlen(CONFIG_FILE) + 2);
-        sprintf(config_filename, "%s/%s", CONFIG_DIR, CONFIG_FILE);
-    }
+    if (!config_filename)
+        config_filename = hsprintf("%s/%s/%s", X_SYSCONFDIR, 
+                                   "powerman", "powerman.conf");
     conf_init(config_filename);
     xfree(config_filename);
 
@@ -159,7 +157,10 @@ int main(int argc, char **argv)
     cli_start(use_stdio);
 
     if (daemonize) {
-        daemon_init(cli_listen_fd(), CONFIG_DIR, DAEMON_NAME); 
+        char *run_dir = hsprintf("%s/run/powerman", X_LOCALSTATEDIR);
+
+        daemon_init(cli_listen_fd(), run_dir, DAEMON_NAME); 
+        xfree(run_dir);
         err_notty();
         dbg_notty();
     }

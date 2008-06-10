@@ -77,6 +77,9 @@ void daemon_init(int skipfd, char *rootdir, char *name)
 
     /* change working directory */
     if (chdir(rootdir) < 0)
+        if (mkdir(rootdir, 0755) < 0)
+            err_exit(TRUE, "mkdir %s", rootdir);
+    if (chdir(rootdir) < 0) 
         err_exit(TRUE, "chdir %s", rootdir);
 
     /* clear our file mode creation mask */

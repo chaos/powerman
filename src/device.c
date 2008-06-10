@@ -85,7 +85,6 @@
 #include "client_proto.h"
 #include "hprintf.h"
 #include "xtime.h"
-#include "powerman.h"
 
 /* ExecCtx's are the state for the execution of a block of statements.
  * They are stacked on the Action (new ExecCtx pushed when executing an

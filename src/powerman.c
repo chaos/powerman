@@ -136,7 +136,7 @@ int main(int argc, char **argv)
     bool genders = FALSE;
     bool dumpcmds = FALSE;
     char *server_path = NULL;
-    char *config_path = "/etc/powerman/powerman.conf"; /* FIXME */
+    char *config_path = NULL;
     List commands;  /* list-o-cmd_t's */
     ListIterator itr;
     cmd_t *cp; 

@@ -310,7 +310,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PROJECT VERSION RELEASE build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE GCCWARN LN_S LEX LEXLIB LEX_OUTPUT_ROOT YACC WITH_GNU_LD_TRUE WITH_GNU_LD_FALSE CPP EGREP WITH_HTTPPOWER_TRUE WITH_HTTPPOWER_FALSE LIBGENDERS LIBFORKPTY LIBWRAP LIBREADLINE LIBCURL LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS PROJECT VERSION RELEASE build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os X_PREFIX X_EXEC_PREFIX X_BINDIR X_SBINDIR X_LIBEXECDIR X_DATADIR X_SYSCONFDIR X_SHAREDSTATEDIR X_LOCALSTATEDIR X_LIBDIR X_INCLUDEDIR X_OLDINCLUDEDIR X_INFODIR X_MANDIR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE GCCWARN LN_S LEX LEXLIB LEX_OUTPUT_ROOT YACC WITH_GNU_LD_TRUE WITH_GNU_LD_FALSE CPP EGREP WITH_HTTPPOWER_TRUE WITH_HTTPPOWER_FALSE LIBGENDERS LIBFORKPTY LIBWRAP LIBREADLINE LIBCURL LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1442,6 +1442,133 @@ test -n "$target_alias" &&
   test "$program_prefix$program_suffix$program_transform_name" = \
     NONENONEs,x,x, &&
   program_prefix=${target_alias}-
+
+  echo "$as_me:$LINENO: checking installation directory variables" >&5
+echo $ECHO_N "checking installation directory variables... $ECHO_C" >&6
+
+  _x_ac_expand_install_dirs_prefix="$prefix"
+  test "$prefix" = NONE && prefix="$ac_default_prefix"
+  _x_ac_expand_install_dirs_exec_prefix="$exec_prefix"
+  test "$exec_prefix" = NONE && exec_prefix="$prefix"
+
+  eval X_PREFIX="$prefix"
+
+cat >>confdefs.h <<_ACEOF
+#define X_PREFIX "$X_PREFIX"
+_ACEOF
+
+
+
+  eval X_EXEC_PREFIX="$exec_prefix"
+
+cat >>confdefs.h <<_ACEOF
+#define X_EXEC_PREFIX "$X_EXEC_PREFIX"
+_ACEOF
+
+
+
+  eval X_BINDIR="$bindir"
+
+cat >>confdefs.h <<_ACEOF
+#define X_BINDIR "$X_BINDIR"
+_ACEOF
+
+
+
+  eval X_SBINDIR="$sbindir"
+
+cat >>confdefs.h <<_ACEOF
+#define X_SBINDIR "$X_SBINDIR"
+_ACEOF
+
+
+
+  eval X_LIBEXECDIR="$libexecdir"
+
+cat >>confdefs.h <<_ACEOF
+#define X_LIBEXECDIR "$X_LIBEXECDIR"
+_ACEOF
+
+
+
+  eval X_DATADIR="$datadir"
+
+cat >>confdefs.h <<_ACEOF
+#define X_DATADIR "$X_DATADIR"
+_ACEOF
+
+
+
+  eval X_SYSCONFDIR="$sysconfdir"
+
+cat >>confdefs.h <<_ACEOF
+#define X_SYSCONFDIR "$X_SYSCONFDIR"
+_ACEOF
+
+
+
+  eval X_SHAREDSTATEDIR="$sharedstatedir"
+
+cat >>confdefs.h <<_ACEOF
+#define X_SHAREDSTATEDIR "$X_SHAREDSTATEDIR"
+_ACEOF
+
+
+
+  eval X_LOCALSTATEDIR="$localstatedir"
+
+cat >>confdefs.h <<_ACEOF
+#define X_LOCALSTATEDIR "$X_LOCALSTATEDIR"
+_ACEOF
+
+
+
+  eval X_LIBDIR="$libdir"
+
+cat >>confdefs.h <<_ACEOF
+#define X_LIBDIR "$X_LIBDIR"
+_ACEOF
+
+
+
+  eval X_INCLUDEDIR="$includedir"
+
+cat >>confdefs.h <<_ACEOF
+#define X_INCLUDEDIR "$X_INCLUDEDIR"
+_ACEOF
+
+
+
+  eval X_OLDINCLUDEDIR="$oldincludedir"
+
+cat >>confdefs.h <<_ACEOF
+#define X_OLDINCLUDEDIR "$X_OLDINCLUDEDIR"
+_ACEOF
+
+
+
+  eval X_INFODIR="$infodir"
+
+cat >>confdefs.h <<_ACEOF
+#define X_INFODIR "$X_INFODIR"
+_ACEOF
+
+
+
+  eval X_MANDIR="$mandir"
+
+cat >>confdefs.h <<_ACEOF
+#define X_MANDIR "$X_MANDIR"
+_ACEOF
+
+
+
+  prefix="$_x_ac_expand_install_dirs_prefix"
+  exec_prefix="$_x_ac_expand_install_dirs_exec_prefix"
+
+  echo "$as_me:$LINENO: result: yes" >&5
+echo "${ECHO_T}yes" >&6
+
 
 ##
 # Automake support.
@@ -6619,6 +6746,20 @@ s,@target@,$target,;t t
 s,@target_cpu@,$target_cpu,;t t
 s,@target_vendor@,$target_vendor,;t t
 s,@target_os@,$target_os,;t t
+s,@X_PREFIX@,$X_PREFIX,;t t
+s,@X_EXEC_PREFIX@,$X_EXEC_PREFIX,;t t
+s,@X_BINDIR@,$X_BINDIR,;t t
+s,@X_SBINDIR@,$X_SBINDIR,;t t
+s,@X_LIBEXECDIR@,$X_LIBEXECDIR,;t t
+s,@X_DATADIR@,$X_DATADIR,;t t
+s,@X_SYSCONFDIR@,$X_SYSCONFDIR,;t t
+s,@X_SHAREDSTATEDIR@,$X_SHAREDSTATEDIR,;t t
+s,@X_LOCALSTATEDIR@,$X_LOCALSTATEDIR,;t t
+s,@X_LIBDIR@,$X_LIBDIR,;t t
+s,@X_INCLUDEDIR@,$X_INCLUDEDIR,;t t
+s,@X_OLDINCLUDEDIR@,$X_OLDINCLUDEDIR,;t t
+s,@X_INFODIR@,$X_INFODIR,;t t
+s,@X_MANDIR@,$X_MANDIR,;t t
 s,@INSTALL_PROGRAM@,$INSTALL_PROGRAM,;t t
 s,@INSTALL_SCRIPT@,$INSTALL_SCRIPT,;t t
 s,@INSTALL_DATA@,$INSTALL_DATA,;t t

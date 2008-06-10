@@ -21,6 +21,18 @@
 
 	* etc/baytech-rpc28-nc.dev : Replace use of end of line operator 
 	in expects with full text of prompt.
+
+	* config/x_ac_expand_install_dirs.m4 : New, borrow from munge.
+
+	* src/Makefile.am : Drop command line CONFIG_DIR definition.
+
+	* src/powerman.c : Drop hard coded daemon and config file location.
+
+	* src/powermand.c : Construct default config_filename using
+	X_SYSCONFDIR setting, and use directory based on X_LOCALSTATEDIR
+	for run directory passed to daemon_init().
+
+	* src/daemon.c : Create rootdir if it doesn't exist.
 	
 2008-06-09 Jim Garlick <garlick@llnl.gov>
 

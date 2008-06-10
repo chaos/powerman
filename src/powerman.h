@@ -28,13 +28,6 @@
 #define PM_POWERMAN_H
 
 #define DAEMON_NAME   		"powermand"
-#define PID_FILE_NAME 		"/var/run/powerman/powerman.pid"
-#define PID_DIR       		"/var/run/powerman"
-#ifndef CONFIG_DIR
-#define CONFIG_DIR          "/etc/powerman"
-#endif
-#define CONFIG_FILE 	    "powerman.conf"
-
 #define DFLT_PORT           "10101"
 #define DFLT_HOSTNAME       "localhost"
 

@@ -1,5 +1,6 @@
 #!/bin/bash
 
+echo Starting powerman with four 16-plug vpcd daemons
 if [ "$PATH_POWERMAND" = "" ]; then
     PATH_POWERMAND=../src/powermand
 fi

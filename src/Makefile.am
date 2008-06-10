@@ -4,7 +4,7 @@
 ## Process this file with automake to produce Makefile.in.
 ##*****************************************************************************
 
-AM_CFLAGS = @GCCWARN@ -DCONFIG_DIR=\"${sysconfdir}/powerman\"
+AM_CFLAGS = @GCCWARN@ 
 
 if WITH_HTTPPOWER
 HTTPPOWER = httppower
