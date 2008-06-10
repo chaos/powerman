@@ -4,8 +4,8 @@ The test methodlogy here is to run the powerman daemon as a child
 of the powerman client, connected via pty.   The powerman daemon in 
 turn spawns copies of 'vpcd' (virtual power control device), connected 
 via ptys.  Each test starts a fresh powerman+powermand+vpcd(s) so no
-state is preserved between tests.  Root or availability of well known
-ports are not required.
+state is preserved between tests.  Root privilage or available well known
+ports are not required to run these tests.
 
 The client can send multiple commands, so we can send commands and
 change state and then query the state to see what happened.
