@@ -7,38 +7,10 @@
 #include "xregex.h"
 #include "xmalloc.h"
 
-#define LONG_STRING "\
-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\
-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc\
-dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd\
-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeMAGICeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee\
-ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff\
-gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg\
-hhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh\
-iiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiiii\
-jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj\
-kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk\
-llllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllllll\
-mmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmm\
-nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnWONDERFULnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn\
-oooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooooo\
-pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp\
-qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq\
-rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr\
-ssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssssss\
-tttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttttt\
-uuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu\
-vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv\
-wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww\
-xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx\
-yyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyyy\
-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzz\
-COOKIE1111111111111111111111111111111111111111111111111111111111111111111111\
-2222222222222222222222222222222222222222222222222222222222222222222222222222\
-3333333333333333333333333333333333333333333333333333333333333333333333333333\
-4444444444444444444444444444444444444444444444444444444444444444444444444444\
-"
+#define LONG_STR_LEN 	(64*1024*1024)
+#define POS_MAGIC 	42
+#define POS_WONDERFUL	32*1024*1024
+#define POS_COOKIE	63*1024*1024
 
 int
 main(int argc, char *argv[])
@@ -119,25 +91,34 @@ main(int argc, char *argv[])
 	xregex_destroy(re);
 
 	/* check a really long string for a regex */
+	s = xmalloc(LONG_STR_LEN);
+	memset(s, 'a', LONG_STR_LEN - 1);
+	memcpy(s + POS_MAGIC,     "MAGIC",     5);
+	memcpy(s + POS_WONDERFUL, "WONDERFUL", 9);
+	memcpy(s + POS_COOKIE,    "COOKIE",    6);
+	s[LONG_STR_LEN - 1] = '\0';
+
 	re = xregex_create();
 	xregex_compile(re, "MAGIC", FALSE);
-	assert(xregex_exec(re, LONG_STRING, NULL) == TRUE);
+	assert(xregex_exec(re, s, NULL) == TRUE);
 	xregex_destroy(re);
 
 	re = xregex_create();
 	xregex_compile(re, "WONDERFUL", FALSE);
-	assert(xregex_exec(re, LONG_STRING, NULL) == TRUE);
+	assert(xregex_exec(re, s, NULL) == TRUE);
 	xregex_destroy(re);
 
 	re = xregex_create();
 	xregex_compile(re, "COOKIE", FALSE);
-	assert(xregex_exec(re, LONG_STRING, NULL) == TRUE);
+	assert(xregex_exec(re, s, NULL) == TRUE);
 	xregex_destroy(re);
 
 	re = xregex_create();
 	xregex_compile(re, "CHOCOLATE", FALSE);
-	assert(xregex_exec(re, LONG_STRING, NULL) == FALSE);
+	assert(xregex_exec(re, s, NULL) == FALSE);
 	xregex_destroy(re);
+
+	xfree(s);
 
 	exit(0);
 }
