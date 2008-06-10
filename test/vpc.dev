@@ -8,119 +8,120 @@ specification "vpc" {
 		    "9" "10" "11" "12" "13" "14" "15" }
 
 	script login {
-		send "login\r\n"
-		expect "[0-9]* OK"
+		send "login\n"
+		expect "[0-9]* OK\n"
+		expect "[0-9]* vpc> "
 	}
 	script logout {
-		send "logoff\r\n"
-		expect "[0-9]* OK"
+		send "logoff\n"
+		expect "[0-9]* OK\n"
 	}
 	script status_all {
-		send "stat *\r\n"
+		send "stat *\n"
 		foreachplug {
-			expect "plug ([0-9]+): (ON|OFF)"
+			expect "plug ([0-9]+): (ON|OFF)\n"
 			setplugstate $1 $2 on="ON" off="OFF"
 		}
-		expect "[0-9]* OK"
+		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
 	script status {
-                send "stat %s\r\n"
-                expect "plug ([0-9]+): (ON|OFF)"
+                send "stat %s\n"
+                expect "plug ([0-9]+): (ON|OFF)\n"
                 setplugstate $1 $2 on="ON" off="OFF"
-                expect "[0-9]* OK"
+                expect "[0-9]* OK\n"
                 expect "[0-9]* vpc> "
         }
 	script status_soft_all {
-		send "soft *\r\n"
+		send "soft *\n"
 		foreachplug {
-			expect "plug ([0-9]+): (ON|OFF)"
+			expect "plug ([0-9]+): (ON|OFF)\n"
 			setplugstate $1 $2 on="ON" off="OFF"
 		}
-		expect "[0-9]* OK"
+		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
 	script status_soft {
-                send "soft %s\r\n"
-                expect "plug ([0-9]+): (ON|OFF)"
+                send "soft %s\n"
+                expect "plug ([0-9]+): (ON|OFF)\n"
                 setplugstate $1 $2 on="ON" off="OFF"
-                expect "[0-9]* OK"
+                expect "[0-9]* OK\n"
                 expect "[0-9]* vpc> "
         }
 	script on {
-		send "on %s\r\n"
-		expect "[0-9]* OK"
+		send "on %s\n"
+		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
 	script on_all {
-		send "on *\r\n"
-		expect "[0-9]* OK"
+		send "on *\n"
+		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
 	script off {
-		send "off %s\r\n"
-		expect "[0-9]* OK"
+		send "off %s\n"
+		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
 	script off_all {
-		send "off *\r\n"
-		expect "[0-9]* OK"
+		send "off *\n"
+		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
 	script cycle {
-		send "off %s\r\n"
-		expect "[0-9]* OK"
+		send "off %s\n"
+		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 		delay 1.0
-		send "on %s\r\n"
-		expect "[0-9]* OK"
+		send "on %s\n"
+		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
 	script cycle_all {
-		send "off *\r\n"
-		expect "[0-9]* OK"
+		send "off *\n"
+		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 		delay 1.0
-		send "on *\r\n"
-		expect "[0-9]* OK"
+		send "on *\n"
+		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
         script beacon_on {
-                send "flash %s\r\n"
-                expect "[0-9]* OK"
+                send "flash %s\n"
+                expect "[0-9]* OK\n"
                 expect "[0-9]* vpc> "
         }
         script beacon_off {
-                send "unflash %s\r\n"
-                expect "[0-9]* OK"
+                send "unflash %s\n"
+                expect "[0-9]* OK\n"
                 expect "[0-9]* vpc> "
         }
         script status_beacon_all {
-                send "beacon *\r\n"
+                send "beacon *\n"
                 foreachplug {
-                        expect "plug ([0-9]+): (ON|OFF)"
+                        expect "plug ([0-9]+): (ON|OFF)\n"
                         setplugstate $1 $2 on="ON" off="OFF"
                 }
-                expect "[0-9]* OK"
+                expect "[0-9]* OK\n"
                 expect "[0-9]* vpc> "
         }
         script status_temp_all {
-                send "temp *\r\n"
+                send "temp *\n"
                 foreachplug {
-                        expect "plug ([0-9]+): ([0-9]+)"
+                        expect "plug ([0-9]+): ([0-9]+)\n"
                         setplugstate $1 $2
                 }
-                expect "[0-9]* OK"
+                expect "[0-9]* OK\n"
                 expect "[0-9]* vpc> "
         }
 	script reset_all {
-		send "reset *\r\n"
-		expect "[0-9]* OK"
+		send "reset *\n"
+		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
 	script reset {
-		send "reset %s\r\n"
-		expect "[0-9]* OK"
+		send "reset %s\n"
+		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
 }

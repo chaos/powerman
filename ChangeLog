@@ -7,6 +7,20 @@
 	* test/* : Cleanup.  Exercise all powerman client options.
 
 	* test/README : Document test coverage.
+
+	* device_pipe.c : Make pty connection use raw mode to avoid
+	races in pty driver bewteen echo and device response which could
+	lead to nondeterministic expect matching.
+
+	* src/xregex.c : Pass REG_NOTBOL and REG_NOTEOL to regexec.
+	The end of line ($) and beginning of line (^) operators are not
+	deterministic the way powerman applies regexes to buffers as they 
+	fill and should not be used.
+
+	* test/tregex.c : Test for above.
+
+	* etc/baytech-rpc28-nc.dev : Remove delays and replace use of 
+	end of line operator ($) in expects with full text of prompt.
 	
 2008-06-09 Jim Garlick <garlick@llnl.gov>
 

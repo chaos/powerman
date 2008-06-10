@@ -104,6 +104,7 @@ bool pipe_connect(Device * dev)
     if (pid < 0) {
         err_exit(TRUE, "_pipe_connect(%s): forkpty error", dev->name);
     } else if (pid == 0) {      /* child */
+        xcfmakeraw(STDIN_FILENO);
         execv(pd->argv[0], pd->argv);
         err_exit(TRUE, "exec %s", pd->argv[0]);
     } else {                    /* parent */

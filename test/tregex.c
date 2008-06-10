@@ -118,6 +118,30 @@ main(int argc, char *argv[])
 	assert(xregex_exec(re, s, NULL) == FALSE);
 	xregex_destroy(re);
 
+	/* beginning/end of line handling should be disabled since 
+	 * beginning/end of string (which normally match) are 
+	 * non-deterministic in powerman.  We should be explicitly matching
+	 * end-of-line sentinels like \n in scripts.
+	 */
+	re = xregex_create();
+	xregex_compile(re, "foo$", FALSE);
+	assert(xregex_exec(re, "foo", NULL) == FALSE);
+	assert(xregex_exec(re, "foo\n", NULL) == FALSE);
+	xregex_destroy(re);
+	
+	re = xregex_create();
+	xregex_compile(re, "^foo", FALSE);
+	assert(xregex_exec(re, "foo", NULL) == FALSE);
+	assert(xregex_exec(re, "bar\nfoo", NULL) == FALSE);
+	xregex_destroy(re);
+
+	re = xregex_create();
+	xregex_compile(re, "foo\n", FALSE);
+	assert(xregex_exec(re, "foo", NULL) == FALSE);
+	assert(xregex_exec(re, "bar\nfoo", NULL) == FALSE);
+	assert(xregex_exec(re, "barfoo\n", NULL) == TRUE);
+	xregex_destroy(re);
+
 	xfree(s);
 
 	exit(0);

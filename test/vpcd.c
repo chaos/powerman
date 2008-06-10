@@ -40,8 +40,6 @@
 #include <stdarg.h>
 #include <libgen.h>
 
-#include "hprintf.h"
-
 #define NUM_PLUGS   16
 static int plug[NUM_PLUGS];
 static int beacon[NUM_PLUGS];
@@ -74,7 +72,7 @@ static void _spew_one(int linenum)
 {
     char buf[80];
 
-    linenum = linenum % strlen(SPEW);
+    linenum %= strlen(SPEW);
 
     memcpy(buf, SPEW + linenum, strlen(SPEW) - linenum);
     memcpy(buf + strlen(SPEW) - linenum, SPEW, linenum);
@@ -163,7 +161,7 @@ static void _prompt_loop(void)
                 printf("plug %d: %s\n", i, beacon[i] ? "ON" : "OFF");
             goto ok;
         }
-        if (sscanf(buf, "temp %d", &i) == 1) {         /* temp <plugnum> */
+        if (sscanf(buf, "temp %d", &i) == 1) {          /* temp <plugnum> */
             if (i < 0 || i >= NUM_PLUGS) {
                 printf("%d BADVAL: %d\n", seq, i);
                 continue;
@@ -175,7 +173,7 @@ static void _prompt_loop(void)
                 printf("plug %d: %d\n", i, temp[i]);
             goto ok;
         }
-        if (sscanf(buf, "spew %d", &i) == 1) {         /* spew <linecount> */
+        if (sscanf(buf, "spew %d", &i) == 1) {          /* spew <linecount> */
             if (i <= 0) {
                 printf("%d BADVAL: %d\n", seq, i);
                 continue;
@@ -230,11 +228,11 @@ static void _prompt_loop(void)
                 printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
-            sleep(1);
+            sleep(1); /* noop */
             goto ok;
         }
         if (strcmp(buf, "reset *") == 0) {              /* reset * */
-            sleep(1);
+            sleep(1); /* noop */
             goto ok;
         }
         printf("%d UNKNOWN: %s\n", seq, buf);

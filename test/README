@@ -36,7 +36,6 @@ t09-t10
 	Check handling of large volume of data returned by device.
 	pm --telemetry --query-all
 	FIXME: inducing cbuf wrap causes regex timeout for some reason
-	FIXME: spurious failures of t09 have been observed
 t11
 	Check power options.
 	pm --query-all --on t4 --query-all --off t4 --query-all \
@@ -59,3 +58,6 @@ t16
 	Check list and device options
 	pm --list \
            --device-all --query t1 --device-all --query t1 --device test0
+
+TODO
+- Implement *_ranged version of on/off/cycle/reset in vpcd and test

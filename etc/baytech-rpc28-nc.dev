@@ -14,73 +14,65 @@ specification "baytech-rpc28-nc" {
 		    "12" "13" "14" "15" "16" "17" "18" "19" "20" }
 
 	script login {
-		send "\r"
+		send "\n"
 		delay 0.2
-		expect ">$"
+		expect "RPC-28A>"
 	}
 	script logout {
-		send "\r"
-		delay 0.2
-		expect ">$"
-		send "exit\r"
+		send "\n"
+		expect "RPC-28A>"
+		send "exit\n"
 	}
 	script status_all {
-		send "\r"
-		delay 0.2
-		expect ">$"
-		send "status\r"
+		send "\n"
+		expect "RPC-28A>"
+		send "status\n"
 		foreachplug {
-			expect "Outlet[ ]+([0-9]+)[^:0-9]+: (On|Off)"
+			expect "Outlet[ ]+([0-9]+)[^:0-9]+: (On|Off)[ ]+\r\n"
 			setplugstate $1 $2 on="On" off="Off"
 		}
-		expect ">$"
+		expect "RPC-28A>"
 	}
 	script on {
-		send "\r"
-		delay 0.2
-		expect ">$"
-		send "on %s\r"
-		expect ">$"
+		send "\n"
+		expect "RPC-28A>"
+		send "on %s\n"
+		expect "RPC-28A>"
 	}
 	script on_all {
-		send "\r"
-		delay 0.2
-		expect ">$"
-		send "on 0\r"
-		expect ">$"
+		send "\n"
+		expect "RPC-28A>"
+		send "on 0\n"
+		expect "RPC-28A>"
 	}
 	script off {
-		send "\r"
-		delay 0.2
-		expect ">$"
-		send "off %s\r"
-		expect ">$"
+		send "\n"
+		expect "RPC-28A>"
+		send "off %s\n"
+		expect "RPC-28A>"
 	}
 	script off_all {
-		send "\r"
-		delay 0.2
-		expect ">$"
-		send "off 0\r"
-		expect ">$"
+		send "\n"
+		expect "RPC-28A>"
+		send "off 0\n"
+		expect "RPC-28A>"
 	}
 	script cycle {
-		send "\r"
-		delay 0.2
-		expect ">$"
-		send "off %s\r"
-		expect ">$"
+		send "\n"
+		expect "RPC-28A>"
+		send "off %s\n"
+		expect "RPC-28A>"
 		delay 4
-		send "on %s\r"
-		expect ">$"
+		send "on %s\n"
+		expect "RPC-28A>"
 	}
 	script cycle_all {
-		send "\r"
-		delay 0.2
-		expect ">$"
-		send "off 0\r"
-		expect ">$"
+		send "\n"
+		expect "RPC-28A>"
+		send "off 0\n"
+		expect "RPC-28A>"
 		delay 4
-		send "on 0\r"
-		expect ">$"
+		send "on 0\n"
+		expect "RPC-28A>"
 	}
 }
