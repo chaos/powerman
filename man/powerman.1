@@ -65,29 +65,38 @@ Turn beacon OFF for targets (if implemented by RPC).
 List available targets.  If possible, output will be compressed into
 a host range (see TARGET SPECIFICATION below).
 .TP
-.I "-q, --query"
-Query plug status of targets.  If none specified, query all targets.
+.I "-q, --query-all"
+Query plug status of all targets.
 Status is not cached;  each time this option is used, powermand 
 queries the appropriate RPC's.  Targets connected to RPC's that could
 not be contacted (e.g. due to network failure) are reported as 
 status "unknown".  If possible, output will be compressed into host
 ranges.
 .TP
-.I "-n, --node"
-Query node power status of targets (if implemented by RPC).  If no targets
-specified, query all targets.
+.I "-Q, --query"
+Query plug status of specific targets.
+.TP
+.I "-n, --soft-all"
+Query soft power status of all targets (if implemented by RPC).
 In this context, a node in the OFF state could be ON at the plug but 
 operating in standby power mode.
 .TP
-.I "-b, --beacon"
-Query beacon status (if implemented by RPC).  If no targets are
-specified, query all targets.
+.I "-N, --soft"
+Query soft power status of specific targets (if implemented by RPC).
 .TP
-.I "-t, --temp"
-Query node temperature (if implemented by RPC).  If no targets are
-specified, query all targets.
+.I "-b, --beacon-all"
+Query beacon status of all targets (if implemented by RPC).
+.TP
+.I "-B, --beacon"
+Query beacon status of specific targets (if implemented by RPC).
+.TP
+.I "-t, --temp-all"
+Query node temperature of all targets (if implemented by RPC).  
 Temperature information is not interpreted by powerman and is reported
 as received from the RPC on one line per target, prefixed by target name.
+.TP
+.I "-P, --temp"
+Query node temperature of specific targets (if implemented by RPC).  
 .TP
 .I "-h, --help"
 Display option summary.
@@ -95,7 +104,7 @@ Display option summary.
 .I "-L, --license"
 Show powerman license information.
 .TP
-.I "-d, --server-host host[:port]"
+.I "-h, --server-host host[:port]"
 Connect to a powerman daemon on non-default host and optionally port.
 .TP
 .I "-V, --version"

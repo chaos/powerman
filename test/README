@@ -1,0 +1,12 @@
+On running 'make check':
+
+The test methodlogy here is to run the powerman daemon as a child
+of the powerman client, connected via pty.   The powerman daemon in 
+turn spawns copies of 'vpcd' (virtual power control device), connected 
+via ptys.  Each test starts a fresh powerman+powermand+vpcd(s) so no
+state is preserved between tests.
+
+The client can send multiple commands, so we can send commands and
+change state and then query the state to see what happened.
+
+The output of each command is compared against expected output.
