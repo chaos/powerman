@@ -19,8 +19,8 @@
 
 	* test/tregex.c : Test for above.
 
-	* etc/baytech-rpc28-nc.dev : Remove delays and replace use of 
-	end of line operator ($) in expects with full text of prompt.
+	* etc/baytech-rpc28-nc.dev : Replace use of end of line operator 
+	in expects with full text of prompt.
 	
 2008-06-09 Jim Garlick <garlick@llnl.gov>
 
