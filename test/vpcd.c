@@ -40,6 +40,13 @@
 #include <stdarg.h>
 #include <libgen.h>
 
+static void usage(void);
+static void _noop_handler(int signum);
+static void _spew_one(int linenum);
+static void _spew(int lines);
+static void _zap_trailing_whitespace(char *s);
+static void _prompt_loop(void);
+
 #define NUM_PLUGS   16
 static int plug[NUM_PLUGS];
 static int beacon[NUM_PLUGS];
@@ -58,17 +65,55 @@ static const struct option longopts[] = {
 #define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
 #endif
 
-static void _noop_handler(int signum)
+int 
+main(int argc, char *argv[])
+{
+    int i, c;
+
+    prog = basename(argv[0]);
+
+    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
+        switch (c) {
+            default:
+                usage();
+        }
+    }
+    if (optind < argc)
+        usage();
+
+    if (signal(SIGPIPE, _noop_handler) == SIG_ERR) {
+        perror("signal");
+        exit(1);
+    }
+
+    for (i = 0; i < NUM_PLUGS; i++) {
+        plug[i] = 0;
+        beacon[i] = 0;
+        temp[i] = 83 + i;
+    }
+    _prompt_loop();
+        
+    fprintf(stderr, "exiting \n");
+    exit(0);
+}
+
+static void 
+usage(void)
+{
+    fprintf(stderr, "Usage: %s\n", prog);
+    exit(1);
+}
+
+static void 
+_noop_handler(int signum)
 {
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
 }
 
-/*
- * Lptest-like spewage to test buffering/select stuff.
- */
 #define SPEW \
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]"
-static void _spew_one(int linenum)
+static void 
+_spew_one(int linenum)
 {
     char buf[80];
 
@@ -80,7 +125,8 @@ static void _spew_one(int linenum)
     printf("%s\n", buf);
 }
 
-static void _spew(int lines)
+static void 
+_spew(int lines)
 {
     int i;
 
@@ -88,16 +134,15 @@ static void _spew(int lines)
         _spew_one(i);
 }
 
-static void _zap_trailing_whitespace(char *s)
+static void 
+_zap_trailing_whitespace(char *s)
 {
     while (isspace(s[strlen(s) - 1]))
         s[strlen(s) - 1] = '\0';
 }
 
-/*
- * Prompt for a command, parse it, execute it, <repeat>
- */
-static void _prompt_loop(void)
+static void 
+_prompt_loop(void)
 {
     int seq, i, res;
     char buf[128];
@@ -240,48 +285,6 @@ static void _prompt_loop(void)
 ok:
         printf("%d OK\n", seq);
     }
-}
-
-static void usage(void)
-{
-    fprintf(stderr, "Usage: %s\n", prog);
-    exit(1);
-}
-
-/*
- * Start 'num_threads' power controllers on consecutive ports starting at
- * BASE_PORT.  Pause waiting for a signal.  Does not daemonize and logs to
- * stdout.
- */
-int main(int argc, char *argv[])
-{
-    int i, c;
-
-    prog = basename(argv[0]);
-
-    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
-        switch (c) {
-            default:
-                usage();
-        }
-    }
-    if (optind < argc)
-        usage();
-
-    if (signal(SIGPIPE, _noop_handler) == SIG_ERR) {
-        perror("signal");
-        exit(1);
-    }
-
-    for (i = 0; i < NUM_PLUGS; i++) {
-        plug[i] = 0;
-        beacon[i] = 0;
-        temp[i] = 83 + i;
-    }
-    _prompt_loop();
-        
-    fprintf(stderr, "exiting \n");
-    exit(0);
 }
 
 /*
