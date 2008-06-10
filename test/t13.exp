@@ -1,7 +1,10 @@
+test0: state=connected reconnects=000 actions=000 type=vpc hosts=t[0-15]
 t[0-15]
+test0: state=connected reconnects=000 actions=000 type=vpc hosts=t[0-15]
 on:      
 off:     t[0-15]
 unknown: 
+test0: state=connected reconnects=000 actions=002 type=vpc hosts=t[0-15]
 t0: 83
 t1: 84
 t2: 85
@@ -18,15 +21,20 @@ t12: 95
 t13: 96
 t14: 97
 t15: 98
-test0: state=connected reconnects=000 actions=018 type=vpc hosts=t[0-15]
+test0: state=connected reconnects=000 actions=003 type=vpc hosts=t[0-15]
 on:      
 off:     t[0-15]
 unknown: 
+test0: state=connected reconnects=000 actions=004 type=vpc hosts=t[0-15]
 Command completed successfully
+test0: state=connected reconnects=000 actions=007 type=vpc hosts=t[0-15]
 on:      t[13-15]
 off:     t[0-12]
 unknown: 
+test0: state=connected reconnects=000 actions=008 type=vpc hosts=t[0-15]
 Command completed successfully
+test0: state=connected reconnects=000 actions=009 type=vpc hosts=t[0-15]
 on:      t[14-15]
 off:     t[0-13]
 unknown: 
+test0: state=connected reconnects=000 actions=010 type=vpc hosts=t[0-15]

@@ -306,6 +306,7 @@ int main(int argc, char **argv)
             break;
     }
     list_iterator_destroy(itr);
+    list_destroy(commands);
 
 done:
     _disconnect_from_server();

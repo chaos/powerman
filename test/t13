@@ -9,15 +9,23 @@
 # -u  unflash nodes
 TEST=t13
 $PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf \
+  -d \
   -l \
+  -d \
   -n \
+  -d \
   -t \
   -d \
   -b \
+  -d \
   -f t[13-15] \
+  -d \
   -b \
+  -d \
   -u t[13] \
+  -d \
   -b \
+  -d \
   >$TEST.out 2>$TEST.err
 test $? = 0 || exit 1
 diff $TEST.out $TEST.exp >$TEST.diff
