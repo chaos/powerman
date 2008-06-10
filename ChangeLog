@@ -1,38 +1,36 @@
 2008-06-10 Jim Garlick <garlick@llnl.gov>
 
-	* src/powerman.c : Make server_fd not global.  Handle --telemetry
-	and --exprange like other commands by enqueuing them at the head of
-	the command queue.
+	* src/powerman.c : Misc cleanup:
+	- make server_fd not global
+	- handle --telemetry and --exprange like other commands by 
+	  enqueuing them at the head of the command queue.
+	- drop hard coded daemon and config file locations.
+	- add --ignore-errs option.
 
-	* test/* : Cleanup.  Exercise all powerman client options.
+	* test/* : Lots of new tests.
 
-	* test/README : Document test coverage.
-
-	* device_pipe.c : Make pty connection use raw mode to avoid
-	races in pty driver bewteen echo and device response which could
-	lead to nondeterministic expect matching.
+	* device_pipe.c : Make pty connection use raw mode.
 
 	* src/xregex.c : Pass REG_NOTBOL and REG_NOTEOL to regexec.
-	The end of line ($) and beginning of line (^) operators are not
-	deterministic the way powerman applies regexes to buffers as they 
-	fill and should not be used.
-
-	* test/tregex.c : Test for above.
+	The end of line ($) and beginning of line (^) operators cannot
+	match determinstically the way powerman applies regexes to buffers 
+	repeatedly as they fill.
 
 	* etc/baytech-rpc28-nc.dev : Replace use of end of line operator 
-	in expects with full text of prompt.
+	with full text of prompt.
 
 	* config/x_ac_expand_install_dirs.m4 : New, borrow from munge.
 
 	* src/Makefile.am : Drop command line CONFIG_DIR definition.
-
-	* src/powerman.c : Drop hard coded daemon and config file location.
 
 	* src/powermand.c : Construct default config_filename using
 	X_SYSCONFDIR setting, and use directory based on X_LOCALSTATEDIR
 	for run directory passed to daemon_init().
 
 	* src/daemon.c : Create rootdir if it doesn't exist.
+
+	* src/device.c : Switch cbuf overwrite mode from NO_DROP to WRAP_MANY
+	and make dropping characters non-fatal.
 	
 2008-06-09 Jim Garlick <garlick@llnl.gov>
 

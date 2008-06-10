@@ -90,7 +90,7 @@ static void _cmd_print(cmd_t *cp);
 
 static char *prog;
 
-#define OPTIONS "0:1:c:r:f:u:B:blQ:qN:nP:tD:dTxgh:S:C:VLZ"
+#define OPTIONS "0:1:c:r:f:u:B:blQ:qN:nP:tD:dTxgh:S:C:VLZI"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
@@ -120,6 +120,7 @@ static const struct option longopts[] = {
     {"version",     no_argument,        0, 'V'},
     {"license",     no_argument,        0, 'L'},
     {"dump-cmds",   no_argument,        0, 'Z'},
+    {"ignore-errs", no_argument,        0, 'I'},
     {0, 0, 0, 0},
 };
 #else
@@ -135,6 +136,7 @@ int main(int argc, char **argv)
     char *host = DFLT_HOSTNAME;
     bool genders = FALSE;
     bool dumpcmds = FALSE;
+    bool ignore_errs = FALSE;
     char *server_path = NULL;
     char *config_path = NULL;
     List commands;  /* list-o-cmd_t's */
@@ -236,6 +238,9 @@ int main(int argc, char **argv)
         case 'Z':              /* --dump-cmds */
             dumpcmds = TRUE;
             break;
+        case 'I':              /* --ignore-errs */
+            ignore_errs = TRUE;
+            break;
         default:
             _usage();
             /*NOTREACHED*/
@@ -289,6 +294,8 @@ int main(int argc, char **argv)
     itr = list_iterator_create(commands);
     while ((cp = list_next(itr))) {
         res = _cmd_execute(cp, server_fd);
+        if (ignore_errs)
+            res = 0;
         if (res != 0)
             break;
     }

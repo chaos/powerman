@@ -1275,10 +1275,7 @@ Device *dev_create(const char *name)
     timerclear(&dev->ping_period);
 
     dev->to = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
-    cbuf_opt_set(dev->to, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
-
     dev->from = cbuf_create(MIN_DEV_BUF, MAX_DEV_BUF);
-    cbuf_opt_set(dev->from, CBUF_OPT_OVERWRITE, CBUF_NO_DROP);
 
     for (i = 0; i < NUM_SCRIPTS; i++)
         dev->scripts[i] = NULL;
@@ -1372,14 +1369,12 @@ static bool _handle_read(Device * dev)
         err(TRUE, "read error on %s", dev->name);
         goto err;
     }
-    if (dropped > 0) {
-        err(FALSE, "buffer space for %s exhausted", dev->name);
-        goto err;
-    }
     if (n == 0) {
         dbg(DBG_DEVICE, "read returned EOF on %s", dev->name);
         goto err;
     }
+    if (dropped > 0)
+        err(FALSE, "%s lost %d chars due to buffer wrap", dev->name, dropped);
     return FALSE;
 err:
     return TRUE;
