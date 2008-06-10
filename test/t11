@@ -1,12 +1,6 @@
 #!/bin/sh
-# 1 vpcd instance, 16 nodes, multiple commands
 TEST=t11
-$PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf \
-  -q \
-  -1 t4 \
-  -q \
-  -0 t4 \
-  -q \
-  >$TEST.out 2>$TEST.err
+$PATH_POWERMAN -S $PATH_POWERMAND -C test.conf \
+  -q -1 t4 -q -0 t4 -q -c t5 -q >$TEST.out 2>$TEST.err
 test $? = 0 || exit 1
 diff $TEST.out $TEST.exp >$TEST.diff

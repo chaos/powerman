@@ -24,6 +24,29 @@ specification "vpc" {
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
 	}
+	script status {
+                send "stat %s\r\n"
+                expect "plug ([0-9]+): (ON|OFF)"
+                setplugstate $1 $2 on="ON" off="OFF"
+                expect "[0-9]* OK"
+                expect "[0-9]* vpc> "
+        }
+	script status_soft_all {
+		send "soft *\r\n"
+		foreachplug {
+			expect "plug ([0-9]+): (ON|OFF)"
+			setplugstate $1 $2 on="ON" off="OFF"
+		}
+		expect "[0-9]* OK"
+		expect "[0-9]* vpc> "
+	}
+	script status_soft {
+                send "soft %s\r\n"
+                expect "plug ([0-9]+): (ON|OFF)"
+                setplugstate $1 $2 on="ON" off="OFF"
+                expect "[0-9]* OK"
+                expect "[0-9]* vpc> "
+        }
 	script on {
 		send "on %s\r\n"
 		expect "[0-9]* OK"
@@ -59,6 +82,44 @@ specification "vpc" {
 		expect "[0-9]* vpc> "
 		delay 1.0
 		send "on *\r\n"
+		expect "[0-9]* OK"
+		expect "[0-9]* vpc> "
+	}
+        script beacon_on {
+                send "flash %s\r\n"
+                expect "[0-9]* OK"
+                expect "[0-9]* vpc> "
+        }
+        script beacon_off {
+                send "unflash %s\r\n"
+                expect "[0-9]* OK"
+                expect "[0-9]* vpc> "
+        }
+        script status_beacon_all {
+                send "beacon *\r\n"
+                foreachplug {
+                        expect "plug ([0-9]+): (ON|OFF)"
+                        setplugstate $1 $2 on="ON" off="OFF"
+                }
+                expect "[0-9]* OK"
+                expect "[0-9]* vpc> "
+        }
+        script status_temp_all {
+                send "temp *\r\n"
+                foreachplug {
+                        expect "plug ([0-9]+): ([0-9]+)"
+                        setplugstate $1 $2
+                }
+                expect "[0-9]* OK"
+                expect "[0-9]* vpc> "
+        }
+	script reset_all {
+		send "reset *\r\n"
+		expect "[0-9]* OK"
+		expect "[0-9]* vpc> "
+	}
+	script reset {
+		send "reset %s\r\n"
 		expect "[0-9]* OK"
 		expect "[0-9]* vpc> "
 	}

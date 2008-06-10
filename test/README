@@ -4,9 +4,58 @@ The test methodlogy here is to run the powerman daemon as a child
 of the powerman client, connected via pty.   The powerman daemon in 
 turn spawns copies of 'vpcd' (virtual power control device), connected 
 via ptys.  Each test starts a fresh powerman+powermand+vpcd(s) so no
-state is preserved between tests.
+state is preserved between tests.  Root or availability of well known
+ports are not required.
 
 The client can send multiple commands, so we can send commands and
 change state and then query the state to see what happened.
 
 The output of each command is compared against expected output.
+
+The tests are summarized here:
+
+t00-t03
+	Pluglist tests using tpl.c.
+t04
+	Argv test using targv.c.
+t05
+	Regex test using tregex.c.
+
+The following tests are configured powerman-powermand-vpcd[1] (16 plugs):
+
+t06
+	Check power status query options
+	pm --query-all --query t1 --query t[3-5]
+t07
+	Check power status query options with no status_all script implemented.
+	pm --query-all --query t1 --query t[3-5]
+t08
+	Telemetry option check.
+	pm --telemetry --query-all
+t09-t10
+	Check handling of large volume of data returned by device.
+	pm --telemetry --query-all
+	FIXME: inducing cbuf wrap causes regex timeout for some reason
+	FIXME: spurious failures of t09 have been observed
+t11
+	Check power options.
+	pm --query-all --on t4 --query-all --off t4 --query-all \
+           --cycle t5 --query-all
+t12
+	Check handling of "dangling" target args.
+	pm --query t1 t2 
+t13
+	Check beacon options:
+	pm --beacon-all --flash t[13-15] --beacon-all --unflash t13 \
+	   --beacon-all --beacon t13 --beacon t14
+t14
+	Check temperature options:
+	pm --temp-all --temp t13 --temp t[13-15]
+t15
+	Check soft-power status and reset options
+	pm --soft-all --soft t1 --soft t[3-5] \
+	   --reset t1 --reset t[3-5]
+t16
+	Check list and device options
+	pm --list \
+           --device-all --query t1 --device-all --query t1 --device test0

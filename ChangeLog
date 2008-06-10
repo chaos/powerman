@@ -1,3 +1,13 @@
+2008-06-10 Jim Garlick <garlick@llnl.gov>
+
+	* src/powerman.c : Make server_fd not global.  Handle --telemetry
+	and --exprange like other commands by enqueuing them at the head of
+	the command queue.
+
+	* test/* : Cleanup.  Exercise all powerman client options.
+
+	* test/README : Document test coverage.
+	
 2008-06-09 Jim Garlick <garlick@llnl.gov>
 
 	* src/powerman.c : Option changes:
@@ -15,10 +25,12 @@
 
 	* scripts/stonith : Reflect option changes above.
 
+	* man/powerman.1 : Reflect option changes above.
+
 	* src/powerman.c : Cleanup:
 	- deprecate "off" and "on" program name support
 	- abbreviate usage() message to only the most common options
-	- allow multiple commands to be run
+	- allow multiple commands to be run in one invocation
 	- add -Z,--dump-cmds option to list commands without executing
 
 	* src/argv.c : Added argv_length(), argv_append().

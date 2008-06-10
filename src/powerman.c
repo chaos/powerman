@@ -71,25 +71,23 @@ typedef struct {
 #if WITH_GENDERS
 static void _push_genders_hosts(hostlist_t targets, char *s);
 #endif
-static void _connect_to_server(char *host, char *port, 
-                               char *server_path, char *config_path);
-static void _disconnect_from_server(void);
+static int _connect_to_server_tcp(char *host, char *port);
+static int _connect_to_server_pipe(char *server_path, char *config_path);
 static void _usage(void);
 static void _license(void);
 static void _version(void);
-static void _getline(char *str, int len);
-static int _process_line(void);
-static void _expect(char *str);
-static int _process_response(void);
-static void _process_version(void);
-static void _cmd_create(List cl, char *fmt, char *arg);
+static void _getline(int fd, char *str, int len);
+static int _process_line(int fd);
+static void _expect(int fd, char *str);
+static int _process_response(int fd);
+static void _process_version(int fd);
+static void _cmd_create(List cl, char *fmt, char *arg, bool prepend);
 static void _cmd_destroy(cmd_t *cp);
 static void _cmd_append(cmd_t *cp, char *arg);
 static void _cmd_prepare(cmd_t *cp, bool genders);
 static int _cmd_execute(cmd_t *cp, int fd);
 static void _cmd_print(cmd_t *cp);
 
-static int server_fd = -1;
 static char *prog;
 
 #define OPTIONS "0:1:c:r:f:u:B:blQ:qN:nP:tD:dTxgh:S:C:VLZ"
@@ -132,10 +130,9 @@ int main(int argc, char **argv)
 {
     int c;
     int res = 0;
+    int server_fd;
     char *port = DFLT_PORT;
     char *host = DFLT_HOSTNAME;
-    bool telemetry = FALSE;
-    bool exprange = FALSE;
     bool genders = FALSE;
     bool dumpcmds = FALSE;
     char *server_path = NULL;
@@ -154,55 +151,55 @@ int main(int argc, char **argv)
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
         case '1':              /* --on */
-            _cmd_create(commands, CP_ON, optarg);
+            _cmd_create(commands, CP_ON, optarg, FALSE);
             break;
         case '0':              /* --off */
-            _cmd_create(commands, CP_OFF, optarg);
+            _cmd_create(commands, CP_OFF, optarg, FALSE);
             break;
         case 'c':              /* --cycle */
-            _cmd_create(commands, CP_CYCLE, optarg);
+            _cmd_create(commands, CP_CYCLE, optarg, FALSE);
             break;
         case 'r':              /* --reset */
-            _cmd_create(commands, CP_RESET, optarg);
+            _cmd_create(commands, CP_RESET, optarg, FALSE);
             break;
         case 'l':              /* --list */
-            _cmd_create(commands, CP_NODES, NULL);
+            _cmd_create(commands, CP_NODES, NULL, FALSE);
             break;
         case 'Q':              /* --query */
-            _cmd_create(commands, CP_STATUS, optarg);
+            _cmd_create(commands, CP_STATUS, optarg, FALSE);
             break;
         case 'q':              /* --query-all */
-            _cmd_create(commands, CP_STATUS_ALL, NULL);
+            _cmd_create(commands, CP_STATUS_ALL, NULL, FALSE);
             break;
         case 'f':              /* --flash */
-            _cmd_create(commands, CP_BEACON_ON, optarg);
+            _cmd_create(commands, CP_BEACON_ON, optarg, FALSE);
             break;
         case 'u':              /* --unflash */
-            _cmd_create(commands, CP_BEACON_OFF, optarg);
+            _cmd_create(commands, CP_BEACON_OFF, optarg, FALSE);
             break;
         case 'B':              /* --beacon */
-            _cmd_create(commands, CP_BEACON, optarg);
+            _cmd_create(commands, CP_BEACON, optarg, FALSE);
             break;
         case 'b':              /* --beacon-all */
-            _cmd_create(commands, CP_BEACON_ALL, NULL);
+            _cmd_create(commands, CP_BEACON_ALL, NULL, FALSE);
             break;
         case 'N':              /* --node */
-            _cmd_create(commands, CP_SOFT, optarg);
+            _cmd_create(commands, CP_SOFT, optarg, FALSE);
             break;
         case 'n':              /* --node-all */
-            _cmd_create(commands, CP_SOFT_ALL, NULL);
+            _cmd_create(commands, CP_SOFT_ALL, NULL, FALSE);
             break;
         case 'P':              /* --temp */
-            _cmd_create(commands, CP_TEMP, optarg);
+            _cmd_create(commands, CP_TEMP, optarg, FALSE);
             break;
         case 't':              /* --temp-all */
-            _cmd_create(commands, CP_TEMP_ALL, NULL);
+            _cmd_create(commands, CP_TEMP_ALL, NULL, FALSE);
             break;
         case 'D':              /* --device */
-            _cmd_create(commands, CP_DEVICE, optarg);
+            _cmd_create(commands, CP_DEVICE, optarg, FALSE);
             break;
         case 'd':              /* --device-all */
-            _cmd_create(commands, CP_DEVICE_ALL, NULL);
+            _cmd_create(commands, CP_DEVICE_ALL, NULL, FALSE);
             break;
         case 'h':              /* --server-host host[:port] */
             if ((port = strchr(optarg, ':')))
@@ -218,10 +215,10 @@ int main(int argc, char **argv)
             /*NOTREACHED*/
             break;
         case 'T':              /* --telemetry */
-            telemetry = TRUE;
+            _cmd_create(commands, CP_TELEMETRY, NULL, TRUE);
             break;
         case 'x':              /* --exprange */
-            exprange = TRUE;
+            _cmd_create(commands, CP_EXPRANGE, NULL, TRUE);
             break;
         case 'g':              /* --genders */
 #if WITH_GENDERS
@@ -278,26 +275,16 @@ int main(int argc, char **argv)
         exit(0);
     }
 
-    /* Establish connection to server and negotiate server side options.
+    /* Establish connection to server and start protocol.
      */
-    _connect_to_server(host, port, server_path, config_path);
-    if (telemetry) {
-        hfdprintf(server_fd, CP_TELEMETRY CP_EOL);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        if (res != 0)
-            goto done;
-    }
-    if (exprange) {
-        hfdprintf(server_fd, CP_EXPRANGE CP_EOL);
-        res = _process_response();
-        _expect(CP_PROMPT);
-        if (res != 0)
-            goto done;
-    }
+    if (server_path)
+        server_fd = _connect_to_server_pipe(server_path, config_path);
+    else
+        server_fd = _connect_to_server_tcp(host, port);
+    _process_version(server_fd);
+    _expect(server_fd, CP_PROMPT);
 
-    /*
-     * Execute the commands.
+    /* Execute the commands.
      */
     itr = list_iterator_create(commands);
     while ((cp = list_next(itr))) {
@@ -308,8 +295,10 @@ int main(int argc, char **argv)
     list_iterator_destroy(itr);
     list_destroy(commands);
 
-done:
-    _disconnect_from_server();
+    /* Disconnect from server.
+     */
+    hfdprintf(server_fd, "%s%s", CP_QUIT, CP_EOL);
+    _expect(server_fd, CP_RSP_QUIT);
 
     exit(res);
 }
@@ -378,7 +367,7 @@ static void _push_genders_hosts(hostlist_t targets, char *s)
 }
 #endif
 
-static void _cmd_create(List cl, char *fmt, char *arg)
+static void _cmd_create(List cl, char *fmt, char *arg, bool prepend)
 {
     cmd_t *cp = (cmd_t *)xmalloc(sizeof(cmd_t));
 
@@ -388,7 +377,10 @@ static void _cmd_create(List cl, char *fmt, char *arg)
     cp->sendstr = NULL;
     if (arg)
         cp->argv = argv_create(arg, "");
-    list_append(cl, cp);
+    if (prepend)
+        list_prepend(cl, cp);
+    else
+        list_append(cl, cp);
 }
 
 static void _cmd_destroy(cmd_t *cp)
@@ -448,8 +440,8 @@ static int _cmd_execute(cmd_t *cp, int fd)
     assert(cp->sendstr != NULL);
 
     hfdprintf(fd, "%s%s", cp->sendstr, CP_EOL);
-    res = _process_response();
-    _expect(CP_PROMPT);
+    res = _process_response(fd);
+    _expect(fd, CP_PROMPT);
 
     return res;
 }
@@ -462,70 +454,63 @@ static void _cmd_print(cmd_t *cp)
     printf("%s%s", cp->sendstr, CP_EOL);
 }
 
-/* Set up connection to server and get to the command prompt.
- */
-static void _connect_to_server(char *host, char *port, 
-                               char *server_path, char *config_path)
+static int _connect_to_server_pipe(char *server_path, char *config_path)
 {
-    struct addrinfo hints, *addrinfo;
+    int saved_stderr;
     char cmd[128];
     char **argv;
     pid_t pid;
-    int n;
+    int fd;
 
-    if (server_path) {
-        int saved_stderr;
-
-        saved_stderr = dup(STDERR_FILENO);
-        if (saved_stderr < 0)
-            err_exit(TRUE, "dup stderr");
-        snprintf(cmd, sizeof(cmd), "powermand -sRf -c %s", config_path);
-        argv = argv_create(cmd, "");
-        pid = xforkpty(&server_fd, NULL, 0);
-        switch (pid) {
-            case -1:
-                err_exit(TRUE, "forkpty error");
-            case 0: /* child */
-                if (dup2(saved_stderr, STDERR_FILENO) < 0)
-                    err_exit(TRUE, "dup2 stderr");
-                xcfmakeraw(STDIN_FILENO);
-                execv(server_path, argv);
-                err_exit(TRUE, "exec %s", server_path);
-            default: /* parent */ 
-                break;
-        }
-        argv_destroy(argv);
-    } else {
-        memset(&hints, 0, sizeof(struct addrinfo));
-        hints.ai_flags = AI_CANONNAME;
-        hints.ai_family = AF_INET;
-        hints.ai_socktype = SOCK_STREAM;
-
-        if ((n = getaddrinfo(host, port, &hints, &addrinfo)) != 0)
-            err_exit(FALSE, "getaddrinfo %s: %s", host, gai_strerror(n));
-
-        server_fd = socket(addrinfo->ai_family, addrinfo->ai_socktype,
-                           addrinfo->ai_protocol);
-        if (server_fd < 0)
-            err_exit(TRUE, "socket");
-
-        if (connect(server_fd, addrinfo->ai_addr, addrinfo->ai_addrlen) < 0)
-            err_exit(TRUE, "connect");
-        freeaddrinfo(addrinfo);
+    saved_stderr = dup(STDERR_FILENO);
+    if (saved_stderr < 0)
+        err_exit(TRUE, "dup stderr");
+    snprintf(cmd, sizeof(cmd), "powermand -sRf -c %s", config_path);
+    argv = argv_create(cmd, "");
+    pid = xforkpty(&fd, NULL, 0);
+    switch (pid) {
+        case -1:
+            err_exit(TRUE, "forkpty error");
+        case 0: /* child */
+            if (dup2(saved_stderr, STDERR_FILENO) < 0)
+                err_exit(TRUE, "dup2 stderr");
+            xcfmakeraw(STDIN_FILENO);
+            execv(server_path, argv);
+            err_exit(TRUE, "exec %s", server_path);
+        default: /* parent */ 
+            break;
     }
-
-    _process_version();
-    _expect(CP_PROMPT);
+    argv_destroy(argv);
+    return fd;
 }
 
-static void _disconnect_from_server(void)
+static int _connect_to_server_tcp(char *host, char *port)
 {
-    hfdprintf(server_fd, CP_QUIT CP_EOL);
-    _expect(CP_RSP_QUIT);
+    struct addrinfo hints, *addrinfo;
+    int n;
+    int fd;
+
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_flags = AI_CANONNAME;
+    hints.ai_family = AF_INET;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if ((n = getaddrinfo(host, port, &hints, &addrinfo)) != 0)
+        err_exit(FALSE, "getaddrinfo %s: %s", host, gai_strerror(n));
+
+    fd = socket(addrinfo->ai_family, addrinfo->ai_socktype,
+                       addrinfo->ai_protocol);
+    if (fd < 0)
+        err_exit(TRUE, "socket");
+
+    if (connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen) < 0)
+        err_exit(TRUE, "connect");
+    freeaddrinfo(addrinfo);
+    return fd;
 }
 
-/*
- * Return true if response should be suppressed.
+
+/* Return true if response should be suppressed.
  */
 static bool _supress(int num)
 {
@@ -544,13 +529,12 @@ static bool _supress(int num)
     return res;
 }
 
-/* 
- * Read a line of data terminated with \r\n or just \n.
+/* Read a line of data terminated with \r\n or just \n.
  */
-static void _getline(char *buf, int size)
+static void _getline(int fd, char *buf, int size)
 {
     while (size > 1) {          /* leave room for terminating null */
-        if (xread(server_fd, buf, 1) <= 0)
+        if (xread(fd, buf, 1) <= 0)
             err_exit(TRUE, "lost connection with server");
         if (*buf == '\r')
             continue;
@@ -562,16 +546,15 @@ static void _getline(char *buf, int size)
     *buf = '\0';
 }
 
-/* 
- * Get a line from the socket and display on stdout.
+/* Get a line from the socket and display on stdout.
  * Return the numerical portion of the repsonse.
  */
-static int _process_line(void)
+static int _process_line(int fd)
 {
     char buf[CP_LINEMAX];
     long int num;
 
-    _getline(buf, CP_LINEMAX);
+    _getline(fd, buf, CP_LINEMAX);
 
     num = strtol(buf, (char **) NULL, 10);
     if (num == LONG_MIN || num == LONG_MAX)
@@ -584,14 +567,13 @@ static int _process_line(void)
     return num;
 }
 
-/*
- * Read version and warn if it doesn't match the client's.
+/* Read version and warn if it doesn't match the client's.
  */
-static void _process_version(void)
+static void _process_version(int fd)
 {
     char buf[CP_LINEMAX], vers[CP_LINEMAX];
 
-    _getline(buf, CP_LINEMAX);
+    _getline(fd, buf, CP_LINEMAX);
     if (sscanf(buf, CP_VERSION, vers) != 1)
         err_exit(FALSE, "unexpected response from server");
     if (strcmp(vers, VERSION) != 0)
@@ -599,21 +581,20 @@ static void _process_version(void)
                 vers, VERSION);
 }
 
-static int _process_response(void)
+static int _process_response(int fd)
 {
     int num;
 
     do {
-        num = _process_line();
+        num = _process_line(fd);
     } while (!CP_IS_ALLDONE(num));
     return (CP_IS_FAILURE(num) ? num : 0);
 }
 
-/* 
- * Read strlen(str) bytes from file descriptor and exit if
+/* Read strlen(str) bytes from file descriptor and exit if
  * it doesn't match 'str'.
  */
-static void _expect(char *str)
+static void _expect(int fd, char *str)
 {
     char buf[CP_LINEMAX];
     int len = strlen(str);
@@ -622,7 +603,7 @@ static void _expect(char *str)
 
     assert(len < sizeof(buf));
     do {
-        res = xread(server_fd, p, len);
+        res = xread(fd, p, len);
         if (res < 0)
             err_exit(TRUE, "lost connection with server");
         p += res;

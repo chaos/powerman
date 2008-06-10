@@ -1,6 +1,6 @@
 #!/bin/sh
-TEST=t13
+TEST=t16
 $PATH_POWERMAN -S $PATH_POWERMAND -C test.conf \
-  -b -f t[13-15] -b -u t13 -b -B t13 -B t14 >$TEST.out 2>$TEST.err
+  -Q t1 -d -Q t1 -d -Q t1 -d -D t1 -l >$TEST.out 2>$TEST.err
 test $? = 0 || exit 1
 diff $TEST.out $TEST.exp >$TEST.diff

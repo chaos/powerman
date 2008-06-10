@@ -137,6 +137,14 @@ static void _prompt_loop(void)
                 printf("plug %d: %s\n", i, plug[i] ? "ON" : "OFF");
             goto ok;
         }
+        if (sscanf(buf, "soft %d", &i) == 1) {          /* soft <plugnum> */
+            if (i < 0 || i >= NUM_PLUGS) {
+                printf("%d BADVAL: %d\n", seq, i);
+                continue;
+            }
+            printf("plug %d: %s\n", i, plug[i] ? "ON" : "OFF");
+            goto ok;
+        }
         if (strcmp(buf, "soft *") == 0) {               /* soft * */
             for (i = 0; i < NUM_PLUGS; i++)
                 printf("plug %d: %s\n", i, plug[i] ? "ON" : "OFF");
@@ -215,6 +223,18 @@ static void _prompt_loop(void)
         if (strcmp(buf, "off *") == 0) {                /* off * */
             for (i = 0; i < NUM_PLUGS; i++)
                 plug[i] = 0;
+            goto ok;
+        }
+        if (sscanf(buf, "reset %d", &i) == 1) {         /* reset <plugnum> */
+            if (i < 0 || i >= NUM_PLUGS) {
+                printf("%d BADVAL: %d\n", seq, i);
+                continue;
+            }
+            sleep(1);
+            goto ok;
+        }
+        if (strcmp(buf, "reset *") == 0) {              /* reset * */
+            sleep(1);
             goto ok;
         }
         printf("%d UNKNOWN: %s\n", seq, buf);
