@@ -87,11 +87,12 @@ static void _cmd_destroy(cmd_t *cp);
 static void _cmd_append(cmd_t *cp, char *arg);
 static void _cmd_prepare(cmd_t *cp, bool genders);
 static int _cmd_execute(cmd_t *cp, int fd);
+static void _cmd_print(cmd_t *cp);
 
 static int server_fd = -1;
 static char *prog;
 
-#define OPTIONS "0:1:c:r:lq::f:u:b:n:t::D::vxTgd:S:C:VL"
+#define OPTIONS "0:1:c:r:f:u:B:blQ:qN:nP:tD:dTxgh:S:C:VLZ"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
@@ -99,22 +100,28 @@ static const struct option longopts[] = {
     {"off",         required_argument,  0, '0'},
     {"cycle",       required_argument,  0, 'c'},
     {"reset",       required_argument,  0, 'r'},
-    {"list",        no_argument,        0, 'l'},
-    {"query",       optional_argument,  0, 'q'},
     {"flash",       required_argument,  0, 'f'},
     {"unflash",     required_argument,  0, 'u'},
-    {"beacon",      required_argument,  0, 'b'},
-    {"node",        required_argument,  0, 'n'},
-    {"temp",        optional_argument,  0, 't'},
-    {"device",      optional_argument,  0, 'D'},
+    {"beacon",      required_argument,  0, 'B'},
+    {"beacon-all",  no_argument,        0, 'b'},
+    {"list",        no_argument,        0, 'l'},
+    {"query",       required_argument,  0, 'Q'},
+    {"query-all",   no_argument,        0, 'q'},
+    {"soft",        required_argument,  0, 'N'},
+    {"soft-all",    no_argument,        0, 'n'},
+    {"temp",        required_argument,  0, 'P'},
+    {"temp-all",    no_argument,        0, 't'},
+    {"device",      required_argument,  0, 'D'},
+    {"device-all",  no_argument,        0, 'd'},
     {"telemetry",   no_argument,        0, 'T'},
     {"exprange",    no_argument,        0, 'x'},
     {"genders",     no_argument,        0, 'g'},
-    {"server-host", required_argument,  0, 'd'},
+    {"server-host", required_argument,  0, 'h'},
     {"server-path", required_argument,  0, 'S'},
     {"config-path", required_argument,  0, 'C'},
     {"version",     no_argument,        0, 'V'},
     {"license",     no_argument,        0, 'L'},
+    {"dump-cmds",   no_argument,        0, 'Z'},
     {0, 0, 0, 0},
 };
 #else
@@ -130,6 +137,7 @@ int main(int argc, char **argv)
     bool telemetry = FALSE;
     bool exprange = FALSE;
     bool genders = FALSE;
+    bool dumpcmds = FALSE;
     char *server_path = NULL;
     char *config_path = "/etc/powerman/powerman.conf"; /* FIXME */
     List commands;  /* list-o-cmd_t's */
@@ -145,9 +153,6 @@ int main(int argc, char **argv)
     opterr = 0;
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
-        case 'l':              /* --list */
-            _cmd_create(commands, CP_NODES, NULL);
-            break;
         case '1':              /* --on */
             _cmd_create(commands, CP_ON, optarg);
             break;
@@ -160,8 +165,14 @@ int main(int argc, char **argv)
         case 'r':              /* --reset */
             _cmd_create(commands, CP_RESET, optarg);
             break;
-        case 'q':              /* --query */
-            _cmd_create(commands, optarg ? CP_STATUS : CP_STATUS_ALL, optarg);
+        case 'l':              /* --list */
+            _cmd_create(commands, CP_NODES, NULL);
+            break;
+        case 'Q':              /* --query */
+            _cmd_create(commands, CP_STATUS, optarg);
+            break;
+        case 'q':              /* --query-all */
+            _cmd_create(commands, CP_STATUS_ALL, NULL);
             break;
         case 'f':              /* --flash */
             _cmd_create(commands, CP_BEACON_ON, optarg);
@@ -169,19 +180,31 @@ int main(int argc, char **argv)
         case 'u':              /* --unflash */
             _cmd_create(commands, CP_BEACON_OFF, optarg);
             break;
-        case 'b':              /* --beacon */
-            _cmd_create(commands, optarg ? CP_BEACON : CP_BEACON_ALL, optarg);
+        case 'B':              /* --beacon */
+            _cmd_create(commands, CP_BEACON, optarg);
             break;
-        case 'n':              /* --node */
-            _cmd_create(commands, optarg ? CP_SOFT : CP_SOFT_ALL, optarg);
+        case 'b':              /* --beacon-all */
+            _cmd_create(commands, CP_BEACON_ALL, NULL);
             break;
-        case 't':              /* --temp */
-            _cmd_create(commands, optarg ? CP_TEMP : CP_TEMP_ALL, optarg);
+        case 'N':              /* --node */
+            _cmd_create(commands, CP_SOFT, optarg);
+            break;
+        case 'n':              /* --node-all */
+            _cmd_create(commands, CP_SOFT_ALL, NULL);
+            break;
+        case 'P':              /* --temp */
+            _cmd_create(commands, CP_TEMP, optarg);
+            break;
+        case 't':              /* --temp-all */
+            _cmd_create(commands, CP_TEMP_ALL, NULL);
             break;
         case 'D':              /* --device */
-            _cmd_create(commands, optarg ? CP_DEVICE : CP_DEVICE_ALL, optarg);
+            _cmd_create(commands, CP_DEVICE, optarg);
             break;
-        case 'd':              /* --server-host host[:port] */
+        case 'd':              /* --device-all */
+            _cmd_create(commands, CP_DEVICE_ALL, NULL);
+            break;
+        case 'h':              /* --server-host host[:port] */
             if ((port = strchr(optarg, ':')))
                 *port++ = '\0';  
             host = optarg;
@@ -213,6 +236,9 @@ int main(int argc, char **argv)
         case 'C':              /* --config-path */
             config_path = optarg;
             break;
+        case 'Z':              /* --dump-cmds */
+            dumpcmds = TRUE;
+            break;
         default:
             _usage();
             /*NOTREACHED*/
@@ -241,6 +267,16 @@ int main(int argc, char **argv)
     while ((cp = list_next(itr)))
         _cmd_prepare(cp, genders);
     list_iterator_destroy(itr);
+
+    /* Dump commands and exit if requested.
+     */
+    if (dumpcmds) {
+        itr = list_iterator_create(commands);
+        while ((cp = list_next(itr)))
+            _cmd_print(cp);
+        list_iterator_destroy(itr);
+        exit(0);
+    }
 
     /* Establish connection to server and negotiate server side options.
      */
@@ -281,11 +317,12 @@ done:
  */
 static void _usage(void)
 {
-    printf("Usage: %s [OPTIONS]\n", prog);
-    printf("-1,--on targets        Power on targets\n");
-    printf("-0,--off targets       Power off targets\n");
-    printf("-c,--cycle targets     Power cycle targets\n");
-    printf("-q,--query [targets]   Query power state of all/specified targets\n");
+    printf("Usage: %s [action] [targets]\n", prog);
+    printf("-1,--on targets      Power on targets\n");
+    printf("-0,--off targets     Power off targets\n");
+    printf("-c,--cycle targets   Power cycle targets\n");
+    printf("-q,--query-all       Query power state of all targets\n");
+    printf("-Q,--query targets   Query power state of specific targets\n");
     exit(1);
 }
 
@@ -368,20 +405,23 @@ static void _cmd_destroy(cmd_t *cp)
 static void _cmd_append(cmd_t *cp, char *arg)
 {
     assert(cp->magic == CMD_MAGIC);
-    assert(cp->argv != NULL);
-    argv_append(cp->argv, arg);
+    if (cp->argv == NULL)
+        err_exit(FALSE, "option takes no arguments");
+    cp->argv = argv_append(cp->argv, arg);
 }
 
 static void _cmd_prepare(cmd_t *cp, bool genders)
 {
+    char tmpstr[CP_LINEMAX];
+    hostlist_t hl;
+    int i;
+
     assert(cp->magic == CMD_MAGIC);
     assert(cp->sendstr == NULL);
 
+    tmpstr[0] = '\0';
     if (cp->argv) {
-        hostlist_t hl = hostlist_create(NULL);
-        char tmpstr[CP_LINEMAX];
-        int i;
-
+        hl = hostlist_create(NULL);
         for (i = 0; i < argv_length(cp->argv); i++) {
             if (genders) {
 #if WITH_GENDERS
@@ -395,9 +435,8 @@ static void _cmd_prepare(cmd_t *cp, bool genders)
         if (hostlist_ranged_string(hl, sizeof(tmpstr), tmpstr) == -1)
             err_exit(FALSE, "hostlist error");
         hostlist_destroy(hl);
-        cp->sendstr = hsprintf(cp->fmt, tmpstr);
-    } else
-        cp->sendstr = xstrdup(cp->fmt);
+    }
+    cp->sendstr = hsprintf(cp->fmt, tmpstr);
 }
 
 static int _cmd_execute(cmd_t *cp, int fd)
@@ -412,6 +451,14 @@ static int _cmd_execute(cmd_t *cp, int fd)
     _expect(CP_PROMPT);
 
     return res;
+}
+
+static void _cmd_print(cmd_t *cp)
+{
+    assert(cp->magic == CMD_MAGIC);
+    assert(cp->sendstr != NULL);
+
+    printf("%s%s", cp->sendstr, CP_EOL);
 }
 
 /* Set up connection to server and get to the command prompt.

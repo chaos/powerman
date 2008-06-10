@@ -1,10 +1,25 @@
 2008-06-09 Jim Garlick <garlick@llnl.gov>
 
+	* src/powerman.c : Option changes:
+	- change -q,--query option to -q,--query-all with no_arguments
+	- add -Q,--query option with required_arguments
+	- change -n,--node option to -n,--soft-all with no_arguments
+	- add -N,--soft option with required_arguments
+	- change -t,--temp option to -t,--temp-all with no_arguments
+	- add -P,--temp option with required_arguments
+	- change -b,--beacon option to -b,--beacon-all with no_arguments
+	- add -B,--beacon option with required_arguments
+	- change -d,--destination option to -h,--server-host
+	- change -D,--device option to -d,--device-all with no_arguments
+	- add -D,--device option with required_arguments
+
+	* scripts/stonith : Reflect option changes above.
+
 	* src/powerman.c : Cleanup:
-	- rename --destination option to --server-host
 	- deprecate "off" and "on" program name support
 	- abbreviate usage() message to only the most common options
 	- allow multiple commands to be run
+	- add -Z,--dump-cmds option to list commands without executing
 
 	* src/argv.c : Added argv_length(), argv_append().
 

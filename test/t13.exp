@@ -1,0 +1,32 @@
+t[0-15]
+on:      
+off:     t[0-15]
+unknown: 
+t0: 83
+t1: 84
+t2: 85
+t3: 86
+t4: 87
+t5: 88
+t6: 89
+t7: 90
+t8: 91
+t9: 92
+t10: 93
+t11: 94
+t12: 95
+t13: 96
+t14: 97
+t15: 98
+test0: state=connected reconnects=000 actions=018 type=vpc hosts=t[0-15]
+on:      
+off:     t[0-15]
+unknown: 
+Command completed successfully
+on:      t[13-15]
+off:     t[0-12]
+unknown: 
+Command completed successfully
+on:      t[14-15]
+off:     t[0-13]
+unknown: 

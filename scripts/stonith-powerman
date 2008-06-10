@@ -53,7 +53,7 @@ power_on()
 
     while [ $secs -gt 0 ]; do
         ${path_powerman} ${pmopts} -1 $1 >/dev/null
-        stat=$(${path_powerman} ${pmopts} -qx $1 | cut -d: -f2 | sed 's/[ ]*//')
+        stat=$(${path_powerman} ${pmopts} -x -Q $1 | cut -d: -f2 | sed 's/[ ]*//')
         if [ "${stat}" = "on" ]; then
             return 
         fi
@@ -71,7 +71,7 @@ power_off()
 
     while [ $secs -gt 0 ]; do
         ${path_powerman} ${pmopts} -0 $1 >/dev/null
-        stat=$(${path_powerman} ${pmopts} -qx $1 | cut -d: -f2 | sed 's/[ ]*//')
+        stat=$(${path_powerman} ${pmopts} -x -Q $1 | cut -d: -f2 | sed 's/[ ]*//')
         if [ "${stat}" = "off" ]; then
             return 
         fi
@@ -88,7 +88,7 @@ power_status()
     local stat
 
     while [ $secs -gt 0 ]; do
-        stat=$(${path_powerman} ${pmopts} -qx $1 | cut -d: -f2 | sed 's/[ ]*//')
+        stat=$(${path_powerman} ${pmopts} -x -Q $1 | cut -d: -f2 | sed 's/[ ]*//')
         if [ "${stat}" = "off" ]; then
             exit 1
         fi
@@ -104,7 +104,7 @@ power_status()
 # Get host list
 power_hostlist()
 {
-    ${path_powerman} ${pmopts} -lx
+    ${path_powerman} ${pmopts} -x -l
 }
 
 ##
@@ -116,7 +116,7 @@ power_hostlist()
 if [ -f ${config_file} ]; then
     source ${config_file}
     if [ -n "$POWERMAN_HOST" ]; then
-        pmopts="${pmopts} -d $POWERMAN_HOST"
+        pmopts="${pmopts} -h $POWERMAN_HOST"
     fi
 fi
 

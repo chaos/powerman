@@ -44,6 +44,8 @@
 
 #define NUM_PLUGS   16
 static int plug[NUM_PLUGS];
+static int beacon[NUM_PLUGS];
+static int temp[NUM_PLUGS];
 static int logged_in = 0;
 
 static char *prog;
@@ -91,22 +93,22 @@ static void _zap_trailing_whitespace(char *s)
  */
 static void _prompt_loop(void)
 {
-    int seq, i, n1, res;
+    int seq, i, res;
     char buf[128];
 
     for (seq = 0;; seq++) {
-        printf("%d vpc> ", seq);   /* prompt */
+        printf("%d vpc> ", seq);
         if (fgets(buf, sizeof(buf), stdin) == NULL)
             break;
         _zap_trailing_whitespace(buf);
-        if (strlen(buf) == 0)   /* empty command */
+        if (strlen(buf) == 0)
             continue;
-        if (strcmp(buf, "logoff") == 0) {       /* logoff */
+        if (strcmp(buf, "logoff") == 0) {               /* logoff */
             printf("%d OK\n", seq);
             logged_in = 0;
             break;
         }
-        if (strcmp(buf, "login") == 0) {        /* logon */
+        if (strcmp(buf, "login") == 0) {                /* logon */
             logged_in = 1;
             goto ok;
         }
@@ -114,57 +116,103 @@ static void _prompt_loop(void)
             printf("%d Please login\n", seq);
             continue;
         }
-        if (sscanf(buf, "stat %d", &n1) == 1) {  /* stat <plugnum> */
-            if (n1 < 0 || n1 >= NUM_PLUGS) {
-                printf("%d BADVAL: %d\n", seq, n1);
+        if (sscanf(buf, "stat %d", &i) == 1) {         /* stat <plugnum> */
+            if (i < 0 || i >= NUM_PLUGS) {
+                printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
-            printf("plug %d: %s\n", n1, plug[n1] ? "ON" : "OFF");
+            printf("plug %d: %s\n", i, plug[i] ? "ON" : "OFF");
             goto ok;
         }
-        if (strcmp(buf, "stat *") == 0) {         /* stat * */
+        if (strcmp(buf, "stat *") == 0) {               /* stat * */
             for (i = 0; i < NUM_PLUGS; i++)
                 printf("plug %d: %s\n", i, plug[i] ? "ON" : "OFF");
             goto ok;
         }
-        if (sscanf(buf, "spew %d", &n1) == 1) { /* spew <linecount> */
-            if (n1 <= 0) {
-                printf("%d BADVAL: %d\n", seq, n1);
+        if (strcmp(buf, "soft *") == 0) {               /* soft * */
+            for (i = 0; i < NUM_PLUGS; i++)
+                printf("plug %d: %s\n", i, plug[i] ? "ON" : "OFF");
+            goto ok;
+        }
+        if (sscanf(buf, "beacon %d", &i) == 1) {       /* beacon <plugnum> */
+            if (i < 0 || i >= NUM_PLUGS) {
+                printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
-            for (i = 0; i < n1; i++)
+            printf("plug %d: %s\n", i, beacon[i] ? "ON" : "OFF");
+            goto ok;
+        }
+        if (strcmp(buf, "beacon *") == 0) {             /* beacon * */
+            for (i = 0; i < NUM_PLUGS; i++)
+                printf("plug %d: %s\n", i, beacon[i] ? "ON" : "OFF");
+            goto ok;
+        }
+        if (sscanf(buf, "temp %d", &i) == 1) {         /* temp <plugnum> */
+            if (i < 0 || i >= NUM_PLUGS) {
+                printf("%d BADVAL: %d\n", seq, i);
+                continue;
+            }
+            printf("plug %d: %d\n", i, temp[i]);
+        }
+        if (strcmp(buf, "temp *") == 0) {               /* temp * */
+            for (i = 0; i < NUM_PLUGS; i++)
+                printf("plug %d: %d\n", i, temp[i]);
+            goto ok;
+        }
+        if (sscanf(buf, "spew %d", &i) == 1) {         /* spew <linecount> */
+            if (i <= 0) {
+                printf("%d BADVAL: %d\n", seq, i);
+                continue;
+            }
+            for (i = 0; i < i; i++)
                 _spew(i);
             goto ok;
         }
-        if (sscanf(buf, "on %d", &n1) == 1) {   /* on <plugnum> */
-            if (n1 < 0 || n1 >= NUM_PLUGS) {
-                printf("%d BADVAL: %d\n", seq, n1);
+        if (sscanf(buf, "on %d", &i) == 1) {           /* on <plugnum> */
+            if (i < 0 || i >= NUM_PLUGS) {
+                printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
-            plug[n1] = 1;
+            plug[i] = 1;
             goto ok;
         }
-        if (sscanf(buf, "off %d", &n1) == 1) {  /* off <plugnum> */
-            if (n1 < 0 || n1 >= NUM_PLUGS) {
-                printf("%d BADVAL: %d\n", seq, n1);
+        if (sscanf(buf, "off %d", &i) == 1) {          /* off <plugnum> */
+            if (i < 0 || i >= NUM_PLUGS) {
+                printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
-            plug[n1] = 0;
+            plug[i] = 0;
             goto ok;
         }
-        if (strcmp(buf, "on *") == 0) {         /* on * */
+        if (sscanf(buf, "flash %d", &i) == 1) {        /* flash <plugnum> */
+            if (i < 0 || i >= NUM_PLUGS) {
+                printf("%d BADVAL: %d\n", seq, i);
+                continue;
+            }
+            beacon[i] = 1;
+            goto ok;
+        }
+        if (sscanf(buf, "unflash %d", &i) == 1) {      /* unflash <plugnum> */
+            if (i < 0 || i >= NUM_PLUGS) {
+                printf("%d BADVAL: %d\n", seq, i);
+                continue;
+            }
+            beacon[i] = 0;
+            goto ok;
+        }
+        if (strcmp(buf, "on *") == 0) {                 /* on * */
             for (i = 0; i < NUM_PLUGS; i++)
                 plug[i] = 1;
             goto ok;
         }
-        if (strcmp(buf, "off *") == 0) {        /* off * */
+        if (strcmp(buf, "off *") == 0) {                /* off * */
             for (i = 0; i < NUM_PLUGS; i++)
                 plug[i] = 0;
             goto ok;
         }
         printf("%d UNKNOWN: %s\n", seq, buf);
         continue;
-      ok:
+ok:
         printf("%d OK\n", seq);
     }
 }
@@ -200,8 +248,11 @@ int main(int argc, char *argv[])
         exit(1);
     }
 
-    for (i = 0; i < NUM_PLUGS; i++)
+    for (i = 0; i < NUM_PLUGS; i++) {
         plug[i] = 0;
+        beacon[i] = 0;
+        temp[i] = 83 + i;
+    }
     _prompt_loop();
         
     fprintf(stderr, "exiting \n");

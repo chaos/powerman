@@ -1,0 +1,23 @@
+#!/bin/sh
+# 1 vpcd instance, 16 nodes, multiple lesser used commands
+# -l  list nodes
+# -n  list soft power state of all nodes
+# -t  list temp of all nodes
+# -d  list info about all devices
+# -f  flash nodes
+# -B  list beacon status of all nodes
+# -u  unflash nodes
+TEST=t13
+$PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf \
+  -l \
+  -n \
+  -t \
+  -d \
+  -b \
+  -f t[13-15] \
+  -b \
+  -u t[13] \
+  -b \
+  >$TEST.out 2>$TEST.err
+test $? = 0 || exit 1
+diff $TEST.out $TEST.exp >$TEST.diff
