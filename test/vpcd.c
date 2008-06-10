@@ -70,7 +70,7 @@ static void _noop_handler(int signum)
  */
 #define SPEW \
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]"
-static void _spew(int linenum)
+static void _spew_one(int linenum)
 {
     char buf[80];
 
@@ -80,6 +80,14 @@ static void _spew(int linenum)
     memcpy(buf + strlen(SPEW) - linenum, SPEW, linenum);
     buf[strlen(SPEW)] = '\0';
     printf("%s\n", buf);
+}
+
+static void _spew(int lines)
+{
+    int i;
+
+    for (i = 0; i < lines; i++)
+        _spew_one(i);
 }
 
 static void _zap_trailing_whitespace(char *s)
@@ -164,8 +172,7 @@ static void _prompt_loop(void)
                 printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
-            for (i = 0; i < i; i++)
-                _spew(i);
+            _spew(i);
             goto ok;
         }
         if (sscanf(buf, "on %d", &i) == 1) {           /* on <plugnum> */
