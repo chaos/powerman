@@ -251,14 +251,19 @@ int main(int argc, char **argv)
         _usage();
 
     /* For backwards compat with powerman 2.0 and earlier,
-     * if there is only one command, any additional arguments are more targets.
+     * additional arguments are more targets for last command.
      */
     if (optind < argc) {
-        if (list_count(commands) > 1)
-            err_exit(FALSE, "error: multiple commands + dangling target args");
-        cp = list_peek(commands); 
+        cmd_t *last = NULL;
+
+        itr = list_iterator_create(commands);
+        while ((cp = list_next(itr)))
+            last = cp;            
+        list_iterator_destroy(itr);
+        if (last == NULL)
+            _usage();
         while (optind < argc) {
-            _cmd_append(cp, argv[optind]);
+            _cmd_append(last, argv[optind]);
             optind++;
         }
     }

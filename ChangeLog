@@ -6,6 +6,9 @@
 	* test/t17.conf, test/t18.conf : Increase timeouts so tests can
 	succeed on slower systems.
 
+	* src/powerman.c : Append any "dangling" arguments to the target
+	list of the last command queued.
+
 2008-06-10 Jim Garlick <garlick@llnl.gov>
 
 	* src/powerman.c : Misc cleanup:
