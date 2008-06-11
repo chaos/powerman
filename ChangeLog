@@ -31,6 +31,9 @@
 
 	* src/device.c : Switch cbuf overwrite mode from NO_DROP to WRAP_MANY
 	and make dropping characters non-fatal.
+
+	* src/client.c : Switch client fd to blocking mode before writing
+	exit response.
 	
 2008-06-09 Jim Garlick <garlick@llnl.gov>
 
