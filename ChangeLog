@@ -1,3 +1,8 @@
+2008-06-11 Jim Garlick <garlick@llnl.gov>
+
+	* src/hostlist.[ch], src/list.[ch], src/cbuf.[ch] :
+	Update to latest versions from lsd-tools trunk.
+
 2008-06-10 Jim Garlick <garlick@llnl.gov>
 
 	* src/powerman.c : Misc cleanup:

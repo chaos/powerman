@@ -27,6 +27,8 @@
 #ifndef _HOSTLIST_H
 #define _HOSTLIST_H
 
+#include <unistd.h>
+
 /* Notes:
  *
  * If WITH_LSD_FATAL_ERROR_FUNC is defined, the linker will expect to
@@ -276,7 +278,8 @@ void hostlist_uniq(hostlist_t hl);
  * hostlist_ranged_string() will write a bracketed hostlist representation
  * where possible.
  */
-size_t hostlist_ranged_string(hostlist_t hl, size_t n, char *buf);
+ssize_t hostlist_ranged_string(hostlist_t hl, size_t n, char *buf);
+ssize_t hostset_ranged_string(hostset_t hs, size_t n, char *buf);
 
 /* hostlist_deranged_string():
  *
@@ -287,7 +290,8 @@ size_t hostlist_ranged_string(hostlist_t hl, size_t n, char *buf);
  * hostlist_deranged_string() will not attempt to write a bracketed
  * hostlist representation. Every hostname will be explicitly written.
  */
-size_t hostlist_deranged_string(hostlist_t hl, size_t n, char *buf);
+ssize_t hostlist_deranged_string(hostlist_t hl, size_t n, char *buf);
+ssize_t hostset_deranged_string(hostset_t hs, size_t n, char *buf);
 
 
 /* ----[ hostlist utility functions ]---- */

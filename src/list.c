@@ -39,8 +39,6 @@
 #include <string.h>
 #include "list.h"
 
-#define MYALLOC
-
 
 /*********************
  *  lsd_fatal_error  *
@@ -133,20 +131,17 @@ static ListNode list_node_alloc (void);
 static void list_node_free (ListNode p);
 static ListIterator list_iterator_alloc (void);
 static void list_iterator_free (ListIterator i);
-#ifdef MYALLOC
 static void * list_alloc_aux (int size, void *pfreelist);
 static void list_free_aux (void *x, void *pfreelist);
-#endif
+
 
 /***************
  *  Variables  *
  ***************/
 
-#ifdef MYALLOC
 static List list_free_lists = NULL;
 static ListNode list_free_nodes = NULL;
 static ListIterator list_free_iterators = NULL;
-#endif
 
 #ifdef WITH_PTHREADS
 static pthread_mutex_t list_free_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -335,7 +330,6 @@ list_find_first (List l, ListFindF f, void *key)
 
     assert(l != NULL);
     assert(f != NULL);
-    assert(key != NULL);
     list_mutex_lock(&l->mutex);
     assert(l->magic == LIST_MAGIC);
     for (p=l->head; p; p=p->next) {
@@ -358,7 +352,6 @@ list_delete_all (List l, ListFindF f, void *key)
 
     assert(l != NULL);
     assert(f != NULL);
-    assert(key != NULL);
     list_mutex_lock(&l->mutex);
     assert(l->magic == LIST_MAGIC);
     pp = &l->head;
@@ -617,7 +610,6 @@ list_find (ListIterator i, ListFindF f, void *key)
 
     assert(i != NULL);
     assert(f != NULL);
-    assert(key != NULL);
     assert(i->magic == LIST_MAGIC);
     while ((v=list_next(i)) && !f(v,key)) {;}
     return(v);
@@ -730,22 +722,14 @@ list_node_destroy (List l, ListNode *pp)
 static List
 list_alloc (void)
 {
-#ifdef MYALLOC
     return(list_alloc_aux(sizeof(struct list), &list_free_lists));
-#else
-    return(malloc(sizeof(struct list)));
-#endif
 }
 
 
 static void
 list_free (List l)
 {
-#ifdef MYALLOC
     list_free_aux(l, &list_free_lists);
-#else
-    free(l);
-#endif
     return;
 }
 
@@ -753,22 +737,14 @@ list_free (List l)
 static ListNode
 list_node_alloc (void)
 {
-#ifdef MYALLOC
     return(list_alloc_aux(sizeof(struct listNode), &list_free_nodes));
-#else
-    return(malloc(sizeof(struct listNode)));
-#endif
 }
 
 
 static void
 list_node_free (ListNode p)
 {
-#ifdef MYALLOC
     list_free_aux(p, &list_free_nodes);
-#else
-    free(p);
-#endif
     return;
 }
 
@@ -776,26 +752,18 @@ list_node_free (ListNode p)
 static ListIterator
 list_iterator_alloc (void)
 {
-#ifdef MYALLOC
     return(list_alloc_aux(sizeof(struct listIterator), &list_free_iterators));
-#else
-    return(malloc(sizeof(struct listIterator)));
-#endif
 }
 
 
 static void
 list_iterator_free (ListIterator i)
 {
-#ifdef MYALLOC
     list_free_aux(i, &list_free_iterators);
-#else
-    free(i);
-#endif
     return;
 }
 
-#ifdef MYALLOC
+
 static void *
 list_alloc_aux (int size, void *pfreelist)
 {
@@ -846,7 +814,7 @@ list_free_aux (void *x, void *pfreelist)
     list_mutex_unlock(&list_free_lock);
     return;
 }
-#endif
+
 
 #ifndef NDEBUG
 #ifdef WITH_PTHREADS

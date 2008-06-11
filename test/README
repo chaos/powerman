@@ -20,9 +20,6 @@ t04
 	Argv test using targv.c.
 t05
 	Regex test using tregex.c.
-
-The following tests are configured powerman-powermand-vpcd[1] (16 plugs):
-
 t06
 	Check power status query options
 	pm --query-all --query t1 --query t[3-5]
@@ -76,8 +73,6 @@ t19
 t20
 	Check timeout/reconnect with partial success (32 plugs).
 	pm -I --query t[14-18] <partial hang> --query t[16-31] <wont hang>
-
-The following tests are configured powerman-powermand-vpcd[4] (64 plugs)
 
 <not done yet>
 
