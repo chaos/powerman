@@ -4,6 +4,14 @@
 
 	* test/t21, test/t22 : Check basic baytech-rpc3-nc functionality.
 
+	* test/t23, test/t24 : Check basic baytech-rpc28-nc functionality.
+
+	* src/regex.c : Refuse to compile regex > 256 bytes for portability.
+
+	* etc/baytech-rpc28-nc.dev : Try without the delays.
+
+	* test/tregex.c : Test some more assumptions about how regexes work.
+
 2008-06-11 Jim Garlick <garlick@llnl.gov>
 
 	* src/hostlist.[ch], src/list.[ch], src/cbuf.[ch] :

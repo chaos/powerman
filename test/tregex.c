@@ -118,6 +118,8 @@ main(int argc, char *argv[])
 	assert(xregex_exec(re, s, NULL) == FALSE);
 	xregex_destroy(re);
 
+	xfree(s);
+
 	/* beginning/end of line handling should be disabled since 
 	 * beginning/end of string (which normally match) are 
 	 * non-deterministic in powerman.  We should be explicitly matching
@@ -142,7 +144,29 @@ main(int argc, char *argv[])
 	assert(xregex_exec(re, "barfoo\n", NULL) == TRUE);
 	xregex_destroy(re);
 
+	/* regex takes first match if there are > 1
+	 */
+	re = xregex_create();
+	rm = xregex_match_create(1);
+	xregex_compile(re, "foo", TRUE);
+	assert(xregex_exec(re, "abfoocdfoo", rm) == TRUE);
+	s = xregex_match_strdup(rm);
+	assert(strcmp(s, "abfoo") == 0);
 	xfree(s);
+	xregex_match_destroy(rm);
+	xregex_destroy(re);
+
+	/* but leading wildcard matches greedily
+	 */
+	re = xregex_create();
+	rm = xregex_match_create(1);
+	xregex_compile(re, ".*foo", TRUE);
+	assert(xregex_exec(re, "abfoocdfoo", rm) == TRUE);
+	s = xregex_match_strdup(rm);
+	assert(strcmp(s, "abfoocdfoo") == 0);
+	xfree(s);
+	xregex_match_destroy(rm);
+	xregex_destroy(re);
 
 	exit(0);
 }

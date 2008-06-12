@@ -95,10 +95,6 @@ _str_subst(char *s1, int len, const char *s2, const char *s3)
     }
 }
 
-/* N.B.  The buffer space available in a compiled RegEx expression is 
- * only 256 bytes.  A long or complicated RegEx will exceed this space 
- * and cause the library call to silently fail.
- */
 void 
 xregex_compile(xregex_t xrp, const char *regex, bool withsub)
 {
@@ -109,6 +105,14 @@ xregex_compile(xregex_t xrp, const char *regex, bool withsub)
     assert(regex != NULL);
     assert(xrp->xr_magic == XREGEX_MAGIC);
     assert(xrp->xr_regex == NULL);
+
+/* No particular limit is imposed  on  the  length  of  REs(!).   Programs
+ * intended to be portable should not employ REs longer than 256 bytes, as
+ * an implementation can refuse to accept such REs and  remain  POSIX-com-
+ * pliant.  -- regex(7) on RHEL 5
+ */
+    if (strlen(regex) > 256)
+        err_exit(FALSE, "refusing to compile regex > 256 bytes");
 
     xrp->xr_regex = (regex_t *)xmalloc(sizeof(regex_t));
     xrp->xr_cflags = REG_EXTENDED;

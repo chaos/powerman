@@ -7,14 +7,6 @@
 #
 # Firmware version: F3.01 (C) 2000
 #
-# Note: the following is repeated throughout this device spec:
-#  send "\r"             # "wake up" the device
-#  delay 0.2             # wait for possibly multiple prompts to be sent
-#  expect "RPC-28[A]*>"  # RPC-28> and RPC-28A> have been spotted
-# This is due to this model's tendancy after a time to ignore the first
-# command sent to it and return just a prompt.  Without the delay extra 
-# prompts and other shenanigans will gunk up future expects.
-#
 specification "baytech-rpc28-nc" {
 	timeout 	10   # about 5 sec for cycle command
 
@@ -22,21 +14,16 @@ specification "baytech-rpc28-nc" {
 		    "12" "13" "14" "15" "16" "17" "18" "19" "20" }
 
 	script login {
-		send "\r"
-		delay 0.2
-		expect "RPC-28[A]*>"
+		send "\r\n"
+		expect ".*RPC-28[A]*>"
 	}
 	script logout {
-		send "\r"
-		delay 0.2
-		expect "RPC-28[A]*>"
-		send "exit\r"
+		send "\r\n"
+		send "exit\r\n"
 	}
 	script status_all {
-		send "\r"
-		delay 0.2
-		expect "RPC-28[A]*>"
-		send "status\r"
+		send "\r\n"
+		send "status\n\r"
 		foreachplug {
 			expect "Outlet[ ]+([0-9]+)[^:0-9]+: (On|Off)"
 			setplugstate $1 $2 on="On" off="Off"
@@ -44,51 +31,39 @@ specification "baytech-rpc28-nc" {
 		expect "RPC-28[A]*>"
 	}
 	script on {
-		send "\r"
-		delay 0.2
-		expect "RPC-28[A]*>"
-		send "on %s\r"
+		send "\r\n"
+		send "on %s\r\n"
 		expect "RPC-28[A]*>"
 	}
 	script on_all {
-		send "\r"
-		delay 0.2
-		expect "RPC-28[A]*>"
-		send "on 0\r"
+		send "\r\n"
+		send "on 0\r\n"
 		expect "RPC-28[A]*>"
 	}
 	script off {
-		send "\r"
-		delay 0.2
-		expect "RPC-28[A]*>"
-		send "off %s\r"
+		send "\r\n"
+		send "off %s\r\n"
 		expect "RPC-28[A]*>"
 	}
 	script off_all {
-		send "\r"
-		delay 0.2
-		expect "RPC-28[A]*>"
-		send "off 0\r"
+		send "\r\n"
+		send "off 0\r\n"
 		expect "RPC-28[A]*>"
 	}
 	script cycle {
-		send "\r"
-		delay 0.2
-		expect "RPC-28[A]*>"
-		send "off %s\r"
+		send "\r\n"
+		send "off %s\r\n"
 		expect "RPC-28[A]*>"
 		delay 4
-		send "on %s\r"
+		send "on %s\r\n"
 		expect "RPC-28[A]*>"
 	}
 	script cycle_all {
-		send "\r"
-		delay 0.2
-		expect "RPC-28[A]*>"
-		send "off 0\r"
+		send "\r\n"
+		send "off 0\r\n"
 		expect "RPC-28[A]*>"
 		delay 4
-		send "on 0\r"
+		send "on 0\r\n"
 		expect "RPC-28[A]*>"
 	}
 }
