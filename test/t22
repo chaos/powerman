@@ -1,0 +1,6 @@
+#!/bin/sh
+TEST=t22
+$PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf \
+    -q -1 t[3-19] -q -0 t[2,17] -q  -1 t[20-127] -q >$TEST.out 2>$TEST.err
+test $? = 0 || exit 1
+diff $TEST.out $TEST.exp >$TEST.diff

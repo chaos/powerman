@@ -1,0 +1,8 @@
+on:      
+off:     t[0-7]
+unknown: 
+Command completed successfully
+on:      t[3-4]
+off:     t[0-2,5-7]
+unknown: 
+Command completed successfully

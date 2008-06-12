@@ -1,3 +1,9 @@
+2008-06-12 Jim Garlick <garlick@llnl.gov>
+
+	* test/baytech.c : New, Baytech emulator.
+
+	* test/t21, test/t22 : Check basic baytech-rpc3-nc functionality.
+
 2008-06-11 Jim Garlick <garlick@llnl.gov>
 
 	* src/hostlist.[ch], src/list.[ch], src/cbuf.[ch] :

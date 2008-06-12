@@ -1,6 +1,6 @@
 On running 'make check':
 
-The test methodlogy here is to run the powerman daemon as a child
+The test methodology here is to run the powerman daemon as a child
 of the powerman client, connected via pty.   The powerman daemon in 
 turn spawns copies of 'vpcd' (virtual power control device), connected 
 via ptys.  Each test starts a fresh powerman+powermand+vpcd(s) so no
@@ -73,8 +73,6 @@ t19
 t20
 	Check timeout/reconnect with partial success (32 plugs).
 	pm -I --query t[14-18] <partial hang> --query t[16-31] <wont hang>
-
-<not done yet>
 
 TODO
 - Implement *_ranged version of on/off/cycle/reset in vpcd and test
