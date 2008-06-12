@@ -168,8 +168,7 @@ main(int argc, char *argv[])
 static void 
 usage(void)
 {
-    fprintf(stderr, "Usage: %s -p personality\n", prog);
-    fprintf(stderr, " where personality is rpc3, rpc3-nc, or rpc28-nc\n");
+    fprintf(stderr, "Usage: %s -p rpc3|rpc3-nc|rpc28-nc\n", prog);
     exit(1);
 }
 
