@@ -5,4 +5,4 @@ if [ "$PATH_POWERMAND" = "" ]; then
     PATH_POWERMAND=../src/powermand
 fi
 #$PATH_POWERMAND -f -c test4.conf -s -R
-$PATH_POWERMAND -f -c t23.conf -s -R
+$PATH_POWERMAND -f -c t27.conf -s -R

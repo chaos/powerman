@@ -1,3 +1,12 @@
+2008-06-13 Jim Garlick <garlick@llnl.gov>
+
+	* test/baytech.c : Add classic baytech rpc3 support.
+
+	* test/t25, test/t26 : Investigate some funny business with delay
+	handling.
+
+	* test/27, test/28 : Check classic baytech functionality.
+
 2008-06-12 Jim Garlick <garlick@llnl.gov>
 
 	* test/baytech.c : New, Baytech emulator.

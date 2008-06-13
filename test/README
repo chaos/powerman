@@ -73,6 +73,14 @@ t19
 t20
 	Check timeout/reconnect with partial success (32 plugs).
 	pm -I --query t[14-18] <partial hang> --query t[16-31] <wont hang>
+t21-t22
+	Test baytech-rpc3-nc script using baytech.c.
+t23-t24
+	Test baytech-rpc28-nc script using baytech.c.
+t25-t26
+	Ensure that delays are process expeditiously.
+t27-t28
+	Test baytech script using baytech.c.
 
 TODO
 - Implement *_ranged version of on/off/cycle/reset in vpcd and test

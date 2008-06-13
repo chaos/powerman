@@ -202,6 +202,80 @@ Maximum Detected:     4.3 Amps\r\n\
 Type \"Help\" for a list of commands\r\n\
 \r\n"
 
+#define RPC3_PROMPT "  RPC-3>"
+
+#define RPC3_WELCOME "\
+\r\n\
+\r\n\
+\r\n\
+        RPC-3 Telnet Host\r\n\
+    Revision F 5.01, (C) 2001 \r\n\
+    Bay Technical Associates\r\n\
+    Unit ID: BT RPC3-20\r\n"
+
+#define RPC3_LOGIN "\
+\r\n\
+    Enter password>"
+
+#define RPC3_BANNER "\
+  Option(s) installed:\r\n\
+  True RMS Current\r\n\
+  Internal Temperature\r\n\
+\r\n\
+\r\n"
+
+#define RPC3_MENU "\r\n\
+  RPC-3 Menu:\r\n\
+\r\n\
+    1)...Outlet Control\r\n\
+    2)...Manage Users\r\n\
+    3)...Configuration\r\n\
+    4)...Unit Status\r\n\
+    5)...Reset Unit\r\n\
+    6)...Logout\r\n\
+\r\n\
+  Enter Selection>"
+
+#define RPC3_OUTLET "\
+  True RMS current:  1.7 Amps\r\n\
+  Maximum Detected:  2.5 Amps\r\n\
+\r\n\
+  Internal Temperature: 32.0 C\r\n\
+\r\n\
+  Circuit Breaker: On \r\n\
+\r\n\
+  Selection   Outlet    Outlet   Power\r\n\
+    Number     Name     Number   Status\r\n\
+      1       Outlet 1    1       %s \r\n\
+      2       Outlet 2    2       %s \r\n\
+      3       Outlet 3    3       %s \r\n\
+      4       Outlet 4    4       %s \r\n\
+      5       Outlet 5    5       %s \r\n\
+      6       Outlet 6    6       %s \r\n\
+      7       Outlet 7    7       %s \r\n\
+      8       Outlet 8    8       %s \r\n\
+\r\n\
+  Type \"Help\" for a list of commands\r\n\
+\r\n"
+
+#define RPC3_OUTLET_HELP "\
+  RPC3 Command Summary (F 5.01).\r\n\
+  \"n\" refers to Selection Number, as displayed in outlet status\r\n\
+  LOGOUT     : terminate session\r\n\
+  OFF n      : turn off outlet \"n\", do all for n = 0\r\n\
+  ON n       : turn on outlet \"n\", do all for n = 0\r\n\
+  REBOOT n   : cycle power off/on outlet \"n\", do all for n = 0\r\n\
+  RC         : display outlet relay control info\r\n\
+  STATUS     : display power status of outlets\r\n\
+  HELP       : display this message\r\n\
+  CLEAR      : Reset the maximum detected current\r\n\
+  CURRENT    : Read the current\r\n\
+  TEMP       : Read current temperature\r\n\
+  MENU       : return to main menu\r\n\
+\r\n\
+  <Strike CR to continue.>"
+
+
 int 
 main(int argc, char *argv[])
 {
@@ -353,11 +427,6 @@ err:
 }
 
 static void 
-_prompt_loop_rpc3(void)
-{
-}
-
-static void 
 _prompt_loop_rpc3_nc(void)
 {
     int i;
@@ -431,7 +500,97 @@ err:
         printf("Input error\r\n\r\n");
     }
 }
+static void 
+_prompt_loop_rpc3(void)
+{
+    int i;
+    char buf[128];
+    int num_plugs = 8;
+    char plug[4][8];
+    int plug_origin = 1;
+    enum { START, MENU, OUTLET, QUIT } state = START;
 
+    for (i = 0; i < num_plugs; i++)
+        strcpy(plug[i], "Off");
+
+    printf(RPC3_WELCOME);
+
+    while (state != QUIT) {
+        switch (state) {
+            case START:
+                printf(RPC3_LOGIN);
+                fflush(stdout);
+                break;
+            case MENU:
+                printf(RPC3_MENU);
+                break;
+            case OUTLET:
+                printf(RPC3_OUTLET, plug[0], plug[1], plug[2], plug[3],
+                                    plug[4], plug[5], plug[6], plug[7]);
+                printf(RPC3_PROMPT);
+                fflush(stdout);
+                break;
+        }
+
+        if (fgets(buf, sizeof(buf), stdin) == NULL) {
+            state = QUIT;
+            continue;
+        }
+        _zap_trailing_whitespace(buf);
+
+        switch (state) {
+            case START:
+                if (!strcmp(buf, "baytech")) {
+                    printf(RPC3_BANNER);
+                    state = MENU;
+                } else
+                    printf("    Invalid password.\r\n\r\n");
+                break;
+            case MENU:
+                if (!strcmp(buf, "1"))
+                    state = OUTLET;
+                else if (!strcmp(buf, "6"))
+                    state = QUIT;
+                else
+                    goto err;
+                break;
+            case OUTLET:
+                if (!strcmp(buf, "?") || !strcmp(buf, "help")) {
+                    printf(RPC3_OUTLET_HELP);
+                    fflush(stdout);
+                    if (fgets(buf, sizeof(buf), stdin) == NULL)
+                        state = QUIT;
+                } else if (!strcmp(buf, "menu")) {
+                    state = MENU;
+                } else if (!strcmp(buf, "logout")) {
+                    state = QUIT;
+                } else if (!strcmp(buf, "status")) {
+                } else if (sscanf(buf, "on %d", &i) == 1) {
+                    if (i >= plug_origin && i < num_plugs + plug_origin)
+                        strcpy(plug[i - plug_origin], "On ");
+                    else if (i == 0)
+                        for (i = 0; i < num_plugs; i++)
+                            strcpy(plug[i], "On ");
+                    else
+                        goto err;
+                } else if (sscanf(buf, "off %d", &i) == 1) {
+                    if (i >= plug_origin && i < num_plugs + plug_origin)
+                        strcpy(plug[i - plug_origin], "Off");
+                    else if (i == 0)
+                        for (i = 0; i < num_plugs; i++)
+                            strcpy(plug[i], "Off");
+                    else
+                        goto err;
+                } else
+                    goto err;
+                break;
+        }
+        continue;
+err:
+        printf("\r\n  Input error.\r\n\r\n");
+    }
+}
+        
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab
  */

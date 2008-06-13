@@ -1,0 +1,122 @@
+send(b0): 'status\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n'
+recv(b0): '\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       Off'
+recv(b0): ' \r\n      2       Outlet 2    2       Off'
+recv(b0): ' \r\n      3       Outlet 3    3       Off'
+recv(b0): ' \r\n      4       Outlet 4    4       Off'
+recv(b0): ' \r\n      5       Outlet 5    5       Off'
+recv(b0): ' \r\n      6       Outlet 6    6       Off'
+recv(b0): ' \r\n      7       Outlet 7    7       Off'
+recv(b0): ' \r\n      8       Outlet 8    8       Off'
+recv(b0): ' \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+on:      
+off:     t[0-7]
+unknown: 
+send(b0): 'on 1\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       On  \r\n      2       Outlet 2    2       Off \r\n      3       Outlet 3    3       Off \r\n      4       Outlet 4    4       Off \r\n      5       Outlet 5    5       Off \r\n      6       Outlet 6    6       Off \r\n      7       Outlet 7    7       Off \r\n      8       Outlet 8    8       Off \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+Command completed successfully
+send(b0): 'status\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n'
+recv(b0): '\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       On'
+recv(b0): '  \r\n      2       Outlet 2    2       Off'
+recv(b0): ' \r\n      3       Outlet 3    3       Off'
+recv(b0): ' \r\n      4       Outlet 4    4       Off'
+recv(b0): ' \r\n      5       Outlet 5    5       Off'
+recv(b0): ' \r\n      6       Outlet 6    6       Off'
+recv(b0): ' \r\n      7       Outlet 7    7       Off'
+recv(b0): ' \r\n      8       Outlet 8    8       Off'
+recv(b0): ' \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+on:      t0
+off:     t[1-7]
+unknown: 
+send(b0): 'off 1\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       Off \r\n      2       Outlet 2    2       Off \r\n      3       Outlet 3    3       Off \r\n      4       Outlet 4    4       Off \r\n      5       Outlet 5    5       Off \r\n      6       Outlet 6    6       Off \r\n      7       Outlet 7    7       Off \r\n      8       Outlet 8    8       Off \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+delay(b0): 4.000000
+send(b0): 'on 1\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       On  \r\n      2       Outlet 2    2       Off \r\n      3       Outlet 3    3       Off \r\n      4       Outlet 4    4       Off \r\n      5       Outlet 5    5       Off \r\n      6       Outlet 6    6       Off \r\n      7       Outlet 7    7       Off \r\n      8       Outlet 8    8       Off \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+Command completed successfully
+send(b0): 'status\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n'
+recv(b0): '\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       On'
+recv(b0): '  \r\n      2       Outlet 2    2       Off'
+recv(b0): ' \r\n      3       Outlet 3    3       Off'
+recv(b0): ' \r\n      4       Outlet 4    4       Off'
+recv(b0): ' \r\n      5       Outlet 5    5       Off'
+recv(b0): ' \r\n      6       Outlet 6    6       Off'
+recv(b0): ' \r\n      7       Outlet 7    7       Off'
+recv(b0): ' \r\n      8       Outlet 8    8       Off'
+recv(b0): ' \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+on:      t0
+off:     t[1-7]
+unknown: 
+send(b0): 'off 1\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       Off \r\n      2       Outlet 2    2       Off \r\n      3       Outlet 3    3       Off \r\n      4       Outlet 4    4       Off \r\n      5       Outlet 5    5       Off \r\n      6       Outlet 6    6       Off \r\n      7       Outlet 7    7       Off \r\n      8       Outlet 8    8       Off \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+Command completed successfully
+send(b0): 'status\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n'
+recv(b0): '\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       Off'
+recv(b0): ' \r\n      2       Outlet 2    2       Off'
+recv(b0): ' \r\n      3       Outlet 3    3       Off'
+recv(b0): ' \r\n      4       Outlet 4    4       Off'
+recv(b0): ' \r\n      5       Outlet 5    5       Off'
+recv(b0): ' \r\n      6       Outlet 6    6       Off'
+recv(b0): ' \r\n      7       Outlet 7    7       Off'
+recv(b0): ' \r\n      8       Outlet 8    8       Off'
+recv(b0): ' \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+on:      
+off:     t[0-7]
+unknown: 
+send(b0): 'on 0\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       On  \r\n      2       Outlet 2    2       On  \r\n      3       Outlet 3    3       On  \r\n      4       Outlet 4    4       On  \r\n      5       Outlet 5    5       On  \r\n      6       Outlet 6    6       On  \r\n      7       Outlet 7    7       On  \r\n      8       Outlet 8    8       On  \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+Command completed successfully
+send(b0): 'status\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n'
+recv(b0): '\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       On'
+recv(b0): '  \r\n      2       Outlet 2    2       On'
+recv(b0): '  \r\n      3       Outlet 3    3       On'
+recv(b0): '  \r\n      4       Outlet 4    4       On'
+recv(b0): '  \r\n      5       Outlet 5    5       On'
+recv(b0): '  \r\n      6       Outlet 6    6       On'
+recv(b0): '  \r\n      7       Outlet 7    7       On'
+recv(b0): '  \r\n      8       Outlet 8    8       On'
+recv(b0): '  \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+on:      t[0-7]
+off:     
+unknown: 
+send(b0): 'off 0\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       Off \r\n      2       Outlet 2    2       Off \r\n      3       Outlet 3    3       Off \r\n      4       Outlet 4    4       Off \r\n      5       Outlet 5    5       Off \r\n      6       Outlet 6    6       Off \r\n      7       Outlet 7    7       Off \r\n      8       Outlet 8    8       Off \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+delay(b0): 4.000000
+send(b0): 'on 0\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       On  \r\n      2       Outlet 2    2       On  \r\n      3       Outlet 3    3       On  \r\n      4       Outlet 4    4       On  \r\n      5       Outlet 5    5       On  \r\n      6       Outlet 6    6       On  \r\n      7       Outlet 7    7       On  \r\n      8       Outlet 8    8       On  \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+Command completed successfully
+send(b0): 'status\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n'
+recv(b0): '\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       On'
+recv(b0): '  \r\n      2       Outlet 2    2       On'
+recv(b0): '  \r\n      3       Outlet 3    3       On'
+recv(b0): '  \r\n      4       Outlet 4    4       On'
+recv(b0): '  \r\n      5       Outlet 5    5       On'
+recv(b0): '  \r\n      6       Outlet 6    6       On'
+recv(b0): '  \r\n      7       Outlet 7    7       On'
+recv(b0): '  \r\n      8       Outlet 8    8       On'
+recv(b0): '  \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+on:      t[0-7]
+off:     
+unknown: 
+send(b0): 'off 0\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       Off \r\n      2       Outlet 2    2       Off \r\n      3       Outlet 3    3       Off \r\n      4       Outlet 4    4       Off \r\n      5       Outlet 5    5       Off \r\n      6       Outlet 6    6       Off \r\n      7       Outlet 7    7       Off \r\n      8       Outlet 8    8       Off \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+Command completed successfully
+send(b0): 'status\r\n'
+recv(b0): '  True RMS current:  1.7 Amps\r\n  Maximum Detected:  2.5 Amps\r\n\r\n  Internal Temperature: 32.0 C\r\n\r\n  Circuit Breaker: On \r\n'
+recv(b0): '\r\n  Selection   Outlet    Outlet   Power\r\n    Number     Name     Number   Status\r\n      1       Outlet 1    1       Off'
+recv(b0): ' \r\n      2       Outlet 2    2       Off'
+recv(b0): ' \r\n      3       Outlet 3    3       Off'
+recv(b0): ' \r\n      4       Outlet 4    4       Off'
+recv(b0): ' \r\n      5       Outlet 5    5       Off'
+recv(b0): ' \r\n      6       Outlet 6    6       Off'
+recv(b0): ' \r\n      7       Outlet 7    7       Off'
+recv(b0): ' \r\n      8       Outlet 8    8       Off'
+recv(b0): ' \r\n\r\n  Type "Help" for a list of commands\r\n\r\n  RPC-3>'
+on:      
+off:     t[0-7]
+unknown: 
