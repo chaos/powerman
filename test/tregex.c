@@ -168,5 +168,18 @@ main(int argc, char *argv[])
 	xregex_match_destroy(rm);
 	xregex_destroy(re);
 
+	/* check that [:space:] character class works inside bracket
+	 * expression
+	 */
+	re = xregex_create();
+	rm = xregex_match_create(1);
+	xregex_compile(re, "bar[[:space:]]*foo", TRUE);
+	assert(xregex_exec(re, "bar                   foo", rm) == TRUE);
+	s = xregex_match_strdup(rm);
+	assert(strcmp(s,"bar                   foo") == 0);
+	xfree(s);
+	xregex_match_destroy(rm);
+	xregex_destroy(re);
+
 	exit(0);
 }

@@ -1,129 +1,27 @@
-send(b0): '\r\n'
-recv(b0): 'RPC3-NC>'
-send(b0): 'status\r\n'
-recv(b0): 'RPC3-NC>\r\n\r\n   Average Power:     338 Watts\r\nTrue RMS Voltage:   120.9 Volts\r\nTrue RMS Current:     2.9 Amps\r\nMaximum Detected:     4.3 Amps\r\n Circuit Breaker:       Good\r\n\r\nInternal Temperature:  40.0 C\r\n\r\n\r\n 1)...Outlet  1       : Off'
-recv(b0): '          \r\n 2)...Outlet  2       : Off'
-recv(b0): '          \r\n 3)...Outlet  3       : Off'
-recv(b0): '          \r\n 4)...Outlet  4       : Off'
-recv(b0): '          \r\n 5)...Outlet  5       : Off'
-recv(b0): '          \r\n 6)...Outlet  6       : Off'
-recv(b0): '          \r\n 7)...Outlet  7       : Off'
-recv(b0): '          \r\n 8)...Outlet  8       : Off'
-recv(b0): '          \r\n\r\nType "Help" for a list of commands\r\n\r\nRPC3-NC>'
 on:      
 off:     t[0-7]
 unknown: 
-send(b0): 'on 1\r\n'
-recv(b0): 'RPC3-NC>'
 Command completed successfully
-send(b0): '\r\n'
-recv(b0): 'RPC3-NC>'
-send(b0): 'status\r\n'
-recv(b0): '\r\n\r\n   Average Power:     338 Watts\r\nTrue RMS Voltage:   120.9 Volts\r\nTrue RMS Current:     2.9 Amps\r\nMaximum Detected:     4.3 Amps\r\n Circuit Breaker:       Good\r\n\r\nInternal Temperature:  40.0 C\r\n\r\n\r\n 1)...Outlet  1       : On'
-recv(b0): '           \r\n 2)...Outlet  2       : Off'
-recv(b0): '          \r\n 3)...Outlet  3       : Off'
-recv(b0): '          \r\n 4)...Outlet  4       : Off'
-recv(b0): '          \r\n 5)...Outlet  5       : Off'
-recv(b0): '          \r\n 6)...Outlet  6       : Off'
-recv(b0): '          \r\n 7)...Outlet  7       : Off'
-recv(b0): '          \r\n 8)...Outlet  8       : Off'
-recv(b0): '          \r\n\r\nType "Help" for a list of commands\r\n\r\nRPC3-NC>'
 on:      t0
 off:     t[1-7]
 unknown: 
-send(b0): 'off 1\r\n'
-recv(b0): 'RPC3-NC>'
-delay(b0): 4.000000
-send(b0): 'on 1\r\n'
-recv(b0): 'RPC3-NC>'
 Command completed successfully
-send(b0): '\r\n'
-recv(b0): 'RPC3-NC>'
-send(b0): 'status\r\n'
-recv(b0): '\r\n\r\n   Average Power:     338 Watts\r\nTrue RMS Voltage:   120.9 Volts\r\nTrue RMS Current:     2.9 Amps\r\nMaximum Detected:     4.3 Amps\r\n Circuit Breaker:       Good\r\n\r\nInternal Temperature:  40.0 C\r\n\r\n\r\n 1)...Outlet  1       : On'
-recv(b0): '           \r\n 2)...Outlet  2       : Off'
-recv(b0): '          \r\n 3)...Outlet  3       : Off'
-recv(b0): '          \r\n 4)...Outlet  4       : Off'
-recv(b0): '          \r\n 5)...Outlet  5       : Off'
-recv(b0): '          \r\n 6)...Outlet  6       : Off'
-recv(b0): '          \r\n 7)...Outlet  7       : Off'
-recv(b0): '          \r\n 8)...Outlet  8       : Off'
-recv(b0): '          \r\n\r\nType "Help" for a list of commands\r\n\r\nRPC3-NC>'
 on:      t0
 off:     t[1-7]
 unknown: 
-send(b0): 'off 1\r\n'
-recv(b0): 'RPC3-NC>'
 Command completed successfully
-send(b0): '\r\n'
-recv(b0): 'RPC3-NC>'
-send(b0): 'status\r\n'
-recv(b0): '\r\n\r\n   Average Power:     338 Watts\r\nTrue RMS Voltage:   120.9 Volts\r\nTrue RMS Current:     2.9 Amps\r\nMaximum Detected:     4.3 Amps\r\n Circuit Breaker:       Good\r\n\r\nInternal Temperature:  40.0 C\r\n\r\n\r\n 1)...Outlet  1       : Off'
-recv(b0): '          \r\n 2)...Outlet  2       : Off'
-recv(b0): '          \r\n 3)...Outlet  3       : Off'
-recv(b0): '          \r\n 4)...Outlet  4       : Off'
-recv(b0): '          \r\n 5)...Outlet  5       : Off'
-recv(b0): '          \r\n 6)...Outlet  6       : Off'
-recv(b0): '          \r\n 7)...Outlet  7       : Off'
-recv(b0): '          \r\n 8)...Outlet  8       : Off'
-recv(b0): '          \r\n\r\nType "Help" for a list of commands\r\n\r\nRPC3-NC>'
 on:      
 off:     t[0-7]
 unknown: 
-send(b0): 'on 0\r\n'
-recv(b0): 'RPC3-NC>'
 Command completed successfully
-send(b0): '\r\n'
-recv(b0): 'RPC3-NC>'
-send(b0): 'status\r\n'
-recv(b0): '\r\n\r\n   Average Power:     338 Watts\r\nTrue RMS Voltage:   120.9 Volts\r\nTrue RMS Current:     2.9 Amps\r\nMaximum Detected:     4.3 Amps\r\n Circuit Breaker:       Good\r\n\r\nInternal Temperature:  40.0 C\r\n\r\n\r\n 1)...Outlet  1       : On'
-recv(b0): '           \r\n 2)...Outlet  2       : On'
-recv(b0): '           \r\n 3)...Outlet  3       : On'
-recv(b0): '           \r\n 4)...Outlet  4       : On'
-recv(b0): '           \r\n 5)...Outlet  5       : On'
-recv(b0): '           \r\n 6)...Outlet  6       : On'
-recv(b0): '           \r\n 7)...Outlet  7       : On'
-recv(b0): '           \r\n 8)...Outlet  8       : On'
-recv(b0): '           \r\n\r\nType "Help" for a list of commands\r\n\r\nRPC3-NC>'
 on:      t[0-7]
 off:     
 unknown: 
-send(b0): 'off 0\r\n'
-recv(b0): 'RPC3-NC>'
-delay(b0): 4.000000
-send(b0): 'on 0\r\n'
-recv(b0): 'RPC3-NC>'
 Command completed successfully
-send(b0): '\r\n'
-recv(b0): 'RPC3-NC>'
-send(b0): 'status\r\n'
-recv(b0): '\r\n\r\n   Average Power:     338 Watts\r\nTrue RMS Voltage:   120.9 Volts\r\nTrue RMS Current:     2.9 Amps\r\nMaximum Detected:     4.3 Amps\r\n Circuit Breaker:       Good\r\n\r\nInternal Temperature:  40.0 C\r\n\r\n\r\n 1)...Outlet  1       : On'
-recv(b0): '           \r\n 2)...Outlet  2       : On'
-recv(b0): '           \r\n 3)...Outlet  3       : On'
-recv(b0): '           \r\n 4)...Outlet  4       : On'
-recv(b0): '           \r\n 5)...Outlet  5       : On'
-recv(b0): '           \r\n 6)...Outlet  6       : On'
-recv(b0): '           \r\n 7)...Outlet  7       : On'
-recv(b0): '           \r\n 8)...Outlet  8       : On'
-recv(b0): '           \r\n\r\nType "Help" for a list of commands\r\n\r\nRPC3-NC>'
 on:      t[0-7]
 off:     
 unknown: 
-send(b0): 'off 0\r\n'
-recv(b0): 'RPC3-NC>'
 Command completed successfully
-send(b0): '\r\n'
-recv(b0): 'RPC3-NC>'
-send(b0): 'status\r\n'
-recv(b0): '\r\n\r\n   Average Power:     338 Watts\r\nTrue RMS Voltage:   120.9 Volts\r\nTrue RMS Current:     2.9 Amps\r\nMaximum Detected:     4.3 Amps\r\n Circuit Breaker:       Good\r\n\r\nInternal Temperature:  40.0 C\r\n\r\n\r\n 1)...Outlet  1       : Off'
-recv(b0): '          \r\n 2)...Outlet  2       : Off'
-recv(b0): '          \r\n 3)...Outlet  3       : Off'
-recv(b0): '          \r\n 4)...Outlet  4       : Off'
-recv(b0): '          \r\n 5)...Outlet  5       : Off'
-recv(b0): '          \r\n 6)...Outlet  6       : Off'
-recv(b0): '          \r\n 7)...Outlet  7       : Off'
-recv(b0): '          \r\n 8)...Outlet  8       : Off'
-recv(b0): '          \r\n\r\nType "Help" for a list of commands\r\n\r\nRPC3-NC>'
 on:      
 off:     t[0-7]
 unknown: 
