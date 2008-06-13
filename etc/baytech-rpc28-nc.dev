@@ -7,6 +7,12 @@
 #
 # Firmware version: F3.01 (C) 2000
 #
+# Maybe it is accumulated serial noise or some other issue, but this 
+# model seems to require a little handshake:
+#		send "\r\n"
+#		expect ".*RPC-28[A]*>"
+# before each command to avoid dropping the command.
+#
 specification "baytech-rpc28-nc" {
 	timeout 	10   # about 5 sec for cycle command
 
@@ -19,11 +25,13 @@ specification "baytech-rpc28-nc" {
 	}
 	script logout {
 		send "\r\n"
+		expect ".*RPC-28[A]*>"
 		send "exit\r\n"
 	}
 	script status_all {
 		send "\r\n"
-		send "status\n\r"
+		expect ".*RPC-28[A]*>"
+		send "status\r\n"
 		foreachplug {
 			expect "Outlet[ ]+([0-9]+)[^:0-9]+: (On|Off)"
 			setplugstate $1 $2 on="On" off="Off"
@@ -32,26 +40,31 @@ specification "baytech-rpc28-nc" {
 	}
 	script on {
 		send "\r\n"
+		expect ".*RPC-28[A]*>"
 		send "on %s\r\n"
 		expect "RPC-28[A]*>"
 	}
 	script on_all {
 		send "\r\n"
+		expect ".*RPC-28[A]*>"
 		send "on 0\r\n"
 		expect "RPC-28[A]*>"
 	}
 	script off {
 		send "\r\n"
+		expect ".*RPC-28[A]*>"
 		send "off %s\r\n"
 		expect "RPC-28[A]*>"
 	}
 	script off_all {
 		send "\r\n"
+		expect ".*RPC-28[A]*>"
 		send "off 0\r\n"
 		expect "RPC-28[A]*>"
 	}
 	script cycle {
 		send "\r\n"
+		expect ".*RPC-28[A]*>"
 		send "off %s\r\n"
 		expect "RPC-28[A]*>"
 		delay 4
@@ -60,6 +73,7 @@ specification "baytech-rpc28-nc" {
 	}
 	script cycle_all {
 		send "\r\n"
+		expect ".*RPC-28[A]*>"
 		send "off 0\r\n"
 		expect "RPC-28[A]*>"
 		delay 4

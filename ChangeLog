@@ -8,7 +8,7 @@
 
 	* src/regex.c : Refuse to compile regex > 256 bytes for portability.
 
-	* etc/baytech-rpc28-nc.dev : Try without the delays.
+	* etc/baytech-rpc28-nc.dev : Eliminate delays from initial handshake.
 
 	* test/tregex.c : Test some more assumptions about how regexes work.
 
