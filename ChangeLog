@@ -3,6 +3,8 @@
 	* etc/apcpdu3.dev : Fixed problem with intermittent failures
 	of query script.
 
+	* etc/apcpdu.dev : Backport change from above.
+
 2008-06-13 Jim Garlick <garlick@llnl.gov>
 
 	* test/baytech.c : Add classic baytech rpc3 support.
