@@ -7,28 +7,59 @@
 #include "xregex.h"
 #include "xmalloc.h"
 
-#define LONG_STR_LEN 	(64*1024*1024)
-#define POS_MAGIC 	42
-#define POS_WONDERFUL	32*1024*1024
-#define POS_COOKIE	63*1024*1024
 
-int
-main(int argc, char *argv[])
+/* Return true if regex [r] matches exactly [p] in [s].
+ */
+static bool
+_matchstr(char *r, char *s, char *p)
+{
+	xregex_t re;
+	xregex_match_t rm;
+	int res;
+	char *tmp;
+
+	re = xregex_create();
+	rm = xregex_match_create(2);
+	xregex_compile(re, r, TRUE);
+	res = xregex_exec(re, s, rm);
+	if (res && p) {
+		tmp = xregex_match_strdup(rm);
+		if (strcmp(tmp, p) != 0)
+			res = FALSE;
+		xfree(tmp);
+	}
+	xregex_match_destroy(rm);
+	xregex_destroy(re);
+
+	return res;
+}
+
+/* Return true if regex [r] matches exactly [s] in [s].
+ */
+static bool
+_matchstr_all(char *r, char *s)
+{
+	return _matchstr(r, s, s);
+}
+
+/* Return true if regex [r] matches anything in [s].
+ */
+static bool
+_match(char *r, char *s)
+{
+	return _matchstr(r, s, NULL);
+}
+
+static void 
+_check_substr_match(void)
 {
 	xregex_t re; 
 	xregex_match_t rm;
 	char *s;
 
 	re = xregex_create();
-	xregex_compile(re, "foo", FALSE);
-	assert(xregex_exec(re, "foo", NULL) == TRUE);
-	assert(xregex_exec(re, "fooxxx", NULL) == TRUE);
-	assert(xregex_exec(re, "xxxfoo", NULL) == TRUE);
-	assert(xregex_exec(re, "bar", NULL) == FALSE);
-	xregex_destroy(re);
-
-	re = xregex_create();
 	rm = xregex_match_create(2);
+
 	xregex_compile(re, "foo([0-9]+)bar([0-9]+)", TRUE);
 	assert(xregex_exec(re, "xxxfoo1bar2", rm) == TRUE);
 	s = xregex_match_sub_strdup(rm, 0);
@@ -82,42 +113,39 @@ main(int argc, char *argv[])
 
 	xregex_match_destroy(rm);
 	xregex_destroy(re);
+}
+
+int
+main(int argc, char *argv[])
+{
+	char *s;
+
+	assert(_match("foo", "foo"));
+	assert(_match("foo", "fooxxx"));
+	assert(_match("foo", "xxxfoo"));
+	assert(!_match("foo", "bar"));
+
+	_check_substr_match();
 
 	/* verify that \\n and \\r are converted into \r and \r */
-	re = xregex_create();
-	xregex_compile(re, "foo\\r\\n", FALSE);
-	assert(xregex_exec(re, "foo\\r\\n", NULL) == FALSE);
-	assert(xregex_exec(re, "foo\r\n", NULL) == TRUE);
-	xregex_destroy(re);
+	assert(!_match("foo\\r\\n", "foo\\r\\n"));
+	assert( _match("foo\\r\\n", "foo\r\n"));
 
 	/* check a really long string for a regex */
+#define LONG_STR_LEN 	(64*1024*1024)
+#define POS_MAGIC 	42
+#define POS_WONDERFUL	32*1024*1024
+#define POS_COOKIE	63*1024*1024
 	s = xmalloc(LONG_STR_LEN);
 	memset(s, 'a', LONG_STR_LEN - 1);
 	memcpy(s + POS_MAGIC,     "MAGIC",     5);
 	memcpy(s + POS_WONDERFUL, "WONDERFUL", 9);
 	memcpy(s + POS_COOKIE,    "COOKIE",    6);
 	s[LONG_STR_LEN - 1] = '\0';
-
-	re = xregex_create();
-	xregex_compile(re, "MAGIC", FALSE);
-	assert(xregex_exec(re, s, NULL) == TRUE);
-	xregex_destroy(re);
-
-	re = xregex_create();
-	xregex_compile(re, "WONDERFUL", FALSE);
-	assert(xregex_exec(re, s, NULL) == TRUE);
-	xregex_destroy(re);
-
-	re = xregex_create();
-	xregex_compile(re, "COOKIE", FALSE);
-	assert(xregex_exec(re, s, NULL) == TRUE);
-	xregex_destroy(re);
-
-	re = xregex_create();
-	xregex_compile(re, "CHOCOLATE", FALSE);
-	assert(xregex_exec(re, s, NULL) == FALSE);
-	xregex_destroy(re);
-
+	assert( _match("MAGIC", s));
+	assert( _match("WONDERFUL", s));
+	assert( _match("COOKIE", s));
+	assert(!_match("CHOCOLATE", s));
 	xfree(s);
 
 	/* beginning/end of line handling should be disabled since 
@@ -125,61 +153,31 @@ main(int argc, char *argv[])
 	 * non-deterministic in powerman.  We should be explicitly matching
 	 * end-of-line sentinels like \n in scripts.
 	 */
-	re = xregex_create();
-	xregex_compile(re, "foo$", FALSE);
-	assert(xregex_exec(re, "foo", NULL) == FALSE);
-	assert(xregex_exec(re, "foo\n", NULL) == FALSE);
-	xregex_destroy(re);
-	
-	re = xregex_create();
-	xregex_compile(re, "^foo", FALSE);
-	assert(xregex_exec(re, "foo", NULL) == FALSE);
-	assert(xregex_exec(re, "bar\nfoo", NULL) == FALSE);
-	xregex_destroy(re);
+	assert(!_match("foo$", "foo"));
+	assert(!_match("foo$", "foo\n"));
+	assert(!_match("^foo", "foo\n"));
+	assert(!_match("^foo", "bar\nfoo"));
+	assert(!_match("foo\n", "foo"));
+	assert(!_match("foo\n", "bar\nfoo"));
+	assert( _match("foo\n", "barfoo\n"));
 
-	re = xregex_create();
-	xregex_compile(re, "foo\n", FALSE);
-	assert(xregex_exec(re, "foo", NULL) == FALSE);
-	assert(xregex_exec(re, "bar\nfoo", NULL) == FALSE);
-	assert(xregex_exec(re, "barfoo\n", NULL) == TRUE);
-	xregex_destroy(re);
-
-	/* regex takes first match if there are > 1
+	/* regex takes first match if there are > 1,
+	 * but leading wildcard matches greedily
 	 */
-	re = xregex_create();
-	rm = xregex_match_create(1);
-	xregex_compile(re, "foo", TRUE);
-	assert(xregex_exec(re, "abfoocdfoo", rm) == TRUE);
-	s = xregex_match_strdup(rm);
-	assert(strcmp(s, "abfoo") == 0);
-	xfree(s);
-	xregex_match_destroy(rm);
-	xregex_destroy(re);
-
-	/* but leading wildcard matches greedily
-	 */
-	re = xregex_create();
-	rm = xregex_match_create(1);
-	xregex_compile(re, ".*foo", TRUE);
-	assert(xregex_exec(re, "abfoocdfoo", rm) == TRUE);
-	s = xregex_match_strdup(rm);
-	assert(strcmp(s, "abfoocdfoo") == 0);
-	xfree(s);
-	xregex_match_destroy(rm);
-	xregex_destroy(re);
+	assert(_matchstr("foo", "abfoocdfoo", 
+                                "abfoo"));
+	assert(_matchstr_all(".*foo", "abfoocdfoo"));
 
 	/* check that [:space:] character class works inside bracket
 	 * expression
 	 */
-	re = xregex_create();
-	rm = xregex_match_create(1);
-	xregex_compile(re, "bar[[:space:]]*foo", TRUE);
-	assert(xregex_exec(re, "bar                   foo", rm) == TRUE);
-	s = xregex_match_strdup(rm);
-	assert(strcmp(s,"bar                   foo") == 0);
-	xfree(s);
-	xregex_match_destroy(rm);
-	xregex_destroy(re);
+	assert(_matchstr_all("bar[0-9[:space:]]*foo", "bar  42  foo"));
+
+	/* debug apcpdu3 regex
+	 */
+#define B3RX "([0-9])*[^\r\n]*(ON|OFF)\r\n"
+	assert(_matchstr_all(B3RX, "     2- Outlet 2                 ON\r\n"));
+	assert(_matchstr_all(B3RX, "     9-                          ON\r\n"));
 
 	exit(0);
 }

@@ -1,3 +1,8 @@
+2008-06-16 Jim Garlick <garlick@llnl.gov>
+
+	* etc/apcpdu3.dev : Fixed problem with intermittent failures
+	of query script.
+
 2008-06-13 Jim Garlick <garlick@llnl.gov>
 
 	* test/baytech.c : Add classic baytech rpc3 support.

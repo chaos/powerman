@@ -38,6 +38,74 @@ static const struct option longopts[] = {
 #define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
 #endif
 
+
+int 
+main(int argc, char *argv[])
+{
+    int i, c;
+    baytype_t personality = NONE;
+
+    prog = basename(argv[0]);
+    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
+        switch (c) {
+            case 'p':
+                if (strcmp(optarg, "rpc3") == 0)
+                    personality = RPC3;
+                else if (strcmp(optarg, "rpc3-nc") == 0)
+                    personality = RPC3_NC;
+                else if (strcmp(optarg, "rpc28-nc") == 0)
+                    personality = RPC28_NC;
+                else
+                    usage();
+                break;
+            default:
+                usage();
+        }
+    }
+    if (optind < argc)
+        usage();
+
+    if (signal(SIGPIPE, _noop_handler) == SIG_ERR) {
+        perror("signal");
+        exit(1);
+    }
+
+    switch (personality) {
+        case NONE:
+            usage();
+        case RPC3:
+            _prompt_loop_rpc3();
+            break;
+        case RPC3_NC:
+            _prompt_loop_rpc3_nc();
+            break;
+        case RPC28_NC:
+            _prompt_loop_rpc28_nc();
+            break;
+    }
+    exit(0);
+}
+
+static void 
+usage(void)
+{
+    fprintf(stderr, "Usage: %s -p rpc3|rpc3-nc|rpc28-nc\n", prog);
+    exit(1);
+}
+
+static void 
+_noop_handler(int signum)
+{
+    fprintf(stderr, "%s: received signal %d\n", prog, signum);
+}
+
+static void 
+_zap_trailing_whitespace(char *s)
+{
+    while (isspace(s[strlen(s) - 1]))
+        s[strlen(s) - 1] = '\0';
+}
+
 #define RPC28_NC_BANNER "\
 RPC-28 Series\n\
 (C) 2000 by BayTech\n\
@@ -122,227 +190,6 @@ Maximum Detected:     6.9 Amps      :      2.8 Amps\r\n\
 Type \"Help\" for a list of commands\r\n\
 \r\n"
 
-#define RPC3_NC_BANNER "\r\n\
-\r\n\
-RPC3-NC Series\r\n\
-(C) 2002 by BayTech\r\n\
-F4.00\r\n\
-\r\n\
-Option(s) Installed:\r\n\
-True RMS Current\r\n\
-Internal Temperature\r\n\
-True RMS Voltage\r\n\
-\r\n"
-#define RPC3_NC_PROMPT "RPC3-NC>"
-
-#define RPC3_NC_STATUS "\r\n\
-\r\n\
-   Average Power:     338 Watts\r\n\
-True RMS Voltage:   120.9 Volts\r\n\
-True RMS Current:     2.9 Amps\r\n\
-Maximum Detected:     4.3 Amps\r\n\
- Circuit Breaker:       Good\r\n\
-\r\n\
-Internal Temperature:  40.0 C\r\n\
-\r\n\
-\r\n\
- 1)...Outlet  1       : %s          \r\n\
- 2)...Outlet  2       : %s          \r\n\
- 3)...Outlet  3       : %s          \r\n\
- 4)...Outlet  4       : %s          \r\n\
- 5)...Outlet  5       : %s          \r\n\
- 6)...Outlet  6       : %s          \r\n\
- 7)...Outlet  7       : %s          \r\n\
- 8)...Outlet  8       : %s          \r\n\
-\r\n\
-Type \"Help\" for a list of commands\r\n\
-\r\n"
-
-#define RPC3_NC_HELP "\r\n\
-On n <cr>     --Turn on an Outlet, n=0,1...8,all\r\n\
-Off n <cr>    --Turn off an Outlet, n=0,1...8,all\r\n\
-Reboot n <cr> --Reboot an Outlet, n=0,1...8,all\r\n\
-Status <cr>   --RPC3-NC Status\r\n\
-Config <cr>   --Enter configuration mode\r\n\
-Lock n <cr>   --Locks Outlet(s) state, n=0,1...8,all\r\n\
-Unlock n <cr> --Unlock Outlet(s) state, n=0,1...8,all\r\n\
-Current <cr>  --Display True RMS Current\r\n\
-Clear <cr>    --Reset the maximum detected current\r\n\
-Temp <cr>     --Read current temperature\r\n\
-Voltage <cr>  --Display True RMS Voltage\r\n\
-Logout <cr>   --Logoff\r\n\
-Logoff <cr>   --Logoff\r\n\
-Exit <cr>     --Logoff\r\n\
-Password <cr> --Changes the current user password\r\n\
-Whoami <cr>   --Displays the current user name\r\n\
-Unitid <cr>   --Displays the unit ID\r\n\
-Help <cr>     --This Command\r\n\
-\r\n\
-\r\n\
-Type \"Help\" for a list of commands\r\n\
-\r\n"
-
-#define RPC3_NC_TEMP "\r\n\
-Internal Temperature:  38.5 C\r\n\
-\r\n\
-Type \"Help\" for a list of commands\r\n\
-\r\n"
-
-#define RPC3_NC_VOLTAGE "\r\n\r\n\
-True RMS Voltage:   120.5 Volts \r\n\
-\r\n\
-Type \"Help\" for a list of commands\r\n\
-\r\n"
-
-#define RPC3_NC_CURRENT "\r\n\r\n\
-True RMS Current:     2.9 Amps\r\n\
-Maximum Detected:     4.3 Amps\r\n\
-\r\n\
-\r\n\
-Type \"Help\" for a list of commands\r\n\
-\r\n"
-
-#define RPC3_PROMPT "  RPC-3>"
-
-#define RPC3_WELCOME "\
-\r\n\
-\r\n\
-\r\n\
-        RPC-3 Telnet Host\r\n\
-    Revision F 5.01, (C) 2001 \r\n\
-    Bay Technical Associates\r\n\
-    Unit ID: BT RPC3-20\r\n"
-
-#define RPC3_LOGIN "\
-\r\n\
-    Enter password>"
-
-#define RPC3_BANNER "\
-  Option(s) installed:\r\n\
-  True RMS Current\r\n\
-  Internal Temperature\r\n\
-\r\n\
-\r\n"
-
-#define RPC3_MENU "\r\n\
-  RPC-3 Menu:\r\n\
-\r\n\
-    1)...Outlet Control\r\n\
-    2)...Manage Users\r\n\
-    3)...Configuration\r\n\
-    4)...Unit Status\r\n\
-    5)...Reset Unit\r\n\
-    6)...Logout\r\n\
-\r\n\
-  Enter Selection>"
-
-#define RPC3_OUTLET "\
-  True RMS current:  1.7 Amps\r\n\
-  Maximum Detected:  2.5 Amps\r\n\
-\r\n\
-  Internal Temperature: 32.0 C\r\n\
-\r\n\
-  Circuit Breaker: On \r\n\
-\r\n\
-  Selection   Outlet    Outlet   Power\r\n\
-    Number     Name     Number   Status\r\n\
-      1       Outlet 1    1       %s \r\n\
-      2       Outlet 2    2       %s \r\n\
-      3       Outlet 3    3       %s \r\n\
-      4       Outlet 4    4       %s \r\n\
-      5       Outlet 5    5       %s \r\n\
-      6       Outlet 6    6       %s \r\n\
-      7       Outlet 7    7       %s \r\n\
-      8       Outlet 8    8       %s \r\n\
-\r\n\
-  Type \"Help\" for a list of commands\r\n\
-\r\n"
-
-#define RPC3_OUTLET_HELP "\
-  RPC3 Command Summary (F 5.01).\r\n\
-  \"n\" refers to Selection Number, as displayed in outlet status\r\n\
-  LOGOUT     : terminate session\r\n\
-  OFF n      : turn off outlet \"n\", do all for n = 0\r\n\
-  ON n       : turn on outlet \"n\", do all for n = 0\r\n\
-  REBOOT n   : cycle power off/on outlet \"n\", do all for n = 0\r\n\
-  RC         : display outlet relay control info\r\n\
-  STATUS     : display power status of outlets\r\n\
-  HELP       : display this message\r\n\
-  CLEAR      : Reset the maximum detected current\r\n\
-  CURRENT    : Read the current\r\n\
-  TEMP       : Read current temperature\r\n\
-  MENU       : return to main menu\r\n\
-\r\n\
-  <Strike CR to continue.>"
-
-
-int 
-main(int argc, char *argv[])
-{
-    int i, c;
-    baytype_t personality = NONE;
-
-    prog = basename(argv[0]);
-    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
-        switch (c) {
-            case 'p':
-                if (strcmp(optarg, "rpc3") == 0)
-                    personality = RPC3;
-                else if (strcmp(optarg, "rpc3-nc") == 0)
-                    personality = RPC3_NC;
-                else if (strcmp(optarg, "rpc28-nc") == 0)
-                    personality = RPC28_NC;
-                else
-                    usage();
-                break;
-            default:
-                usage();
-        }
-    }
-    if (optind < argc)
-        usage();
-
-    if (signal(SIGPIPE, _noop_handler) == SIG_ERR) {
-        perror("signal");
-        exit(1);
-    }
-
-    switch (personality) {
-        case NONE:
-            usage();
-        case RPC3:
-            _prompt_loop_rpc3();
-            break;
-        case RPC3_NC:
-            _prompt_loop_rpc3_nc();
-            break;
-        case RPC28_NC:
-            _prompt_loop_rpc28_nc();
-            break;
-    }
-    exit(0);
-}
-
-static void 
-usage(void)
-{
-    fprintf(stderr, "Usage: %s -p rpc3|rpc3-nc|rpc28-nc\n", prog);
-    exit(1);
-}
-
-static void 
-_noop_handler(int signum)
-{
-    fprintf(stderr, "%s: received signal %d\n", prog, signum);
-}
-
-static void 
-_zap_trailing_whitespace(char *s)
-{
-    while (isspace(s[strlen(s) - 1]))
-        s[strlen(s) - 1] = '\0';
-}
-
 static void 
 _prompt_loop_rpc28_nc(void)
 {
@@ -426,6 +273,86 @@ err:
     }
 }
 
+#define RPC3_NC_BANNER "\r\n\
+\r\n\
+RPC3-NC Series\r\n\
+(C) 2002 by BayTech\r\n\
+F4.00\r\n\
+\r\n\
+Option(s) Installed:\r\n\
+True RMS Current\r\n\
+Internal Temperature\r\n\
+True RMS Voltage\r\n\
+\r\n"
+#define RPC3_NC_PROMPT "RPC3-NC>"
+
+#define RPC3_NC_STATUS "\r\n\
+\r\n\
+   Average Power:     338 Watts\r\n\
+True RMS Voltage:   120.9 Volts\r\n\
+True RMS Current:     2.9 Amps\r\n\
+Maximum Detected:     4.3 Amps\r\n\
+ Circuit Breaker:       Good\r\n\
+\r\n\
+Internal Temperature:  40.0 C\r\n\
+\r\n\
+\r\n\
+ 1)...Outlet  1       : %s          \r\n\
+ 2)...Outlet  2       : %s          \r\n\
+ 3)...Outlet  3       : %s          \r\n\
+ 4)...Outlet  4       : %s          \r\n\
+ 5)...Outlet  5       : %s          \r\n\
+ 6)...Outlet  6       : %s          \r\n\
+ 7)...Outlet  7       : %s          \r\n\
+ 8)...Outlet  8       : %s          \r\n\
+\r\n\
+Type \"Help\" for a list of commands\r\n\
+\r\n"
+
+#define RPC3_NC_HELP "\r\n\
+On n <cr>     --Turn on an Outlet, n=0,1...8,all\r\n\
+Off n <cr>    --Turn off an Outlet, n=0,1...8,all\r\n\
+Reboot n <cr> --Reboot an Outlet, n=0,1...8,all\r\n\
+Status <cr>   --RPC3-NC Status\r\n\
+Config <cr>   --Enter configuration mode\r\n\
+Lock n <cr>   --Locks Outlet(s) state, n=0,1...8,all\r\n\
+Unlock n <cr> --Unlock Outlet(s) state, n=0,1...8,all\r\n\
+Current <cr>  --Display True RMS Current\r\n\
+Clear <cr>    --Reset the maximum detected current\r\n\
+Temp <cr>     --Read current temperature\r\n\
+Voltage <cr>  --Display True RMS Voltage\r\n\
+Logout <cr>   --Logoff\r\n\
+Logoff <cr>   --Logoff\r\n\
+Exit <cr>     --Logoff\r\n\
+Password <cr> --Changes the current user password\r\n\
+Whoami <cr>   --Displays the current user name\r\n\
+Unitid <cr>   --Displays the unit ID\r\n\
+Help <cr>     --This Command\r\n\
+\r\n\
+\r\n\
+Type \"Help\" for a list of commands\r\n\
+\r\n"
+
+#define RPC3_NC_TEMP "\r\n\
+Internal Temperature:  38.5 C\r\n\
+\r\n\
+Type \"Help\" for a list of commands\r\n\
+\r\n"
+
+#define RPC3_NC_VOLTAGE "\r\n\r\n\
+True RMS Voltage:   120.5 Volts \r\n\
+\r\n\
+Type \"Help\" for a list of commands\r\n\
+\r\n"
+
+#define RPC3_NC_CURRENT "\r\n\r\n\
+True RMS Current:     2.9 Amps\r\n\
+Maximum Detected:     4.3 Amps\r\n\
+\r\n\
+\r\n\
+Type \"Help\" for a list of commands\r\n\
+\r\n"
+
 static void 
 _prompt_loop_rpc3_nc(void)
 {
@@ -500,6 +427,80 @@ err:
         printf("Input error\r\n\r\n");
     }
 }
+
+#define RPC3_PROMPT "  RPC-3>"
+
+#define RPC3_WELCOME "\
+\r\n\
+\r\n\
+\r\n\
+        RPC-3 Telnet Host\r\n\
+    Revision F 5.01, (C) 2001 \r\n\
+    Bay Technical Associates\r\n\
+    Unit ID: BT RPC3-20\r\n"
+
+#define RPC3_LOGIN "\
+\r\n\
+    Enter password>"
+
+#define RPC3_BANNER "\
+  Option(s) installed:\r\n\
+  True RMS Current\r\n\
+  Internal Temperature\r\n\
+\r\n\
+\r\n"
+
+#define RPC3_MENU "\r\n\
+  RPC-3 Menu:\r\n\
+\r\n\
+    1)...Outlet Control\r\n\
+    2)...Manage Users\r\n\
+    3)...Configuration\r\n\
+    4)...Unit Status\r\n\
+    5)...Reset Unit\r\n\
+    6)...Logout\r\n\
+\r\n\
+  Enter Selection>"
+
+#define RPC3_OUTLET "\
+  True RMS current:  1.7 Amps\r\n\
+  Maximum Detected:  2.5 Amps\r\n\
+\r\n\
+  Internal Temperature: 32.0 C\r\n\
+\r\n\
+  Circuit Breaker: On \r\n\
+\r\n\
+  Selection   Outlet    Outlet   Power\r\n\
+    Number     Name     Number   Status\r\n\
+      1       Outlet 1    1       %s \r\n\
+      2       Outlet 2    2       %s \r\n\
+      3       Outlet 3    3       %s \r\n\
+      4       Outlet 4    4       %s \r\n\
+      5       Outlet 5    5       %s \r\n\
+      6       Outlet 6    6       %s \r\n\
+      7       Outlet 7    7       %s \r\n\
+      8       Outlet 8    8       %s \r\n\
+\r\n\
+  Type \"Help\" for a list of commands\r\n\
+\r\n"
+
+#define RPC3_OUTLET_HELP "\
+  RPC3 Command Summary (F 5.01).\r\n\
+  \"n\" refers to Selection Number, as displayed in outlet status\r\n\
+  LOGOUT     : terminate session\r\n\
+  OFF n      : turn off outlet \"n\", do all for n = 0\r\n\
+  ON n       : turn on outlet \"n\", do all for n = 0\r\n\
+  REBOOT n   : cycle power off/on outlet \"n\", do all for n = 0\r\n\
+  RC         : display outlet relay control info\r\n\
+  STATUS     : display power status of outlets\r\n\
+  HELP       : display this message\r\n\
+  CLEAR      : Reset the maximum detected current\r\n\
+  CURRENT    : Read the current\r\n\
+  TEMP       : Read current temperature\r\n\
+  MENU       : return to main menu\r\n\
+\r\n\
+  <Strike CR to continue.>"
+
 static void 
 _prompt_loop_rpc3(void)
 {
