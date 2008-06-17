@@ -354,7 +354,7 @@ static bool _timeout(struct timeval *time_stamp, struct timeval *timeout,
     if (gettimeofday(&now, NULL) < 0)
         err_exit(TRUE, "gettimeofday");
 
-    if (timercmp(&now, &limit, >))      /* if now > limit */
+    if (timercmp(&now, &limit, >=))      /* if now >= limit */
         result = TRUE;
 
     if (result == FALSE)

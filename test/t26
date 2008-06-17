@@ -1,6 +1,6 @@
 #!/bin/sh
 TEST=t26
-$PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf -T \
+$PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf \
     -c t1 -c t1 -c t1 -c t1 \
     -c t1 -c t1 -c t1 -c t1 \
     -c t1 -c t1 -c t1 -c t1 \
