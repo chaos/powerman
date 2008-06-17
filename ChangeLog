@@ -3,6 +3,10 @@
 	* src/device.c : Fix bug where expired delays could be extended by
 	the device timeout.
 
+	* test/baytech.c : Fix bug in plug array declarations.
+
+	* test/tregex.c : Initialize error.c for out of memory case.
+
 2008-06-16 Jim Garlick <garlick@llnl.gov>
 
 	* etc/apcpdu3.dev : Fixed problem with intermittent failures

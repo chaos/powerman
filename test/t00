@@ -1,4 +1,4 @@
 #!/bin/sh
 TEST=t00
-./tpl -f p493 foo[1-500] p[1-500] >$TEST.out 2>&1 || exit 1
+./tpl -f p493 'foo[1-500]' 'p[1-500]' >$TEST.out 2>&1 || exit 1
 diff $TEST.out $TEST.exp >$TEST.diff

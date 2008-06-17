@@ -1,4 +1,4 @@
 #!/bin/sh
 TEST=t01
-./tpl t[1,2,3] p[999-1001] >$TEST.out 2>&1 || exit 1
+./tpl 't[1,2,3]' 'p[999-1001]' >$TEST.out 2>&1 || exit 1
 diff $TEST.out $TEST.exp >$TEST.diff
