@@ -120,6 +120,8 @@ main(int argc, char *argv[])
 {
 	char *s;
 
+	err_init("tregex");
+
 	assert(_match("foo", "foo"));
 	assert(_match("foo", "fooxxx"));
 	assert(_match("foo", "xxxfoo"));

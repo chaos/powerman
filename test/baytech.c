@@ -15,6 +15,7 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <libgen.h>
+#include <assert.h>
 
 static void usage(void);
 static void _noop_handler(int signum);
@@ -196,7 +197,7 @@ _prompt_loop_rpc28_nc(void)
     int i;
     char buf[128];
     int num_plugs = 20;
-    char plug[4][20];
+    char plug[20][4];
     int plug_origin = 1;
     int logged_in = 1;
     int seq = 0;
@@ -359,7 +360,7 @@ _prompt_loop_rpc3_nc(void)
     int i;
     char buf[128];
     int num_plugs = 8;
-    char plug[4][8];
+    char plug[8][4];
     int plug_origin = 1;
     int logged_in = 1;
 
@@ -507,7 +508,7 @@ _prompt_loop_rpc3(void)
     int i;
     char buf[128];
     int num_plugs = 8;
-    char plug[4][8];
+    char plug[8][4];
     int plug_origin = 1;
     enum { START, MENU, OUTLET, QUIT } state = START;
 
