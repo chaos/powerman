@@ -410,9 +410,26 @@ static void _cmd_destroy(cmd_t *cp)
 static void _cmd_append(cmd_t *cp, char *arg)
 {
     assert(cp->magic == CMD_MAGIC);
-    if (cp->argv == NULL)
-        err_exit(FALSE, "option takes no arguments");
-    cp->argv = argv_append(cp->argv, arg);
+    if (cp->argv == NULL) {
+        if (!strcmp(cp->fmt, CP_STATUS_ALL)) {
+            cp->fmt = CP_STATUS;
+            cp->argv = argv_create(arg, "");
+        } else if (!strcmp(cp->fmt, CP_SOFT_ALL)) {
+            cp->fmt = CP_SOFT;
+            cp->argv = argv_create(arg, "");
+        } else if (!strcmp(cp->fmt, CP_BEACON_ALL)) {
+            cp->fmt = CP_BEACON;
+            cp->argv = argv_create(arg, "");
+        } else if (!strcmp(cp->fmt, CP_DEVICE_ALL)) {
+            cp->fmt = CP_DEVICE;
+            cp->argv = argv_create(arg, "");
+        } else if (!strcmp(cp->fmt, CP_TEMP_ALL)) {
+            cp->fmt = CP_TEMP;
+            cp->argv = argv_create(arg, "");
+        } else
+            err_exit(FALSE, "option takes no arguments");
+    } else 
+        cp->argv = argv_append(cp->argv, arg);
 }
 
 static void _cmd_prepare(cmd_t *cp, bool genders)
