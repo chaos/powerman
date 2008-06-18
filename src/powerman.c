@@ -71,21 +71,21 @@ typedef struct {
 #if WITH_GENDERS
 static void _push_genders_hosts(hostlist_t targets, char *s);
 #endif
-static int _connect_to_server_tcp(char *host, char *port);
-static int _connect_to_server_pipe(char *server_path, char *config_path);
+static int  _connect_to_server_tcp(char *host, char *port);
+static int  _connect_to_server_pipe(char *server_path, char *config_path);
 static void _usage(void);
 static void _license(void);
 static void _version(void);
 static void _getline(int fd, char *str, int len);
-static int _process_line(int fd);
+static int  _process_line(int fd);
 static void _expect(int fd, char *str);
-static int _process_response(int fd);
+static int  _process_response(int fd);
 static void _process_version(int fd);
 static void _cmd_create(List cl, char *fmt, char *arg, bool prepend);
 static void _cmd_destroy(cmd_t *cp);
 static void _cmd_append(cmd_t *cp, char *arg);
 static void _cmd_prepare(cmd_t *cp, bool genders);
-static int _cmd_execute(cmd_t *cp, int fd);
+static int  _cmd_execute(cmd_t *cp, int fd);
 static void _cmd_print(cmd_t *cp);
 
 static char *prog;
