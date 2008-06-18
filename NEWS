@@ -1,20 +1,21 @@
 =========================================================================
-Release Notes for PowerMan version 2.1                        XX Jun 2008
+Release Notes for PowerMan version 2.1                        18 Jun 2008
 =========================================================================
 
 * Client overhaul.
 
-* Fix intermittent query failures in apcpdu3.dev script.
+* [apcpdu3] Fix intermittent query failures.
 
-* Fixed off by one bug in server that allowed some delays in dev scripts
-  to take longer than programmed.
+* Fixed off by one bug in server that allowed some delays in dev 
+  scripts to take longer than programmed.
 
-* Use raw mode in pipe (!&) connections to avoid processing echo.
+* Use raw mode in pipe (!&) connections to avoid local tty echo.
 
 * Run server in /var/run/powerman rather than /etc/powerman.
-  Create directory if it doesn't exist.
+  Create this directory if it doesn't exist.
 
 * Enhanced integrated test suite.
+  Note: all tests do not currently pass on AIX.
 
 =========================================================================
 Release Notes for PowerMan version 2.0                        01 Jun 2008

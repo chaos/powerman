@@ -1,3 +1,7 @@
+2008-06-18 Jim Garlick <garlick@llnl.gov>
+
+	* : tag powerman-2.1
+
 2008-06-17 Jim Garlick <garlick@llnl.gov>
 
 	* src/device.c : Fix bug where expired delays could be extended by
