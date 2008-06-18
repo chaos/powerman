@@ -2,6 +2,8 @@
 
 	* : tag powerman-2.1
 
+	* powerman.spec: Add fc9 stanza.
+
 2008-06-17 Jim Garlick <garlick@llnl.gov>
 
 	* src/device.c : Fix bug where expired delays could be extended by
