@@ -1,3 +1,7 @@
+2008-06-18 Albert Chu <chu11@llnl.gov>
+
+	* etc/ipmipower.dev: Fix tabbing.
+
 2008-06-18 Jim Garlick <garlick@llnl.gov>
 
 	* : tag powerman-2.1
