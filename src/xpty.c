@@ -169,7 +169,6 @@ pid_t xforkpty(int *amaster, char *name, int len)
             break;
     } 
 #endif
-    /* XXX setsid() needed? */
     return pid;
 }
 
