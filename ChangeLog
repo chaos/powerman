@@ -6,6 +6,11 @@
 
 	* etc/icebox4.dev : Removed.
 
+	* etc/mcr.conf : Test harness version of mcr powerman.conf.
+
+	* examples/* : Removed as the examples were out of date and there
+	are now plenty in test/*.conf.
+
 2008-06-18 Albert Chu <chu11@llnl.gov>
 
 	* etc/ipmipower.dev: Fix tabbing.
