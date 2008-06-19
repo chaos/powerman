@@ -23,7 +23,6 @@ DEVFILES = \
 	ibmh8.dev \
 	icebox.dev \
 	icebox3.dev \
-	icebox4.dev \
 	ilom-inline.dev \
 	ipmi.dev \
 	ipmipower.dev \

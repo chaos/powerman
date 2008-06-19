@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-# Linux Networx ICE Box firmware version 3.x
+# Linux Networx ICE Box firmware version 3.x and 4.x
 #
 # For 3.0 B70 or better, 2 sec delays in beacon_on/beacon_off can be 
 # commented out.
@@ -12,7 +12,7 @@ specification "icebox3" {
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
 
 	script login {
-		expect "V3[^\n]*\r\n"
+		expect "V[34][^\n]*\r\n"
 		send "auth icebox\r\n"
 		expect "OK\r\n"
 	}
