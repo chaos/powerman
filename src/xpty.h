@@ -27,9 +27,10 @@
 #ifndef PM_XPTY_H
 #define PM_XPTY_H
 
-/* Configure the tty associated with 'fd' in raw mode.
- */
+/* FIXME: these have nothing to do with ptys per se */
 void xcfmakeraw(int fd);
+void nonblock_set(int fd);
+void nonblock_clr(int fd);
 
 pid_t xforkpty(int *amaster, char *name, int len);
 

@@ -65,6 +65,7 @@
 #include "hprintf.h"
 #include "arglist.h"
 #include "device_private.h"
+#include "xpty.h"
 #include "powerman.h"
 
 #ifndef HAVE_SOCKLEN_T
@@ -139,30 +140,6 @@ static int cli_id_seq = 1;      /* range 1...INT_MAX */
 
 #define _internal_error_response(c) \
     _client_printf(c, CP_ERR_INTERNAL, __FILE__, __LINE__)
-
-static void _set_nonblocking(int fd)
-{
-    int fd_settings;
-
-    /* mark fd as non-blocking */
-    fd_settings = fcntl(fd, F_GETFL, 0);
-    if (fd_settings < 0)
-        err_exit(TRUE, "fcntl F_GETFL");
-    if (fcntl(fd, F_SETFL, fd_settings | O_NONBLOCK) < 0)
-        err_exit(TRUE, "fcntl F_SETFL");
-}
-
-static void _clr_nonblocking(int fd)
-{
-    int fd_settings;
-
-    /* mark fd as non-blocking */
-    fd_settings = fcntl(fd, F_GETFL, 0);
-    if (fd_settings < 0)
-        err_exit(TRUE, "fcntl F_GETFL");
-    if (fcntl(fd, F_SETFL, fd_settings & ~(O_NONBLOCK)) < 0)
-        err_exit(TRUE, "fcntl F_SETFL");
-}
 
 /*
  * printf-like function which writes to the output cbuf.
@@ -810,7 +787,7 @@ static void _listen_client(void)
      * for this problem is to:  1.  Always set a listening socket nonblocking
      * if we use select ..."                            - Stevens, UNP p424
      */
-    _set_nonblocking(listen_fd);
+    nonblock_set(listen_fd);
 
     addr.sin_family = AF_INET;
     listen_port = conf_get_listen_port();
@@ -893,7 +870,7 @@ static void _create_client_socket(void)
     c->to = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
     c->from = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
 
-    _set_nonblocking(c->fd);
+    nonblock_set(c->fd);
 
     /* append to the list of clients */
     list_append(cli_clients, c);
@@ -927,8 +904,8 @@ static void _create_client_stdio(void)
     c->to = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
     c->from = cbuf_create(MIN_CLIENT_BUF, MAX_CLIENT_BUF);
 
-    _set_nonblocking(c->fd);
-    _set_nonblocking(c->ofd);
+    nonblock_set(c->fd);
+    nonblock_set(c->ofd);
 
     /* append to the list of clients */
     list_append(cli_clients, c);
@@ -972,7 +949,7 @@ static void _handle_write(Client * c)
 
     assert(c->magic == CLI_MAGIC);
     if (c->client_quit)
-        _clr_nonblocking(ofd);
+        nonblock_clr(ofd);
     n = cbuf_read_to_fd(c->to, ofd, -1);
     if (n < 0) {
         err(TRUE, "write error on client");

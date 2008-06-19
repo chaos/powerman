@@ -11,6 +11,10 @@
 	* examples/* : Removed as the examples were out of date and there
 	are now plenty in test/*.conf.
 
+	* src/xpty.[ch], src/device_pipe.c, src/device_serial.c,
+	src/device_tcp.c, src/client.c : Factor out nonblock_set() and
+	nonblock_clr() functions.
+
 2008-06-18 Albert Chu <chu11@llnl.gov>
 
 	* etc/ipmipower.dev: Fix tabbing.

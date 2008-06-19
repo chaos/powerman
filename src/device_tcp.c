@@ -66,6 +66,7 @@
 #include "error.h"
 #include "debug.h"
 #include "device_tcp.h"
+#include "xpty.h"
 
 #ifndef HAVE_SOCKLEN_T
 typedef int socklen_t;                  /* socklen_t is uint32_t in Posix.1g */
@@ -169,7 +170,6 @@ bool tcp_connect(Device * dev)
     TcpDev *tcp;
     struct addrinfo hints, *addrinfo;
     int opt;
-    int fd_settings;
     int n;
 
     assert(dev->magic == DEV_MAGIC);
@@ -197,12 +197,8 @@ bool tcp_connect(Device * dev)
     opt = 1;
     if (setsockopt(dev->fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
         err_exit(TRUE, "setsockopt SO_REUSEADDR");
-
-    fd_settings = fcntl(dev->fd, F_GETFL, 0);
-    if (fd_settings < 0)
-        err_exit(TRUE, "fcntl F_GETFL");
-    if (fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK) < 0)
-        err_exit(TRUE, "fcntl F_SETFL");
+   
+    nonblock_set(dev->fd);
 
     dev->connect_state = DEV_CONNECTING;
     if (connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen) >= 0)

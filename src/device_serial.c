@@ -54,6 +54,7 @@
 #include "device_serial.h"
 #include "error.h"
 #include "debug.h"
+#include "xpty.h"
 
 typedef struct {
     char *special;
@@ -200,7 +201,6 @@ bool serial_connect(Device * dev)
     int baud = 9600, databits = 8, stopbits = 1; 
     char parity = 'N';
     int res;
-    int fd_settings;
     int n;
 
     assert(dev->magic == DEV_MAGIC);
@@ -225,15 +225,7 @@ bool serial_connect(Device * dev)
      *    open on a tty will affect subsequent read()s.
      *    Play it safe and be explicit!
      */
-    fd_settings = fcntl(dev->fd, F_GETFL, 0);
-    if (fd_settings < 0) {
-        err(TRUE, "fcntl F_GETFL");
-        goto out;
-    }
-    if (fcntl(dev->fd, F_SETFL, fd_settings | O_NONBLOCK) < 0) {
-        err(TRUE, "fcntl F_SETFL");
-        goto out;
-    }
+    nonblock_set(dev->fd);
 
     /* Conman takes an fcntl F_WRLCK on serial devices.
      * Powerman should respect conman's locks and vice-versa.

@@ -108,13 +108,7 @@ bool pipe_connect(Device * dev)
         execv(pd->argv[0], pd->argv);
         err_exit(TRUE, "exec %s", pd->argv[0]);
     } else {                    /* parent */
-        int flags;
-
-        flags = fcntl(fd, F_GETFL, 0);
-        if (flags < 0)
-            err_exit(TRUE, "fcntl F_GETFL");
-        if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
-            err_exit(TRUE, "fcntl F_SETFL");
+        nonblock_set(fd);
 
         dev->fd = fd;
 

@@ -55,6 +55,28 @@
 #include "xpty.h"
 #include "error.h"
 
+void nonblock_set(int fd)
+{
+    int flags;
+
+    flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0)
+        err_exit(TRUE, "fcntl F_GETFL");
+    if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
+        err_exit(TRUE, "fcntl F_SETFL");
+}
+
+void nonblock_clr(int fd)
+{
+    int flags;
+
+    flags = fcntl(fd, F_GETFL, 0);
+    if (flags < 0)
+        err_exit(TRUE, "fcntl F_GETFL");
+    if (fcntl(fd, F_SETFL, flags & ~(O_NONBLOCK)) < 0)
+        err_exit(TRUE, "fcntl F_SETFL");
+}
+
 void xcfmakeraw(int fd)
 {
     struct termios tio;
