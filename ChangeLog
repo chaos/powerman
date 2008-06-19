@@ -1,12 +1,14 @@
-2008-06-18 Albert Chu <chu11@llnl.gov>
-
-	* etc/ipmipower.dev: Fix tabbing.
+2008-06-18 Jim Garlick <garlick@llnl.gov>
 
 	* test/icebox.c, t29 thru t34 : Tests for icebox support.
 
 	* etc/icebox3.dev : Make it work for v3 and v4.
 
 	* etc/icebox4.dev : Removed.
+
+2008-06-18 Albert Chu <chu11@llnl.gov>
+
+	* etc/ipmipower.dev: Fix tabbing.
 
 2008-06-18 Jim Garlick <garlick@llnl.gov>
 
