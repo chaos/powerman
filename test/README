@@ -81,6 +81,12 @@ t25-t26
 	Ensure that delays are process expeditiously.
 t27-t28
 	Test baytech script using baytech.c.
+t29-t30
+	Test icebox v3 using icebox.c.
+t31-t32
+	Test icebox v2 using icebox.c.
+t33-t34
+	Test icebox v4 using icebox.c.
 
 TODO
 - Implement *_ranged version of on/off/cycle/reset in vpcd and test

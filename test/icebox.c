@@ -1,0 +1,240 @@
+/* icebox.c - icebox simulator */
+
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+#include <stdio.h>
+#if HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+#include <unistd.h>
+#include <stdlib.h>
+#include <sys/types.h>
+#include <string.h>
+#include <signal.h>
+#include <errno.h>
+#include <stdarg.h>
+#include <libgen.h>
+#include <assert.h>
+
+static void usage(void);
+static void _noop_handler(int signum);
+static void _zap_trailing_whitespace(char *s);
+static void _prompt_loop(void);
+
+typedef enum { NONE, V2, V3, V4 } icetype_t;
+static icetype_t personality = NONE;
+
+static char *prog;
+
+#define OPTIONS "p:"
+#if HAVE_GETOPT_LONG
+#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
+static const struct option longopts[] = {
+    { "personality", required_argument, 0, 'p' },
+    {0, 0, 0, 0},
+};
+#else
+#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
+#endif
+
+
+int 
+main(int argc, char *argv[])
+{
+    int i, c;
+
+    prog = basename(argv[0]);
+    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
+        switch (c) {
+            case 'p':
+                if (strcmp(optarg, "v2") == 0)
+                    personality = V2;
+                else if (strcmp(optarg, "v3") == 0)
+                    personality = V3;
+                else if (strcmp(optarg, "v4") == 0)
+                    personality = V4;
+                else
+                    usage();
+                break;
+            default:
+                usage();
+        }
+    }
+    if (optind < argc)
+        usage();
+    if (personality == NONE)
+        usage();
+
+    if (signal(SIGPIPE, _noop_handler) == SIG_ERR) {
+        perror("signal");
+        exit(1);
+    }
+
+    _prompt_loop();
+    exit(0);
+}
+
+static void 
+usage(void)
+{
+    fprintf(stderr, "Usage: %s -p v2|v3|v4\n", prog);
+    exit(1);
+}
+
+static void 
+_noop_handler(int signum)
+{
+    fprintf(stderr, "%s: received signal %d\n", prog, signum);
+}
+
+static void 
+_zap_trailing_whitespace(char *s)
+{
+    while (isspace(s[strlen(s) - 1]))
+        s[strlen(s) - 1] = '\0';
+}
+
+/* 
+ * V2 
+ * V3 and V4 are pretty much identical as far as powerman is concerned,
+ * except for banner.
+ */
+
+#define V2_BANNER       "V2.0\r\n"
+#define V3_BANNER       "V3.0\r\n"
+#define V4_BANNER       "V4.0\r\n"
+
+#define V3_AUTHCMD      "auth icebox\r\n"
+#define V3_RESP_OK      "OK\r\n"
+#define V3_ERROR_CMD    "ERROR 0\r\n"
+#define V3_ERROR_AUTH   "ERROR 4\r\n"
+
+#define V3_POWER_STATUS "\
+N1:%d N2:%d N3:%d N4:%d N5:%d N6:%d N7:%d N8:%d N9:%d N10:%d\r\n"
+static void 
+
+#define V3_BEACON_STATUS "\
+N1:%s N2:%s N3:%s N4:%s N5:%s N6:%s N7:%s N8:%s N9:%s N10:%s N11:%s N12:%s\r\n"
+
+#define V2_TEMP "\
+N1:%d, N2:%d, N3:%d, N4:%d, N5:%d, N6:%d, N7:%d, N8:%d, N9:%d, N10:%d, N11:%d, N12:%d,\r\n"
+
+#define V3_TEMP "\
+N1:%d: N2:%d: N3:%d: N4:%d: N5:%d: N6:%d: N7:%d: N8:%d: N9:%d: N10:%d: N11:%d: N12:%d:\r\n"
+
+_prompt_loop(void)
+{
+    int i;
+    char buf[128];
+    int num_plugs = 10;
+    int num_plugs_ext = 12;
+    int plug[10];
+    char beacon[10][4];
+    int temp[12];
+    int plug_origin = 1;
+    int logged_in = 0;
+    int seq = 0;
+    int quit = 0;
+    char arg[80];
+ 
+    for (i = 0; i < num_plugs_ext; i++) {
+        plug[i] = 0;
+        temp[i] = 73 + i;
+        strcpy(beacon[i], "OFF");
+    }
+
+    /* User must first authenticate.
+     */
+    switch (personality) {
+        case V2:
+            printf(V2_BANNER);
+            break;
+        case V3:
+            printf(V3_BANNER);
+            break;
+        case V4:
+            printf(V4_BANNER);
+            break;
+    }
+    while (!logged_in) {
+        if (fgets(buf, sizeof(buf), stdin) == NULL)
+            return;
+        _zap_trailing_whitespace(buf);
+        if (strcmp(buf, "auth icebox") == 0) {
+            logged_in = 1;
+            printf(V3_RESP_OK);
+        } else
+            printf(V3_ERROR_AUTH);
+    }
+
+    /* Process comands.
+     */
+    while (logged_in) {
+        if (fgets(buf, sizeof(buf), stdin) == NULL)
+            break;
+        _zap_trailing_whitespace(buf);
+        if (strlen(buf) == 0) {
+            goto err;
+        } else if (!strcmp(buf, "q")) {
+            logged_in = 0;
+        } else if (!strcmp(buf, "ps *") || !strcmp(buf, "ns *")) {
+            printf(V3_POWER_STATUS, plug[0], plug[1], plug[2], plug[3], 
+                                    plug[4], plug[5], plug[6], plug[7], 
+                                    plug[8], plug[9]);
+        } else if (personality != V2 && !strcmp(buf, "be *")) {
+            printf(V3_BEACON_STATUS, beacon[0], beacon[1], beacon[2], 
+                                     beacon[3], beacon[4], beacon[5], 
+                                     beacon[6], beacon[7], beacon[8], 
+                                     beacon[9], beacon[10], beacon[11]);
+        } else if (personality != V2 && !strcmp(buf, "is *")) {
+            printf(V3_TEMP, temp[0], temp[1], temp[2], temp[3], 
+                            temp[4], temp[5], temp[6], temp[7], 
+                            temp[8], temp[9], temp[10], temp[11]);
+        } else if (personality == V2 && !strcmp(buf, "ts *")) {
+            printf(V2_TEMP, temp[0], temp[1], temp[2], temp[3], 
+                            temp[4], temp[5], temp[6], temp[7], 
+                            temp[8], temp[9], temp[10], temp[11]);
+        } else if (!strcmp(buf, "ph *")) {
+            for (i = 0; i < num_plugs; i++)
+                plug[i] = 1;
+        } else if (sscanf(buf, "ph %d", &i) == 1) {
+            if (i >= plug_origin && i < num_plugs + plug_origin)
+                plug[i - plug_origin] = 1;
+            else
+                goto err;
+        } else if (!strcmp(buf, "pl *")) {
+            for (i = 0; i < num_plugs; i++)
+                plug[i] = 0;
+        } else if (sscanf(buf, "pl %d", &i) == 1) {
+            if (i >= plug_origin && i < num_plugs + plug_origin)
+                plug[i - plug_origin] = 0;
+            else
+                goto err;
+        } else if (!strcmp(buf, "rp *")) {
+        } else if (sscanf(buf, "rp %d", &i) == 1) {
+            if (!(i >= plug_origin && i < num_plugs + plug_origin))
+                goto err;
+        } else if (personality != V2 && sscanf(buf, "be %d %s", &i, arg) == 2) {
+            if (i >= plug_origin && i < num_plugs_ext + plug_origin) {
+                if (!strcmp(arg, "off"))
+                    strcpy(beacon[i - plug_origin], "OFF");
+                else if (!strcmp(arg, "on"))
+                    strcpy(beacon[i - plug_origin], "ON");
+                else
+                    goto err;
+            } else
+                goto err;
+        } else
+            goto err;
+        if (logged_in)
+            printf(V3_RESP_OK);
+        continue;
+err:
+        printf(V3_ERROR_CMD);
+    }
+}
+
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */

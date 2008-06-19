@@ -2,6 +2,8 @@
 
 	* etc/ipmipower.dev: Fix tabbing.
 
+	* test/icebox.c, t29 thru t34 : Tests for icebox support.
+
 2008-06-18 Jim Garlick <garlick@llnl.gov>
 
 	* : tag powerman-2.1

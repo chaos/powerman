@@ -37,7 +37,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 check_PROGRAMS = tpl$(EXEEXT) vpcd$(EXEEXT) tregex$(EXEEXT) \
-	targv$(EXEEXT) baytech$(EXEEXT)
+	targv$(EXEEXT) baytech$(EXEEXT) icebox$(EXEEXT)
 subdir = test
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -63,6 +63,9 @@ am_baytech_OBJECTS = baytech.$(OBJEXT) $(am__objects_1)
 baytech_OBJECTS = $(am_baytech_OBJECTS)
 am__DEPENDENCIES_1 =
 baytech_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am_icebox_OBJECTS = icebox.$(OBJEXT) $(am__objects_1)
+icebox_OBJECTS = $(am_icebox_OBJECTS)
+icebox_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_targv_OBJECTS = targv.$(OBJEXT) $(am__objects_1)
 targv_OBJECTS = $(am_targv_OBJECTS)
 targv_DEPENDENCIES = $(am__DEPENDENCIES_1)
@@ -82,10 +85,10 @@ COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
 	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
 CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(baytech_SOURCES) $(targv_SOURCES) $(tpl_SOURCES) \
-	$(tregex_SOURCES) $(vpcd_SOURCES)
-DIST_SOURCES = $(baytech_SOURCES) $(targv_SOURCES) $(tpl_SOURCES) \
-	$(tregex_SOURCES) $(vpcd_SOURCES)
+SOURCES = $(baytech_SOURCES) $(icebox_SOURCES) $(targv_SOURCES) \
+	$(tpl_SOURCES) $(tregex_SOURCES) $(vpcd_SOURCES)
+DIST_SOURCES = $(baytech_SOURCES) $(icebox_SOURCES) $(targv_SOURCES) \
+	$(tpl_SOURCES) $(tregex_SOURCES) $(vpcd_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -209,7 +212,7 @@ target_vendor = @target_vendor@
 TESTS_ENVIRONMENT = env "PATH_POWERMAN=$(top_builddir)/src/powerman" \
 	"PATH_POWERMAND=$(top_builddir)/src/powermand" \
 	"PATH_ETC=$(top_builddir)/etc"
-TESTS = t00 t01 t02 t03 t04 t05 t06 t07 t08 t09 t10 t11 t12 t13 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28
+TESTS = t00 t01 t02 t03 t04 t05 t06 t07 t08 t09 t10 t11 t12 t13 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28 t29 t30 t31 t32 t33 t34
 CLEANFILES = *.out *.err *.diff
 common_sources = \
 	$(top_srcdir)/src/xread.c \
@@ -234,6 +237,8 @@ targv_SOURCES = targv.c $(common_sources)
 targv_LDADD = $(LIBFORKPTY)
 baytech_SOURCES = baytech.c $(common_sources)
 baytech_LDADD = $(LIBFORKPTY)
+icebox_SOURCES = icebox.c $(common_sources)
+icebox_LDADD = $(LIBFORKPTY)
 all: all-am
 
 .SUFFIXES:
@@ -273,6 +278,9 @@ clean-checkPROGRAMS:
 baytech$(EXEEXT): $(baytech_OBJECTS) $(baytech_DEPENDENCIES) 
 	@rm -f baytech$(EXEEXT)
 	$(LINK) $(baytech_LDFLAGS) $(baytech_OBJECTS) $(baytech_LDADD) $(LIBS)
+icebox$(EXEEXT): $(icebox_OBJECTS) $(icebox_DEPENDENCIES) 
+	@rm -f icebox$(EXEEXT)
+	$(LINK) $(icebox_LDFLAGS) $(icebox_OBJECTS) $(icebox_LDADD) $(LIBS)
 targv$(EXEEXT): $(targv_OBJECTS) $(targv_DEPENDENCIES) 
 	@rm -f targv$(EXEEXT)
 	$(LINK) $(targv_LDFLAGS) $(targv_OBJECTS) $(targv_LDADD) $(LIBS)
@@ -298,6 +306,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hostlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hprintf.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icebox.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pluglist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/targv.Po@am__quote@

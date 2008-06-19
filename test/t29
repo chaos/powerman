@@ -1,0 +1,16 @@
+#!/bin/sh
+TEST=t29
+$PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf \
+    -q -n -1 t0 \
+    -q -n -c t0 \
+    -q -n -0 t0 \
+    -q -n -1 t[0-9] \
+    -q -n -c t[0-9] \
+    -q -n -0 t[0-9] \
+    -b -f t0 \
+    -b -u t0 \
+    -b -f t[0-9] \
+    -b -u t[0-9] \
+    -b -q -n -t >$TEST.out 2>$TEST.err
+test $? = 0 || exit 1
+diff $TEST.out $TEST.exp >$TEST.diff
