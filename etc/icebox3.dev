@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-# Linux Networx ICE Box firmware version 3.x and 4.x
+# Linux Networx ICE Box firmware version 3.x and 4.x on port 1010.
 #
 # For 3.0 B70 or better, 2 sec delays in beacon_on/beacon_off can be 
 # commented out.

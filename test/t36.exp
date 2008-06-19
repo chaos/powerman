@@ -1,0 +1,35 @@
+on:      
+off:     x[0-31]
+unknown: 
+Command completed successfully
+on:      x[0,8,16,24]
+off:     x[1-7,9-15,17-23,25-31]
+unknown: 
+Command completed successfully
+on:      x[0,8,16,24]
+off:     x[1-7,9-15,17-23,25-31]
+unknown: 
+Command completed successfully
+on:      
+off:     x[0-31]
+unknown: 
+Command completed successfully
+on:      
+off:     x[0-31]
+unknown: 
+Command completed successfully
+on:      x[0-31]
+off:     
+unknown: 
+Command completed successfully
+on:      x[0-31]
+off:     
+unknown: 
+Command completed successfully
+on:      
+off:     x[0-31]
+unknown: 
+Command completed successfully
+on:      
+off:     x[0-31]
+unknown: 

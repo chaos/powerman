@@ -88,7 +88,9 @@ t31-t32
 t33-t34
 	Test icebox v4 using icebox.c.
 t35
-	Test powerman->powermand->powermand->vpcd[4]
+	Powerman as a pseudo-power controller, direct mapping.
+t36
+	Powerman as a pseudo-power controller, remapped subset.
 
 TODO
 - Implement *_ranged version of on/off/cycle/reset in vpcd and test

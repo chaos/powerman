@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-# Linux Networx ICE box firmware version 2.x
+# Linux Networx ICE box firmware version 2.x on port 1010.
 #
 specification "icebox" {
 	timeout 	20 # accomodate 14 sec plus "cycle *" time */

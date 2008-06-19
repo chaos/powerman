@@ -95,7 +95,7 @@ _zap_trailing_whitespace(char *s)
         s[strlen(s) - 1] = '\0';
 }
 
-#define V2_BANNER       "V2.0\r\n"
+#define V2_BANNER       "V2.1\r\n"
 #define V3_BANNER       "V3.0\r\n"
 #define V4_BANNER       "V4.0\r\n"
 
@@ -112,7 +112,7 @@ static void
 N1:%s N2:%s N3:%s N4:%s N5:%s N6:%s N7:%s N8:%s N9:%s N10:%s N11:%s N12:%s\r\n"
 
 #define V2_TEMP "\
-N1:%d, N2:%d, N3:%d, N4:%d, N5:%d, N6:%d, N7:%d, N8:%d, N9:%d, N10:%d, N11:%d, N12:%d,\r\n"
+N1:%d,0,0,0 N2:%d,0,0,0 N3:%d,0,0,0 N4:%d,0,0,0 N5:%d,0,0,0 N6:%d,0,0,0 N7:%d,0,0,0 N8:%d,0,0,0 N9:%d,0,0,0 N10:%d,0,0,0 N11:%d,0,0,0 N12:%d,0,0,0\r\n"
 
 #define V3_TEMP "\
 N1:%d: N2:%d: N3:%d: N4:%d: N5:%d: N6:%d: N7:%d: N8:%d: N9:%d: N10:%d: N11:%d: N12:%d:\r\n"
