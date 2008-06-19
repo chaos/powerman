@@ -543,19 +543,13 @@ static int _connect_to_server_tcp(char *host, char *port)
  */
 static bool _supress(int num)
 {
-    char *ignoreme[] = { CP_RSP_QRY_COMPLETE, CP_RSP_TELEMETRY, 
-        CP_RSP_EXPRANGE };
-    bool res = FALSE;
-    int i;
-
-    for (i = 0; i < sizeof(ignoreme)/sizeof(char *); i++) {
-        if (strtol(ignoreme[i], (char **) NULL, 10) == num) {
-            res = TRUE;
-            break;
-        }
-    }
-
-    return res;
+    if (strtol(CP_RSP_QRY_COMPLETE, NULL, 10) == num)
+        return TRUE;
+    if (strtol(CP_RSP_TELEMETRY, NULL, 10) == num)
+        return TRUE;
+    if (strtol(CP_RSP_EXPRANGE, NULL, 10) == num)
+        return TRUE;
+    return FALSE;
 }
 
 /* Read a line of data terminated with \r\n or just \n.
@@ -585,7 +579,7 @@ static int _process_line(int fd)
 
     _getline(fd, buf, CP_LINEMAX);
 
-    num = strtol(buf, (char **) NULL, 10);
+    num = strtol(buf, NULL, 10);
     if (num == LONG_MIN || num == LONG_MAX)
         num = -1;
     if (strlen(buf) > 4) {
