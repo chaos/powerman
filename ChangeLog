@@ -1,3 +1,9 @@
+2008-06-19 Jim Garlick <garlick@llnl.gov>
+
+	* etc/powerman.dev : Implement ranged scripts.
+
+	* test/t35 : Test for powerman vs powerman configuration.
+
 2008-06-18 Jim Garlick <garlick@llnl.gov>
 
 	* test/icebox.c, t29 thru t34 : Tests for icebox support.

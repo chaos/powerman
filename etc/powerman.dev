@@ -3,6 +3,8 @@
 #
 # PowerMan script for controlling another PowerMan daemon.
 #
+# N.B. allow 'client' to configure a subset of 'server' plugs
+#
 specification "powerman" {
 	timeout 	100.0
 
@@ -24,7 +26,15 @@ specification "powerman" {
 		send "on %s\r\n"
 		expect "powerman> "
 	}
+	script on_ranged {
+		send "on %s\r\n"
+		expect "powerman> "
+	}
 	script off {
+		send "off %s\r\n"
+		expect "powerman> "
+	}
+	script off_ranged {
 		send "off %s\r\n"
 		expect "powerman> "
 	}
@@ -32,7 +42,15 @@ specification "powerman" {
 		send "cycle %s\r\n"
 		expect "powerman> "
 	}
+	script cycle_ranged {
+		send "cycle %s\r\n"
+		expect "powerman> "
+	}
 	script reset {
+		send "reset %s\r\n"
+		expect "powerman> "
+	}
+	script reset_ranged {
 		send "reset %s\r\n"
 		expect "powerman> "
 	}
