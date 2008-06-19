@@ -1,0 +1,14 @@
+#!/bin/sh
+TEST=t35
+$PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf \
+    -q -1 t[0,8,16,24,32,40,48,56] \
+    -q -c t[0,8,16,24,32,40,48,56] \
+    -q -0 t[0,8,16,24,32,40,48,56] \
+    -q -r t[0,8,16,24,32,40,48,56] \
+    -q -1 t[0-63] \
+    -q -c t[0-63] \
+    -q -0 t[0-63] \
+    -q -r t[0-63] \
+    -q >$TEST.out 2>$TEST.err
+test $? = 0 || exit 1
+diff $TEST.out $TEST.exp >$TEST.diff

@@ -15,11 +15,11 @@ The output of each command is compared against expected output.
 The tests are summarized here:
 
 t00-t03
-	Pluglist tests using tpl.c.
+	pluglist.c tests using tpl.c.
 t04
-	Argv test using targv.c.
+	argv.c test using targv.c.
 t05
-	Regex test using tregex.c.
+	xregex.c tests using tregex.c.
 t06
 	Check power status query options
 	pm --query-all --query t1 --query t[3-5]
@@ -87,6 +87,8 @@ t31-t32
 	Test icebox v2 using icebox.c.
 t33-t34
 	Test icebox v4 using icebox.c.
+t35
+	Test powerman->powermand->powermand->vpcd[4]
 
 TODO
 - Implement *_ranged version of on/off/cycle/reset in vpcd and test
