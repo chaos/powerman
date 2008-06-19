@@ -95,12 +95,6 @@ _zap_trailing_whitespace(char *s)
         s[strlen(s) - 1] = '\0';
 }
 
-/* 
- * V2 
- * V3 and V4 are pretty much identical as far as powerman is concerned,
- * except for banner.
- */
-
 #define V2_BANNER       "V2.0\r\n"
 #define V3_BANNER       "V3.0\r\n"
 #define V4_BANNER       "V4.0\r\n"
