@@ -2,6 +2,10 @@
 # ICS 8064 16-port relay box using 'ics8064' utility from gpib-utils project.
 #
 #   "/usr/bin/ics8064 --shell|&"
+#  
+# Remember to run:
+#   ics8064 --comm-timeout=0
+#   ics8064 --commit-config
 #
 specification "ics8064" {
 	timeout 	5 
