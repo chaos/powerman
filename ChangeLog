@@ -1,3 +1,10 @@
+2008-06-21 Jim Garlick <garlick@llnl.gov>
+
+	* powerman.spec: Test %{?fedora} not %{?fc9}, %{?chaos} not %{?ch4}.
+	Add test for %{?rhel}.
+
+	* etc/ics8064.dev, etc/hp3488.dev : New gpib-utils devices.
+
 2008-06-19 Jim Garlick <garlick@llnl.gov>
 
 	* etc/powerman.dev : Implement ranged scripts.

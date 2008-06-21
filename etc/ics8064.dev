@@ -1,0 +1,69 @@
+#
+# ICS 8064 16-port relay box using 'ics8064' utility from gpib-utils project.
+#
+#   "/usr/bin/ics8064 --shell|&"
+#
+specification "ics8064" {
+	timeout 	5 
+
+	plug name { "1" "2"  "3"  "4"  "5"  "6"  "7"  "8"
+	            "9" "10" "11" "12" "13" "14" "15" "16" }
+
+	script login {
+		expect "ics8064> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status_all {
+		send "status\n"
+		expect "([01]),  ([01]),  ([01]),  ([01]),  ([01]),  ([01]),  ([01]),  ([01]),  ([01]),  ([01]),  ([01]),  ([01]),  ([01]),  ([01]),  ([01]),  ([01])\n"
+		setplugstate "1" $1 off="0" on="1"
+                setplugstate "2" $2 off="0" on="1"
+                setplugstate "3" $3 off="0" on="1"
+                setplugstate "4" $4 off="0" on="1"
+                setplugstate "5" $5 off="0" on="1"
+                setplugstate "6" $6 off="0" on="1"
+                setplugstate "7" $7 off="0" on="1"
+                setplugstate "8" $8 off="0" on="1"
+                setplugstate "9" $9 off="0" on="1"
+                setplugstate "10" $10 off="0" on="1"
+                setplugstate "11" $11 off="0" on="1"
+                setplugstate "12" $12 off="0" on="1"
+                setplugstate "13" $13 off="0" on="1"
+                setplugstate "14" $14 off="0" on="1"
+                setplugstate "15" $15 off="0" on="1"
+                setplugstate "16" $16 off="0" on="1"
+		expect "ics8064> "
+	}
+	script on {
+		send "close %s\n"
+		expect "ics8064> "
+	}
+	script on_ranged {
+		send "close %s\n"
+		expect "ics8064> "
+	}
+	script off {
+		send "open %s\n"
+		expect "ics8064> "
+	}
+	script off_ranged {
+		send "open %s\n"
+		expect "ics8064> "
+	}
+	script cycle {
+		send "open %s\n"
+		expect "ics8064> "
+		delay 4
+		send "close %s\n"
+		expect "ics8064> "
+	}
+	script cycle_ranged {
+		send "open %s\n"
+		expect "ics8064> "
+		delay 4
+		send "close %s\n"
+		expect "ics8064> "
+	}
+}

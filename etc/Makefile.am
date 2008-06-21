@@ -19,10 +19,12 @@ DEVFILES = \
 	cyclades-pm10.dev \
 	cyclades-pm8.dev \
 	dli.dev \
+	hp3488.dev \
 	ibmbladecenter.dev \
 	ibmh8.dev \
 	icebox.dev \
 	icebox3.dev \
+	ics8064.dev \
 	ilom-inline.dev \
 	ipmi.dev \
 	ipmipower.dev \
