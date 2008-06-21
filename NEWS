@@ -9,7 +9,7 @@ Release Notes for PowerMan version 2.1                        18 Jun 2008
 * Fixed off by one bug in server that allowed some delays in dev 
   scripts to take longer than programmed.
 
-* Use raw mode in pipe (!&) connections to avoid local tty echo.
+* Use raw mode in pipe (|&) connections to avoid local tty echo.
 
 * Run server in /var/run/powerman rather than /etc/powerman.
   Create this directory if it doesn't exist.
