@@ -11,7 +11,7 @@ HTTPPOWER = httppower
 endif
 
 bin_PROGRAMS = powerman pm
-sbin_PROGRAMS = powermand $(HTTPPOWER)
+sbin_PROGRAMS = powermand plmpower $(HTTPPOWER)
 
 noinst_HEADERS = \
 	arglist.h \
@@ -64,6 +64,12 @@ if WITH_HTTPPOWER
 httppower_SOURCES = httppower.c $(COMMON_SOURCE)
 
 httppower_LDADD = $(LIBCURL) $(LIBREADLINE) $(LIBFORKPTY)
+endif
+
+if WITH_PLMPOWER
+plmpower_SOURCES = plmpower.c $(COMMON_SOURCE)
+
+plmpower_LDADD = $(LIBREADLINE) $(LIBFORKPTY)
 endif
 
 powermand_SOURCES = \

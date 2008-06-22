@@ -37,6 +37,14 @@ int xread(int fd, char *p, int max);
  */
 int xwrite(int fd, char *p, int max);
 
+/* Wrapper for xread that reads exactly count bytes or dies trying
+ */
+void xread_all(int fd, char *p, int count);
+
+/* Wrapper for xwrite that writes exactly count bytes or dies trying.
+ */
+void xwrite_all(int fd, char *p, int count);
+
 #endif /* PM_XREAD_H */
 
 /*

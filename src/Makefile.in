@@ -35,7 +35,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 bin_PROGRAMS = powerman$(EXEEXT) pm$(EXEEXT)
-sbin_PROGRAMS = powermand$(EXEEXT) $(am__EXEEXT_1)
+sbin_PROGRAMS = powermand$(EXEEXT) plmpower$(EXEEXT) $(am__EXEEXT_1)
 subdir = src
 DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in parse_lex.c parse_tab.c parse_tab.h
@@ -73,6 +73,9 @@ am__DEPENDENCIES_1 =
 @WITH_HTTPPOWER_TRUE@httppower_DEPENDENCIES = $(am__DEPENDENCIES_1) \
 @WITH_HTTPPOWER_TRUE@	$(am__DEPENDENCIES_1) \
 @WITH_HTTPPOWER_TRUE@	$(am__DEPENDENCIES_1)
+am_plmpower_OBJECTS = plmpower.$(OBJEXT) $(am__objects_1)
+plmpower_OBJECTS = $(am_plmpower_OBJECTS)
+plmpower_DEPENDENCIES = $(am__DEPENDENCIES_1)
 pm_SOURCES = pm.c
 pm_OBJECTS = pm.$(OBJEXT)
 pm_LDADD = $(LDADD)
@@ -99,10 +102,10 @@ LEXCOMPILE = $(LEX) $(LFLAGS) $(AM_LFLAGS)
 YLWRAP = $(top_srcdir)/config/ylwrap
 @MAINTAINER_MODE_FALSE@am__skipyacc = test -f $@ ||
 YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
-SOURCES = $(httppower_SOURCES) pm.c $(powerman_SOURCES) \
-	$(powermand_SOURCES)
-DIST_SOURCES = $(am__httppower_SOURCES_DIST) pm.c $(powerman_SOURCES) \
-	$(powermand_SOURCES)
+SOURCES = $(httppower_SOURCES) $(plmpower_SOURCES) pm.c \
+	$(powerman_SOURCES) $(powermand_SOURCES)
+DIST_SOURCES = $(am__httppower_SOURCES_DIST) $(plmpower_SOURCES) pm.c \
+	$(powerman_SOURCES) $(powermand_SOURCES)
 HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -281,6 +284,8 @@ powerman_SOURCES = powerman.c $(COMMON_SOURCE)
 powerman_LDADD = $(LIBGENDERS) $(LIBFORKPTY)
 @WITH_HTTPPOWER_TRUE@httppower_SOURCES = httppower.c $(COMMON_SOURCE)
 @WITH_HTTPPOWER_TRUE@httppower_LDADD = $(LIBCURL) $(LIBREADLINE) $(LIBFORKPTY)
+plmpower_SOURCES = plmpower.c $(COMMON_SOURCE)
+plmpower_LDADD = $(LIBFORKPTY)
 powermand_SOURCES = \
 	powermand.c \
 	arglist.c \
@@ -382,6 +387,9 @@ clean-sbinPROGRAMS:
 httppower$(EXEEXT): $(httppower_OBJECTS) $(httppower_DEPENDENCIES) 
 	@rm -f httppower$(EXEEXT)
 	$(LINK) $(httppower_OBJECTS) $(httppower_LDADD) $(LIBS)
+plmpower$(EXEEXT): $(plmpower_OBJECTS) $(plmpower_DEPENDENCIES) 
+	@rm -f plmpower$(EXEEXT)
+	$(LINK) $(plmpower_OBJECTS) $(plmpower_LDADD) $(LIBS)
 powerman$(EXEEXT): $(powerman_OBJECTS) $(powerman_DEPENDENCIES) 
 	@rm -f powerman$(EXEEXT)
 	$(LINK) $(powerman_OBJECTS) $(powerman_LDADD) $(LIBS)
@@ -419,6 +427,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_lex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_tab.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/plmpower.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pluglist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/powerman.Po@am__quote@

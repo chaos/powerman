@@ -95,6 +95,7 @@ fi
 %if 0%{?_with_httppower}
 %{_sbindir}/httppower
 %endif
+%{_sbindir}/plmpower
 %dir %config %{_sysconfdir}/powerman
 %{_sysconfdir}/powerman/*.dev
 %{_mandir}/man1/*

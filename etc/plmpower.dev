@@ -1,0 +1,39 @@
+# This device configuration supports power control via the 
+# 'plmpower' utility, e.g.
+#
+#   device "plm" "plmpower" "/usr/sbin/plmpower -d /dev/ttyS1 |&"
+#
+# Plug names are three byte hex addresses separated by periods (xx.xx.xx).
+# These are the unique addresses printed on Insteon devices.
+#
+specification "plmpower" {
+	timeout 	5 
+
+	script login {
+		expect "plmpower> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status {
+		send "status %s\n"
+		expect "([0-9A-F]{2}.[0-9A-F]{2}.[0-9A-F]{2}): ([0-9A-F]{2})\n"
+		setplugstate $1 $2 off="00" on=".."
+		expect "plmpower> "
+	}
+	script on {
+		send "on %s\n"
+		expect "plmpower> "
+	}
+	script off {
+		send "off %s\n"
+		expect "plmpower> "
+	}
+	script cycle {
+		send "off %s\n"
+		expect "plmpower> "
+		delay 4
+		send "on %s\n"
+		expect "plmpower> "
+	}
+}

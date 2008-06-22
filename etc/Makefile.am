@@ -30,6 +30,7 @@ DEVFILES = \
 	ipmipower.dev \
 	phantom4.dev \
 	phantom.dev \
+	plmpower.dev \
 	powerman.dev \
 	swpdu.dev \
 	wti.dev \

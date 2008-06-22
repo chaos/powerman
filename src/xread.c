@@ -61,6 +61,34 @@ int xwrite(int fd, char *p, int max)
     return n;
 }
 
+void xwrite_all(int fd, char *p, int count)
+{
+    int n;
+    int done = 0;
+
+    while (done < count) {
+        n = xwrite(fd, p + done, count - done);
+        if (n < 0)
+            err_exit(TRUE, "write");
+        done += n;
+    }
+}
+
+void xread_all(int fd, char *p, int count)
+{
+    int n;
+    int done = 0;
+
+    while (done < count) {
+        n = xread(fd, p + done, count - done);
+        if (n < 0)
+            err_exit(TRUE, "read");
+        if (n == 0)
+            err_exit(FALSE, "EOF on read");
+         done += n;
+    }
+}
+
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab
  */
