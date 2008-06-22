@@ -1,0 +1,27 @@
+on:      
+off:     t[0-149]
+unknown: 
+Command completed successfully
+on:      t[0,10,20,30,40,50,60,70,80,90,100,110,120,130,140]
+off:     t[1-9,11-19,21-29,31-39,41-49,51-59,61-69,71-79,81-89,91-99,101-109,111-119,121-129,131-139,141-149]
+unknown: 
+Command completed successfully
+on:      t[0,10,20,30,40,50,60,70,80,90,100,110,120,130,140]
+off:     t[1-9,11-19,21-29,31-39,41-49,51-59,61-69,71-79,81-89,91-99,101-109,111-119,121-129,131-139,141-149]
+unknown: 
+Command completed successfully
+on:      
+off:     t[0-149]
+unknown: 
+Command completed successfully
+on:      t[0-149]
+off:     
+unknown: 
+Command completed successfully
+on:      t[0-149]
+off:     
+unknown: 
+Command completed successfully
+on:      
+off:     t[0-149]
+unknown: 

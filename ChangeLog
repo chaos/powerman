@@ -5,6 +5,12 @@
 
 	* etc/ics8064.dev, etc/hp3488.dev : New gpib-utils devices.
 
+	* tests/t37-t40, tests/gpib.c : Tests for above.
+
+	* test/t32.exp : Added missing file.
+	
+	* test/icebox.c : Fix incorrect plug array declaration.
+
 2008-06-19 Jim Garlick <garlick@llnl.gov>
 
 	* etc/powerman.dev : Implement ranged scripts.

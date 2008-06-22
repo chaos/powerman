@@ -1,0 +1,27 @@
+on:      
+off:     t[0-15]
+unknown: 
+Command completed successfully
+on:      t0
+off:     t[1-15]
+unknown: 
+Command completed successfully
+on:      t0
+off:     t[1-15]
+unknown: 
+Command completed successfully
+on:      
+off:     t[0-15]
+unknown: 
+Command completed successfully
+on:      t[0-15]
+off:     
+unknown: 
+Command completed successfully
+on:      t[0-15]
+off:     
+unknown: 
+Command completed successfully
+on:      
+off:     t[0-15]
+unknown: 

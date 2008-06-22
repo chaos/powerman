@@ -106,7 +106,6 @@ _zap_trailing_whitespace(char *s)
 
 #define V3_POWER_STATUS "\
 N1:%d N2:%d N3:%d N4:%d N5:%d N6:%d N7:%d N8:%d N9:%d N10:%d\r\n"
-static void 
 
 #define V3_BEACON_STATUS "\
 N1:%s N2:%s N3:%s N4:%s N5:%s N6:%s N7:%s N8:%s N9:%s N10:%s N11:%s N12:%s\r\n"
@@ -117,14 +116,15 @@ N1:%d,0,0,0 N2:%d,0,0,0 N3:%d,0,0,0 N4:%d,0,0,0 N5:%d,0,0,0 N6:%d,0,0,0 N7:%d,0,
 #define V3_TEMP "\
 N1:%d: N2:%d: N3:%d: N4:%d: N5:%d: N6:%d: N7:%d: N8:%d: N9:%d: N10:%d: N11:%d: N12:%d:\r\n"
 
+static void
 _prompt_loop(void)
 {
     int i;
     char buf[128];
     int num_plugs = 10;
     int num_plugs_ext = 12;
-    int plug[10];
-    char beacon[10][4];
+    int plug[12];
+    char beacon[12][4];
     int temp[12];
     int plug_origin = 1;
     int logged_in = 0;
