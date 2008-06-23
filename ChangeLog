@@ -1,7 +1,7 @@
 2008-06-22 Jim Garlick <garlick@llnl.gov>
 
-	* src/plmpower.c : Add support for SmartLabs PLM 2412S Insteon
-	controller.
+	* src/plmpower.c, etc/plmpower.dev : Add support for SmartLabs 
+	PLM 2412S controller, controlling Insteon and X10 devices.
 
 2008-06-21 Jim Garlick <garlick@llnl.gov>
 

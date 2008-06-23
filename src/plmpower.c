@@ -49,6 +49,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <termios.h>
+#include <ctype.h>
 
 #include "xtypes.h"
 #include "xmalloc.h"
@@ -56,28 +57,53 @@
 #include "argv.h"
 #include "xread.h"
 
-#define IM_STX      0x02
-#define IM_INFO     0x60
-#define IM_SEND     0x62
-#define IM_RESET    0x67
-#define IM_ACK      0x06
-#define IM_NAK      0x15
-#define IM_RECV_STD 0x50
-#define IM_RECV_EXT 0x51
+/* PLM commands */
+#define IM_STX              0x02
+#define IM_INFO             0x60
+#define IM_SEND             0x62
+#define IM_SEND_X10         0x63
+#define IM_RESET            0x67
+#define IM_ACK              0x06
+#define IM_NAK              0x15
+#define IM_RECV_STD         0x50
+#define IM_RECV_EXT         0x51
+#define IM_RECV_X10         0x52
 
 /* insteon commands */
-#define CMD_GRP_ASSIGN  0x01
-#define CMD_GRP_DELETE  0x02
-#define CMD_PING        0x10
-#define CMD_ON          0x11
-#define CMD_ON_FAST     0x12
-#define CMD_OFF         0x13
-#define CMD_OFF_FAST    0x14
-#define CMD_BRIGHT      0x15
-#define CMD_DIM         0x16
-#define CMD_MAN_START   0x17
-#define CMD_MAN_STOP    0x18
-#define CMD_STATUS      0x19
+#define CMD_GRP_ASSIGN      0x01
+#define CMD_GRP_DELETE      0x02
+#define CMD_PING            0x10
+#define CMD_ON              0x11
+#define CMD_ON_FAST         0x12
+#define CMD_OFF             0x13
+#define CMD_OFF_FAST        0x14
+#define CMD_BRIGHT          0x15
+#define CMD_DIM             0x16
+#define CMD_MAN_START       0x17
+#define CMD_MAN_STOP        0x18
+#define CMD_STATUS          0x19
+
+/* X10 commands */
+#define X10_ALL_UNITS_OFF   0x0
+#define X10_ALL_LIGHTS_ON   0x1
+#define X10_ON              0x2
+#define X10_OFF             0x3
+#define X10_DIM             0x4
+#define X10_BRIGHT          0x5
+#define X10_ALL_LIGHTS_OFF  0x6
+#define X10_EXT_CODE        0x7
+#define X10_HAIL_REQ        0x8
+#define X10_HAIL_ACK        0x9
+#define X10_PRESET_DIM      0xa
+#define X10_PRESET_DIM2     0xb
+#define X10_EXT_DATA        0xc
+#define X10_STATUS_ON       0xd
+#define X10_STATUS_OFF      0xe
+#define X10_STATUS_REQ      0xf
+
+/* X10 encoding of housecode A-P and device code 1-16 */
+static int x10_enc[] = { 0x6, 0xe, 0x2, 0xa, 0x1, 0x9, 0x5, 0xd, 
+                         0x7, 0xf, 0x3, 0xb, 0x0, 0x8, 0x4, 0xc };
 
 typedef enum { ON, OFF, STATUS } cmd_t;
 
@@ -86,6 +112,11 @@ typedef struct {
     char m;
     char l;
 } addr_t;
+
+typedef struct {
+    char house;
+    char unit;
+} x10addr_t;
 
 #define OPTIONS "d:"
 static struct option longopts[] = {
@@ -99,26 +130,43 @@ help(void)
     printf("Valid commands are:\n");
     printf("  info             get PLM info\n");
     printf("  reset            reset the PLM\n");
-    printf("  on     xx.xx.xx  turn on device\n");
-    printf("  off    xx.xx.xx  turn on device\n");
-    printf("  status xx.xx.xx  query status of device\n");
+    printf("  on     addr      turn on device\n");
+    printf("  off    addr      turn on device\n");
+    printf("  status addr      query status of device\n");
+    printf("Where addr is insteon (xx.xx.xx) or X10 (hdd)\n");
 }
 
 static int 
 str2addr(char *s, addr_t *ap)
 {
-    if (sscanf(s, "%2hhx.%2hhx.%2hhx", &ap->h, &ap->m, &ap->l) != 3) {
-        printf("Error parsing address\n");
+    if (sscanf(s, "%2hhx.%2hhx.%2hhx", &ap->h, &ap->m, &ap->l) != 3)
         return 0;
-    }
     return 1;
 }
 static char *
 addr2str(addr_t *ap)
 {
     static char s[64];
-    sprintf(s, "%.2hhX.%.2hhX.%.2hhX", ap->h, ap->m, ap->l);
+
+    snprintf(s, sizeof(s), "%.2hhX.%.2hhX.%.2hhX", ap->h, ap->m, ap->l);
     return s;
+}
+
+static int
+str2x10addr(char *s, x10addr_t *xp)
+{
+    unsigned long i;
+
+    if (isupper(s[0]))
+        s[0] = tolower(s[0]);
+    if (!islower(s[0]) || s[0] > 'p')
+        return 0;
+    xp->house = x10_enc[s[0] - 'a'];
+    i = strtoul(&s[1], NULL, 10) - 1;
+    if (i >= sizeof(x10_enc)/sizeof(int))
+        return 0;
+    xp->unit = x10_enc[i];
+    return 1;
 }
 
 static void
@@ -180,6 +228,37 @@ plm_send(int fd, addr_t *ap, char cmd1, char cmd2)
 }
 
 static void
+plm_send_x10(int fd, x10addr_t *xp, char fun)
+{
+    char send[4] = { IM_STX, IM_SEND_X10, 0, 0 };
+    char recv[5];
+
+    send[2] = (xp->house << 4) | xp->unit;
+    send[3] = 0;
+    xwrite_all(fd, send, sizeof(send));
+    xread_all(fd, recv, sizeof(recv));
+    switch (recv[4]) {
+        case IM_ACK:
+            break;
+        case IM_NAK:
+        default:
+            err_exit(FALSE, "plm_send_x10: failed\n");
+    }
+    sleep(1); /* XXX seems necessary */
+    send[2] = (xp->house << 4) | fun;
+    send[3] = 0x80;
+    xwrite_all(fd, send, sizeof(send));
+    xread_all(fd, recv, sizeof(recv));
+    switch (recv[4]) {
+        case IM_ACK:
+            break;
+        case IM_NAK:
+        default:
+            err_exit(FALSE, "plm_send_x10: failed\n");
+    }
+}
+
+static void
 plm_recv(int fd, addr_t *ap, char *cmd1, char *cmd2)
 {
     char recv[11];
@@ -206,41 +285,53 @@ static void
 plm_on(int fd, char *addrstr)
 {
     addr_t addr;    
+    x10addr_t x;
     char cmd2;
 
-    if (!str2addr(addrstr, &addr))
-        return;
-    plm_send(fd, &addr, CMD_ON_FAST, 0xff);
-    plm_recv(fd, &addr, NULL, &cmd2);
-    if (cmd2 == 0)
-        err_exit(FALSE, "on command failed");
+    if (str2addr(addrstr, &addr)) {
+        plm_send(fd, &addr, CMD_ON_FAST, 0xff);
+        plm_recv(fd, &addr, NULL, &cmd2);
+        if (cmd2 == 0)
+            err_exit(FALSE, "on command failed");
+    } else if (str2x10addr(addrstr, &x))
+        plm_send_x10(fd, &x, X10_ON);
+    else
+        err(FALSE, "could not parse address");
 }
 
 static void
 plm_off(int fd, char *addrstr)
 {
     addr_t addr;
+    x10addr_t x;
     char cmd2;
 
-    if (!str2addr(addrstr, &addr))
-        return;
-    plm_send(fd, &addr, CMD_OFF_FAST, 0);
-    plm_recv(fd, &addr, NULL, &cmd2);
-    if (cmd2 != 0)
-        err_exit(FALSE, "off command failed");
+    if (str2addr(addrstr, &addr)) {
+        plm_send(fd, &addr, CMD_OFF_FAST, 0);
+        plm_recv(fd, &addr, NULL, &cmd2);
+        if (cmd2 != 0)
+            err_exit(FALSE, "off command failed");
+    } else if (str2x10addr(addrstr, &x))
+       plm_send_x10(fd, &x, X10_OFF);
+    else
+        err(FALSE, "could not parse address");
 }
 
 static void
 plm_status(int fd, char *addrstr)
 {
     addr_t addr;
+    x10addr_t x;
     char cmd2;
 
-    if (!str2addr(addrstr, &addr))
-        return;
-    plm_send(fd, &addr, CMD_STATUS, 0);
-    plm_recv(fd, &addr, NULL, &cmd2);
-    printf("%s: %.2hhX\n", addrstr, cmd2);
+    if (str2addr(addrstr, &addr)) {
+        plm_send(fd, &addr, CMD_STATUS, 0);
+        plm_recv(fd, &addr, NULL, &cmd2);
+        printf("%s: %.2hhX\n", addrstr, cmd2);
+    } else if (str2x10addr(addrstr, &x))
+        printf("%s: unknown\n", addrstr);
+    else
+        err(FALSE, "could not parse address");
 }
 
 void 
@@ -257,16 +348,19 @@ docmd(int fd, char **av, int *quitp)
             plm_reset(fd);
         } else if (strcmp(av[0], "on") == 0) {
             if (argv_length(av) != 2)
-                printf("Usage: on xx.xx.xx\n");
-            plm_on(fd, av[1]);
+                printf("Usage: on addr\n");
+            else
+                plm_on(fd, av[1]);
         } else if (strcmp(av[0], "off") == 0) {
             if (argv_length(av) != 2)
-                printf("Usage: off xx.xx.xx\n");
-            plm_off(fd, av[1]);
+                printf("Usage: off addr\n");
+            else
+                plm_off(fd, av[1]);
         } else if (strcmp(av[0], "status") == 0) {
             if (argv_length(av) != 2)
-                printf("Usage: status xx.xx.xx\n");
-            plm_status(fd, av[1]);
+                printf("Usage: status addr\n");
+            else
+                plm_status(fd, av[1]);
         } else 
             printf("type \"help\" for a list of commands\n");
     }

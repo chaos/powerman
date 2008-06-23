@@ -5,6 +5,9 @@
 #
 # Plug names are three byte hex addresses separated by periods (xx.xx.xx).
 # These are the unique addresses printed on Insteon devices.
+# 
+# The PLM can also handle X10 devices, in which case plug names are
+# the single character house code (A-P) followed by unit address (1-16) 
 #
 specification "plmpower" {
 	timeout 	5 
@@ -17,8 +20,8 @@ specification "plmpower" {
 	}
 	script status {
 		send "status %s\n"
-		expect "([0-9A-F]{2}.[0-9A-F]{2}.[0-9A-F]{2}): ([0-9A-F]{2})\n"
-		setplugstate $1 $2 off="00" on=".."
+		expect "([^:]+): ([^\n]+)\n"
+		setplugstate $1 $2 off="00" on="[0-9A-F]{2}"
 		expect "plmpower> "
 	}
 	script on {
