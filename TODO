@@ -3,7 +3,6 @@
 * Store scripts in a list and search the list for the script name, rather than
   hard code the list.   Make it possible to execute arbitrary scripts that
   are device specific, e.g. "pm --script scriptname".
-* Package with autoconf/automake
 * Power sequencing.  Provide a way of expressing the max number of outlets
   or power control devices which can be powered on in parallel.
 * Client should have option for verifying soft power status (expand hostranges
