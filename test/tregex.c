@@ -150,15 +150,13 @@ main(int argc, char *argv[])
 	assert(!_match("CHOCOLATE", s));
 	xfree(s);
 
-	/* beginning/end of line handling should be disabled since 
-	 * beginning/end of string (which normally match) are 
-	 * non-deterministic in powerman.  We should be explicitly matching
-	 * end-of-line sentinels like \n in scripts.
+	/* end of line handling should be disabled since end of string 
+	 * (which normally matches) is non-deterministic in powerman.  
+	 * We should be explicitly matching end-of-line sentinels like 
+	 * \n in scripts.
 	 */
 	assert(!_match("foo$", "foo"));
 	assert(!_match("foo$", "foo\n"));
-	assert(!_match("^foo", "foo\n"));
-	assert(!_match("^foo", "bar\nfoo"));
 	assert(!_match("foo\n", "foo"));
 	assert(!_match("foo\n", "bar\nfoo"));
 	assert( _match("foo\n", "barfoo\n"));

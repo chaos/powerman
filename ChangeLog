@@ -2,6 +2,13 @@
 
 	* htdocs/supported.html : Add hp3488, ics8064, plmpower, swpdu.
 
+	* etc/ipmipower.dev : Change status scripts to not expect local
+	command echo since we turned that off, and to expect \r\n rather
+	than $ when setting plug state.
+
+	* src/xregex.c, test/tregex.c : Drop NOT_BOL flag from xregexec,
+	so ^ is allowed but $ still isn't.
+
 2008-06-22 Jim Garlick <garlick@llnl.gov>
 
 	* src/plmpower.c, etc/plmpower.dev : Add support for SmartLabs 

@@ -134,7 +134,7 @@ xregex_compile(xregex_t xrp, const char *regex, bool withsub)
 bool 
 xregex_exec(xregex_t xrp, const char *s, xregex_match_t xm)
 {
-    int eflags = REG_NOTBOL | REG_NOTEOL;
+    int eflags = REG_NOTEOL;
     int res;
 
     assert(xrp->xr_magic == XREGEX_MAGIC);
