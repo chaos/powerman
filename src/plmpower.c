@@ -463,6 +463,7 @@ plm_on(int fd, char *addrstr)
         plm_send_x10(fd, &x, X10_ON);
     else
         err(FALSE, "could not parse address");
+    sleep(1);
 }
 
 static void
@@ -481,6 +482,7 @@ plm_off(int fd, char *addrstr)
        plm_send_x10(fd, &x, X10_OFF);
     else
         err(FALSE, "could not parse address");
+    sleep(1);
 }
 
 static void

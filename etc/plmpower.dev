@@ -10,7 +10,7 @@
 # the single character house code (A-P) followed by unit address (1-16) 
 #
 specification "plmpower" {
-	timeout 	5 
+	timeout 	10
 
 	script login {
 		expect "plmpower> "
