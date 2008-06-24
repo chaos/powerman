@@ -134,9 +134,13 @@ typedef struct {
     char unit;
 } x10addr_t;
 
-#define OPTIONS "d:"
+static int testmode = 0;
+static char test_plug = 0;
+
+#define OPTIONS "d:t"
 static struct option longopts[] = {
     { "device", required_argument, 0, 'd' },
+    { "testmode", no_argument, 0, 't' },
     {0,0,0,0},
 };
 
@@ -343,8 +347,13 @@ plm_reset(int fd)
     char send[2] = { IM_STX, IM_RESET };
     char recv[3];
 
-    xwrite_all(fd, send, sizeof(send));
-    xread_all(fd, recv, sizeof(recv));
+    if (testmode) {
+        sleep(2);
+        recv[2] = IM_ACK;
+    } else {
+        xwrite_all(fd, send, sizeof(send));
+        xread_all(fd, recv, sizeof(recv));
+    }
     switch (recv[2]) {
         case IM_ACK:
             printf("PLM reset complete\n");
@@ -462,13 +471,18 @@ plm_on(int fd, char *addrstr)
     char cmd2;
 
     if (str2addr(addrstr, &addr)) {
-        plm_send(fd, &addr, CMD_ON_FAST, 0xff);
-        plm_recv(fd, &addr, NULL, &cmd2);
-        if (cmd2 == 0)
-            err_exit(FALSE, "on command failed");
-    } else if (str2x10addr(addrstr, &x))
-        plm_send_x10(fd, &x, X10_ON);
-    else
+        if (testmode) {
+            test_plug = 1;
+        } else { 
+            plm_send(fd, &addr, CMD_ON_FAST, 0xff);
+            plm_recv(fd, &addr, NULL, &cmd2);
+            if (cmd2 == 0)
+                err_exit(FALSE, "on command failed");
+        }
+    } else if (str2x10addr(addrstr, &x)) {
+        if (!testmode)
+            plm_send_x10(fd, &x, X10_ON);
+    } else
         err(FALSE, "could not parse address");
 }
 
@@ -480,13 +494,18 @@ plm_off(int fd, char *addrstr)
     char cmd2;
 
     if (str2addr(addrstr, &addr)) {
-        plm_send(fd, &addr, CMD_OFF_FAST, 0);
-        plm_recv(fd, &addr, NULL, &cmd2);
-        if (cmd2 != 0)
-            err_exit(FALSE, "off command failed");
-    } else if (str2x10addr(addrstr, &x))
-       plm_send_x10(fd, &x, X10_OFF);
-    else
+        if (testmode) {
+            test_plug = 0;
+        } else {
+            plm_send(fd, &addr, CMD_OFF_FAST, 0);
+            plm_recv(fd, &addr, NULL, &cmd2);
+            if (cmd2 != 0)
+                err_exit(FALSE, "off command failed");
+        }
+    } else if (str2x10addr(addrstr, &x)) {
+        if (!testmode)
+           plm_send_x10(fd, &x, X10_OFF);
+    } else
         err(FALSE, "could not parse address");
 }
 
@@ -498,8 +517,12 @@ plm_status(int fd, char *addrstr)
     char cmd2;
 
     if (str2addr(addrstr, &addr)) {
-        plm_send(fd, &addr, CMD_STATUS, 0);
-        plm_recv(fd, &addr, NULL, &cmd2);
+        if (testmode) {
+            cmd2 = test_plug;
+        } else {
+            plm_send(fd, &addr, CMD_STATUS, 0);
+            plm_recv(fd, &addr, NULL, &cmd2);
+        }
         printf("%s: %.2hhX\n", addrstr, cmd2);
     } else if (str2x10addr(addrstr, &x))
         printf("%s: unknown\n", addrstr);
@@ -576,7 +599,10 @@ docmd(int fd, char **av, int *quitp)
         } else if (strcmp(av[0], "quit") == 0) {
             *quitp = 1;
         } else if (strcmp(av[0], "info") == 0) {
-            plm_info(fd);
+            if (testmode)
+                printf("Unavailable in test mode\n");
+            else
+                plm_info(fd);
         } else if (strcmp(av[0], "reset") == 0) {
             plm_reset(fd);
         } else if (strcmp(av[0], "on") == 0) {
@@ -595,7 +621,10 @@ docmd(int fd, char **av, int *quitp)
             else
                 plm_status(fd, av[1]);
         } else if (strcmp(av[0], "monitor") == 0) {
-            plm_monitor(fd);
+            if (testmode)
+                printf("Unavailable in test mode\n");
+            else
+                plm_monitor(fd);
         } else 
             printf("type \"help\" for a list of commands\n");
     }
@@ -663,6 +692,9 @@ main(int argc, char *argv[])
             case 'd':
                 device = optarg;
                 break;
+            case 't':
+                testmode = 1;
+                break;
             default:
                 usage();
                 break;
@@ -670,10 +702,12 @@ main(int argc, char *argv[])
     }
     if (optind < argc)
         usage();
-    if (device == NULL)
-        usage();
 
-    fd = open_serial(device);
+    if (!testmode) {
+        if (device == NULL)
+            usage();
+        fd = open_serial(device);
+    }
 
     shell(fd);
 

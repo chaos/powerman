@@ -1,3 +1,9 @@
+2008-06-24 Jim Garlick <garlick@llnl.gov>
+
+	* src/plmpower.c : Added -t option.
+
+	* test/t41 : Test for above.
+
 2008-06-23 Jim Garlick <garlick@llnl.gov>
 
 	* htdocs/supported.html : Add hp3488, ics8064, plmpower, swpdu.

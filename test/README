@@ -95,6 +95,8 @@ t37-38
 	Test hp3488 using gpib.c
 t39-40
 	Test ics8064 using gpib.c
+t41
+	Test plmpower using plm.c
 
 TODO
 - Implement *_ranged version of on/off/cycle/reset in vpcd and test

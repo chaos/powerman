@@ -1,0 +1,16 @@
+on:      
+off:     t0
+unknown: t1
+Command completed successfully
+on:      t0
+off:     
+unknown: t1
+Command completed successfully
+on:      t0
+off:     
+unknown: t1
+Command completed successfully
+on:      
+off:     t0
+unknown: t1
+No such nodes: t[2-15]
