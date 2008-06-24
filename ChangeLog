@@ -9,6 +9,11 @@
 	* src/xregex.c, test/tregex.c : Drop NOT_BOL flag from xregexec,
 	so ^ is allowed but $ still isn't.
 
+	* etc/plmpower.dev : Add PLM reset to login script, in case
+	someone ran 'monitor' and left PLM in monitor mode.
+
+	* src/plmpower.c : Add 'monitor' command.
+
 2008-06-22 Jim Garlick <garlick@llnl.gov>
 
 	* src/plmpower.c, etc/plmpower.dev : Add support for SmartLabs 

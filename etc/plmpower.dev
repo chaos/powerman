@@ -14,6 +14,8 @@ specification "plmpower" {
 
 	script login {
 		expect "plmpower> "
+		send "reset\n"
+		expect "plmpower> "
 	}
 	script logout {
 		send "quit\n"

@@ -36,6 +36,12 @@
  *   http://www.insteon.net/sdk/files/dm/docs/
  */
 
+/* FIXME: The PLM asynchronously reports any X10 traffic.
+ * The IM_RECV_X10 message thus may interfere with expected 
+ * responses if there is any X10 traffic on the wire.
+ * We should ignore unsolicited replies, but for now we probably exit(1).
+ */
+
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -68,6 +74,14 @@
 #define IM_RECV_STD         0x50
 #define IM_RECV_EXT         0x51
 #define IM_RECV_X10         0x52
+#define IM_CONFIG_GET       0x73
+#define IM_CONFIG_SET       0x6B
+
+/* PLM config bits */
+#define IM_CONFIG_BUTLINK_DISABLE  0x80
+#define IM_CONFIG_MONITOR_MODE     0x40
+#define IM_CONFIG_AUTOLED_DISABLE  0x20
+#define IM_CONFIG_DEADMAN_DISABLE  0x10
 
 /* insteon commands */
 #define CMD_GRP_ASSIGN      0x01
@@ -133,7 +147,54 @@ help(void)
     printf("  on     addr      turn on device\n");
     printf("  off    addr      turn on device\n");
     printf("  status addr      query status of device\n");
+    printf("  monitor          monitor Insteon/X10 traffic\n");
     printf("Where addr is insteon (xx.xx.xx) or X10 (hdd)\n");
+}
+
+static char *
+cmd2str(char c)
+{
+    static char s[16];
+
+    switch (c) {
+        case CMD_GRP_ASSIGN:
+            strcpy(s, "assign-to-group");
+            break;
+        case CMD_GRP_DELETE:
+            strcpy(s, "delete-from-group");
+            break;
+        case CMD_PING:
+            strcpy(s, "ping");
+            break;
+        case CMD_ON:
+            strcpy(s, "on");
+            break;
+        case CMD_ON_FAST:
+            strcpy(s, "on-fast");
+            break;
+        case CMD_OFF:
+            strcpy(s, "off");
+            break;
+        case CMD_OFF_FAST:
+            strcpy(s, "off-fast");
+            break;
+        case CMD_BRIGHT:
+            strcpy(s, "bright");
+            break;
+        case CMD_DIM:
+            strcpy(s, "dim");
+            break;
+        case CMD_MAN_START:
+            strcpy(s, "start-manual-change");
+            break;
+        case CMD_MAN_STOP:
+            strcpy(s, "stop-manual-change");
+            break;
+        case CMD_STATUS:
+            strcpy(s, "status-request");
+            break;
+    }
+    return s;
 }
 
 static int 
@@ -152,6 +213,61 @@ addr2str(addr_t *ap)
     return s;
 }
 
+static char *
+x10cmd2str(char c)
+{
+    static char s[64];
+    switch (c) {
+        case X10_ALL_UNITS_OFF:
+            strcpy(s, "all-units-off");
+            break;
+        case X10_ALL_LIGHTS_ON:
+            strcpy(s, "all-lights-on");
+            break;
+        case X10_ON:
+            strcpy(s, "on");
+            break;
+        case X10_OFF:
+            strcpy(s, "off");
+            break;
+        case X10_DIM:
+            strcpy(s, "dim");
+            break;
+        case X10_BRIGHT:
+            strcpy(s, "bright");
+            break;
+        case X10_ALL_LIGHTS_OFF:
+            strcpy(s, "all-lights-off");
+            break;
+        case X10_EXT_CODE:
+            strcpy(s, "extended-code");
+            break;
+        case X10_HAIL_REQ:
+            strcpy(s, "hail-request");
+            break;
+        case X10_HAIL_ACK:
+            strcpy(s, "hail-acknowledge");
+            break;
+        case X10_PRESET_DIM:
+        case X10_PRESET_DIM2:
+            strcpy(s, "preset-dim");
+            break;
+        case X10_EXT_DATA:
+            strcpy(s, "extended-data");
+            break;
+        case X10_STATUS_ON:
+            strcpy(s, "status=on");
+            break;
+        case X10_STATUS_OFF:
+            strcpy(s, "status=off");
+            break;
+        case X10_STATUS_REQ:
+            strcpy(s, "status-request");
+            break;
+    }
+    return s;
+}
+
 static int
 str2x10addr(char *s, x10addr_t *xp)
 {
@@ -167,6 +283,56 @@ str2x10addr(char *s, x10addr_t *xp)
         return 0;
     xp->unit = x10_enc[i];
     return 1;
+}
+static char *
+x10addr2str(x10addr_t *xp)
+{
+    static char s[16];
+    int i;
+
+    sprintf(s, "???");
+    for (i = 0; i < 16; i++)
+        if (x10_enc[i] == xp->house)
+            s[0] = 'A' + i;
+    for (i = 0; i < 16; i++)
+        if (x10_enc[i] == xp->unit)
+            sprintf(&s[1], "%d", i + 1);
+    return s;
+}
+
+static char
+plm_config_get(int fd)
+{
+    char send[2] = { IM_STX, IM_CONFIG_GET };
+    char recv[6];
+
+    xwrite_all(fd, send, sizeof(send));
+    xread_all(fd, recv, sizeof(recv));
+    switch (recv[5]) {
+        case IM_ACK:
+            break;
+        case IM_NAK:
+        default:
+            err_exit(FALSE, "plm_config_get: failed");
+    } 
+    return recv[2];
+}
+
+static void
+plm_config_set(int fd, char c)
+{
+    char send[3] = { IM_STX, IM_CONFIG_SET, c };
+    char recv[4];
+
+    xwrite_all(fd, send, sizeof(send));
+    xread_all(fd, recv, sizeof(recv));
+    switch (recv[3]) {
+        case IM_ACK:
+            break;
+        case IM_NAK:
+        default:
+            err_exit(FALSE, "plm_config_set: failed");
+    } 
 }
 
 static void
@@ -334,6 +500,59 @@ plm_status(int fd, char *addrstr)
         err(FALSE, "could not parse address");
 }
 
+static void
+plm_monitor(int fd)
+{
+    char c;
+    int stx = 0;
+    char buf[23];
+    addr_t a;
+    x10addr_t x;
+
+    for (;;) {
+        xread_all(fd, &c, 1);
+        if (!stx) {
+            if (c == IM_STX)
+                stx = 1;
+            else
+                printf("Spurious: %.2hhX\n", c);
+            continue;
+        }
+        switch (c) {
+            case IM_RECV_STD:   /* untested */
+                xread_all(fd, buf, 9);
+                a.h = buf[0]; a.m = buf[1]; a.l = buf[2];
+                printf("Insteon: [%s -> ", addr2str(&a));
+                a.h = buf[3]; a.m = buf[4]; a.l = buf[5];
+                printf("%s] %.2hhX %s %.2hhX\n", 
+                        addr2str(&a), buf[6], cmd2str(buf[7]), buf[8]);
+                stx = 0;
+                break;
+            case IM_RECV_EXT:   /* untested */
+                xread_all(fd, buf, 23);
+                a.h = buf[0]; a.m = buf[1]; a.l = buf[2];
+                printf("Insteon: [%s -> ", addr2str(&a));
+                a.h = buf[3]; a.m = buf[4]; a.l = buf[5];
+                printf("%s] %.2hhX %s %.2hhX <extended data>\n", 
+                        addr2str(&a), buf[6], cmd2str(buf[7]), buf[8]);
+                stx = 0;
+                break;
+            case IM_RECV_X10:
+                xread_all(fd, buf, 2);
+                if (buf[1] == 0) {
+                    x.house = (buf[0] & 0xf0) >> 4;
+                    x.unit = buf[0] & 0x0f;
+                    printf("X10: select %s\n", x10addr2str(&x));
+                } else if ((unsigned char)buf[1] == 0x80) {
+                    printf("X10: %s\n", x10cmd2str(buf[1] & 0x0f));
+                } else 
+                    printf("X10: <%.2hhX><%.2hhX>\n", buf[2], buf[1]);
+                stx = 0;
+                break;
+        }
+    }
+}
+
 void 
 docmd(int fd, char **av, int *quitp)
 {
@@ -361,6 +580,10 @@ docmd(int fd, char **av, int *quitp)
                 printf("Usage: status addr\n");
             else
                 plm_status(fd, av[1]);
+        } else if (strcmp(av[0], "monitor") == 0) {
+            char c = plm_config_get(fd);
+            plm_config_set(fd, c | IM_CONFIG_MONITOR_MODE);
+            plm_monitor(fd);
         } else 
             printf("type \"help\" for a list of commands\n");
     }
