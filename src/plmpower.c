@@ -549,6 +549,10 @@ plm_monitor(int fd)
                     printf("X10: <%.2hhX><%.2hhX>\n", buf[2], buf[1]);
                 stx = 0;
                 break;
+            default:
+                printf("Unknown PLM command: %.2hhX\n", c);
+                stx = 0;
+                break;
         }
     }
 }
