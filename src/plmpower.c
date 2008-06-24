@@ -24,7 +24,7 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-/* plmpower.c - control Insteon devices via SmartLabs PLM 2412S */
+/* plmpower.c - control Insteon/X10 devices via SmartLabs PLM 2412S */
 
 /* For PLM bits, see 'Insteon Modem Developer's Guide',
  *   http://www.smarthome.com/manuals/2412sdevguide.pdf
@@ -36,11 +36,15 @@
  *   http://www.insteon.net/sdk/files/dm/docs/
  */
 
-/* FIXME: The PLM asynchronously reports any X10 traffic.
- * The IM_RECV_X10 message thus may interfere with expected 
- * responses if there is any X10 traffic on the wire.
- * We should ignore unsolicited replies, but for now we probably exit(1).
- */
+ /* The PLM will send "unsolicited" data (data not sent in response to
+  * an action by us) in the following cases, assuming empty all-link db:
+  * - Any X10 data appearing on the wire
+  * - Direct message with to address matching the IM's insteon ID.
+  * - Button press events
+  * FIXME: The way plmpower is currently coded, receipt of any of these could
+  * interfere with an expected response and cause plmpower to exit.
+  * This will be manifested as a spurious command timeout to powerman.
+  */
 
 #if HAVE_CONFIG_H
 #include "config.h"
@@ -118,8 +122,6 @@
 /* X10 encoding of housecode A-P and device code 1-16 */
 static const int x10_enc[] = { 0x6, 0xe, 0x2, 0xa, 0x1, 0x9, 0x5, 0xd, 
                                0x7, 0xf, 0x3, 0xb, 0x0, 0x8, 0x4, 0xc };
-
-typedef enum { ON, OFF, STATUS } cmd_t;
 
 typedef struct {
     char h;
@@ -511,6 +513,9 @@ plm_monitor(int fd)
     addr_t a;
     x10addr_t x;
 
+    /* XXX monitor mode has no effect with an empty all-link db */
+    plm_config_set(fd, plm_config_get(fd) | IM_CONFIG_MONITOR_MODE);
+
     for (;;) {
         xread_all(fd, &c, 1);
         if (!stx) {
@@ -587,8 +592,6 @@ docmd(int fd, char **av, int *quitp)
             else
                 plm_status(fd, av[1]);
         } else if (strcmp(av[0], "monitor") == 0) {
-            char c = plm_config_get(fd);
-            plm_config_set(fd, c | IM_CONFIG_MONITOR_MODE);
             plm_monitor(fd);
         } else 
             printf("type \"help\" for a list of commands\n");
