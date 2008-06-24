@@ -36,14 +36,14 @@
  *   http://www.insteon.net/sdk/files/dm/docs/
  */
 
- /* The PLM will send "unsolicited" data (data not sent in response to
+ /* NOTE: The PLM will send "unsolicited" data (data not sent in response to
   * an action by us) in the following cases, assuming empty all-link db:
   * - Any X10 data appearing on the wire
   * - Direct message with to address matching the IM's insteon ID.
   * - Button press events
   * FIXME: The way plmpower is currently coded, receipt of any of these could
   * interfere with an expected response and cause plmpower to exit.
-  * This will be manifested as a spurious command timeout to powerman.
+  * This will be manifested as a spurious command timeout in powerman.
   */
 
 #if HAVE_CONFIG_H
@@ -150,7 +150,7 @@ help(void)
     printf("  off    addr      turn on device\n");
     printf("  status addr      query status of device\n");
     printf("  monitor          monitor Insteon/X10 traffic\n");
-    printf("Where addr is insteon (xx.xx.xx) or X10 (hdd)\n");
+    printf("Where addr is insteon (xx.xx.xx) or X10 (Huu)\n");
 }
 
 static char *
@@ -412,7 +412,12 @@ plm_send_x10(int fd, x10addr_t *xp, char fun)
         default:
             err_exit(FALSE, "plm_send_x10: failed\n");
     }
-    sleep(1); /* XXX seems necessary */
+
+    /* This delay seems to be necessary.  
+     * Without it the second command will sometimes be ignored by the PLM.
+     */
+    sleep(1);
+
     send[2] = (xp->house << 4) | fun;
     send[3] = 0x80;
     xwrite_all(fd, send, sizeof(send));
@@ -465,7 +470,6 @@ plm_on(int fd, char *addrstr)
         plm_send_x10(fd, &x, X10_ON);
     else
         err(FALSE, "could not parse address");
-    sleep(1);
 }
 
 static void
@@ -484,7 +488,6 @@ plm_off(int fd, char *addrstr)
        plm_send_x10(fd, &x, X10_OFF);
     else
         err(FALSE, "could not parse address");
-    sleep(1);
 }
 
 static void
