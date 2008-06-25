@@ -1,3 +1,10 @@
+2008-06-25 Jim Garlick <garlick@llnl.gov>
+
+	* : tag powerman-1.0.33
+
+	* etc/apcpdu3.dev : Fix problem with intermittent failuers of query
+	script [backport from trunk].
+
 2008-04-25 Jim Garlick <garlick@llnl.gov>
 
 	* etc/powerman.dev : Remove status_all, add status.   This is slower
