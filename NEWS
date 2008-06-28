@@ -1,4 +1,23 @@
 =========================================================================
+Release Notes for PowerMan version 2.2                        28 Jun 2008
+=========================================================================
+
+* [plmpower] Added support for controlling Insteon/X10 devices via 
+  SmartLabs PLM 2412S.
+
+* [hp3488] Added support for modular GPIB-based HP 3488A switch/control 
+  unit via gpib-utils project.
+
+* [ics8064] Added support for VXI-11-based ICS 8064 16-port relay unit
+  via gpib-utils project.
+
+* [powerman] Improved efficiency of powerman-controlling-powerman
+  configurations, when one powerman controls a subset of the plugs
+  of another powerman.
+
+* Enhanced integrated test suite.
+
+=========================================================================
 Release Notes for PowerMan version 2.1                        18 Jun 2008
 =========================================================================
 

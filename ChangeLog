@@ -1,9 +1,9 @@
 2008-06-28 Jim Garlick <garlick@llnl.gov>
 
-	* src/plmpower.c : Tighten up PLM synchronization:
+	* src/plmpower.c : Tighten up PLM synchronization and clean up:
 	- Send X10 commands 3 times (override with -x option)
 	- Handle PLM-not-ready NAK properly.
-	- Timeout/retry insteon packets (override 1s timeout with -t option.  
+	- Timeout/retry (1s) insteon packets (override timeout with -t option).
 	- Added ping command.
 	- Rename --testmode,-t to --testmode,-T.
 	- Drop monitor command.
