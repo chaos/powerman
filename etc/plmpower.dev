@@ -17,7 +17,6 @@ specification "plmpower" {
 		expect "plmpower> "
 		send "reset\n"
 		expect "plmpower> "
-		delay 1
 	}
 	script logout {
 		send "quit\n"
@@ -31,12 +30,10 @@ specification "plmpower" {
 	script on {
 		send "on %s\n"
 		expect "plmpower> "
-		delay 0.5
 	}
 	script off {
 		send "off %s\n"
 		expect "plmpower> "
-		delay 0.5
 	}
 	script cycle {
 		send "off %s\n"
@@ -44,6 +41,5 @@ specification "plmpower" {
 		delay 4
 		send "on %s\n"
 		expect "plmpower> "
-		delay 0.5
 	}
 }

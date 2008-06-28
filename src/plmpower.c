@@ -36,16 +36,6 @@
  *   http://www.insteon.net/sdk/files/dm/docs/
  */
 
- /* NOTE: The PLM will send "unsolicited" data (data not sent in response to
-  * an action by us) in the following cases, assuming empty all-link db:
-  * - Any X10 data appearing on the wire
-  * - Direct message with to address matching the IM's insteon ID.
-  * - Button press events
-  * FIXME: The way plmpower is currently coded, receipt of any of these could
-  * interfere with an expected response and cause plmpower to exit.
-  * This will be manifested as a spurious command timeout in powerman.
-  */
-
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
@@ -60,32 +50,66 @@
 #include <fcntl.h>
 #include <termios.h>
 #include <ctype.h>
+#include <sys/time.h>
 
 #include "xtypes.h"
 #include "xmalloc.h"
 #include "error.h"
 #include "argv.h"
 #include "xread.h"
+#include "xtime.h"
+#include "xpoll.h"
+
+typedef struct {
+    int code;
+    int rbytes;
+    char *desc;
+} plmcmd_t;
 
 /* PLM commands */
-#define IM_STX              0x02
-#define IM_INFO             0x60
-#define IM_SEND             0x62
-#define IM_SEND_X10         0x63
-#define IM_RESET            0x67
-#define IM_ACK              0x06
-#define IM_NAK              0x15
-#define IM_RECV_STD         0x50
-#define IM_RECV_EXT         0x51
-#define IM_RECV_X10         0x52
-#define IM_CONFIG_GET       0x73
-#define IM_CONFIG_SET       0x6B
+#define IM_RECV_STD                 0x50
+#define IM_RECV_EXT                 0x51
+#define IM_RECV_X10                 0x52
+#define IM_RECV_ALL_LINK_COMPLETE   0x53
+#define IM_RECV_BUTTON              0x54
+#define IM_RECV_RESET               0x55
+#define IM_RECV_ALL_LINK_FAIL       0x56
+#define IM_RECV_ALL_LINK_REC        0x57
+#define IM_RECV_ALL_LINK_STAT       0x58
+
+#define IM_GET_INFO                 0x60
+#define IM_SEND_ALL_LINK            0x61
+#define IM_SEND                     0x62
+#define IM_SEND_X10                 0x63
+#define IM_START_ALL_LINK           0x64
+#define IM_CANCEL_ALL_LINK          0x65
+#define IM_SET_HOST_CATEGORY        0x66
+#define IM_RESET                    0x67
+#define IM_SET_ACK                  0x68
+#define IM_GET_FIRST_ALL_LINK_REC   0x69
+#define IM_GET_NEXT_ALL_LINK_REC    0x6A
+#define IM_CONFIG_SET               0x6B
+#define IM_GET_SENDER_ALL_LINK_REC  0x6C
+#define IM_LED_ON                   0x6D
+#define IM_LED_OFF                  0x6E
+#define IM_MANAGE_ALL_LINK_REC      0x6F
+#define IM_SET_NACK                 0x70
+#define IM_SET_ACK2                 0x71
+#define IM_RF_SLEEP                 0x72
+#define IM_CONFIG_GET               0x73
+
+/* other PLM control bytes */
+#define IM_STX                      0x02
+#define IM_ACK                      0x06
+#define IM_NAK                      0x15
 
 /* PLM config bits */
-#define IM_CONFIG_BUTLINK_DISABLE  0x80
-#define IM_CONFIG_MONITOR_MODE     0x40
-#define IM_CONFIG_AUTOLED_DISABLE  0x20
-#define IM_CONFIG_DEADMAN_DISABLE  0x10
+#define IM_CONFIG_BUTLINK_DISABLE   0x80
+#define IM_CONFIG_MONITOR_MODE      0x40
+#define IM_CONFIG_AUTOLED_DISABLE   0x20
+#define IM_CONFIG_DEADMAN_DISABLE   0x10
+
+#define IM_MAX_RECVLEN              28 /* response to send extended msg */
 
 /* insteon commands */
 #define CMD_GRP_ASSIGN      0x01
@@ -134,13 +158,17 @@ typedef struct {
     char unit;
 } x10addr_t;
 
-static int testmode = 0;
-static char test_plug = 0;
+static int              testmode = 0;
+static char             test_plug = 0;
+static unsigned long    x10_attempts = 3;
+static int              insteon_tmout = 1000; /* (msec) retry after 1s */
 
-#define OPTIONS "d:t"
+#define OPTIONS "d:Tx:t:"
 static struct option longopts[] = {
-    { "device", required_argument, 0, 'd' },
-    { "testmode", no_argument, 0, 't' },
+    { "device",         required_argument, 0, 'd' },
+    { "testmode",       no_argument,       0, 'T' },
+    { "x10-attempts",   required_argument, 0, 'x' },
+    { "timeout",        required_argument, 0, 't' },
     {0,0,0,0},
 };
 
@@ -149,58 +177,12 @@ help(void)
 {
     printf("Valid commands are:\n");
     printf("  info             get PLM info\n");
-    printf("  reset            reset the PLM\n");
+    printf("  reset            reset the PLM (clears all-link db)\n");
     printf("  on     addr      turn on device\n");
     printf("  off    addr      turn on device\n");
     printf("  status addr      query status of device\n");
-    printf("  monitor          monitor Insteon/X10 traffic\n");
+    printf("  ping   addr      time round trip packet to device\n");
     printf("Where addr is insteon (xx.xx.xx) or X10 (Huu)\n");
-}
-
-static char *
-cmd2str(char c)
-{
-    static char s[16];
-
-    switch (c) {
-        case CMD_GRP_ASSIGN:
-            strcpy(s, "assign-to-group");
-            break;
-        case CMD_GRP_DELETE:
-            strcpy(s, "delete-from-group");
-            break;
-        case CMD_PING:
-            strcpy(s, "ping");
-            break;
-        case CMD_ON:
-            strcpy(s, "on");
-            break;
-        case CMD_ON_FAST:
-            strcpy(s, "on-fast");
-            break;
-        case CMD_OFF:
-            strcpy(s, "off");
-            break;
-        case CMD_OFF_FAST:
-            strcpy(s, "off-fast");
-            break;
-        case CMD_BRIGHT:
-            strcpy(s, "bright");
-            break;
-        case CMD_DIM:
-            strcpy(s, "dim");
-            break;
-        case CMD_MAN_START:
-            strcpy(s, "start-manual-change");
-            break;
-        case CMD_MAN_STOP:
-            strcpy(s, "stop-manual-change");
-            break;
-        case CMD_STATUS:
-            strcpy(s, "status-request");
-            break;
-    }
-    return s;
 }
 
 static int 
@@ -216,61 +198,6 @@ addr2str(addr_t *ap)
     static char s[64];
 
     snprintf(s, sizeof(s), "%.2hhX.%.2hhX.%.2hhX", ap->h, ap->m, ap->l);
-    return s;
-}
-
-static char *
-x10cmd2str(char c)
-{
-    static char s[64];
-    switch (c) {
-        case X10_ALL_UNITS_OFF:
-            strcpy(s, "all-units-off");
-            break;
-        case X10_ALL_LIGHTS_ON:
-            strcpy(s, "all-lights-on");
-            break;
-        case X10_ON:
-            strcpy(s, "on");
-            break;
-        case X10_OFF:
-            strcpy(s, "off");
-            break;
-        case X10_DIM:
-            strcpy(s, "dim");
-            break;
-        case X10_BRIGHT:
-            strcpy(s, "bright");
-            break;
-        case X10_ALL_LIGHTS_OFF:
-            strcpy(s, "all-lights-off");
-            break;
-        case X10_EXT_CODE:
-            strcpy(s, "extended-code");
-            break;
-        case X10_HAIL_REQ:
-            strcpy(s, "hail-request");
-            break;
-        case X10_HAIL_ACK:
-            strcpy(s, "hail-acknowledge");
-            break;
-        case X10_PRESET_DIM:
-        case X10_PRESET_DIM2:
-            strcpy(s, "preset-dim");
-            break;
-        case X10_EXT_DATA:
-            strcpy(s, "extended-data");
-            break;
-        case X10_STATUS_ON:
-            strcpy(s, "status=on");
-            break;
-        case X10_STATUS_OFF:
-            strcpy(s, "status=off");
-            break;
-        case X10_STATUS_REQ:
-            strcpy(s, "status-request");
-            break;
-    }
     return s;
 }
 
@@ -290,6 +217,7 @@ str2x10addr(char *s, x10addr_t *xp)
     xp->unit = x10_enc[i];
     return 1;
 }
+#if 0
 static char *
 x10addr2str(x10addr_t *xp)
 {
@@ -305,161 +233,162 @@ x10addr2str(x10addr_t *xp)
             sprintf(&s[1], "%d", i + 1);
     return s;
 }
+#endif
 
-static char
-plm_config_get(int fd)
+/* Wait until PLM has data for us or timeout_msec expires.
+ * Return value is 0 on timeout, 1 on data ready.
+ */
+static int
+wait_until_ready(int fd, int timeout_msec)
 {
-    char send[2] = { IM_STX, IM_CONFIG_GET };
-    char recv[6];
+    xpollfd_t pfd = xpollfd_create();
+    struct timeval tv;
+    int res = 1;
+   
+    tv.tv_sec = timeout_msec / 1000; 
+    tv.tv_usec = (timeout_msec % 1000) * 1000;
 
-    xwrite_all(fd, send, sizeof(send));
-    xread_all(fd, recv, sizeof(recv));
-    switch (recv[5]) {
-        case IM_ACK:
-            break;
-        case IM_NAK:
-        default:
-            err_exit(FALSE, "plm_config_get: failed");
-    } 
-    return recv[2];
+    xpollfd_set(pfd, fd, XPOLLIN);
+    if (xpoll(pfd, &tv) == 0)
+        res = 0;
+    xpollfd_destroy(pfd);
+    return res;
+}
+
+static int
+plm_recv(int fd, char cmd, char *recv, int recvlen)
+{
+    char b[IM_MAX_RECVLEN];
+retry:
+    xread_all(fd, &b[0], 1);
+    if (b[0] == IM_NAK)
+        return 1;
+    if (b[0] != IM_STX)
+        err_exit(FALSE, "expected IM_STX, got %.2hhX", b[0]);
+    xread_all(fd, &b[1], 1);
+    if (b[1] != cmd) {  
+        switch (b[1]) {
+            case IM_RECV_STD:
+                xread_all(fd, &b[2], 9);
+                break;
+            case IM_RECV_EXT:
+                xread_all(fd, &b[2], 23);
+                break;
+            case IM_RECV_X10:
+                xread_all(fd, &b[2], 2);
+                break;
+            case IM_RECV_ALL_LINK_COMPLETE:
+                xread_all(fd, &b[2], 8);
+                break;
+            case IM_RECV_BUTTON:
+                xread_all(fd, &b[2], 1);
+                break;
+            case IM_RECV_RESET:
+                break;
+            case IM_RECV_ALL_LINK_FAIL:
+                xread_all(fd, &b[2], 5);
+                break;
+            case IM_RECV_ALL_LINK_REC:
+                xread_all(fd, &b[2], 8);
+                break;
+            case IM_RECV_ALL_LINK_STAT:
+                xread_all(fd, &b[2], 1);
+                break;
+            default:
+                err_exit(FALSE, "unexpected command: %.2hhX", b[1]);
+                break;
+        }
+        goto retry;
+    }
+    xread_all(fd, &b[2], recvlen - 2);
+    memcpy(recv, b, recvlen);
+    return 0;
 }
 
 static void
-plm_config_set(int fd, char c)
+plm_docmd(int fd, char *send, int sendlen, char *recv, int recvlen)
 {
-    char send[3] = { IM_STX, IM_CONFIG_SET, c };
-    char recv[4];
+    int nak;
 
-    xwrite_all(fd, send, sizeof(send));
-    xread_all(fd, recv, sizeof(recv));
-    switch (recv[3]) {
-        case IM_ACK:
-            break;
-        case IM_NAK:
-        default:
-            err_exit(FALSE, "plm_config_set: failed");
-    } 
+    do {
+        xwrite_all(fd, send, sendlen);
+        nak = plm_recv(fd, send[1], recv, recvlen);
+        if (recv[recvlen - 1] == IM_NAK)
+            nak = 1;
+        if (nak)
+            usleep(1000*100); /* wait 100ms for PLM to become ready */
+    } while (nak);
 }
 
 static void
 plm_reset(int fd)
 {
-    char send[2] = { IM_STX, IM_RESET };
-    char recv[3];
-
-    if (testmode) {
+    if (testmode)
         sleep(2);
-        recv[2] = IM_ACK;
-    } else {
-        xwrite_all(fd, send, sizeof(send));
-        xread_all(fd, recv, sizeof(recv));
+    else {
+        char send[2] = { IM_STX, IM_RESET };
+        char recv[3];
+
+        plm_docmd(fd, send, sizeof(send), recv, sizeof(recv));
     }
-    switch (recv[2]) {
-        case IM_ACK:
-            printf("PLM reset complete\n");
-            break;
-        case IM_NAK:
-        default:
-            err_exit(FALSE, "plm_reset: failed");
-    } 
+    printf("PLM reset complete\n");
 }
 
 static void
 plm_info(int fd)
 {
     addr_t addr;
-    char send[2] = { IM_STX, IM_INFO };
+    char send[2] = { IM_STX, IM_GET_INFO };
     char recv[9];
 
-    xwrite_all(fd, send, sizeof(send));
-    xread_all(fd, recv, sizeof(recv));
-    switch (recv[8]) {
-        case IM_ACK:
-            addr.h = recv[2];
-            addr.m = recv[3];
-            addr.l = recv[4];
-            printf("id=%s dev=%.2hhX.%.2hhX vers=%hhd\n", addr2str(&addr), 
-                    recv[5], recv[6], recv[7]);
-            break;
-        case IM_NAK:
-        default:
-            err_exit(FALSE, "plm_info: failed\n");
-    }
+    plm_docmd(fd, send, sizeof(send), recv, sizeof(recv));
+    addr.h = recv[2];
+    addr.m = recv[3];
+    addr.l = recv[4];
+    printf("id=%s dev=%.2hhX.%.2hhX vers=%hhd\n", addr2str(&addr), 
+        recv[5], recv[6], recv[7]);
 }
 
 static void
-plm_send(int fd, addr_t *ap, char cmd1, char cmd2)
+plm_send_insteon(int fd, addr_t *ap, char cmd1, char cmd2)
 {
     char send[8] = { IM_STX, IM_SEND, ap->h, ap->m, ap->l, 3, cmd1, cmd2 };
     char recv[9];
 
-    xwrite_all(fd, send, sizeof(send));
-    xread_all(fd, recv, sizeof(recv));
-    switch (recv[8]) {
-        case IM_ACK:
-            break;
-        default:
-        case IM_NAK:
-            err_exit(FALSE, "plm_send: failed\n");
-    }
+    plm_docmd(fd, send, sizeof(send), recv, sizeof(recv));
+}
+
+static int
+plm_recv_insteon(int fd, addr_t *ap, char *cmd1, char *cmd2, int timeout_msec)
+{
+    char recv[11];
+    int nak;
+
+    do {
+        if (!wait_until_ready(fd, timeout_msec))
+            return 0;
+        nak = plm_recv(fd, IM_RECV_STD, recv, sizeof(recv));
+        if (nak)
+            err_exit(FALSE, "unexpected NAK while waiting for Insteon packet");
+    } while (ap->h != recv[2] || ap->m != recv[3] || ap->l != recv[4]);
+    if (cmd1)
+        *cmd1 = recv[9];
+    if (cmd2)
+        *cmd2 = recv[10];
+    return 1;
 }
 
 static void
 plm_send_x10(int fd, x10addr_t *xp, char fun)
 {
-    char send[4] = { IM_STX, IM_SEND_X10, 0, 0 };
+    char senda[4] = { IM_STX, IM_SEND_X10, (xp->house << 4) | xp->unit, 0 };
+    char sendb[4] = { IM_STX, IM_SEND_X10, (xp->house << 4) | fun, 0x80 };
     char recv[5];
+    int i;
 
-    send[2] = (xp->house << 4) | xp->unit;
-    send[3] = 0;
-    xwrite_all(fd, send, sizeof(send));
-    xread_all(fd, recv, sizeof(recv));
-    switch (recv[4]) {
-        case IM_ACK:
-            break;
-        case IM_NAK:
-        default:
-            err_exit(FALSE, "plm_send_x10: failed\n");
-    }
-
-    /* This delay seems to be necessary.  
-     * Without it the second command will sometimes be ignored by the PLM.
-     */
-    sleep(1);
-
-    send[2] = (xp->house << 4) | fun;
-    send[3] = 0x80;
-    xwrite_all(fd, send, sizeof(send));
-    xread_all(fd, recv, sizeof(recv));
-    switch (recv[4]) {
-        case IM_ACK:
-            break;
-        case IM_NAK:
-        default:
-            err_exit(FALSE, "plm_send_x10: failed\n");
-    }
-}
-
-static void
-plm_recv(int fd, addr_t *ap, char *cmd1, char *cmd2)
-{
-    char recv[11];
-
-    xread_all(fd, recv, sizeof(recv));
-    if (recv[0] != IM_STX)
-        err_exit(FALSE, "plm_recv: unexpected first byte: %.2hhX", recv[0]);
-    switch (recv[1]) {
-        case IM_RECV_STD:
-            if (ap->h != recv[2] || ap->m != recv[3] || ap->l != recv[4])
-                err_exit(FALSE, "plm_recv: unexpected from addr: %s",
-                        addr2str(ap));
-            if (cmd1)
-                *cmd1 = recv[9];
-            if (cmd2)
-                *cmd2 = recv[10];
-            break;
-        default:
-            err_exit(FALSE, "plm_recv: unexpected command: %.2hhX", recv[1]);
+    for (i = 0; i < x10_attempts; i++) {
+        plm_docmd(fd, senda, sizeof(senda), recv, sizeof(recv));
+        plm_docmd(fd, sendb, sizeof(sendb), recv, sizeof(recv));
     }
 }
 
@@ -474,8 +403,9 @@ plm_on(int fd, char *addrstr)
         if (testmode) {
             test_plug = 1;
         } else { 
-            plm_send(fd, &addr, CMD_ON_FAST, 0xff);
-            plm_recv(fd, &addr, NULL, &cmd2);
+            do {
+                plm_send_insteon(fd, &addr, CMD_ON_FAST, 0xff);
+            } while (!plm_recv_insteon(fd, &addr, NULL, &cmd2, insteon_tmout));
             if (cmd2 == 0)
                 err_exit(FALSE, "on command failed");
         }
@@ -497,8 +427,9 @@ plm_off(int fd, char *addrstr)
         if (testmode) {
             test_plug = 0;
         } else {
-            plm_send(fd, &addr, CMD_OFF_FAST, 0);
-            plm_recv(fd, &addr, NULL, &cmd2);
+            do {
+                plm_send_insteon(fd, &addr, CMD_OFF_FAST, 0);
+            } while (!plm_recv_insteon(fd, &addr, NULL, &cmd2, insteon_tmout));
             if (cmd2 != 0)
                 err_exit(FALSE, "off command failed");
         }
@@ -520,8 +451,9 @@ plm_status(int fd, char *addrstr)
         if (testmode) {
             cmd2 = test_plug;
         } else {
-            plm_send(fd, &addr, CMD_STATUS, 0);
-            plm_recv(fd, &addr, NULL, &cmd2);
+            do {
+                plm_send_insteon(fd, &addr, CMD_STATUS, 0);
+            } while (!plm_recv_insteon(fd, &addr, NULL, &cmd2, insteon_tmout));
         }
         printf("%s: %.2hhX\n", addrstr, cmd2);
     } else if (str2x10addr(addrstr, &x))
@@ -531,63 +463,29 @@ plm_status(int fd, char *addrstr)
 }
 
 static void
-plm_monitor(int fd)
+plm_ping(int fd, char *addrstr)
 {
-    char c;
-    int stx = 0;
-    char buf[23];
-    addr_t a;
+    addr_t addr;
     x10addr_t x;
+    struct timeval t1, t2, delta;
+    int tries = 0;
 
-    /* XXX monitor mode has no effect with an empty all-link db */
-    plm_config_set(fd, plm_config_get(fd) | IM_CONFIG_MONITOR_MODE);
-
-    for (;;) {
-        xread_all(fd, &c, 1);
-        if (!stx) {
-            if (c == IM_STX)
-                stx = 1;
-            else
-                printf("Spurious: %.2hhX\n", c);
-            continue;
-        }
-        switch (c) {
-            case IM_RECV_STD:   /* untested */
-                xread_all(fd, buf, 9);
-                a.h = buf[0]; a.m = buf[1]; a.l = buf[2];
-                printf("Insteon: [%s -> ", addr2str(&a));
-                a.h = buf[3]; a.m = buf[4]; a.l = buf[5];
-                printf("%s] %.2hhX %s %.2hhX\n", 
-                        addr2str(&a), buf[6], cmd2str(buf[7]), buf[8]);
-                stx = 0;
-                break;
-            case IM_RECV_EXT:   /* untested */
-                xread_all(fd, buf, 23);
-                a.h = buf[0]; a.m = buf[1]; a.l = buf[2];
-                printf("Insteon: [%s -> ", addr2str(&a));
-                a.h = buf[3]; a.m = buf[4]; a.l = buf[5];
-                printf("%s] %.2hhX %s %.2hhX <extended data>\n", 
-                        addr2str(&a), buf[6], cmd2str(buf[7]), buf[8]);
-                stx = 0;
-                break;
-            case IM_RECV_X10:
-                xread_all(fd, buf, 2);
-                if (buf[1] == 0) {
-                    x.house = (buf[0] & 0xf0) >> 4;
-                    x.unit = buf[0] & 0x0f;
-                    printf("X10: select %s\n", x10addr2str(&x));
-                } else if ((unsigned char)buf[1] == 0x80) {
-                    printf("X10: %s\n", x10cmd2str(buf[1] & 0x0f));
-                } else 
-                    printf("X10: <%.2hhX><%.2hhX>\n", buf[2], buf[1]);
-                stx = 0;
-                break;
-            default:
-                printf("Unknown PLM command: %.2hhX\n", c);
-                stx = 0;
-                break;
-        }
-    }
+    if (str2addr(addrstr, &addr)) {
+        if (gettimeofday(&t1, NULL) < 0)
+            err_exit(TRUE, "gettimeofday");
+        do {
+            tries++;
+            plm_send_insteon(fd, &addr, CMD_PING, 0);
+        } while (!plm_recv_insteon(fd, &addr, NULL, NULL, insteon_tmout));
+        if (gettimeofday(&t2, NULL) < 0)
+            err_exit(TRUE, "gettimeofday");
+        timersub(&t2, &t1, &delta);
+        printf("PING from %s: retries=%d time=%.2lf ms\n", addrstr, tries - 1,
+               (double)delta.tv_usec / 1000.0 + (double)delta.tv_sec * 1000.0);
+    } else if (str2x10addr(addrstr, &x))
+        err(FALSE, "ping is only for Insteon devices");
+    else
+        err(FALSE, "could not parse address");
 }
 
 void 
@@ -620,11 +518,11 @@ docmd(int fd, char **av, int *quitp)
                 printf("Usage: status addr\n");
             else
                 plm_status(fd, av[1]);
-        } else if (strcmp(av[0], "monitor") == 0) {
-            if (testmode)
-                printf("Unavailable in test mode\n");
+        } else if (strcmp(av[0], "ping") == 0) {
+            if (argv_length(av) != 2)
+                printf("Usage: ping addr\n");
             else
-                plm_monitor(fd);
+                plm_ping(fd, av[1]);
         } else 
             printf("type \"help\" for a list of commands\n");
     }
@@ -667,7 +565,7 @@ open_serial(char *dev)
     if (lockf(fd, F_TLOCK, 0) < 0) /* see comment in device_serial.c */
         err_exit(TRUE, "could not lock %s", dev);
     tcgetattr(fd, &tio);
-    tio.c_cflag |= B19200 | CS8 | CLOCAL | CREAD;
+    tio.c_cflag = B19200 | CS8 | CLOCAL | CREAD;
     tio.c_iflag = IGNBRK | IGNPAR;
     tio.c_oflag = ONLRET;
     tio.c_lflag = 0;
@@ -683,17 +581,25 @@ main(int argc, char *argv[])
 {
     char *device = NULL;
     int c;
-    int fd;
+    int fd = -1;
 
     err_init(basename(argv[0]));
 
     while ((c = getopt_long(argc, argv, OPTIONS, longopts, NULL)) != EOF) {
         switch (c) {
-            case 'd':
+            case 'd':   /* --device */
                 device = optarg;
                 break;
-            case 't':
+            case 'T':   /* --testmode */
                 testmode = 1;
+                break;
+            case 't':   /* --timeout msec */
+                insteon_tmout = strtoul(optarg, NULL, 10);
+                break;
+            case 'x':   /* --x10-attempts */
+                x10_attempts = strtoul(optarg, NULL, 10);
+                if (x10_attempts < 1)
+                    err_exit(FALSE, "X10 attempts must be >= 1");
                 break;
             default:
                 usage();

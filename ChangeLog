@@ -1,3 +1,21 @@
+2008-06-28 Jim Garlick <garlick@llnl.gov>
+
+	* src/plmpower.c : Tighten up PLM synchronization:
+	- Send X10 commands 3 times (override with -x option)
+	- Handle PLM-not-ready NAK properly.
+	- Timeout/retry insteon packets (override 1s timeout with -t option.  
+	- Added ping command.
+	- Rename --testmode,-t to --testmode,-T.
+	- Drop monitor command.
+
+	* etc/plmpower.dev : Remove delays.
+
+2008-06-27 Jim Garlick <garlick@llnl.gov>
+
+	* src/plmpower.c : Correct serial port initialization.
+
+	* etc/plmpower.dev : Add 1 sec delay between commands.
+
 2008-06-24 Jim Garlick <garlick@llnl.gov>
 
 	* src/plmpower.c : Added -t option.
