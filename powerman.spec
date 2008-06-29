@@ -34,7 +34,7 @@ BuildRequires: tcp_wrappers
 BuildRequires: genders
 %endif
 %if 0%{?_with_httppower}
-BuildRequires: curl-devel, readline-devel, ncurses-devel
+BuildRequires: curl-devel
 %endif
 
 %description

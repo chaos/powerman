@@ -1,3 +1,10 @@
+2008-06-29 Jim Garlick <garlick@llnl.gov>
+
+	* src/httppower.c, src/Makefile.am, config/ac_readline.m4,
+	configure.ac : Drop readline dependency.
+
+	* test/dli.c, test/t42, test/t43 : Test for DLI LPC device.
+
 2008-06-28 Jim Garlick <garlick@llnl.gov>
 
 	* src/plmpower.c : Tighten up PLM synchronization and clean up:

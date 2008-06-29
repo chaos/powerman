@@ -34,12 +34,6 @@
 #else
 #error httppower needs curl support!
 #endif
-#if HAVE_READLINE
-#include <readline/readline.h>
-#include <readline/history.h>
-#else
-#error httppower needs readline support!
-#endif
 #include <getopt.h>
 #include <string.h>
 #include <stdlib.h>
@@ -170,20 +164,19 @@ int docmd(CURL *h, char **av)
 
 void shell(CURL *h)
 {
-    char *line;
+    char buf[128];
     char **av;
     int rc = 0;
 
-    /* disable readline file name completion */
-    /*rl_bind_key ('\t', rl_insert); */
-    while (rc == 0 && (line = readline("httppower> "))) {
-        if (strlen(line) > 0) {
-            add_history(line);
-            av = argv_create(line, "");
+    while (rc == 0) {
+        printf("httppower> ");
+        fflush(stdout);
+        if (fgets(buf, sizeof(buf), stdin)) {
+            av = argv_create(buf, "");
             rc = docmd(h, av);
             argv_destroy(av);
-        }
-        free(line);
+        } else
+            rc = 1;
     }
 }
 

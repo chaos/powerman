@@ -313,7 +313,10 @@ docmd(int fd, char **av, int *quitp)
             else
                 plm_info(fd);
         } else if (strcmp(av[0], "reset") == 0) {
-            plm_reset(fd);
+            if (testmode)
+                printf("Unavailable in test mode\n");
+            else
+                plm_reset(fd);
         } else if (strcmp(av[0], "on") == 0) {
             if (argv_length(av) != 2)
                 printf("Usage: on addr\n");
@@ -611,14 +614,10 @@ plm_docmd(int fd, char *send, int sendlen, char *recv, int recvlen)
 static void
 plm_reset(int fd)
 {
-    if (testmode)
-        sleep(2);
-    else {
-        char send[2] = { IM_STX, IM_RESET };
-        char recv[3];
+    char send[2] = { IM_STX, IM_RESET };
+    char recv[3];
 
-        plm_docmd(fd, send, sizeof(send), recv, sizeof(recv));
-    }
+    plm_docmd(fd, send, sizeof(send), recv, sizeof(recv));
     printf("PLM reset complete\n");
 }
 
