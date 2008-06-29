@@ -211,6 +211,8 @@ main(int argc, char *argv[])
                 break;
             case 't':   /* --timeout msec */
                 insteon_tmout = strtoul(optarg, NULL, 10);
+                if (insteon_tmout < 1)
+                    err_exit(FALSE, "timeout must be >= 1 msec");
                 break;
             case 'x':   /* --x10-attempts */
                 x10_attempts = strtoul(optarg, NULL, 10);
@@ -355,7 +357,7 @@ help(void)
 }
 
 /* Send the ON command to [addrstr], either X10 or Insteon, via PLM on [fd].
- * If Insteon, retry the command until it succeeds.
+ * If Insteon, retry the command until a response is received.
  * If X10, send it x10_attempts times whether we need to or not.
  */
 static void
@@ -383,7 +385,7 @@ plm_on(int fd, char *addrstr)
 }
 
 /* Send the OFF command to [addrstr], either X10 or Insteon, via PLM on [fd].
- * If Insteon, retry the command until it succeeds.
+ * If Insteon, retry the command until a response is received.
  * If X10, send it x10_attempts times whether we need to or not.
  */
 static void
@@ -410,8 +412,8 @@ plm_off(int fd, char *addrstr)
         err(FALSE, "could not parse address");
 }
 
-/* Send the Insteon STATUS command to [addrstr] via PLM on [fd] 
- * and print the result on stdout.  Retry the command until it succeeds. 
+/* Send the Insteon STATUS command to [addrstr] via PLM on [fd] and print 
+ * the result on stdout.  Retry the command until a response is received.
  * X10 addresses are accepted here, but we always report status as "unknown".
  */
 static void
@@ -511,8 +513,8 @@ str2x10addr(char *s, x10addr_t *xp)
     return 1;
 }
 
-/* Wait until PLM on [fd] has data for us or [timeout_msec] expires.
- * Return value is 0 on timeout, 1 on data ready.
+/* Wait until PLM on [fd] has data ready for reading or [timeout_msec] expires.
+ * Return value is 1 on data ready, 0 on timeout.
  */
 static int
 wait_until_ready(int fd, int timeout_msec)
@@ -530,7 +532,7 @@ wait_until_ready(int fd, int timeout_msec)
 }
 
 /* Receive a command or a response from the PLM on [fd] and return it 
- * in [recv] of length[recvlen].  If the a command is received which does 
+ * in [recv] of length [recvlen].  If the a command is received which does 
  * not match [cmd], silently discard it.  If a NAK is received instead of STX
  * indicating the PLM was busy when the last command was sent, return 1, 
  * otherwise return 0.
