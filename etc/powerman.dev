@@ -1,10 +1,11 @@
 #
 # $Id$
 #
-# PowerMan script for controlling another PowerMan daemon.
+# PowerMan script for controlling another PowerMan daemon, e.g.
 #
-# N.B. allow 'client' to configure a subset of 'server' plugs
-#
+#  device "cartman" "powerman" "cartman.llnl.gov:10101"
+#  node "b[1-4]" "cartman" "b[1-4]"
+# 
 specification "powerman" {
 	timeout 	100.0
 
