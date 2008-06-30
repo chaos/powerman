@@ -1,3 +1,7 @@
+2008-06-30 Jim Garlick <garlick@llnl.gov>
+
+	* src/plmpower.c : Fix compilation #if !HAVE_GETOPT_LONG.
+
 2008-06-29 Jim Garlick <garlick@llnl.gov>
 
 	* src/httppower.c, src/Makefile.am, config/ac_readline.m4,
