@@ -201,16 +201,17 @@ static char *_getregex_buf(cbuf_t b, xregex_t re, xregex_match_t xm)
 {
     int bytes_peeked, dropped, matchlen;
     char *str;
+    int maxpeeksize = cbuf_used(b);
 
-    str = xmalloc(MAX_DEV_BUF + 1);
-    bytes_peeked = cbuf_peek(b, str, MAX_DEV_BUF);
+    str = xmalloc(maxpeeksize + 1);
+    bytes_peeked = cbuf_peek(b, str, maxpeeksize);
     if (bytes_peeked <= 0) {            /* FIXME: any -1 handling needed? */
         if (bytes_peeked < 0)
             err(TRUE, "_getregex_buf: cbuf_peek returned %d", bytes_peeked);
         xfree(str);
         return NULL;
     }
-    assert(bytes_peeked <= MAX_DEV_BUF);
+    assert(bytes_peeked <= maxpeeksize);
     _memtrans(str, bytes_peeked, '\0', '\377');
     str[bytes_peeked] = '\0';
     if (!xregex_exec(re, str, xm)) {

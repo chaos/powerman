@@ -2,6 +2,20 @@
 
 	* src/plmpower.c : Fix compilation #if !HAVE_GETOPT_LONG.
 
+	* test/t25.conf : Relax timeout for slow AIX test system.
+
+	* src/device.c : Use actual number of bytes in buffer instead of
+	maximum expanded size of buffer to copy buffer contents into for
+	regex match.  This 64k memory allocation would fail on AIX in t35-t36.
+
+	* src/xpty.c : xcfmakeraw(): check properly for tcsetattr errors().
+
+	* src/xpty.c : Avoid cfmakeraw() on AIX.  This fixed failures on 
+	tests t21-t24,t27-t28,t38.
+
+	* src/powerman.c : Stop leaking a file descriptor for duped stderr
+	in _connect_to_server_pipe().
+
 2008-06-29 Jim Garlick <garlick@llnl.gov>
 
 	* src/httppower.c, src/Makefile.am, config/ac_readline.m4,

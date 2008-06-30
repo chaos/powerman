@@ -77,13 +77,41 @@ void nonblock_clr(int fd)
         err_exit(TRUE, "fcntl F_SETFL");
 }
 
+static int tiocmp(struct termios *a, struct termios *b)
+{
+    if (            memcmp(a->c_cc, b->c_cc, sizeof(a->c_cc)) == 0
+                    && a->c_cc[VTIME] == b->c_cc[VTIME]
+                    && a->c_iflag == b->c_iflag 
+                    && a->c_oflag == b->c_oflag
+                    && a->c_cflag == b->c_cflag
+                    && a->c_lflag == b->c_lflag)
+        return 1;
+    return 0;
+}
+
+/* tcsetattr returns success if anything succeeds so we must verify
+ * with another tcgetattr.
+ */
+static void xtcsetattr(int fd, int flags, struct termios *tio)
+{
+    struct termios act;
+
+    if (tcsetattr(fd, flags, tio) < 0)
+        err_exit(TRUE, "tcsetattr");
+    memset(&act, 0, sizeof(act));
+    if (tcgetattr(fd, &act) < 0)
+        err_exit(TRUE, "tcgetattr");
+    if (!tiocmp(tio, &act))
+        err_exit(FALSE, "tcsetattr failed");
+}
+
 void xcfmakeraw(int fd)
 {
     struct termios tio;
 
     if (tcgetattr(fd, &tio) < 0)
         err_exit(TRUE, "xcfmakeraw: tcgetattr");
-#if HAVE_CFMAKERAW
+#if HAVE_CFMAKERAW && !defined(_AIX)
     cfmakeraw(&tio);
 #else
     /* Stevens: Adv. Prog. in the UNIX Env.  1ed p.345 */
@@ -95,8 +123,7 @@ void xcfmakeraw(int fd)
     tio.c_cc[VMIN] = 1;
     tio.c_cc[VTIME] = 0;
 #endif
-    if (tcsetattr(fd, TCSANOW, &tio) < 0)
-        err_exit(TRUE, "xcfmakeraw: tcsetattr");
+    xtcsetattr(fd, TCSANOW, &tio);
 }
 
 pid_t xforkpty(int *amaster, char *name, int len)
@@ -159,7 +186,7 @@ pid_t xforkpty(int *amaster, char *name, int len)
         close (master); 
         return -1; 
     } 
-    slave_name = ptsname (master); 
+    slave_name = ttyname (master); 
     if (slave_name == NULL) { 
         close (master); 
         return -1; 

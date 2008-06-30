@@ -503,10 +503,12 @@ static int _connect_to_server_pipe(char *server_path, char *config_path)
         case 0: /* child */
             if (dup2(saved_stderr, STDERR_FILENO) < 0)
                 err_exit(TRUE, "dup2 stderr");
+            close(saved_stderr);
             xcfmakeraw(STDIN_FILENO);
             execv(server_path, argv);
             err_exit(TRUE, "exec %s", server_path);
         default: /* parent */ 
+            close(saved_stderr);
             break;
     }
     argv_destroy(argv);

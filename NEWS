@@ -1,5 +1,5 @@
 =========================================================================
-Release Notes for PowerMan version 2.2                        28 Jun 2008
+Release Notes for PowerMan version 2.2                        30 Jun 2008
 =========================================================================
 
 * [plmpower] Added support for controlling Insteon/X10 devices via 
@@ -16,6 +16,7 @@ Release Notes for PowerMan version 2.2                        28 Jun 2008
   of another powerman.
 
 * Enhanced integrated test suite.
+  Note: tests all pass on AIX now.
 
 =========================================================================
 Release Notes for PowerMan version 2.1                        18 Jun 2008

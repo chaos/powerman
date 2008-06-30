@@ -93,7 +93,6 @@ main(int argc, char *argv[])
     }
     _prompt_loop();
         
-    fprintf(stderr, "exiting \n");
     exit(0);
 }
 
