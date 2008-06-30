@@ -181,7 +181,7 @@ static void     plm_send_x10(int fd, x10addr_t *xp, char cmd);
 static int              testmode = 0;
 static char             test_plug = 0;
 static unsigned long    x10_attempts = 3;
-static int              insteon_tmout = 1000; /* (msec) retry after 1s */
+static int              insteon_tmout = 1000; /* (msec) */
 
 #define OPTIONS "d:Tx:t:"
 static struct option longopts[] = {
@@ -209,7 +209,7 @@ main(int argc, char *argv[])
             case 'T':   /* --testmode */
                 testmode = 1;
                 break;
-            case 't':   /* --timeout msec */
+            case 't':   /* --timeout */
                 insteon_tmout = strtoul(optarg, NULL, 10);
                 if (insteon_tmout < 1)
                     err_exit(FALSE, "timeout must be >= 1 msec");
@@ -260,7 +260,7 @@ open_serial(char *dev)
     fd = open(dev, O_RDWR | O_NOCTTY);
     if (fd < 0)
         err_exit(TRUE, "could not open %s", dev);
-    if (lockf(fd, F_TLOCK, 0) < 0) /* see comment in device_serial.c */
+    if (lockf(fd, F_TLOCK, 0) < 0)
         err_exit(TRUE, "could not lock %s", dev);
     tcgetattr(fd, &tio);
     tio.c_cflag = B19200 | CS8 | CLOCAL | CREAD;
@@ -473,7 +473,7 @@ plm_ping(int fd, char *addrstr)
         err(FALSE, "could not parse address");
 }
 
-/* Convert a string [s] to insteon address [ip].
+/* Convert a string [s] to Insteon address [ip].
  * Return 1 on success, 0 on failure.
  */
 static int 
@@ -484,7 +484,7 @@ str2insaddr(char *s, insaddr_t *ip)
     return 1;
 }
 
-/* Convert an insteon address [ip] to string [returned].
+/* Convert an Insteon address [ip] to string [returned].
  * Returns pointer to static data overwritten on each call.
  */
 static char *
@@ -621,7 +621,7 @@ plm_reset(int fd)
     printf("PLM reset complete\n");
 }
 
-/* Send IM_INFO to the PLM on [fd] and print the response on stdout.
+/* Send IM_GET_INFO to the PLM on [fd] and print the response on stdout.
  */
 static void
 plm_info(int fd)
