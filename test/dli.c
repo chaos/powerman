@@ -2,6 +2,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 #define DLI_POST "\
 <HTML><HEAD>\n\
