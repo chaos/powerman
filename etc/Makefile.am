@@ -25,7 +25,7 @@ DEVFILES = \
 	icebox.dev \
 	icebox3.dev \
 	ics8064.dev \
-	ilom-inline.dev \
+	ilom.dev \
 	ipmi.dev \
 	ipmipower.dev \
 	phantom4.dev \

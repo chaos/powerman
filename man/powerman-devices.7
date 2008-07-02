@@ -151,5 +151,27 @@ Run factory_defaults command.
 .P
 The PM8 can run in a mode where it can be daisy chained from a Cyclades
 terminal server.  This mode is not yet supported by PowerMan.
+.SH "Sun ILOM"
+The dedicated ILOM serial port (SER MGT RJ-45) runs at 9600,8n1 and the 
+default login is root/changeme.  Use a Sun/NETRA/Cisco RJ45 adapter to 
+connect to Cyclades TS.
+.P
+The dedicated ILOM ethernet port (NET MGT RJ-45) can be configured for 
+DHCP (the default) or static IP settings.  To configure static IP via 
+the ILOM serial port, run:
+.IP
+.nf
+    cd /SP/network
+    set pendingipdiscovery=static
+    set pendingipaddress=xxx.xxx.xxx.xxx
+    set pendingipnetmask=xxx.xxx.xxx.xxx
+    set pendingipgateway=xxx.xxx.xxx.xxx
+    set commitpending=true
+.fi
+.P
+The ILOM network configuration can alternatively be set up via the system
+BIOS setup screen.  Hit F2 during boot to access BIOS setup, go to the
+"Advanced" tab, select "IPMI 2.0 configuration" and "set LAN 
+configuration".  Make your changes and commit them.
 .SH "SEE ALSO"
 powerman(1), powermand(1), powerman.conf(5)

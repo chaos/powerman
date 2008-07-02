@@ -1,0 +1,54 @@
+#
+# Sun ILOM
+#
+# Written for:
+#   Sunfire X4140 SP firmware 2.0.2.3 build 29049, SP file system 0.1.16
+#
+# Examples:
+#
+# over SER MGT RJ-45, e.g. (serial via cyclades)
+#   device "ilom" "ilom" "usr-ts:7016"
+# over SER MGT RJ-45, e.g. (direct serial)
+#   device "ilom" "ilom" "/dev/ttyS1" "9600,8n1"
+# over NET MGT RJ-45, e.g. (network over ssh)
+#   device "ilom" "ilom" "ssh -o StrictHostKeyChecking=no -lroot sol|&"
+#
+specification  "ilom" {
+	timeout 	10
+
+	plug name { "1" }
+
+	# login script handles three cases:
+	# 1) serial port, already logged in
+	# 2) serial port, not logged in
+	# 3) ssh, enter password only
+	script login {
+		send "\n"
+ 		expect "->|Password:|login: "
+		send "root\n"
+		expect "->|Password: "
+		send "changeme\n"
+		expect "->"
+	}
+	script status {
+		send "show -d properties /SYS\n"
+		expect "(POWERSTATE|power_state)[^Oo]+(On|Off|on|off)"
+		setplugstate "1" $2 on="On|on" off="Off|off"
+		expect "->"
+	}
+	script on {
+		send "start -script /SYS\n"
+		expect "->"
+	}		
+	script off {
+		send "stop -script -force /SYS\n"
+		expect "->"
+	}		
+	script cycle {
+		send "stop -script -force /SYS\n"
+		expect "->"
+		delay 4	
+		send "start -script /SYS\n"
+		expect "->"
+	}
+}

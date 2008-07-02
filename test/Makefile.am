@@ -1,4 +1,4 @@
-check_PROGRAMS = tpl vpcd tregex targv baytech icebox gpib dli
+check_PROGRAMS = tpl vpcd tregex targv baytech icebox gpib dli ilom
 
 TESTS_ENVIRONMENT = env 
 TESTS_ENVIRONMENT += "PATH_POWERMAN=$(top_builddir)/src/powerman"
@@ -45,3 +45,6 @@ gpib_LDADD = $(LIBFORKPTY)
 
 dli_SOURCES = dli.c $(common_sources)
 dli_LDADD = $(LIBFORKPTY)
+
+ilom_SOURCES = ilom.c $(common_sources)
+ilom_LDADD = $(LIBFORKPTY)
