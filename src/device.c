@@ -1306,6 +1306,9 @@ void dev_destroy(Device * dev)
     assert(dev->magic == DEV_MAGIC);
     dev->magic = 0;
 
+    if (dev->connect_state == DEV_CONNECTED)
+        dev->disconnect(dev);
+
     xfree(dev->name);
     xfree(dev->specname);
     if (dev->data) {

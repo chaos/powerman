@@ -1,17 +1,16 @@
 #
-# Sun ILOM
+# Sun Integrated Lights Out Management card
 #
 # Written for:
 #   Sunfire X4140 SP firmware 2.0.2.3 build 29049, SP file system 0.1.16
 #
 # Examples:
-#
-# over SER MGT RJ-45, e.g. (serial via cyclades)
-#   device "ilom" "ilom" "usr-ts:7016"
-# over SER MGT RJ-45, e.g. (direct serial)
-#   device "ilom" "ilom" "/dev/ttyS1" "9600,8n1"
-# over NET MGT RJ-45, e.g. (network over ssh)
-#   device "ilom" "ilom" "ssh -o StrictHostKeyChecking=no -lroot sol|&"
+#   over SER MGT RJ-45 (serial via cyclades)
+#     device "ilom" "ilom" "usr-ts:7016"
+#   over SER MGT RJ-45 (direct serial)
+#     device "ilom" "ilom" "/dev/ttyS1" "9600,8n1"
+#   over NET MGT RJ-45 (network over ssh)
+#     device "ilom" "ilom" "ssh -o StrictHostKeyChecking=no -lroot sol|&"
 #
 specification  "ilom" {
 	timeout 	10

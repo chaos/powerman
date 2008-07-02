@@ -4,6 +4,9 @@
 
 	* etc/ilom.dev : Added, new and improved.
 
+	* src/devices.c : Call device disconnect method during
+	device teardown, which occurs as a result of receiving a SIGINT.
+
 2008-06-30 Jim Garlick <garlick@llnl.gov>
 
 	* src/plmpower.c : Fix compilation #if !HAVE_GETOPT_LONG.
