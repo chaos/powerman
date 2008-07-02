@@ -1,5 +1,18 @@
-#define SSH_LOGIN_PROMPT "SUNSP00144FEE320F login: "
-#define SSH_PASSWD_PROMPT "Password: "
+#ifdef HAVE_CONFIG_H
+#include "config.h"
+#endif
+#include <stdio.h>
+#if HAVE_GETOPT_H
+#include <getopt.h>
+#endif
+#include <stdio.h>
+#include <libgen.h>
+#include <ctype.h>
+#include <string.h>
+#include <stdlib.h>
+
+#define ILOM_LOGIN_PROMPT "SUNSP00144FEE320F login: "
+#define ILOM_PASSWD_PROMPT "Password: "
 
 #define ILOM_PROMPT " -> "
 
@@ -33,7 +46,7 @@ Warning: password is set to factory default.\n\n"
 #define ILOM_START_RESP2 "start: Target already started\n\n"
 
 #define ILOM_CMD_INVAL "\
-Invalid command 'foo' - type help for a list of commands.\n\n"
+Invalid command '%s' - type help for a list of commands.\n\n"
 
 #define ILOM_HELP "\
 The help command is used to view information about commands and targets\n\
@@ -69,8 +82,146 @@ SP firmware build number: 29049\n\
 SP firmware date: Thu Feb 21 19:42:30 PST 2008\n\
 SP filesystem version: 0.1.16\n\n"
 
+static void usage(void);
+static void prompt_loop(void);
 
-int
+typedef enum { NONE, SSH, SER, SER_LOGIN } ilomtype_t;
+static ilomtype_t personality = NONE;
+
+static char *prog;
+
+#define OPTIONS "p:"
+#if HAVE_GETOPT_LONG
+#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
+static const struct option longopts[] = {
+    { "personality", required_argument, 0, 'p' },
+    {0, 0, 0, 0},
+};
+#else
+#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
+#endif
+
+int 
 main(int argc, char *argv[])
 {
+    int i, c;
+
+    prog = basename(argv[0]);
+    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
+        switch (c) {
+            case 'p':
+                if (strcmp(optarg, "ssh") == 0)
+                    personality = SSH;
+                else if (strcmp(optarg, "serial") == 0)
+                    personality = SER;
+                else if (strcmp(optarg, "serial_loggedin") == 0)
+                    personality = SER_LOGIN;
+                else
+                    usage();
+                break;
+            default:
+                usage();
+        }
+    }
+    if (optind < argc)
+        usage();
+    if (personality == NONE)
+        usage();
+    prompt_loop();
+    exit(0);
 }
+
+static void 
+usage(void)
+{
+    fprintf(stderr, "Usage: %s -p ssh|serial|serial_loggedin\n", prog);
+    exit(1);
+}
+
+static void
+_zap_trailing_whitespace(char *s)
+{
+    while (isspace(s[strlen(s) - 1]))
+        s[strlen(s) - 1] = '\0';
+}
+
+static void
+prompt_loop(void)
+{
+    char buf[128];
+    static char plug[4];
+    int authenticated;
+
+    strcpy(plug, "Off");
+    switch (personality) {
+        case SER:
+            authenticated = 0;
+            break;
+        case SSH:
+            authenticated = 1;
+            break;
+        case SER_LOGIN:
+            authenticated = 2;
+            break;
+    }
+    for (;;) { 
+        switch (authenticated) {
+            case 0:
+                printf(ILOM_LOGIN_PROMPT);
+                fflush(stdout);
+                if (fgets(buf, sizeof(buf), stdin) == NULL)
+                    goto done;
+                _zap_trailing_whitespace(buf);
+                if (!strcmp(buf, "root"))
+                    authenticated = 1;
+                break;
+            case 1:
+                printf(ILOM_PASSWD_PROMPT);
+                fflush(stdout);
+                if (fgets(buf, sizeof(buf), stdin) == NULL)
+                    goto done;
+                _zap_trailing_whitespace(buf);
+                if (!strcmp(buf, "changeme")) {
+                    authenticated = 2;
+                    printf(ILOM_BANNER);
+                }
+                break;
+            case 2:
+                printf(ILOM_PROMPT);
+                fflush(stdout);
+                if (fgets(buf, sizeof(buf), stdin) == NULL)
+                    goto done;
+                _zap_trailing_whitespace(buf);
+                if (!strcmp(buf, "exit")) {
+                    goto done;
+                } else if (!strcmp(buf, "help")) {
+                    printf(ILOM_HELP);
+                } else if (!strcmp(buf, "version")) {
+                    printf(ILOM_VERS);
+                } else if (!strcmp(buf, "show -d properties /SYS")) {
+                    printf(ILOM_PROP_SYS, plug);
+                } else if (!strcmp(buf, "start -script /SYS")) {
+                    if (!strcmp(plug, "Off")) {
+                        strcpy(plug, "On");
+                        printf(ILOM_START_RESP);
+                    } else 
+                        printf(ILOM_START_RESP2);
+                } else if (!strcmp(buf, "stop -script -force /SYS")) {
+                    if (!strcmp(plug, "On")) {
+                        strcpy(plug, "Off");
+                        printf(ILOM_STOP_RESP);
+                    } else 
+                        printf(ILOM_STOP_RESP2);
+                } else {
+                    printf(ILOM_CMD_INVAL, buf);
+                }
+        }
+    continue;
+done:
+    break;
+    }
+}                    
+
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
+ */

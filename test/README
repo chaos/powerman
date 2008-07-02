@@ -99,3 +99,5 @@ t41
 	Test plmpower using plm.c
 t42-t43
 	Test DLI LPC using dli.c	
+t44
+	Test Sun ILOM using ilom.c

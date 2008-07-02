@@ -1,6 +1,13 @@
 =========================================================================
-Release Notes for PowerMan version 2.2                        30 Jun 2008
+Release Notes for PowerMan version 2.2                        02 Jul 2008
 =========================================================================
+
+* Call device disconnect methods on receipt of SIGINT.
+  This causes a SIGINT to be sent to any coprocess children.
+
+* [ilom] Revised Sun Integrated Lights Out Management support 
+  to work over ssh and serial.  The previous console/serial shared 
+  mode is deprecated.
 
 * [plmpower] Added support for controlling Insteon/X10 devices via 
   SmartLabs PLM 2412S.
