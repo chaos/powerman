@@ -2,8 +2,10 @@
 TEST=t44
 $PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf \
     -q -1 t[0-2] \
+    -q -r t[0-2] \
     -q -c t[0-2] \
     -q -0 t[0-2] \
+    -q -r t[0-2] \
     -q >$TEST.out 2>$TEST.err
 test $? = 0 || exit 1
 diff $TEST.out $TEST.exp >$TEST.diff

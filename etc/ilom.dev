@@ -50,4 +50,8 @@ specification  "ilom" {
 		send "start -script /SYS\n"
 		expect "->"
 	}
+	script reset {
+		send "reset -script /SYS\n"
+		expect "->"
+	}
 }

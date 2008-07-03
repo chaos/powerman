@@ -6,8 +6,8 @@ Release Notes for PowerMan version 2.2                        02 Jul 2008
   This causes a SIGINT to be sent to any coprocess children.
 
 * [ilom] Revised Sun Integrated Lights Out Management support 
-  to work over ssh and serial.  The previous console/serial shared 
-  mode is deprecated.
+  to work over ssh and serial.  Dropped shared console/serial 
+  "ilom-inline" support.
 
 * [plmpower] Added support for controlling Insteon/X10 devices via 
   SmartLabs PLM 2412S.

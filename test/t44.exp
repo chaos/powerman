@@ -10,6 +10,14 @@ on:      t[0-2]
 off:     
 unknown: 
 Command completed successfully
+on:      t[0-2]
+off:     
+unknown: 
+Command completed successfully
+on:      
+off:     t[0-2]
+unknown: 
+Command completed successfully
 on:      
 off:     t[0-2]
 unknown: 

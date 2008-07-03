@@ -44,6 +44,9 @@ Warning: password is set to factory default.\n\n"
 #define ILOM_STOP_RESP2 "stop: Target already stopped\n\n"
 #define ILOM_START_RESP "Starting /SYS\n\n"
 #define ILOM_START_RESP2 "start: Target already started\n\n"
+#define ILOM_RESET_RESP "Performing hard reset on /SYS\n\n"
+#define ILOM_RESET_RESP2 "Performing hard reset on /SYS failed\n\
+reset: Target already stopped\n\n"
 
 #define ILOM_CMD_INVAL "\
 Invalid command '%s' - type help for a list of commands.\n\n"
@@ -212,6 +215,11 @@ prompt_loop(void)
                         printf(ILOM_STOP_RESP);
                     } else 
                         printf(ILOM_STOP_RESP2);
+                } else if (!strcmp(buf, "reset -script /SYS")) {
+                    if (!strcmp(plug, "On")) {
+                        printf(ILOM_RESET_RESP);
+                    } else 
+                        printf(ILOM_RESET_RESP2);
                 } else {
                     printf(ILOM_CMD_INVAL, buf);
                 }
