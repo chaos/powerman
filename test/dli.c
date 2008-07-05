@@ -4,6 +4,8 @@
 #include <string.h>
 #include <ctype.h>
 
+#include "xread.h"
+
 #define DLI_POST "\
 <HTML><HEAD>\n\
 \n\
@@ -212,13 +214,6 @@
 </html>\n"
 
 static void
-_zap_trailing_whitespace(char *s)
-{
-    while (isspace(s[strlen(s) - 1]))
-        s[strlen(s) - 1] = '\0';
-}
-
-static void
 prompt_loop(void)
 {
     char buf[128], tmp[32];
@@ -232,11 +227,8 @@ prompt_loop(void)
         strcpy(plug[i], "OFF");
 
     for (;;) {
-        printf("httppower> ");
-        fflush(stdout);
-        if (fgets(buf, sizeof(buf), stdin) == NULL)
+        if (xreadline("httppower> ", buf, sizeof(buf)) == NULL)
             break;
-        _zap_trailing_whitespace(buf);
         if (!strcmp(buf, "help")) {
             printf("Commands are:\n");
             printf(" auth admin:admin\n");

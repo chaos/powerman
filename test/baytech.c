@@ -17,9 +17,10 @@
 #include <libgen.h>
 #include <assert.h>
 
+#include "xread.h"
+
 static void usage(void);
 static void _noop_handler(int signum);
-static void _zap_trailing_whitespace(char *s);
 static void _prompt_loop_rpc28_nc(void);
 static void _prompt_loop_rpc3_nc(void);
 static void _prompt_loop_rpc3(void);
@@ -98,13 +99,6 @@ static void
 _noop_handler(int signum)
 {
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
-}
-
-static void 
-_zap_trailing_whitespace(char *s)
-{
-    while (isspace(s[strlen(s) - 1]))
-        s[strlen(s) - 1] = '\0';
 }
 
 #define RPC28_NC_BANNER "\
@@ -209,14 +203,9 @@ _prompt_loop_rpc28_nc(void)
 
     while (logged_in) {
         /* switch between two possible prompts - our scripts must handle both */
-        if (seq++ % 2)
-            printf(RPC28_NC_PROMPT);
-        else
-            printf(RPC28_NC_PROMPT2);
-        fflush(stdout);
-        if (fgets(buf, sizeof(buf), stdin) == NULL)
+        if (xreadline((seq++ % 2) ? RPC28_NC_PROMPT : RPC28_NC_PROMPT2,
+                      buf, sizeof(buf)) == NULL)
             break;
-        _zap_trailing_whitespace(buf);
         if (strlen(buf) == 0) {
             continue;
         } else if (!strcmp(buf, "logoff") || !strcmp(buf, "logout") 
@@ -370,11 +359,8 @@ _prompt_loop_rpc3_nc(void)
     printf(RPC3_NC_BANNER);
 
     while (logged_in) {
-        printf(RPC3_NC_PROMPT);
-        fflush(stdout);
-        if (fgets(buf, sizeof(buf), stdin) == NULL)
+        if (xreadline(RPC3_NC_PROMPT, buf, sizeof(buf)) == NULL)
             break;
-        _zap_trailing_whitespace(buf);
         if (strlen(buf) == 0) {
             continue;
         } else if (!strcmp(buf, "logoff") || !strcmp(buf, "logout") 
@@ -511,6 +497,7 @@ _prompt_loop_rpc3(void)
     char plug[8][4];
     int plug_origin = 1;
     enum { START, MENU, OUTLET, QUIT } state = START;
+    char *prompt;
 
     for (i = 0; i < num_plugs; i++)
         strcpy(plug[i], "Off");
@@ -520,26 +507,21 @@ _prompt_loop_rpc3(void)
     while (state != QUIT) {
         switch (state) {
             case START:
-                printf(RPC3_LOGIN);
-                fflush(stdout);
+                prompt = RPC3_LOGIN;
                 break;
             case MENU:
-                printf(RPC3_MENU);
+                prompt = RPC3_MENU;
                 break;
             case OUTLET:
                 printf(RPC3_OUTLET, plug[0], plug[1], plug[2], plug[3],
                                     plug[4], plug[5], plug[6], plug[7]);
-                printf(RPC3_PROMPT);
-                fflush(stdout);
+                prompt = RPC3_PROMPT;
                 break;
         }
-
-        if (fgets(buf, sizeof(buf), stdin) == NULL) {
+        if (xreadline(prompt, buf, sizeof(buf)) == NULL) {
             state = QUIT;
             continue;
         }
-        _zap_trailing_whitespace(buf);
-
         switch (state) {
             case START:
                 if (!strcmp(buf, "baytech")) {
@@ -558,9 +540,7 @@ _prompt_loop_rpc3(void)
                 break;
             case OUTLET:
                 if (!strcmp(buf, "?") || !strcmp(buf, "help")) {
-                    printf(RPC3_OUTLET_HELP);
-                    fflush(stdout);
-                    if (fgets(buf, sizeof(buf), stdin) == NULL)
+                    if (xreadline(RPC3_OUTLET_HELP, buf, sizeof(buf)) == NULL)
                         state = QUIT;
                 } else if (!strcmp(buf, "menu")) {
                     state = MENU;

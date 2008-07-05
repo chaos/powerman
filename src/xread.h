@@ -45,7 +45,12 @@ void xread_all(int fd, char *p, int count);
  */
 void xwrite_all(int fd, char *p, int count);
 
+/* Read a line of input, strip whitespace off the end, and return it.
+ */
+char *xreadline(char *prompt, char *buf, int buflen);
+
 #endif /* PM_XREAD_H */
+
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

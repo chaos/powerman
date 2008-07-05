@@ -1,3 +1,7 @@
+2008-07-05 Jim Garlick <garlick@llnl.gov>
+
+	* src/xread.c : Add xreadline().
+
 2008-07-03 Jim Garlick <garlick@llnl.gov>
 
 	* etc/ilom.dev, test/ilom.c, test/t44 : Added reset support.

@@ -4,7 +4,6 @@
  *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton <uselton2@llnl.gov>
- *  Select/Poll wrap and Malloc debug added by Jim Garlick <garlick@llnl.gov>
  *  UCRL-CODE-2002-008.
  *  
  *  This file is part of PowerMan, a remote power management program.
@@ -28,10 +27,13 @@
 #if HAVE_CONFIG_H
 #include "config.h"
 #endif
+#include <stdio.h>
 #include <errno.h>
 #include <assert.h>
 #include <unistd.h>
 #include <stdarg.h>
+#include <ctype.h>
+#include <string.h>
 
 #include "xread.h"
 #include "xtypes.h"
@@ -87,6 +89,24 @@ void xread_all(int fd, char *p, int count)
             err_exit(FALSE, "EOF on read");
          done += n;
     }
+}
+
+static void _zap_trailing_whitespace(char *s)
+{
+    char *p = s + strlen(s) - 1;
+
+    while (p >= s && isspace(*p))
+        *p-- = '\0';
+}
+
+char *xreadline(char *prompt, char *buf, int buflen)
+{
+    printf("%s", prompt);
+    fflush(stdout);
+    if (fgets(buf, buflen, stdin) == NULL)
+        return NULL;
+    _zap_trailing_whitespace(buf);
+    return buf;
 }
 
 /*

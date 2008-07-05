@@ -26,7 +26,6 @@ typedef enum { NONE, ICS8064, HP3488 } gptype_t;
 
 static void usage(void);
 static void _noop_handler(int signum);
-static void _zap_trailing_whitespace(char *s);
 static void _prompt_loop(void);
 static int relay_op(char *s, relayop_t op, int *plug, 
                     int num_plugs, int plug_origin);
@@ -95,13 +94,6 @@ static void
 _noop_handler(int signum)
 {
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
-}
-
-static void 
-_zap_trailing_whitespace(char *s)
-{
-    while (isspace(s[strlen(s) - 1]))
-        s[strlen(s) - 1] = '\0';
 }
 
 static int
@@ -234,12 +226,8 @@ _prompt_loop(void)
     plug = (int *)xmalloc(sizeof(int) * num_plugs);
     memset(plug, 0, sizeof(int) * num_plugs);
     while (!quit) {
-        if (personality == ICS8064)
-            printf("ics8064> ");
-        else
-            printf("hp3488> ");
-        if (fgets(buf, sizeof(buf), stdin)) {
-            _zap_trailing_whitespace(buf);
+        if (xreadline(personality == ICS8064 ? "ics8064> " : "hp3488> ",
+                      buf, sizeof(buf))) {
             av = argv_create(buf, "");
             if (personality == ICS8064)
                 res = ics8064_cmd(av, plug, num_plugs, plug_origin, &quit);

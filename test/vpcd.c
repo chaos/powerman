@@ -40,11 +40,12 @@
 #include <stdarg.h>
 #include <libgen.h>
 
+#include "xread.h"
+
 static void usage(void);
 static void _noop_handler(int signum);
 static void _spew_one(int linenum);
 static void _spew(int lines);
-static void _zap_trailing_whitespace(char *s);
 static void _prompt_loop(void);
 
 #define NUM_PLUGS   16
@@ -134,23 +135,16 @@ _spew(int lines)
 }
 
 static void 
-_zap_trailing_whitespace(char *s)
-{
-    while (isspace(s[strlen(s) - 1]))
-        s[strlen(s) - 1] = '\0';
-}
-
-static void 
 _prompt_loop(void)
 {
     int seq, i, res;
     char buf[128];
+    char prompt[16];
 
     for (seq = 0;; seq++) {
-        printf("%d vpc> ", seq);
-        if (fgets(buf, sizeof(buf), stdin) == NULL)
+        snprintf(prompt, sizeof(prompt), "%d vpc> ", seq);
+        if (xreadline(prompt, buf, sizeof(buf)) == NULL)
             break;
-        _zap_trailing_whitespace(buf);
         if (strlen(buf) == 0)
             continue;
         if (strcmp(buf, "logoff") == 0) {               /* logoff */

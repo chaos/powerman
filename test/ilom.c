@@ -11,6 +11,8 @@
 #include <string.h>
 #include <stdlib.h>
 
+#include "xread.h"
+
 #define ILOM_LOGIN_PROMPT "SUNSP00144FEE320F login: "
 #define ILOM_PASSWD_PROMPT "Password: "
 
@@ -142,13 +144,6 @@ usage(void)
 }
 
 static void
-_zap_trailing_whitespace(char *s)
-{
-    while (isspace(s[strlen(s) - 1]))
-        s[strlen(s) - 1] = '\0';
-}
-
-static void
 prompt_loop(void)
 {
     char buf[128];
@@ -170,31 +165,22 @@ prompt_loop(void)
     for (;;) { 
         switch (authenticated) {
             case 0:
-                printf(ILOM_LOGIN_PROMPT);
-                fflush(stdout);
-                if (fgets(buf, sizeof(buf), stdin) == NULL)
+                if (xreadline(ILOM_LOGIN_PROMPT, buf, sizeof(buf)) == NULL)
                     goto done;
-                _zap_trailing_whitespace(buf);
                 if (!strcmp(buf, "root"))
                     authenticated = 1;
                 break;
             case 1:
-                printf(ILOM_PASSWD_PROMPT);
-                fflush(stdout);
-                if (fgets(buf, sizeof(buf), stdin) == NULL)
+                if (xreadline(ILOM_PASSWD_PROMPT, buf, sizeof(buf)) == NULL)
                     goto done;
-                _zap_trailing_whitespace(buf);
                 if (!strcmp(buf, "changeme")) {
                     authenticated = 2;
                     printf(ILOM_BANNER);
                 }
                 break;
             case 2:
-                printf(ILOM_PROMPT);
-                fflush(stdout);
-                if (fgets(buf, sizeof(buf), stdin) == NULL)
+                if (xreadline(ILOM_PROMPT, buf, sizeof(buf)) == NULL)
                     goto done;
-                _zap_trailing_whitespace(buf);
                 if (!strcmp(buf, "exit")) {
                     goto done;
                 } else if (!strcmp(buf, "help")) {

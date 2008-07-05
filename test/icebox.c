@@ -17,9 +17,10 @@
 #include <libgen.h>
 #include <assert.h>
 
+#include "xread.h"
+
 static void usage(void);
 static void _noop_handler(int signum);
-static void _zap_trailing_whitespace(char *s);
 static void _prompt_loop(void);
 
 typedef enum { NONE, V2, V3, V4 } icetype_t;
@@ -88,13 +89,6 @@ _noop_handler(int signum)
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
 }
 
-static void 
-_zap_trailing_whitespace(char *s)
-{
-    while (isspace(s[strlen(s) - 1]))
-        s[strlen(s) - 1] = '\0';
-}
-
 #define V2_BANNER       "V2.1\r\n"
 #define V3_BANNER       "V3.0\r\n"
 #define V4_BANNER       "V4.0\r\n"
@@ -152,9 +146,8 @@ _prompt_loop(void)
             break;
     }
     while (!logged_in) {
-        if (fgets(buf, sizeof(buf), stdin) == NULL)
+        if (xreadline("", buf, sizeof(buf)) == NULL)
             return;
-        _zap_trailing_whitespace(buf);
         if (strcmp(buf, "auth icebox") == 0) {
             logged_in = 1;
             printf(V3_RESP_OK);
@@ -165,9 +158,8 @@ _prompt_loop(void)
     /* Process comands.
      */
     while (logged_in) {
-        if (fgets(buf, sizeof(buf), stdin) == NULL)
+        if (xreadline("", buf, sizeof(buf)) == NULL)
             break;
-        _zap_trailing_whitespace(buf);
         if (strlen(buf) == 0) {
             goto err;
         } else if (!strcmp(buf, "q")) {
