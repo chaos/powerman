@@ -1,14 +1,18 @@
 =========================================================================
-Release Notes for PowerMan version 2.2                        02 Jul 2008
+Release Notes for PowerMan version 2.2                        15 Jul 2008
 =========================================================================
-
-* Call device disconnect methods on receipt of SIGINT.
-  This causes a SIGINT to be sent to any coprocess children.
 
 * [ilom] Revised Sun Integrated Lights Out Management support 
   to work over ssh and serial.  Dropped shared console/serial 
   "ilom-inline" support.
 
+* [icebox3] Now supports both v3 and v4 Ice Box.  Users of icebox4
+  should change their device types to icebox3 in powerman.conf.
+
+* Send a SIGINT to coprocesses rather than just closing file
+  descriptors during powermand shutdown.  This is required to 
+  terminate an ssh client running in coprocess mode.
+  
 * [plmpower] Added support for controlling Insteon/X10 devices via 
   SmartLabs PLM 2412S.
 
