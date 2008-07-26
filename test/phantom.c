@@ -115,7 +115,34 @@ _noop_handler(int signum)
 | Choose a command                            |\n\
 +---------------------------------------------+\n"
 
-#define PHANTOM_MENU_V4 "foo"
+#define PHANTOM_MENU_V4 "\
++---------------------------------------------+\n\
+|               Rackable Systems              |\n\
+|                   Phantom                   |\n\
+|                Copyright 2003               |\n\
+|                Firmware  v4.0               |\n\
+|                                             |\n\
+| D - Enter a new power on delay              |\n\
+| R - Reset the Server                        |\n\
+| P - Turn the Server On                      |\n\
+| L - Turn the LED On                         |\n\
+| B - Start Blinking                          |\n\
+| E - Erase the LCD                           |\n\
+| M - Enter LCD message                       |\n\
+| S - Save LCD message                        |\n\
+| C - Adjust LCD contrast                     |\n\
+| V - View LCD message                        |\n\
+| W - Show Saved LCD message: Yes             |\n\
+| T - Read Temperature                        |\n\
+| I - Power Sense: Reset                      |\n\
+| H - Change Hotkey                           |\n\
+| A - Change Baud Rate                        |\n\
+| X - Reset the Phantom                       |\n\
+| U - Upgrade Firmware                        |\n\
+| ESC - Quit                                  |\n\
+|                                             |\n\
+| Choose a command                            |\n\
++---------------------------------------------+\n"
 
 #define PHANTOM_PROMPT "Phantom [? for Help]:\r"
 #define PHANTOM_STATUS "Server is %s\r"
