@@ -28,7 +28,6 @@ DEVFILES = \
 	ilom.dev \
 	ipmi.dev \
 	ipmipower.dev \
-	phantom4.dev \
 	phantom.dev \
 	plmpower.dev \
 	powerman.dev \

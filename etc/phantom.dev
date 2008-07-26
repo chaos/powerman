@@ -1,7 +1,5 @@
 #
-# Rackable Phantom III
-#
-# Tested with firmware version 3.0.2.
+# Rackable Phantom v3 and v4.
 #
 specification  "phantom" {
 	timeout 	15.0
@@ -13,60 +11,60 @@ specification  "phantom" {
 		expect "ok\r"
 	}
 	script status {
-		send "P?\r\n"
+		send "P?"
 		expect "(0|1)\r"
 		setplugstate "1" $1 on="1" off="0"
 	}
 	script on {
-		send "P?\r\n"
+		send "P?"
 		expect "(0|1)\r"
 		setplugstate "1" $1 on="1" off="0"
 		ifoff {
-			send "PT\r\n"
+			send "PT"
 			expect "ok\r"
 		}
 	}		
 	script off {
-		send "P?\r\n"
+		send "P?"
 		expect "(0|1)\r"
 		setplugstate "1" $1 on="1" off="0"
 		ifon {
-			send "PT\r\n"
+			send "PT"
 			expect "ok\r"
 		}
 	}		
 	script cycle {
-		send "P?\r\n"
+		send "P?"
 		expect "(0|1)\r"
 		setplugstate "1" $1 on="1" off="0"
 		ifon {
-			send "PT\r\n"
+			send "PT"
 			expect "ok\r"
+			delay 4
 		}
-		delay 4
-		send "PT\r\n"
+		send "PT"
 		expect "ok\r"
 	}
 	script beacon_on {
-		send "L1\r\n"	# LED on
+		send "L1"	# LED on
 		expect "ok\r"
-		send "B1\r\n"	# blink LED
+		send "B1"	# blink LED
 		expect "ok\r"
 	}
 	script beacon_off {
-		send "L0\r\n"	# LED off
+		send "L0"	# LED off
 		expect "ok\r"
-		send "B0\r\n"	# unblink LED
+		send "B0"	# unblink LED
 		expect "ok\r"
 	}
-# XXX phantom user's manual for v3.0.4 says 0=on, 1=off (opposite seems true)
 	script status_beacon {
-		send "L?\r\n"	# get LED status 1=on, 0=off, B=blink
-		expect "(0|1|B)" 
+		send "L?"	# get LED status 1=on, 0=off, B=blink
+		expect "(0|1|B)\r" 
 		setplugstate "1" $1 on="(B|1)" off="0"
 	}
+# N.B. phantom 3 requires probe #, phantom 4 ignores it
 	script status_temp {
-		send "T0\r\n"	# get temp probe 0 (there is also a 1- unused)
+		send "T0"	# get temp probe 0
 		expect "([0-9]+)\r" # value is 8-bit Celcius  
 		setplugstate "1" $1
 	}

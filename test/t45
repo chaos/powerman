@@ -1,0 +1,13 @@
+#!/bin/sh
+TEST=t45
+$PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf \
+    -q -1 t[0-1] \
+    -q -c t[0-1] \
+    -q -0 t[0-1] \
+    -q -c t[0-1] \
+    -q \
+    -b -f t[0-1] \
+    -b -u t[0-1] \
+    -b -t t[0-1] >$TEST.out 2>$TEST.err
+test $? = 0 || exit 1
+diff $TEST.out $TEST.exp >$TEST.diff

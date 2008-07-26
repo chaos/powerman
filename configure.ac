@@ -76,6 +76,7 @@ AC_CHECK_FUNCS( \
 )
 AC_SEARCH_LIBS([bind],[socket])
 AC_SEARCH_LIBS([gethostbyaddr],[nsl])
+AC_CURSES
 AC_FORKPTY
 AC_WRAP
 AC_CHECK_FUNC([poll], AC_DEFINE([HAVE_POLL], [1], [Define if you have poll]))

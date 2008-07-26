@@ -1,3 +1,13 @@
+2008-07-26 Jim Garlick <garlick@llnl.gov>
+
+	* test/phantom.c, t45 : Add phantom tests.
+
+	* etc/phantom.dev : Make it work for v3 and v4.
+
+	* etc/phantom4.dev : Removed.
+
+	* config/ac_curses.m4 : Added curses config check, needed by phantom.
+
 2008-07-05 Jim Garlick <garlick@llnl.gov>
 
 	* src/xread.c : Add xreadline().

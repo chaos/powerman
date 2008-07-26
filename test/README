@@ -101,3 +101,5 @@ t42-t43
 	Test DLI LPC using dli.c	
 t44
 	Test Sun ILOM using ilom.c
+t45
+	Test Rackable Phantom using phantom.c

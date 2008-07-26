@@ -6,6 +6,9 @@
 /* Define if you have libcurl */
 #undef HAVE_CURL
 
+/* Define if you have curses.h */
+#undef HAVE_CURSES_H
+
 /* Define if you have forkpty */
 #undef HAVE_FORKPTY
 
@@ -23,6 +26,9 @@
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
+
+/* Define if you have ncurses.h */
+#undef HAVE_NCURSES_H
 
 /* Define if you have poll */
 #undef HAVE_POLL
