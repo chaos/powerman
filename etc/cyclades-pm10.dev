@@ -3,128 +3,73 @@
 #
 specification "pm10" {
 	timeout 	10
-
+	pingperiod	60
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
 
-# We may get logged out due to inactivity timeout, so every command is 
-# wrapped in the login/logoff sequence.
-
 	script login {
-		send "exit\r\r" # works whether logged in or not
-		expect "Username:"
-	}
-	script status_all {
-		send "admin\r"
-		expect "Password:"
-		send "pm8\r"
+		expect "Username: "
+		send "admin\n"
+		expect "Password: "
+		send "pm8\n"
 		expect "pm>"
-
-		send "status 1-10\r"
+	}
+	script ping {
+                send "\n"
+                expect "pm>"
+        }
+	script status_all {
+		send "status 1-10\n"
+		expect "Users"
 		foreachplug {
 			expect "([0-9]+)[[:space:]]+Unlocked (ON|OFF)"
 			setplugstate $1 $2 on="ON" off="OFF"
 		}
 		expect "pm>"
-
-		send "exit\r"
-		expect "Username:"
 	}
 	script on {
-		send "admin\r"
-		expect "Password:"
-		send "pm8\r"
+		send "on %s\n"
+		expect "Outlet turned on."
 		expect "pm>"
-
-		send "on %s\r"
-		expect "Outlet turned on.\r\n"
-		expect "pm>"
-
-		send "exit\r"
-		expect "Username:"
 	}
 	script on_all {
-		send "admin\r"
-		expect "Password:"
-		send "pm8\r"
-		expect "pm>"
-
-		send "on 1-10\r"
+		send "on 1-10\n"
 		foreachplug {
-			expect "Outlet turned on.\r\n"
+			expect "Outlet turned on."
 		}
 		expect "pm>"
-
-		send "exit\r"
-		expect "Username:"
 	}
 	script off {
-		send "admin\r"
-		expect "Password:"
-		send "pm8\r"
+		send "off %s\n"
+		expect "Outlet turned off."
 		expect "pm>"
-
-		send "off %s\r"
-		expect "Outlet turned off.\r\n"
-		expect "pm>"
-
-		send "exit\r"
-		expect "Username:"
 	}
 	script off_all {
-		send "admin\r"
-		expect "Password:"
-		send "pm8\r"
-		expect "pm>"
-
-		send "off 1-10\r"
+		send "off 1-10\n"
 		foreachplug {
-			expect "Outlet turned off.\r\n"
+			expect "Outlet turned off."
 		}
 		expect "pm>"
-
-		send "exit\r"
-		expect "Username:"
 	}
 	script cycle {
-		send "admin\r"
-		expect "Password:"
-		send "pm8\r"
+		send "off %s\n"
+		expect "Outlet turned off."
 		expect "pm>"
-
-		send "off %s\r"
-		expect "Outlet turned off.\r\n"
-		expect "pm>"
-
 		delay 4
-
-		send "on %s\r"
-		expect "Outlet turned on.\r\n"
+		send "on %s\n"
+		expect "Outlet turned on."
 		expect "pm>"
-
-		send "exit\r"
-		expect "Username:"
 	}
 	script cycle_all {
-		send "admin\r"
-		expect "Password:"
-		send "pm8\r"
-		expect "pm>"
-
-		send "off 1-10\r"
+		send "off 1-10\n"
 		foreachplug {
-			expect "Outlet turned off.\r\n"
+			expect "Outlet turned off."
 		}
 		expect "pm>"
-
 		delay 4
-
-		send "on 1-10\r"
+		send "on 1-10\n"
 		foreachplug {
-			expect "Outlet turned on.\r\n"
+			expect "Outlet turned on."
 		}
 		expect "pm>"
-
-		send "exit\r"
-		expect "Username:"
 	}
 }
