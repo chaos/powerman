@@ -20,15 +20,15 @@ specification "ipmipower" {
 	script status_all {
 		send "stat\n"
 		foreachnode {
-			expect "([^\r\n:]*): ([[:alnum:]|[:space:]|_]+\r\n)"
-			setplugstate $1 $2 on="^on\r\n" off="^off\r\n"
+			expect "([^\n:]+): ([^\n]+)\n"
+			setplugstate $1 $2 on="on" off="off"
 		}
 		expect "ipmipower> "
 	}
 	script status {
 		send "stat %s\n"
-		expect "([^\r\n:]*): ([[:alpha:]|[:space:]|_]+\r\n)"
-		setplugstate $1 $2 on="^on\r\n" off="^off\r\n"
+		expect "([^\n:]+): ([^\n]+)\n"
+		setplugstate $1 $2 on="on" off="off"
 		expect "ipmipower> "
 	}
 	script on {

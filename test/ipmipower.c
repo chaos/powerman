@@ -132,9 +132,9 @@ _stat(hash_t hstatus, const char *nodes)
     }
     while ((node = hostlist_next(hlitr))) {
         if ((str = hash_find(hstatus, node)))
-            printf("%s: %s\r\n", node, str);
+            printf("%s: %s\n", node, str);
         else
-            printf("%s: %s\r\n", node, "invalid hostname");
+            printf("%s: %s\n", node, "invalid hostname");
         free(node);
     }
     hostlist_iterator_destroy(hlitr);
@@ -161,7 +161,7 @@ _onoff(hash_t hstatus, const char *nodes, const char *state)
     }
     while ((node = hostlist_next(hlitr))) {
         if ((str = hash_find(hstatus, node))) {
-            printf("%s: %s\r\n", node, OK_STATUS);
+            printf("%s: %s\n", node, OK_STATUS);
             hash_remove(hstatus, node);
             if (!hash_insert(hstatus, (void *)node, (void *)state)) {
                 perror("hash_insert");
@@ -171,7 +171,7 @@ _onoff(hash_t hstatus, const char *nodes, const char *state)
              * the hash key.  It's a mem-leak.  Fix later.
              */
         } else {
-            printf("%s: %s\r\n", node, "invalid hostname");
+            printf("%s: %s\n", node, "invalid hostname");
             free(node);
         }
     }
