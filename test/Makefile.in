@@ -34,7 +34,8 @@ host_triplet = @host@
 target_triplet = @target@
 check_PROGRAMS = tpl$(EXEEXT) vpcd$(EXEEXT) tregex$(EXEEXT) \
 	targv$(EXEEXT) baytech$(EXEEXT) icebox$(EXEEXT) gpib$(EXEEXT) \
-	dli$(EXEEXT) ilom$(EXEEXT) phantom$(EXEEXT) cyclades$(EXEEXT)
+	dli$(EXEEXT) ilom$(EXEEXT) phantom$(EXEEXT) cyclades$(EXEEXT) \
+	ipmipower$(EXEEXT)
 subdir = test
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -53,9 +54,9 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config/config.h
 CONFIG_CLEAN_FILES =
 am__objects_1 = xread.$(OBJEXT) error.$(OBJEXT) debug.$(OBJEXT) \
-	pluglist.$(OBJEXT) hostlist.$(OBJEXT) list.$(OBJEXT) \
-	hprintf.$(OBJEXT) xregex.$(OBJEXT) xmalloc.$(OBJEXT) \
-	argv.$(OBJEXT)
+	pluglist.$(OBJEXT) hostlist.$(OBJEXT) hash.$(OBJEXT) \
+	list.$(OBJEXT) hprintf.$(OBJEXT) xregex.$(OBJEXT) \
+	xmalloc.$(OBJEXT) argv.$(OBJEXT)
 am_baytech_OBJECTS = baytech.$(OBJEXT) $(am__objects_1)
 baytech_OBJECTS = $(am_baytech_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -75,6 +76,9 @@ icebox_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_ilom_OBJECTS = ilom.$(OBJEXT) $(am__objects_1)
 ilom_OBJECTS = $(am_ilom_OBJECTS)
 ilom_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am_ipmipower_OBJECTS = ipmipower.$(OBJEXT) $(am__objects_1)
+ipmipower_OBJECTS = $(am_ipmipower_OBJECTS)
+ipmipower_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_phantom_OBJECTS = phantom.$(OBJEXT) $(am__objects_1)
 phantom_OBJECTS = $(am_phantom_OBJECTS)
 phantom_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
@@ -99,12 +103,12 @@ CCLD = $(CC)
 LINK = $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(baytech_SOURCES) $(cyclades_SOURCES) $(dli_SOURCES) \
 	$(gpib_SOURCES) $(icebox_SOURCES) $(ilom_SOURCES) \
-	$(phantom_SOURCES) $(targv_SOURCES) $(tpl_SOURCES) \
-	$(tregex_SOURCES) $(vpcd_SOURCES)
+	$(ipmipower_SOURCES) $(phantom_SOURCES) $(targv_SOURCES) \
+	$(tpl_SOURCES) $(tregex_SOURCES) $(vpcd_SOURCES)
 DIST_SOURCES = $(baytech_SOURCES) $(cyclades_SOURCES) $(dli_SOURCES) \
 	$(gpib_SOURCES) $(icebox_SOURCES) $(ilom_SOURCES) \
-	$(phantom_SOURCES) $(targv_SOURCES) $(tpl_SOURCES) \
-	$(tregex_SOURCES) $(vpcd_SOURCES)
+	$(ipmipower_SOURCES) $(phantom_SOURCES) $(targv_SOURCES) \
+	$(tpl_SOURCES) $(tregex_SOURCES) $(vpcd_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -236,7 +240,7 @@ top_srcdir = @top_srcdir@
 TESTS_ENVIRONMENT = env "PATH_POWERMAN=$(top_builddir)/src/powerman" \
 	"PATH_POWERMAND=$(top_builddir)/src/powermand" \
 	"PATH_ETC=$(top_builddir)/etc"
-TESTS = t00 t01 t02 t03 t04 t05 t06 t07 t08 t09 t10 t11 t12 t13 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39 t40 t41 t42 t43 t44 t45 t46
+TESTS = t00 t01 t02 t03 t04 t05 t06 t07 t08 t09 t10 t11 t12 t13 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39 t40 t41 t42 t43 t44 t45 t46 t47
 CLEANFILES = *.out *.err *.diff
 common_sources = \
 	$(top_srcdir)/src/xread.c \
@@ -244,6 +248,7 @@ common_sources = \
 	$(top_srcdir)/src/debug.c \
 	$(top_srcdir)/src/pluglist.c \
 	$(top_srcdir)/src/hostlist.c \
+	$(top_srcdir)/src/hash.c \
 	$(top_srcdir)/src/list.c \
 	$(top_srcdir)/src/hprintf.c \
 	$(top_srcdir)/src/xregex.c \
@@ -273,6 +278,8 @@ phantom_SOURCES = phantom.c $(common_sources)
 phantom_LDADD = $(LIBFORKPTY) $(LIBCURSES)
 cyclades_SOURCES = cyclades.c $(common_sources)
 cyclades_LDADD = $(LIBFORKPTY)
+ipmipower_SOURCES = ipmipower.c $(common_sources)
+ipmipower_LDADD = $(LIBFORKPTY)
 all: all-am
 
 .SUFFIXES:
@@ -327,6 +334,9 @@ icebox$(EXEEXT): $(icebox_OBJECTS) $(icebox_DEPENDENCIES)
 ilom$(EXEEXT): $(ilom_OBJECTS) $(ilom_DEPENDENCIES) 
 	@rm -f ilom$(EXEEXT)
 	$(LINK) $(ilom_OBJECTS) $(ilom_LDADD) $(LIBS)
+ipmipower$(EXEEXT): $(ipmipower_OBJECTS) $(ipmipower_DEPENDENCIES) 
+	@rm -f ipmipower$(EXEEXT)
+	$(LINK) $(ipmipower_OBJECTS) $(ipmipower_LDADD) $(LIBS)
 phantom$(EXEEXT): $(phantom_OBJECTS) $(phantom_DEPENDENCIES) 
 	@rm -f phantom$(EXEEXT)
 	$(LINK) $(phantom_OBJECTS) $(phantom_LDADD) $(LIBS)
@@ -356,10 +366,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dli.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/error.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpib.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hash.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hostlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hprintf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icebox.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ilom.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ipmipower.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phantom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pluglist.Po@am__quote@
@@ -454,6 +466,20 @@ hostlist.obj: $(top_srcdir)/src/hostlist.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/hostlist.c' object='hostlist.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hostlist.obj `if test -f '$(top_srcdir)/src/hostlist.c'; then $(CYGPATH_W) '$(top_srcdir)/src/hostlist.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/hostlist.c'; fi`
+
+hash.o: $(top_srcdir)/src/hash.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT hash.o -MD -MP -MF $(DEPDIR)/hash.Tpo -c -o hash.o `test -f '$(top_srcdir)/src/hash.c' || echo '$(srcdir)/'`$(top_srcdir)/src/hash.c
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/hash.Tpo $(DEPDIR)/hash.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/hash.c' object='hash.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hash.o `test -f '$(top_srcdir)/src/hash.c' || echo '$(srcdir)/'`$(top_srcdir)/src/hash.c
+
+hash.obj: $(top_srcdir)/src/hash.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT hash.obj -MD -MP -MF $(DEPDIR)/hash.Tpo -c -o hash.obj `if test -f '$(top_srcdir)/src/hash.c'; then $(CYGPATH_W) '$(top_srcdir)/src/hash.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/hash.c'; fi`
+@am__fastdepCC_TRUE@	mv -f $(DEPDIR)/hash.Tpo $(DEPDIR)/hash.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/hash.c' object='hash.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hash.obj `if test -f '$(top_srcdir)/src/hash.c'; then $(CYGPATH_W) '$(top_srcdir)/src/hash.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/hash.c'; fi`
 
 list.o: $(top_srcdir)/src/list.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT list.o -MD -MP -MF $(DEPDIR)/list.Tpo -c -o list.o `test -f '$(top_srcdir)/src/list.c' || echo '$(srcdir)/'`$(top_srcdir)/src/list.c

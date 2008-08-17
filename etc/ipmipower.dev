@@ -15,10 +15,10 @@ specification "ipmipower" {
 		expect "ipmipower> "
 	}
 	script logout {
-		send "quit\r"
+		send "quit\n"
 	}
 	script status_all {
-		send "stat\r"
+		send "stat\n"
 		foreachnode {
 			expect "([^\r\n:]*): ([[:alnum:]|[:space:]|_]+\r\n)"
 			setplugstate $1 $2 on="^on\r\n" off="^off\r\n"
@@ -26,75 +26,75 @@ specification "ipmipower" {
 		expect "ipmipower> "
 	}
 	script status {
-		send "stat %s\r"
+		send "stat %s\n"
 		expect "([^\r\n:]*): ([[:alpha:]|[:space:]|_]+\r\n)"
 		setplugstate $1 $2 on="^on\r\n" off="^off\r\n"
 		expect "ipmipower> "
 	}
 	script on {
-		send "on %s\r"
+		send "on %s\n"
 		expect "ipmipower> "
 	}
 	script on_ranged {
-		send "on %s\r"
+		send "on %s\n"
 		expect "ipmipower> "
 	}
 	script on_all {
-		send "on\r"
+		send "on\n"
 		expect "ipmipower> "
 	}
 	script off {
-		send "off %s\r"
+		send "off %s\n"
 		expect "ipmipower> "
 	}
 	script off_ranged {
-		send "off %s\r"
+		send "off %s\n"
 		expect "ipmipower> "
 	}
 	script off_all {
-		send "off\r"
+		send "off\n"
 		expect "ipmipower> "
 	}
 	script cycle {
-		send "off %s\r"
+		send "off %s\n"
 		expect "ipmipower> "
 		delay 5
-		send "on %s\r"
+		send "on %s\n"
 		expect "ipmipower> "
 	}
 	script cycle_ranged {
-		send "off %s\r"
+		send "off %s\n"
 		expect "ipmipower> "
 		delay 5
-		send "on %s\r"
+		send "on %s\n"
 		expect "ipmipower> "
 	}
 	script cycle_all {
-		send "off\r"
+		send "off\n"
 		expect "ipmipower> "
 		delay 5
-		send "on\r"
+		send "on\n"
 		expect "ipmipower> "
 	}
 	script reset {
-		send "off %s\r"
+		send "off %s\n"
 		expect "ipmipower> "
 		delay 5
-		send "on %s\r"
+		send "on %s\n"
 		expect "ipmipower> "
 	}
 	script reset_ranged {
-		send "off %s\r"
+		send "off %s\n"
 		expect "ipmipower> "
 		delay 5
-		send "on %s\r"
+		send "on %s\n"
 		expect "ipmipower> "
 	}
 	script reset_all {
-		send "off\r"
+		send "off\n"
 		expect "ipmipower> "
 		delay 5
-		send "on\r"
+		send "on\n"
 		expect "ipmipower> "
 	}
 }

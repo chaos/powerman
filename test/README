@@ -103,3 +103,8 @@ t44
 	Test Sun ILOM using ilom.c
 t45
 	Test Rackable Phantom using phantom.c
+t46
+	Test cyclades pm8/pm10 using cyclades.c
+t47
+	Test FreeIPMI ipmipower using ipmipower.c
+

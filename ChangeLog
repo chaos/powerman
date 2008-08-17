@@ -1,3 +1,9 @@
+2008-08-18 Jim Garlick <garlick@llnl.gov>
+
+	* etc/ipmipower.c, test/t47 : Add ipmipower test [Al Chu].
+	
+	* etc/ipmipower.dev : Use \n to terminate commands instead of \r.
+
 2008-07-27 Jim Garlick <garlick@llnl.gov>
 
 	* etc/cyclades-pm10.dev, etc/cyclades-pm8.dev : Simplified.
