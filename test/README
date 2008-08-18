@@ -52,7 +52,7 @@ t14
 	Check temperature options:
 	pm --temp-all --temp t13 --temp t[13-15]
 t15
-	Check soft-power status and reset options
+	Check reset options
 	pm --reset t1 --reset t[3-5]
 t16
 	Check list and device options
