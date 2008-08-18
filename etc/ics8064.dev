@@ -40,27 +40,12 @@ specification "ics8064" {
                 setplugstate "16" $16 off="0" on="1"
 		expect "ics8064> "
 	}
-	script on {
-		send "close %s\n"
-		expect "ics8064> "
-	}
 	script on_ranged {
 		send "close %s\n"
 		expect "ics8064> "
 	}
-	script off {
-		send "open %s\n"
-		expect "ics8064> "
-	}
 	script off_ranged {
 		send "open %s\n"
-		expect "ics8064> "
-	}
-	script cycle {
-		send "open %s\n"
-		expect "ics8064> "
-		delay 4
-		send "close %s\n"
 		expect "ics8064> "
 	}
 	script cycle_ranged {

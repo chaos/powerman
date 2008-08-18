@@ -21,27 +21,12 @@ specification "hp3488" {
 		setplugstate $1 $2 off="0" on="1"
 		expect "hp3488> "
 	}
-	script on {
-		send "on %s\n"
-		expect "hp3488> "
-	}
 	script on_ranged {
 		send "on %s\n"
 		expect "hp3488> "
 	}
-	script off {
-		send "off %s\n"
-		expect "hp3488> "
-	}
 	script off_ranged {
 		send "off %s\n"
-		expect "hp3488> "
-	}
-	script cycle {
-		send "off %s\n"
-		expect "hp3488> "
-		delay 4
-		send "on %s\n"
 		expect "hp3488> "
 	}
 	script cycle_ranged {

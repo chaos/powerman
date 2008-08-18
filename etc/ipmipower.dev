@@ -25,58 +25,15 @@ specification "ipmipower" {
 		}
 		expect "ipmipower> "
 	}
-	script status {
-		send "stat %s\n"
-		expect "([^\n:]+): ([^\n]+)\n"
-		setplugstate $1 $2 on="on" off="off"
-		expect "ipmipower> "
-	}
-	script on {
-		send "on %s\n"
-		expect "ipmipower> "
-	}
 	script on_ranged {
 		send "on %s\n"
-		expect "ipmipower> "
-	}
-	script on_all {
-		send "on\n"
-		expect "ipmipower> "
-	}
-	script off {
-		send "off %s\n"
 		expect "ipmipower> "
 	}
 	script off_ranged {
 		send "off %s\n"
 		expect "ipmipower> "
 	}
-	script off_all {
-		send "off\n"
-		expect "ipmipower> "
-	}
-	script cycle {
-		send "off %s\n"
-		expect "ipmipower> "
-		delay 5
-		send "on %s\n"
-		expect "ipmipower> "
-	}
 	script cycle_ranged {
-		send "off %s\n"
-		expect "ipmipower> "
-		delay 5
-		send "on %s\n"
-		expect "ipmipower> "
-	}
-	script cycle_all {
-		send "off\n"
-		expect "ipmipower> "
-		delay 5
-		send "on\n"
-		expect "ipmipower> "
-	}
-	script reset {
 		send "off %s\n"
 		expect "ipmipower> "
 		delay 5
@@ -88,13 +45,6 @@ specification "ipmipower" {
 		expect "ipmipower> "
 		delay 5
 		send "on %s\n"
-		expect "ipmipower> "
-	}
-	script reset_all {
-		send "off\n"
-		expect "ipmipower> "
-		delay 5
-		send "on\n"
 		expect "ipmipower> "
 	}
 }

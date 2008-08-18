@@ -72,7 +72,8 @@ typedef struct {
 static void _push_genders_hosts(hostlist_t targets, char *s);
 #endif
 static int  _connect_to_server_tcp(char *host, char *port);
-static int  _connect_to_server_pipe(char *server_path, char *config_path);
+static int  _connect_to_server_pipe(char *server_path, char *config_path,
+                                    bool short_circuit_delays);
 static void _usage(void);
 static void _license(void);
 static void _version(void);
@@ -90,7 +91,7 @@ static void _cmd_print(cmd_t *cp);
 
 static char *prog;
 
-#define OPTIONS "0:1:c:r:f:u:B:blQ:qN:nP:tD:dTxgh:S:C:VLZI"
+#define OPTIONS "0:1:c:r:f:u:B:blQ:qN:nP:tD:dTxgh:S:C:YVLZI"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
@@ -117,6 +118,7 @@ static const struct option longopts[] = {
     {"server-host", required_argument,  0, 'h'},
     {"server-path", required_argument,  0, 'S'},
     {"config-path", required_argument,  0, 'C'},
+    {"short-circuit-delays", no_argument,  0, 'Y'},
     {"version",     no_argument,        0, 'V'},
     {"license",     no_argument,        0, 'L'},
     {"dump-cmds",   no_argument,        0, 'Z'},
@@ -142,6 +144,7 @@ int main(int argc, char **argv)
     List commands;  /* list-o-cmd_t's */
     ListIterator itr;
     cmd_t *cp; 
+    bool short_circuit_delays = FALSE;
 
     prog = basename(argv[0]);
     err_init(prog);
@@ -203,6 +206,9 @@ int main(int argc, char **argv)
         case 'd':              /* --device-all */
             _cmd_create(commands, CP_DEVICE_ALL, NULL, FALSE);
             break;
+        case 'Y':              /* --short-circuit-delays */
+            short_circuit_delays = TRUE;
+            break;
         case 'h':              /* --server-host host[:port] */
             if ((port = strchr(optarg, ':')))
                 *port++ = '\0';  
@@ -249,6 +255,8 @@ int main(int argc, char **argv)
     }
     if (list_is_empty(commands))
         _usage();
+    if (short_circuit_delays && !server_path)
+        _usage();
 
     /* For backwards compat with powerman 2.0 and earlier,
      * additional arguments are more targets for last command.
@@ -288,7 +296,8 @@ int main(int argc, char **argv)
     /* Establish connection to server and start protocol.
      */
     if (server_path)
-        server_fd = _connect_to_server_pipe(server_path, config_path);
+        server_fd = _connect_to_server_pipe(server_path, config_path, 
+                                            short_circuit_delays);
     else
         server_fd = _connect_to_server_tcp(host, port);
     _process_version(server_fd);
@@ -483,7 +492,8 @@ static void _cmd_print(cmd_t *cp)
     printf("%s%s", cp->sendstr, CP_EOL);
 }
 
-static int _connect_to_server_pipe(char *server_path, char *config_path)
+static int _connect_to_server_pipe(char *server_path, char *config_path,
+                                   bool short_circuit_delays)
 {
     int saved_stderr;
     char cmd[128];
@@ -496,6 +506,8 @@ static int _connect_to_server_pipe(char *server_path, char *config_path)
         err_exit(TRUE, "dup stderr");
     snprintf(cmd, sizeof(cmd), "powermand -sRf -c %s", config_path);
     argv = argv_create(cmd, "");
+    if (short_circuit_delays) 
+        argv = argv_append(argv, "-Y");
     pid = xforkpty(&fd, NULL, 0);
     switch (pid) {
         case -1:

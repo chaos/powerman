@@ -66,7 +66,7 @@ static void _noop_handler(int signum);
 static void _exit_handler(int signum);
 static void _select_loop(void);
 
-#define OPTIONS "c:fhd:VsR"
+#define OPTIONS "c:fhd:VsRY"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
@@ -77,6 +77,7 @@ static const struct option longopts[] = {
     {"version",         no_argument,        0, 'V'},
     {"stdio",           no_argument,        0, 's'},
     {"force-notroot",   no_argument,        0, 'R'},
+    {"short-circuit-delay", no_argument,    0, 'Y'},
     {0, 0, 0, 0}
 };
 #else
@@ -90,15 +91,15 @@ int main(int argc, char **argv)
     bool daemonize = TRUE;
     bool use_stdio = FALSE;
     bool force_notroot = FALSE;
-
-    /* initialize various modules */
-    err_init(argv[0]);
-    dev_init();
-    cli_init();
+    bool short_circuit_delay = FALSE;
 
     /* parse command line options */
+    err_init(argv[0]);
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
+        case 'Y': /* --short-circuit-delay */
+            short_circuit_delay = TRUE;
+            break;
         case 'c': /* --conf */
             if (!config_filename)
                 config_filename = xstrdup(optarg);
@@ -146,6 +147,10 @@ int main(int argc, char **argv)
     if (!config_filename)
         config_filename = hsprintf("%s/%s/%s", X_SYSCONFDIR, 
                                    "powerman", "powerman.conf");
+
+    dev_init(short_circuit_delay);
+    cli_init();
+
     conf_init(config_filename);
     xfree(config_filename);
 

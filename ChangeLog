@@ -4,6 +4,15 @@
 	
 	* etc/ipmipower.dev : Use \n to terminate commands instead of \r.
 
+	* etc/hp3488.dev, etc/ics8064.dev, etc/powerman.dev,
+	etc/ipmipower.dev : Define only 'ranged' version of scripts.
+
+	* src/device.c : Use ranged version of scripts instead of _all or
+	singlet versions if defined.
+
+	* src/device.c, src/powermand.c, src/powerman.c, test/t?? : Add 
+	-Y (--short-circuit-delay) option to expedite testing.
+
 2008-07-27 Jim Garlick <garlick@llnl.gov>
 
 	* etc/cyclades-pm10.dev, etc/cyclades-pm8.dev : Simplified.

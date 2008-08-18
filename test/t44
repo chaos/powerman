@@ -1,6 +1,6 @@
 #!/bin/sh
 TEST=t44
-$PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf \
+$PATH_POWERMAN -Y -S $PATH_POWERMAND -C $TEST.conf \
     -q -1 t[0-2] \
     -q -r t[0-2] \
     -q -c t[0-2] \

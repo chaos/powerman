@@ -23,32 +23,16 @@ specification "powerman" {
 		setplugstate $1 $2 off="off" on="on"
 		expect "powerman> "
 	}
-	script on {
-		send "on %s\r\n"
-		expect "powerman> "
-	}
 	script on_ranged {
 		send "on %s\r\n"
-		expect "powerman> "
-	}
-	script off {
-		send "off %s\r\n"
 		expect "powerman> "
 	}
 	script off_ranged {
 		send "off %s\r\n"
 		expect "powerman> "
 	}
-	script cycle {
-		send "cycle %s\r\n"
-		expect "powerman> "
-	}
 	script cycle_ranged {
 		send "cycle %s\r\n"
-		expect "powerman> "
-	}
-	script reset {
-		send "reset %s\r\n"
 		expect "powerman> "
 	}
 	script reset_ranged {

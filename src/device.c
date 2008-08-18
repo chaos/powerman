@@ -156,6 +156,7 @@ static bool _reconnect(Device * dev, struct timeval *timeout);
 static bool _time_to_reconnect(Device * dev, struct timeval *timeout);
 
 static List dev_devices = NULL;
+static bool short_circuit_delay = FALSE;
 
 static void _dbg_actions(Device * dev)
 {
@@ -311,9 +312,10 @@ static void _destroy_action(Action * act)
 }
 
 /* initialize this module */
-void dev_init(void)
+void dev_init(bool Sopt)
 {
     dev_devices = list_create((ListDelF) dev_destroy);
+    short_circuit_delay = Sopt;
 }
 
 /* tear down this module */
@@ -465,7 +467,8 @@ bool dev_check_actions(int com, hostlist_t hl)
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
         if (_command_needs_device(dev, hl)) {
-            if (!dev->scripts[com] && _get_all_script(dev, com) == -1)  {
+            if (!dev->scripts[com] && _get_all_script(dev, com) == -1
+                                   && _get_ranged_script(dev, com) == -1)  {
                 valid = FALSE;
                 break;
             }
@@ -491,7 +494,8 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
     while ((dev = list_next(itr))) {
         int count;
 
-        if (!dev->scripts[com] && _get_all_script(dev, com) == -1)
+        if (!dev->scripts[com] && _get_all_script(dev, com) == -1
+                               && _get_ranged_script(dev, com) == -1)
             continue;                               /* unimplemented script */
         if (hl && !_command_needs_device(dev, hl))
             continue;                               /* uninvolved device */
@@ -704,22 +708,22 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
      * (discard 'new_acts' later on if so)
      */
     if (all || _is_query_action(com)) {
-        int ncom;
-        /* _ALL script available - use that */
-        if ((ncom = _get_all_script(dev, com)) != -1) {
-            act = _create_action(dev, ncom, NULL, complete_fun, vpf_fun,
-                    client_id, arglist);
+        int ncom = _get_all_script(dev, com);
+
+        if (ncom != -1) {
+            act = _create_action(dev, ncom, NULL, complete_fun, 
+                                 vpf_fun, client_id, arglist);
             list_append(dev->acts, act);
             count++;
         }
     }
 
-    /* _ALL wasn't appropriate, try a ranged input
+    /* _ALL didn't work, so try _RANGED.
      */
-    if (!count && list_count(ranged_plugs) > 1) {
-        int ncom;
-        /* _RANGED script available - use that */
-        if ((ncom = _get_ranged_script(dev, com)) != -1) {
+    if (count == 0) {
+        int ncom = _get_ranged_script(dev, com);
+
+        if (ncom != -1) {
             act = _create_action(dev, ncom, ranged_plugs, complete_fun, 
                                  vpf_fun, client_id, arglist);
             list_append(dev->acts, act);
@@ -728,8 +732,7 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
         }
     }
 
-    /* _ALL or _RANGE wasn't appropriate or wasn't defined so do one
-     *  action per plug 
+    /* _ALL and _RANGED didn't work, try one action per plug.
      */
     if (count == 0) {
         while ((act = list_pop(new_acts))) {
@@ -1247,7 +1250,7 @@ static bool _process_delay(Device *dev, Action *act, ExecCtx *e,
     }
 
     /* timeout expired? */
-    if (_timeout(&act->delay_start, &delay, &timeleft)) {
+    if (short_circuit_delay || _timeout(&act->delay_start, &delay, &timeleft)) {
         e->processing = FALSE;
         finished = TRUE;
     } else

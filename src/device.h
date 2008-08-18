@@ -27,7 +27,7 @@
 #ifndef PM_DEVICE_H
 #define PM_DEVICE_H
 
-void dev_init(void);
+void dev_init(bool short_circuit_delay);
 void dev_fini(void);
 void dev_initial_connect(void);
 
