@@ -1,11 +1,2 @@
-on:      
-off:     t[0-15]
-unknown: 
-on:      
-off:     t1
-unknown: 
-on:      
-off:     t[3-5]
-unknown: 
 Command completed successfully
 Command completed successfully

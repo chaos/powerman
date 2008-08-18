@@ -173,19 +173,6 @@ _prompt_loop(void)
                 printf("plug %d: %s\n", i, plug[i] ? "ON" : "OFF");
             goto ok;
         }
-        if (sscanf(buf, "soft %d", &i) == 1) {          /* soft <plugnum> */
-            if (i < 0 || i >= NUM_PLUGS) {
-                printf("%d BADVAL: %d\n", seq, i);
-                continue;
-            }
-            printf("plug %d: %s\n", i, plug[i] ? "ON" : "OFF");
-            goto ok;
-        }
-        if (strcmp(buf, "soft *") == 0) {               /* soft * */
-            for (i = 0; i < NUM_PLUGS; i++)
-                printf("plug %d: %s\n", i, plug[i] ? "ON" : "OFF");
-            goto ok;
-        }
         if (sscanf(buf, "beacon %d", &i) == 1) {       /* beacon <plugnum> */
             if (i < 0 || i >= NUM_PLUGS) {
                 printf("%d BADVAL: %d\n", seq, i);

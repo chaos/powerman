@@ -6,11 +6,11 @@ Release Notes for PowerMan version 2.2                        XX Aug 2008
   descriptors during powermand shutdown.  This is required to 
   terminate an ssh client running in coprocess mode.
 
-* Improved efficiency of powerman-controlling-powerman configurations, 
-  when one powerman controls a subset of the plugs of another powerman.
-
 * Make it possible to only define the _ranged version of scripts.  Scripts 
   are selected using the following precedence: _all, _ranged, singlet.
+
+* Drop "soft power status" support.  This allowed iceboxes to detect 
+  whether a node was powered up or not, independently of plug state.
 
 * [ipmipower] Drop _all and singlet version of scripts. 
 
@@ -29,6 +29,10 @@ Release Notes for PowerMan version 2.2                        XX Aug 2008
 
 * [ics8064] Added support for VXI-11-based ICS 8064 16-port relay unit
   via gpib-utils project.
+
+* [powerman] Improved efficiency of powerman-controlling-powerman 
+  configurations, when one powerman controls a subset of the plugs of 
+  another powerman through the use of _ranged scripts.
 
 * Enhanced integrated test suite.
   Note: tests all pass on AIX now.

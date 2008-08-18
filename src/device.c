@@ -545,7 +545,6 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
     case PM_POWER_CYCLE:
     case PM_RESET:
     case PM_STATUS_PLUGS:
-    case PM_STATUS_NODES:
     case PM_STATUS_TEMP:
     case PM_STATUS_BEACON:
         count += _enqueue_targetted_actions(dev, com, hl, complete_fun,
@@ -583,10 +582,6 @@ static int _get_all_script(Device * dev, int com)
     case PM_STATUS_PLUGS:
         if (dev->scripts[PM_STATUS_PLUGS_ALL])
             new = PM_STATUS_PLUGS_ALL;
-        break;
-    case PM_STATUS_NODES:
-        if (dev->scripts[PM_STATUS_NODES_ALL])
-            new = PM_STATUS_NODES_ALL;
         break;
     case PM_STATUS_TEMP:
         if (dev->scripts[PM_STATUS_TEMP_ALL])
@@ -635,8 +630,6 @@ static bool _is_query_action(int com)
     switch (com) {
         case PM_STATUS_PLUGS:
         case PM_STATUS_PLUGS_ALL:
-        case PM_STATUS_NODES:
-        case PM_STATUS_NODES_ALL:
         case PM_STATUS_TEMP:
         case PM_STATUS_TEMP_ALL:
         case PM_STATUS_BEACON:

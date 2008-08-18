@@ -91,7 +91,7 @@ static void _cmd_print(cmd_t *cp);
 
 static char *prog;
 
-#define OPTIONS "0:1:c:r:f:u:B:blQ:qN:nP:tD:dTxgh:S:C:YVLZI"
+#define OPTIONS "0:1:c:r:f:u:B:blQ:qP:tD:dTxgh:S:C:YVLZI"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
@@ -106,8 +106,6 @@ static const struct option longopts[] = {
     {"list",        no_argument,        0, 'l'},
     {"query",       required_argument,  0, 'Q'},
     {"query-all",   no_argument,        0, 'q'},
-    {"soft",        required_argument,  0, 'N'},
-    {"soft-all",    no_argument,        0, 'n'},
     {"temp",        required_argument,  0, 'P'},
     {"temp-all",    no_argument,        0, 't'},
     {"device",      required_argument,  0, 'D'},
@@ -187,12 +185,6 @@ int main(int argc, char **argv)
             break;
         case 'b':              /* --beacon-all */
             _cmd_create(commands, CP_BEACON_ALL, NULL, FALSE);
-            break;
-        case 'N':              /* --node */
-            _cmd_create(commands, CP_SOFT, optarg, FALSE);
-            break;
-        case 'n':              /* --node-all */
-            _cmd_create(commands, CP_SOFT_ALL, NULL, FALSE);
             break;
         case 'P':              /* --temp */
             _cmd_create(commands, CP_TEMP, optarg, FALSE);
@@ -422,9 +414,6 @@ static void _cmd_append(cmd_t *cp, char *arg)
     if (cp->argv == NULL) {
         if (!strcmp(cp->fmt, CP_STATUS_ALL)) {
             cp->fmt = CP_STATUS;
-            cp->argv = argv_create(arg, "");
-        } else if (!strcmp(cp->fmt, CP_SOFT_ALL)) {
-            cp->fmt = CP_SOFT;
             cp->argv = argv_create(arg, "");
         } else if (!strcmp(cp->fmt, CP_BEACON_ALL)) {
             cp->fmt = CP_BEACON;

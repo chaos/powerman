@@ -163,8 +163,6 @@ login           return TOK_LOGIN;
 logout          return TOK_LOGOUT;
 status          return TOK_STATUS;
 status_all      return TOK_STATUS_ALL;
-status_soft     return TOK_STATUS_SOFT;
-status_soft_all return TOK_STATUS_SOFT_ALL;
 on              return TOK_ON;
 on_ranged       return TOK_ON_RANGED;
 on_all          return TOK_ON_ALL;

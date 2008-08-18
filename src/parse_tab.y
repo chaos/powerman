@@ -127,7 +127,7 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 
 /* script names */
 %token TOK_LOGIN TOK_LOGOUT TOK_STATUS TOK_STATUS_ALL
-%token TOK_STATUS_SOFT TOK_STATUS_SOFT_ALL TOK_STATUS_TEMP TOK_STATUS_TEMP_ALL
+%token TOK_STATUS_TEMP TOK_STATUS_TEMP_ALL
 %token TOK_STATUS_BEACON TOK_STATUS_BEACON_ALL TOK_BEACON_ON TOK_BEACON_OFF
 %token TOK_ON TOK_ON_RANGED TOK_ON_ALL TOK_OFF TOK_OFF_RANGED TOK_OFF_ALL 
 %token TOK_CYCLE TOK_CYCLE_RANGED TOK_CYCLE_ALL 
@@ -250,10 +250,6 @@ spec_script     : TOK_SCRIPT TOK_LOGIN stmt_block {
     makeScript(PM_STATUS_PLUGS, (List)$3);
 }               | TOK_SCRIPT TOK_STATUS_ALL stmt_block {
     makeScript(PM_STATUS_PLUGS_ALL, (List)$3);
-}               | TOK_SCRIPT TOK_STATUS_SOFT stmt_block {
-    makeScript(PM_STATUS_NODES, (List)$3);
-}               | TOK_SCRIPT TOK_STATUS_SOFT_ALL stmt_block {
-    makeScript(PM_STATUS_NODES_ALL, (List)$3);
 }               | TOK_SCRIPT TOK_STATUS_TEMP stmt_block {
     makeScript(PM_STATUS_TEMP, (List)$3);
 }               | TOK_SCRIPT TOK_STATUS_TEMP_ALL stmt_block {

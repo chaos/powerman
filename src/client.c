@@ -593,10 +593,6 @@ static void _parse_input(Client * c, char *input)
         cmd = _create_command(c, PM_STATUS_PLUGS, arg1);
     } else if (!strncasecmp(str, CP_STATUS_ALL, strlen(CP_STATUS_ALL))) {
         cmd = _create_command(c, PM_STATUS_PLUGS, NULL);
-    } else if (sscanf(str, CP_SOFT, arg1) == 1) {       /* soft [hostlist] */
-        cmd = _create_command(c, PM_STATUS_NODES, arg1);
-    } else if (!strncasecmp(str, CP_SOFT_ALL, strlen(CP_SOFT_ALL))) {
-        cmd = _create_command(c, PM_STATUS_NODES, NULL);
     } else if (sscanf(str, CP_TEMP, arg1) == 1) {       /* temp [hostlist] */
         cmd = _create_command(c, PM_STATUS_TEMP, arg1);
     } else if (!strncasecmp(str, CP_TEMP_ALL, strlen(CP_TEMP_ALL))) {
@@ -682,7 +678,6 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
     if (--c->cmd->pending == 0) {
         switch (c->cmd->com) {
         case PM_STATUS_PLUGS:      /* status */
-        case PM_STATUS_NODES:      /* soft */
         case PM_STATUS_BEACON:     /* beacon */
             _client_query_status_reply(c, c->cmd->error);
             break;

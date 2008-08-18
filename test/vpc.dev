@@ -25,29 +25,6 @@ specification "vpc" {
 		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
-	script status {
-                send "stat %s\n"
-                expect "plug ([0-9]+): (ON|OFF)\n"
-                setplugstate $1 $2 on="ON" off="OFF"
-                expect "[0-9]* OK\n"
-                expect "[0-9]* vpc> "
-        }
-	script status_soft_all {
-		send "soft *\n"
-		foreachplug {
-			expect "plug ([0-9]+): (ON|OFF)\n"
-			setplugstate $1 $2 on="ON" off="OFF"
-		}
-		expect "[0-9]* OK\n"
-		expect "[0-9]* vpc> "
-	}
-	script status_soft {
-                send "soft %s\n"
-                expect "plug ([0-9]+): (ON|OFF)\n"
-                setplugstate $1 $2 on="ON" off="OFF"
-                expect "[0-9]* OK\n"
-                expect "[0-9]* vpc> "
-        }
 	script on {
 		send "on %s\n"
 		expect "[0-9]* OK\n"

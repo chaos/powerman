@@ -1,13 +1,7 @@
 on:      
 off:     t[0-9]
 unknown: 
-on:      
-off:     t[0-9]
-unknown: 
 Command completed successfully
-on:      t0
-off:     t[1-9]
-unknown: 
 on:      t0
 off:     t[1-9]
 unknown: 
@@ -15,20 +9,11 @@ Command completed successfully
 on:      t0
 off:     t[1-9]
 unknown: 
-on:      t0
-off:     t[1-9]
-unknown: 
 Command completed successfully
 on:      
 off:     t[0-9]
 unknown: 
-on:      
-off:     t[0-9]
-unknown: 
 Command completed successfully
-on:      t[0-9]
-off:     
-unknown: 
 on:      t[0-9]
 off:     
 unknown: 
@@ -36,13 +21,7 @@ Command completed successfully
 on:      t[0-9]
 off:     
 unknown: 
-on:      t[0-9]
-off:     
-unknown: 
 Command completed successfully
-on:      
-off:     t[0-9]
-unknown: 
 on:      
 off:     t[0-9]
 unknown: 

@@ -56,8 +56,6 @@
 #define CP_DEVICE_ALL "device"
 #define CP_STATUS     "status %s"
 #define CP_STATUS_ALL "status"
-#define CP_SOFT       "soft %s"
-#define CP_SOFT_ALL   "soft"
 #define CP_TEMP       "temp %s"
 #define CP_TEMP_ALL   "temp"
 #define CP_BEACON     "beacon %s"
@@ -107,7 +105,6 @@
  "301 off <nodes>        - power off"                               CP_EOL \
  "301 cycle <nodes>      - power cycle"                             CP_EOL \
  "301 reset <nodes>      - hardware reset (if available)"           CP_EOL \
- "301 soft [<nodes>]     - query soft power status (if available)"  CP_EOL \
  "301 temp [<nodes>]     - query temperature (if available)"        CP_EOL \
  "301 beacon [<nodes>]   - query beacon status (if available)"      CP_EOL \
  "301 flash <nodes>      - set beacon to ON (if available)"         CP_EOL \

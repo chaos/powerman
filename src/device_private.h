@@ -34,8 +34,8 @@
 #define PM_LOG_OUT            1
 #define PM_STATUS_PLUGS       2
 #define PM_STATUS_PLUGS_ALL   3
-#define PM_STATUS_NODES       4
-#define PM_STATUS_NODES_ALL   5
+/*4*/
+/*5*/
 #define PM_PING               6
 #define PM_POWER_ON           7
 #define PM_POWER_ON_RANGED    8

@@ -13,6 +13,14 @@
 	* src/device.c, src/powermand.c, src/powerman.c, test/t?? : Add 
 	-Y (--short-circuit-delay) option to expedite testing.
 
+	* etc/icebox.dev, etc/icebox3.dev : Drop status_soft_all scripts.
+
+	* tests/* : Drop soft power status related tests.
+
+	* src/powerman.c, src/client_proto.h, src/client.c, src/parse_tab.y,
+	src/parse_lex.l : Drop --soft and --soft-all queries and status_soft,
+	status_soft_all scripts.
+
 2008-07-27 Jim Garlick <garlick@llnl.gov>
 
 	* etc/cyclades-pm10.dev, etc/cyclades-pm8.dev : Simplified.
