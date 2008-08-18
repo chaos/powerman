@@ -7,8 +7,8 @@
 	* etc/hp3488.dev, etc/ics8064.dev, etc/powerman.dev,
 	etc/ipmipower.dev : Define only 'ranged' version of scripts.
 
-	* src/device.c : Use ranged version of scripts instead of _all or
-	singlet versions if defined.
+	* src/device.c : Use ranged version of scripts instead of singlet 
+	versions if defined.  Allow only the ranged script to be defined.
 
 	* src/device.c, src/powermand.c, src/powerman.c, test/t?? : Add 
 	-Y (--short-circuit-delay) option to expedite testing.

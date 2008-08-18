@@ -1,6 +1,18 @@
 =========================================================================
-Release Notes for PowerMan version 2.2                        15 Jul 2008
+Release Notes for PowerMan version 2.2                        XX Aug 2008
 =========================================================================
+
+* Send a SIGINT to coprocesses rather than just closing file
+  descriptors during powermand shutdown.  This is required to 
+  terminate an ssh client running in coprocess mode.
+
+* Improved efficiency of powerman-controlling-powerman configurations, 
+  when one powerman controls a subset of the plugs of another powerman.
+
+* Make it possible to only define the _ranged version of scripts.  Scripts 
+  are selected using the following precedence: _all, _ranged, singlet.
+
+* [ipmipower] Drop _all and singlet version of scripts. 
 
 * [ilom] Revised Sun Integrated Lights Out Management support 
   to work over ssh and serial.  Dropped shared console/serial 
@@ -9,10 +21,6 @@ Release Notes for PowerMan version 2.2                        15 Jul 2008
 * [icebox3] Now supports both v3 and v4 Ice Box.  Users of icebox4
   should change their device types to icebox3 in powerman.conf.
 
-* Send a SIGINT to coprocesses rather than just closing file
-  descriptors during powermand shutdown.  This is required to 
-  terminate an ssh client running in coprocess mode.
-  
 * [plmpower] Added support for controlling Insteon/X10 devices via 
   SmartLabs PLM 2412S.
 
@@ -21,10 +29,6 @@ Release Notes for PowerMan version 2.2                        15 Jul 2008
 
 * [ics8064] Added support for VXI-11-based ICS 8064 16-port relay unit
   via gpib-utils project.
-
-* [powerman] Improved efficiency of powerman-controlling-powerman
-  configurations, when one powerman controls a subset of the plugs
-  of another powerman.
 
 * Enhanced integrated test suite.
   Note: tests all pass on AIX now.

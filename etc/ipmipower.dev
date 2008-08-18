@@ -40,11 +40,4 @@ specification "ipmipower" {
 		send "on %s\n"
 		expect "ipmipower> "
 	}
-	script reset_ranged {
-		send "off %s\n"
-		expect "ipmipower> "
-		delay 5
-		send "on %s\n"
-		expect "ipmipower> "
-	}
 }

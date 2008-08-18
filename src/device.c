@@ -704,8 +704,7 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
     }
     pluglist_iterator_destroy(itr);
 
-    /* See if we can use a command targetted at all plugs 
-     * (discard 'new_acts' later on if so)
+    /* Try _all version of script.
      */
     if (all || _is_query_action(com)) {
         int ncom = _get_all_script(dev, com);
@@ -718,7 +717,7 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
         }
     }
 
-    /* _ALL didn't work, so try _RANGED.
+    /* _all didn't work, try _ranged.
      */
     if (count == 0) {
         int ncom = _get_ranged_script(dev, com);
@@ -732,7 +731,7 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
         }
     }
 
-    /* _ALL and _RANGED didn't work, try one action per plug.
+    /* _all and _ranged didn't work, try singlet.
      */
     if (count == 0) {
         while ((act = list_pop(new_acts))) {
