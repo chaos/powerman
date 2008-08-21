@@ -21,11 +21,12 @@
 
 static void usage(void);
 static void _noop_handler(int signum);
+static void _prompt_loop_rpc3_de(void);
 static void _prompt_loop_rpc28_nc(void);
 static void _prompt_loop_rpc3_nc(void);
 static void _prompt_loop_rpc3(void);
 
-typedef enum { NONE, RPC3, RPC3_NC, RPC28_NC } baytype_t;
+typedef enum { NONE, RPC3, RPC3_NC, RPC28_NC, RPC3_DE } baytype_t;
 
 static char *prog;
 
@@ -57,6 +58,8 @@ main(int argc, char *argv[])
                     personality = RPC3_NC;
                 else if (strcmp(optarg, "rpc28-nc") == 0)
                     personality = RPC28_NC;
+                else if (strcmp(optarg, "rpc3-de") == 0)
+                    personality = RPC3_DE;
                 else
                     usage();
                 break;
@@ -84,6 +87,9 @@ main(int argc, char *argv[])
         case RPC28_NC:
             _prompt_loop_rpc28_nc();
             break;
+        case RPC3_DE:
+            _prompt_loop_rpc3_de();
+            break;
     }
     exit(0);
 }
@@ -91,7 +97,7 @@ main(int argc, char *argv[])
 static void 
 usage(void)
 {
-    fprintf(stderr, "Usage: %s -p rpc3|rpc3-nc|rpc28-nc\n", prog);
+    fprintf(stderr, "Usage: %s -p rpc3|rpc3-nc|rpc28-nc|rpc3-de\n", prog);
     exit(1);
 }
 
@@ -226,6 +232,192 @@ _prompt_loop_rpc28_nc(void)
                    plug[8], plug[9], plug[10], plug[11],  
                    plug[12], plug[13], plug[14], plug[15],
                    plug[16], plug[17], plug[18], plug[19]);
+/* NOTE: we only suport one plug at a time or all for on,off,reboot */
+        } else if (sscanf(buf, "on %d", &i) == 1) {
+            if (i >= plug_origin && i < num_plugs + plug_origin)
+                strcpy(plug[i - plug_origin], "On ");
+            else if (i == 0)
+                for (i = 0; i < num_plugs; i++)
+                    strcpy(plug[i], "On ");
+            else
+                goto err;
+        } else if (sscanf(buf, "off %d", &i) == 1) {
+            if (i >= plug_origin && i < num_plugs + plug_origin)
+                strcpy(plug[i - plug_origin], "Off");
+            else if (i == 0)
+                for (i = 0; i < num_plugs; i++)
+                    strcpy(plug[i], "Off");
+            else
+                goto err;
+        } else if (sscanf(buf, "reboot %d", &i) == 1) {
+            /* if off, leaves it off */
+            if (i == 0 || (i >= plug_origin && i < num_plugs + plug_origin)) {
+                printf("\r\nRebooting...  ");
+                for (i = 9; i >= 0; i--) {
+                    printf("%d", i);
+                    fflush(stdout);
+                    sleep(1);
+                }
+                printf("\r\n");   
+            } else
+                goto err;
+        } else
+            goto err;
+        continue;
+err:
+        printf("Input error\r\n\r\n");
+    }
+}
+
+#define RPC3_DE_BANNER "\r\n\r\n\
+RPC-3/4(A)DE Series\r\n\
+(C) 2004 BayTech\r\n\
+F1.08\r\n\
+\r\n\
+Option(s) Installed:\r\n\
+True RMS Voltage\r\n\
+True RMS Current\r\n\
+Internal Temperature\r\n\
+\r\n"
+
+#define RPC3_DE_PROMPT "RPC-4>"
+
+#define RPC3_DE_STATUS "\r\n\
+\r\n\
+-------------------------------------------------------------------------------\r\n\
+|    Outlet      | True RMS  | Peak RMS  |  True RMS   |   Average  |  Volt-  |\r\n\
+|    Group       |  Current  |  Current  |   Voltage   |    Power   |  Amps   |\r\n\
+-------------------------------------------------------------------------------\r\n\
+|  Outlet  1-4   |  1.8 Amps |  2.3 Amps | 122.5 Volts |  216 Watts |  220 VA |\r\n\
+|  Outlet  5-8   |  2.4 Amps |  5.0 Amps | 122.1 Volts |  269 Watts |  277 VA |\r\n\
+-------------------------------------------------------------------------------\r\n\
+\r\n\
+Internal Temperature:  78.8 F\r\n\
+\r\n\
+Switch 1: Open 2: Open\r\n\
+\r\n\
+ 1)...Outlet  1       : %s           \r\n\
+ 2)...Outlet  2       : %s           \r\n\
+ 3)...Outlet  3       : %s           \r\n\
+ 4)...Outlet  4       : %s           \r\n\
+ 5)...Outlet  5       : %s           \r\n\
+ 6)...Outlet  6       : %s           \r\n\
+ 7)...Outlet  7       : %s           \r\n\
+ 8)...Outlet  8       : %s           \r\n\
+\r\n\
+\r\n\
+Type Help for a list of commands\r\n\
+\r\n"
+
+#define RPC3_DE_HELP "\r\n\r\n\
+On n <cr>     --Turn on an Outlet, n=0,1...8,all\r\n\
+Off n <cr>    --Turn off an Outlet, n=0,1...8,all\r\n\
+Reboot n <cr> --Reboot an Outlet, n=0,1...8,all\r\n\
+Status <cr>   --RPC-4 Status\r\n\
+Config <cr>   --Enter configuration mode\r\n\
+RC <cr>       --Powerup/watchdog reset counts\r\n\
+Lock n <cr>   --Locks Outlet(s) state, n=0,1...8,all\r\n\
+Unlock n <cr> --Unlock Outlet(s) state, n=0,1...8,all\r\n\
+Current <cr>  --Display True RMS Current\r\n\
+Voltage <cr>  --Display True RMS Voltage\r\n\
+Power <cr>    --Display Average Power\r\n\
+Clear <cr>    --Reset the maximum detected current\r\n\
+Temp <cr>     --Read current temperature\r\n\
+Logout <cr>   --Logoff\r\n\
+Logoff <cr>   --Logoff\r\n\
+Exit <cr>     --Logoff\r\n\
+Password <cr> --Changes the current user password\r\n\
+Whoami <cr>   --Displays the current user name\r\n\
+Unitid <cr>   --Displays the unit ID\r\n\
+\r\n\
+\r\n\
+Type Help for a list of commands\r\n\
+\r\n"
+
+#define RPC3_DE_TEMP "\r\n\r\n\
+Internal Temperature:  77.9 F\r\n\
+\r\n\
+Type Help for a list of commands\r\n\
+\r\n"
+
+#define RPC3_DE_VOLTAGE "\r\n\r\n\
+--------------------------------\r\n\
+|    Outlet      |  True RMS   |\r\n\
+|    Group       |   Voltage   |\r\n\
+--------------------------------\r\n\
+|  Outlet  1-4   | 122.4 Volts | \r\n\
+|  Outlet  5-8   | 122.3 Volts | \r\n\
+--------------------------------\r\n\
+\r\n\
+Type Help for a list of commands\r\n\
+\r\n"
+
+#define RPC3_DE_CURRENT "\r\n\r\n\
+------------------------------------------\r\n\
+|    Outlet      | True RMS  | Peak RMS  |\r\n\
+|    Group       |  Current  |  Current  |\r\n\
+------------------------------------------\r\n\
+|  Outlet  1-4   |  1.8 Amps |  2.3 Amps |\r\n\
+|  Outlet  5-8   |  2.3 Amps |  5.0 Amps |\r\n\
+------------------------------------------\r\n\
+\r\n\
+\r\n\
+\r\n\
+Type Help for a list of commands\r\n\
+\r\n"
+
+#define RPC3_DE_POWER "\r\n\r\n\
+------------------------------------------\r\n\
+|    Outlet      | True RMS  | Peak RMS  |\r\n\
+|    Group       |  Current  |  Current  |\r\n\
+------------------------------------------\r\n\
+|  Outlet  1-4   |  1.8 Amps |  2.3 Amps |\r\n\
+|  Outlet  5-8   |  2.3 Amps |  5.0 Amps |\r\n\
+------------------------------------------\r\n\
+\r\n\
+\r\n\
+\r\n\
+Type Help for a list of commands\r\n\
+\r\n"
+
+
+static void 
+_prompt_loop_rpc3_de(void)
+{
+    int i;
+    char buf[128];
+    int num_plugs = 8;
+    char plug[8][4];
+    int plug_origin = 1;
+    int logged_in = 1;
+
+    for (i = 0; i < num_plugs; i++)
+        strcpy(plug[i], "Off");
+
+    printf(RPC3_DE_BANNER);
+
+    while (logged_in) {
+        if (xreadline(RPC3_DE_PROMPT, buf, sizeof(buf)) == NULL)
+            break;
+        if (strlen(buf) == 0) {
+            continue;
+        } else if (!strcmp(buf, "logoff") || !strcmp(buf, "logout") 
+                                          || !strcmp(buf, "exit")) {
+            break;
+        } else if (!strcmp(buf, "help")) {
+            printf(RPC3_DE_HELP); 
+        } else if (!strcmp(buf, "temp"))
+            printf(RPC3_DE_TEMP); 
+        else if (!strcmp(buf, "voltage"))
+            printf(RPC3_DE_VOLTAGE); 
+        else if (!strcmp(buf, "current"))
+            printf(RPC3_DE_CURRENT); 
+        else if (!strcmp(buf, "power"))
+            printf(RPC3_DE_POWER); 
+        else if (!strcmp(buf, "status")) {
+            printf(RPC3_DE_STATUS, 
+                   plug[0], plug[1], plug[2], plug[3],  
+                   plug[4], plug[5], plug[6], plug[7]);
 /* NOTE: we only suport one plug at a time or all for on,off,reboot */
         } else if (sscanf(buf, "on %d", &i) == 1) {
             if (i >= plug_origin && i < num_plugs + plug_origin)
