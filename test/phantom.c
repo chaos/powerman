@@ -20,7 +20,7 @@
 #include "xtypes.h"
 #include "error.h"
 #include "xread.h"
-
+#define _BOOL /* prevent solaris curses.h from defining bool */
 #include <curses.h> /* after xtypes.h */
 
 static void usage(void);
