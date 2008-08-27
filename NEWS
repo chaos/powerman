@@ -1,5 +1,5 @@
 =========================================================================
-Release Notes for PowerMan version 2.2                        XX Aug 2008
+Release Notes for PowerMan version 2.2                        27 Aug 2008
 =========================================================================
 
 * Send a SIGINT to coprocesses rather than just closing file

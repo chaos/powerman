@@ -1,3 +1,7 @@
+2008-08-27 Jim Garlick <garlick@llnl.gov>
+
+	* : tag powerman-2.2
+
 2008-08-21 Jim Garlick <garlick@llnl.gov>
 
 	* test/baytech.c, test/t21*, test/t22* : Also test rpc3-de model.
