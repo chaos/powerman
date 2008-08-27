@@ -15,7 +15,7 @@
 	versions if defined.  Allow only the ranged script to be defined.
 
 	* src/device.c, src/powermand.c, src/powerman.c, test/t?? : Add 
-	-Y (--short-circuit-delay) option to expedite testing.
+	-Y,--short-circuit-delay option to expedite testing.
 
 	* etc/icebox.dev, etc/icebox3.dev : Drop status_soft_all scripts.
 
