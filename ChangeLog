@@ -1,3 +1,9 @@
+2008-09-15 Jim Garlick <garlick@llnl.gov>
+
+	* : tag powerman-2.2.1
+
+	* powerman.spec : Handle case when %chaos and %rhel are both defined.
+
 2008-08-27 Jim Garlick <garlick@llnl.gov>
 
 	* : tag powerman-2.2
