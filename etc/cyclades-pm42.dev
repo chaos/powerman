@@ -1,0 +1,79 @@
+#
+# Cyclades PM42
+#
+specification "pm42" {
+	timeout 	10
+	pingperiod      60
+	plug name { "1"  "2"  "3"  "4"  "5"  "6"  "7"  "8"  "9"  "10" 
+                    "11" "12" "13" "14" "15" "16" "17" "18" "19" "20" 
+                    "21" "22" "23" "24" "25" "26" "27" "28" "29" "30"
+                    "31" "32" "33" "34" "35" "36" "37" "38" "39" "40"
+                    "41" "42" }
+
+	script login {
+		expect "Username: "
+		send "admin\n"
+		expect "Password: "
+		send "pm8\n"
+		expect "pm>"
+	}
+	script ping {
+                send "\n"
+                expect "pm>"
+        }
+	script status_all {
+		send "status 1-42\n"
+		expect "Users"
+		foreachplug {
+			expect "([0-9]+)[[:space:]]+Unlocked (ON|OFF)"
+			setplugstate $1 $2 on="ON" off="OFF"
+		}
+		expect "pm>"
+	}
+	script on {
+		send "on %s\n"
+		expect "Outlet turned on."
+		expect "pm>"
+	}
+	script on_all {
+		send "on 1-42\n"
+		foreachplug {
+			expect "Outlet turned on."
+		}
+		expect "pm>"
+	}
+	script off {
+		send "off %s\n"
+		expect "Outlet turned off."
+		expect "pm>"
+	}
+	script off_all {
+		send "off 1-42\n"
+		foreachplug {
+			expect "Outlet turned off."
+		}
+		expect "pm>"
+	}
+	script cycle {
+		send "off %s\n"
+		expect "Outlet turned off."
+		expect "pm>"
+		delay 4
+		send "on %s\n"
+		expect "Outlet turned on."
+		expect "pm>"
+	}
+	script cycle_all {
+		send "off 1-42\n"
+		foreachplug {
+			expect "Outlet turned off."
+		}
+		expect "pm>"
+		delay 4
+		send "on 1-42\n"
+		foreachplug {
+			expect "Outlet turned on."
+		}
+		expect "pm>"
+	}
+}

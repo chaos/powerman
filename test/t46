@@ -1,12 +1,12 @@
 #!/bin/sh
 TEST=t46
 $PATH_POWERMAN -Y -S $PATH_POWERMAND -C $TEST.conf \
-    -q -1 t[0,8] \
-    -q -c t[0,8] \
-    -q -0 t[0,8] \
-    -q -1 t[0-15] \
-    -q -c t[0-15] \
-    -q -0 t[0-15] \
+    -q -1 t[0,8,16] \
+    -q -c t[0,8,16] \
+    -q -0 t[0,8,16] \
+    -q -1 t[0-57] \
+    -q -c t[0-57] \
+    -q -0 t[0-57] \
     -q >$TEST.out 2>$TEST.err
 test $? = 0 || exit 1
 diff $TEST.out $TEST.exp >$TEST.diff

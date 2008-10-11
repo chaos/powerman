@@ -1,3 +1,9 @@
+2008-10-10 Jim Garlick <garlick@llnl.gov>
+
+	* etc/cyclades-pm42.dev : New.
+
+	* test/cyclades.c, test/t46* : Test for above.
+
 2008-09-15 Jim Garlick <garlick@llnl.gov>
 
 	* : tag powerman-2.2.1
