@@ -1,3 +1,8 @@
+2008-10-15 Jim Garlick <garlick@llnl.gov>
+
+	* src/client.c : Use getaddrinfo() instead of gethostbyaddr()
+	to prepare for ipv6 support.
+
 2008-10-10 Jim Garlick <garlick@llnl.gov>
 
 	* etc/cyclades-pm42.dev : New.
