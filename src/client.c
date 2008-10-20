@@ -802,8 +802,7 @@ static void _create_client_socket(void)
     Client *c;
     struct sockaddr_in addr;
     socklen_t addr_size = sizeof(struct sockaddr_in);
-    struct addrinfo *addrinfo;
-    int n;
+    struct hostent *hent;
     char buf[64];
 
     /* create client data structure */
@@ -842,11 +841,11 @@ static void _create_client_socket(void)
     c->port = ntohs(addr.sin_port);
 
     /* get c->host */
-    if ((n = getaddrinfo(c->ip, NULL, NULL, &addrinfo)) != 0) {
-        err(FALSE, "_create_client: getaddrinfo %s: %s", 
-            c->ip, gai_strerror(n));
+    if ((hent = gethostbyaddr((const char *) &addr.sin_addr,
+                              sizeof(struct in_addr), AF_INET)) == NULL) {
+        err(FALSE, "_create_client: gethostbyaddr failed");
     } else {
-        c->host = xstrdup(addrinfo->ai_canonname);
+        c->host = xstrdup(hent->h_name);
     }
 #if HAVE_TCP_WRAPPERS
     /* get authorization from tcp wrappers */

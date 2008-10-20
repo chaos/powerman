@@ -16,8 +16,9 @@ DEVFILES = \
 	baytech-rpc28-nc.dev \
 	baytech-rpc3-nc.dev \
 	cb-7050.dev \
-	cyclades-pm10.dev \
 	cyclades-pm8.dev \
+	cyclades-pm10.dev \
+	cyclades-pm42.dev \
 	dli.dev \
 	hp3488.dev \
 	ibmbladecenter.dev \

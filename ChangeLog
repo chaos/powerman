@@ -1,3 +1,11 @@
+2008-10-20 Jim Garlick <garlick@llnl.gov>
+
+	* : tag powerman-2.2.2
+
+	* src/client.c :  Revert change to client.c pending debug (r1039:1049).
+
+	* etc/Makefile.am : Add cyclades-pm42.dev to installed dev scripts.
+
 2008-10-15 Jim Garlick <garlick@llnl.gov>
 
 	* src/client.c : Use getaddrinfo() instead of gethostbyaddr()
