@@ -79,6 +79,8 @@ typedef struct {
     TelnetState tstate;         /* state of telnet processing */
     unsigned char tcmd;         /* buffered telnet command */
     bool quiet;                 /* don't report idle timeout messages */
+    struct addrinfo *addrs;
+    struct addrinfo *cur;
 } TcpDev;
 
 static void _telnet_init(Device *dev);
@@ -102,6 +104,8 @@ static void _parse_options(TcpDev *tcp, char *flags)
 void *tcp_create(char *host, char *port, char *flags)
 {
     TcpDev *tcp = (TcpDev *)xmalloc(sizeof(TcpDev));
+    struct addrinfo hints;
+    int error;
 
     tcp->host = xstrdup(host);
     tcp->port = xstrdup(port);
@@ -110,6 +114,16 @@ void *tcp_create(char *host, char *port, char *flags)
     tcp->quiet = FALSE;
     if (flags)
         _parse_options(tcp, flags);
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = PF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    if ((error = getaddrinfo(tcp->host, tcp->port, &hints, &tcp->addrs)) != 0)
+        err_exit(FALSE, "getaddrinfo %s:%s: %s", tcp->host, tcp->port, 
+                                                 gai_strerror(error));
+    if (tcp->addrs == NULL)
+        err_exit(FALSE, "no addresses for server %s:%s", tcp->host, tcp->port);
+    tcp->cur = tcp->addrs;
 
     return (void *)tcp;
 }
@@ -122,7 +136,39 @@ void tcp_destroy(void *data)
         xfree(tcp->host);
     if (tcp->port)
         xfree(tcp->port);
+    if (tcp->addrs)
+        freeaddrinfo(tcp->addrs);
+        
     xfree(tcp);
+}
+
+/* 
+ * initiate connect to tcp->cur 
+ */
+static bool tcp_connect_next_addr(Device *dev)
+{
+    TcpDev *tcp = (TcpDev *)dev->data;
+    int opt;
+
+    if (tcp->cur == NULL)
+        return FALSE;
+
+    if ((dev->fd = socket(tcp->cur->ai_family, tcp->cur->ai_socktype, 0)) < 0)
+        return FALSE;
+    opt = 1;
+    if (setsockopt(dev->fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+        close(dev->fd);
+        return FALSE;
+    }
+    nonblock_set(dev->fd);
+
+    if (connect(dev->fd, tcp->cur->ai_addr, tcp->cur->ai_addrlen) >= 0)
+        return tcp_finish_connect(dev);
+    else if (errno == EINPROGRESS)
+        return TRUE;
+
+    close(dev->fd);
+    return FALSE;
 }
 
 /*
@@ -149,7 +195,10 @@ bool tcp_finish_connect(Device * dev)
     if (rc < 0)
         error = errno;
     if (error) {
-        err(FALSE, "tcp_finish_connect(%s): %s", dev->name, strerror(error));
+        while (tcp->cur && !tcp_connect_next_addr(dev))
+            tcp->cur = tcp->cur->ai_next;
+        if (tcp->cur == NULL)
+            dev->connect_state = DEV_NOT_CONNECTED;
     } else {
         if (!tcp->quiet)
             err(FALSE, "tcp_finish_connect(%s): connected", dev->name);
@@ -168,9 +217,6 @@ bool tcp_finish_connect(Device * dev)
 bool tcp_connect(Device * dev)
 {
     TcpDev *tcp;
-    struct addrinfo hints, *addrinfo;
-    int opt;
-    int n;
 
     assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_NOT_CONNECTED);
@@ -178,37 +224,11 @@ bool tcp_connect(Device * dev)
 
     tcp = (TcpDev *)dev->data;
 
-    memset(&hints, 0, sizeof(struct addrinfo));
-    addrinfo = &hints;
-    hints.ai_flags = AI_CANONNAME;
-    hints.ai_family = AF_INET;
-    hints.ai_socktype = SOCK_STREAM;
-    if ((n = getaddrinfo(tcp->host, tcp->port, &hints, &addrinfo)) != 0)
-        err_exit(FALSE, "getaddrinfo %s: %s", tcp->host, gai_strerror(n));
-
-    dev->fd = socket(addrinfo->ai_family, addrinfo->ai_socktype,
-                     addrinfo->ai_protocol);
-    if (dev->fd < 0)
-        err_exit(TRUE, "socket");
-
-    dbg(DBG_DEVICE, "tcp_connect: %s on fd %d", dev->name, dev->fd);
-
-    /* set up and initiate a non-blocking connect */
-    opt = 1;
-    if (setsockopt(dev->fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-        err_exit(TRUE, "setsockopt SO_REUSEADDR");
-   
-    nonblock_set(dev->fd);
-
     dev->connect_state = DEV_CONNECTING;
-    if (connect(dev->fd, addrinfo->ai_addr, addrinfo->ai_addrlen) >= 0)
-        tcp_finish_connect(dev);
-    else if (errno == ECONNREFUSED)
+    while (tcp->cur && !tcp_connect_next_addr(dev))
+        tcp->cur = tcp->cur->ai_next;
+    if (tcp->cur == NULL)
         dev->connect_state = DEV_NOT_CONNECTED;
-    else if (errno != EINPROGRESS)
-        err_exit(TRUE, "connect");
-
-    freeaddrinfo(addrinfo);
 
     switch(dev->connect_state) {
         case DEV_NOT_CONNECTED:

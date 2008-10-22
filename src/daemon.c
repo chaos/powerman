@@ -44,8 +44,16 @@
 #include "error.h"
 #include "daemon.h"
 
+static int in_fdlist(int fd, int *fds, int len)
+{
+    while (--len >= 0)
+        if (fds[len] == fd)
+            return 1;
+    return 0;
+}
+
 /* Review: if NDEBUG turn off core generation */
-void daemon_init(int skipfd, char *rootdir, char *name)
+void daemon_init(int *skipfds, int skipfdslen, char *rootdir, char *name)
 {
     int i;
 
@@ -87,7 +95,7 @@ void daemon_init(int skipfd, char *rootdir, char *name)
 
     /* close fd's */
     for (i = 0; i < 256; i++) {
-        if (i != skipfd)
+        if (!in_fdlist(i, skipfds, skipfdslen))
             close(i);               /* ignore errors */
     }
 

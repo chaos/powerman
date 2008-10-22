@@ -163,8 +163,10 @@ int main(int argc, char **argv)
 
     if (daemonize) {
         char *run_dir = hsprintf("%s/run/powerman", X_LOCALSTATEDIR);
+        int *fds, len;
 
-        daemon_init(cli_listen_fd(), run_dir, DAEMON_NAME); 
+        cli_listen_fds(&fds, &len);
+        daemon_init(fds, len, run_dir, DAEMON_NAME); 
         xfree(run_dir);
         err_notty();
         dbg_notty();

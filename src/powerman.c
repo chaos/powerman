@@ -518,29 +518,34 @@ static int _connect_to_server_pipe(char *server_path, char *config_path,
 
 static int _connect_to_server_tcp(char *host, char *port)
 {
-    struct addrinfo hints, *addrinfo;
-    int n;
-    int fd;
+    int error, fd = -1;
+    struct addrinfo hints, *res, *r;
 
-    memset(&hints, 0, sizeof(struct addrinfo));
-    hints.ai_flags = AI_CANONNAME;
-    hints.ai_family = AF_INET;
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = PF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    if ((n = getaddrinfo(host, port, &hints, &addrinfo)) != 0)
-        err_exit(FALSE, "getaddrinfo %s: %s", host, gai_strerror(n));
+    if ((error = getaddrinfo(host, port, &hints, &res)) != 0)
+        err_exit(FALSE, "getaddrinfo %s:%s: %s", host, port,
+                       gai_strerror(error));
+    if (res == NULL)
+        err_exit(FALSE, "no addresses for server %s:%s", host, port);
 
-    fd = socket(addrinfo->ai_family, addrinfo->ai_socktype,
-                       addrinfo->ai_protocol);
-    if (fd < 0)
-        err_exit(TRUE, "socket");
+    for (r = res; r != NULL; r = r->ai_next) {
+        if ((fd = socket(r->ai_family, r->ai_socktype, 0)) < 0)
+            continue;
+        if (connect(fd, r->ai_addr, r->ai_addrlen) < 0) {
+            close(fd);
+            continue;
+        }
+        break; /* success! */
+    }
+    if (r == NULL)
+        err_exit(FALSE, "could not bind to address %s:%s", host, port);
 
-    if (connect(fd, addrinfo->ai_addr, addrinfo->ai_addrlen) < 0)
-        err_exit(TRUE, "connect");
-    freeaddrinfo(addrinfo);
+    freeaddrinfo(res);
     return fd;
 }
-
 
 /* Return true if response should be suppressed.
  */

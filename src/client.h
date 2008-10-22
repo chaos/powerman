@@ -31,7 +31,7 @@ void cli_init(void);
 void cli_fini(void);
 
 void cli_start(bool use_stdio);
-int cli_listen_fd(void);
+void cli_listen_fds(int **fds, int *len);
 bool cli_server_done(void);
 
 void cli_post_poll(xpollfd_t pfd);

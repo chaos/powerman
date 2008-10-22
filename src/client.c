@@ -118,7 +118,7 @@ static void _handle_input(Client *c);
 static char *_strip_whitespace(char *str);
 static void _parse_input(Client * c, char *input);
 static void _destroy_client(Client * c);
-static void _create_client_socket(void);
+static void _create_client_socket(int fd);
 static void _create_client_stdio(void);
 static void _act_finish(int client_id, ActError acterr, const char *fmt, ...);
 static void _telemetry_printf(int client_id, const char *fmt, ...);
@@ -130,7 +130,8 @@ int allow_severity = LOG_INFO;  /* logging level for accepted reqs */
 int deny_severity = LOG_WARNING;/* logging level for rejected reqs */
 #endif
 
-static int listen_fd = NO_FD;   /* powermand listen socket */
+static int *listen_fds;         /* powermand listen sockets */
+static int listen_fds_len = 0;  /* count of above sockets */
 static List cli_clients = NULL; /* list of clients */
 static bool server_done = FALSE;/* true when stdio client exits */
 
@@ -738,7 +739,7 @@ static void _destroy_client(Client *c)
     if (c->host)
         xfree(c->host);
     xfree(c);
-    if (listen_fd == NO_FD)
+    if (listen_fds_len == 0) /* case of one stdio client */
         server_done = TRUE;
 }
 
@@ -761,43 +762,70 @@ static Client *_find_client(int seq)
  */
 static void _listen_client(void)
 {
-    struct sockaddr_in addr;
-    int opt;
-    unsigned short listen_port;
+    int fd, error, i, opt, count;
+    struct addrinfo hints, *res, *r;
+    char serv[6];
+    char *what = "nothing";
+    int saved_errno = 0;
 
-    listen_fd = socket(PF_INET, SOCK_STREAM, 0);
-    if (listen_fd < 0)
-        err_exit(TRUE, "socket");
+    /* query the available addresses */
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = PF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+    snprintf(serv, sizeof(serv), "%d", conf_get_listen_port());
+    if ((error = getaddrinfo(NULL, serv, &hints, &res)))
+        err_exit(FALSE, "getaddrinfo: %s", gai_strerror(error));
+    if (res == NULL)
+        err_exit(FALSE, "no addresses to bind to");
 
-    /* 
-     * "All TCP servers should specify [the SO_REUSEADDR] socket option ..."
-     *                                                  - Stevens, UNP p194 
-     */
-    opt = 1;
-    if (setsockopt(listen_fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0)
-        err_exit(TRUE, "setsockopt SO_REUSEADDR");
+    /* allocate the listen_fds array */
+    for (r = res; r != NULL; r = r->ai_next)
+        listen_fds_len++;
+    listen_fds = (int *)xmalloc(sizeof(int) * listen_fds_len); 
 
-    /* 
-     *   A client could abort before a ready connection is accepted.  "The fix
-     * for this problem is to:  1.  Always set a listening socket nonblocking
-     * if we use select ..."                            - Stevens, UNP p424
-     */
-    nonblock_set(listen_fd);
-
-    addr.sin_family = AF_INET;
-    listen_port = conf_get_listen_port();
-    addr.sin_port = htons(listen_port);
-    addr.sin_addr.s_addr = INADDR_ANY;
-    if (bind(listen_fd, (struct sockaddr *) &addr, sizeof(addr)) < 0)
-        err_exit(TRUE, "bind");
-
-    if (listen(listen_fd, LISTEN_BACKLOG) < 0)
-        err_exit(TRUE, "listen");
-
-    dbg(DBG_CLIENT, "listening");
+    /* bind sockets to addresses */
+    count = 0;
+    saved_errno = 0;
+    for (r = res, i = 0; r != NULL; r = r->ai_next, i++) {
+        listen_fds[i] = NO_FD;
+        if ((fd = socket(r->ai_family, r->ai_socktype, 0)) < 0) {
+            saved_errno = errno;
+            what = "socket";
+            continue;
+        }
+        opt = 1;
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+            saved_errno = errno;
+            what = "setsockopt";
+            close(fd);
+            continue;
+        }
+        nonblock_set(fd);
+        if (bind(fd, r->ai_addr, r->ai_addrlen) < 0) {
+            saved_errno = errno;
+            what = "bind";
+            close(fd);
+            continue;
+        }
+        if (listen(fd, LISTEN_BACKLOG) < 0) {
+            saved_errno = errno;
+            what = "listen";
+            close(fd);
+            continue;
+        }
+        listen_fds[i] = fd;
+        count++;
+    }
+    freeaddrinfo(res);
+    if (count == 0) {
+        errno = saved_errno;
+        err_exit(TRUE, "%s", what);
+    }
+    dbg(DBG_CLIENT, "listening on %d sockets", count);
 }
 
-static void _create_client_socket(void)
+static void _create_client_socket(int fd)
 {
     Client *c;
     struct sockaddr_in addr;
@@ -817,7 +845,7 @@ static void _create_client_socket(void)
     c->ofd = NO_FD;
     c->client_quit = FALSE;
 
-    c->fd = accept(listen_fd, (struct sockaddr *) &addr, &addr_size);
+    c->fd = accept(fd, (struct sockaddr *) &addr, &addr_size);
     if (c->fd < 0){ 
         /* client died after it initiated connect and before we could accept 
          * Ref. Stevens, UNP p424 
@@ -970,10 +998,12 @@ void cli_pre_poll(xpollfd_t pfd)
 {
     ListIterator itr;
     Client *client;
+    int i;
 
-    if (listen_fd != NO_FD) {
-        assert(listen_fd >= 0);
-        xpollfd_set(pfd, listen_fd, XPOLLIN);
+    for (i = 0; i < listen_fds_len; i++) {
+        if (listen_fds[i] != NO_FD)
+            assert(listen_fds[i] >= 0);
+            xpollfd_set(pfd, listen_fds[i], XPOLLIN);
     }
 
     itr = list_iterator_create(cli_clients);
@@ -1004,9 +1034,13 @@ void cli_post_poll(xpollfd_t pfd)
 {
     ListIterator itr;
     Client *c;
+    int i;
 
-    if (listen_fd != NO_FD && xpollfd_revents(pfd, listen_fd) & XPOLLIN)
-        _create_client_socket();
+    for (i = 0; i < listen_fds_len; i++) {
+        if (listen_fds[i] != NO_FD)
+            if ((xpollfd_revents(pfd, listen_fds[i]) & XPOLLIN))
+                _create_client_socket(listen_fds[i]);
+    }
 
     itr = list_iterator_create(cli_clients);
     while ((c = list_next(itr))) {
@@ -1056,9 +1090,10 @@ client_dead:
 }
 
 /* hook so daemonization function can avoid closing our fd */
-int cli_listen_fd(void)
+void cli_listen_fds(int **fdsp, int *lenp)
 {
-    return listen_fd;
+    *fdsp = listen_fds;
+    *lenp = listen_fds_len;
 }
 
 bool cli_server_done(void)
