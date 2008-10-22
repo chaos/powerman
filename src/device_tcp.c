@@ -142,6 +142,32 @@ void tcp_destroy(void *data)
     xfree(tcp);
 }
 
+static bool tcp_finish_connect_one(Device *dev)
+{
+    int rc;
+    int error = 0;
+    socklen_t len = sizeof(error);
+    TcpDev *tcp = (TcpDev *)dev->data;
+
+    rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &error, &len);
+    /*
+     *  If an error occurred, Berkeley-derived implementations
+     *    return 0 with the pending error in 'error'.  But Solaris
+     *    returns -1 with the pending error in 'errno'.  -dun
+     */
+    if (rc < 0)
+        error = errno;
+    if (! error) {
+        if (!tcp->quiet)
+            err(FALSE, "tcp_finish_connect(%s): connected", dev->name);
+        dev->connect_state = DEV_CONNECTED;
+        dev->stat_successful_connects++;
+        _telnet_init(dev);
+        return TRUE;
+    }
+    return FALSE;
+}
+
 /* 
  * initiate connect to tcp->cur 
  */
@@ -150,8 +176,7 @@ static bool tcp_connect_next_addr(Device *dev)
     TcpDev *tcp = (TcpDev *)dev->data;
     int opt;
 
-    if (tcp->cur == NULL)
-        return FALSE;
+    assert(tcp->cur != NULL);
 
     if ((dev->fd = socket(tcp->cur->ai_family, tcp->cur->ai_socktype, 0)) < 0)
         return FALSE;
@@ -163,7 +188,7 @@ static bool tcp_connect_next_addr(Device *dev)
     nonblock_set(dev->fd);
 
     if (connect(dev->fd, tcp->cur->ai_addr, tcp->cur->ai_addrlen) >= 0)
-        return tcp_finish_connect(dev);
+        return tcp_finish_connect_one(dev);
     else if (errno == EINPROGRESS)
         return TRUE;
 
@@ -172,13 +197,12 @@ static bool tcp_connect_next_addr(Device *dev)
 }
 
 /*
- * Complete a non-blocking TCP connect.
+ * Continue TCP connect when fd unblocks.
+ * Return FALSE on error, which triggers timed retry of tcp_connect().
+ * Return TRUE if connected or still connecting on another address.
  */
 bool tcp_finish_connect(Device * dev)
 {
-    int rc;
-    int error = 0;
-    socklen_t len = sizeof(error);
     TcpDev *tcp;
 
     assert(dev->magic == DEV_MAGIC);
@@ -186,33 +210,33 @@ bool tcp_finish_connect(Device * dev)
 
     tcp = (TcpDev *)dev->data;
 
-    rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &error, &len);
-    /*
-     *  If an error occurred, Berkeley-derived implementations
-     *    return 0 with the pending error in 'error'.  But Solaris
-     *    returns -1 with the pending error in 'errno'.  -dun
-     */
-    if (rc < 0)
-        error = errno;
-    if (error) {
+    if (!tcp_finish_connect_one(dev)) {
+        tcp->cur = tcp->cur->ai_next;
         while (tcp->cur && !tcp_connect_next_addr(dev))
             tcp->cur = tcp->cur->ai_next;
         if (tcp->cur == NULL)
             dev->connect_state = DEV_NOT_CONNECTED;
-    } else {
-        if (!tcp->quiet)
-            err(FALSE, "tcp_finish_connect(%s): connected", dev->name);
-        dev->connect_state = DEV_CONNECTED;
-        dev->stat_successful_connects++;
-        _telnet_init(dev);
     }
-
-    return (dev->connect_state == DEV_CONNECTED);
+    switch(dev->connect_state) {
+        case DEV_NOT_CONNECTED:
+            err(FALSE, "tcp_finish_connect(%s): connection refused", dev->name);
+            break;
+        case DEV_CONNECTED:
+            if (!tcp->quiet)
+                err(FALSE, "tcp_finish_connect(%s): connected", dev->name);
+            break;
+        case DEV_CONNECTING:
+            if (!tcp->quiet)
+                err(FALSE, "tcp_finish_connect(%s): connecting", dev->name);
+            break;
+    }
+    return (dev->connect_state != DEV_NOT_CONNECTED);
 }
 
 /*
- * Initiate a non-blocking TCP connect.  tcp_finish_connect() will finish 
- * the job when the main poll() loop unblocks again, unless we finish here.
+ * Initiate a non-blocking TCP connect.  tcp_finish_connect() will try to 
+ * finish the job when the main poll() loop unblocks again, unless we 
+ * finish here.
  */
 bool tcp_connect(Device * dev)
 {

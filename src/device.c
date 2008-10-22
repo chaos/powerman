@@ -1427,8 +1427,8 @@ _handle_ready_device(Device *dev, short flags)
             assert(dev->finish_connect != NULL);
             if (!dev->finish_connect(dev))
                 goto ioerr;
-            assert(dev->connect_state == DEV_CONNECTED);
-            _enqueue_login(dev);    /* enqueue login if connected */
+            if (dev->connect_state == DEV_CONNECTED)
+                _enqueue_login(dev);    /* enqueue login if connected */
             goto success;           /* don't want to test read bit */
         } else {
             assert(dev->connect_state == DEV_CONNECTED);
