@@ -828,10 +828,10 @@ static void _listen_client(void)
 static void _create_client_socket(int fd)
 {
     Client *c;
-    struct sockaddr_in addr;
-    socklen_t addr_size = sizeof(struct sockaddr_in);
-    struct hostent *hent;
-    char buf[64];
+    struct sockaddr_storage addr;
+    socklen_t addr_size = sizeof(addr);
+    char hbuf[64], pbuf[6];
+    int error;
 
     /* create client data structure */
     c = (Client *) xmalloc(sizeof(Client));
@@ -845,7 +845,7 @@ static void _create_client_socket(int fd)
     c->ofd = NO_FD;
     c->client_quit = FALSE;
 
-    c->fd = accept(fd, (struct sockaddr *) &addr, &addr_size);
+    c->fd = accept(fd, (struct sockaddr *)&addr, &addr_size);
     if (c->fd < 0){ 
         /* client died after it initiated connect and before we could accept 
          * Ref. Stevens, UNP p424 
@@ -859,22 +859,22 @@ static void _create_client_socket(int fd)
         err_exit(TRUE, "accept");
     }
 
-    /* get c->ip */
-    if (inet_ntop(AF_INET, &addr.sin_addr, buf, sizeof(buf)) == NULL) {
+    if ((error = getnameinfo((struct sockaddr *)&addr, addr_size, 
+                             hbuf, sizeof(hbuf), pbuf, sizeof(pbuf), 
+                             NI_NUMERICHOST | NI_NUMERICSERV))) {
         _destroy_client(c);
-        err(TRUE, "_create_client: inet_ntop");
+        err(TRUE, "_create_client: getnameinfo: %s", gai_strerror(error));
         return;
     }
-    c->ip = xstrdup(buf);
-    c->port = ntohs(addr.sin_port);
+    c->ip   = xstrdup(hbuf);
+    c->port = strtoul(pbuf, NULL, 10);
 
-    /* get c->host */
-    if ((hent = gethostbyaddr((const char *) &addr.sin_addr,
-                              sizeof(struct in_addr), AF_INET)) == NULL) {
-        err(FALSE, "_create_client: gethostbyaddr failed");
-    } else {
-        c->host = xstrdup(hent->h_name);
-    }
+    if ((error = getnameinfo((struct sockaddr *)&addr, addr_size, 
+                             hbuf, sizeof(hbuf), NULL, 0, NI_NAMEREQD)))
+        err(FALSE, "_create_client: getnameinfo: %s", gai_strerror(error));
+    else
+        c->host = xstrdup(hbuf);
+
 #if HAVE_TCP_WRAPPERS
     /* get authorization from tcp wrappers */
     if (conf_get_use_tcp_wrappers()) {

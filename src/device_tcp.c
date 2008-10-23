@@ -168,17 +168,14 @@ static bool tcp_finish_connect_one(Device *dev)
     return FALSE;
 }
 
-/* 
- * initiate connect to tcp->cur 
- */
-static bool tcp_connect_next_addr(Device *dev)
+static bool tcp_connect_one(Device *dev, struct addrinfo *addr)
 {
     TcpDev *tcp = (TcpDev *)dev->data;
     int opt;
 
     assert(tcp->cur != NULL);
 
-    if ((dev->fd = socket(tcp->cur->ai_family, tcp->cur->ai_socktype, 0)) < 0)
+    if ((dev->fd = socket(addr->ai_family, addr->ai_socktype, 0)) < 0)
         return FALSE;
     opt = 1;
     if (setsockopt(dev->fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
@@ -187,7 +184,7 @@ static bool tcp_connect_next_addr(Device *dev)
     }
     nonblock_set(dev->fd);
 
-    if (connect(dev->fd, tcp->cur->ai_addr, tcp->cur->ai_addrlen) >= 0)
+    if (connect(dev->fd, addr->ai_addr, addr->ai_addrlen) >= 0)
         return tcp_finish_connect_one(dev);
     else if (errno == EINPROGRESS)
         return TRUE;
@@ -212,7 +209,7 @@ bool tcp_finish_connect(Device * dev)
 
     if (!tcp_finish_connect_one(dev)) {
         tcp->cur = tcp->cur->ai_next;
-        while (tcp->cur && !tcp_connect_next_addr(dev))
+        while (tcp->cur && !tcp_connect_one(dev, tcp->cur))
             tcp->cur = tcp->cur->ai_next;
         if (tcp->cur == NULL)
             dev->connect_state = DEV_NOT_CONNECTED;
@@ -249,7 +246,7 @@ bool tcp_connect(Device * dev)
     tcp = (TcpDev *)dev->data;
 
     dev->connect_state = DEV_CONNECTING;
-    while (tcp->cur && !tcp_connect_next_addr(dev))
+    while (tcp->cur && !tcp_connect_one(dev, tcp->cur))
         tcp->cur = tcp->cur->ai_next;
     if (tcp->cur == NULL)
         dev->connect_state = DEV_NOT_CONNECTED;
