@@ -29,11 +29,8 @@
 .SH NAME
 powerman \- power on/off nodes
 .SH SYNOPSIS
-.B powerman
-.I "[-option] [targets]"
-.br
 .B pm
-.I "[-option] [targets]"
+.I "[-options] -action [targets] [-action [targets] ...]"
 .SH DESCRIPTION
 .B powerman
 provides power management in a data center or compute cluster environment.  
@@ -43,22 +40,22 @@ Target hostnames are mapped to plugs on RPC devices in
 .I powerman.conf(5).
 .SH OPTIONS
 .TP
-.I "-1, --on"
+.I "-1, --on targets"
 Power ON targets.
 .TP
-.I "-0, --off"
+.I "-0, --off targets"
 Power OFF targets.
 .TP
-.I "-c, --cycle"
+.I "-c, --cycle targets"
 Power cycle targets.
 .TP
-.I "-r, --reset"
+.I "-r, --reset targets"
 Assert hardware reset for targets (if implemented by RPC).
 .TP
-.I "-f, --flash"
+.I "-f, --flash targets"
 Turn beacon ON for targets (if implemented by RPC).
 .TP
-.I "-u, --unflash"
+.I "-u, --unflash targets"
 Turn beacon OFF for targets (if implemented by RPC).
 .TP
 .I "-l, --list"
@@ -73,7 +70,7 @@ not be contacted (e.g. due to network failure) are reported as
 status "unknown".  If possible, output will be compressed into host
 ranges.
 .TP
-.I "-Q, --query"
+.I "-Q, --query targets"
 Query plug status of specific targets.
 .TP
 .I "-n, --soft-all"
@@ -81,13 +78,13 @@ Query soft power status of all targets (if implemented by RPC).
 In this context, a node in the OFF state could be ON at the plug but 
 operating in standby power mode.
 .TP
-.I "-N, --soft"
+.I "-N, --soft targets"
 Query soft power status of specific targets (if implemented by RPC).
 .TP
 .I "-b, --beacon-all"
 Query beacon status of all targets (if implemented by RPC).
 .TP
-.I "-B, --beacon"
+.I "-B, --beacon targets"
 Query beacon status of specific targets (if implemented by RPC).
 .TP
 .I "-t, --temp-all"
@@ -95,7 +92,7 @@ Query node temperature of all targets (if implemented by RPC).
 Temperature information is not interpreted by powerman and is reported
 as received from the RPC on one line per target, prefixed by target name.
 .TP
-.I "-P, --temp"
+.I "-P, --temp targets"
 Query node temperature of specific targets (if implemented by RPC).  
 .TP
 .I "-h, --help"
@@ -120,6 +117,11 @@ Useful for debugging device scripts.
 .TP
 .I "-x, --exprange"
 Expand host ranges in query responses.
+.TP
+.I "-g, --genders"
+If configured with the genders(3) package, this option tells powerman that
+targets are genders attributes that map to node names rather than the
+node names themselves.
 .SH "TARGET SPECIFICATION"
 .B powerman
 target hostnames may be specified as comma separated or space separated
