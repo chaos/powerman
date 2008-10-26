@@ -1,0 +1,9 @@
+on:      
+off:     t[0-15]
+unknown: 
+on:      
+off:     t1
+unknown: 
+on:      
+off:     t[3-5]
+unknown: 

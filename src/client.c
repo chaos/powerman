@@ -133,6 +133,7 @@ int deny_severity = LOG_WARNING;/* logging level for rejected reqs */
 static int *listen_fds;         /* powermand listen sockets */
 static int listen_fds_len = 0;  /* count of above sockets */
 static List cli_clients = NULL; /* list of clients */
+static bool one_client = FALSE; /* terminate after first client */
 static bool server_done = FALSE;/* true when stdio client exits */
 
 static int cli_id_seq = 1;      /* range 1...INT_MAX */
@@ -739,7 +740,7 @@ static void _destroy_client(Client *c)
     if (c->host)
         xfree(c->host);
     xfree(c);
-    if (listen_fds_len == 0) /* case of one stdio client */
+    if (one_client)
         server_done = TRUE;
 }
 
@@ -1101,12 +1102,13 @@ bool cli_server_done(void)
     return server_done;
 }
 
-void cli_start(bool use_stdio)
+void cli_start(bool use_stdio, bool oc)
 {
     if (use_stdio)
         _create_client_stdio();
     else
         _listen_client();
+    one_client = oc;
 }
 
 /*

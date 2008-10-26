@@ -66,7 +66,7 @@ static void _noop_handler(int signum);
 static void _exit_handler(int signum);
 static void _select_loop(void);
 
-#define OPTIONS "c:fhd:VsRY"
+#define OPTIONS "c:fhd:VsRY1"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
@@ -78,6 +78,7 @@ static const struct option longopts[] = {
     {"stdio",           no_argument,        0, 's'},
     {"force-notroot",   no_argument,        0, 'R'},
     {"short-circuit-delay", no_argument,    0, 'Y'},
+    {"one-client",      no_argument,        0, '1'},
     {0, 0, 0, 0}
 };
 #else
@@ -92,6 +93,7 @@ int main(int argc, char **argv)
     bool use_stdio = FALSE;
     bool force_notroot = FALSE;
     bool short_circuit_delay = FALSE;
+    bool one_client = FALSE;
 
     /* parse command line options */
     err_init(argv[0]);
@@ -125,9 +127,13 @@ int main(int argc, char **argv)
             break;
         case 's': /* --stdio */
             use_stdio = TRUE;
+            one_client = TRUE;
             break;
         case 'R': /* --force-notroot */
             force_notroot = TRUE;
+            break;
+        case '1': /* --one-client */
+            one_client = TRUE;
             break;
         case 'h': /* --help */
         default:
@@ -159,7 +165,7 @@ int main(int argc, char **argv)
     xsignal(SIGINT, _exit_handler);
     xsignal(SIGPIPE, SIG_IGN);
 
-    cli_start(use_stdio);
+    cli_start(use_stdio, one_client);
 
     if (daemonize) {
         char *run_dir = hsprintf("%s/run/powerman", X_LOCALSTATEDIR);
@@ -187,6 +193,7 @@ static void _usage(char *prog)
     printf("  -V --version           Report powerman version\n");
     printf("  -s --stdio             Talk to client on stdin/stdout\n");
     printf("  -R --force-notroot     Allow powermand to run as non-root\n");
+    printf("  -1 --one-client        Terminate when client disconnects\n");
     exit(0);
 }
 

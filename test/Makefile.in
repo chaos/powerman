@@ -60,7 +60,8 @@ CONFIG_CLEAN_FILES =
 am__objects_1 = xread.$(OBJEXT) error.$(OBJEXT) debug.$(OBJEXT) \
 	pluglist.$(OBJEXT) hostlist.$(OBJEXT) hash.$(OBJEXT) \
 	list.$(OBJEXT) hprintf.$(OBJEXT) xregex.$(OBJEXT) \
-	xmalloc.$(OBJEXT) argv.$(OBJEXT)
+	xmalloc.$(OBJEXT) argv.$(OBJEXT) xpoll.$(OBJEXT) \
+	xpty.$(OBJEXT)
 am_baytech_OBJECTS = baytech.$(OBJEXT) $(am__objects_1)
 baytech_OBJECTS = $(am_baytech_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -236,7 +237,7 @@ target_vendor = @target_vendor@
 TESTS_ENVIRONMENT = env "PATH_POWERMAN=$(top_builddir)/src/powerman" \
 	"PATH_POWERMAND=$(top_builddir)/src/powermand" \
 	"PATH_ETC=$(top_builddir)/etc"
-TESTS = t00 t01 t02 t03 t04 t05 t06 t07 t08 t09 t10 t11 t12 t13 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39 t40 t41 t42 t43 t44 t45 t46 t47
+TESTS = t00 t01 t02 t03 t04 t05 t06 t07 t08 t09 t10 t11 t12 t13 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39 t40 t41 t42 t43 t44 t45 t46 t47 t48
 CLEANFILES = *.out *.err *.diff
 common_sources = \
 	$(top_srcdir)/src/xread.c \
@@ -249,7 +250,9 @@ common_sources = \
 	$(top_srcdir)/src/hprintf.c \
 	$(top_srcdir)/src/xregex.c \
 	$(top_srcdir)/src/xmalloc.c \
-	$(top_srcdir)/src/argv.c
+	$(top_srcdir)/src/argv.c \
+	$(top_srcdir)/src/xpoll.c \
+	$(top_srcdir)/src/xpty.c
 
 AM_CFLAGS = -I$(top_srcdir)/src
 vpcd_SOURCES = vpcd.c $(common_sources)
@@ -376,6 +379,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tregex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpcd.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xmalloc.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xpoll.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xpty.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xread.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xregex.Po@am__quote@
 
@@ -546,6 +551,34 @@ argv.obj: $(top_srcdir)/src/argv.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/argv.c' object='argv.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o argv.obj `if test -f '$(top_srcdir)/src/argv.c'; then $(CYGPATH_W) '$(top_srcdir)/src/argv.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/argv.c'; fi`
+
+xpoll.o: $(top_srcdir)/src/xpoll.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xpoll.o -MD -MP -MF "$(DEPDIR)/xpoll.Tpo" -c -o xpoll.o `test -f '$(top_srcdir)/src/xpoll.c' || echo '$(srcdir)/'`$(top_srcdir)/src/xpoll.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/xpoll.Tpo" "$(DEPDIR)/xpoll.Po"; else rm -f "$(DEPDIR)/xpoll.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/xpoll.c' object='xpoll.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xpoll.o `test -f '$(top_srcdir)/src/xpoll.c' || echo '$(srcdir)/'`$(top_srcdir)/src/xpoll.c
+
+xpoll.obj: $(top_srcdir)/src/xpoll.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xpoll.obj -MD -MP -MF "$(DEPDIR)/xpoll.Tpo" -c -o xpoll.obj `if test -f '$(top_srcdir)/src/xpoll.c'; then $(CYGPATH_W) '$(top_srcdir)/src/xpoll.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/xpoll.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/xpoll.Tpo" "$(DEPDIR)/xpoll.Po"; else rm -f "$(DEPDIR)/xpoll.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/xpoll.c' object='xpoll.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xpoll.obj `if test -f '$(top_srcdir)/src/xpoll.c'; then $(CYGPATH_W) '$(top_srcdir)/src/xpoll.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/xpoll.c'; fi`
+
+xpty.o: $(top_srcdir)/src/xpty.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xpty.o -MD -MP -MF "$(DEPDIR)/xpty.Tpo" -c -o xpty.o `test -f '$(top_srcdir)/src/xpty.c' || echo '$(srcdir)/'`$(top_srcdir)/src/xpty.c; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/xpty.Tpo" "$(DEPDIR)/xpty.Po"; else rm -f "$(DEPDIR)/xpty.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/xpty.c' object='xpty.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xpty.o `test -f '$(top_srcdir)/src/xpty.c' || echo '$(srcdir)/'`$(top_srcdir)/src/xpty.c
+
+xpty.obj: $(top_srcdir)/src/xpty.c
+@am__fastdepCC_TRUE@	if $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT xpty.obj -MD -MP -MF "$(DEPDIR)/xpty.Tpo" -c -o xpty.obj `if test -f '$(top_srcdir)/src/xpty.c'; then $(CYGPATH_W) '$(top_srcdir)/src/xpty.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/xpty.c'; fi`; \
+@am__fastdepCC_TRUE@	then mv -f "$(DEPDIR)/xpty.Tpo" "$(DEPDIR)/xpty.Po"; else rm -f "$(DEPDIR)/xpty.Tpo"; exit 1; fi
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$(top_srcdir)/src/xpty.c' object='xpty.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o xpty.obj `if test -f '$(top_srcdir)/src/xpty.c'; then $(CYGPATH_W) '$(top_srcdir)/src/xpty.c'; else $(CYGPATH_W) '$(srcdir)/$(top_srcdir)/src/xpty.c'; fi`
 uninstall-info-am:
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)

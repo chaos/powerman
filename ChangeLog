@@ -1,3 +1,13 @@
+2008-10-26 Jim Garlick <garlick@llnl.gov>
+
+	* test/vpcd.c : Add -p port option and code to accept a connection
+	on the specified socket.
+
+	* test/t48 : Simple test using socket between powermand and vpcd.
+
+	* src/powermand.c, src/client.[ch] : Added --one-client option for 
+	testing.
+
 2008-10-22 Jim Garlick <garlick@llnl.gov>
 
 	* src/client.c : Additional changes for IPv6 support.

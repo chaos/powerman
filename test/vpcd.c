@@ -39,14 +39,19 @@
 #include <errno.h>
 #include <stdarg.h>
 #include <libgen.h>
+#include <sys/socket.h>
+#include <netdb.h>
 
+#include "xmalloc.h"
 #include "xread.h"
+#include "xpoll.h"
 
 static void usage(void);
 static void _noop_handler(int signum);
 static void _spew_one(int linenum);
 static void _spew(int lines);
 static void _prompt_loop(void);
+static void _setup_socket(char *port);
 
 #define NUM_PLUGS   16
 static int plug[NUM_PLUGS];
@@ -56,10 +61,11 @@ static int logged_in = 0;
 
 static char *prog;
 
-#define OPTIONS ""
+#define OPTIONS "p:"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
+    {"port", required_argument, 0, 'p'},
     {0, 0, 0, 0},
 };
 #else
@@ -70,11 +76,15 @@ int
 main(int argc, char *argv[])
 {
     int i, c;
+    char *port = NULL;
 
     prog = basename(argv[0]);
 
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
+            case 'p':   /* --port n */
+                port = xstrdup(optarg);
+                break;
             default:
                 usage();
         }
@@ -86,6 +96,9 @@ main(int argc, char *argv[])
         perror("signal");
         exit(1);
     }
+
+    if (port)
+        _setup_socket(port);
 
     for (i = 0; i < NUM_PLUGS; i++) {
         plug[i] = 0;
@@ -108,6 +121,118 @@ static void
 _noop_handler(int signum)
 {
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
+}
+
+/* Return with stdin/stdout reopened as a connected socket.
+ */
+#define LISTEN_BACKLOG 5
+static void 
+_setup_socket(char *serv)
+{
+    struct addrinfo hints, *res, *r;
+    int *fds, fd, fdlen, saved_errno, count, error, i, opt;
+    char *what;
+    xpollfd_t pfd;
+    struct sockaddr_storage addr;
+    socklen_t addr_size = sizeof(addr); 
+
+    /* get addresses to listen on for this port */
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = PF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+    hints.ai_flags = AI_PASSIVE;
+    if ((error = getaddrinfo(NULL, serv, &hints, &res))) {
+        fprintf(stderr, "getaddrinfo: %s\n", gai_strerror(error));
+        exit(1);
+    }
+    if (res == NULL) {
+        fprintf(stderr, "getaddrinfo: no address to bind to\n");
+        exit(1);
+    }
+
+    /* allocate array of listen fd's */
+    fdlen = 0;
+    for (r = res; r != NULL; r = r->ai_next)
+       fdlen++;
+    fds = (int *)xmalloc(sizeof(int) * fdlen);
+
+    /* bind fds to addresses and listen */
+    count = 0;
+    saved_errno = 0;
+    for (r = res, i = 0; r != NULL; r = r->ai_next, i++) {
+        fds[i] = -1;
+        if ((fd = socket(r->ai_family, r->ai_socktype, 0)) < 0) {
+            saved_errno = errno;
+            what = "socket";
+            continue;
+        }
+        opt = 1;
+        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
+            saved_errno = errno;
+            what = "setsockopt";
+            close(fd);
+            continue;
+        }
+        nonblock_set(fd);
+        if (bind(fd, r->ai_addr, r->ai_addrlen) < 0) {
+            saved_errno = errno;
+            what = "bind";
+            close(fd);
+            continue;
+        }
+        if (listen(fd, LISTEN_BACKLOG) < 0) {
+            saved_errno = errno;
+            what = "listen";
+            close(fd);
+            continue;
+        }
+        fds[i] = fd;
+        count++;
+    }
+    freeaddrinfo(res);
+    if (count == 0) {
+        fprintf(stderr, "%s: %s\n", what, strerror(saved_errno));
+        exit(1);
+    }
+
+    /* accept a connection on 'fd' */
+    pfd = xpollfd_create();
+    fd = -1;
+    while (fd == -1) {
+        xpollfd_zero(pfd); 
+        for (i = 0; i < fdlen; i++) {
+            if (fds[i] != -1)
+                xpollfd_set(pfd, fds[i], XPOLLIN);
+        }
+        (void)xpoll(pfd, NULL);
+        for (i = 0; i < fdlen; i++) {
+            if (xpollfd_revents (pfd, fds[i]) | XPOLLIN) {
+                fd = accept(fds[i], (struct sockaddr *)&addr, &addr_size);
+                if (fd < 0) {
+                    fprintf(stderr, "accept: %s\n", strerror(errno));
+                    exit(1);
+                }
+                break;
+            }
+        }
+    }      
+    xpollfd_destroy(pfd);
+    for (i = 0; i < fdlen; i++) {
+        if (fds[i] != -1 && fds[i] != fd)
+            close(fds[i]);
+    }
+
+    /* dup socket to stdio */
+    (void)close(0);
+    if (dup2(fd, 0) < 0) {
+        fprintf(stderr, "dup2(stdin): %s\n", strerror(errno));
+        exit(1);
+    }
+    (void)close(1);
+    if (dup2(fd, 1) < 0) {
+        fprintf(stderr, "dup2(stdout): %s\n", strerror(errno));
+        exit(1);
+    }
 }
 
 #define SPEW \

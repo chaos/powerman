@@ -106,4 +106,5 @@ t46
 	Test cyclades pm8/pm10 using cyclades.c
 t47
 	Test FreeIPMI ipmipower using ipmipower.c
-
+t48
+	Run some simple vpcd tests using sockets.
