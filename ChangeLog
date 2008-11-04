@@ -4,7 +4,7 @@
 
 	* etc/cyclades-pm20.dev : New [Scott Burns].
 
-	* etc/cyclades-pm[8,10,42] : Added temperature script [Scott Burns].
+	* etc/cyclades-pm[8,10,42].dev : Added temp script [Scott Burns].
 
 	* test/t46, test/cyclades.c : Added PM20.
 

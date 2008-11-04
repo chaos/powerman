@@ -147,7 +147,6 @@ static bool tcp_finish_connect_one(Device *dev)
     int rc;
     int error = 0;
     socklen_t len = sizeof(error);
-    TcpDev *tcp = (TcpDev *)dev->data;
 
     rc = getsockopt(dev->fd, SOL_SOCKET, SO_ERROR, &error, &len);
     /*
@@ -158,8 +157,6 @@ static bool tcp_finish_connect_one(Device *dev)
     if (rc < 0)
         error = errno;
     if (! error) {
-        if (!tcp->quiet)
-            err(FALSE, "tcp_finish_connect(%s): connected", dev->name);
         dev->connect_state = DEV_CONNECTED;
         dev->stat_successful_connects++;
         _telnet_init(dev);
