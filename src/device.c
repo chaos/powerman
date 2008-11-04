@@ -1117,9 +1117,10 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
 static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
 {
     bool finished = FALSE;
+    char *str;
 
     xregex_match_recycle(dev->xmatch);
-    if ((_getregex_buf(dev->from, e->cur->u.expect.exp, dev->xmatch))) {
+    if ((str = _getregex_buf(dev->from, e->cur->u.expect.exp, dev->xmatch))) {
         if (act->vpf_fun) {
             char *matchstr = xregex_match_strdup(dev->xmatch);
             char *memstr = dbg_memstr(matchstr, strlen(matchstr));
@@ -1129,6 +1130,7 @@ static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
             xfree(memstr);
             xfree(matchstr);
         }
+        xfree(str);
         finished = TRUE;
     } 
     return finished;

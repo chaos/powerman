@@ -1,10 +1,10 @@
 #
-# Cyclades PM8/PM8i s/w v. 1.0.9a
+# Cyclades PM20 
 #
-specification "pm8" {
-	timeout 	10
-	pingperiod      60
-	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
+specification "pm20" {
+	timeout 	25
+	pingperiod	60
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15" "16" "17" "18" "19" "20" }
 
 	script login {
 		expect "Username: "
@@ -18,7 +18,7 @@ specification "pm8" {
                 expect "pm>"
         }
 	script status_all {
-		send "status 1-8\n"
+		send "status 1-20\n"
 		expect "Users"
 		foreachplug {
 			expect "([0-9]+)[[:space:]]+Unlocked (ON|OFF)"
@@ -32,7 +32,7 @@ specification "pm8" {
 		expect "pm>"
 	}
 	script on_all {
-		send "on 1-8\n"
+		send "on 1-20\n"
 		foreachplug {
 			expect "Outlet turned on."
 		}
@@ -44,7 +44,7 @@ specification "pm8" {
 		expect "pm>"
 	}
 	script off_all {
-		send "off 1-8\n"
+		send "off 1-20\n"
 		foreachplug {
 			expect "Outlet turned off."
 		}
@@ -60,13 +60,13 @@ specification "pm8" {
 		expect "pm>"
 	}
 	script cycle_all {
-		send "off 1-8\n"
+		send "off 1-20\n"
 		foreachplug {
 			expect "Outlet turned off."
 		}
 		expect "pm>"
 		delay 4
-		send "on 1-8\n"
+		send "on 1-20\n"
 		foreachplug {
 			expect "Outlet turned on."
 		}
@@ -83,5 +83,18 @@ specification "pm8" {
 		setplugstate "6" $1
 		setplugstate "7" $1
 		setplugstate "8" $1
+		setplugstate "9" $1
+		setplugstate "10" $1
+		setplugstate "11" $1
+		setplugstate "12" $1
+		setplugstate "13" $1
+		setplugstate "14" $1
+		setplugstate "15" $1
+		setplugstate "16" $1
+		setplugstate "17" $1
+		setplugstate "18" $1
+		setplugstate "19" $1
+		setplugstate "20" $1
 	}
 }
+

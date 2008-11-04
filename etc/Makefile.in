@@ -187,6 +187,7 @@ DEVFILES = \
 	cb-7050.dev \
 	cyclades-pm8.dev \
 	cyclades-pm10.dev \
+	cyclades-pm20.dev \
 	cyclades-pm42.dev \
 	dli.dev \
 	hp3488.dev \

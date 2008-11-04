@@ -1,3 +1,13 @@
+2008-11-04 Jim Garlick <garlick@llnl.gov>
+
+	* src/device.c : Fix memory leak [Scott Burns].
+
+	* etc/cyclades-pm20.dev : New [Scott Burns].
+
+	* etc/cyclades-pm[8,10,42] : Added temperature script [Scott Burns].
+
+	* test/t46, test/cyclades.c : Added PM20.
+
 2008-11-03 Jim Garlick <garlick@llnl.gov>
 
 	* test/vpcd.c : Fix logic error.

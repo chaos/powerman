@@ -23,7 +23,7 @@ static void usage(void);
 static void _noop_handler(int signum);
 static void _prompt_loop(void);
 
-typedef enum { NONE, PM8, PM10, PM42 } cytype_t;
+typedef enum { NONE, PM8, PM10, PM20, PM42 } cytype_t;
 
 static char *prog;
 static cytype_t personality = NONE;
@@ -52,6 +52,8 @@ main(int argc, char *argv[])
                     personality = PM8;
                 else if (strcmp(optarg, "pm10") == 0)
                     personality = PM10;
+                else if (strcmp(optarg, "pm20") == 0)
+                    personality = PM20;
                 else if (strcmp(optarg, "pm42") == 0)
                     personality = PM42;
                 else
@@ -78,7 +80,7 @@ main(int argc, char *argv[])
 static void 
 usage(void)
 {
-    fprintf(stderr, "Usage: %s -p pm8|pm10|pm42\n", prog);
+    fprintf(stderr, "Usage: %s -p pm8|pm10|pm20|pm42\n", prog);
     exit(1);
 }
 
@@ -174,6 +176,29 @@ NOTE: To get detailed help on the commands listed above type\n\
  9                              Unlocked %s\n\
 10                              Unlocked %s\n"
 
+#define STATUS_TMPL_PM20 "\
+ Outlet         Name            Status          Users\n\
+ 1                              Unlocked %s\n\
+ 2                              Unlocked %s\n\
+ 3                              Unlocked %s\n\
+ 4                              Unlocked %s\n\
+ 5                              Unlocked %s\n\
+ 6                              Unlocked %s\n\
+ 7                              Unlocked %s\n\
+ 8                              Unlocked %s\n\
+ 9                              Unlocked %s\n\
+10                              Unlocked %s\n\
+ 11                             Unlocked %s\n\
+ 12                             Unlocked %s\n\
+ 13                             Unlocked %s\n\
+ 14                             Unlocked %s\n\
+ 15                             Unlocked %s\n\
+ 16                             Unlocked %s\n\
+ 17                             Unlocked %s\n\
+ 18                             Unlocked %s\n\
+ 19                             Unlocked %s\n\
+ 20                             Unlocked %s\n"
+
 #define STATUS_TMPL_PM42 "\
  Outlet Name                    Status          Interval (s)    Users\n\
  1                              Unlocked %s    0.0\n\
@@ -248,6 +273,9 @@ _prompt_loop(void)
         case PM10:
             num_plugs = 10;
             break;
+        case PM20:
+            num_plugs = 20;
+            break;
         case PM42:
             num_plugs = 42;
             break;
@@ -281,15 +309,22 @@ login_again:
         } else if (!strcmp(buf, "help")) {
             printf(personality == PM42 ? HELP_MSG2 : HELP_MSG); 
         } else if (!strcmp(buf, status_all)) {
-            if (personality == PM10) {
-                printf(STATUS_TMPL_PM10, 
-                       plug[0],  plug[1],  plug[2],  plug[3],
-                       plug[4],  plug[5],  plug[6],  plug[7],
-                       plug[8],  plug[9],  plug[10]);
-            } else if (personality == PM8) {
+            if (personality == PM8) {
                 printf(STATUS_TMPL_PM8, 
                        plug[0],  plug[1],  plug[2],  plug[3],
                        plug[4],  plug[5],  plug[6],  plug[7]);
+            } else if (personality == PM10) {
+                printf(STATUS_TMPL_PM10, 
+                       plug[0],  plug[1],  plug[2],  plug[3],
+                       plug[4],  plug[5],  plug[6],  plug[7],
+                       plug[8],  plug[9]);
+            } else if (personality == PM20) {
+                printf(STATUS_TMPL_PM20, 
+                       plug[0],  plug[1],  plug[2],  plug[3],
+                       plug[4],  plug[5],  plug[6],  plug[7], 
+                       plug[8],  plug[9],  plug[10], plug[11],
+                       plug[12], plug[13], plug[14], plug[15],
+                       plug[16], plug[17], plug[18], plug[19]);
             } else if (personality == PM42) {
                 printf(STATUS_TMPL_PM42, 
                        plug[0],  plug[1],  plug[2],  plug[3],

@@ -72,4 +72,18 @@ specification "pm10" {
 		}
 		expect "pm>"
 	}
+	script status_temp_all {
+		send "temperature\n"
+		expect "IPDU #1: Temperature: ([0-9.]+)"
+		setplugstate "1" $1
+		setplugstate "2" $1
+		setplugstate "3" $1
+		setplugstate "4" $1
+		setplugstate "5" $1
+		setplugstate "6" $1
+		setplugstate "7" $1
+		setplugstate "8" $1
+		setplugstate "9" $1
+		setplugstate "10" $1
+	}
 }
