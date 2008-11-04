@@ -115,6 +115,9 @@ void *tcp_create(char *host, char *port, char *flags)
     if (flags)
         _parse_options(tcp, flags);
 
+    /* Store a list of possible addresses/families to connect to
+     * in the tcp->addrs linked list.
+     */
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = PF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
@@ -142,6 +145,9 @@ void tcp_destroy(void *data)
     xfree(tcp);
 }
 
+/* After a successful connect, perform some management on
+ * the connection.  Returns TRUE on success, FALSE on error.
+ */
 static bool tcp_finish_connect_one(Device *dev)
 {
     int rc;
@@ -165,6 +171,9 @@ static bool tcp_finish_connect_one(Device *dev)
     return FALSE;
 }
 
+/* Obtain a socket for the specified address and attempt to connect it.
+ * Return TRUE on completion or connection in progress, FALSE on error.
+ */
 static bool tcp_connect_one(Device *dev, struct addrinfo *addr)
 {
     TcpDev *tcp = (TcpDev *)dev->data;
@@ -193,7 +202,7 @@ static bool tcp_connect_one(Device *dev, struct addrinfo *addr)
 /*
  * Continue TCP connect when fd unblocks.
  * Return FALSE on error, which triggers timed retry of tcp_connect().
- * Return TRUE if connected or still connecting on another address.
+ * Return TRUE if connected or still connecting (on the next address).
  */
 bool tcp_finish_connect(Device * dev)
 {
