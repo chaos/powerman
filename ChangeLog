@@ -1,3 +1,7 @@
+2008-11-03 Jim Garlick <garlick@llnl.gov>
+
+	* test/vpcd.c : Fix logic error.
+
 2008-10-26 Jim Garlick <garlick@llnl.gov>
 
 	* test/vpcd.c : Add -p port option and code to accept a connection

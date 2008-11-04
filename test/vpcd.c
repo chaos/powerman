@@ -134,7 +134,8 @@ _setup_socket(char *serv)
     char *what;
     xpollfd_t pfd;
     struct sockaddr_storage addr;
-    socklen_t addr_size = sizeof(addr); 
+    socklen_t addr_size;
+    short flags;
 
     /* get addresses to listen on for this port */
     memset(&hints, 0, sizeof(hints));
@@ -173,7 +174,6 @@ _setup_socket(char *serv)
             close(fd);
             continue;
         }
-        nonblock_set(fd);
         if (bind(fd, r->ai_addr, r->ai_addrlen) < 0) {
             saved_errno = errno;
             what = "bind";
@@ -204,15 +204,26 @@ _setup_socket(char *serv)
             if (fds[i] != -1)
                 xpollfd_set(pfd, fds[i], XPOLLIN);
         }
-        (void)xpoll(pfd, NULL);
+        if (xpoll(pfd, NULL) < 0) {
+            fprintf(stderr, "poll: %s\n", strerror(errno));
+            exit(1);
+        }
         for (i = 0; i < fdlen; i++) {
-            if (xpollfd_revents (pfd, fds[i]) | XPOLLIN) {
-                fd = accept(fds[i], (struct sockaddr *)&addr, &addr_size);
-                if (fd < 0) {
-                    fprintf(stderr, "accept: %s\n", strerror(errno));
-                    exit(1);
+            if (fds[i] != -1) {
+                flags = xpollfd_revents(pfd, fds[i]);
+                if ((flags & (XPOLLERR|XPOLLHUP|XPOLLNVAL))) {
+                        fprintf(stderr, "poll: error on fd %d\n", fds[i]);
+                        exit(1);
                 }
-                break;
+                if ((flags & XPOLLIN)) {
+                    addr_size = sizeof(addr);
+                    fd = accept(fds[i], (struct sockaddr *)&addr, &addr_size);
+                    if (fd < 0) {
+                        fprintf(stderr, "accept: %s\n", strerror(errno));
+                        exit(1);
+                    }
+                    break;
+                }
             }
         }
     }      
