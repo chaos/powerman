@@ -1,3 +1,8 @@
+2008-11-05 Jim Garlick <garlick@llnl.gov>
+
+	* scripts/Makefile.am : Fix a typo in install command
+	line that broke on Solaris.
+
 2008-11-04 Jim Garlick <garlick@llnl.gov>
 
 	* src/device.c : Fix memory leak [Scott Burns].
