@@ -95,6 +95,7 @@ AC_CONFIG_FILES( \
   etc/Makefile \
   man/Makefile \
   scripts/Makefile \
+  scripts/powerman.init \
   test/Makefile \
 )
 AC_OUTPUT

@@ -1,3 +1,8 @@
+2008-11-06 Jim Garlick <garlick@llnl.gov>
+
+	* scripts/powerman.init.in : Replace old powerman.init
+	with Chris Dunlap's portable init script (lifted fron ConMan).
+
 2008-11-05 Jim Garlick <garlick@llnl.gov>
 
 	* scripts/Makefile.am : Fix a typo in install command
