@@ -60,26 +60,17 @@ make install DESTDIR=$RPM_BUILD_ROOT
 rm -rf $RPM_BUILD_ROO
 
 %post
-if [ -x %{_sysconfdir}/init.d/powerman ]; then
-  if %{_sysconfdir}/init.d/powerman status | grep running >/dev/null 2>&1; then
-    %{_sysconfdir}/init.d/powerman stop
-    WASRUNNING=1
-  fi
-  [ -x /sbin/chkconfig ] && /sbin/chkconfig --del powerman
-  [ -x /sbin/chkconfig ] && /sbin/chkconfig --add powerman
-  if test x$WASRUNNING = x1; then
-    %{_sysconfdir}/init.d/powerman start
-  fi
-fi
+if [ -x /sbin/chkconfig ]; then /sbin/chkconfig --add powerman; fi
 
 %preun
 if [ "$1" = 0 ]; then
-  if [ -x %{_sysconfdir}/init.d/powerman ]; then
-    [ -x /sbin/chkconfig ] && /sbin/chkconfig --del powerman
-    if %{_sysconfdir}/init.d/powerman status | grep running >/dev/null 2>&1; then
-      %{_sysconfdir}/init.d/powerman stop
-    fi
-  fi
+  %{_sysconfdir}/init.d/powerman stop >/dev/null 2>&1 || :
+  if [ -x /sbin/chkconfig ]; then /sbin/chkconfig --del powerman; fi
+fi
+
+%postun
+if [ "$1" -ge 1 ]; then
+  %{_sysconfdir}/init.d/powerman condrestart >/dev/null 2>&1 || :
 fi
 
 %files
@@ -98,6 +89,7 @@ fi
 %{_sbindir}/plmpower
 %dir %config %{_sysconfdir}/powerman
 %{_sysconfdir}/powerman/*.dev
+%config(noreplace) %{_sysconfdir}/powerman/powerman.conf
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man7/*

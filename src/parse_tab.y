@@ -152,7 +152,7 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 %%
 /* Grammar Rules for the powerman.conf config file */
 
-configuration_file : spec_list config_list
+configuration_file : config_list
 ;
 /**************************************************************/
 /* config_list                                                */
@@ -160,12 +160,14 @@ configuration_file : spec_list config_list
 
 config_list     : config_list config_item
                 | config_item
+                |
 ;
 config_item     : client_port 
                 | TCP_wrappers 
                 | device
                 | node
                 | alias
+                | spec
 ;
 TCP_wrappers    : TOK_TCP_WRAPPERS         { 
     _warnmsg("'tcpwrappers' without yes|no"); 
@@ -200,9 +202,6 @@ alias           : TOK_ALIAS TOK_STRING_VAL TOK_STRING_VAL {
 /**************************************************************/
 /* specifications                                             */
 /**************************************************************/
-spec_list       : spec_list spec
-                | spec
-;
 spec            : TOK_SPEC TOK_STRING_VAL TOK_BEGIN 
                   spec_item_list 
                   TOK_END {

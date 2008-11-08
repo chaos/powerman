@@ -1,7 +1,16 @@
+2008-11-07 Jim Garlick <garlick@llnl.gov>
+
+	* src/parse_tab.y : Relax order of types of config entries.
+
+	* etc/powerman.conf : Config file example.
+
 2008-11-06 Jim Garlick <garlick@llnl.gov>
 
 	* scripts/powerman.init.in : Replace old powerman.init
 	with Chris Dunlap's portable init script (lifted fron ConMan).
+
+	* powerman.spec : Make crufty %post, %preun, %postun scripts
+	look more like ConMan's.
 
 2008-11-05 Jim Garlick <garlick@llnl.gov>
 

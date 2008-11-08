@@ -4,6 +4,9 @@
 ## Process this file with automake to produce Makefile.in.
 ##*****************************************************************************
 
+CONFFILE = \
+	powerman.conf
+
 DEVFILES = \
 	apc7900.dev \
 	apc.dev \
@@ -43,6 +46,9 @@ install-data-local:
 	for file in $(DEVFILES); do \
 		$(top_srcdir)/config/install-sh -m 644 $(srcdir)/$$file $(DESTDIR)$(sysconfdir)/powerman; \
 	done
+	if ! test -f $(DESTDIR)$(sysconfdir)/powerman/powerman.conf; then \
+		$(top_srcdir)/config/install-sh -m 644 $(srcdir)/powerman.conf $(DESTDIR)$(sysconfdir)/powerman; \
+	fi
 
 uninstall-local:
 	$(RM) -f $(DESTDIR)$(sysconfdir)/powerman
