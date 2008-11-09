@@ -541,7 +541,7 @@ static int _connect_to_server_tcp(char *host, char *port)
         break; /* success! */
     }
     if (r == NULL)
-        err_exit(FALSE, "could not bind to address %s:%s", host, port);
+        err_exit(FALSE, "could not connect to address %s:%s", host, port);
 
     freeaddrinfo(res);
     return fd;
