@@ -137,6 +137,12 @@ static bool _validate_config(void)
     }
     list_iterator_destroy(itr);
 
+    /* make sure there is at least one node defined */
+    if (hostlist_is_empty(conf_nodes)) {
+        err(FALSE, "no nodes are defined");
+        valid = FALSE;
+    }
+
     return valid;
 }
 

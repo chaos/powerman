@@ -1,4 +1,10 @@
-2008-11-07 Jim Garlick <garlick@llnl.gov>
+2008-11-11 Jim Garlick <garlick@llnl.gov>
+
+	* parse_util.c : Declare config invalid if no nodes are defined.
+
+	* etc/ibmh8.dev : Removed.
+
+008-11-07 Jim Garlick <garlick@llnl.gov>
 
 	* src/parse_tab.y : Relax order of types of config entries.
 
