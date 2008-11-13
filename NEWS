@@ -1,4 +1,16 @@
 =========================================================================
+Release Notes for PowerMan version 2.3                        12 Nov 2008
+=========================================================================
+
+* Make init script work on Solaris.
+
+* IPv6 support.
+
+* Include example powerman.conf file (/etc/powerman/powerman.conf.example)
+
+* Added support for Cyclades PM20, PM42.
+
+=========================================================================
 Release Notes for PowerMan version 2.2                        27 Aug 2008
 =========================================================================
 

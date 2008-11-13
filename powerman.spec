@@ -89,7 +89,7 @@ fi
 %{_sbindir}/plmpower
 %dir %config %{_sysconfdir}/powerman
 %{_sysconfdir}/powerman/*.dev
-%config(noreplace) %{_sysconfdir}/powerman/powerman.conf
+%{_sysconfdir}/powerman/powerman.conf.example
 %{_mandir}/man1/*
 %{_mandir}/man5/*
 %{_mandir}/man7/*
