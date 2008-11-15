@@ -5,7 +5,8 @@
 #
 # Tested the following firmware versions:
 #   RPC3-NC Series (C) 2002 by BayTech F4.00
-#   RPC-3/4(A)DE Series (C) 2004 BayTech F1.08 (req. powerman 1.0.24 telnet)
+#   RPC-3/4(A)DE Series (C) 2004 BayTech F1.08
+#   RPC-3/4(A)DE Series (C) 2004 BayTech F1.09
 # 
 # Note:
 #   Type ";;;;;" to access "network interface module".
