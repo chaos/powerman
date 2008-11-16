@@ -9,6 +9,9 @@
 /* Define if you have curses.h */
 #undef HAVE_CURSES_H
 
+/* Define to 1 if you have the <dlfcn.h> header file. */
+#undef HAVE_DLFCN_H
+
 /* Define if you have forkpty */
 #undef HAVE_FORKPTY
 

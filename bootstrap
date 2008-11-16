@@ -1,12 +1,16 @@
 #!/bin/sh
-echo "running aclocal ... "
+echo "Running aclocal ... "
 aclocal -I config
-#echo "running libtoolize ... "
-#libtoolize --automake --copy 
-echo "running autoheader ... "
+echo "Running libtoolize ... "
+libtoolize --automake --copy 
+echo "Running autoheader ... "
 autoheader
-echo "running automake ... "
+echo "Running automake ... "
 automake --copy --add-missing 
-echo "running autoconf ... "
+echo "Running autoconf ... "
 autoconf
-echo "now run ./configure to configure powerman for your environment."
+echo "Cleaning up ..."
+mv aclocal.m4 config/
+rm -rf autom4te.cache
+
+echo "Now run ./configure."

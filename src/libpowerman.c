@@ -2,53 +2,164 @@
  * libpowerman.c - a simple C API for controlling outlets via powerman
  */
 
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+
+#include "powerman.h"
+#include "libpowerman.h"
+
 #define PMH_MAGIC 0x44445555
 struct pm_handle_struct {
-    int pmh_magic;
+    int         pmh_magic;
+    int         pmh_fd;
+    char **     pmh_nodenames;
+    int         pmh_numnodes;
 };
 
 #define PMI_MAGIC 0xab5634fd
 struct pm_node_iterator_struct {
-    int pmi_magic;
-    int pmi_handle;
+    int         pmi_magic;
+    pm_handle_t pmi_handle;
+    int         pmi_pos;
 };
 
-/* Connect to powerman server (host:port string format)
- * and return a handle for the connection.
+/* Add a node to the list of nodes stored in the handle.
+ */
+static pm_err_t
+_add_node(pm_handle_t pmh, char *node)
+{
+    char *nodecpy;
+
+    if ((nodecpy = strdup(node)) == NULL)
+        return PM_ENOMEM;
+    if (pmh->pmh_nodenames == NULL)
+        pmh->pmh_nodenames = malloc(sizeof(char *));
+    else
+        pmh->pmh_nodenames = realloc(pmh->pmh_nodenames, 
+                                 (pmh->pmh_numnodes + 1)*sizeof(char *));
+    if (pmh->pmh_nodenames == NULL) {
+        free(nodecpy);
+        return PM_ENOMEM;
+    }
+    pmh->pmh_nodenames[pmh->pmh_numnodes++] = nodecpy;
+    return PM_ESUCCESS;
+}
+
+/* Establish connection to powerman server.
+ */
+static pm_err_t 
+_connect_to_server_tcp(pm_handle_t pmh, char *host, char *port)
+{
+    struct addrinfo hints, *res, *r;
+    pm_err_t result = PM_ESUCCESS;
+
+    memset(&hints, 0, sizeof(hints));
+    hints.ai_family = PF_UNSPEC;
+    hints.ai_socktype = SOCK_STREAM;
+
+    if (getaddrinfo(host, port, &hints, &res) != 0 || res == NULL) {
+        result = PM_ENOADDR;
+        goto done;
+    }
+    for (r = res; r != NULL; r = r->ai_next) {
+        if ((pmh->pmh_fd = socket(r->ai_family, r->ai_socktype, 0)) < 0)
+            continue;
+        /* N.B. default TCP connect timeout applies */
+        if (connect(pmh->pmh_fd, r->ai_addr, r->ai_addrlen) < 0) {
+            close(pmh->pmh_fd);
+            continue;
+        }
+        break; /* success! */
+    }
+    if (r == NULL)
+        result = PM_ECONNECT;
+
+done:
+    if (res)
+        freeaddrinfo(res);
+    return result;
+}
+
+/* Send command to powerman server, with optional argument (if arg non-NULL),
+ * optionally collect response (if response non-NULL).
+ * Caller must free response.
+ */
+static pm_err_t
+_server_command(pm_handle_t pmh, char *cmd, char *arg, char **response)
+{
+    /* FIXME: */
+}
+
+/* Connect to powerman server and return a handle for the connection.
  */
 pm_err_t
-pm_connect(char *servername, pm_handle_t *pmhp)
+pm_connect(char *host, char *port, pm_handle_t *pmhp)
 {
     pm_handle_t pmh;
+    pm_err_t err;
+    char *result;
 
     if (pmhp == NULL)
         return PM_EBADARG;
+    if (host == NULL)
+        host = DFLT_HOSTNAME;
+    if (port == NULL)
+        port = DFLT_PORT;
 
-    /* FIXME: use external malloc function */
-    pmh = (pm_handle_t)malloc(sizeof(struct pm_handle_struct));
-    if (pmh == NULL)
+    if ((pmh = (pm_handle_t)malloc(sizeof(struct pm_handle_struct))) == NULL)
         return PM_ENOMEM;
 
     pmh->pmh_magic = PMH_MAGIC;
+    pmh->pmh_numnodes = 0;
+    pmh->pmh_nodenames = NULL;
 
-    /* FIXME: connect to server */
+    if ((err = _connect_to_server_tcp(pmh, host, port)) != PM_ESUCCESS) {
+        free(pmh);
+        return err;
+    }
+    if ((err = _server_command(pmh, "exprange", NULL, NULL)) != PM_ESUCCESS) {
+        (void)close(pmh->pmh_fd);
+        free(pmh);
+        return err;
+    }
+    if ((err = _server_command(pmh, "nodes", NULL, &result)) != PM_ESUCCESS) {
+        (void)close(pmh->pmh_fd);
+        free(pmh);
+        return err;
+    }
 
+    /* FIXME: call _add_node() for each node in result */
+
+    free(result);
     *pmhp = pmh;
-    return pmh;
+    return PM_ESUCCESS;
 }
+
 
 /* Disconnect from powerman server and free the handle.
  */
 void 
 pm_disconnect(pm_handle_t pmh)
 {
-    if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
-        return PM_EBADHAND;
+    int i;
 
-    /* FIXME: disconnect from server */
+    if (pmh != NULL && pmh->pmh_magic == PMH_MAGIC) {
+        (void)_server_command(pmh, "quit", NULL, NULL);
+        (void)close(pmh->pmh_fd);
 
-    memset(pmh, 0, sizeof(struct pm_handle_struct));
-    free(pmh);
+        if (pmh->pmh_nodenames != NULL) {
+            for (i = 0; i < pmh->pmh_numnodes; i++)
+                if (pmh->pmh_nodenames[i] != NULL)
+                    free(pmh->pmh_nodenames[i]);
+            free(pmh->pmh_nodenames);
+        }
+        free(pmh);
+    }
 }
 
 pm_err_t
@@ -59,7 +170,7 @@ pm_node_iterator_create(pm_handle_t pmh, pm_node_iterator_t *pmip)
     if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
         return PM_EBADHAND;
     if (pmip == NULL)
-        return PM_BADARG;
+        return PM_EBADARG;
 
     pmi = (pm_node_iterator_t)malloc(sizeof(struct pm_node_iterator_struct));
     if (pmi == NULL)
@@ -67,54 +178,120 @@ pm_node_iterator_create(pm_handle_t pmh, pm_node_iterator_t *pmip)
         
     pmi->pmi_magic = PMI_MAGIC;
     pmi->pmi_handle = pmh;
+    pmi->pmi_pos = 0;
 
     *pmip = pmi;
-    return PM_SUCCESS;
+    return PM_ESUCCESS;
 }
 
-pm_err_t
+void
+pm_node_iterator_reset(pm_node_iterator_t pmi)
+{
+    if (pmi != NULL && pmi->pmi_magic == PMI_MAGIC)
+        pmi->pmi_pos = 0;
+}
+
+char *
+pm_node_next(pm_node_iterator_t pmi)
+{
+    if (pmi == NULL || pmi->pmi_magic != PMI_MAGIC)
+        return NULL;
+    if (pmi->pmi_pos >= pmi->pmi_handle->pmh_numnodes)
+        return NULL;
+
+    return pmi->pmi_handle->pmh_nodenames[pmi->pmi_pos++];
+}
+
+void
 pm_node_iterator_destroy(pm_node_iterator_t pmi)
 {
-    if (pmi == NULL || pmi->pmi_magic != PMI_MAGIC)
-        return PM_EBADITER;
+    if (pmi != NULL && pmi->pmi_magic == PMI_MAGIC) {
+        memset(pmi, 0, sizeof(struct pm_node_iterator_struct));
+        free(pmi);
+    }
+}
 
-    memset(pmi, 0, sizeof(struct pm_node_iterator_struct));
-    free(pmi);
+static pm_err_t
+_validate_node(pm_handle_t pmh, char *node)
+{
+    pm_node_iterator_t pmi;
+    char *tnode;
+    pm_err_t err;
 
-    return PM_SUCCESS;
+    if ((err = pm_node_iterator_create(pmh, &pmi)) != PM_ESUCCESS)
+        return err;
+    err = PM_EBADNODE;
+    while ((tnode = pm_node_next(pmi)) != NULL) {
+        if (!strcmp(node, tnode)) {
+            err = PM_ESUCCESS;
+            break;
+        }
+    }
+    pm_node_iterator_destroy(pmi);
+    return err;
 }
 
 pm_err_t
-pm_node_next(pm_node_iterator_t pmi, char **next)
+pm_node_status(pm_handle_t pmh, char *node, pm_node_state_t *statep)
 {
-    if (pmi == NULL || pmi->pmi_magic != PMI_MAGIC)
-        return PM_EBADITER;
+    pm_err_t err;
+    char *response;
 
-    /* FIXME: return next node */
-
-    return PM_SUCCESS;
-}
-
-pm_err_t
-pm_node_state_query(pm_handle_t pmh, char *node, pm_node_state_t *oldstatep)
-{
     if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
         return PM_EBADHAND;
+    if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
+        return err;
+    if ((err = _server_command(pmh, "status", node, &response)) != PM_ESUCCESS)
+        return err;
 
-    /* FIXME: query node */
+     /* FIXME: translate response into pm_node_state_t */
 
-    return PM_SUCCESS;
+    free(response);
+    return PM_ESUCCESS;
 }
 
 pm_err_t
-pm_node_state_update(pm_handle_t pmh, char *node, pm_node_state_t newstate)
+pm_node_on(pm_handle_t pmh, char *node)
 {
+    pm_err_t err;
+
     if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
         return PM_EBADHAND;
+    if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
+        return err;
+    if ((err = _server_command(pmh, "on", node, NULL)) != PM_ESUCCESS)
+        return err;
 
-    /* FIXME: update node */
+    return PM_ESUCCESS;
+}
+pm_err_t
+pm_node_off(pm_handle_t pmh, char *node)
+{
+    pm_err_t err;
 
-    return PM_SUCCESS;
+    if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
+        return PM_EBADHAND;
+    if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
+        return err;
+    if ((err = _server_command(pmh, "off", node, NULL)) != PM_ESUCCESS)
+        return err;
+
+    return PM_ESUCCESS;
+}
+
+pm_err_t
+pm_node_cycle(pm_handle_t pmh, char *node)
+{
+    pm_err_t err;
+
+    if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
+        return PM_EBADHAND;
+    if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
+        return err;
+    if ((err = _server_command(pmh, "cycle", node, NULL)) != PM_ESUCCESS)
+        return err;
+
+    return PM_ESUCCESS;
 }
 
 /*

@@ -6,6 +6,11 @@
 
 AM_CFLAGS = @GCCWARN@ 
 
+lib_LTLIBRARIES = libpowerman.la
+
+libpowerman_la_SOURCES = \
+	libpowerman.c
+
 if WITH_HTTPPOWER
 HTTPPOWER = httppower
 endif

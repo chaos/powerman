@@ -1,35 +1,39 @@
-/* FIXME: c++ environment */
 
 typedef struct pm_handle_struct         *pm_handle_t;
-typedef struct pm_node_interator_struct *pm_node_interator_t;
+typedef struct pm_node_iterator_struct  *pm_node_iterator_t;
 
-enum {
-    PM_OFF,
-    PM_ON,
-    PM_UNKNOWN,
+typedef enum {
+    PM_UNKNOWN      = 0,
+    PM_OFF          = 1,
+    PM_ON           = 2,
 } pm_node_state_t;
 
-enum {
-    PM_SUCCESS = 0,
-    PM_ERRNOVALID,
-    PM_ENOMEM,
-    PM_EBADHAND,
-    PM_EBADITER,
-    PM_EBADARG,
-    PM_SERVERERR,
+typedef enum {
+    PM_ESUCCESS     = 0,    /* success */
+    PM_ERRNOVALID   = 1,    /* system call failed, see system errno */
+    PM_ENOADDR      = 2,    /* failed to get address info for host:port */
+    PM_ECONNECT     = 3,    /* connect failed */
+    PM_ENOMEM       = 4,    /* out of memory */
+    PM_EBADHAND     = 5,    /* bad server handle */
+    PM_EBADITER     = 6,    /* bad node iterator */
+    PM_EBADNODE     = 7,    /* unknown node name */
+    PM_EBADARG      = 8,    /* bad argument */
+    PM_ETIMEOUT     = 9,    /* client timed out */
+    PM_SERVERERR    = 10,   /* server error */
 } pm_err_t;
 
-pm_err_t pm_connect(char *servername, pm_handle_t *pmhp);
-pm_err_t pm_disconnect(pm_handle_t pmh);
+pm_err_t pm_connect(char *host, char *port, pm_handle_t *pmhp);
+void     pm_disconnect(pm_handle_t pmh);
 
 pm_err_t pm_node_iterator_create(pm_handle_t pmh, pm_node_iterator_t *pmip);
-pm_err_t pm_node_iterator_destroy(pm_node_iterator_t i);
-pm_err_t pm_node_next(pm_node_iterator_t i, char **nextp);
+char *   pm_node_next(pm_node_iterator_t pmi);
+void     pm_node_iterator_reset(pm_node_iterator_t pmi);
+void     pm_node_iterator_destroy(pm_node_iterator_t pmi);
 
-pm_err_t pm_node_state_query(pm_handle_t pmh, char *node, 
-                             pm_node_state_t *oldstatep);
-pm_err_t pm_node_state_change(pm_handle_t pmh, char *node, 
-                             pm_node_state_t newstate);
+pm_err_t pm_node_status(pm_handle_t pmh, char *node, pm_node_state_t *statep);
+pm_err_t pm_node_on(pm_handle_t pmh, char *node);
+pm_err_t pm_node_off(pm_handle_t pmh, char *node);
+pm_err_t pm_node_cycle(pm_handle_t pmh, char *node);
 
 char *   pm_strerror(pm_err_t err, char *str, int len);
 

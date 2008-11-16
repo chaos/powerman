@@ -2,6 +2,9 @@
 
 	* src/libpowerman.[ch] : New.
 
+	* bootstrap, autoconf.ac, src/Makefile.am : Add infrastructure
+	for libtoolized powerman library.
+
 2008-11-12 Jim Garlick <garlick@llnl.gov>
 
 	* : tag powerman-2.3
