@@ -1,4 +1,10 @@
+2008-11-16 Jim Garlick <garlick@llnl.gov>
+
+	* src/libpowerman.[ch] : New.
+
 2008-11-12 Jim Garlick <garlick@llnl.gov>
+
+	* : tag powerman-2.3
 
 	* etc/powerman.conf.example : Renamed from powerman.conf.
 
