@@ -90,12 +90,39 @@ done:
 }
 
 static int
-_terminated(char *buf, int count)
+_strncmpend(char *s1, char *s2, int len)
 {
-    /* FIXME: '1xx string CP_EOL' = success
-     *        '2xx string CP_EOL' = failure
-     */
-    return 1;
+    return strncmp(s1 + len - strlen(s2), s2, strlen(s2));
+}
+
+static int
+_terminated(char *buf, int count, pm_err_t *errp)
+{
+    /* success */
+    if (strncmpend(buf, CP_RSP_QUIT, count) == 0
+        || strncmpend(buf, CP_RSP_COM_COMPLETE, count) == 0
+        || strncmpend(buf, CP_RSP_QRY_COMPLETE, count) == 0
+        || strncmpend(buf, CP_RSP_TELEMETRY, count) == 0
+        || strncmpend(buf, CP_RSP_EXPRANGE, count) == 0) {
+        *errp = PM_ESUCCESS;
+        return 1
+    }
+
+    /* failure */
+    if (strncmpend(buf, CP_ERR_UNKNOWN, count) == 0
+        || strncmpend(buf, CP_ERR_TOOLONG, count) == 0
+        || strncmpend(buf, CP_ERR_INTERNAL, count) == 0
+        || strncmpend(buf, CP_ERR_HOSTLIST, count) == 0
+        || strncmpend(buf, CP_ERR_CLIBUSY, count) == 0
+        || strncmpend(buf, CP_ERR_NOSUCHNODES, count) == 0
+        || strncmpend(buf, CP_ERR_COM_COMPLETE, count) == 0
+        || strncmpend(buf, CP_ERR_QRY_COMPLETE, count) == 0
+        || strncmpend(buf, CP_ERR_UNIMPL, count) == 0)
+        *errp = PM_ESERVER;
+        return 1;
+    }
+    
+    return 0;
 }
 
 static pm_err_t
@@ -124,10 +151,12 @@ _server_recv_response(pm_handle_t pmh, char **response)
             break;
         }
         count += n;
-    } while (!_terminated(buf, count));
+    } while (!_terminated(buf, count, &err));
 
     if (err == PM_ESUCCESS)
         *response = buf;
+    else if (buf)
+        free(buf);
     return err;
 }
 
