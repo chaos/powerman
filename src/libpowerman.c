@@ -1,7 +1,10 @@
 /*
- * libpowerman.c - a simple C API for controlling outlets via powerman
+ * libpowerman.c - simple powerman client library
  */
 
+#if HAVE_CONFIG_H
+#include "config.h"
+#endif
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
@@ -11,6 +14,7 @@
 #include <unistd.h>
 
 #include "powerman.h"
+#include "client_proto.h"
 #include "libpowerman.h"
 
 #define PMH_MAGIC 0x44445555
@@ -85,14 +89,84 @@ done:
     return result;
 }
 
+static int
+_terminated(char *buf, int count)
+{
+    /* FIXME: '1xx string CP_EOL' = success
+     *        '2xx string CP_EOL' = failure
+     */
+    return 1;
+}
+
+static pm_err_t
+_server_recv_response(pm_handle_t pmh, char **response)
+{
+    int buflen = 0, count = 0, n;
+    char *buf = NULL; 
+    pm_err_t err = PM_ESUCCESS;
+
+    do {
+        if (buflen - count == 0) {
+            buflen += CP_LINEMAX;
+            buf = buf ? realloc(buf, buflen) : malloc(buflen);
+            if (buf == NULL) {
+                err = PM_ENOMEM;
+                break;
+            }
+        } 
+        n = read(pmh->pmh_fd, buf + count, buflen - count);
+        if (n == 0) {
+            err = PM_ESERVEREOF;
+            break;
+        }
+        if (n < 0) {
+            err = PM_ERRNOVALID;
+            break;
+        }
+        count += n;
+    } while (!_terminated(buf, count));
+
+    if (err == PM_ESUCCESS)
+        *response = buf;
+    return err;
+}
+
+static pm_err_t
+_server_send_command(pm_handle_t pmh, char *cmd, char *arg)
+{
+    char sendstr[CP_LINEMAX];    
+    int count, msglen, n;
+    pm_err_t err = PM_ESUCCESS;
+
+    snprintf(sendstr, sizeof(sendstr), "%s%s%s%s", cmd, arg ? " " : "", 
+                                                        arg ? arg : "", CP_EOL);
+    count = 0;
+    msglen = strlen(sendstr);
+    while (count < msglen) {
+        n = write(pmh->pmh_fd, sendstr + count, msglen - count);
+        if (n < 0) {
+            err = PM_ERRNOVALID;
+            break;
+        }
+        count += n;
+    }
+    return err;
+}
+
 /* Send command to powerman server, with optional argument (if arg non-NULL),
- * optionally collect response (if response non-NULL).
+ * and optionally collect response (if response non-NULL).
  * Caller must free response.
  */
 static pm_err_t
 _server_command(pm_handle_t pmh, char *cmd, char *arg, char **response)
 {
-    /* FIXME: */
+    pm_err_t err;
+
+    if ((err = _server_send_command(pmh, cmd, arg)) != PM_ESUCCESS)
+        return err;
+    if ((err = _server_recv_response(pmh, response)) != PM_ESUCCESS)
+        return err;
+    return PM_ESUCCESS;
 }
 
 /* Connect to powerman server and return a handle for the connection.
@@ -102,7 +176,7 @@ pm_connect(char *host, char *port, pm_handle_t *pmhp)
 {
     pm_handle_t pmh;
     pm_err_t err;
-    char *result;
+    char *response;
 
     if (pmhp == NULL)
         return PM_EBADARG;
@@ -122,20 +196,23 @@ pm_connect(char *host, char *port, pm_handle_t *pmhp)
         free(pmh);
         return err;
     }
-    if ((err = _server_command(pmh, "exprange", NULL, NULL)) != PM_ESUCCESS) {
+
+    /* FIXME: receive and check server version string? */
+
+    if ((err = _server_command(pmh, CP_EXPRANGE, NULL, NULL)) != PM_ESUCCESS) {
         (void)close(pmh->pmh_fd);
         free(pmh);
         return err;
     }
-    if ((err = _server_command(pmh, "nodes", NULL, &result)) != PM_ESUCCESS) {
+    if ((err = _server_command(pmh, CP_NODES, NULL, &response)) != PM_ESUCCESS){
         (void)close(pmh->pmh_fd);
         free(pmh);
         return err;
     }
 
-    /* FIXME: call _add_node() for each node in result */
+    /* FIXME: call _add_node() for each node in response */
 
-    free(result);
+    free(response);
     *pmhp = pmh;
     return PM_ESUCCESS;
 }
@@ -241,7 +318,7 @@ pm_node_status(pm_handle_t pmh, char *node, pm_node_state_t *statep)
         return PM_EBADHAND;
     if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
         return err;
-    if ((err = _server_command(pmh, "status", node, &response)) != PM_ESUCCESS)
+    if ((err = _server_command(pmh, CP_STATUS, node, &response)) != PM_ESUCCESS)
         return err;
 
      /* FIXME: translate response into pm_node_state_t */
@@ -259,7 +336,7 @@ pm_node_on(pm_handle_t pmh, char *node)
         return PM_EBADHAND;
     if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
         return err;
-    if ((err = _server_command(pmh, "on", node, NULL)) != PM_ESUCCESS)
+    if ((err = _server_command(pmh, CP_ON, node, NULL)) != PM_ESUCCESS)
         return err;
 
     return PM_ESUCCESS;
@@ -273,7 +350,7 @@ pm_node_off(pm_handle_t pmh, char *node)
         return PM_EBADHAND;
     if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
         return err;
-    if ((err = _server_command(pmh, "off", node, NULL)) != PM_ESUCCESS)
+    if ((err = _server_command(pmh, CP_OFF, node, NULL)) != PM_ESUCCESS)
         return err;
 
     return PM_ESUCCESS;
@@ -288,7 +365,7 @@ pm_node_cycle(pm_handle_t pmh, char *node)
         return PM_EBADHAND;
     if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
         return err;
-    if ((err = _server_command(pmh, "cycle", node, NULL)) != PM_ESUCCESS)
+    if ((err = _server_command(pmh, CP_CYCLE, node, NULL)) != PM_ESUCCESS)
         return err;
 
     return PM_ESUCCESS;

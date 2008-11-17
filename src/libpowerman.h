@@ -19,7 +19,8 @@ typedef enum {
     PM_EBADNODE     = 7,    /* unknown node name */
     PM_EBADARG      = 8,    /* bad argument */
     PM_ETIMEOUT     = 9,    /* client timed out */
-    PM_SERVERERR    = 10,   /* server error */
+    PM_ESERVEREOF   = 10,   /* received unexpected EOF from server */
+    PM_SERVERERR    = 11,   /* server error */
 } pm_err_t;
 
 pm_err_t pm_connect(char *host, char *port, pm_handle_t *pmhp);
