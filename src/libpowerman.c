@@ -32,6 +32,11 @@ struct pm_node_iterator_struct {
     int         pmi_pos;
 };
 
+typedef struct resp_t {
+    char **lines;
+    int count;
+} resp_t;
+
 /* Add a node to the list of nodes stored in the handle.
  */
 static pm_err_t
@@ -99,34 +104,60 @@ static int
 _terminated(char *buf, int count, pm_err_t *errp)
 {
     /* success */
-    if (strncmpend(buf, CP_RSP_QUIT, count) == 0
-        || strncmpend(buf, CP_RSP_COM_COMPLETE, count) == 0
-        || strncmpend(buf, CP_RSP_QRY_COMPLETE, count) == 0
-        || strncmpend(buf, CP_RSP_TELEMETRY, count) == 0
-        || strncmpend(buf, CP_RSP_EXPRANGE, count) == 0) {
+    if (_strncmpend(buf, CP_RSP_QUIT, count) == 0
+                || _strncmpend(buf, CP_RSP_COM_COMPLETE, count) == 0
+                || _strncmpend(buf, CP_RSP_QRY_COMPLETE, count) == 0
+                || _strncmpend(buf, CP_RSP_TELEMETRY, count) == 0
+                || _strncmpend(buf, CP_RSP_EXPRANGE, count) == 0) {
         *errp = PM_ESUCCESS;
-        return 1
+        return 1;
     }
 
     /* failure */
-    if (strncmpend(buf, CP_ERR_UNKNOWN, count) == 0
-        || strncmpend(buf, CP_ERR_TOOLONG, count) == 0
-        || strncmpend(buf, CP_ERR_INTERNAL, count) == 0
-        || strncmpend(buf, CP_ERR_HOSTLIST, count) == 0
-        || strncmpend(buf, CP_ERR_CLIBUSY, count) == 0
-        || strncmpend(buf, CP_ERR_NOSUCHNODES, count) == 0
-        || strncmpend(buf, CP_ERR_COM_COMPLETE, count) == 0
-        || strncmpend(buf, CP_ERR_QRY_COMPLETE, count) == 0
-        || strncmpend(buf, CP_ERR_UNIMPL, count) == 0)
+    if (_strncmpend(buf, CP_ERR_UNKNOWN, count) == 0
+                || _strncmpend(buf, CP_ERR_TOOLONG, count) == 0
+                || _strncmpend(buf, CP_ERR_INTERNAL, count) == 0
+                || _strncmpend(buf, CP_ERR_HOSTLIST, count) == 0
+                || _strncmpend(buf, CP_ERR_CLIBUSY, count) == 0
+                || _strncmpend(buf, CP_ERR_NOSUCHNODES, count) == 0
+                || _strncmpend(buf, CP_ERR_COM_COMPLETE, count) == 0
+                || _strncmpend(buf, CP_ERR_QRY_COMPLETE, count) == 0
+                || _strncmpend(buf, CP_ERR_UNIMPL, count) == 0) {
         *errp = PM_ESERVER;
         return 1;
     }
-    
+
+    /* unterminated */    
     return 0;
 }
 
 static pm_err_t
-_server_recv_response(pm_handle_t pmh, char **response)
+_parse_response(char *buf, int len, resp_t *resp)
+{
+    int l = strlen(CP_EOL);
+    int i, count = 0;  
+    char *p, **lines = NULL;
+
+    p = buf;
+    for (i = 0; i < len - l; i++) {
+        if (strncmp(&buf[i], CP_EOL, l) == 0)
+            memset(&buf[i], 0, l);
+        lines = lines ? (char **)realloc(lines, (count + 1) * sizeof(char *))
+                      : (char **)malloc(sizeof(char *));
+        if (lines == NULL)
+            return PM_ENOMEM;
+        lines[count++] = p;
+        p = &buf[i + l];
+    }
+    if (resp) {
+        resp->lines = lines;
+        resp->count = count;
+    }
+    return PM_ESUCCESS;
+}
+
+static pm_err_t
+_server_recv_response(pm_handle_t pmh, resp_t *resp)
 {
     int buflen = 0, count = 0, n;
     char *buf = NULL; 
@@ -153,9 +184,9 @@ _server_recv_response(pm_handle_t pmh, char **response)
         count += n;
     } while (!_terminated(buf, count, &err));
 
-    if (err == PM_ESUCCESS)
-        *response = buf;
-    else if (buf)
+    if (err == PM_ESUCCESS && resp != NULL)
+        err = _parse_response(buf, count, resp);
+    if (err != PM_ESUCCESS && buf != NULL)
         free(buf);
     return err;
 }
@@ -187,16 +218,17 @@ _server_send_command(pm_handle_t pmh, char *cmd, char *arg)
  * Caller must free response.
  */
 static pm_err_t
-_server_command(pm_handle_t pmh, char *cmd, char *arg, char **response)
+_server_command(pm_handle_t pmh, char *cmd, char *arg, resp_t *resp)
 {
     pm_err_t err;
 
     if ((err = _server_send_command(pmh, cmd, arg)) != PM_ESUCCESS)
         return err;
-    if ((err = _server_recv_response(pmh, response)) != PM_ESUCCESS)
+    if ((err = _server_recv_response(pmh, resp)) != PM_ESUCCESS)
         return err;
     return PM_ESUCCESS;
 }
+
 
 /* Connect to powerman server and return a handle for the connection.
  */
@@ -205,7 +237,8 @@ pm_connect(char *host, char *port, pm_handle_t *pmhp)
 {
     pm_handle_t pmh;
     pm_err_t err;
-    char *response;
+    resp_t resp;
+    int i;
 
     if (pmhp == NULL)
         return PM_EBADARG;
@@ -226,24 +259,42 @@ pm_connect(char *host, char *port, pm_handle_t *pmhp)
         return err;
     }
 
-    /* FIXME: receive and check server version string? */
+    if ((err = _server_command(pmh, CP_EXPRANGE, NULL, NULL)) != PM_ESUCCESS)
+        goto error;
+    if ((err = _server_command(pmh, CP_NODES, NULL, &resp)) != PM_ESUCCESS)
+        goto error;
 
-    if ((err = _server_command(pmh, CP_EXPRANGE, NULL, NULL)) != PM_ESUCCESS) {
-        (void)close(pmh->pmh_fd);
-        free(pmh);
-        return err;
+    err = PM_ESUCCESS;
+    for (i = 0; i < resp.count; i++) {
+        char node[CP_LINEMAX];
+
+        if (sscanf(resp.lines[i], "306 %s", node) == 1) {
+            err = _add_node(pmh, node);
+            if (err != PM_ESUCCESS)
+                break;
+        } else {
+            err = PM_EPARSE;
+            break;
+        }
     }
-    if ((err = _server_command(pmh, CP_NODES, NULL, &response)) != PM_ESUCCESS){
-        (void)close(pmh->pmh_fd);
-        free(pmh);
-        return err;
+
+    free(resp.lines);
+
+    if (err == PM_ESUCCESS) {
+        *pmhp = pmh;
+        return PM_ESUCCESS;
     }
 
-    /* FIXME: call _add_node() for each node in response */
-
-    free(response);
-    *pmhp = pmh;
-    return PM_ESUCCESS;
+error:
+    if (pmh != NULL) {
+        (void)close(pmh->pmh_fd);
+        for (i = 0; i < pmh->pmh_numnodes; i++)
+            if (pmh->pmh_nodenames[i] != NULL)
+                free(pmh->pmh_nodenames[i]);
+        free(pmh->pmh_nodenames);
+        free(pmh);
+    }
+    return err;
 }
 
 
@@ -341,18 +392,18 @@ pm_err_t
 pm_node_status(pm_handle_t pmh, char *node, pm_node_state_t *statep)
 {
     pm_err_t err;
-    char *response;
+    resp_t resp;
 
     if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
         return PM_EBADHAND;
     if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
         return err;
-    if ((err = _server_command(pmh, CP_STATUS, node, &response)) != PM_ESUCCESS)
+    if ((err = _server_command(pmh, CP_STATUS, node, &resp)) != PM_ESUCCESS)
         return err;
 
      /* FIXME: translate response into pm_node_state_t */
 
-    free(response);
+    free(resp.lines);
     return PM_ESUCCESS;
 }
 

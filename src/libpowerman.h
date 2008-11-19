@@ -20,7 +20,8 @@ typedef enum {
     PM_EBADARG      = 8,    /* bad argument */
     PM_ETIMEOUT     = 9,    /* client timed out */
     PM_ESERVEREOF   = 10,   /* received unexpected EOF from server */
-    PM_SERVERERR    = 11,   /* server error */
+    PM_ESERVER      = 11,   /* server error */
+    PM_EPARSE       = 12,   /* received unexpected response from server */
 } pm_err_t;
 
 pm_err_t pm_connect(char *host, char *port, pm_handle_t *pmhp);
