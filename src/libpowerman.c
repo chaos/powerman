@@ -37,6 +37,10 @@ typedef struct resp_t {
     int count;
 } resp_t;
 
+/* FIXME: timeouts needed? */
+
+/* FIXME: implement pm_strerror */
+
 /* Add a node to the list of nodes stored in the handle.
  */
 static pm_err_t
@@ -100,35 +104,16 @@ _strncmpend(char *s1, char *s2, int len)
     return strncmp(s1 + len - strlen(s2), s2, strlen(s2));
 }
 
-static int
-_terminated(char *buf, int count, pm_err_t *errp)
+static char *
+_strndup(char *s, int len)
 {
-    /* success */
-    if (_strncmpend(buf, CP_RSP_QUIT, count) == 0
-                || _strncmpend(buf, CP_RSP_COM_COMPLETE, count) == 0
-                || _strncmpend(buf, CP_RSP_QRY_COMPLETE, count) == 0
-                || _strncmpend(buf, CP_RSP_TELEMETRY, count) == 0
-                || _strncmpend(buf, CP_RSP_EXPRANGE, count) == 0) {
-        *errp = PM_ESUCCESS;
-        return 1;
-    }
+    char *c;
 
-    /* failure */
-    if (_strncmpend(buf, CP_ERR_UNKNOWN, count) == 0
-                || _strncmpend(buf, CP_ERR_TOOLONG, count) == 0
-                || _strncmpend(buf, CP_ERR_INTERNAL, count) == 0
-                || _strncmpend(buf, CP_ERR_HOSTLIST, count) == 0
-                || _strncmpend(buf, CP_ERR_CLIBUSY, count) == 0
-                || _strncmpend(buf, CP_ERR_NOSUCHNODES, count) == 0
-                || _strncmpend(buf, CP_ERR_COM_COMPLETE, count) == 0
-                || _strncmpend(buf, CP_ERR_QRY_COMPLETE, count) == 0
-                || _strncmpend(buf, CP_ERR_UNIMPL, count) == 0) {
-        *errp = PM_ESERVER;
-        return 1;
+    if ((c = (char *)malloc(len + 1))) {
+        memcpy(c, s, len);
+        c[len] = '\0';
     }
-
-    /* unterminated */    
-    return 0;
+    return c;     
 }
 
 static pm_err_t
@@ -137,16 +122,24 @@ _parse_response(char *buf, int len, resp_t *resp)
     int l = strlen(CP_EOL);
     int i, count = 0;  
     char *p, **lines = NULL;
+    char *cpy;
+    pm_err_t err;
 
     p = buf;
     for (i = 0; i < len - l; i++) {
-        if (strncmp(&buf[i], CP_EOL, l) == 0)
-            memset(&buf[i], 0, l);
+        if (strncmp(&buf[i], CP_EOL, l) != 0)
+            continue;
+        if ((cpy = _strndup(p, &buf[i] - p + l)) == NULL) {
+            err = PM_ENOMEM;
+            goto error;
+        }
         lines = lines ? (char **)realloc(lines, (count + 1) * sizeof(char *))
                       : (char **)malloc(sizeof(char *));
-        if (lines == NULL)
-            return PM_ENOMEM;
-        lines[count++] = p;
+        if (lines == NULL) {
+            err = PM_ENOMEM;
+            goto error;
+        }
+        lines[count++] = cpy;
         p = &buf[i + l];
     }
     if (resp) {
@@ -154,6 +147,14 @@ _parse_response(char *buf, int len, resp_t *resp)
         resp->count = count;
     }
     return PM_ESUCCESS;
+error:
+    if (lines) {
+        for (i = 0; i < count; i++)
+            if (lines[i])
+                free(lines[i]);
+        free(lines);
+    }
+    return err;
 }
 
 static pm_err_t
@@ -182,7 +183,7 @@ _server_recv_response(pm_handle_t pmh, resp_t *resp)
             break;
         }
         count += n;
-    } while (!_terminated(buf, count, &err));
+    } while (_strncmpend(buf, CP_PROMPT, count) != 0);
 
     if (err == PM_ESUCCESS && resp != NULL)
         err = _parse_response(buf, count, resp);
@@ -194,16 +195,16 @@ _server_recv_response(pm_handle_t pmh, resp_t *resp)
 static pm_err_t
 _server_send_command(pm_handle_t pmh, char *cmd, char *arg)
 {
-    char sendstr[CP_LINEMAX];    
-    int count, msglen, n;
+    char buf[CP_LINEMAX];    
+    int count, len, n;
     pm_err_t err = PM_ESUCCESS;
 
-    snprintf(sendstr, sizeof(sendstr), "%s%s%s%s", cmd, arg ? " " : "", 
-                                                        arg ? arg : "", CP_EOL);
+    snprintf(buf, sizeof(buf), cmd, arg);
+    strcat(buf, CP_EOL); /* FIXME */
     count = 0;
-    msglen = strlen(sendstr);
-    while (count < msglen) {
-        n = write(pmh->pmh_fd, sendstr + count, msglen - count);
+    len = strlen(buf);
+    while (count < len) {
+        n = write(pmh->pmh_fd, buf + count, len - count);
         if (n < 0) {
             err = PM_ERRNOVALID;
             break;
@@ -259,8 +260,13 @@ pm_connect(char *host, char *port, pm_handle_t *pmhp)
         return err;
     }
 
+    /* eat version + prompt */
+    if ((err = _server_recv_response(pmh, NULL)) != PM_ESUCCESS)
+        goto error;
+    /* tell server not to compress output */
     if ((err = _server_command(pmh, CP_EXPRANGE, NULL, NULL)) != PM_ESUCCESS)
         goto error;
+    /* cache list of valid node names */
     if ((err = _server_command(pmh, CP_NODES, NULL, &resp)) != PM_ESUCCESS)
         goto error;
 
@@ -268,13 +274,10 @@ pm_connect(char *host, char *port, pm_handle_t *pmhp)
     for (i = 0; i < resp.count; i++) {
         char node[CP_LINEMAX];
 
-        if (sscanf(resp.lines[i], "306 %s", node) == 1) {
+        if (sscanf(resp.lines[i], CP_INFO_XNODES, node) == 1) {
             err = _add_node(pmh, node);
             if (err != PM_ESUCCESS)
                 break;
-        } else {
-            err = PM_EPARSE;
-            break;
         }
     }
 
@@ -306,7 +309,7 @@ pm_disconnect(pm_handle_t pmh)
     int i;
 
     if (pmh != NULL && pmh->pmh_magic == PMH_MAGIC) {
-        (void)_server_command(pmh, "quit", NULL, NULL);
+        (void)_server_command(pmh, CP_QUIT, NULL, NULL);
         (void)close(pmh->pmh_fd);
 
         if (pmh->pmh_nodenames != NULL) {
@@ -391,8 +394,11 @@ _validate_node(pm_handle_t pmh, char *node)
 pm_err_t
 pm_node_status(pm_handle_t pmh, char *node, pm_node_state_t *statep)
 {
+    char offstr[CP_LINEMAX], onstr[CP_LINEMAX];
     pm_err_t err;
     resp_t resp;
+    pm_node_state_t state = PM_UNKNOWN;
+    int i;
 
     if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
         return PM_EBADHAND;
@@ -401,9 +407,19 @@ pm_node_status(pm_handle_t pmh, char *node, pm_node_state_t *statep)
     if ((err = _server_command(pmh, CP_STATUS, node, &resp)) != PM_ESUCCESS)
         return err;
 
-     /* FIXME: translate response into pm_node_state_t */
+    snprintf(offstr, sizeof(offstr), CP_INFO_XSTATUS, node, "off");
+    snprintf(onstr,  sizeof(onstr),  CP_INFO_XSTATUS, node, "on");
+
+    for (i = 0; i < resp.count; i++) {
+        if (!strcmp(offstr, resp.lines[i]))
+            state = PM_OFF;
+        else if (!strcmp(onstr, resp.lines[i]))
+            state = PM_ON;
+    }
 
     free(resp.lines);
+    if (statep)
+        *statep = state;
     return PM_ESUCCESS;
 }
 
@@ -418,6 +434,7 @@ pm_node_on(pm_handle_t pmh, char *node)
         return err;
     if ((err = _server_command(pmh, CP_ON, node, NULL)) != PM_ESUCCESS)
         return err;
+    /* FIXME : parse result for success/failure */
 
     return PM_ESUCCESS;
 }
@@ -432,6 +449,7 @@ pm_node_off(pm_handle_t pmh, char *node)
         return err;
     if ((err = _server_command(pmh, CP_OFF, node, NULL)) != PM_ESUCCESS)
         return err;
+    /* FIXME : parse result for success/failure */
 
     return PM_ESUCCESS;
 }
@@ -447,6 +465,7 @@ pm_node_cycle(pm_handle_t pmh, char *node)
         return err;
     if ((err = _server_command(pmh, CP_CYCLE, node, NULL)) != PM_ESUCCESS)
         return err;
+    /* FIXME : parse result for success/failure */
 
     return PM_ESUCCESS;
 }

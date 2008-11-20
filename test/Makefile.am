@@ -1,5 +1,5 @@
 check_PROGRAMS = tpl vpcd tregex targv \
-		 baytech icebox gpib dli ilom phantom cyclades ipmipower
+		 baytech icebox gpib dli ilom phantom cyclades ipmipower cli
 
 TESTS_ENVIRONMENT = env 
 TESTS_ENVIRONMENT += "PATH_POWERMAN=$(top_builddir)/src/powerman"
@@ -61,3 +61,6 @@ cyclades_LDADD = $(LIBFORKPTY)
 
 ipmipower_SOURCES = ipmipower.c $(common_sources)
 ipmipower_LDADD = $(LIBFORKPTY)
+
+cli_SOURCES = cli.c $(top_srcdir)/src/libpowerman.c
+cli_LDADD = $(LIBFORKPTY)
