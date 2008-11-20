@@ -182,15 +182,39 @@ error:
     return err;
 }
 
+/* Scan response from server for return code.
+ */
+static pm_err_t
+_server_retcode(resp_t resp)
+{
+    int i, code;
+    pm_err_t err = PM_EPARSE;
+
+    for (i = 0; i < resp.count; i++) {
+        if (sscanf(resp.lines[i], "%d ", &code) == 1) {
+            if (code == 1 || CP_IS_SUCCESS(code)) { /* 001 = hello */
+                err = PM_ESUCCESS;
+                break;
+            } else if (CP_IS_FAILURE(code)) {
+                /* N.B. we could decode the individual error codes here */
+                err = PM_ESERVER;
+                break;
+            }
+        }
+    }
+    return err;
+}
+
 /* Read response from server handle [pmh] and store it in
  * [resp], an array of lines.  Caller must free [resp].
  */
 static pm_err_t
-_server_recv_response(pm_handle_t pmh, resp_t *resp)
+_server_recv_response(pm_handle_t pmh, resp_t *respp)
 {
     int buflen = 0, count = 0, n;
     char *buf = NULL; 
     pm_err_t err = PM_ESUCCESS;
+    resp_t resp;
 
     do {
         if (buflen - count == 0) {
@@ -213,10 +237,14 @@ _server_recv_response(pm_handle_t pmh, resp_t *resp)
         count += n;
     } while (_strncmpend(buf, CP_PROMPT, count) != 0);
 
-    if (err == PM_ESUCCESS && resp != NULL)
-        err = _parse_response(buf, count, resp);
-    if (err != PM_ESUCCESS && buf != NULL)
+    if (err == PM_ESUCCESS)
+        err = _parse_response(buf, count, &resp);
+    if (err == PM_ESUCCESS)
+        err = _server_retcode(resp);
+    if (buf != NULL)
         free(buf);
+    if (err == PM_ESUCCESS && respp)
+        *respp = resp;
     return err;
 }
 
@@ -232,7 +260,7 @@ _server_send_command(pm_handle_t pmh, char *cmd, char *arg)
     pm_err_t err = PM_ESUCCESS;
 
     snprintf(buf, sizeof(buf), cmd, arg);
-    strcat(buf, CP_EOL); /* FIXME */
+    snprintf(buf + strlen(buf), sizeof(buf) - strlen(buf), CP_EOL);
     count = 0;
     len = strlen(buf);
     while (count < len) {
@@ -484,9 +512,8 @@ pm_node_on(pm_handle_t pmh, char *node)
         return err;
     if ((err = _server_command(pmh, CP_ON, node, NULL)) != PM_ESUCCESS)
         return err;
-    /* FIXME : parse result for success/failure */
 
-    return PM_ESUCCESS;
+    return err;
 }
 
 /* Tell server [pmh] to turn [node] off.
@@ -502,9 +529,8 @@ pm_node_off(pm_handle_t pmh, char *node)
         return err;
     if ((err = _server_command(pmh, CP_OFF, node, NULL)) != PM_ESUCCESS)
         return err;
-    /* FIXME : parse result for success/failure */
 
-    return PM_ESUCCESS;
+    return err;
 }
 
 /* Tell server [pmh] to power cycle [node].
@@ -520,11 +546,12 @@ pm_node_cycle(pm_handle_t pmh, char *node)
         return err;
     if ((err = _server_command(pmh, CP_CYCLE, node, NULL)) != PM_ESUCCESS)
         return err;
-    /* FIXME : parse result for success/failure */
 
-    return PM_ESUCCESS;
+    return err;
 }
 
+/* Convert error code to human readable string.
+ */
 char *
 pm_strerror(pm_err_t err, char *str, int len)
 {

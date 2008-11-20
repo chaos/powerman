@@ -15,13 +15,12 @@ typedef enum {
     PM_ECONNECT     = 3,    /* connect failed */
     PM_ENOMEM       = 4,    /* out of memory */
     PM_EBADHAND     = 5,    /* bad server handle */
-    PM_EBADITER     = 6,    /* bad node iterator */
-    PM_EBADNODE     = 7,    /* unknown node name */
-    PM_EBADARG      = 8,    /* bad argument */
-    PM_ETIMEOUT     = 9,    /* client timed out */
-    PM_ESERVEREOF   = 10,   /* received unexpected EOF from server */
-    PM_ESERVER      = 11,   /* server error */
-    PM_EPARSE       = 12,   /* received unexpected response from server */
+    PM_EBADNODE     = 6,    /* unknown node name */
+    PM_EBADARG      = 7,    /* bad argument */
+    PM_ETIMEOUT     = 8,    /* client timed out */
+    PM_ESERVEREOF   = 9,    /* received unexpected EOF from server */
+    PM_ESERVER      = 10,   /* server error */
+    PM_EPARSE       = 11,   /* received unexpected response from server */
 } pm_err_t;
 
 pm_err_t pm_connect(char *host, char *port, pm_handle_t *pmhp);
