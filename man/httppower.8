@@ -9,13 +9,29 @@ httppower \- communicate with HTTP based power distribution units
 .B httppower
 is a helper program for
 .B powerman
-which enables communication with HTTP based power distribution units.
+which enables it to communicate with HTTP based power distribution units.
 It is run interactively by the powerman daemon.
-For an example see the dli device script.
 .SH OPTIONS
 .TP
 .I "-u, --url URL"
-Connect to the specified URL.
+Set the base URL.
+.SH INTERACTIVE COMMANDS
+The following commands are available at the httppower> prompt:
+.TP
+.I "auth user:pass"
+Authenticate to the base URL with specified user and password,
+using ``basic'' HTTP authentication which sends the user and password
+over the network in plain text.
+.TP
+.I "seturl URL"
+Set the base URL.  Overrides the command line option.
+.TP
+.I "get [URL-suffix]"
+Send an HTTP GET to the base URL with the optional URL-suffix appended.
+.TP
+.I "post [URL-suffix] key=val[&key=val]..."
+Send an HTTP POST to the base URL with the optional URL-suffix appended,
+and key-value pairs as argument.
 .SH "FILES"
 /usr/sbin/httppower
 .br

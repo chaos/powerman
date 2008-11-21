@@ -9,12 +9,43 @@ plmpower \- control Insteon/X10 devices via SmartLabs PLM 2412S
 .B plmpower
 is a helper program for
 .B powerman
-which enables communication with Insteon/X10 devices via SmartLabs PLM 2412S.
+which enables communication with Insteon/X10 devices via SmartLabs 
+Power Line Modem, model 2412S.
 It is run interactively by the powerman daemon.
 .SH OPTIONS
 .TP
 .I "-d, --device serial-port"
 Specify the path to the special file connected to the PLM's serial port.
+.TP
+.I "-t, --timeout msec"
+Set the Insteon timeout to the specified number of milliseconds (default 1000).
+.TP
+.I "-x, --x10-attempts"
+Set the number of times to run every X10 command (default 3).
+.SH INTERACTIVE COMMANDS
+The following commands are accepted by the plmpower> prompt:
+.TP
+.I "help"
+Display help on the available commands.
+Address arguments may be Insteon (e.g. 1A.2B.3C) or X10 (e.g. G12).
+.TP
+.I "info"
+Get info abou the PLM.
+.TP
+.I "reset"
+Reset the PLM (clears the all-link db).
+.TP
+.I "on addr"
+Turn on device.  
+.TP
+.I "off addr"
+Turn off device.  
+.TP
+.I "status addr"
+Query status of device.  
+.TP
+.I "ping addr"
+Time round trip request/response to device.
 .SH "FILES"
 /usr/sbin/plmpower
 .br
