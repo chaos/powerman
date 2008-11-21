@@ -1,3 +1,13 @@
+2008-11-20 Jim Garlick <garlick@llnl.gov>
+
+	* : Audit for debian [Arnaud Quette]
+	- rename bootstrap to autoreconf (convention)
+	- remove htdocs/powerman47.jpg (redistribution rights)
+	- fix AUTHORS typo
+	- remove comments from man pages
+	- add man pages for httppower, plmpower
+	- make pm man page an alias for powerman man page
+
 2008-11-16 Jim Garlick <garlick@llnl.gov>
 
 	* src/libpowerman.[ch] : New.

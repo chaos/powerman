@@ -1,0 +1,26 @@
+.TH PowerMan 8 "Release 2.3" "LLNL" "PowerMan"
+.SH NAME
+httppower \- communicate with HTTP based power distribution units
+.SH SYNOPSIS
+.B httppower
+.I "[--url URL]"
+.LP
+.SH DESCRIPTION
+.B httppower
+is a helper program for
+.B powerman
+which enables communication with HTTP based power distribution units.
+It is run interactively by the powerman daemon.
+For an example see the dli device script.
+.SH OPTIONS
+.TP
+.I "-u, --url URL"
+Connect to the specified URL.
+.SH "FILES"
+/usr/sbin/httppower
+.br
+/usr/sbin/powermand
+.br
+/etc/powerman/powerman.conf
+.SH "SEE ALSO"
+powerman(1) powerman.conf(5) powermand(8)

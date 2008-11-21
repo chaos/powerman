@@ -21,6 +21,8 @@ typedef enum {
     PM_ESERVEREOF   = 9,    /* received unexpected EOF from server */
     PM_ESERVER      = 10,   /* server error */
     PM_EPARSE       = 11,   /* received unexpected response from server */
+    PM_EPARTIAL     = 12,   /* command completed with errors */
+    PM_EUNIMPL      = 13,   /* command not implemented by device */
 } pm_err_t;
 
 pm_err_t pm_connect(char *host, char *port, pm_handle_t *pmhp);

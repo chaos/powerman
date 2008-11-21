@@ -196,8 +196,18 @@ _server_retcode(resp_t resp)
                 err = PM_ESUCCESS;
                 break;
             } else if (CP_IS_FAILURE(code)) {
-                /* N.B. we could decode the individual error codes here */
-                err = PM_ESERVER;
+                switch (code) {
+                    case 210:
+                    case 211:
+                        err = PM_EPARTIAL;
+                        break;
+                    case 213:
+                        err = PM_EUNIMPL;
+                        break;
+                    default:
+                        err = PM_ESERVER;
+                        break;
+                }
                 break;
             }
         }
@@ -237,10 +247,11 @@ _server_recv_response(pm_handle_t pmh, resp_t *respp)
         count += n;
     } while (_strncmpend(buf, CP_PROMPT, count) != 0);
 
-    if (err == PM_ESUCCESS)
+    if (err == PM_ESUCCESS) {
         err = _parse_response(buf, count, &resp);
-    if (err == PM_ESUCCESS)
-        err = _server_retcode(resp);
+        if (err == PM_ESUCCESS)
+            err = _server_retcode(resp);
+    }
     if (buf != NULL)
         free(buf);
     if (err == PM_ESUCCESS && respp)
@@ -591,6 +602,12 @@ pm_strerror(pm_err_t err, char *str, int len)
             break;
         case PM_EPARSE:
             strncpy(str, "received unexpected response from server", len);
+            break;
+        case PM_EPARTIAL:
+            strncpy(str, "command completed with errors", len);
+            break;
+        case PM_EUNIMPL:
+            strncpy(str, "command is not implemented by device", len);
             break;
     }
     return str;

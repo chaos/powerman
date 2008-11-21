@@ -198,16 +198,19 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-man1_MANS = powerman.1
+man1_MANS = powerman.1 pm.1
 man5_MANS = powerman.conf.5 powerman.dev.5
 man7_MANS = powerman-devices.7
-man8_MANS = powermand.8
+man8_MANS = powermand.8 httppower.8 plmpower.8
+CLEANFILES = pm.1
 EXTRA_DIST = \
 	powerman.1 \
 	powerman.conf.5 \
 	powerman.dev.5 \
 	powerman-devices.7 \
-	powermand.8
+	powermand.8 \
+	httppower.8 \
+	plmpower.8
 
 all: all-am
 
@@ -489,6 +492,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -557,6 +561,9 @@ uninstall-man: uninstall-man1 uninstall-man5 uninstall-man7 \
 	uninstall-info-am uninstall-man uninstall-man1 uninstall-man5 \
 	uninstall-man7 uninstall-man8
 
+
+pm.1: powerman.1
+	cp $< $@
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
