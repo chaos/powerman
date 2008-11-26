@@ -13,7 +13,7 @@ man7_MANS = powerman-devices.7
 man8_MANS = powermand.8 httppower.8 plmpower.8
 
 pm.1: powerman.1
-	cp $< $@
+	cp powerman.1 $@
 
 CLEANFILES = pm.1
 	
