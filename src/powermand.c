@@ -66,7 +66,7 @@ static void _noop_handler(int signum);
 static void _exit_handler(int signum);
 static void _select_loop(void);
 
-#define OPTIONS "c:fhd:VsRY1"
+#define OPTIONS "c:fhd:VsY1"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
@@ -76,7 +76,6 @@ static const struct option longopts[] = {
     {"debug",           required_argument,  0, 'd'},
     {"version",         no_argument,        0, 'V'},
     {"stdio",           no_argument,        0, 's'},
-    {"force-notroot",   no_argument,        0, 'R'},
     {"short-circuit-delay", no_argument,    0, 'Y'},
     {"one-client",      no_argument,        0, '1'},
     {0, 0, 0, 0}
@@ -91,7 +90,6 @@ int main(int argc, char **argv)
     char *config_filename = NULL;
     bool daemonize = TRUE;
     bool use_stdio = FALSE;
-    bool force_notroot = FALSE;
     bool short_circuit_delay = FALSE;
     bool one_client = FALSE;
 
@@ -129,9 +127,6 @@ int main(int argc, char **argv)
             use_stdio = TRUE;
             one_client = TRUE;
             break;
-        case 'R': /* --force-notroot */
-            force_notroot = TRUE;
-            break;
         case '1': /* --one-client */
             one_client = TRUE;
             break;
@@ -145,10 +140,6 @@ int main(int argc, char **argv)
 
     if (use_stdio && daemonize)
         err_exit(FALSE, "--stdio should only be used with --foreground");
-
-    /* need root for ability to chown ptys, etc */
-    if (!force_notroot && geteuid() != 0)
-        err_exit(FALSE, "must be root");
 
     if (!config_filename)
         config_filename = hsprintf("%s/%s/%s", X_SYSCONFDIR, 
@@ -172,7 +163,7 @@ int main(int argc, char **argv)
         int *fds, len;
 
         cli_listen_fds(&fds, &len);
-        daemon_init(fds, len, run_dir, DAEMON_NAME); 
+        daemon_init(fds, len, DAEMON_NAME); 
         xfree(run_dir);
         err_notty();
         dbg_notty();
@@ -192,7 +183,6 @@ static void _usage(char *prog)
     printf("  -f --foreground        Don't daemonize\n");
     printf("  -V --version           Report powerman version\n");
     printf("  -s --stdio             Talk to client on stdin/stdout\n");
-    printf("  -R --force-notroot     Allow powermand to run as non-root\n");
     printf("  -1 --one-client        Terminate when client disconnects\n");
     exit(0);
 }

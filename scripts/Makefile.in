@@ -47,6 +47,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_httppower.m4 \
 	$(top_srcdir)/config/ac_meta.m4 \
 	$(top_srcdir)/config/ac_pkgconfig.m4 \
+	$(top_srcdir)/config/ac_runas.m4 \
 	$(top_srcdir)/config/ac_wrap.m4 \
 	$(top_srcdir)/config/x_ac_expand_install_dirs.m4 \
 	$(top_srcdir)/configure.ac
@@ -121,6 +122,7 @@ PATH_SEPARATOR = @PATH_SEPARATOR@
 PROJECT = @PROJECT@
 RANLIB = @RANLIB@
 RELEASE = @RELEASE@
+RUN_AS_USER = @RUN_AS_USER@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
@@ -366,6 +368,10 @@ install-data-local:
 		$(DESTDIR)$(sysconfdir)/init.d
 	$(top_srcdir)/config/install-sh -m 755 $(srcdir)/powerman.init \
 		$(DESTDIR)$(sysconfdir)/init.d/powerman
+	-$(top_srcdir)/config/install-sh -m 755 -d \
+		$(DESTDIR)$(localstatedir)/run
+	-$(top_srcdir)/config/install-sh -o $(RUN_AS_USER) -m 755 -d \
+		$(DESTDIR)$(localstatedir)/run/powerman
 
 uninstall-local:
 	$(RM) $(DESTDIR)$(sysconfdir)/init.d/powerman

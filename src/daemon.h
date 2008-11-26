@@ -27,7 +27,7 @@
 #ifndef PM_DAEMON_H
 #define PM_DAEMON_H
 
-void daemon_init(int *skipfds, int skipfds_len, char *rootdir, char *name);
+void daemon_init(int *skipfds, int skipfds_len, char *name);
 
 #endif /* PM_DAEMON_H */
 

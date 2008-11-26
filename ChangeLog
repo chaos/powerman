@@ -1,8 +1,19 @@
 2008-11-26 Jim Garlick <garlick@llnl.gov>
 
+	* scripts/Makefile.am : Create /var/run/powerman during install.
+
+	* src/powermand.c, src/daemon.c : Don't chdir to /var/run/powerman
+	in daemon initialization.  Let the init script do that for us.
+	Also don't attempt to create /var/run/powerman.
+
+	* src/powermand.c : Drop --force-notroot option and do not
+	insist that the daemon run as root.
+
+	* config/ac_runas.m4 : New.
+
 	* src/Makefile.am : Install pkg-config file and header.
 
-	* config/ac_pkgconfig.m4 : New [Arnaud Quette]
+	* config/ac_pkgconfig.m4 : New [Arnaud Quette].
 
 	* src/libpowreman.pc.in : New [Arnaud Quette]
 

@@ -493,7 +493,7 @@ static int _connect_to_server_pipe(char *server_path, char *config_path,
     saved_stderr = dup(STDERR_FILENO);
     if (saved_stderr < 0)
         err_exit(TRUE, "dup stderr");
-    snprintf(cmd, sizeof(cmd), "powermand -sRf -c %s", config_path);
+    snprintf(cmd, sizeof(cmd), "powermand -sf -c %s", config_path);
     argv = argv_create(cmd, "");
     if (short_circuit_delays) 
         argv = argv_append(argv, "-Y");

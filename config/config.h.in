@@ -108,6 +108,9 @@
 /* Define the project's release. */
 #undef RELEASE
 
+/* Powerman daemon user */
+#undef RUN_AS_USER
+
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
 

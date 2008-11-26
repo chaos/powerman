@@ -57,7 +57,7 @@ rm -rf $RPM_BUILD_ROOT
 make install DESTDIR=$RPM_BUILD_ROOT 
 
 %clean
-rm -rf $RPM_BUILD_ROO
+rm -rf $RPM_BUILD_ROOT
 
 %post
 if [ -x /sbin/chkconfig ]; then /sbin/chkconfig --add powerman; fi
@@ -97,6 +97,7 @@ fi
 %{_sysconfdir}/init.d/powerman
 %{_libdir}/*
 %{_includedir}/*
+%dir %attr(0755,daemon,root) %config %{_localstatedir}/run/powerman
 
 %changelog
 
