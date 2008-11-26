@@ -1,3 +1,29 @@
+/*****************************************************************************\
+ *  $Id:$
+ *****************************************************************************
+ *  Copyright (C) 2008 The Regents of the University of California.
+ *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
+ *  Written by Jim Garlick <garlick@llnl.gov>
+ *  UCRL-CODE-2002-008.
+ *  
+ *  This file is part of PowerMan, a remote power management program.
+ *  For details, see <http://www.llnl.gov/linux/powerman/>.
+ *  
+ *  PowerMan is free software; you can redistribute it and/or modify it under
+ *  the terms of the GNU General Public License as published by the Free
+ *  Software Foundation; either version 2 of the License, or (at your option)
+ *  any later version.
+ *  
+ *  PowerMan is distributed in the hope that it will be useful, but WITHOUT 
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
+ *  for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License along
+ *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
+ *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+\*****************************************************************************/
+
 /*
  * libpowerman.c - simple powerman client library
  */
@@ -22,33 +48,86 @@
 struct pm_handle_struct {
     int         pmh_magic;
     int         pmh_fd;
-    char **     pmh_nodenames;
-    int         pmh_numnodes;
 };
 
-#define PMI_MAGIC 0xab5634fd
+
+typedef void (*list_free_t) (void *x);
+struct list_struct {
+    char *              data;
+    struct list_struct *next;
+    list_free_t         freefun;
+};
+
+#define PMI_MAGIC 0x41a452b5
 struct pm_node_iterator_struct {
-    int         pmi_magic;
-    pm_handle_t pmi_handle;
-    int         pmi_pos;
+    int                 pmi_magic;
+    struct list_struct *pmi_nodes;
+    struct list_struct *pmi_pos;
 };
 
-typedef struct resp_t {
-    char **lines;
-    int count;
-} resp_t;
+static pm_err_t _list_add(struct list_struct **head, char *s, 
+                                list_free_t freefun);
+static void     _list_free(struct list_struct **head);
+static int      _list_search(struct list_struct *head, char *s);
 
 static int      _strncmpend(char *s1, char *s2, int len);
 static char *   _strndup(char *s, int len);
-static void *   _realloc(void *ptr, size_t size);
-static pm_err_t _add_node(pm_handle_t pmh, char *node);
-static pm_err_t _validate_node(pm_handle_t pmh, char *node);
 static pm_err_t _connect_to_server_tcp(pm_handle_t pmh, char *host, char *port);
-static pm_err_t _parse_response(char *buf, int len, resp_t *resp);
-static pm_err_t _server_recv_response(pm_handle_t pmh, resp_t *resp);
+static pm_err_t _parse_response(char *buf, int len, 
+                                struct list_struct **respp);
+static pm_err_t _server_recv_response(pm_handle_t pmh, 
+                                struct list_struct **respp);
 static pm_err_t _server_send_command(pm_handle_t pmh, char *cmd, char *arg);
 static pm_err_t _server_command(pm_handle_t pmh, char *cmd, char *arg, 
-                                resp_t *resp);
+                                struct list_struct **respp);
+
+
+/* Add [s] to the list referenced by [head], registering [freefun] to 
+ * be called on [s] when the list is freed.
+ */
+static pm_err_t
+_list_add(struct list_struct **head, char *s, list_free_t freefun)
+{
+    struct list_struct *new;
+
+    if (!(new = malloc(sizeof(struct list_struct))))
+        return PM_ENOMEM;
+    new->data = s;
+    new->next = *head;
+    new->freefun = freefun;
+    *head = new;
+    return PM_ESUCCESS;
+}
+
+/* Free the list referred to by [head].
+ */
+static void
+_list_free(struct list_struct **head)
+{
+    struct list_struct *lp, *tmp;
+
+    for (lp = *head; lp != NULL; lp = tmp->next) {
+        tmp = lp;
+        if (lp->freefun)
+            lp->freefun(lp->data); 
+        free(lp);
+    }
+    *head = NULL;
+}
+
+/* Scan the list referenced by [head] looking for an element containing
+ * exactly the string [s], returning true if found.
+ */
+static int
+_list_search(struct list_struct *head, char *s)
+{
+    struct list_struct *lp;
+
+    for (lp = head; lp != NULL; lp = lp->next)
+        if (strcmp(lp->data, s) == 0)
+            return 1;
+    return 0;
+}
 
 /* Test if [s2] is a terminating substring of [s1].
  */
@@ -73,35 +152,6 @@ _strndup(char *s, int len)
     return c;     
 }
 
-/* Realloc that handles NULL [ptr].
- */
-static void *
-_realloc(void *ptr, size_t size)
-{
-    if (ptr == NULL)
-        return malloc(size);
-    return realloc(ptr, size);
-}
-
-/* Add [node] to the list of valid nodes stored in handle [pmh].
- */
-static pm_err_t
-_add_node(pm_handle_t pmh, char *node)
-{
-    char *nodecpy;
-
-    if ((nodecpy = strdup(node)) == NULL)
-        return PM_ENOMEM;
-    pmh->pmh_nodenames = _realloc(pmh->pmh_nodenames, 
-                                 (pmh->pmh_numnodes + 1)*sizeof(char *));
-    if (pmh->pmh_nodenames == NULL) {
-        free(nodecpy);
-        return PM_ENOMEM;
-    }
-    pmh->pmh_nodenames[pmh->pmh_numnodes++] = nodecpy;
-    return PM_ESUCCESS;
-}
-
 /* Establish connection to powerman server on [host] and [port].
  * Connection state is returned in the handle.
  */
@@ -109,46 +159,38 @@ static pm_err_t
 _connect_to_server_tcp(pm_handle_t pmh, char *host, char *port)
 {
     struct addrinfo hints, *res, *r;
-    pm_err_t result = PM_ESUCCESS;
+    pm_err_t err = PM_ECONNECT;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = PF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
 
-    if (getaddrinfo(host, port, &hints, &res) != 0 || res == NULL) {
-        result = PM_ENOADDR;
-        goto done;
-    }
+    if (getaddrinfo(host, port, &hints, &res) != 0 || res == NULL)
+        return PM_ENOADDR;
     for (r = res; r != NULL; r = r->ai_next) {
         if ((pmh->pmh_fd = socket(r->ai_family, r->ai_socktype, 0)) < 0)
             continue;
-        /* N.B. default TCP connect timeout applies */
         if (connect(pmh->pmh_fd, r->ai_addr, r->ai_addrlen) < 0) {
             close(pmh->pmh_fd);
             continue;
         }
-        break; /* success! */
+        err = PM_ESUCCESS;
+        break;
     }
-    if (r == NULL)
-        result = PM_ECONNECT;
-
-done:
-    if (res)
-        freeaddrinfo(res);
-    return result;
+    freeaddrinfo(res);
+    return err;
 }
 
 /* Parse a server response stored in [buf] of length [len] into
- * an array of lines stored in [resp].  Caller must free [resp].
+ * an array of lines stored in [respp] which caller must free.
  */
 static pm_err_t
-_parse_response(char *buf, int len, resp_t *resp)
+_parse_response(char *buf, int len, struct list_struct **respp)
 {
-    int l = strlen(CP_EOL);
-    int i, count = 0;  
-    char *p, **lines = NULL;
-    char *cpy;
-    pm_err_t err;
+    int i, l = strlen(CP_EOL);
+    char *p, *cpy;
+    struct list_struct *resp = NULL;
+    pm_err_t err = PM_ESUCCESS;
 
     p = buf;
     for (i = 0; i < len - l; i++) {
@@ -156,61 +198,62 @@ _parse_response(char *buf, int len, resp_t *resp)
             continue;
         if ((cpy = _strndup(p, &buf[i] - p + l)) == NULL) {
             err = PM_ENOMEM;
-            goto error;
+            break;
         }
-        lines = (char **)_realloc(lines, (count + 1) * sizeof(char *));
-        if (lines == NULL) {
-            err = PM_ENOMEM;
-            goto error;
-        }
-        lines[count++] = cpy;
+        if ((err = _list_add(&resp, cpy, (list_free_t)free)) != PM_ESUCCESS)
+            break;
         p = &buf[i + l];
     }
-    if (resp) {
-        resp->lines = lines;
-        resp->count = count;
-    }
-
-    return PM_ESUCCESS;
-error:
-    if (lines) {
-        for (i = 0; i < count; i++)
-            if (lines[i])
-                free(lines[i]);
-        free(lines);
-    }
+    if (err == PM_ESUCCESS && respp != NULL)
+        *respp = resp;
+    else
+        _list_free(&resp);
     return err;
 }
 
 /* Scan response from server for return code.
  */
 static pm_err_t
-_server_retcode(resp_t resp)
+_server_retcode(struct list_struct *resp)
 {
-    int i, code;
+    int code;
     pm_err_t err = PM_EPARSE;
-
-    for (i = 0; i < resp.count; i++) {
-        if (sscanf(resp.lines[i], "%d ", &code) == 1) {
-            if (code == 1 || CP_IS_SUCCESS(code)) { /* 001 = hello */
-                err = PM_ESUCCESS;
-                break;
-            } else if (CP_IS_FAILURE(code)) {
-                switch (code) {
-                    case 210:
-                    case 211:
-                        err = PM_EPARTIAL;
-                        break;
-                    case 213:
-                        err = PM_EUNIMPL;
-                        break;
-                    default:
-                        err = PM_ESERVER;
-                        break;
-                }
-                break;
+   
+    /* N.B. there will only be one 1xx or 2xx code in a response */ 
+    while (resp != NULL) {
+        if (sscanf(resp->data, "%d ", &code) == 1) {
+            switch (code) {
+                case 1:     /* hello */
+                case 101:   /* goodbye */
+                case 102:   /* command completed successfully */
+                case 103:   /* query complete */
+                case 104:   /* telemetry on|off */
+                case 105:   /* hostrange expansion on|off */
+                    err = PM_ESUCCESS;
+                    break; 
+                case 201:   /* unknown command */
+                case 202:   /* parse error */
+                case 203:   /* command too long */
+                case 204:   /* internal powermand error... */
+                case 205:   /* hostlist error */
+                case 208:   /* command in progress */
+                    err = PM_ESERVER;
+                    break;
+                case 209:   /* no such nodes */
+                    err = PM_EBADNODE;
+                    break;
+                case 210:   /* command completed with errors */
+                case 211:   /* query completed with errors */
+                    err = PM_EPARTIAL;
+                    break;
+                case 213:   /* command cannot be handled by PDU */
+                    err = PM_EUNIMPL;
+                    break;
+                default:    /* 3xx (ignore) */
+                    break;
             }
         }
+        resp = resp->next;
     }
     return err;
 }
@@ -219,17 +262,17 @@ _server_retcode(resp_t resp)
  * [resp], an array of lines.  Caller must free [resp].
  */
 static pm_err_t
-_server_recv_response(pm_handle_t pmh, resp_t *respp)
+_server_recv_response(pm_handle_t pmh, struct list_struct **respp)
 {
     int buflen = 0, count = 0, n;
     char *buf = NULL; 
     pm_err_t err = PM_ESUCCESS;
-    resp_t resp;
+    struct list_struct *resp;
 
     do {
         if (buflen - count == 0) {
             buflen += CP_LINEMAX;
-            buf = _realloc(buf, buflen);
+            buf = buf ? realloc(buf, buflen) : malloc(buflen);
             if (buf == NULL) {
                 err = PM_ENOMEM;
                 break;
@@ -249,13 +292,16 @@ _server_recv_response(pm_handle_t pmh, resp_t *respp)
 
     if (err == PM_ESUCCESS) {
         err = _parse_response(buf, count, &resp);
-        if (err == PM_ESUCCESS)
+        if (err == PM_ESUCCESS) {
             err = _server_retcode(resp);
+            if (err == PM_ESUCCESS && respp != NULL)
+                *respp = resp;
+            else
+                _list_free(&resp);
+        }
     }
     if (buf != NULL)
         free(buf);
-    if (err == PM_ESUCCESS && respp)
-        *respp = resp;
     return err;
 }
 
@@ -285,113 +331,175 @@ _server_send_command(pm_handle_t pmh, char *cmd, char *arg)
     return err;
 }
 
-/* Send command [cmd] with argumetn [arg] to server handle [pmh].
- * If [resp] is non-NULL, return parsed array of response lines 
- * in [resp] which the caller must free.
+/* Send command [cmd] with argument [arg] to server handle [pmh].
+ * If [respp] is non-NULL, return list of response lines which
+ * the caller must free.
  */
 static pm_err_t
-_server_command(pm_handle_t pmh, char *cmd, char *arg, resp_t *resp)
+_server_command(pm_handle_t pmh, char *cmd, char *arg, struct list_struct **respp)
 {
     pm_err_t err;
 
     if ((err = _server_send_command(pmh, cmd, arg)) != PM_ESUCCESS)
         return err;
-    if ((err = _server_recv_response(pmh, resp)) != PM_ESUCCESS)
+    if ((err = _server_recv_response(pmh, respp)) != PM_ESUCCESS)
         return err;
     return PM_ESUCCESS;
 }
 
-/* Check if [node] is one of the valid node names stored in handle [pmh].
- */
 static pm_err_t
-_validate_node(pm_handle_t pmh, char *node)
+_parse_hostport(char *str, char **hp, char **pp)
 {
-    pm_node_iterator_t pmi;
-    char *tnode;
-    pm_err_t err;
+    char *h = NULL, *p = NULL;
 
-    if ((err = pm_node_iterator_create(pmh, &pmi)) != PM_ESUCCESS)
-        return err;
-    err = PM_EBADNODE;
-    while ((tnode = pm_node_next(pmi)) != NULL) {
-        if (!strcmp(node, tnode)) {
-            err = PM_ESUCCESS;
-            break;
+    if (str) {
+        if (!(h = strdup(str)))
+            goto nomem;
+        if ((p = strchr(h, ':'))) {
+            *p = '\0';
+            if (!(p = strdup(p + 1))) {
+                goto nomem;
+            }
         }
     }
-    pm_node_iterator_destroy(pmi);
+    if (h == NULL && !(h = strdup(DFLT_HOSTNAME)))
+        goto nomem;
+    if (p == NULL && !(p = strdup(DFLT_PORT)))
+        goto nomem;
+    *hp = h;
+    *pp = p;
+    return PM_ESUCCESS;
+nomem:
+    if (h)
+        free(h);
+    if (p)
+        free(p);
+    return PM_ENOMEM;
+}
+
+pm_err_t
+pm_connect(char *server, void *arg, pm_handle_t *pmhp)
+{
+    pm_handle_t pmh = NULL;
+    char *host = NULL, *port = NULL;
+    pm_err_t err;
+
+    if (pmhp == NULL) {
+        err = PM_EBADARG;
+        goto error;
+    }
+    if ((err = _parse_hostport(server, &host, &port)) != PM_ESUCCESS)
+        goto error;
+    if ((pmh = (pm_handle_t)malloc(sizeof(struct pm_handle_struct))) == NULL) {
+        err = PM_ENOMEM;
+        goto error;
+    }
+    pmh->pmh_magic = PMH_MAGIC;
+
+    if ((err = _connect_to_server_tcp(pmh, host, port)) != PM_ESUCCESS)
+        goto error;
+
+    /* eat version + prompt */
+    if ((err = _server_recv_response(pmh, NULL)) != PM_ESUCCESS) {
+        (void)close(pmh->pmh_fd);
+        goto error;
+    }
+    /* tell server not to compress output */
+    if ((err = _server_command(pmh, CP_EXPRANGE, NULL, NULL)) != PM_ESUCCESS) {
+        (void)close(pmh->pmh_fd);
+        goto error;
+    }
+    if (err == PM_ESUCCESS) {
+        *pmhp = pmh;
+        free(host);
+        free(port);
+        return PM_ESUCCESS;
+    }
+
+error:
+    free(host);
+    free(port);
+    if (pmh)
+        free(pmh);
     return err;
 }
 
-/* Connect to powerman server on [host] and [port], either of which
- * may be NULL indicating a desire to use the defaults.
- * Return a handle for the connection in [pmhp].
- */
-pm_err_t
-pm_connect(char *host, char *port, pm_handle_t *pmhp)
+static pm_err_t
+_node_iterator_create(pm_node_iterator_t *pmip)
 {
-    pm_handle_t pmh;
-    pm_err_t err;
-    resp_t resp;
-    int i;
+    pm_node_iterator_t pmi; 
 
-    if (pmhp == NULL)
-        return PM_EBADARG;
-    if (host == NULL)
-        host = DFLT_HOSTNAME;
-    if (port == NULL)
-        port = DFLT_PORT;
-
-    if ((pmh = (pm_handle_t)malloc(sizeof(struct pm_handle_struct))) == NULL)
+    if (!(pmi = malloc(sizeof(struct pm_node_iterator_struct))))
         return PM_ENOMEM;
+    pmi->pmi_magic = PMI_MAGIC;
+    pmi->pmi_pos = pmi->pmi_nodes = NULL;
+    *pmip = pmi;
+    return PM_ESUCCESS;
+}
 
-    pmh->pmh_magic = PMH_MAGIC;
-    pmh->pmh_numnodes = 0;
-    pmh->pmh_nodenames = NULL;
+void
+pm_node_iterator_destroy(pm_node_iterator_t pmi)
+{
+    _list_free(&pmi->pmi_nodes);
+    pmi->pmi_pos = NULL;
+    pmi->pmi_magic = 0;
+    free(pmi);
+}
 
-    if ((err = _connect_to_server_tcp(pmh, host, port)) != PM_ESUCCESS) {
-        free(pmh);
+pm_err_t
+pm_node_iterator_create(pm_handle_t pmh, pm_node_iterator_t *pmip)
+{
+    pm_node_iterator_t pmi;
+    struct list_struct *lp, *resp;
+    char *cpy, *p, node[CP_LINEMAX];
+    pm_err_t err;
+    int code;
+
+    if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
+        return PM_EBADHAND;
+    if ((err = _node_iterator_create(&pmi)) != PM_ESUCCESS)
+        return err;
+    if ((err = _server_command(pmh, CP_NODES, NULL, &resp)) != PM_ESUCCESS) {
+        pm_node_iterator_destroy(pmi);
         return err;
     }
-
-    /* eat version + prompt */
-    if ((err = _server_recv_response(pmh, NULL)) != PM_ESUCCESS)
-        goto error;
-    /* tell server not to compress output */
-    if ((err = _server_command(pmh, CP_EXPRANGE, NULL, NULL)) != PM_ESUCCESS)
-        goto error;
-    /* cache list of valid node names */
-    if ((err = _server_command(pmh, CP_NODES, NULL, &resp)) != PM_ESUCCESS)
-        goto error;
-
-    err = PM_ESUCCESS;
-    for (i = 0; i < resp.count; i++) {
-        char node[CP_LINEMAX];
-
-        if (sscanf(resp.lines[i], CP_INFO_XNODES, node) == 1) {
-            err = _add_node(pmh, node);
+    for (lp = resp; lp != NULL; lp = lp->next) {
+        if (sscanf(lp->data, CP_INFO_XNODES, node) == 1) {
+            if (!(cpy = strdup(node))) {
+                err = PM_ENOMEM;
+                break;
+            }
+            err = _list_add(&pmi->pmi_nodes, cpy, (list_free_t)free);
             if (err != PM_ESUCCESS)
                 break;
         }
     }
 
-    free(resp.lines);
-
-    if (err == PM_ESUCCESS) {
-        *pmhp = pmh;
-        return PM_ESUCCESS;
-    }
-
-error:
-    if (pmh != NULL) {
-        (void)close(pmh->pmh_fd);
-        for (i = 0; i < pmh->pmh_numnodes; i++)
-            if (pmh->pmh_nodenames[i] != NULL)
-                free(pmh->pmh_nodenames[i]);
-        free(pmh->pmh_nodenames);
-        free(pmh);
-    }
+    if (err == PM_ESUCCESS && pmip != NULL) {
+        pm_node_iterator_reset(pmi);
+        *pmip = pmi;
+    } else
+        pm_node_iterator_destroy(pmi);
+    _list_free(&resp);
     return err;
+}
+
+char *
+pm_node_next(pm_node_iterator_t pmi)
+{
+    struct list_struct *cur = pmi->pmi_pos;
+
+    if (!cur)
+        return NULL;
+    pmi->pmi_pos = pmi->pmi_pos->next;
+
+    return cur->data;
+}
+
+void
+pm_node_iterator_reset(pm_node_iterator_t pmi)
+{
+    pmi->pmi_pos = pmi->pmi_nodes;
 }
 
 
@@ -400,78 +508,10 @@ error:
 void 
 pm_disconnect(pm_handle_t pmh)
 {
-    int i;
-
     if (pmh != NULL && pmh->pmh_magic == PMH_MAGIC) {
-        (void)_server_command(pmh, CP_QUIT, NULL, NULL);
+        (void)_server_command(pmh, CP_QUIT, NULL, NULL); /* PM_ESERVEREOF */
         (void)close(pmh->pmh_fd);
-
-        if (pmh->pmh_nodenames != NULL) {
-            for (i = 0; i < pmh->pmh_numnodes; i++)
-                if (pmh->pmh_nodenames[i] != NULL)
-                    free(pmh->pmh_nodenames[i]);
-            free(pmh->pmh_nodenames);
-        }
         free(pmh);
-    }
-}
-
-/* Create an iterater [pmip] that works over the list of valid node names 
- * stored at connect time in server handle [pmh].
- */
-pm_err_t
-pm_node_iterator_create(pm_handle_t pmh, pm_node_iterator_t *pmip)
-{
-    pm_node_iterator_t pmi;
-
-    if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
-        return PM_EBADHAND;
-    if (pmip == NULL)
-        return PM_EBADARG;
-
-    pmi = (pm_node_iterator_t)malloc(sizeof(struct pm_node_iterator_struct));
-    if (pmi == NULL)
-        return PM_ENOMEM;
-        
-    pmi->pmi_magic = PMI_MAGIC;
-    pmi->pmi_handle = pmh;
-    pmi->pmi_pos = 0;
-
-    *pmip = pmi;
-    return PM_ESUCCESS;
-}
-
-/* Rewind iterator [pmi] back to the beginning of the node list.
- */
-void
-pm_node_iterator_reset(pm_node_iterator_t pmi)
-{
-    if (pmi != NULL && pmi->pmi_magic == PMI_MAGIC)
-        pmi->pmi_pos = 0;
-}
-
-/* Return the next node in the node list pointed to by iterator [pmi]
- * or NULL if end of list.
- */
-char *
-pm_node_next(pm_node_iterator_t pmi)
-{
-    if (pmi == NULL || pmi->pmi_magic != PMI_MAGIC)
-        return NULL;
-    if (pmi->pmi_pos >= pmi->pmi_handle->pmh_numnodes)
-        return NULL;
-
-    return pmi->pmi_handle->pmh_nodenames[pmi->pmi_pos++];
-}
-
-/* Destroy iterator [pmi].
- */
-void
-pm_node_iterator_destroy(pm_node_iterator_t pmi)
-{
-    if (pmi != NULL && pmi->pmi_magic == PMI_MAGIC) {
-        memset(pmi, 0, sizeof(struct pm_node_iterator_struct));
-        free(pmi);
     }
 }
 
@@ -483,28 +523,24 @@ pm_node_status(pm_handle_t pmh, char *node, pm_node_state_t *statep)
 {
     char offstr[CP_LINEMAX], onstr[CP_LINEMAX];
     pm_err_t err;
-    resp_t resp;
-    pm_node_state_t state = PM_UNKNOWN;
-    int i;
+    struct list_struct *resp;
+    pm_node_state_t state;
 
     if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
         return PM_EBADHAND;
-    if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
-        return err;
     if ((err = _server_command(pmh, CP_STATUS, node, &resp)) != PM_ESUCCESS)
         return err;
 
     snprintf(offstr, sizeof(offstr), CP_INFO_XSTATUS, node, "off");
     snprintf(onstr,  sizeof(onstr),  CP_INFO_XSTATUS, node, "on");
+    if (_list_search(resp, offstr))
+        state = PM_OFF;
+    else if (_list_search(resp, onstr))
+        state = PM_ON;
+    else
+        state = PM_UNKNOWN;
+    _list_free(&resp);
 
-    for (i = 0; i < resp.count; i++) {
-        if (!strcmp(offstr, resp.lines[i]))
-            state = PM_OFF;
-        else if (!strcmp(onstr, resp.lines[i]))
-            state = PM_ON;
-    }
-
-    free(resp.lines);
     if (statep)
         *statep = state;
     return PM_ESUCCESS;
@@ -515,16 +551,9 @@ pm_node_status(pm_handle_t pmh, char *node, pm_node_state_t *statep)
 pm_err_t
 pm_node_on(pm_handle_t pmh, char *node)
 {
-    pm_err_t err;
-
     if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
         return PM_EBADHAND;
-    if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
-        return err;
-    if ((err = _server_command(pmh, CP_ON, node, NULL)) != PM_ESUCCESS)
-        return err;
-
-    return err;
+    return _server_command(pmh, CP_ON, node, NULL);
 }
 
 /* Tell server [pmh] to turn [node] off.
@@ -532,33 +561,19 @@ pm_node_on(pm_handle_t pmh, char *node)
 pm_err_t
 pm_node_off(pm_handle_t pmh, char *node)
 {
-    pm_err_t err;
-
     if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
         return PM_EBADHAND;
-    if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
-        return err;
-    if ((err = _server_command(pmh, CP_OFF, node, NULL)) != PM_ESUCCESS)
-        return err;
-
-    return err;
+    return _server_command(pmh, CP_OFF, node, NULL);
 }
 
-/* Tell server [pmh] to power cycle [node].
+/* Tell server [pmh] to cycle [node].
  */
 pm_err_t
 pm_node_cycle(pm_handle_t pmh, char *node)
 {
-    pm_err_t err;
-
     if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
         return PM_EBADHAND;
-    if ((err = _validate_node(pmh, node)) != PM_ESUCCESS)
-        return err;
-    if ((err = _server_command(pmh, CP_CYCLE, node, NULL)) != PM_ESUCCESS)
-        return err;
-
-    return err;
+    return _server_command(pmh, CP_CYCLE, node, NULL);
 }
 
 /* Convert error code to human readable string.

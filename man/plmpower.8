@@ -20,14 +20,17 @@ Specify the path to the special file connected to the PLM's serial port.
 .I "-t, --timeout msec"
 Set the Insteon timeout to the specified number of milliseconds (default 1000).
 .TP
-.I "-x, --x10-attempts"
+.I "-x, --x10-attempts number"
 Set the number of times to run every X10 command (default 3).
+X10 does not provide an ACK/NAK mechanism like Insteon so we cannot
+be certain that any particular X10 command completed, 
+therefore X10 commands are issued multiple times to increase confidence.
 .SH INTERACTIVE COMMANDS
-The following commands are accepted by the plmpower> prompt:
+The following commands are accepted by the plmpower> prompt.
+Address arguments may be Insteon (e.g. 1A.2B.3C) or X10 (e.g. G12).
 .TP
 .I "help"
 Display help on the available commands.
-Address arguments may be Insteon (e.g. 1A.2B.3C) or X10 (e.g. G12).
 .TP
 .I "info"
 Get info abou the PLM.
@@ -42,10 +45,10 @@ Turn on device.
 Turn off device.  
 .TP
 .I "status addr"
-Query status of device.  
+Query status of device (Insteon only).
 .TP
 .I "ping addr"
-Time round trip request/response to device.
+Time round trip request/response to device (Insteon only).
 .SH "FILES"
 /usr/sbin/plmpower
 .br

@@ -1,3 +1,9 @@
+2008-11-25 Jim Garlick <garlick@llnl.gov>
+
+	* : Add some missing copyright headers.
+
+	* src/libpowerman.[ch] : Some refactoring and cleanup.
+
 2008-11-20 Jim Garlick <garlick@llnl.gov>
 
 	* : Audit for debian [Arnaud Quette]

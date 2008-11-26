@@ -1,3 +1,29 @@
+/*****************************************************************************\
+ *  $Id:$
+ *****************************************************************************
+ *  Copyright (C) 2008 The Regents of the University of California.
+ *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
+ *  Written by Jim Garlick <garlick@llnl.gov>
+ *  UCRL-CODE-2002-008.
+ *  
+ *  This file is part of PowerMan, a remote power management program.
+ *  For details, see <http://www.llnl.gov/linux/powerman/>.
+ *  
+ *  PowerMan is free software; you can redistribute it and/or modify it under
+ *  the terms of the GNU General Public License as published by the Free
+ *  Software Foundation; either version 2 of the License, or (at your option)
+ *  any later version.
+ *  
+ *  PowerMan is distributed in the hope that it will be useful, but WITHOUT 
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
+ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
+ *  for more details.
+ *  
+ *  You should have received a copy of the GNU General Public License along
+ *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
+ *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
+\*****************************************************************************/
+
 /* cli.c - simple client to demo the libpowerman api */
 
 #include <stdio.h>
@@ -5,8 +31,8 @@
 
 #include "libpowerman.h"
 
-static pm_err_t query_one(pm_handle_t pm, char *s);
-static pm_err_t query_all(pm_handle_t pm);
+static pm_err_t list_nodes(pm_handle_t pm);
+static void usage(void);
 
 int
 main(int argc, char *argv[])
@@ -15,39 +41,44 @@ main(int argc, char *argv[])
     pm_node_state_t ns;
     pm_handle_t pm;
     char *str, ebuf[64];
-    char *host, *port;
+    char *server, *node;
     char cmd;
 
-    if (argc < 4 || argc > 5 || (argv[3][0] != 'q' && argv[3][0] != '1'
-                              && argv[3][0] != '0' && argv[3][0] != 'c')) {
-        fprintf(stderr, "Usage: cli host port 0|1|c|q [node]\n");
-        exit(1);
-    }
-    host = argv[1];
-    port = argv[2];
-    cmd = argv[3][0];
+    if (argc < 3 || argc > 4)
+        usage();
+    server = argv[1];
+    cmd = argv[2][0];
+    if (argc == 3 && cmd != 'l')
+        usage();
+    if (argc == 4 && cmd != '1' && cmd != '0' && cmd != 'c' && cmd != 'q')
+        usage();
+    if (argc == 4)
+        node = argv[3];
 
-    if ((err = pm_connect(host, port, &pm)) != PM_ESUCCESS) {
-        fprintf(stderr, "%s:%s: %s\n", host, port,
+    if ((err = pm_connect(server, NULL, &pm)) != PM_ESUCCESS) {
+        fprintf(stderr, "%s: %s\n", server,
                 pm_strerror(err, ebuf, sizeof(ebuf)));
         exit(1);
     }
 
     switch (cmd) {
         case '1':
-            err = pm_node_on(pm, argv[4]);
+            err = pm_node_on(pm, node);
             break;
         case '0':
-            err = pm_node_off(pm, argv[4]);
+            err = pm_node_off(pm, node);
             break;
         case 'c':
-            err = pm_node_cycle(pm, argv[4]);
+            err = pm_node_cycle(pm, node);
+            break;
+        case 'l':
+            err = list_nodes(pm);
             break;
         case 'q':
-            if (argc == 5)
-                err = query_one(pm, argv[4]);
-            else
-                err = query_all(pm);
+            ns = PM_UNKNOWN;
+            err = pm_node_status(pm, node, &ns);
+            printf("%s: %s\n", node, ns == PM_ON ? "on" : 
+                                     ns == PM_OFF ? "off" : "unknown");
             break;
     }
 
@@ -58,37 +89,31 @@ main(int argc, char *argv[])
     }
 
     pm_disconnect(pm);
+
     exit(0);
 }
 
-static pm_err_t
-query_one(pm_handle_t pm, char *s)
+static pm_err_t 
+list_nodes(pm_handle_t pm)
 {
+    pm_node_iterator_t pmi;
     pm_err_t err;
-    pm_node_state_t ns;
+    char *s;
 
-    err = pm_node_status(pm, s, &ns);
-    if (err == PM_ESUCCESS)
-        printf("%s: %s\n", s, ns == PM_ON ? "on" : 
-                              ns == PM_OFF ? "off" : "unknown");
+    if ((err = pm_node_iterator_create(pm, &pmi)) != PM_ESUCCESS)
+        return err;
+    while ((s = pm_node_next(pmi)))
+        printf("%s\n", s);
+    pm_node_iterator_destroy(pmi);
     return err;
 }
 
-static pm_err_t
-query_all(pm_handle_t pm)
+static void
+usage(void)
 {
-    pm_err_t err;
-    pm_node_iterator_t itr;
-    char *s;
-
-    err = pm_node_iterator_create(pm, &itr);
-    if (err != PM_ESUCCESS)
-        return err;
-    while ((s = pm_node_next(itr)))
-        if ((err = query_one(pm, s)) != PM_ESUCCESS)
-            break;
-    pm_node_iterator_destroy(itr);
-    return err;
+    fprintf(stderr, "Usage: cli host:port 0|1|q node\n");
+    fprintf(stderr, "       cli host:port l\n");
+    exit(1);
 }
 
 /*

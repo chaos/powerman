@@ -77,26 +77,26 @@
 #define CP_IS_FAILURE(i) ((i) >= 200 && (i) < 300)
 #define CP_IS_ALLDONE(i) ((i) >= 100 && (i) < 300)
 
-/* success */
+/* success 1xx */
 #define CP_RSP_QUIT         "101 Goodbye"                           CP_EOL
 #define CP_RSP_COM_COMPLETE "102 Command completed successfully"    CP_EOL
 #define CP_RSP_QRY_COMPLETE "103 Query complete"                    CP_EOL
 #define CP_RSP_TELEMETRY    "104 Telemetry %s"                      CP_EOL
 #define CP_RSP_EXPRANGE     "105 Hostrange expansion %s"            CP_EOL
 
-/* failure */
+/* failure 2xx */
 #define CP_ERR_UNKNOWN      "201 Unknown command"                   CP_EOL
 #define CP_ERR_PARSE        "202 Parse error"                       CP_EOL
 #define CP_ERR_TOOLONG      "203 Command too long"                  CP_EOL
 #define CP_ERR_INTERNAL     "204 Internal powermand error: %s::%d"  CP_EOL
-#define CP_ERR_HOSTLIST     "309 Hostlist error: %s"                CP_EOL
+#define CP_ERR_HOSTLIST     "205 Hostlist error: %s"                CP_EOL
 #define CP_ERR_CLIBUSY      "208 Command in progress"               CP_EOL
 #define CP_ERR_NOSUCHNODES  "209 No such nodes: %s"                 CP_EOL
 #define CP_ERR_COM_COMPLETE "210 Command completed with errors"     CP_EOL
 #define CP_ERR_QRY_COMPLETE "211 Query completed with errors"       CP_EOL
 #define CP_ERR_UNIMPL       "213 Command cannot be handled by power control device(s)" CP_EOL
 
-/* informational */
+/* informational 3xx */
 #define CP_INFO_HELP  \
  "301 nodes              - query node list"                         CP_EOL \
  "301 device [<nodes>]   - query power control device status"       CP_EOL \
