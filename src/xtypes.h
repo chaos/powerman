@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  $Id: arglist.h 689 2004-02-20 16:51:06Z garlick $
+ *  $Id$
  *****************************************************************************
  *  Copyright (C) 2004-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).

@@ -612,7 +612,7 @@ int yy_flex_debug = 0;
 char *yytext;
 #line 1 "parse_lex.l"
 /*****************************************************************************\
- *  $Id: parse.lex 868 2008-05-21 21:17:04Z garlick $
+ *  $Id$
  *****************************************************************************
  *  Copyright (C) 2001-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
