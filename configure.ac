@@ -87,6 +87,9 @@ AC_CURL
 AC_DEFINE(WITH_LSD_FATAL_ERROR_FUNC, 1, [Define lsd_fatal_error])
 AC_DEFINE(WITH_LSD_NOMEM_ERROR_FUNC, 1, [Define lsd_fatal_error])
 
+# whether to install pkg-config file for API
+AC_PKGCONFIG
+
 ##
 # Epilogue.
 ##

@@ -95,6 +95,8 @@ fi
 %{_mandir}/man7/*
 %{_mandir}/man8/*
 %{_sysconfdir}/init.d/powerman
+%{_libdir}/*
+%{_includedir}/*
 
 %changelog
 

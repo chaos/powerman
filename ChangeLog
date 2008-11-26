@@ -1,5 +1,9 @@
 2008-11-26 Jim Garlick <garlick@llnl.gov>
 
+	* src/Makefile.am : Install pkg-config file and header.
+
+	* config/ac_pkgconfig.m4 : New [Arnaud Quette]
+
 	* src/libpowreman.pc.in : New [Arnaud Quette]
 
 	* configure.ac : Add support for above.
