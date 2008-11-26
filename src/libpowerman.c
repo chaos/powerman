@@ -40,9 +40,16 @@
 #include <unistd.h>
 #include <errno.h>
 
-#include "powerman.h"
 #include "client_proto.h"
 #include "libpowerman.h"
+
+#ifndef MAXHOSTNAMELEN
+#define MAXHOSTNAMELEN 64
+#endif
+#ifndef MAXPORTNAMELEN
+#define MAXPORTNAMELEN 64
+#endif
+
 
 #define PMH_MAGIC 0x44445555
 struct pm_handle_struct {
@@ -347,79 +354,55 @@ _server_command(pm_handle_t pmh, char *cmd, char *arg, struct list_struct **resp
     return PM_ESUCCESS;
 }
 
-static pm_err_t
-_parse_hostport(char *str, char **hp, char **pp)
+static void
+_parse_hostport(char *s, char *host, char *port)
 {
-    char *h = NULL, *p = NULL;
+    char *p;
 
-    if (str) {
-        if (!(h = strdup(str)))
-            goto nomem;
-        if ((p = strchr(h, ':'))) {
-            *p = '\0';
-            if (!(p = strdup(p + 1))) {
-                goto nomem;
-            }
-        }
-    }
-    if (h == NULL && !(h = strdup(DFLT_HOSTNAME)))
-        goto nomem;
-    if (p == NULL && !(p = strdup(DFLT_PORT)))
-        goto nomem;
-    *hp = h;
-    *pp = p;
-    return PM_ESUCCESS;
-nomem:
-    if (h)
-        free(h);
-    if (p)
-        free(p);
-    return PM_ENOMEM;
+    if (s)
+        snprintf(host, MAXHOSTNAMELEN, "%s", s);
+    else
+        snprintf(host, MAXHOSTNAMELEN, "%s", PM_DFLT_HOST);
+    if ((p = strchr(host, ':'))) {
+        *p++ = '\0';
+        snprintf(port, MAXPORTNAMELEN, "%s", p);
+    } else
+        snprintf(port, MAXPORTNAMELEN, "%s", PM_DFLT_PORT);
+        
 }
 
 pm_err_t
 pm_connect(char *server, void *arg, pm_handle_t *pmhp)
 {
     pm_handle_t pmh = NULL;
-    char *host = NULL, *port = NULL;
+    char host[MAXHOSTNAMELEN], port[MAXPORTNAMELEN];
     pm_err_t err;
 
-    if (pmhp == NULL) {
-        err = PM_EBADARG;
-        goto error;
-    }
-    if ((err = _parse_hostport(server, &host, &port)) != PM_ESUCCESS)
-        goto error;
-    if ((pmh = (pm_handle_t)malloc(sizeof(struct pm_handle_struct))) == NULL) {
-        err = PM_ENOMEM;
-        goto error;
-    }
+    if (pmhp == NULL)
+        return PM_EBADARG;
+    if ((pmh = (pm_handle_t)malloc(sizeof(struct pm_handle_struct))) == NULL)
+        return PM_ENOMEM;
     pmh->pmh_magic = PMH_MAGIC;
+    _parse_hostport(server, host, port);
 
-    if ((err = _connect_to_server_tcp(pmh, host, port)) != PM_ESUCCESS)
-        goto error;
-
-    /* eat version + prompt */
+    if ((err = _connect_to_server_tcp(pmh, host, port)) != PM_ESUCCESS) {
+        (void)close(pmh->pmh_fd);
+        free(pmh);
+        return err;
+    }
     if ((err = _server_recv_response(pmh, NULL)) != PM_ESUCCESS) {
         (void)close(pmh->pmh_fd);
-        goto error;
+        free(pmh);
+        return err;
     }
-    /* tell server not to compress output */
     if ((err = _server_command(pmh, CP_EXPRANGE, NULL, NULL)) != PM_ESUCCESS) {
         (void)close(pmh->pmh_fd);
-        goto error;
+        free(pmh);
+        return err;
     }
-    if (err == PM_ESUCCESS) {
+    if (err == PM_ESUCCESS)
         *pmhp = pmh;
-        free(host);
-        free(port);
-        return PM_ESUCCESS;
-    }
-
-error:
-    free(host);
-    free(port);
-    if (pmh)
+    else
         free(pmh);
     return err;
 }
@@ -451,9 +434,8 @@ pm_node_iterator_create(pm_handle_t pmh, pm_node_iterator_t *pmip)
 {
     pm_node_iterator_t pmi;
     struct list_struct *lp, *resp;
-    char *cpy, *p, node[CP_LINEMAX];
+    char *cpy, node[CP_LINEMAX];
     pm_err_t err;
-    int code;
 
     if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
         return PM_EBADHAND;

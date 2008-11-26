@@ -24,6 +24,9 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
+#ifndef LIBPOWERMAN_H
+#define LIBPOWERMAN_H
+
 typedef struct pm_handle_struct         *pm_handle_t;
 typedef struct pm_node_iterator_struct  *pm_node_iterator_t;
 
@@ -64,6 +67,11 @@ void     pm_node_iterator_reset(pm_node_iterator_t pmi);
 void     pm_node_iterator_destroy(pm_node_iterator_t pmi);
 
 char *   pm_strerror(pm_err_t err, char *str, int len);
+
+#define PM_DFLT_PORT           "10101"
+#define PM_DFLT_HOST           "localhost"
+
+#endif /* PM_POWERMAN_H */
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab
