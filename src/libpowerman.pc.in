@@ -1,0 +1,13 @@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
+sysconfdir=@sysconfdir@
+pmuser=@RUN_AS_USER@
+pmport=@DFLT_PORT@
+
+Name: libpowerman
+Description: Centralized Power Distribution Unit (PDU) management
+Version: @PACKAGE_VERSION@
+Libs: -L${libdir} -lpowerman
+Cflags: -I${includedir}

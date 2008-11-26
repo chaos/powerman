@@ -1,3 +1,9 @@
+2008-11-26 Jim Garlick <garlick@llnl.gov>
+
+	* src/libpowreman.pc.in : New [Arnaud Quette]
+
+	* configure.ac : Add support for above.
+
 2008-11-25 Jim Garlick <garlick@llnl.gov>
 
 	* : Add some missing copyright headers.
