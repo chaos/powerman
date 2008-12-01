@@ -1,0 +1,205 @@
+.TH PowerMan 3 "@META_DATE@" "@META_ALIAS@" "PowerMan"
+
+.SH NAME
+libpowerman \- PowerMan Client API
+
+.SH SYNOPSIS
+.nf
+.B #include <libpowerman.h>
+.sp
+.BI "pm_err_t pm_connect (char *" server ", void *" arg ", pm_handle_t *" hp ,
+.BI "                     int " flags );
+.sp
+.BI "void pm_disconnect (pm_handle_t " h );
+.sp
+.BI "pm_err_t pm_node_on (pm_handle_t " h ", char *" node );
+.sp
+.BI "pm_err_t pm_node_off (pm_handle_t " h ", char *" node );
+.sp
+.BI "pm_err_t pm_node_cycle (pm_handle_t " h ", char *" node );
+.sp
+.BI "pm_err_t pm_node_status (pm_handle_t " h ", char *" node , 
+.BI "                         pm_node_state_t " sp );
+.sp
+.BI "pm_err_t pm_node_iterator_create (pm_handle_t " h ,
+.BI "                                  pm_node_iterator_t *" ip );
+.sp
+.BI "void pm_node_iterator_destroy (pm_node_iterator_t " i );
+.sp
+.BI "char * pm_node_next (pm_node_iterator_t " i );
+.sp
+.BI "void pm_node_iterator_reset (pm_node_iterator_t " i );
+.sp
+.BI "char * pm_strerror (pm_err_t " err ", char * " str ", int " len );
+.sp
+.B cc ... -lpowerman
+.fi
+
+.SH DESCRIPTION
+The \fBpm_connect\fR() function establishes a connection with \fIserver\fR,
+a string containing \fIhost[:port]\fR or NULL for defaults;
+and returns a handle in \fIhp\fR.  The \fIarg\fR parameter is currently
+unused. The \fIflags\fR parameter should be zero or one or more 
+logically-OR'ed flags.  Possible flags are:
+.TP
+.B PM_CONN_INET6
+Establish connection to the powerman server using (only) IPv6 protocol.
+With this flag, any available address family will be used.
+.PP
+The \fBpm_disconnect\fR() function tears down the server connection
+and frees storage associated with handle \fIh\fR.
+.PP
+The \fBpm_node_on\fR(), \fBpm_node_off\fR(), and \fBpm_node_cycle\fR()
+functions issue on, off, and cycle commands acting on \fInode\fR to 
+the server on handle \fIh\fR.
+.PP
+The \fBpm_node_status\fR() function issues a status query acting on \fInode\fR
+to the server on handle \fIh\fR.  The result is resturned in \fIsp\fR which
+will be one of the values:
+.TP
+.B PM_ON
+Node is powered on.
+.TP
+.B PM_OFF
+Node is powered off.
+.TP
+.B PM_UNKNOWN
+Although an error did not occur, the server could not determine
+the power status of the node.
+.PP
+To use the above functions you must know the name of the node you wish
+to control.  Calling \fBpm_node_iterator_create\fR() on handle \fIh\fR
+returns an iterator \fIip\fR which can be used to walk the list of 
+valid node names.  \fBpm_node_next\fR() returns the next node in the list,
+or NULL when the end of the list is reached.  \fBpm_node_iterator_reset\fR()
+rewinds iterator \fIi\fR to the beginning of the list.
+Finally, \fBpm_node_iterator_destroy\fR() destroys an iterator and
+reclaims its storage.
+
+.SH RETURN VALUE
+Most functions have a return type of \fIpm_err_t\fR.
+\fBpm_strerror\fR() is available to convert an error code \fIerr\fR 
+to a human-readable string using storage \fIstr\fR of length \fIlen\fR 
+passed in by the caller.
+
+.SH ERRORS
+.TP
+.B PM_ESUCCESS
+Success.
+.TP
+.B PM_ERRNOVALID
+System call failed, see system errno.
+.TP
+.B PM_ENOADDR
+Failed to get address info for server.
+.TP
+.B PM_ECONNECT
+Connect failed.
+.TP
+.B PM_ENOMEM
+Out of memory.
+.TP
+.B PM_EBADHAND
+Bad server handle.
+.TP
+.B PM_EBADARG
+Bad argument.
+.TP
+.B PM_ESERVEREOF
+Received unexpected EOF from server.
+.TP
+.B PM_ESERVERPARSE
+Received unexpected response from server.
+.TP
+.B PM_EUNKNOWN
+Server responded with ``unknown command''.
+.TP
+.B PM_EPARSE
+Server responded with ``parse error''.
+.TP
+.B PM_ETOOLONG
+Server responded with ``command too long''.
+.TP
+.B PM_EINTERNAL
+Server responed with ``internal error''.
+.TP
+.B PM_EHOSTLIST
+Server responded with ``hostlist error''.
+.TP
+.B PM_EINPROGRESS
+Server responded with ``command in progress''.
+.TP
+.B PM_ENOSUCHNODES
+Server responded with ``no such nodes''.
+.TP
+.B PM_ECOMMAND
+Server responded with ``command completed with errors''.
+.TP
+.B PM_EQUERY
+Server responded with ``query completed with errors''.
+.TP
+.B PM_EUNIMPL
+Server responded with ``not implemented by device''.
+
+.SH EXAMPLE
+This example program queries the list of valid nodes and turns them
+all on.
+.PP
+.nf
+#include <stdio.h>
+#include <stdlib.h>
+#include <libpowerman.h>
+.sp
+int
+int
+main(int argc, char *argv[])
+{
+    pm_err_t err;
+    pm_node_state_t s;
+    pm_handle_t h;
+    pm_node_iterator_t i;
+    char ebuf[64], *node;
+.sp
+    if ((err = pm_connect (NULL, NULL, &h, 0)) != PM_ESUCCESS) {
+        fprintf (stderr, "pm_connect: %s\n",
+                pm_strerror (err, ebuf, sizeof (ebuf)));
+        exit(1);
+    }
+.sp
+    if ((err = pm_node_iterator_create (h, &i)) != PM_ESUCCESS) {
+        fprintf (stderr, "pm_node_iterator_create: %s\n",
+                pm_strerror (err, ebuf, sizeof (ebuf)));
+        exit(1);
+    }
+    while ((node = pm_node_next (i))) {
+        if ((err = pm_node_on (h, node)) != PM_ESUCCESS) {
+            fprintf (stderr, "pm_node_on: %s\n",
+                    pm_strerror (err, ebuf, sizeof(ebuf)));
+            exit(1);
+        }
+    }
+    pm_node_iterator_destroy(i);
+.sp
+    pm_disconnect (pm);
+    exit (0);
+}
+.fi
+.SH "FILES"
+@X_LIBDIR@/libpowerman.*
+.br
+@X_INCLUDEDIR@/libpowerman.h
+.SH "ORIGIN"
+Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Linux
+clusters.  This software is open source and distributed under
+the terms of the Gnu GPL.
+.SH "SEE ALSO"
+.BR powerman (1),
+.BR powermand (8),
+.BR httppower (8),
+.BR plmpower (8),
+.BR vpcd (8),
+.BR powerman.conf (5),
+.BR powerman.dev (5),
+.BR powerman-devices (7).
+.PP
+\fBhttp://http://sourceforge.net/projects/powerman\fR

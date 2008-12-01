@@ -4,6 +4,6 @@
 ## Process this file with automake to produce Makefile.in.
 ##*****************************************************************************
 
-SUBDIRS = etc man scripts src test
+SUBDIRS = etc man scripts src lib test
 
 EXTRA_DIST = DISCLAIMER META 

@@ -34,6 +34,8 @@
 static pm_err_t list_nodes(pm_handle_t pm);
 static void usage(void);
 
+#define statstr(s) ((s) == PM_ON ? "on" : (s) == PM_OFF ? "off" : "unknown")
+
 int
 main(int argc, char *argv[])
 {
@@ -55,7 +57,7 @@ main(int argc, char *argv[])
     if (argc == 4)
         node = argv[3];
 
-    if ((err = pm_connect(server, NULL, &pm)) != PM_ESUCCESS) {
+    if ((err = pm_connect(server, NULL, &pm, 0)) != PM_ESUCCESS) {
         fprintf(stderr, "%s: %s\n", server,
                 pm_strerror(err, ebuf, sizeof(ebuf)));
         exit(1);
@@ -76,9 +78,8 @@ main(int argc, char *argv[])
             break;
         case 'q':
             ns = PM_UNKNOWN;
-            err = pm_node_status(pm, node, &ns);
-            printf("%s: %s\n", node, ns == PM_ON ? "on" : 
-                                     ns == PM_OFF ? "off" : "unknown");
+            if ((err = pm_node_status(pm, node, &ns)) == PM_ESUCCESS)
+                printf("%s: %s\n", node, statstr(ns));
             break;
     }
 

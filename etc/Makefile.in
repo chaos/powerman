@@ -44,12 +44,11 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_forkpty.m4 \
 	$(top_srcdir)/config/ac_genders.m4 \
 	$(top_srcdir)/config/ac_httppower.m4 \
-	$(top_srcdir)/config/ac_meta.m4 \
 	$(top_srcdir)/config/ac_pkgconfig.m4 \
 	$(top_srcdir)/config/ac_runas.m4 \
 	$(top_srcdir)/config/ac_wrap.m4 \
 	$(top_srcdir)/config/x_ac_expand_install_dirs.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/config/x_ac_meta.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -110,6 +109,15 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
+META_ALIAS = @META_ALIAS@
+META_AUTHOR = @META_AUTHOR@
+META_DATE = @META_DATE@
+META_LT_AGE = @META_LT_AGE@
+META_LT_CURRENT = @META_LT_CURRENT@
+META_LT_REVISION = @META_LT_REVISION@
+META_NAME = @META_NAME@
+META_RELEASE = @META_RELEASE@
+META_VERSION = @META_VERSION@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -118,9 +126,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PROJECT = @PROJECT@
 RANLIB = @RANLIB@
-RELEASE = @RELEASE@
 RUN_AS_USER = @RUN_AS_USER@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -197,7 +203,7 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 CONFFILE = \
-	powerman.conf.example
+	powerman.conf
 
 DEVFILES = \
 	apc7900.dev \
@@ -231,7 +237,7 @@ DEVFILES = \
 	wti.dev \
 	wti-rps10.dev
 
-EXTRA_DIST = $(DEVFILES)
+EXTRA_DIST = $(DEVFILES) $(CONFFILE)
 all: all-am
 
 .SUFFIXES:
@@ -380,7 +386,7 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-local
+uninstall-am: uninstall-info-am
 
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
 	distclean distclean-generic distclean-libtool distdir dvi \
@@ -390,18 +396,19 @@ uninstall-am: uninstall-info-am uninstall-local
 	install-strip installcheck installcheck-am installdirs \
 	maintainer-clean maintainer-clean-generic mostlyclean \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	uninstall uninstall-am uninstall-info-am uninstall-local
+	uninstall uninstall-am uninstall-info-am
 
 
 install-data-local:
 	-$(top_srcdir)/config/install-sh -m 755 -d \
-		$(DESTDIR)$(sysconfdir)/powerman
-	for file in $(DEVFILES) $(CONFFILE); do \
-		$(top_srcdir)/config/install-sh -m 644 $(srcdir)/$$file $(DESTDIR)$(sysconfdir)/powerman; \
+	    $(DESTDIR)$(sysconfdir)/powerman
+	for file in $(DEVFILES); do \
+	    $(top_srcdir)/config/install-sh -m 644 \
+	      $(srcdir)/$$file $(DESTDIR)$(sysconfdir)/powerman; \
 	done
-
-uninstall-local:
-	$(RM) -f $(DESTDIR)$(sysconfdir)/powerman
+	test -f $(DESTDIR)$(sysconfdir)/powerman/$(CONFFILE) || \
+	    $(top_srcdir)/config/install-sh -m 644 \
+	      $(srcdir)/$(CONFFILE) $(DESTDIR)$(sysconfdir)/powerman/$(CONFFILE)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

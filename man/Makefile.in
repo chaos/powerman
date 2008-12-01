@@ -37,34 +37,42 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 subdir = man
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
+	$(srcdir)/httppower.8.in $(srcdir)/libpowerman.3.in \
+	$(srcdir)/plmpower.8.in $(srcdir)/powerman-devices.7.in \
+	$(srcdir)/powerman.1.in $(srcdir)/powerman.conf.5.in \
+	$(srcdir)/powerman.dev.5.in $(srcdir)/powermand.8.in \
+	$(srcdir)/vpcd.8.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_curses.m4 \
 	$(top_srcdir)/config/ac_forkpty.m4 \
 	$(top_srcdir)/config/ac_genders.m4 \
 	$(top_srcdir)/config/ac_httppower.m4 \
-	$(top_srcdir)/config/ac_meta.m4 \
 	$(top_srcdir)/config/ac_pkgconfig.m4 \
 	$(top_srcdir)/config/ac_runas.m4 \
 	$(top_srcdir)/config/ac_wrap.m4 \
 	$(top_srcdir)/config/x_ac_expand_install_dirs.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/config/x_ac_meta.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config/config.h
-CONFIG_CLEAN_FILES =
+CONFIG_CLEAN_FILES = powerman.1 libpowerman.3 powerman.conf.5 \
+	powerman.dev.5 powerman-devices.7 httppower.8 plmpower.8 \
+	powermand.8 vpcd.8
 SOURCES =
 DIST_SOURCES =
 man1dir = $(mandir)/man1
-am__installdirs = "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man5dir)" \
-	"$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)"
+am__installdirs = "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man3dir)" \
+	"$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man7dir)" \
+	"$(DESTDIR)$(man8dir)"
+man3dir = $(mandir)/man3
 man5dir = $(mandir)/man5
 man7dir = $(mandir)/man7
 man8dir = $(mandir)/man8
 NROFF = nroff
-MANS = $(man1_MANS) $(man5_MANS) $(man7_MANS) $(man8_MANS)
+MANS = $(man1_MANS) $(man3_MANS) $(man5_MANS) $(man7_MANS) $(man8_MANS)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -118,6 +126,15 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
+META_ALIAS = @META_ALIAS@
+META_AUTHOR = @META_AUTHOR@
+META_DATE = @META_DATE@
+META_LT_AGE = @META_LT_AGE@
+META_LT_CURRENT = @META_LT_CURRENT@
+META_LT_REVISION = @META_LT_REVISION@
+META_NAME = @META_NAME@
+META_RELEASE = @META_RELEASE@
+META_VERSION = @META_VERSION@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -126,9 +143,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PROJECT = @PROJECT@
 RANLIB = @RANLIB@
-RELEASE = @RELEASE@
 RUN_AS_USER = @RUN_AS_USER@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -205,12 +220,14 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 man1_MANS = powerman.1 pm.1
+man3_MANS = libpowerman.3
 man5_MANS = powerman.conf.5 powerman.dev.5
 man7_MANS = powerman-devices.7
-man8_MANS = powermand.8 httppower.8 plmpower.8
+man8_MANS = powermand.8 httppower.8 plmpower.8 vpcd.8
 CLEANFILES = pm.1
 EXTRA_DIST = \
 	powerman.1 \
+	libpowerman.3 \
 	powerman.conf.5 \
 	powerman.dev.5 \
 	powerman-devices.7 \
@@ -250,6 +267,24 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+powerman.1: $(top_builddir)/config.status $(srcdir)/powerman.1.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+libpowerman.3: $(top_builddir)/config.status $(srcdir)/libpowerman.3.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+powerman.conf.5: $(top_builddir)/config.status $(srcdir)/powerman.conf.5.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+powerman.dev.5: $(top_builddir)/config.status $(srcdir)/powerman.dev.5.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+powerman-devices.7: $(top_builddir)/config.status $(srcdir)/powerman-devices.7.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+httppower.8: $(top_builddir)/config.status $(srcdir)/httppower.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+plmpower.8: $(top_builddir)/config.status $(srcdir)/plmpower.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+powermand.8: $(top_builddir)/config.status $(srcdir)/powermand.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+vpcd.8: $(top_builddir)/config.status $(srcdir)/vpcd.8.in
+	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -304,6 +339,51 @@ uninstall-man1:
 	  inst=`echo $$inst | sed '$(transform)'`.$$ext; \
 	  echo " rm -f '$(DESTDIR)$(man1dir)/$$inst'"; \
 	  rm -f "$(DESTDIR)$(man1dir)/$$inst"; \
+	done
+install-man3: $(man3_MANS) $(man_MANS)
+	@$(NORMAL_INSTALL)
+	test -z "$(man3dir)" || $(mkdir_p) "$(DESTDIR)$(man3dir)"
+	@list='$(man3_MANS) $(dist_man3_MANS) $(nodist_man3_MANS)'; \
+	l2='$(man_MANS) $(dist_man_MANS) $(nodist_man_MANS)'; \
+	for i in $$l2; do \
+	  case "$$i" in \
+	    *.3*) list="$$list $$i" ;; \
+	  esac; \
+	done; \
+	for i in $$list; do \
+	  if test -f $(srcdir)/$$i; then file=$(srcdir)/$$i; \
+	  else file=$$i; fi; \
+	  ext=`echo $$i | sed -e 's/^.*\\.//'`; \
+	  case "$$ext" in \
+	    3*) ;; \
+	    *) ext='3' ;; \
+	  esac; \
+	  inst=`echo $$i | sed -e 's/\\.[0-9a-z]*$$//'`; \
+	  inst=`echo $$inst | sed -e 's/^.*\///'`; \
+	  inst=`echo $$inst | sed '$(transform)'`.$$ext; \
+	  echo " $(INSTALL_DATA) '$$file' '$(DESTDIR)$(man3dir)/$$inst'"; \
+	  $(INSTALL_DATA) "$$file" "$(DESTDIR)$(man3dir)/$$inst"; \
+	done
+uninstall-man3:
+	@$(NORMAL_UNINSTALL)
+	@list='$(man3_MANS) $(dist_man3_MANS) $(nodist_man3_MANS)'; \
+	l2='$(man_MANS) $(dist_man_MANS) $(nodist_man_MANS)'; \
+	for i in $$l2; do \
+	  case "$$i" in \
+	    *.3*) list="$$list $$i" ;; \
+	  esac; \
+	done; \
+	for i in $$list; do \
+	  ext=`echo $$i | sed -e 's/^.*\\.//'`; \
+	  case "$$ext" in \
+	    3*) ;; \
+	    *) ext='3' ;; \
+	  esac; \
+	  inst=`echo $$i | sed -e 's/\\.[0-9a-z]*$$//'`; \
+	  inst=`echo $$inst | sed -e 's/^.*\///'`; \
+	  inst=`echo $$inst | sed '$(transform)'`.$$ext; \
+	  echo " rm -f '$(DESTDIR)$(man3dir)/$$inst'"; \
+	  rm -f "$(DESTDIR)$(man3dir)/$$inst"; \
 	done
 install-man5: $(man5_MANS) $(man_MANS)
 	@$(NORMAL_INSTALL)
@@ -478,7 +558,7 @@ check-am: all-am
 check: check-am
 all-am: Makefile $(MANS)
 installdirs:
-	for dir in "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)"; do \
+	for dir in "$(DESTDIR)$(man1dir)" "$(DESTDIR)$(man3dir)" "$(DESTDIR)$(man5dir)" "$(DESTDIR)$(man7dir)" "$(DESTDIR)$(man8dir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -530,7 +610,8 @@ install-exec-am:
 
 install-info: install-info-am
 
-install-man: install-man1 install-man5 install-man7 install-man8
+install-man: install-man1 install-man3 install-man5 install-man7 \
+	install-man8
 
 installcheck-am:
 
@@ -552,20 +633,21 @@ ps-am:
 
 uninstall-am: uninstall-info-am uninstall-man
 
-uninstall-man: uninstall-man1 uninstall-man5 uninstall-man7 \
-	uninstall-man8
+uninstall-man: uninstall-man1 uninstall-man3 uninstall-man5 \
+	uninstall-man7 uninstall-man8
 
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
 	distclean distclean-generic distclean-libtool distdir dvi \
 	dvi-am html html-am info info-am install install-am \
 	install-data install-data-am install-exec install-exec-am \
 	install-info install-info-am install-man install-man1 \
-	install-man5 install-man7 install-man8 install-strip \
-	installcheck installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
-	uninstall-info-am uninstall-man uninstall-man1 uninstall-man5 \
-	uninstall-man7 uninstall-man8
+	install-man3 install-man5 install-man7 install-man8 \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	uninstall uninstall-am uninstall-info-am uninstall-man \
+	uninstall-man1 uninstall-man3 uninstall-man5 uninstall-man7 \
+	uninstall-man8
 
 
 pm.1: powerman.1

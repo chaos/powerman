@@ -37,10 +37,26 @@ BuildRequires: genders
 BuildRequires: curl-devel
 %endif
 
+%package devel
+Requires: %{name} = %{version}-%{release}
+Summary: Headers and libraries for developing applications using PowerMan
+Group: Development/Libraries
+
+%package libs
+Requires: %{name} = %{version}-%{release}
+Summary: Libraries for applications using PowerMan
+Group: System Environment/Libraries
+
 %description
 PowerMan is a tool for manipulating remote power control (RPC) devices from a 
 central location. Several RPC varieties are supported natively by PowerMan and 
 Expect-like configurability simplifies the addition of new devices.
+
+%description devel
+A header file and static library for developing applications using PowerMan.
+
+%description libs
+A shared library for applications using PowerMan.
 
 %prep
 %setup
@@ -62,6 +78,9 @@ rm -rf $RPM_BUILD_ROOT
 %post
 if [ -x /sbin/chkconfig ]; then /sbin/chkconfig --add powerman; fi
 
+%post libs
+if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
+
 %preun
 if [ "$1" = 0 ]; then
   %{_sysconfdir}/init.d/powerman stop >/dev/null 2>&1 || :
@@ -73,8 +92,11 @@ if [ "$1" -ge 1 ]; then
   %{_sysconfdir}/init.d/powerman condrestart >/dev/null 2>&1 || :
 fi
 
+%postun libs
+if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
+
 %files
-%defattr(-,root,root,-)
+%defattr(-,root,root,0755)
 %doc ChangeLog 
 %doc DISCLAIMER 
 %doc COPYING
@@ -83,21 +105,39 @@ fi
 %{_bindir}/powerman
 %{_bindir}/pm
 %{_sbindir}/powermand
+%{_sbindir}/vpcd
 %if 0%{?_with_httppower}
 %{_sbindir}/httppower
 %endif
 %{_sbindir}/plmpower
 %dir %config %{_sysconfdir}/powerman
 %{_sysconfdir}/powerman/*.dev
-%{_sysconfdir}/powerman/powerman.conf.example
-%{_mandir}/man1/*
-%{_mandir}/man5/*
-%{_mandir}/man7/*
-%{_mandir}/man8/*
+%config(noreplace) %{_sysconfdir}/powerman/powerman.conf
+%{_mandir}/*1/*
+%{_mandir}/*5/*
+%{_mandir}/*7/*
+%{_mandir}/*8/*
 %{_sysconfdir}/init.d/powerman
-%{_libdir}/*
-%{_includedir}/*
 %dir %attr(0755,daemon,root) %config %{_localstatedir}/run/powerman
+
+%files devel
+%defattr(-,root,root,0755)
+%{_includedir}/*
+%{_libdir}/*.la
+%{_mandir}/*3/*
+%ifnos aix5.3 aix5.2 aix5.1 aix5.0 aix4.3
+%{_libdir}/*.a
+%{_libdir}/*.so
+%{_libdir}/pkgconfig/*
+%endif
+
+%files libs
+%defattr(-,root,root,0755)
+%ifnos aix5.3 aix5.2 aix5.1 aix5.0 aix4.3
+%{_libdir}/*.so.*
+%else
+%{_libdir}/*.a
+%endif
 
 %changelog
 

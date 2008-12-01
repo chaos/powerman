@@ -5,7 +5,7 @@
 ##*****************************************************************************
 
 CONFFILE = \
-	powerman.conf.example
+	powerman.conf
 
 DEVFILES = \
 	apc7900.dev \
@@ -41,12 +41,13 @@ DEVFILES = \
 
 install-data-local:
 	-$(top_srcdir)/config/install-sh -m 755 -d \
-		$(DESTDIR)$(sysconfdir)/powerman
-	for file in $(DEVFILES) $(CONFFILE); do \
-		$(top_srcdir)/config/install-sh -m 644 $(srcdir)/$$file $(DESTDIR)$(sysconfdir)/powerman; \
+	    $(DESTDIR)$(sysconfdir)/powerman
+	for file in $(DEVFILES); do \
+	    $(top_srcdir)/config/install-sh -m 644 \
+	      $(srcdir)/$$file $(DESTDIR)$(sysconfdir)/powerman; \
 	done
+	test -f $(DESTDIR)$(sysconfdir)/powerman/$(CONFFILE) || \
+	    $(top_srcdir)/config/install-sh -m 644 \
+	      $(srcdir)/$(CONFFILE) $(DESTDIR)$(sysconfdir)/powerman/$(CONFFILE)
 
-uninstall-local:
-	$(RM) -f $(DESTDIR)$(sysconfdir)/powerman
-
-EXTRA_DIST = $(DEVFILES)
+EXTRA_DIST = $(DEVFILES) $(CONFFILE)

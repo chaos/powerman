@@ -1,4 +1,4 @@
-.TH powerman\-devices 7 "Release 2.3" "LLNL" "powerman-devices"
+.TH PowerMan 7 "@META_DATE@" "@META_ALIAS@" "PowerMan"
 .SH NAME
 powerman\(hydevices \- Powerman Device Configuration Notes
 .SH DESCRIPTION
@@ -174,4 +174,13 @@ BIOS setup screen.  Hit F2 during boot to access BIOS setup, go to the
 "Advanced" tab, select "IPMI 2.0 configuration" and "set LAN 
 configuration".  Make your changes and commit them.
 .SH "SEE ALSO"
-powerman(1), powermand(1), powerman.conf(5)
+.BR powerman (1),
+.BR powermand (8),
+.BR httppower (8),
+.BR plmpower (8),
+.BR vpcd (8),
+.BR powerman.conf (5),
+.BR powerman.dev (5),
+.BR powerman-devices (7).
+.PP
+\fBhttp://http://sourceforge.net/projects/powerman\fR

@@ -8,10 +8,10 @@
 # Prologue.
 ##
 AC_INIT([powerman])
-AC_META
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([NEWS])
 AC_CANONICAL_SYSTEM
+X_AC_META
 X_AC_EXPAND_INSTALL_DIRS
 
 ##
@@ -99,12 +99,22 @@ AC_RUNAS
 AC_CONFIG_FILES( \
   Makefile \
   src/Makefile \
-  src/libpowerman.pc \
+  lib/Makefile \
+  lib/libpowerman.pc \
   etc/Makefile \
-  man/Makefile \
   scripts/Makefile \
   scripts/powerman.init \
   test/Makefile \
+  man/Makefile \
+  man/powerman.1 \
+  man/libpowerman.3 \
+  man/powerman.conf.5 \
+  man/powerman.dev.5 \
+  man/powerman-devices.7 \
+  man/httppower.8 \
+  man/plmpower.8 \
+  man/powermand.8 \
+  man/vpcd.8 \
 )
 AC_OUTPUT
 

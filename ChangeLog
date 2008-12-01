@@ -1,3 +1,27 @@
+2008-12-01 Jim Garlick <garlick@llnl.gov>
+
+	* man/libopwerman.3.in, man/vpcd.8.in : New.
+
+	* man/* : Process through autoconf to get version and path
+	substitution.  Normalize headers and SEE ALSO section.
+
+	* test/t49* : Simple test of libpowerman API using cli.c.
+
+	* test/cli.c : Modified to reflect API changes.
+
+	* lib/libpowerman.[ch] : Represent all server errors in pm_err_t.
+	Add a flags argument to pm_connect() and a flag for IPv6 only.
+
+	* powerman.spec : Add devel and libs subpackages.
+
+	* lib/* : Move lib sources from src.
+
+	* : Continued audit for debian [Arnaud Quette]
+	- rename autoreconf to autogen.sh, I misunderstood previous suggestion.
+	- drop sysconfdir from libpowerman.pc.in
+	- install powerman.conf.example as the actual config file
+	- install vpcd as part of the base package
+
 2008-11-26 Jim Garlick <garlick@llnl.gov>
 
 	* scripts/Makefile.am : Create /var/run/powerman during install.

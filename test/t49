@@ -1,0 +1,11 @@
+#!/bin/sh
+TEST=t49
+
+$PATH_POWERMAND -c $TEST.conf -f -1 2>/dev/null&  
+sleep 1
+
+./cli localhost:10103 q t1 >$TEST.out 2>$TEST.err
+test $? = 0 || exit 1
+
+wait
+diff $TEST.out $TEST.exp >$TEST.diff

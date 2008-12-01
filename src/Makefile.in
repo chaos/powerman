@@ -15,8 +15,6 @@
 @SET_MAKE@
 
 
-
-
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -43,41 +41,25 @@ target_triplet = @target@
 bin_PROGRAMS = powerman$(EXEEXT) pm$(EXEEXT)
 sbin_PROGRAMS = powermand$(EXEEXT) plmpower$(EXEEXT) $(am__EXEEXT_1)
 subdir = src
-DIST_COMMON = $(include_HEADERS) $(noinst_HEADERS) \
-	$(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/libpowerman.pc.in parse_lex.c parse_tab.c \
-	parse_tab.h
+DIST_COMMON = $(noinst_HEADERS) $(srcdir)/Makefile.am \
+	$(srcdir)/Makefile.in parse_lex.c parse_tab.c parse_tab.h
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_curses.m4 \
 	$(top_srcdir)/config/ac_forkpty.m4 \
 	$(top_srcdir)/config/ac_genders.m4 \
 	$(top_srcdir)/config/ac_httppower.m4 \
-	$(top_srcdir)/config/ac_meta.m4 \
 	$(top_srcdir)/config/ac_pkgconfig.m4 \
 	$(top_srcdir)/config/ac_runas.m4 \
 	$(top_srcdir)/config/ac_wrap.m4 \
 	$(top_srcdir)/config/x_ac_expand_install_dirs.m4 \
-	$(top_srcdir)/configure.ac
+	$(top_srcdir)/config/x_ac_meta.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config/config.h
-CONFIG_CLEAN_FILES = libpowerman.pc
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" \
-	"$(DESTDIR)$(sbindir)" "$(DESTDIR)$(pkgconfigdir)" \
-	"$(DESTDIR)$(includedir)"
-libLTLIBRARIES_INSTALL = $(INSTALL)
-LTLIBRARIES = $(lib_LTLIBRARIES)
-libpowerman_la_LIBADD =
-am_libpowerman_la_OBJECTS = libpowerman.lo
-libpowerman_la_OBJECTS = $(am_libpowerman_la_OBJECTS)
+CONFIG_CLEAN_FILES =
+am__installdirs = "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)"
 binPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 @WITH_HTTPPOWER_TRUE@am__EXEEXT_1 = httppower$(EXEEXT)
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
@@ -128,16 +110,11 @@ LTLEXCOMPILE = $(LIBTOOL) --mode=compile $(LEX) $(LFLAGS) $(AM_LFLAGS)
 YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
 LTYACCCOMPILE = $(LIBTOOL) --mode=compile $(YACC) $(YFLAGS) \
 	$(AM_YFLAGS)
-SOURCES = $(libpowerman_la_SOURCES) $(httppower_SOURCES) \
-	$(plmpower_SOURCES) pm.c $(powerman_SOURCES) \
-	$(powermand_SOURCES)
-DIST_SOURCES = $(libpowerman_la_SOURCES) $(am__httppower_SOURCES_DIST) \
-	$(plmpower_SOURCES) pm.c $(powerman_SOURCES) \
-	$(powermand_SOURCES)
-pkgconfigDATA_INSTALL = $(INSTALL_DATA)
-DATA = $(pkgconfig_DATA)
-includeHEADERS_INSTALL = $(INSTALL_HEADER)
-HEADERS = $(include_HEADERS) $(noinst_HEADERS)
+SOURCES = $(httppower_SOURCES) $(plmpower_SOURCES) pm.c \
+	$(powerman_SOURCES) $(powermand_SOURCES)
+DIST_SOURCES = $(am__httppower_SOURCES_DIST) $(plmpower_SOURCES) pm.c \
+	$(powerman_SOURCES) $(powermand_SOURCES)
+HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -193,6 +170,15 @@ MAINT = @MAINT@
 MAINTAINER_MODE_FALSE = @MAINTAINER_MODE_FALSE@
 MAINTAINER_MODE_TRUE = @MAINTAINER_MODE_TRUE@
 MAKEINFO = @MAKEINFO@
+META_ALIAS = @META_ALIAS@
+META_AUTHOR = @META_AUTHOR@
+META_DATE = @META_DATE@
+META_LT_AGE = @META_LT_AGE@
+META_LT_CURRENT = @META_LT_CURRENT@
+META_LT_REVISION = @META_LT_REVISION@
+META_NAME = @META_NAME@
+META_RELEASE = @META_RELEASE@
+META_VERSION = @META_VERSION@
 OBJEXT = @OBJEXT@
 PACKAGE = @PACKAGE@
 PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
@@ -201,9 +187,7 @@ PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PROJECT = @PROJECT@
 RANLIB = @RANLIB@
-RELEASE = @RELEASE@
 RUN_AS_USER = @RUN_AS_USER@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
@@ -280,12 +264,6 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 AM_CFLAGS = @GCCWARN@ 
-lib_LTLIBRARIES = libpowerman.la
-libpowerman_la_SOURCES = \
-	libpowerman.c
-
-@WITH_PKG_CONFIG_TRUE@pkgconfig_DATA = libpowerman.pc
-include_HEADERS = libpowerman.h
 @WITH_HTTPPOWER_TRUE@HTTPPOWER = httppower
 noinst_HEADERS = \
 	arglist.h \
@@ -388,37 +366,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-libpowerman.pc: $(top_builddir)/config.status $(srcdir)/libpowerman.pc.in
-	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
-install-libLTLIBRARIES: $(lib_LTLIBRARIES)
-	@$(NORMAL_INSTALL)
-	test -z "$(libdir)" || $(mkdir_p) "$(DESTDIR)$(libdir)"
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  if test -f $$p; then \
-	    f=$(am__strip_dir) \
-	    echo " $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) '$$p' '$(DESTDIR)$(libdir)/$$f'"; \
-	    $(LIBTOOL) --mode=install $(libLTLIBRARIES_INSTALL) $(INSTALL_STRIP_FLAG) "$$p" "$(DESTDIR)$(libdir)/$$f"; \
-	  else :; fi; \
-	done
-
-uninstall-libLTLIBRARIES:
-	@$(NORMAL_UNINSTALL)
-	@set -x; list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  p=$(am__strip_dir) \
-	  echo " $(LIBTOOL) --mode=uninstall rm -f '$(DESTDIR)$(libdir)/$$p'"; \
-	  $(LIBTOOL) --mode=uninstall rm -f "$(DESTDIR)$(libdir)/$$p"; \
-	done
-
-clean-libLTLIBRARIES:
-	-test -z "$(lib_LTLIBRARIES)" || rm -f $(lib_LTLIBRARIES)
-	@list='$(lib_LTLIBRARIES)'; for p in $$list; do \
-	  dir="`echo $$p | sed -e 's|/[^/]*$$||'`"; \
-	  test "$$dir" != "$$p" || dir=.; \
-	  echo "rm -f \"$${dir}/so_locations\""; \
-	  rm -f "$${dir}/so_locations"; \
-	done
-libpowerman.la: $(libpowerman_la_OBJECTS) $(libpowerman_la_DEPENDENCIES) 
-	$(LINK) -rpath $(libdir) $(libpowerman_la_LDFLAGS) $(libpowerman_la_OBJECTS) $(libpowerman_la_LIBADD) $(LIBS)
 install-binPROGRAMS: $(bin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(bindir)" || $(mkdir_p) "$(DESTDIR)$(bindir)"
@@ -514,7 +461,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hostlist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hprintf.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/httppower.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/libpowerman.Plo@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_lex.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_tab.Po@am__quote@
@@ -587,40 +533,6 @@ clean-libtool:
 distclean-libtool:
 	-rm -f libtool
 uninstall-info-am:
-install-pkgconfigDATA: $(pkgconfig_DATA)
-	@$(NORMAL_INSTALL)
-	test -z "$(pkgconfigdir)" || $(mkdir_p) "$(DESTDIR)$(pkgconfigdir)"
-	@list='$(pkgconfig_DATA)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
-	  echo " $(pkgconfigDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(pkgconfigdir)/$$f'"; \
-	  $(pkgconfigDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(pkgconfigdir)/$$f"; \
-	done
-
-uninstall-pkgconfigDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(pkgconfig_DATA)'; for p in $$list; do \
-	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(pkgconfigdir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(pkgconfigdir)/$$f"; \
-	done
-install-includeHEADERS: $(include_HEADERS)
-	@$(NORMAL_INSTALL)
-	test -z "$(includedir)" || $(mkdir_p) "$(DESTDIR)$(includedir)"
-	@list='$(include_HEADERS)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
-	  echo " $(includeHEADERS_INSTALL) '$$d$$p' '$(DESTDIR)$(includedir)/$$f'"; \
-	  $(includeHEADERS_INSTALL) "$$d$$p" "$(DESTDIR)$(includedir)/$$f"; \
-	done
-
-uninstall-includeHEADERS:
-	@$(NORMAL_UNINSTALL)
-	@list='$(include_HEADERS)'; for p in $$list; do \
-	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(includedir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(includedir)/$$f"; \
-	done
 
 ID: $(HEADERS) $(SOURCES) $(LISP) $(TAGS_FILES)
 	list='$(SOURCES) $(HEADERS) $(LISP) $(TAGS_FILES)'; \
@@ -699,11 +611,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(LTLIBRARIES) $(PROGRAMS) $(DATA) $(HEADERS)
-install-binPROGRAMS: install-libLTLIBRARIES
-
+all-am: Makefile $(PROGRAMS) $(HEADERS)
 installdirs:
-	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)" "$(DESTDIR)$(pkgconfigdir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(sbindir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -735,8 +645,8 @@ maintainer-clean-generic:
 	-rm -f parse_tab.h
 clean: clean-am
 
-clean-am: clean-binPROGRAMS clean-generic clean-libLTLIBRARIES \
-	clean-libtool clean-sbinPROGRAMS mostlyclean-am
+clean-am: clean-binPROGRAMS clean-generic clean-libtool \
+	clean-sbinPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -754,10 +664,9 @@ info: info-am
 
 info-am:
 
-install-data-am: install-includeHEADERS install-pkgconfigDATA
+install-data-am:
 
-install-exec-am: install-binPROGRAMS install-libLTLIBRARIES \
-	install-sbinPROGRAMS
+install-exec-am: install-binPROGRAMS install-sbinPROGRAMS
 
 install-info: install-info-am
 
@@ -783,26 +692,21 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
-	uninstall-info-am uninstall-libLTLIBRARIES \
-	uninstall-pkgconfigDATA uninstall-sbinPROGRAMS
+uninstall-am: uninstall-binPROGRAMS uninstall-info-am \
+	uninstall-sbinPROGRAMS
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-binPROGRAMS \
-	clean-generic clean-libLTLIBRARIES clean-libtool \
-	clean-sbinPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-binPROGRAMS install-data install-data-am install-exec \
-	install-exec-am install-includeHEADERS install-info \
-	install-info-am install-libLTLIBRARIES install-man \
-	install-pkgconfigDATA install-sbinPROGRAMS install-strip \
+	clean-generic clean-libtool clean-sbinPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-binPROGRAMS install-data \
+	install-data-am install-exec install-exec-am install-info \
+	install-info-am install-man install-sbinPROGRAMS install-strip \
 	installcheck installcheck-am installdirs maintainer-clean \
 	maintainer-clean-generic mostlyclean mostlyclean-compile \
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am uninstall-binPROGRAMS \
-	uninstall-includeHEADERS uninstall-info-am \
-	uninstall-libLTLIBRARIES uninstall-pkgconfigDATA \
-	uninstall-sbinPROGRAMS
+	uninstall-info-am uninstall-sbinPROGRAMS
 
 
 pm: powerman

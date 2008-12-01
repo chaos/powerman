@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  $Id:$
+ *  $Id$
  *****************************************************************************
  *  Copyright (C) 2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -79,7 +79,9 @@ static int      _list_search(struct list_struct *head, char *s);
 
 static int      _strncmpend(char *s1, char *s2, int len);
 static char *   _strndup(char *s, int len);
-static pm_err_t _connect_to_server_tcp(pm_handle_t pmh, char *host, char *port);
+static void     _parse_hostport(char *s, char *host, char *port);
+static pm_err_t _connect_to_server_tcp(pm_handle_t pmh, 
+                                char *server, int family);
 static pm_err_t _parse_response(char *buf, int len, 
                                 struct list_struct **respp);
 static pm_err_t _server_recv_response(pm_handle_t pmh, 
@@ -159,19 +161,38 @@ _strndup(char *s, int len)
     return c;     
 }
 
-/* Establish connection to powerman server on [host] and [port].
+static void
+_parse_hostport(char *s, char *host, char *port)
+{
+    char *p;
+
+    if (s)
+        snprintf(host, MAXHOSTNAMELEN, "%s", s);
+    else
+        snprintf(host, MAXHOSTNAMELEN, "%s", PM_DFLT_HOST);
+    if ((p = strchr(host, ':'))) {
+        *p++ = '\0';
+        snprintf(port, MAXPORTNAMELEN, "%s", p);
+    } else
+        snprintf(port, MAXPORTNAMELEN, "%s", PM_DFLT_PORT);
+        
+}
+
+/* Establish connection to powermand [server].
  * Connection state is returned in the handle.
  */
 static pm_err_t 
-_connect_to_server_tcp(pm_handle_t pmh, char *host, char *port)
+_connect_to_server_tcp(pm_handle_t pmh, char *server, int family)
 {
     struct addrinfo hints, *res, *r;
     pm_err_t err = PM_ECONNECT;
+    char host[MAXHOSTNAMELEN], port[MAXPORTNAMELEN];
 
     memset(&hints, 0, sizeof(hints));
-    hints.ai_family = PF_UNSPEC;
+    hints.ai_family = family;
     hints.ai_socktype = SOCK_STREAM;
 
+    _parse_hostport(server, host, port);
     if (getaddrinfo(host, port, &hints, &res) != 0 || res == NULL)
         return PM_ENOADDR;
     for (r = res; r != NULL; r = r->ai_next) {
@@ -224,7 +245,7 @@ static pm_err_t
 _server_retcode(struct list_struct *resp)
 {
     int code;
-    pm_err_t err = PM_EPARSE;
+    pm_err_t err = PM_ESERVERPARSE;
    
     /* N.B. there will only be one 1xx or 2xx code in a response */ 
     while (resp != NULL) {
@@ -238,25 +259,19 @@ _server_retcode(struct list_struct *resp)
                 case 105:   /* hostrange expansion on|off */
                     err = PM_ESUCCESS;
                     break; 
-                case 201:   /* unknown command */
-                case 202:   /* parse error */
-                case 203:   /* command too long */
-                case 204:   /* internal powermand error... */
-                case 205:   /* hostlist error */
-                case 208:   /* command in progress */
-                    err = PM_ESERVER;
+                case PM_EUNKNOWN:
+                case PM_EPARSE:
+                case PM_ETOOLONG:
+                case PM_EINTERNAL:
+                case PM_EHOSTLIST:
+                case PM_EINPROGRESS:
+                case PM_ENOSUCHNODES:
+                case PM_ECOMMAND:
+                case PM_EQUERY:
+                case PM_EUNIMPL:
+                    err = code;
                     break;
-                case 209:   /* no such nodes */
-                    err = PM_EBADNODE;
-                    break;
-                case 210:   /* command completed with errors */
-                case 211:   /* query completed with errors */
-                    err = PM_EPARTIAL;
-                    break;
-                case 213:   /* command cannot be handled by PDU */
-                    err = PM_EUNIMPL;
-                    break;
-                default:    /* 3xx (ignore) */
+                default:    /* 3xx informational (ignore) */
                     break;
             }
         }
@@ -354,28 +369,10 @@ _server_command(pm_handle_t pmh, char *cmd, char *arg, struct list_struct **resp
     return PM_ESUCCESS;
 }
 
-static void
-_parse_hostport(char *s, char *host, char *port)
-{
-    char *p;
-
-    if (s)
-        snprintf(host, MAXHOSTNAMELEN, "%s", s);
-    else
-        snprintf(host, MAXHOSTNAMELEN, "%s", PM_DFLT_HOST);
-    if ((p = strchr(host, ':'))) {
-        *p++ = '\0';
-        snprintf(port, MAXPORTNAMELEN, "%s", p);
-    } else
-        snprintf(port, MAXPORTNAMELEN, "%s", PM_DFLT_PORT);
-        
-}
-
 pm_err_t
-pm_connect(char *server, void *arg, pm_handle_t *pmhp)
+pm_connect(char *server, void *arg, pm_handle_t *pmhp, int flags)
 {
     pm_handle_t pmh = NULL;
-    char host[MAXHOSTNAMELEN], port[MAXPORTNAMELEN];
     pm_err_t err;
 
     if (pmhp == NULL)
@@ -383,9 +380,9 @@ pm_connect(char *server, void *arg, pm_handle_t *pmhp)
     if ((pmh = (pm_handle_t)malloc(sizeof(struct pm_handle_struct))) == NULL)
         return PM_ENOMEM;
     pmh->pmh_magic = PMH_MAGIC;
-    _parse_hostport(server, host, port);
 
-    if ((err = _connect_to_server_tcp(pmh, host, port)) != PM_ESUCCESS) {
+    if ((err = _connect_to_server_tcp(pmh, server, (flags & PM_CONN_INET6) 
+                                ? PF_INET6 : PF_UNSPEC)) != PM_ESUCCESS) {
         (void)close(pmh->pmh_fd);
         free(pmh);
         return err;
@@ -571,7 +568,7 @@ pm_strerror(pm_err_t err, char *str, int len)
             strncpy(str, strerror(errno), len);
             break;
         case PM_ENOADDR:
-            strncpy(str, "failed to get address info for host:port", len);
+            strncpy(str, "failed to get address info for server", len);
             break;
         case PM_ECONNECT:
             strncpy(str, "connect failed", len);
@@ -582,29 +579,44 @@ pm_strerror(pm_err_t err, char *str, int len)
         case PM_EBADHAND:
             strncpy(str, "bad server handle", len);
             break;
-        case PM_EBADNODE:
-            strncpy(str, "unknown node name", len);
-            break;
         case PM_EBADARG:
             strncpy(str, "bad argument", len);
-            break;
-        case PM_ETIMEOUT:
-            strncpy(str, "client timed out", len);
             break;
         case PM_ESERVEREOF:
             strncpy(str, "received unexpected EOF from server", len);
             break;
-        case PM_ESERVER:
-            strncpy(str, "server error", len);
+        case PM_ESERVERPARSE:
+            strncpy(str, "unexpected response from server", len);
+            break;
+        case PM_EUNKNOWN:
+            strncpy(str, "server: unknown command", len);
             break;
         case PM_EPARSE:
-            strncpy(str, "received unexpected response from server", len);
+            strncpy(str, "server: parse error", len);
             break;
-        case PM_EPARTIAL:
-            strncpy(str, "command completed with errors", len);
+        case PM_ETOOLONG:
+            strncpy(str, "server: command too long", len);
+            break;
+        case PM_EINTERNAL:
+            strncpy(str, "server: internal error", len);
+            break;
+        case PM_EHOSTLIST:
+            strncpy(str, "server: hostlist error", len);
+            break;
+        case PM_EINPROGRESS:
+            strncpy(str, "server: command in progress", len);
+            break;
+        case PM_ENOSUCHNODES:
+            strncpy(str, "server: no such nodes", len);
+            break;
+        case PM_ECOMMAND:
+            strncpy(str, "server: command completed with errors", len);
+            break;
+        case PM_EQUERY:
+            strncpy(str, "server: query completed with errors", len);
             break;
         case PM_EUNIMPL:
-            strncpy(str, "command is not implemented by device", len);
+            strncpy(str, "server: not implemented by device", len);
             break;
     }
     return str;

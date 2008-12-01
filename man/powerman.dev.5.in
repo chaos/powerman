@@ -1,4 +1,4 @@
-.TH POWERMAN.DEV 5 "Release 2.3" "LLNL" "POWERMAN.DEV"
+.TH PowerMan 5 "@META_DATE@" "@META_ALIAS@" "PowerMan"
 
 .SH NAME
 powerman.dev \- PowerMan device specification files
@@ -183,10 +183,19 @@ Results of a parenthesized regular expression match are assigned to
 $1, $2, ... $N.
 
 .SH "FILES"
-/etc/powerman/*.dev
+@X_SYSCONFDIR@/powerman/*.dev
 .SH "ORIGIN"
 Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Linux 
 clusters.  This software is open source and distributed under
 the terms of the Gnu GPL.  
 .SH "SEE ALSO"
-powerman(1), powerman.conf(5), powerman-devices(7), powermand(8)
+.BR powerman (1),
+.BR powermand (8),
+.BR httppower (8),
+.BR plmpower (8),
+.BR vpcd (8),
+.BR powerman.conf (5),
+.BR powerman.dev (5),
+.BR powerman-devices (7).
+.PP
+\fBhttp://http://sourceforge.net/projects/powerman\fR

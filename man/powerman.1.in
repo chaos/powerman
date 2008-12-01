@@ -1,4 +1,4 @@
-.TH PowerMan 1 "Release 1.0" "LLNL" "PowerMan"
+.TH PowerMan 1 "@META_DATE@" "@META_ALIAS@" "PowerMan"
 .SH NAME
 powerman \- power on/off nodes
 .SH SYNOPSIS
@@ -129,18 +129,21 @@ tcsh, the last example above should be executed as:
     powerman --on "foo[0,4-5]"
 .fi
 .SH "FILES"
-/usr/sbin/powermand
+@X_BINDIR@/powerman
 .br
-/usr/bin/powerman
-.br
-/usr/bin/pm
-.br
-/etc/powerman/powerman.conf
-.br
-/etc/powerman/*.dev
+@X_BINDIR@/pm
 .SH "ORIGIN"
 Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Linux 
 clusters.  This software is open source and distributed under
 the terms of the Gnu GPL.  
 .SH "SEE ALSO"
-powerman.conf(5) powermand(8)
+.BR powerman (1),
+.BR powermand (8),
+.BR httppower (8),
+.BR plmpower (8),
+.BR vpcd (8),
+.BR powerman.conf (5),
+.BR powerman.dev (5),
+.BR powerman-devices (7).
+.PP
+\fBhttp://http://sourceforge.net/projects/powerman\fR
