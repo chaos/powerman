@@ -1,4 +1,16 @@
 =========================================================================
+Release Notes for PowerMan version 2.4                        26 Nov 2008
+=========================================================================
+
+* Initial powerman client API.
+
+* Run the powerman daemon (and all coprocesses) as 'daemon' by default
+  instead of root.  To override, set USER=root or other user in
+  /etc/sysconfig/powerman.
+
+* New man pages for httppower, plmpower.
+
+=========================================================================
 Release Notes for PowerMan version 2.3                        12 Nov 2008
 =========================================================================
 

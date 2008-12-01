@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  $Id:$
+ *  $Id$
  *****************************************************************************
  *  Copyright (C) 2004-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -26,6 +26,10 @@
 
 #ifndef LIBPOWERMAN_H
 #define LIBPOWERMAN_H
+
+#ifdef __cplusplus
+  extern "C" {
+#endif
 
 typedef struct pm_handle_struct         *pm_handle_t;
 typedef struct pm_node_iterator_struct  *pm_node_iterator_t;
@@ -70,6 +74,10 @@ char *   pm_strerror(pm_err_t err, char *str, int len);
 
 #define PM_DFLT_PORT           "10101"
 #define PM_DFLT_HOST           "localhost"
+
+#ifdef __cplusplus
+  }
+#endif
 
 #endif /* PM_POWERMAN_H */
 
