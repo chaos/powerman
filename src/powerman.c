@@ -349,7 +349,7 @@ static void _license(void)
  */
 static void _version(void)
 {
-    printf("%s\n", VERSION);
+    printf("%s\n", META_VERSION);
     exit(1);
 }
 
@@ -607,9 +607,9 @@ static void _process_version(int fd)
     _getline(fd, buf, CP_LINEMAX);
     if (sscanf(buf, CP_VERSION, vers) != 1)
         err_exit(FALSE, "unexpected response from server");
-    if (strcmp(vers, VERSION) != 0)
+    if (strcmp(vers, META_VERSION) != 0)
         err(FALSE, "warning: server version (%s) != client (%s)",
-                vers, VERSION);
+                vers, META_VERSION);
 }
 
 static int _process_response(int fd)
