@@ -1,5 +1,10 @@
 2008-12-02 Jim Garlick <garlick@llnl.gov>
 
+	* FIXME: write/check pidfile in /var/run/powerman, and chdir there
+	so cores go to the right place.
+
+	* scripts/powerman.init.in : Obsolete PIDFILE, doesn't work on RHEL 5.
+
 	* man/* : Fix misc. typos.
 
 	* lib/libpowerman.c : Fix a use-after-free bug in _list_free().

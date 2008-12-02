@@ -151,7 +151,6 @@ all on.
 #include <libpowerman.h>
 .sp
 int
-int
 main(int argc, char *argv[])
 {
     pm_err_t err;
@@ -161,26 +160,26 @@ main(int argc, char *argv[])
     char ebuf[64], *node;
 .sp
     if ((err = pm_connect (NULL, NULL, &h, 0)) != PM_ESUCCESS) {
-        fprintf (stderr, "pm_connect: %s\n",
+        fprintf (stderr, "pm_connect: %s\\n",
                 pm_strerror (err, ebuf, sizeof (ebuf)));
         exit(1);
     }
 .sp
     if ((err = pm_node_iterator_create (h, &i)) != PM_ESUCCESS) {
-        fprintf (stderr, "pm_node_iterator_create: %s\n",
+        fprintf (stderr, "pm_node_iterator_create: %s\\n",
                 pm_strerror (err, ebuf, sizeof (ebuf)));
         exit(1);
     }
     while ((node = pm_node_next (i))) {
         if ((err = pm_node_on (h, node)) != PM_ESUCCESS) {
-            fprintf (stderr, "pm_node_on: %s\n",
+            fprintf (stderr, "pm_node_on: %s\\n",
                     pm_strerror (err, ebuf, sizeof(ebuf)));
             exit (1);
         }
     }
     pm_node_iterator_destroy (i);
 .sp
-    pm_disconnect (pm);
+    pm_disconnect (h);
     exit (0);
 }
 .fi
