@@ -2,6 +2,10 @@
 
 	* man/* : Fix misc. typos.
 
+	* lib/libpowerman.c : Fix a use-after-free bug in _list_free().
+
+	* test/t49* : Use iterator functions.
+
 2008-12-01 Jim Garlick <garlick@llnl.gov>
 
 	* : tag powerman-2.3.1

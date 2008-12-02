@@ -115,8 +115,8 @@ _list_free(struct list_struct **head)
 {
     struct list_struct *lp, *tmp;
 
-    for (lp = *head; lp != NULL; lp = tmp->next) {
-        tmp = lp;
+    for (lp = *head; lp != NULL; lp = tmp) {
+        tmp = lp->next;
         if (lp->freefun)
             lp->freefun(lp->data); 
         free(lp);
