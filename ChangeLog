@@ -1,5 +1,7 @@
 2008-12-02 Jim Garlick <garlick@llnl.gov>
 
+	* : tag powerman-2.3.2
+
 	* src/daemon.[ch], src/powermand.c:  Fix pidfile management.
 
 	* man/* : Fix misc. typos.

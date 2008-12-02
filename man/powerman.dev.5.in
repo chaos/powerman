@@ -12,7 +12,10 @@ Note: the authors do not guarantee that the PowerMan specification
 language will not change, however we are open to taking on maintenance
 of scripts submitted by PowerMan users.  We can't guarantee that we'll
 be able to test new releases against all devices but we'll do our best
-not to break anything.
+not to break anything.  NOTE: the best way to help us in this endeavor
+is to provide a ``simulator'' for your power controller and associated
+tests in the \fItest\fR subdirectory of the powerman source code.
+See the examples in that directory.
 .LP
 By convention, device scripts are one device per file and are included
 as needed from a powerman.conf file, like this:
