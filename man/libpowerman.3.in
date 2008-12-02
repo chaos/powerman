@@ -40,7 +40,7 @@ The \fBpm_connect\fR() function establishes a connection with \fIserver\fR,
 a string containing \fIhost[:port]\fR or NULL for defaults;
 and returns a handle in \fIhp\fR.  The \fIarg\fR parameter is currently
 unused. The \fIflags\fR parameter should be zero or one or more 
-logically-OR'ed flags.  Possible flags are:
+logically-OR'ed flags:
 .TP
 .B PM_CONN_INET6
 Establish connection to the powerman server using (only) IPv6 protocol.
@@ -64,8 +64,8 @@ Node is powered on.
 Node is powered off.
 .TP
 .B PM_UNKNOWN
-Although an error did not occur, the server could not determine
-the power status of the node.
+Node state is unknown.  Some devices may return this even when the query
+is successful, for example X10 devices controlled by \fBplmpower\fR.
 .PP
 To use the above functions you must know the name of the node you wish
 to control.  Calling \fBpm_node_iterator_create\fR() on handle \fIh\fR
@@ -175,23 +175,25 @@ main(int argc, char *argv[])
         if ((err = pm_node_on (h, node)) != PM_ESUCCESS) {
             fprintf (stderr, "pm_node_on: %s\n",
                     pm_strerror (err, ebuf, sizeof(ebuf)));
-            exit(1);
+            exit (1);
         }
     }
-    pm_node_iterator_destroy(i);
+    pm_node_iterator_destroy (i);
 .sp
     pm_disconnect (pm);
     exit (0);
 }
 .fi
+
 .SH "FILES"
 @X_LIBDIR@/libpowerman.*
 .br
 @X_INCLUDEDIR@/libpowerman.h
+
 .SH "ORIGIN"
-Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Linux
-clusters.  This software is open source and distributed under
-the terms of the Gnu GPL.
+PowerMan was originally developed by Andrew Uselton on LLNL's Linux clusters.
+This software is open source and distributed under the terms of the GNU GPL.
+
 .SH "SEE ALSO"
 .BR powerman (1),
 .BR powermand (8),
@@ -202,4 +204,4 @@ the terms of the Gnu GPL.
 .BR powerman.dev (5),
 .BR powerman-devices (7).
 .PP
-\fBhttp://http://sourceforge.net/projects/powerman\fR
+\fBhttp://sourceforge.net/projects/powerman\fR

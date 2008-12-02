@@ -48,14 +48,16 @@ device "pow1" "baytech" "pow1:23"  # instantiate pow1
 node "pengra[0-7]" "pow0" "[1-8]"  # map pengra0...pengra7 to pow0 plug 1-8
 node "pengra[8-15]" "pow1" "[1-8]" # map pengra8...pengra15 to pow1 plug 1-8
 .fi
+
 .SH "FILES"
 @X_SYSCONFDIR@/powerman/powerman.conf
 .br
 @X_SYSCONFDIR@/powerman/*.dev
+
 .SH "ORIGIN"
-Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Linux 
-clusters.  This software is open source and distributed under
-the terms of the Gnu GPL.  
+PowerMan was originally developed by Andrew Uselton on LLNL's Linux clusters.
+This software is open source and distributed under the terms of the GNU GPL.
+
 .SH "SEE ALSO"
 .BR powerman (1),
 .BR powermand (8),
@@ -66,4 +68,4 @@ the terms of the Gnu GPL.
 .BR powerman.dev (5),
 .BR powerman-devices (7).
 .PP
-\fBhttp://http://sourceforge.net/projects/powerman\fR
+\fBhttp://sourceforge.net/projects/powerman\fR

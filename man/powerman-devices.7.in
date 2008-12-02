@@ -173,6 +173,11 @@ The ILOM network configuration can alternatively be set up via the system
 BIOS setup screen.  Hit F2 during boot to access BIOS setup, go to the
 "Advanced" tab, select "IPMI 2.0 configuration" and "set LAN 
 configuration".  Make your changes and commit them.
+
+.SH "ORIGIN"
+PowerMan was originally developed by Andrew Uselton on LLNL's Linux clusters.
+This software is open source and distributed under the terms of the GNU GPL.
+
 .SH "SEE ALSO"
 .BR powerman (1),
 .BR powermand (8),
@@ -183,4 +188,4 @@ configuration".  Make your changes and commit them.
 .BR powerman.dev (5),
 .BR powerman-devices (7).
 .PP
-\fBhttp://http://sourceforge.net/projects/powerman\fR
+\fBhttp://sourceforge.net/projects/powerman\fR

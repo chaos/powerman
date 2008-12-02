@@ -68,6 +68,11 @@ If PLUG is ``*'', perform this action on all plugs.
 
 .SH "FILES"
 @X_SBINDIR@/vpcd
+
+.SH "ORIGIN"
+PowerMan was originally developed by Andrew Uselton on LLNL's Linux clusters.
+This software is open source and distributed under the terms of the GNU GPL.
+
 .SH "SEE ALSO"
 .BR powerman (1),
 .BR powermand (8),
@@ -78,4 +83,4 @@ If PLUG is ``*'', perform this action on all plugs.
 .BR powerman.dev (5),
 .BR powerman-devices (7).
 .PP
-\fBhttp://http://sourceforge.net/projects/powerman\fR
+\fBhttp://sourceforge.net/projects/powerman\fR

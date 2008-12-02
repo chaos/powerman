@@ -68,10 +68,16 @@ Query status of device (Insteon only).
 .TP
 .I "ping addr"
 Time round trip request/response to device (Insteon only).
+
 .SH "FILES"
 @X_SBINDIR@/plmpower
 .br
 @X_SYSCONFDIR@/powerman/powerman.conf
+
+.SH "ORIGIN"
+PowerMan was originally developed by Andrew Uselton on LLNL's Linux clusters.
+This software is open source and distributed under the terms of the GNU GPL.
+
 .SH "SEE ALSO"
 .BR powerman (1),
 .BR powermand (8),
@@ -82,4 +88,4 @@ Time round trip request/response to device (Insteon only).
 .BR powerman.dev (5),
 .BR powerman-devices (7).
 .PP
-\fBhttp://http://sourceforge.net/projects/powerman\fR
+\fBhttp://sourceforge.net/projects/powerman\fR

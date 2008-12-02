@@ -32,10 +32,16 @@ Send an HTTP GET to the base URL with the optional URL-suffix appended.
 .I "post [URL-suffix] key=val[&key=val]..."
 Send an HTTP POST to the base URL with the optional URL-suffix appended,
 and key-value pairs as argument.
+
 .SH "FILES"
 @X_SBINDIR@/httppower
 .br
 @X_SYSCONFDIR@/powerman/powerman.conf
+
+.SH "ORIGIN"
+PowerMan was originally developed by Andrew Uselton on LLNL's Linux clusters.
+This software is open source and distributed under the terms of the GNU GPL.
+
 .SH "SEE ALSO"
 .BR powerman (1),
 .BR powermand (8),
@@ -46,4 +52,4 @@ and key-value pairs as argument.
 .BR powerman.dev (5),
 .BR powerman-devices (7).
 .PP
-\fBhttp://http://sourceforge.net/projects/powerman\fR
+\fBhttp://sourceforge.net/projects/powerman\fR

@@ -184,10 +184,11 @@ $1, $2, ... $N.
 
 .SH "FILES"
 @X_SYSCONFDIR@/powerman/*.dev
+
 .SH "ORIGIN"
-Developed by Andrew  Uselton <useton2@llnl.gov> on LLNL's Linux 
-clusters.  This software is open source and distributed under
-the terms of the Gnu GPL.  
+PowerMan was originally developed by Andrew Uselton on LLNL's Linux clusters.
+This software is open source and distributed under the terms of the GNU GPL.
+
 .SH "SEE ALSO"
 .BR powerman (1),
 .BR powermand (8),
@@ -198,4 +199,4 @@ the terms of the Gnu GPL.
 .BR powerman.dev (5),
 .BR powerman-devices (7).
 .PP
-\fBhttp://http://sourceforge.net/projects/powerman\fR
+\fBhttp://sourceforge.net/projects/powerman\fR
