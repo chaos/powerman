@@ -1,5 +1,5 @@
 =========================================================================
-Release Notes for PowerMan version 2.4                        26 Nov 2008
+Release Notes for PowerMan version 2.3.1                      01 Dec 2008
 =========================================================================
 
 * Initial powerman client API.
@@ -8,7 +8,11 @@ Release Notes for PowerMan version 2.4                        26 Nov 2008
   instead of root.  To override, set USER=root or other user in
   /etc/sysconfig/powerman.
 
-* New man pages for httppower, plmpower.
+* New man pages for httppower, plmpower, libpowerman, vpcd.
+
+* Include vpcd in the dist.
+
+* Various changes coming from Debian audit [Arnaud Quette].
 
 =========================================================================
 Release Notes for PowerMan version 2.3                        12 Nov 2008
