@@ -107,7 +107,6 @@ int main(int argc, char **argv)
         case 'f': /* --foreground */
             daemonize = FALSE;
             break;
-#ifndef NDEBUG
         case 'd': /* --debug */
             {
                 unsigned long val = strtol(optarg, NULL, 0);
@@ -118,7 +117,6 @@ int main(int argc, char **argv)
                 dbg_setmask(val);
             }
             break;
-#endif
         case 'V': /* --version */
             _version();
             /*NOTREACHED*/
@@ -159,12 +157,14 @@ int main(int argc, char **argv)
     cli_start(use_stdio, one_client);
 
     if (daemonize) {
-        char *run_dir = hsprintf("%s/run/powerman", X_LOCALSTATEDIR);
+        char *rundir = hsprintf("%s/run/powerman", X_LOCALSTATEDIR);
+        char *pidfile = hsprintf("%s/powermand.pid", rundir);
         int *fds, len;
 
         cli_listen_fds(&fds, &len);
-        daemon_init(fds, len, DAEMON_NAME); 
-        xfree(run_dir);
+        daemon_init(fds, len, rundir, pidfile, DAEMON_NAME); 
+        xfree(rundir);
+        xfree(pidfile);
         err_notty();
         dbg_notty();
     }

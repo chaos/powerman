@@ -52,10 +52,11 @@ static int in_fdlist(int fd, int *fds, int len)
     return 0;
 }
 
-/* Review: if NDEBUG turn off core generation */
-void daemon_init(int *skipfds, int skipfdslen, char *name)
+void daemon_init(int *skipfds, int skipfdslen, char *rundir, char *pidfile,
+                 char *logname)
 {
     int i;
+    FILE *fp;
 
     switch (fork()) {
         case -1:
@@ -83,8 +84,25 @@ void daemon_init(int *skipfds, int skipfdslen, char *name)
     }
     /* 2nd child continues */
 
+    /* change working directory */
+    if (chdir(rundir) < 0)
+        err_exit(TRUE, "chdir %s", rundir);
+
     /* clear our file mode creation mask */
-    umask(0);
+    umask(0022);
+
+    /* craete pidfile */
+    (void)unlink(pidfile);
+    if (!(fp = fopen(pidfile, "w")))
+        err_exit(TRUE, "fopen %s", pidfile);
+    if (fprintf(fp, "%d\n", (int)getpid()) == EOF) {
+        (void)unlink(pidfile);
+        err_exit(TRUE, "fwrite %s", pidfile);
+    }
+    if (fclose(fp) == EOF) {
+        (void)unlink(pidfile);
+        err_exit(TRUE, "fclose %s", pidfile);
+    }
 
     /* close fd's */
     for (i = 0; i < 256; i++) {
@@ -93,7 +111,7 @@ void daemon_init(int *skipfds, int skipfdslen, char *name)
     }
 
     /* Init syslog */
-    openlog(name, LOG_NDELAY | LOG_PID, LOG_DAEMON);
+    openlog(logname, LOG_NDELAY | LOG_PID, LOG_DAEMON);
     syslog(LOG_NOTICE, "started");
 }
 
