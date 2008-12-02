@@ -1,5 +1,7 @@
 2008-12-01 Jim Garlick <garlick@llnl.gov>
 
+	* : tag powerman-2.3.1
+
 	* man/libopwerman.3.in, man/vpcd.8.in : New.
 
 	* man/* : Process through autoconf to get version and path
