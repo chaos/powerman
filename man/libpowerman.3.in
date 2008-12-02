@@ -44,7 +44,7 @@ logically-OR'ed flags.  Possible flags are:
 .TP
 .B PM_CONN_INET6
 Establish connection to the powerman server using (only) IPv6 protocol.
-With this flag, any available address family will be used.
+Without this flag, any available address family will be used.
 .PP
 The \fBpm_disconnect\fR() function tears down the server connection
 and frees storage associated with handle \fIh\fR.

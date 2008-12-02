@@ -23,6 +23,7 @@ noinst_HEADERS = \
 	debug.h \
 	device.h \
 	device_pipe.h \
+	device_private.h \
 	device_serial.h \
 	device_tcp.h \
 	error.h \
@@ -90,6 +91,8 @@ powermand_SOURCES = \
 powermand_LDADD = $(LIBWRAP) $(LIBFORKPTY)
 
 AM_YFLAGS = -d
+
+pm_SOURCES =
 
 pm: powerman
 	$(LN_S) powerman pm

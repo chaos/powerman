@@ -80,8 +80,8 @@ am__DEPENDENCIES_1 =
 am_plmpower_OBJECTS = plmpower.$(OBJEXT) $(am__objects_1)
 plmpower_OBJECTS = $(am_plmpower_OBJECTS)
 plmpower_DEPENDENCIES = $(am__DEPENDENCIES_1)
-pm_SOURCES = pm.c
-pm_OBJECTS = pm.$(OBJEXT)
+am_pm_OBJECTS =
+pm_OBJECTS = $(am_pm_OBJECTS)
 pm_LDADD = $(LDADD)
 am_powerman_OBJECTS = powerman.$(OBJEXT) $(am__objects_1)
 powerman_OBJECTS = $(am_powerman_OBJECTS)
@@ -110,10 +110,10 @@ LTLEXCOMPILE = $(LIBTOOL) --mode=compile $(LEX) $(LFLAGS) $(AM_LFLAGS)
 YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
 LTYACCCOMPILE = $(LIBTOOL) --mode=compile $(YACC) $(YFLAGS) \
 	$(AM_YFLAGS)
-SOURCES = $(httppower_SOURCES) $(plmpower_SOURCES) pm.c \
+SOURCES = $(httppower_SOURCES) $(plmpower_SOURCES) $(pm_SOURCES) \
 	$(powerman_SOURCES) $(powermand_SOURCES)
-DIST_SOURCES = $(am__httppower_SOURCES_DIST) $(plmpower_SOURCES) pm.c \
-	$(powerman_SOURCES) $(powermand_SOURCES)
+DIST_SOURCES = $(am__httppower_SOURCES_DIST) $(plmpower_SOURCES) \
+	$(pm_SOURCES) $(powerman_SOURCES) $(powermand_SOURCES)
 HEADERS = $(noinst_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -275,6 +275,7 @@ noinst_HEADERS = \
 	debug.h \
 	device.h \
 	device_pipe.h \
+	device_private.h \
 	device_serial.h \
 	device_tcp.h \
 	error.h \
@@ -333,6 +334,7 @@ powermand_SOURCES = \
 
 powermand_LDADD = $(LIBWRAP) $(LIBFORKPTY)
 AM_YFLAGS = -d
+pm_SOURCES = 
 all: all-am
 
 .SUFFIXES:
@@ -467,7 +469,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_util.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/plmpower.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pluglist.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pm.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/powerman.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/powermand.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/xmalloc.Po@am__quote@
