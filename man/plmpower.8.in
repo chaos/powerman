@@ -1,4 +1,4 @@
-.TH PowerMan 8 "@META_DATE@" "@META_ALIAS@" "PowerMan"
+.TH plmpower 8 "@META_DATE@" "@META_ALIAS@" "@META_NAME@"
 .SH NAME
 plmpower \- control Insteon/X10 devices via SmartLabs PLM 2412S
 .SH SYNOPSIS
@@ -45,14 +45,14 @@ X10 does not provide an ACK/NAK mechanism like Insteon so we cannot
 be certain that any particular X10 command completed, 
 therefore X10 commands are issued multiple times to increase confidence.
 .SH INTERACTIVE COMMANDS
-The following commands are accepted by the plmpower> prompt.
+The following commands are accepted at the plmpower> prompt.
 Address arguments may be Insteon (e.g. 1A.2B.3C) or X10 (e.g. G12).
 .TP
 .I "help"
 Display help on the available commands.
 .TP
 .I "info"
-Get info abou the PLM.
+Get info about the PLM.
 .TP
 .I "reset"
 Reset the PLM (clears the all-link db).

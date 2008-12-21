@@ -1,4 +1,4 @@
-.TH PowerMan 8 "@META_DATE@" "@META_ALIAS@" "PowerMan"
+.TH httppower 8 "@META_DATE@" "@META_ALIAS@" "@META_NAME@"
 .SH NAME
 httppower \- communicate with HTTP based power distribution units
 .SH SYNOPSIS
@@ -16,7 +16,7 @@ It is run interactively by the powerman daemon.
 .I "-u, --url URL"
 Set the base URL.
 .SH INTERACTIVE COMMANDS
-The following commands are available at the httppower> prompt:
+The following commands are accepted at the httppower> prompt:
 .TP
 .I "auth user:pass"
 Authenticate to the base URL with specified user and password,

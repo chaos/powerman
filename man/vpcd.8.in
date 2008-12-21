@@ -1,4 +1,4 @@
-.TH PowerMan 8 "@META_DATE@" "@META_ALIAS@" "PowerMan"
+.TH vpcd 8 "@META_DATE@" "@META_ALIAS@" "@META_NAME@"
 .SH NAME
 vpcd \- virtual power control daemon
 .SH SYNOPSIS

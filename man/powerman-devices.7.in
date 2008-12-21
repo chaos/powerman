@@ -1,4 +1,4 @@
-.TH PowerMan 7 "@META_DATE@" "@META_ALIAS@" "PowerMan"
+.TH powerman-devices 7 "@META_DATE@" "@META_ALIAS@" "@META_NAME@"
 .SH NAME
 powerman\(hydevices \- Powerman Device Configuration Notes
 .SH DESCRIPTION

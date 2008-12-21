@@ -1,4 +1,4 @@
-.TH PowerMan 1 "@META_DATE@" "@META_ALIAS@" "PowerMan"
+.TH powerman 1 "@META_DATE@" "@META_ALIAS@" "@META_NAME@"
 .SH NAME
 powerman \- power on/off nodes
 .SH SYNOPSIS
