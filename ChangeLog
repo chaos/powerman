@@ -1,6 +1,10 @@
+2009-01-09 Jim Garlick <garlick@llnl.gov>
+
+	* : tag powerman-2.3.3
+
 2008-12-21 Jim Garlick <garlick@llnl.gov>
 
-	* man/*.\d.in : Standardize headers.
+	* man/*.\d.in : Standardize headers, and fix typos etc.
 
 2008-12-02 Jim Garlick <garlick@llnl.gov>
 
