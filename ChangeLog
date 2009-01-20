@@ -1,3 +1,11 @@
+2009-01-20 Jim Garlick <garlick@llnl.gov>
+
+	* : Continued audit for Debian [Arnaud Quette]
+	- fix typo in man/powermand.8.in 
+	- add config file path to scripts/powerman.init.in so it properly
+	  handles startup when config file is missing
+	- install sample powerman.conf as powerman.conf.example
+
 2009-01-09 Jim Garlick <garlick@llnl.gov>
 
 	* : tag powerman-2.3.3
@@ -38,7 +46,7 @@
 
 	* lib/* : Move lib sources from src.
 
-	* : Continued audit for debian [Arnaud Quette]
+	* : Continued audit for Debian [Arnaud Quette]
 	- rename autoreconf to autogen.sh, I misunderstood previous suggestion.
 	- drop sysconfdir from libpowerman.pc.in
 	- install powerman.conf.example as the actual config file
@@ -61,7 +69,7 @@
 
 	* config/ac_pkgconfig.m4 : New [Arnaud Quette].
 
-	* src/libpowreman.pc.in : New [Arnaud Quette]
+	* src/libpowerman.pc.in : New [Arnaud Quette]
 
 	* configure.ac : Add support for above.
 
@@ -73,7 +81,7 @@
 
 2008-11-20 Jim Garlick <garlick@llnl.gov>
 
-	* : Audit for debian [Arnaud Quette]
+	* : Audit for Debian [Arnaud Quette]
 	- rename bootstrap to autoreconf (convention)
 	- remove htdocs/powerman47.jpg (redistribution rights)
 	- fix AUTHORS typo

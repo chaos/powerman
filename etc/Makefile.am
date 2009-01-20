@@ -5,7 +5,7 @@
 ##*****************************************************************************
 
 CONFFILE = \
-	powerman.conf
+	powerman.conf.example
 
 DEVFILES = \
 	apc7900.dev \

@@ -1,8 +1,9 @@
 #
 # Sun Integrated Lights Out Management card
 #
-# Written for:
+# Verified on:
 #   Sunfire X4140 SP firmware 2.0.2.3 build 29049, SP file system 0.1.16
+#   Sunfire X4550 SP firmware 2.0.2.5 build 32394, SP file system 0.1.16
 #
 # Examples:
 #   over SER MGT RJ-45 (serial via cyclades)

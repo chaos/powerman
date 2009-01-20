@@ -32,7 +32,7 @@ and exit.
 .SH "FILES"
 @X_SBINDIR@/powermand
 .br
-@X_SYSCONFDIR/powerman/powerman.conf
+@X_SYSCONFDIR@/powerman/powerman.conf
 
 .SH "ORIGIN"
 PowerMan was originally developed by Andrew Uselton on LLNL's Linux clusters.
