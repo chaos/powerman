@@ -108,3 +108,7 @@ t47
 	Test FreeIPMI ipmipower using ipmipower.c
 t48
 	Run some simple vpcd tests using sockets.
+t49
+	Test libpowerman API
+t50
+	Test bashfun demo script.

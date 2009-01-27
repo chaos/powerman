@@ -11,26 +11,24 @@ specification  "bashfun" {
 	plug name { "1" }
  
 	script login {
-		expect "[^#]*# "
+		send "stty -echo"
 		send "unset PROMPT_COMMAND\n"
-		expect "[^#]*# "
-		send "export PS1=\"# \"\n"
-		expect "[^#]*# "
-		expect "[^#]*# "
+		send "export PS1=P\n"
 		send "echo off >/tmp/state\n"
-		expect "[^#]*# "
+		expect "P"
 	}
 	script status {
 		send "cat /tmp/state\n"
-		expect "(off|on)[^#]*# "
+		expect "(off|on)"
 		setplugstate "1" $1 on="on" off="off"
+		expect "P"
 	}
 	script on {
 		send "echo on >/tmp/state\n"
-		expect "[^#]*# "
+		expect "P"
 	}
 	script off {
 		send "echo off >/tmp/state\n"
-		expect "[^#]*# "
+		expect "P"
 	}
 }

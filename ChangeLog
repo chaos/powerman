@@ -1,3 +1,12 @@
+2009-01-26 Jim Garlick <garlick@llnl.gov>
+
+	* etc/bashfun.dev : This wasn't working.  Simplify and fix prompt
+	expects so they don't depend on root's prompt initially being a '#'.
+
+	* test/t50 : New test for above.
+
+	* test/Makefile.am : Add -L to cli target so we can find libpowerman.
+
 2009-01-20 Jim Garlick <garlick@llnl.gov>
 
 	* : Continued audit for Debian [Arnaud Quette]
