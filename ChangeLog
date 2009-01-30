@@ -1,3 +1,12 @@
+2009-01-30 Jim Garlick <garlick@llnl.gov>
+
+	* etc/powerman.dev : Revert change on 2008-04-25 to drop status_all.
+	Document that master must powerman.conf control all the plugs in
+	the slave powerman.conf's.
+
+	* test/t36 : Alter test to check that a remapped superset works,
+	not a subset.
+
 2009-01-26 Jim Garlick <garlick@llnl.gov>
 
 	* etc/bashfun.dev : This wasn't working.  Simplify and fix prompt

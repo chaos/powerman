@@ -89,7 +89,7 @@ t33-t34
 t35
 	Powerman as a pseudo-power controller, direct mapping.
 t36
-	Powerman as a pseudo-power controller, remapped subset.
+	Powerman as a pseudo-power controller, remapped.
 t37-38
 	Test hp3488 using gpib.c
 t39-40

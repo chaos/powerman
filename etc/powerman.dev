@@ -5,6 +5,9 @@
 #
 #  device "cartman" "powerman" "cartman.llnl.gov:10101"
 #  node "b[1-4]" "cartman" "b[1-4]"
+#
+# N.B. master powerman.conf must contain the union of all slave 
+# powerman.conf plugs, or status_all script will not work.
 # 
 specification "powerman" {
 	timeout 	100.0
@@ -17,12 +20,14 @@ specification "powerman" {
 	script logout {
 		send "quit\r\n"
 	}
-	script status {
-		send "status %s\r\n"
-		expect "303 ([^:]+): (off|on|unknown)\r\n"
-		setplugstate $1 $2 off="off" on="on"
-		expect "powerman> "
-	}
+        script status_all {
+                send "status\r\n"
+                foreachplug {
+                        expect "303 ([^:]+): (off|on|unknown)\r\n"
+                        setplugstate $1 $2 off="off" on="on"
+                }
+                expect "powerman> "
+        }
 	script on_ranged {
 		send "on %s\r\n"
 		expect "powerman> "
