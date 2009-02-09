@@ -1,3 +1,7 @@
+2009-02-09 Jim Garlick <garlick@llnl.gov>
+
+	* : tag powerman-2.3.4
+
 2009-01-30 Jim Garlick <garlick@llnl.gov>
 
 	* etc/powerman.dev : Revert change on 2008-04-25 to drop status_all.
