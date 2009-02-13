@@ -14,6 +14,7 @@ specification  "bashfun" {
 		send "stty -echo"
 		send "unset PROMPT_COMMAND\n"
 		send "export PS1=P\n"
+		expect "P"
 		send "echo off >/tmp/state\n"
 		expect "P"
 	}

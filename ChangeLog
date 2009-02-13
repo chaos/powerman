@@ -1,3 +1,7 @@
+2009-02-12 Jim Garlick <garlick@llnl.gov>
+
+	* etc/bashfun.dev : Small tweak to get working on AIX.
+
 2009-02-09 Jim Garlick <garlick@llnl.gov>
 
 	* : tag powerman-2.3.4
