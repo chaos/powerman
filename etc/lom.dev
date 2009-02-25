@@ -1,0 +1,53 @@
+#
+# Sun LOM
+#
+# Verified on (only via ssh so far):
+#   Sun v40, Version V2.1.0.16
+#
+# Examples:
+#   over SER MGT RJ-45 (serial via cyclades)
+#     device "lom" "lom" "usr-ts:7016"
+#   over SER MGT RJ-45 (direct serial)
+#     device "lom" "lom" "/dev/ttyS1" "9600,8n1"
+#   over NET MGT RJ-45 (network over ssh)
+#     device "lom" "lom" "ssh -o StrictHostKeyChecking=no -ladmin sol|&"
+#
+specification  "lom" {
+	timeout 	10
+
+	plug name { "1" }
+
+	# login script handles three cases:
+	# 1) serial port, already logged in
+	# 2) serial port, not logged in
+	# 3) ssh, enter password only
+	script login {
+		send "\n"
+ 		expect "->|assword:|login: "
+		send "admin\n"
+		expect "$|assword: "
+		send "admin\n"
+		expect "$"
+	}
+	script status {
+		send "platform get power state\n"
+		expect "(On|Off)"
+		setplugstate "1" $2 on="On" off="Off"
+		expect "$"
+	}
+	script on {
+		send "platform set power state -W -f -q on\n"
+		expect "$"
+	}		
+	script off {
+		send "platform set power state -W -f -q off\n"
+		expect "$"
+	}		
+	script cycle {
+		send "platform set power state -W -f -q off\n"
+		expect "$"
+		delay 4	
+		send "platform set power state -W -f -q on\n"
+		expect "$"
+	}
+}

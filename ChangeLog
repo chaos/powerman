@@ -1,3 +1,7 @@
+2009-02-25 Jim Garlick <garlick@llnl.gov>
+
+	* etc/lom.dev, test/lom.c : Added initial support for Sun LOM.
+
 2009-02-12 Jim Garlick <garlick@llnl.gov>
 
 	* etc/bashfun.dev : Small tweak to get working on AIX.

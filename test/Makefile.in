@@ -40,8 +40,8 @@ target_triplet = @target@
 sbin_PROGRAMS = vpcd$(EXEEXT)
 check_PROGRAMS = tpl$(EXEEXT) tregex$(EXEEXT) targv$(EXEEXT) \
 	baytech$(EXEEXT) icebox$(EXEEXT) gpib$(EXEEXT) dli$(EXEEXT) \
-	ilom$(EXEEXT) phantom$(EXEEXT) cyclades$(EXEEXT) \
-	ipmipower$(EXEEXT) cli$(EXEEXT)
+	phantom$(EXEEXT) cyclades$(EXEEXT) ipmipower$(EXEEXT) \
+	cli$(EXEEXT) ilom$(EXEEXT) lom$(EXEEXT)
 subdir = test
 DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -93,6 +93,9 @@ ilom_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_ipmipower_OBJECTS = ipmipower.$(OBJEXT) $(am__objects_1)
 ipmipower_OBJECTS = $(am_ipmipower_OBJECTS)
 ipmipower_DEPENDENCIES = $(am__DEPENDENCIES_1)
+am_lom_OBJECTS = lom.$(OBJEXT) $(am__objects_1)
+lom_OBJECTS = $(am_lom_OBJECTS)
+lom_DEPENDENCIES = $(am__DEPENDENCIES_1)
 am_phantom_OBJECTS = phantom.$(OBJEXT) $(am__objects_1)
 phantom_OBJECTS = $(am_phantom_OBJECTS)
 phantom_DEPENDENCIES = $(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
@@ -121,14 +124,14 @@ LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
 SOURCES = $(baytech_SOURCES) $(cli_SOURCES) $(cyclades_SOURCES) \
 	$(dli_SOURCES) $(gpib_SOURCES) $(icebox_SOURCES) \
-	$(ilom_SOURCES) $(ipmipower_SOURCES) $(phantom_SOURCES) \
-	$(targv_SOURCES) $(tpl_SOURCES) $(tregex_SOURCES) \
-	$(vpcd_SOURCES)
+	$(ilom_SOURCES) $(ipmipower_SOURCES) $(lom_SOURCES) \
+	$(phantom_SOURCES) $(targv_SOURCES) $(tpl_SOURCES) \
+	$(tregex_SOURCES) $(vpcd_SOURCES)
 DIST_SOURCES = $(baytech_SOURCES) $(cli_SOURCES) $(cyclades_SOURCES) \
 	$(dli_SOURCES) $(gpib_SOURCES) $(icebox_SOURCES) \
-	$(ilom_SOURCES) $(ipmipower_SOURCES) $(phantom_SOURCES) \
-	$(targv_SOURCES) $(tpl_SOURCES) $(tregex_SOURCES) \
-	$(vpcd_SOURCES)
+	$(ilom_SOURCES) $(ipmipower_SOURCES) $(lom_SOURCES) \
+	$(phantom_SOURCES) $(targv_SOURCES) $(tpl_SOURCES) \
+	$(tregex_SOURCES) $(vpcd_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -317,6 +320,8 @@ dli_SOURCES = dli.c $(common_sources)
 dli_LDADD = $(LIBFORKPTY)
 ilom_SOURCES = ilom.c $(common_sources)
 ilom_LDADD = $(LIBFORKPTY)
+lom_SOURCES = lom.c $(common_sources)
+lom_LDADD = $(LIBFORKPTY)
 phantom_SOURCES = phantom.c $(common_sources)
 phantom_LDADD = $(LIBFORKPTY) $(LIBCURSES)
 cyclades_SOURCES = cyclades.c $(common_sources)
@@ -417,6 +422,9 @@ ilom$(EXEEXT): $(ilom_OBJECTS) $(ilom_DEPENDENCIES)
 ipmipower$(EXEEXT): $(ipmipower_OBJECTS) $(ipmipower_DEPENDENCIES) 
 	@rm -f ipmipower$(EXEEXT)
 	$(LINK) $(ipmipower_LDFLAGS) $(ipmipower_OBJECTS) $(ipmipower_LDADD) $(LIBS)
+lom$(EXEEXT): $(lom_OBJECTS) $(lom_DEPENDENCIES) 
+	@rm -f lom$(EXEEXT)
+	$(LINK) $(lom_LDFLAGS) $(lom_OBJECTS) $(lom_LDADD) $(LIBS)
 phantom$(EXEEXT): $(phantom_OBJECTS) $(phantom_DEPENDENCIES) 
 	@rm -f phantom$(EXEEXT)
 	$(LINK) $(phantom_LDFLAGS) $(phantom_OBJECTS) $(phantom_LDADD) $(LIBS)
@@ -454,6 +462,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ilom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ipmipower.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/list.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phantom.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/pluglist.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/targv.Po@am__quote@
