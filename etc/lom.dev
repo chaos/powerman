@@ -23,31 +23,34 @@ specification  "lom" {
 	# 3) ssh, enter password only
 	script login {
 		send "\n"
- 		expect "->|assword:|login: "
+ 		expect "\\$|assword:|login: "
 		send "admin\n"
-		expect "$|assword: "
+		expect "\\$|assword: "
 		send "admin\n"
-		expect "$"
+		expect "\\$"
 	}
 	script status {
 		send "platform get power state\n"
 		expect "(On|Off)"
-		setplugstate "1" $2 on="On" off="Off"
-		expect "$"
+		setplugstate "1" $1 on="On" off="Off"
+		expect "\\$"
 	}
 	script on {
 		send "platform set power state -W -f -q on\n"
-		expect "$"
+		expect "\\$"
+		delay 3
 	}		
 	script off {
 		send "platform set power state -W -f -q off\n"
-		expect "$"
+		expect "\\$"
+		delay 3
 	}		
 	script cycle {
 		send "platform set power state -W -f -q off\n"
-		expect "$"
+		expect "\\$"
 		delay 4	
 		send "platform set power state -W -f -q on\n"
-		expect "$"
+		expect "\\$"
+		delay 3
 	}
 }

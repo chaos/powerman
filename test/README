@@ -112,3 +112,5 @@ t49
 	Test libpowerman API
 t50
 	Test bashfun demo script.
+t51
+	Test Sun LOM using lom.c

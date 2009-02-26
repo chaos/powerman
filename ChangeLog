@@ -1,6 +1,8 @@
 2009-02-25 Jim Garlick <garlick@llnl.gov>
 
-	* etc/lom.dev, test/lom.c : Added initial support for Sun LOM.
+	* etc/lom.dev : Added initial support for Sun LOM.
+
+	* test/t51, test/lom.c : Test for above.
 
 2009-02-12 Jim Garlick <garlick@llnl.gov>
 
