@@ -1,3 +1,9 @@
+2009-03-09 Jim Garlick <garlick@llnl.gov>
+
+	* scripts/powerman.init.in : Change log_init() message on Red Hat
+	from e.g. "Starting Powerman: powermand" to "Starting Powerman: ",
+	per chaos bug 710.
+
 2009-02-25 Jim Garlick <garlick@llnl.gov>
 
 	* etc/lom.dev : Added initial support for Sun LOM.

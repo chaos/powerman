@@ -478,7 +478,7 @@ log_init ()
       fi
       ;;
     REDHAT|SUSE|LSB|*)
-      printf "$MESSAGE: $PROCNAME"
+      printf "$MESSAGE: "
       ;;
   esac
 }
