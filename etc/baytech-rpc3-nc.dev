@@ -17,6 +17,10 @@
 #   Status menu : disabled
 #   No access control
 #
+# NOTE: DHCP implementation at least as of F.3.09.8 does not renew leases
+# and having it enabled seems cause spurious disconnection (with idle
+# timeout disabled).  Best to avoid.
+#
 specification "baytech-rpc3-nc" {
 	timeout 	10   # about 5 sec for cycle command
 
