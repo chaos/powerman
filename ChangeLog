@@ -1,3 +1,7 @@
+2009-03-17 Albert Chu <chu11@llnl.gov>
+
+	* man/powerman.dev.5.in: Fix spelling typo (seperated -> separated).
+	
 2009-03-09 Jim Garlick <garlick@llnl.gov>
 
 	* scripts/powerman.init.in : Change log_init() message on Red Hat

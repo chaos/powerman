@@ -176,7 +176,7 @@ three digit octal values, and most common backslash-escaped
 single character values.
 .TP
 .I "<string list>"
-Multiple <string> values seperated by white space.
+Multiple <string> values separated by white space.
 .TP
 .I "<script_name>"
 Name of script (see above).
