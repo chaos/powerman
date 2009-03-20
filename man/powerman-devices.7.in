@@ -178,7 +178,7 @@ IPMI based power control is supported via FreeIPMI's
 .B ipmipower.
 It is configured by running
 .B ipmipower
-in coprocess mode and setting appropriate options in powerman.conf
+in coprocess mode in powerman.conf
 
 Due to semantic differences between IPMI and traditional remote power
 control devices, some power control operations may not seem to work
