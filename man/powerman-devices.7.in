@@ -173,6 +173,53 @@ The ILOM network configuration can alternatively be set up via the system
 BIOS setup screen.  Hit F2 during boot to access BIOS setup, go to the
 "Advanced" tab, select "IPMI 2.0 configuration" and "set LAN 
 configuration".  Make your changes and commit them.
+.SH "IPMI (via Ipmipower)"
+IPMI based power control is supported via FreeIPMI's 
+.B ipmipower.
+It is configured by running
+.B ipmipower
+in coprocess mode and setting appropriate options in powerman.conf
+
+Due to semantic differences between IPMI and traditional remote power
+control devices, some power control operations may not seem to work
+properly by default with
+.B Powerman.  
+For example, several IPMI power control operations are allowed to
+return prior to the operation fully completing.  A machine that has
+been powered off by IPMI may be later queried as being powered on.
+This is because IPMI may successfully return from a power off
+operation to the user, but the machine may elect to power itself off
+at a later time.  In order to get around several of these issues, it
+is recommended that the user configure
+.B ipmipower 
+with the
+\fB\-\-wait\-until\-on\fR
+and
+\fB\-\-wait\-until\-off\fR
+options.
+With these options set,
+.B ipmipower
+will behave more like traditional remote power control devices.
+
+In order to hide IPMI usernames and passwords from
+.B ps(1), 
+it is also recommended that the user configure the username and
+password (and at your discretion, the above options) using the
+FreeIPMI configuration file and not in the powerman.conf file.  Please
+see the
+.B ipmipower
+section of the
+.B freeipmi.conf(5)
+manpage for more information.
+
+Because IPMI usernames and passwords are sensitive, the default
+FreeIPMI configuration file is only readable and writable by root.  This may
+conflict with the default
+.B powermand
+daemon settings, thus making the configuration file non-readable.
+Administrators may wish to run the
+.B powermand
+daemon as root or adjust the configuration file permissions as needed.
 
 .SH "ORIGIN"
 PowerMan was originally developed by Andrew Uselton on LLNL's Linux clusters.

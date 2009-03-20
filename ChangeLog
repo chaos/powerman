@@ -1,3 +1,9 @@
+2009-03-20 Albert Chu <chu11@llnl.gov>
+
+	* man/powerman-devices.7.in: Re-add IPMI/ipmipower section.
+	Update with new FreeIPMI information and troubleshooting
+	information.
+	
 2009-03-17 Albert Chu <chu11@llnl.gov>
 
 	* man/powerman.dev.5.in: Fix spelling typo (seperated -> separated).
