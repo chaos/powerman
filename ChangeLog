@@ -1,3 +1,7 @@
+2009-03-29 Jim Garlick <garlick@llnl.gov>
+
+	* src/powerman.c : Fix -h option parsing so port is optional.
+
 2009-03-20 Albert Chu <chu11@llnl.gov>
 
 	* man/powerman-devices.7.in: Re-add IPMI/ipmipower section.

@@ -132,7 +132,7 @@ int main(int argc, char **argv)
     int c;
     int res = 0;
     int server_fd;
-    char *port = DFLT_PORT;
+    char *p, *port = DFLT_PORT;
     char *host = DFLT_HOSTNAME;
     bool genders = FALSE;
     bool dumpcmds = FALSE;
@@ -183,7 +183,7 @@ int main(int argc, char **argv)
         case 'B':              /* --beacon */
             _cmd_create(commands, CP_BEACON, optarg, FALSE);
             break;
-        case 'b':              /* --beacon-all */
+        case 'b':              /* --beacon-all */;
             _cmd_create(commands, CP_BEACON_ALL, NULL, FALSE);
             break;
         case 'P':              /* --temp */
@@ -202,8 +202,10 @@ int main(int argc, char **argv)
             short_circuit_delays = TRUE;
             break;
         case 'h':              /* --server-host host[:port] */
-            if ((port = strchr(optarg, ':')))
-                *port++ = '\0';  
+            if ((p = strchr(optarg, ':'))) {
+                *p++ = '\0';  
+		port = p;
+            }
             host = optarg;
             break;
         case 'L':              /* --license */

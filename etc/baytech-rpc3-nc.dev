@@ -16,7 +16,7 @@
 #   Command confirmation : disabled
 #   Status menu : disabled
 #   No access control
-#   No idle timeout (causes disconnections)
+#   No idle timeout
 #   No active restore (causes disconnections)
 #
 specification "baytech-rpc3-nc" {
