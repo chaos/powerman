@@ -24,7 +24,7 @@
 declare -r path_powerman=/usr/bin/powerman
 declare -r prog=stonith-powerman
 declare -r retry_secs=60
-declare -r reset_delay_secs=2
+declare -r reset_delay_secs=8
 declare -r config_file=/etc/powerman/stonith.conf
 pmopts=""
 

@@ -1,0 +1,80 @@
+# HP Management Processor device (MP) for mid-range cellular systems
+#
+# (c) Copyright 2009 Hewlett-Packard Development Company, L.P.
+#	Bjorn Helgaas <bjorn.helgaas@hp.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+# Example:
+#	device "rx8620-001" "hpmpcell" "rx8620-001-mp.test:23"
+#	node "rx8620-001-p0" "rx8620-001" "0"
+#
+# Tested on:
+#	rx8620 (MP firmware A.7.008, A.8.005)
+#
+# This handles each partition separately.  The "plug" argument to node is the
+# partition number.
+#
+# N.B. This only works on mid-range, e.g., rx7620, rx7640, rx8620, and rx8640.
+# It doesn't handle Superdome because Superdome uses "P" to select partition,
+# not "R".  It should support PA-RISC systems, e.g., rp7620, rp7640, etc.
+
+specification  "hpmpcell" {
+	timeout 10
+
+	script login {
+		expect "MP login: "
+		send "Admin\r\n"
+		expect "MP password: "
+		send "Admin\r\n"
+		expect "MP> "
+		send "cm\r\n"
+		expect "MP:CM> "
+	}
+	script status {
+		send "pe\r\n"
+		expect "Select Device: "
+		send "r\r\n"
+		expect "Select a partition number: "
+		send "%s\r\n"
+		expect "The power state is (ON|OFF)"
+		setplugstate $1 on="ON" off="OFF"
+		expect "In what state do you want the power.*\? "
+		send "q\r\n"
+		expect "MP:CM> "
+	}
+	script on {
+		send "pe\r\n"
+		expect "Select Device: "
+		send "r\r\n"
+		expect "Select a partition number: "
+		send "%s\r\n"
+		expect "The power state is (ON|OFF)"
+		setplugstate $1 on="ON" off="OFF"
+		expect "In what state do you want the power.*\? "
+		send "on\r\n"
+		expect "MP:CM> "
+	}
+	script off {
+		send "pe\r\n"
+		expect "Select Device: "
+		send "r\r\n"
+		expect "Select a partition number: "
+		send "%s\r\n"
+		expect "The power state is (ON|OFF)"
+		setplugstate $1 on="ON" off="OFF"
+		expect "In what state do you want the power.*\? "
+		send "off\r\n"
+		expect "MP:CM> "
+	}
+	script reset {
+		send "rs\r\n"
+		expect "Select a partition number: "
+		send "%s\r\n"
+		expect "Do you want to reset partition number.*\? "
+		send "y\r\n"
+		expect "MP:CM> "
+	}
+}

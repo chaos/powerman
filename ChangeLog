@@ -1,3 +1,9 @@
+2009-03-31 Jim Garlick <garlick@llnl.gov>
+
+	* etc/Makefile.am, man/powerman-devices.7.in, etc/hpilo.dev,
+	etc/hpmpblade.dev, etc/hpmpcell.dev, etc/hpmp.dev,
+	etc/hpmpdome.dev : New support for HP systems [Bjorn Helgaas].
+
 2009-03-29 Jim Garlick <garlick@llnl.gov>
 
 	* src/powerman.c : Fix -h option parsing so port is optional.

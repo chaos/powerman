@@ -221,6 +221,35 @@ Administrators may wish to run the
 .B powermand
 daemon as root or adjust the configuration file permissions as needed.
 
+.SH "HP iLO"
+The "hpilo" script supports the Integrated Lights-Out management processor
+in HP ProLiant servers, including both rack-mount and blade servers.
+Configure the iLO to allow Telnet access on port 23, and add a user "Admin"
+with password "Admin".  You may have to reduce the minimum password length
+on the Administration/Access/Options tab of the web interface.
+
+.SH "HP MP"
+The "hpmp" script supports the Management Processor in HP non-cellular,
+rack-mount Integrity servers.  Configure the MP to allow Telnet access with the
+"CM:SA" command, and make sure there's a user "Admin" with password "Admin".
+If the MP enforces a minimum password length, you may have to use
+"uc -all default" to restore the default Admin/Admin user.
+
+.SH "HP MP (cellular)"
+The "hpmpcell" script supports the Management Processor in HP mid-range
+cellular servers.  Configure the MP to allow Telnet access with the
+"CM:SA" command, and make sure there's a user "Admin" with password "Admin".
+
+.SH "HP MP (Superdome)"
+The "hpmpdome" script supports the Management Processor in HP Superdome
+servers.  Configure the MP to allow Telnet access with the
+"CM:SA" command, and make sure there's a user "Admin" with password "Admin".
+
+.SH "HP MP (Integrity blades)"
+The "hpmpblade" script supports the Management Processor in HP Integrity blade
+servers.  Configure the MP to allow Telnet access with the "CM:SA" command, and
+make sure there's a user "Admin" with password "Admin".
+
 .SH "ORIGIN"
 PowerMan was originally developed by Andrew Uselton on LLNL's Linux clusters.
 This software is open source and distributed under the terms of the GNU GPL.

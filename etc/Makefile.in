@@ -223,6 +223,11 @@ DEVFILES = \
 	cyclades-pm42.dev \
 	dli.dev \
 	hp3488.dev \
+	hpilo.dev \
+	hpmp.dev \
+	hpmpblade.dev \
+	hpmpcell.dev \
+	hpmpdome.dev \
 	ibmbladecenter.dev \
 	icebox.dev \
 	icebox3.dev \

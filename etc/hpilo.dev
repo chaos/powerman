@@ -1,0 +1,62 @@
+# HP Integrated Lights-Out management device (iLO)
+#
+# (c) Copyright 2009 Hewlett-Packard Development Company, L.P.
+#	Bjorn Helgaas <bjorn.helgaas@hp.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+# Example:
+#	device "dl360-001" "hpilo" "dl360-001-ilo.test:23"
+#	node   "dl360-001" "dl360-001"
+#
+# Tested on:
+#	DL360 (iLO firmware 1.93)
+#	DL320 (iLO firmware 1.42)
+#	BL465c G5 (iLO firmware 1.61)
+
+specification  "hpilo" {
+	timeout 10
+	plug name { "1" }
+
+	script login {
+		expect "Login Name:  "
+		send "Admin\r\n"
+		expect "Password:    "
+		send "Admin\r\n"
+		expect "hpiLO-> "
+	}
+	script status {
+		send "power\r\n"
+		expect "server power is currently: (On|Off)"
+		setplugstate "1" $1 on="On" off="Off"
+		expect "hpiLO-> "
+	}
+	script on {
+		send "power on\r\n"
+		expect "hpiLO-> "
+	}
+	script off {
+		send "power off\r\n"
+		expect "hpiLO-> "
+	}
+	script reset {
+		send "reset system1\r\n"
+		expect "hpiLO-> "
+	}
+	script status_beacon {
+		send "uid\r\n"
+		expect "The UID light is currently: (On|Off)"
+		setplugstate "1" $1 on="On" off="Off"
+		expect "hpiLO-> "
+	}
+	script beacon_on {
+		send "uid on\r\n"
+		expect "hpiLO-> "
+	}
+	script beacon_off {
+		send "uid off\r\n"
+		expect "hpiLO-> "
+	}
+}

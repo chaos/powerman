@@ -1,0 +1,63 @@
+# HP Management Processor device (MP)
+# a.k.a. Integrity Integrated Lights-Out 2
+#
+# (c) Copyright 2009 Hewlett-Packard Development Company, L.P.
+#	Bjorn Helgaas <bjorn.helgaas@hp.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+# Example:
+#	device "bl860c-001" "hpmpblade" "bl860c-001-mp.test:23"
+#	node   "bl860c-001" "bl860c-001"
+#
+# Tested on:
+#	BL860c (MP firmware T.02.16)
+
+specification  "hpmpblade" {
+	timeout 10
+	plug name { "1" }
+
+	script login {
+		expect "login: "
+		send "Admin\r\n"
+		expect "password: "
+		send "Admin\r\n"
+		expect "MP> "
+		send "cm\r\n"
+		expect "MP:CM> "
+	}
+	script status {
+		send "ps\r\n"
+		expect "System Power state[^O]+(On|Off)"
+		setplugstate "1" $1 on="On" off="Off"
+		expect "MP:CM> "
+	}
+	script on {
+		send "pc -on -nc\r\n"
+		expect "MP:CM> "
+	}
+	script off {
+		send "pc -off -nc\r\n"
+		expect "MP:CM> "
+	}
+	script reset {
+		send "rs -nc\r\n"
+		expect "MP:CM> "
+	}
+	script status_beacon {
+		send "loc -nc\r\n"
+		expect "Server Locator UID LED[^O]+(On|Off)"
+		setplugstate "1" $1 on="On" off="Off"
+		expect "MP:CM> "
+	}
+	script beacon_on {
+		send "loc -on -nc\r\n"
+		expect "MP:CM> "
+	}
+	script beacon_off {
+		send "loc -off -nc\r\n"
+		expect "MP:CM> "
+	}
+}

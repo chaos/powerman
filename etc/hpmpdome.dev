@@ -1,0 +1,78 @@
+# HP Management Processor device (MP) for high-end cellular systems
+#
+# (c) Copyright 2009 Hewlett-Packard Development Company, L.P.
+#	Bjorn Helgaas <bjorn.helgaas@hp.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+# Example:
+#	device "sd-001" "hpmpdome" "sd-001-mp.test:23"
+#	node "sd-001-p0" "sd-001" "0"
+#
+# Tested on:
+#	SD64B (MP firmware 26.5.1)
+#
+# This handles each partition separately.  The "plug" argument to node is the
+# partition number.
+#
+# N.B. This only works on Superdomes, not mid-range cellular systems.
+
+specification  "hpmpdome" {
+	timeout 10
+
+	script login {
+		expect "MP login: "
+		send "Admin\r\n"
+		expect "MP password: "
+		send "Admin\r\n"
+		expect "MP> "
+		send "cm\r\n"
+		expect "MP:CM> "
+	}
+	script status {
+		send "pe\r\n"
+		expect "Select Device: "
+		send "p\r\n"
+		expect "Select a partition number: "
+		send "%s\r\n"
+		expect "The power state is (ON|OFF)"
+		setplugstate $1 on="ON" off="OFF"
+		expect "In what state do you want the power.*\? "
+		send "q\r\n"
+		expect "MP:CM> "
+	}
+	script on {
+		send "pe\r\n"
+		expect "Select Device: "
+		send "p\r\n"
+		expect "Select a partition number: "
+		send "%s\r\n"
+		expect "The power state is (ON|OFF)"
+		setplugstate $1 on="ON" off="OFF"
+		expect "In what state do you want the power.*\? "
+		send "on\r\n"
+		expect "MP:CM> "
+	}
+	script off {
+		send "pe\r\n"
+		expect "Select Device: "
+		send "p\r\n"
+		expect "Select a partition number: "
+		send "%s\r\n"
+		expect "The power state is (ON|OFF)"
+		setplugstate $1 on="ON" off="OFF"
+		expect "In what state do you want the power.*\? "
+		send "off\r\n"
+		expect "MP:CM> "
+	}
+	script reset {
+		send "rs\r\n"
+		expect "Select a partition number: "
+		send "%s\r\n"
+		expect "Do you want to reset partition number.*\? "
+		send "y\r\n"
+		expect "MP:CM> "
+	}
+}

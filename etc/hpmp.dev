@@ -1,0 +1,65 @@
+# HP Management Processor device (MP)
+# a.k.a. Integrated Lights-Out HP Integrity
+#
+# (c) Copyright 2009 Hewlett-Packard Development Company, L.P.
+#	Bjorn Helgaas <bjorn.helgaas@hp.com>
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License version 2 as
+# published by the Free Software Foundation.
+#
+# Example:
+#	device "rx3600-001" "hpmp" "rx3600-001-mp.test:23"
+#	node   "rx3600-001" "rx3600-001"
+#
+# Tested on:
+#	rx3600 (MP firmware F.01.41)
+#	rx1600 (MP firmware E.03.30)
+#	rx1620 (MP firmware E.03.30)
+
+specification  "hpmp" {
+	timeout 10
+	plug name { "1" }
+
+	script login {
+		expect "MP login: "
+		send "Admin\r\n"
+		expect "MP password: "
+		send "Admin\r\n"
+		expect "MP> "
+		send "cm\r\n"
+		expect "MP:CM> "
+	}
+	script status {
+		send "ps\r\n"
+		expect "System Power state[^O]+(On|Off)"
+		setplugstate "1" $1 on="On" off="Off"
+		expect "MP:CM> "
+	}
+	script on {
+		send "pc -on -nc\r\n"
+		expect "MP:CM> "
+	}
+	script off {
+		send "pc -off -nc\r\n"
+		expect "MP:CM> "
+	}
+	script reset {
+		send "rs -nc\r\n"
+		expect "MP:CM> "
+	}
+	script status_beacon {
+		send "loc -nc\r\n"
+		expect "Current -> Locator LED (On|Off)"
+		setplugstate "1" $1 on="On" off="Off"
+		expect "MP:CM> "
+	}
+	script beacon_on {
+		send "loc -on -nc\r\n"
+		expect "MP:CM> "
+	}
+	script beacon_off {
+		send "loc -off -nc\r\n"
+		expect "MP:CM> "
+	}
+}
