@@ -110,7 +110,7 @@
      TOK_NODE = 299,
      TOK_ALIAS = 300,
      TOK_TCP_WRAPPERS = 301,
-     TOK_PORT = 302,
+     TOK_LISTEN = 302,
      TOK_MATCHPOS = 303,
      TOK_STRING_VAL = 304,
      TOK_NUMERIC_VAL = 305,
@@ -167,7 +167,7 @@
 #define TOK_NODE 299
 #define TOK_ALIAS 300
 #define TOK_TCP_WRAPPERS 301
-#define TOK_PORT 302
+#define TOK_LISTEN 302
 #define TOK_MATCHPOS 303
 #define TOK_STRING_VAL 304
 #define TOK_NUMERIC_VAL 305
@@ -253,7 +253,6 @@ static Stmt *makeStmt(PreStmt *p);
 static void destroyStmt(Stmt *stmt);
 static void makeDevice(char *devstr, char *specstr, char *hoststr, 
                         char *portstr);
-static void makeClientPort(char *s2);
 
 /* device config */
 static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr, 
@@ -315,7 +314,7 @@ typedef int YYSTYPE;
 
 
 /* Line 216 of yacc.c.  */
-#line 319 "parse_tab.c"
+#line 318 "parse_tab.c"
 
 #ifdef short
 # undef short
@@ -530,7 +529,7 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  23
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   131
+#define YYLAST   130
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  57
@@ -606,7 +605,7 @@ static const yytype_int8 yyrhs[] =
       58,     0,    -1,    59,    -1,    59,    60,    -1,    60,    -1,
       -1,    62,    -1,    61,    -1,    63,    -1,    64,    -1,    65,
       -1,    66,    -1,    46,    -1,    46,    51,    -1,    46,    52,
-      -1,    47,    50,    -1,    43,    49,    49,    49,    49,    -1,
+      -1,    47,    49,    -1,    43,    49,    49,    49,    49,    -1,
       43,    49,    49,    49,    -1,    44,    49,    49,    49,    -1,
       44,    49,    49,    -1,    45,    49,    49,    -1,    26,    49,
       53,    67,    54,    -1,    67,    68,    -1,    68,    -1,    69,
@@ -635,14 +634,14 @@ static const yytype_int8 yyrhs[] =
 /* YYRLINE[YYN] -- source line where rule number YYN was defined.  */
 static const yytype_uint16 yyrline[] =
 {
-       0,   155,   155,   161,   162,   163,   165,   166,   167,   168,
-     169,   170,   172,   175,   177,   181,   185,   188,   192,   194,
-     198,   205,   211,   212,   214,   215,   216,   217,   219,   223,
-     227,   230,   235,   241,   242,   244,   246,   248,   250,   252,
-     254,   256,   258,   260,   262,   264,   266,   268,   270,   272,
-     274,   276,   278,   280,   282,   284,   286,   288,   292,   296,
-     299,   304,   306,   308,   310,   312,   315,   317,   319,   321,
-     323,   326,   329,   332,   337,   340,   345,   347,   351
+       0,   154,   154,   160,   161,   162,   164,   165,   166,   167,
+     168,   169,   171,   174,   176,   180,   184,   187,   191,   193,
+     197,   204,   210,   211,   213,   214,   215,   216,   218,   222,
+     226,   229,   234,   240,   241,   243,   245,   247,   249,   251,
+     253,   255,   257,   259,   261,   263,   265,   267,   269,   271,
+     273,   275,   277,   279,   281,   283,   285,   287,   291,   295,
+     298,   303,   305,   307,   309,   311,   314,   316,   318,   320,
+     322,   325,   328,   331,   336,   339,   344,   346,   350
 };
 #endif
 
@@ -662,10 +661,10 @@ static const char *const yytname[] =
   "TOK_IFON", "TOK_OFF_STRING", "TOK_ON_STRING", "TOK_MAX_PLUG_COUNT",
   "TOK_TIMEOUT", "TOK_DEV_TIMEOUT", "TOK_PING_PERIOD", "TOK_PLUG_NAME",
   "TOK_SCRIPT", "TOK_DEVICE", "TOK_NODE", "TOK_ALIAS", "TOK_TCP_WRAPPERS",
-  "TOK_PORT", "TOK_MATCHPOS", "TOK_STRING_VAL", "TOK_NUMERIC_VAL",
+  "TOK_LISTEN", "TOK_MATCHPOS", "TOK_STRING_VAL", "TOK_NUMERIC_VAL",
   "TOK_YES", "TOK_NO", "TOK_BEGIN", "TOK_END", "TOK_UNRECOGNIZED",
   "TOK_EQUALS", "$accept", "configuration_file", "config_list",
-  "config_item", "TCP_wrappers", "client_port", "device", "node", "alias",
+  "config_item", "TCP_wrappers", "listen", "device", "node", "alias",
   "spec", "spec_item_list", "spec_item", "spec_timeout",
   "spec_ping_period", "string_list", "spec_plug_list", "spec_script_list",
   "spec_script", "stmt_block", "stmt_list", "stmt", "interp_list",
@@ -747,28 +746,28 @@ static const yytype_int8 yydefgoto[] =
 #define YYPACT_NINF -82
 static const yytype_int8 yypact[] =
 {
-      -3,   -25,    -2,     5,     7,   -13,    53,   104,    -3,   -82,
+      -3,   -25,    -2,     5,     7,   -13,    55,   103,    -3,   -82,
      -82,   -82,   -82,   -82,   -82,   -82,    52,    57,    60,    61,
      -82,   -82,   -82,   -82,   -82,    54,    62,    63,   -82,    64,
-      65,    55,    59,    -5,   -82,   -82,   -82,   -82,    71,   -82,
-      67,   -82,   -82,   -82,    68,    66,    66,    66,    66,    66,
-      66,    66,    66,    66,    66,    66,    66,    66,    66,    66,
-      66,    66,    66,    66,    66,    66,    66,    66,   -82,   -82,
+      65,    66,    59,    -5,   -82,   -82,   -82,   -82,    71,   -82,
+      67,   -82,   -82,   -82,    68,    69,    69,    69,    69,    69,
+      69,    69,    69,    69,    69,    69,    69,    69,    69,    69,
+      69,    69,    69,    69,    69,    69,    69,    69,   -82,   -82,
      -82,   -82,   -82,     1,    58,   -82,   -82,   -82,   -82,   -82,
      -82,   -82,   -82,   -82,   -82,   -82,   -82,   -82,   -82,   -82,
      -82,   -82,   -82,   -82,   -82,   -82,   -82,   -82,   -82,   -82,
-      69,    50,    72,    70,    66,    66,    66,    66,    -1,   -82,
-     -82,    73,    74,     9,   -82,   -82,   -82,   -82,   -82,   -82,
-     -82,   -82,   -82,    84,    51,    75,    84,   -82,    84,    84,
-      76,    77,   -82,    84,   -82,   -82
+      72,    50,    74,    70,    69,    69,    69,    69,    -1,   -82,
+     -82,    75,    76,     9,   -82,   -82,   -82,   -82,   -82,   -82,
+     -82,   -82,   -82,    84,    51,    73,    84,   -82,    84,    84,
+      77,    78,   -82,    84,   -82,   -82
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -82,   -82,   -82,   116,   -82,   -82,   -82,   -82,   -82,   -82,
-     -82,    94,   -82,   -82,   -82,   -82,   -82,    90,   -46,   -82,
-      21,   -77,   -81,   -11
+     -82,   -82,   -82,   100,   -82,   -82,   -82,   -82,   -82,   -82,
+     -82,    85,   -82,   -82,   -82,   -82,   -82,    90,   -46,   -82,
+      22,   -77,   -81,   -11
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]].  What to do in state STATE-NUM.  If
@@ -788,13 +787,13 @@ static const yytype_uint8 yytable[] =
       53,    54,    55,    56,    57,    58,    59,    60,    61,    62,
       63,    64,    65,    66,    67,   100,   101,   102,   103,   104,
      105,   106,   107,    29,    30,    31,    32,   124,   111,   112,
-     125,   123,   128,    22,    23,    25,    26,   130,    44,    27,
-      28,    40,    41,    32,    42,    43,    71,    72,   110,    74,
-     115,   114,   111,   122,    24,   134,   135,    69,    70,   121,
-       0,   131
+     125,   123,   128,    23,    22,    25,    26,   130,    24,    27,
+      28,    40,    41,    32,    42,    43,    71,    72,    69,    44,
+     115,   110,    74,   114,   111,   122,   134,   135,    70,   131,
+     121
 };
 
-static const yytype_int16 yycheck[] =
+static const yytype_uint8 yycheck[] =
 {
       46,    47,    48,    49,    50,    51,    52,    53,    54,    55,
       56,    57,    58,    59,    60,    61,    62,    63,    64,    65,
@@ -806,10 +805,10 @@ static const yytype_int16 yycheck[] =
       11,    12,    13,    14,    15,    16,    17,    18,    19,    20,
       21,    22,    23,    24,    25,    27,    28,    29,    30,    31,
       32,    33,    34,    39,    40,    41,    42,    13,    48,    49,
-      16,   112,   113,    50,     0,    53,    49,    56,    53,    49,
-      49,    49,    49,    42,    50,    50,    49,    49,    49,    53,
-      50,    49,    48,    50,     8,    49,    49,    33,    38,   108,
-      -1,    56
+      16,   112,   113,     0,    49,    53,    49,    56,     8,    49,
+      49,    49,    49,    42,    50,    50,    49,    49,    33,    53,
+      50,    49,    53,    49,    48,    50,    49,    49,    38,    56,
+     108
 };
 
 /* YYSTOS[STATE-NUM] -- The (internal number of the) accessing
@@ -818,7 +817,7 @@ static const yytype_uint8 yystos[] =
 {
        0,    26,    43,    44,    45,    46,    47,    58,    59,    60,
       61,    62,    63,    64,    65,    66,    49,    49,    49,    49,
-      51,    52,    50,     0,    60,    53,    49,    49,    49,    39,
+      51,    52,    49,     0,    60,    53,    49,    49,    49,    39,
       40,    41,    42,    67,    68,    69,    70,    72,    73,    74,
       49,    49,    50,    50,    53,     3,     4,     5,     6,     7,
        8,     9,    10,    11,    12,    13,    14,    15,    16,    17,
@@ -1644,7 +1643,7 @@ yyreduce:
   switch (yyn)
     {
         case 12:
-#line 172 "parse_tab.y"
+#line 171 "parse_tab.y"
     { 
     _warnmsg("'tcpwrappers' without yes|no"); 
     conf_set_use_tcp_wrappers(TRUE);
@@ -1652,84 +1651,84 @@ yyreduce:
     break;
 
   case 13:
-#line 175 "parse_tab.y"
+#line 174 "parse_tab.y"
     { 
     conf_set_use_tcp_wrappers(TRUE);
 }
     break;
 
   case 14:
-#line 177 "parse_tab.y"
+#line 176 "parse_tab.y"
     { 
     conf_set_use_tcp_wrappers(FALSE);
 }
     break;
 
   case 15:
-#line 181 "parse_tab.y"
-    {
-    makeClientPort((yyvsp[(2) - (2)]));
+#line 180 "parse_tab.y"
+    { 
+    conf_add_listen((yyvsp[(2) - (2)]));
 }
     break;
 
   case 16:
-#line 186 "parse_tab.y"
+#line 185 "parse_tab.y"
     {
     makeDevice((yyvsp[(2) - (5)]), (yyvsp[(3) - (5)]), (yyvsp[(4) - (5)]), (yyvsp[(5) - (5)]));
 }
     break;
 
   case 17:
-#line 188 "parse_tab.y"
+#line 187 "parse_tab.y"
     {
     makeDevice((yyvsp[(2) - (4)]), (yyvsp[(3) - (4)]), (yyvsp[(4) - (4)]), NULL);
 }
     break;
 
   case 18:
-#line 192 "parse_tab.y"
+#line 191 "parse_tab.y"
     {
     makeNode((yyvsp[(2) - (4)]), (yyvsp[(3) - (4)]), (yyvsp[(4) - (4)]));
 }
     break;
 
   case 19:
-#line 194 "parse_tab.y"
+#line 193 "parse_tab.y"
     {
     makeNode((yyvsp[(2) - (3)]), (yyvsp[(3) - (3)]), NULL);
 }
     break;
 
   case 20:
-#line 198 "parse_tab.y"
+#line 197 "parse_tab.y"
     {
     makeAlias((yyvsp[(2) - (3)]), (yyvsp[(3) - (3)]));
 }
     break;
 
   case 21:
-#line 207 "parse_tab.y"
+#line 206 "parse_tab.y"
     {
     makeSpec((yyvsp[(2) - (5)]));
 }
     break;
 
   case 28:
-#line 219 "parse_tab.y"
+#line 218 "parse_tab.y"
     {
     _doubletotv(&current_spec.timeout, _strtodouble((yyvsp[(2) - (2)])));
 }
     break;
 
   case 29:
-#line 223 "parse_tab.y"
+#line 222 "parse_tab.y"
     {
     _doubletotv(&current_spec.ping_period, _strtodouble((yyvsp[(2) - (2)])));
 }
     break;
 
   case 30:
-#line 227 "parse_tab.y"
+#line 226 "parse_tab.y"
     {
     list_append((List)(yyvsp[(1) - (2)]), xstrdup((yyvsp[(2) - (2)]))); 
     (yyval) = (yyvsp[(1) - (2)]); 
@@ -1737,7 +1736,7 @@ yyreduce:
     break;
 
   case 31:
-#line 230 "parse_tab.y"
+#line 229 "parse_tab.y"
     {
     (yyval) = (char *)list_create((ListDelF)xfree);
     list_append((List)(yyval), xstrdup((yyvsp[(1) - (1)]))); 
@@ -1745,7 +1744,7 @@ yyreduce:
     break;
 
   case 32:
-#line 235 "parse_tab.y"
+#line 234 "parse_tab.y"
     {
     if (current_spec.plugs != NULL)
         _errormsg("duplicate plug list");
@@ -1754,175 +1753,175 @@ yyreduce:
     break;
 
   case 35:
-#line 244 "parse_tab.y"
+#line 243 "parse_tab.y"
     {
     makeScript(PM_LOG_IN, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 36:
-#line 246 "parse_tab.y"
+#line 245 "parse_tab.y"
     {
     makeScript(PM_LOG_OUT, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 37:
-#line 248 "parse_tab.y"
+#line 247 "parse_tab.y"
     {
     makeScript(PM_STATUS_PLUGS, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 38:
-#line 250 "parse_tab.y"
+#line 249 "parse_tab.y"
     {
     makeScript(PM_STATUS_PLUGS_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 39:
-#line 252 "parse_tab.y"
+#line 251 "parse_tab.y"
     {
     makeScript(PM_STATUS_TEMP, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 40:
-#line 254 "parse_tab.y"
+#line 253 "parse_tab.y"
     {
     makeScript(PM_STATUS_TEMP_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 41:
-#line 256 "parse_tab.y"
+#line 255 "parse_tab.y"
     {
     makeScript(PM_STATUS_BEACON, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 42:
-#line 258 "parse_tab.y"
+#line 257 "parse_tab.y"
     {
     makeScript(PM_STATUS_BEACON_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 43:
-#line 260 "parse_tab.y"
+#line 259 "parse_tab.y"
     {
     makeScript(PM_BEACON_ON, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 44:
-#line 262 "parse_tab.y"
+#line 261 "parse_tab.y"
     {
     makeScript(PM_BEACON_OFF, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 45:
-#line 264 "parse_tab.y"
+#line 263 "parse_tab.y"
     {
     makeScript(PM_POWER_ON, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 46:
-#line 266 "parse_tab.y"
+#line 265 "parse_tab.y"
     {
     makeScript(PM_POWER_ON_RANGED, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 47:
-#line 268 "parse_tab.y"
+#line 267 "parse_tab.y"
     {
     makeScript(PM_POWER_ON_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 48:
-#line 270 "parse_tab.y"
+#line 269 "parse_tab.y"
     {
     makeScript(PM_POWER_OFF, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 49:
-#line 272 "parse_tab.y"
+#line 271 "parse_tab.y"
     {
     makeScript(PM_POWER_OFF_RANGED, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 50:
-#line 274 "parse_tab.y"
+#line 273 "parse_tab.y"
     {
     makeScript(PM_POWER_OFF_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 51:
-#line 276 "parse_tab.y"
+#line 275 "parse_tab.y"
     {
     makeScript(PM_POWER_CYCLE, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 52:
-#line 278 "parse_tab.y"
+#line 277 "parse_tab.y"
     {
     makeScript(PM_POWER_CYCLE_RANGED, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 53:
-#line 280 "parse_tab.y"
+#line 279 "parse_tab.y"
     {
     makeScript(PM_POWER_CYCLE_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 54:
-#line 282 "parse_tab.y"
+#line 281 "parse_tab.y"
     {
     makeScript(PM_RESET, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 55:
-#line 284 "parse_tab.y"
+#line 283 "parse_tab.y"
     {
     makeScript(PM_RESET_RANGED, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 56:
-#line 286 "parse_tab.y"
+#line 285 "parse_tab.y"
     {
     makeScript(PM_RESET_ALL, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 57:
-#line 288 "parse_tab.y"
+#line 287 "parse_tab.y"
     {
     makeScript(PM_PING, (List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 58:
-#line 292 "parse_tab.y"
+#line 291 "parse_tab.y"
     {
     (yyval) = (yyvsp[(2) - (3)]);
 }
     break;
 
   case 59:
-#line 296 "parse_tab.y"
+#line 295 "parse_tab.y"
     { 
     list_append((List)(yyvsp[(1) - (2)]), (yyvsp[(2) - (2)])); 
     (yyval) = (yyvsp[(1) - (2)]); 
@@ -1930,7 +1929,7 @@ yyreduce:
     break;
 
   case 60:
-#line 299 "parse_tab.y"
+#line 298 "parse_tab.y"
     { 
     (yyval) = (char *)list_create((ListDelF)destroyPreStmt);
     list_append((List)(yyval), (yyvsp[(1) - (1)])); 
@@ -1938,35 +1937,35 @@ yyreduce:
     break;
 
   case 61:
-#line 304 "parse_tab.y"
+#line 303 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_EXPECT, (yyvsp[(2) - (2)]), NULL, NULL, NULL, NULL, NULL);
 }
     break;
 
   case 62:
-#line 306 "parse_tab.y"
+#line 305 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SEND, (yyvsp[(2) - (2)]), NULL, NULL, NULL, NULL, NULL);
 }
     break;
 
   case 63:
-#line 308 "parse_tab.y"
+#line 307 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_DELAY, NULL, (yyvsp[(2) - (2)]), NULL, NULL, NULL, NULL);
 }
     break;
 
   case 64:
-#line 310 "parse_tab.y"
+#line 309 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SETPLUGSTATE, (yyvsp[(2) - (3)]), NULL, NULL, (yyvsp[(3) - (3)]), NULL, NULL);
 }
     break;
 
   case 65:
-#line 312 "parse_tab.y"
+#line 311 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SETPLUGSTATE, (yyvsp[(2) - (4)]), NULL, NULL, (yyvsp[(3) - (4)]), NULL,
                              (List)(yyvsp[(4) - (4)]));
@@ -1974,35 +1973,35 @@ yyreduce:
     break;
 
   case 66:
-#line 315 "parse_tab.y"
+#line 314 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, (yyvsp[(2) - (3)]), (yyvsp[(3) - (3)]), NULL, NULL);
 }
     break;
 
   case 67:
-#line 317 "parse_tab.y"
+#line 316 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, (yyvsp[(2) - (4)]), (yyvsp[(3) - (4)]), NULL,(List)(yyvsp[(4) - (4)]));
 }
     break;
 
   case 68:
-#line 319 "parse_tab.y"
+#line 318 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL, (yyvsp[(2) - (2)]), NULL, NULL);
 }
     break;
 
   case 69:
-#line 321 "parse_tab.y"
+#line 320 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL,(yyvsp[(2) - (3)]),NULL,(List)(yyvsp[(3) - (3)]));
 }
     break;
 
   case 70:
-#line 323 "parse_tab.y"
+#line 322 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_FOREACHNODE, NULL, NULL, NULL, NULL, 
                              (List)(yyvsp[(2) - (2)]), NULL);
@@ -2010,7 +2009,7 @@ yyreduce:
     break;
 
   case 71:
-#line 326 "parse_tab.y"
+#line 325 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_FOREACHPLUG, NULL, NULL, NULL, NULL, 
                              (List)(yyvsp[(2) - (2)]), NULL);
@@ -2018,7 +2017,7 @@ yyreduce:
     break;
 
   case 72:
-#line 329 "parse_tab.y"
+#line 328 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_IFOFF, NULL, NULL, NULL, NULL, 
                              (List)(yyvsp[(2) - (2)]), NULL);
@@ -2026,7 +2025,7 @@ yyreduce:
     break;
 
   case 73:
-#line 332 "parse_tab.y"
+#line 331 "parse_tab.y"
     {
     (yyval) = (char *)makePreStmt(STMT_IFON, NULL, NULL, NULL, NULL, 
                              (List)(yyvsp[(2) - (2)]), NULL);
@@ -2034,7 +2033,7 @@ yyreduce:
     break;
 
   case 74:
-#line 337 "parse_tab.y"
+#line 336 "parse_tab.y"
     { 
     list_append((List)(yyvsp[(1) - (2)]), (yyvsp[(2) - (2)])); 
     (yyval) = (yyvsp[(1) - (2)]); 
@@ -2042,7 +2041,7 @@ yyreduce:
     break;
 
   case 75:
-#line 340 "parse_tab.y"
+#line 339 "parse_tab.y"
     { 
     (yyval) = (char *)list_create((ListDelF)destroyInterp);
     list_append((List)(yyval), (yyvsp[(1) - (1)])); 
@@ -2050,21 +2049,21 @@ yyreduce:
     break;
 
   case 76:
-#line 345 "parse_tab.y"
+#line 344 "parse_tab.y"
     {
     (yyval) = (char *)makeInterp(ST_ON, (yyvsp[(3) - (3)]));
 }
     break;
 
   case 77:
-#line 347 "parse_tab.y"
+#line 346 "parse_tab.y"
     {
     (yyval) = (char *)makeInterp(ST_OFF, (yyvsp[(3) - (3)]));
 }
     break;
 
   case 78:
-#line 351 "parse_tab.y"
+#line 350 "parse_tab.y"
     {
     (yyval) = (yyvsp[(2) - (2)]);
 }
@@ -2072,7 +2071,7 @@ yyreduce:
 
 
 /* Line 1267 of yacc.c.  */
-#line 2076 "parse_tab.c"
+#line 2075 "parse_tab.c"
       default: break;
     }
   YY_SYMBOL_PRINT ("-> $$ =", yyr1[yyn], &yyval, &yyloc);
@@ -2286,7 +2285,7 @@ yyreturn:
 }
 
 
-#line 355 "parse_tab.y"
+#line 354 "parse_tab.y"
 
 
 void scanner_init(char *filename);
@@ -2682,15 +2681,6 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
 
     if (!conf_addnodes(nodestr))
         _errormsg("duplicate node name");
-}
-
-static void makeClientPort(char *s2)
-{
-    int port = _strtolong(s2);
-
-    if (port < 1024)
-        _errormsg("bogus client listener port");
-    conf_set_listen_port(port); 
 }
 
 /**

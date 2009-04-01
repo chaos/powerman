@@ -37,8 +37,8 @@ hostlist_t conf_getnodes(void);
 bool conf_get_use_tcp_wrappers(void);
 void conf_set_use_tcp_wrappers(bool val);
 
-int conf_get_listen_port(void);
-void conf_set_listen_port(int val);
+List conf_get_listen(void);
+void conf_add_listen(char *hostport);
 
 void conf_exp_aliases(hostlist_t hl);
 bool conf_add_alias(char *name, char *hosts);

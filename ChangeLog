@@ -1,3 +1,23 @@
+2009-04-01 Jim Garlick <garlick@llnl.gov>
+
+	* test/t58.conf, test/t59.conf : Use listen directive instead
+	of port directive to alter the daemon port.
+
+	* man/powerman.conf.5.in : Document listen directive.  Deprecated
+	port directive was not documented.
+
+	* src/client.c : Bind daemon to all configured host:port tuples.
+
+	* src/parse_util.[ch] : Allow multiple listen directives to specify
+	host:port tuples for daemon to listen on.  If none are configured,
+	use default of "127.0.0.1:10101".  NOTE: we used to default to
+	"0.0.0.0:10101"!  See https://bugs.launchpad.net/bugs/337226.
+
+	* src/parse_tab.y, src/parse_lex.l : Deprecate "port" directive.
+	Add "listen" directive.  USER NOTE: config file syntax change!
+
+	* src/powerman.h : Use numerical address for DFLT_HOSTNAME.
+
 2009-03-31 Jim Garlick <garlick@llnl.gov>
 
 	* etc/Makefile.am, man/powerman-devices.7.in, etc/hpilo.dev,

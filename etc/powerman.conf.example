@@ -3,8 +3,8 @@
 # Uncomment to enable TCP wrappers
 #tcpwrappers yes
 
-# Have powermand listen on a port other than default of 10101.
-#port 10102
+# Uncomment to listen on all ports (default is 127.0.0.1:10101)
+#listen "0.0.0.0:10101"
 
 # Include device specifications for power controllers
 #include "/etc/powerman/apc7900.dev"
@@ -24,6 +24,11 @@
 #include "/etc/powerman/cyclades-pm8.dev"
 #include "/etc/powerman/dli.dev"
 #include "/etc/powerman/hp3488.dev"
+#include "/etc/powerman/hpilo.dev"
+#include "/etc/powerman/hpmpblade.dev"
+#include "/etc/powerman/hpmpcell.dev"
+#include "/etc/powerman/hpmp.dev"
+#include "/etc/powerman/hpmpdome.dev"
 #include "/etc/powerman/ibmbladecenter.dev"
 #include "/etc/powerman/icebox3.dev"
 #include "/etc/powerman/icebox.dev"
@@ -31,6 +36,7 @@
 #include "/etc/powerman/ilom.dev"
 #include "/etc/powerman/ipmi.dev"
 #include "/etc/powerman/ipmipower.dev"
+#include "/etc/powerman/lom.dev"
 #include "/etc/powerman/phantom.dev"
 #include "/etc/powerman/plmpower.dev"
 #include "/etc/powerman/powerman.dev"

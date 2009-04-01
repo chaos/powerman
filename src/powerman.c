@@ -204,7 +204,7 @@ int main(int argc, char **argv)
         case 'h':              /* --server-host host[:port] */
             if ((p = strchr(optarg, ':'))) {
                 *p++ = '\0';  
-		port = p;
+                port = p;
             }
             host = optarg;
             break;

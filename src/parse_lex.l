@@ -146,7 +146,7 @@ static List line_ptrs;
     }
 }
 
-port            return TOK_PORT;
+listen          return TOK_LISTEN;
 tcpwrappers     return TOK_TCP_WRAPPERS;
 timeout         return TOK_DEV_TIMEOUT;
 pingperiod      return TOK_PING_PERIOD;

@@ -55,7 +55,7 @@ typedef struct {
 } alias_t;
 
 static bool         conf_use_tcp_wrap = FALSE;
-static int          conf_listen_port;
+static List         conf_listen = NULL;     /* list of host:port strings */
 static hostlist_t   conf_nodes = NULL;
 static List         conf_aliases = NULL;    /* list of alias_t's */
 
@@ -73,7 +73,7 @@ void conf_init(char *filename)
     struct stat stbuf;
     bool valid;
 
-    conf_listen_port = strtol(DFLT_PORT, NULL, 10);
+    conf_listen = list_create((ListDelF) xfree);
 
     conf_nodes = hostlist_create(NULL);
 
@@ -143,6 +143,13 @@ static bool _validate_config(void)
         valid = FALSE;
     }
 
+    /* if no listen ports, add the default */
+    if (list_count(conf_listen) == 0) {
+        char *s = xmalloc(strlen(DFLT_HOSTNAME) + strlen(DFLT_PORT) + 2);
+
+        sprintf(s, "%s:%s", DFLT_HOSTNAME, DFLT_PORT);
+        list_append(conf_listen, s);
+    }
     return valid;
 }
 
@@ -204,14 +211,14 @@ void conf_set_use_tcp_wrappers(bool val)
     conf_use_tcp_wrap = val;
 }
 
-void conf_set_listen_port(int val)
+List conf_get_listen(void)
 {
-    conf_listen_port = val;
+    return conf_listen;
 }
 
-int conf_get_listen_port(void)
+void conf_add_listen(char *hostport)
 {
-    return conf_listen_port;
+    list_append(conf_listen, xstrdup(hostport));
 }
 
 /*

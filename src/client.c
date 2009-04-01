@@ -759,66 +759,92 @@ static Client *_find_client(int seq)
 }
 
 /*
- * Begin listening for clients on powermand's socket.
+ * Begin listening for clients on configured listen addresses.
  */
 static void _listen_client(void)
 {
     int fd, error, i, opt, count;
     struct addrinfo hints, *res, *r;
-    char serv[6];
+    char *addr, *host, *port;
     char *what = "nothing";
     int saved_errno = 0;
+    List addrs; 
+    ListIterator itr;
 
-    /* query the available addresses */
-    memset(&hints, 0, sizeof(hints));
-    hints.ai_family = PF_UNSPEC;
-    hints.ai_socktype = SOCK_STREAM;
-    hints.ai_flags = AI_PASSIVE;
-    snprintf(serv, sizeof(serv), "%d", conf_get_listen_port());
-    if ((error = getaddrinfo(NULL, serv, &hints, &res)))
-        err_exit(FALSE, "getaddrinfo: %s", gai_strerror(error));
-    if (res == NULL)
-        err_exit(FALSE, "no addresses to bind to");
-
-    /* allocate the listen_fds array */
-    for (r = res; r != NULL; r = r->ai_next)
-        listen_fds_len++;
-    listen_fds = (int *)xmalloc(sizeof(int) * listen_fds_len); 
-
-    /* bind sockets to addresses */
+    i = 0;
     count = 0;
     saved_errno = 0;
-    for (r = res, i = 0; r != NULL; r = r->ai_next, i++) {
-        listen_fds[i] = NO_FD;
-        if ((fd = socket(r->ai_family, r->ai_socktype, 0)) < 0) {
-            saved_errno = errno;
-            what = "socket";
-            continue;
+
+    addrs = conf_get_listen();
+    itr = list_iterator_create(addrs);
+    while ((addr = list_next(itr))) {
+        host = addr;
+        if (!(port = strchr(addr, ':')))
+            err_exit(FALSE, "error parsing listen address: %s", addr);
+        *port++ = '\0';
+
+        memset(&hints, 0, sizeof(hints));
+        hints.ai_family = PF_UNSPEC;
+        hints.ai_socktype = SOCK_STREAM;
+
+        if ((error = getaddrinfo(host, port, &hints, &res)))
+            err_exit(FALSE, "getaddrinfo: %s", gai_strerror(error));
+        if (res == NULL)
+            err_exit(FALSE, "listen address has no addrinfo: %s", addr);
+
+        /* allocate the listen_fds array */
+        for (r = res; r != NULL; r = r->ai_next)
+            listen_fds_len++;
+        if (listen_fds == NULL)
+            listen_fds = (int *)xmalloc(sizeof(int) * listen_fds_len);
+        else
+            listen_fds = (int *)xrealloc((char *)listen_fds,
+                                         sizeof(int) * listen_fds_len); 
+
+        /* bind sockets to addresses */
+        for (r = res; r != NULL; r = r->ai_next, i++) {
+            assert(i < listen_fds_len); 
+
+            listen_fds[i] = NO_FD;
+            if ((fd = socket(r->ai_family, r->ai_socktype, 0)) < 0) {
+                saved_errno = errno;
+                what = "socket";
+                continue;
+            }
+            opt = 1;
+            if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt,
+                           sizeof(opt)) < 0) {
+                saved_errno = errno;
+                what = "setsockopt";
+                close(fd);
+                continue;
+            }
+            nonblock_set(fd);
+            if (bind(fd, r->ai_addr, r->ai_addrlen) < 0) {
+                saved_errno = errno;
+                what = "bind";
+                close(fd);
+                continue;
+            }
+            if (listen(fd, LISTEN_BACKLOG) < 0) {
+                saved_errno = errno;
+                what = "listen";
+                close(fd);
+                continue;
+            }
+            listen_fds[i] = fd;
+            count++;
         }
-        opt = 1;
-        if (setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
-            saved_errno = errno;
-            what = "setsockopt";
-            close(fd);
-            continue;
-        }
-        nonblock_set(fd);
-        if (bind(fd, r->ai_addr, r->ai_addrlen) < 0) {
-            saved_errno = errno;
-            what = "bind";
-            close(fd);
-            continue;
-        }
-        if (listen(fd, LISTEN_BACKLOG) < 0) {
-            saved_errno = errno;
-            what = "listen";
-            close(fd);
-            continue;
-        }
-        listen_fds[i] = fd;
-        count++;
+
+        freeaddrinfo(res);
     }
-    freeaddrinfo(res);
+    list_iterator_destroy(itr);
+
+    /* FIXME: dodgy error handling here:  As we go through the loop(s) we may
+     * encounter errors that are interesting, however we only display the
+     * most recent one, and then only if no bindable addresses were found.
+     */
+
     if (count == 0) {
         errno = saved_errno;
         err_exit(TRUE, "%s", what);

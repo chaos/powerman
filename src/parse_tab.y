@@ -94,7 +94,6 @@ static Stmt *makeStmt(PreStmt *p);
 static void destroyStmt(Stmt *stmt);
 static void makeDevice(char *devstr, char *specstr, char *hoststr, 
                         char *portstr);
-static void makeClientPort(char *s2);
 
 /* device config */
 static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr, 
@@ -143,7 +142,7 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 %token TOK_PLUG_NAME TOK_SCRIPT 
 
 /* powerman.conf stuff */
-%token TOK_DEVICE TOK_NODE TOK_ALIAS TOK_TCP_WRAPPERS TOK_PORT
+%token TOK_DEVICE TOK_NODE TOK_ALIAS TOK_TCP_WRAPPERS TOK_LISTEN
 
 /* general */
 %token TOK_MATCHPOS TOK_STRING_VAL TOK_NUMERIC_VAL TOK_YES TOK_NO
@@ -162,7 +161,7 @@ config_list     : config_list config_item
                 | config_item
                 |
 ;
-config_item     : client_port 
+config_item     : listen
                 | TCP_wrappers 
                 | device
                 | node
@@ -178,8 +177,8 @@ TCP_wrappers    : TOK_TCP_WRAPPERS         {
     conf_set_use_tcp_wrappers(FALSE);
 }
 ;
-client_port     : TOK_PORT TOK_NUMERIC_VAL {
-    makeClientPort($2);
+listen          : TOK_LISTEN TOK_STRING_VAL { 
+    conf_add_listen($2);
 }
 ;
 device          : TOK_DEVICE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL 
@@ -747,15 +746,6 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
 
     if (!conf_addnodes(nodestr))
         _errormsg("duplicate node name");
-}
-
-static void makeClientPort(char *s2)
-{
-    int port = _strtolong(s2);
-
-    if (port < 1024)
-        _errormsg("bogus client listener port");
-    conf_set_listen_port(port); 
 }
 
 /**
