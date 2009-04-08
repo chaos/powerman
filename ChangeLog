@@ -1,3 +1,8 @@
+2009-04-08 Albert Chu <chu11@llnl.gov>
+
+	* etc/ipmipower.dev: Add comment about why cycle is implemented as
+	"off,delay,on" instead of using a normal IPMI cycle.
+	
 2009-04-01 Jim Garlick <garlick@llnl.gov>
 
 	* test/t58.conf, test/t59.conf : Use listen directive instead
