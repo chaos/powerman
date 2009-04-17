@@ -10,6 +10,10 @@ install-data-local:
 	$(top_srcdir)/config/install-sh -m 755 $(srcdir)/powerman.init \
 		$(DESTDIR)$(sysconfdir)/init.d/powerman
 	-$(top_srcdir)/config/install-sh -m 755 -d \
+		$(DESTDIR)$(libdir)/stonith/plugins/external
+	$(top_srcdir)/config/install-sh -m 755 $(srcdir)/stonith-powerman \
+		$(DESTDIR)$(libdir)/stonith/plugins/external/powerman
+	-$(top_srcdir)/config/install-sh -m 755 -d \
 		$(DESTDIR)$(localstatedir)/run
 	-$(top_srcdir)/config/install-sh -o $(RUN_AS_USER) -m 755 -d \
 		$(DESTDIR)$(localstatedir)/run/powerman
@@ -17,6 +21,7 @@ install-data-local:
 
 uninstall-local:
 	$(RM) $(DESTDIR)$(sysconfdir)/init.d/powerman
+	$(RM) $(DESTDIR)$(libdir)/stonith/plugins/external/powerman
 
 EXTRA_DIST = \
 	powerman.init

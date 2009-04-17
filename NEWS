@@ -1,4 +1,21 @@
 =========================================================================
+Release Notes for PowerMan version 2.3.5                      17 Apr 2009
+=========================================================================
+
+* Deprecated undocumented powerman.conf port directive.
+
+* Added powerman.conf listen directive to configure which interfaces
+  and ports the server listens on.  Make the default localhost:10101.
+
+* Add support for HP integrated power control devices [Bjorn Helgaas]
+
+* Add support for Sun LOM.
+
+* Misc. documentation improvements
+
+* Add heartbeat STONITH plugin.
+
+=========================================================================
 Release Notes for PowerMan version 2.3.4                      09 Feb 2009
 =========================================================================
 

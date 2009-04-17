@@ -1,3 +1,10 @@
+2009-04-17 Jim Garlick <garlick@llnl.gov>
+
+	* : tag powerman-2.3.5
+
+	* scripts/stonith-powerman : Test with heartbeat and reinstate
+	in the powerman package now that it works.
+
 2009-04-08 Albert Chu <chu11@llnl.gov>
 
 	* etc/ipmipower.dev: Add comment about why cycle is implemented as

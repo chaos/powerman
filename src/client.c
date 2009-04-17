@@ -760,6 +760,8 @@ static Client *_find_client(int seq)
 
 /*
  * Begin listening for clients on configured listen addresses.
+ * This function leaves listen_fds[] (of size listen_fds_len) initialized
+ * with each element either NO_FD or an open fd we are listening on.
  */
 static void _listen_client(void)
 {
@@ -787,6 +789,9 @@ static void _listen_client(void)
         hints.ai_family = PF_UNSPEC;
         hints.ai_socktype = SOCK_STREAM;
 
+        /* N.B.: host=NULL, ai_hints=AI_PASSIVE says "any interface",
+         * while host="0.0.0.0" is IPv4-specific INADDR_ANY.
+         */
         if ((error = getaddrinfo(host, port, &hints, &res)))
             err_exit(FALSE, "getaddrinfo: %s", gai_strerror(error));
         if (res == NULL)
