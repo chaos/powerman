@@ -31,6 +31,14 @@ specification "ipmipower" {
 		}
 		expect "ipmipower> "
 	}
+	script status_beacon_all {
+		send "identify-status\n"
+		foreachnode {
+			expect "([^\n:]+): ([^\n]+)\n"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "ipmipower> "
+	}
 	script on_ranged {
 		send "on %s\n"
 		expect "ipmipower> "
@@ -44,6 +52,14 @@ specification "ipmipower" {
 		expect "ipmipower> "
 		delay 5
 		send "on %s\n"
+		expect "ipmipower> "
+	}
+	script beacon_on_ranged {
+		send "identify-on %s\n"
+		expect "ipmipower> "
+	}
+	script beacon_off_ranged {
+		send "identify-off %s\n"
 		expect "ipmipower> "
 	}
 }

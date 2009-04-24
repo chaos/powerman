@@ -54,9 +54,11 @@
 #define PM_STATUS_BEACON      21
 #define PM_STATUS_BEACON_ALL  22
 #define PM_BEACON_ON          23
-#define PM_BEACON_OFF         24
-#define PM_RESOLVE            25
-#define NUM_SCRIPTS           26 /* count of scripts above */
+#define PM_BEACON_ON_RANGED   24
+#define PM_BEACON_OFF         25
+#define PM_BEACON_OFF_RANGED  26
+#define PM_RESOLVE            27
+#define NUM_SCRIPTS           28 /* count of scripts above */
 
 #define MAX_MATCH_POS   20 
 

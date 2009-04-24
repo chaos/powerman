@@ -619,6 +619,14 @@ static int _get_ranged_script(Device * dev, int com)
         if (dev->scripts[PM_RESET_RANGED])
             new = PM_RESET_RANGED;
         break;
+    case PM_BEACON_ON:
+        if (dev->scripts[PM_BEACON_ON_RANGED])
+            new = PM_BEACON_ON_RANGED;
+        break;
+    case PM_BEACON_OFF:
+        if (dev->scripts[PM_BEACON_OFF_RANGED])
+            new = PM_BEACON_OFF_RANGED;
+        break;
     default:
         break;
     }

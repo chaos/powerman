@@ -221,6 +221,12 @@ Administrators may wish to run the
 .B powermand
 daemon as root or adjust the configuration file permissions as needed.
 
+IPMI based beacon support is also supported since
+.B ipmipower
+0.7.9.
+Users should be aware that not all motherboards support
+physical system identification through an LED.
+
 .SH "HP iLO"
 The "hpilo" script supports the Integrated Lights-Out management processor
 in HP ProLiant servers, including both rack-mount and blade servers.

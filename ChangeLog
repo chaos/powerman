@@ -1,3 +1,12 @@
+2009-04-23 Albert Chu <chu11@llnl.gov>
+
+	* src/device.c, src/device_private.h, src/parse_lex.l,
+	src/parse_tab.y: Support ranged beacon on/off device scripts.
+
+	* etc/ipmipower.dev: Add beacon support.
+
+	* man/powerman-devices.7.in: Add information on beacon support.
+	
 2009-04-17 Jim Garlick <garlick@llnl.gov>
 
 	* : tag powerman-2.3.5

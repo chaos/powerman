@@ -127,7 +127,8 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 /* script names */
 %token TOK_LOGIN TOK_LOGOUT TOK_STATUS TOK_STATUS_ALL
 %token TOK_STATUS_TEMP TOK_STATUS_TEMP_ALL
-%token TOK_STATUS_BEACON TOK_STATUS_BEACON_ALL TOK_BEACON_ON TOK_BEACON_OFF
+%token TOK_STATUS_BEACON TOK_STATUS_BEACON_ALL
+%token TOK_BEACON_ON TOK_BEACON_ON_RANGED TOK_BEACON_OFF TOK_BEACON_OFF_RANGED
 %token TOK_ON TOK_ON_RANGED TOK_ON_ALL TOK_OFF TOK_OFF_RANGED TOK_OFF_ALL 
 %token TOK_CYCLE TOK_CYCLE_RANGED TOK_CYCLE_ALL 
 %token TOK_RESET TOK_RESET_RANGED TOK_RESET_ALL TOK_PING TOK_SPEC 
@@ -258,8 +259,12 @@ spec_script     : TOK_SCRIPT TOK_LOGIN stmt_block {
     makeScript(PM_STATUS_BEACON_ALL, (List)$3);
 }               | TOK_SCRIPT TOK_BEACON_ON stmt_block {
     makeScript(PM_BEACON_ON, (List)$3);
+}               | TOK_SCRIPT TOK_BEACON_ON_RANGED stmt_block {
+    makeScript(PM_BEACON_ON_RANGED, (List)$3);
 }               | TOK_SCRIPT TOK_BEACON_OFF stmt_block {
     makeScript(PM_BEACON_OFF, (List)$3);
+}               | TOK_SCRIPT TOK_BEACON_OFF_RANGED stmt_block {
+    makeScript(PM_BEACON_OFF_RANGED, (List)$3);
 }               | TOK_SCRIPT TOK_ON stmt_block {
     makeScript(PM_POWER_ON, (List)$3);
 }               | TOK_SCRIPT TOK_ON_RANGED stmt_block {
