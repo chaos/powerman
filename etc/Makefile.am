@@ -9,6 +9,7 @@ CONFFILE = \
 
 DEVFILES = \
 	apc7900.dev \
+	apc7920.dev \
 	apc.dev \
 	apcnew.dev \
 	apcold.dev \

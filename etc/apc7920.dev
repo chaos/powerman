@@ -1,0 +1,102 @@
+#
+# $Id:$
+# Written by Manfred Gruber <m.gruber@tirol.com>
+#
+# Based upon apc7900.dev by Martin K. Petersen <mkp@mkp.net>
+# Based upon apcpdc.dev by Trent D'Hooge and Makia Minich
+#
+# APC MasterSwitch AP7920
+# - Firmware: APP v3.3.3 / AOS v3.3.4
+#
+specification "apc7920" {
+	timeout         3
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
+
+	script login {
+		expect "\rUser Name : "
+		send "apc\r\n"
+		expect "\rPassword  : "
+		send "apc\r\n"
+		expect "> "
+	}
+	script logout {
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+		send "4\r\n"
+	}
+	script on {
+		send "1\r\n"  # device manager menu
+		expect "> "
+
+		send "2\r\n"  # Outlet Management
+		expect "> "
+
+		send "1\r\n"  # outlet control/configuration
+		expect "> "
+
+		send "%s\r\n" # Nr Outlet X
+		expect "> "
+
+		send "1\r\n" # select control outlet
+		expect "> "
+
+		send "1\r\n" # immediate on
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+		send "\r\n"
+		expect "> "
+	}
+	script off {
+		send "1\r\n"  # device manager menu
+		expect "> "
+
+		send "2\r\n"  # Outlet Management
+		expect "> "
+
+		send "1\r\n"  # outlet control/configuration
+		expect "> "
+
+		send "%s\r\n" # Nr Outlet X
+		expect "> "
+
+		send "1\r\n" # select control outlet
+		expect "> "
+
+		send "2\r\n" # immediate off
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+		send "\r\n"
+		expect "> "
+	}
+}

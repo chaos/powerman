@@ -1,3 +1,7 @@
+2009-06-22 Jim Garlick <garlick@llnl.gov>
+
+	* etc/apc7920.dev : New [Manfred Gruber].
+
 2009-04-23 Albert Chu <chu11@llnl.gov>
 
 	* src/device.c, src/device_private.h, src/parse_lex.l,
