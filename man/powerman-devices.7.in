@@ -5,9 +5,8 @@ powerman\(hydevices \- Powerman Device Configuration Notes
 Following are notes on configuring various remote power controllers
 and related equipment supported by PowerMan.
 .SH CYCLADES TS-1000
-A cyclades TS-1000 configured so that PowerMan can connect to
-serial-port-based remote power control devices using telnet is set up
-as follows:
+To configure the Cyclades TS-1000 so that PowerMan can connect to
+serial-port-based remote power control devices using telnet:
 .P
 Attach console cable between laptop running minicom
 and console port at 9600,8n1 and authenticate with 
@@ -68,12 +67,70 @@ and
 and finally, power cycle the unit.  It should be possible to configure
 PowerMan to connect to hostname:7001 for port 1, hostname:7002 for port 2,
 etc..
+.SH "MRV IN-REACH IR-8020"
+To configure the In-Reach IR-8020 so that PowerMan can connect to
+serial-port-based remote power control devices using telnet:
+.PP
+To reset configuration: attach terminal to any port, press button on front
+with paper clip until all LED's light up; release, then hold again for
+3-5 seconds until sweeping pattern stops; led's will count down,
+then press return on terminal several times.
+After \fIConfiguration in Progress\fR message, type \fIaccess\fR.
+Then select \fI2. Modify unit configuration\fR, then \fI3. Initialize
+server and port parameters\fR, then \fID\fR to use defaults, \fIS\fR
+to save them, \fIX\fR to go back to the main menu, and \fS\fR to exit
+saving config.  The terminal server will now reboot and obtain its network
+config from BOOTP.
+.PP
+Attach terminal to port 1 and type return a few times to get the \fILogin>\fR
+prompt.  Type \fIaccess\fR, and whatever at the \fIEnter username>\fR prompt.
+At the \fIIn-Reach>\fR prompt, type \fIset priv\fR, then default password
+\fIsystem\fR.  You should now have the \fIIn-Reach_Priv>\fR prompt.
+Now enter the following:
+.PP
+.nf
+define server change enabled
+define login password "access"
+define priv password "system"
+define server parameter server check disabled
+define po 1-16 autoconnect enabled
+define po 1-16 inactivity logout disabled
+define po 1-16 flow control disabled
+define po 1-16 autobaud disabled
+define po 1-16 autoprompt disabled
+define po 1-16 message codes disabled
+define po 1-16 internet connect disabled
+define po 1-16 broadcast disabled
+define po 1-16 input flow control disabled
+define po 1-16 output flow control disabled
+define po 1-16 loss notification disabled
+define po 2-16 line editor disabled
+define po 1-16 verification disabled
+define po 2-16 access remote
+define po 1 access local
+define po 1-16 break disabled
+define po 1-16 tel newline nul
+define po 1-16 tel binary session mode pasthru
+define po 1-16 default sessions mode pasthru
+define po 1-16 tel csi escape disabled
+define po 1-16 type ansi
+define po 1-16 speed 115200
+define po 1-16 char size 8
+define po 1-16 parity none
+define po 1-16 typeahead size 2048
+define po 1-16 ip tcp window size 2048
+.fi
+.PP
+It should be possible to configure PowerMan to connect to
+hostname:(2000+(100*port), e.g. hostname:2200 for port 2,
+hostname:2300 for port 3, etc..
+etc..
 .SH "BAYTECH RPC-3 (non-NC models) (network port 23)"
 Attach console cable between laptop running minicom
 and console port at 9600,8n1.  Main menu should display.
-.P
+.PP
 From main menu, select 3)...Configuration, then set IP parameters.
-.P
+.PP
 From Configuration menu, select 5)...Access, then disable command
 confirmation, set admin password to baytech, and enable prompt for 
 password.  Exit Access menu by typing return.
@@ -112,7 +169,7 @@ Reboots the icebox.
 Attach console cable between laptop running minicom
 and console port at 9600,8n1.  Authenticate with default account admin/icebox.
 Configuration is the same as the V2 ICE BOX.
-.SH "APC MASTERSWITCH MODEL AP9606 (network port 23)"
+.SH "APC MASTERSWITCH (network port 23)"
 Attach console cable between laptop running minicom
 and console port (may be labeled ``advanced port'') at 2400,8n1.  
 Press enter, then authenticate with default account apc/apc.
@@ -269,5 +326,7 @@ This software is open source and distributed under the terms of the GNU GPL.
 .BR powerman.conf (5),
 .BR powerman.dev (5),
 .BR powerman-devices (7).
+.PP
+\fBhttp://www.pimpworks.org/xyplex/xyplex.html\fR
 .PP
 \fBhttp://sourceforge.net/projects/powerman\fR
