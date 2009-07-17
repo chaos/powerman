@@ -68,8 +68,8 @@ and finally, power cycle the unit.  It should be possible to configure
 PowerMan to connect to hostname:7001 for port 1, hostname:7002 for port 2,
 etc..
 .SH "MRV IN-REACH IR-8020"
-To configure the In-Reach IR-8020 so that PowerMan can connect to
-serial-port-based remote power control devices using telnet:
+To configure the In-Reach (formerly Xyplex) IR-8020 so that PowerMan can
+connect to serial-port-based remote power control devices using telnet:
 .PP
 To reset configuration: attach terminal to any port, press button on front
 with paper clip until all LED's light up; release, then hold again for
@@ -82,8 +82,8 @@ to save them, \fIX\fR to go back to the main menu, and \fS\fR to exit
 saving config.  The terminal server will now reboot and obtain its network
 config from BOOTP.
 .PP
-Attach terminal to port 1 and type return a few times to get the \fILogin>\fR
-prompt.  Type \fIaccess\fR, and whatever at the \fIEnter username>\fR prompt.
+Telnet to port 2000 and at the \fILogin>\fR prompt, type \fIaccess\fR,
+and anything you like at the \fIEnter username>\fR prompt.
 At the \fIIn-Reach>\fR prompt, type \fIset priv\fR, then default password
 \fIsystem\fR.  You should now have the \fIIn-Reach_Priv>\fR prompt.
 Now enter the following:
@@ -104,10 +104,9 @@ define po 1-16 broadcast disabled
 define po 1-16 input flow control disabled
 define po 1-16 output flow control disabled
 define po 1-16 loss notification disabled
-define po 2-16 line editor disabled
+define po 1-16 line editor disabled
 define po 1-16 verification disabled
-define po 2-16 access remote
-define po 1 access local
+define po 1-16 access remote
 define po 1-16 break disabled
 define po 1-16 tel newline nul
 define po 1-16 tel binary session mode pasthru
@@ -121,10 +120,15 @@ define po 1-16 typeahead size 2048
 define po 1-16 ip tcp window size 2048
 .fi
 .PP
+To reboot, type
+.PP
+.nf
+init del 1
+.fi
+.PP
 It should be possible to configure PowerMan to connect to
-hostname:(2000+(100*port), e.g. hostname:2200 for port 2,
-hostname:2300 for port 3, etc..
-etc..
+hostname:(2000+(100*port), e.g. hostname:2100 for port 1,
+hostname:2200 for port 2, etc..
 .SH "BAYTECH RPC-3 (non-NC models) (network port 23)"
 Attach console cable between laptop running minicom
 and console port at 9600,8n1.  Main menu should display.
