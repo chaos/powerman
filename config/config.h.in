@@ -1,8 +1,5 @@
 /* config/config.h.in.  Generated from configure.ac by autoheader.  */
 
-/* Define if building universal (internal helper macro) */
-#undef AC_APPLE_UNIVERSAL_BUILD
-
 /* Define to 1 if you have the `cfmakeraw' function. */
 #undef HAVE_CFMAKERAW
 
@@ -29,6 +26,12 @@
 
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
+
+/* Define to 1 if you have the `lua' library (-llua). */
+#undef HAVE_LIBLUA
+
+/* Define to 1 if you have the `munge' library (-lmunge). */
+#undef HAVE_LIBMUNGE
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -86,10 +89,6 @@
 
 /* Define to 1 if you have the file `AC_File'. */
 #undef HAVE__DEV_PTMX
-
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
-#undef LT_OBJDIR
 
 /* Define the project alias string (name-ver or name-ver-rel). */
 #undef META_ALIAS
@@ -154,17 +153,9 @@
 /* Define lsd_fatal_error */
 #undef WITH_LSD_NOMEM_ERROR_FUNC
 
-/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
-   significant byte first (like Motorola and SPARC, unlike Intel). */
-#if defined AC_APPLE_UNIVERSAL_BUILD
-# if defined __BIG_ENDIAN__
-#  define WORDS_BIGENDIAN 1
-# endif
-#else
-# ifndef WORDS_BIGENDIAN
-#  undef WORDS_BIGENDIAN
-# endif
-#endif
+/* Define to 1 if your processor stores words with the most significant byte
+   first (like Motorola and SPARC, unlike Intel and VAX). */
+#undef WORDS_BIGENDIAN
 
 /* Expansion of the "bindir" installation directory. */
 #undef X_BINDIR

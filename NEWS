@@ -1,4 +1,18 @@
 =========================================================================
+Release Notes for PowerMan version 2.3.6                      12 Aug 2010
+=========================================================================
+
+* Convert several internal buffers from static to dynamic to address
+  overflow in query output [chaos bugzilla 1009]
+
+* Add support for Appro Greenblade [Trent D'Hooge].
+
+* Add support for APC 7920 [Manfred Gruber].
+
+* Add Support for ranged beacon on/off device scripts, and beacon
+  support for ipmipower [Al Chu].
+
+=========================================================================
 Release Notes for PowerMan version 2.3.5                      17 Apr 2009
 =========================================================================
 

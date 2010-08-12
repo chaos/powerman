@@ -49,6 +49,12 @@ void xwrite_all(int fd, char *p, int count);
  */
 char *xreadline(char *prompt, char *buf, int buflen);
 
+/* Read a line of data from file descriptor, terminated with \r\n,
+ * which is not returned.  Exit on EOF or read error.
+ * Caller must free returned string (null terminated).
+ */
+char *xreadstr(int fd);
+
 #endif /* PM_XREAD_H */
 
 

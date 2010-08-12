@@ -37,6 +37,7 @@
 
 #include "xread.h"
 #include "xtypes.h"
+#include "xmalloc.h"
 #include "error.h"
 
 int xread(int fd, char *p, int max)
@@ -49,6 +50,34 @@ int xread(int fd, char *p, int max)
     if (n < 0 && errno != EWOULDBLOCK && errno != ECONNRESET)
         err_exit(TRUE, "read");
     return n;
+}
+
+#define CHUNKSIZE 80
+char *xreadstr(int fd)
+{
+    int size = 0;
+    int len = 0;
+    char *str;
+    int n;
+
+    do {
+        if (size - len - 1 <= 0) {
+            str = (size == 0) ? xmalloc(CHUNKSIZE)
+                              : xrealloc(str, size + CHUNKSIZE);
+            size += CHUNKSIZE;
+        }
+        //n = xread(fd, str + len, size - len - 1);
+        n = xread(fd, str + len, 1);
+        if (n < 0)
+            err_exit (TRUE, "read");
+        if (n == 0)
+            err_exit (FALSE, "EOF on read");
+        len += n;
+        str[len] = '\0';
+    } while (len < 2 || strcmp(&str[len - 2], "\r\n") != 0);
+
+    str[len - 2] = '\0';
+    return str;
 }
 
 int xwrite(int fd, char *p, int max)

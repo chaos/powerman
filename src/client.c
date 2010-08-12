@@ -143,6 +143,26 @@ static int cli_id_seq = 1;      /* range 1...INT_MAX */
 #define _internal_error_response(c) \
     _client_printf(c, CP_ERR_INTERNAL, __FILE__, __LINE__)
 
+#include "hostlist.h"
+
+/*
+ * Wrapped hostlist_ranged_string() with internal buffer allocation,
+ * which caller must xfree().
+ */
+#define CHUNKSIZE 80
+static char *_xhostlist_ranged_string(hostlist_t hl)
+{
+    int size = 0;
+    char *str;
+
+    do {
+        str = (size == 0) ? xmalloc(CHUNKSIZE) : xrealloc(str, size+CHUNKSIZE);
+        size += CHUNKSIZE;
+    } while (hostlist_ranged_string(hl, size, str) == -1);
+
+    return str;
+}
+
 /*
  * printf-like function which writes to the output cbuf.
  */
@@ -225,12 +245,11 @@ static hostlist_t _hostlist_create_validated(Client * c, char *str)
         free(host); /* hostlist_next strdups returned string */
     }
     if (!valid) {
-        char hosts[CP_LINEMAX];
+        char *hosts;
 
-        if (hostlist_ranged_string(badhl, sizeof(hosts), hosts) == -1)
-            _client_printf(c, CP_ERR_NOSUCHNODES, str);
-        else
-            _client_printf(c, CP_ERR_NOSUCHNODES, hosts);
+        hosts = _xhostlist_ranged_string(badhl);
+        _client_printf(c, CP_ERR_NOSUCHNODES, hosts);
+        xfree (hosts);
         hostlist_iterator_destroy(itr);
         hostlist_destroy(hl);
         hostlist_destroy(badhl);
@@ -265,13 +284,10 @@ static void _client_query_nodes_reply(Client * c)
         hostlist_iterator_destroy(itr);
         
     } else {
-        char hosts[CP_LINEMAX];
+        char *hosts = _xhostlist_ranged_string(nodes);
 
-        if (hostlist_ranged_string(nodes, sizeof(hosts), hosts) == -1) {
-            _internal_error_response(c);
-            return;
-        }
         _client_printf(c, CP_INFO_NODES, hosts);
+        xfree (hosts);
     }
 
     _client_printf(c, CP_RSP_QRY_COMPLETE);
@@ -280,16 +296,16 @@ static void _client_query_nodes_reply(Client * c)
 /* 
  * Helper for _client_query_device_reply() .
  * Create a hostlist string for the nodes attached to the specified device.
- * Return TRUE if str contains a valid hostlist string.
+ * Caller must xfree().
  */
-static bool _make_pluglist(Device * dev, char *str, int len)
+static char *_make_pluglist_str(Device * dev)
 {
     hostlist_t hl = hostlist_create(NULL);
     PlugListIterator itr;
-    bool res = FALSE;
     Plug *plug;
+    char *str = NULL;
 
-    if (hl != NULL) {
+    if (hl) {
         itr = pluglist_iterator_create(dev->plugs);
         while ((plug = pluglist_next(itr))) {
             assert(plug->name != NULL);
@@ -298,11 +314,10 @@ static bool _make_pluglist(Device * dev, char *str, int len)
         pluglist_iterator_destroy(itr);
 
         hostlist_sort(hl);
-        if (hostlist_ranged_string(hl, len, str) != -1)
-            res = TRUE;
+        str = _xhostlist_ranged_string(hl);
         hostlist_destroy(hl);
     }
-    return res;
+    return str;
 }
 
 /*
@@ -343,13 +358,13 @@ static void _client_query_device_reply(Client * c, char *arg)
 
         itr = list_iterator_create(devs);
         while ((dev = list_next(itr))) {
-            char nodelist[CP_LINEMAX];
+            char *nodelist;
             int con = dev->stat_successful_connects;
 
             if (arg && !_device_matches_targets(dev, arg))
                 continue;
 
-            if (_make_pluglist(dev, nodelist, sizeof(nodelist))) {
+            if ((nodelist = _make_pluglist_str(dev))) {
                 _client_printf(c, CP_INFO_DEVICE, 
                         dev->name,
                         dev->connect_state == DEV_CONNECTED ? "connected"
@@ -359,6 +374,7 @@ static void _client_query_device_reply(Client * c, char *arg)
                         dev->stat_successful_actions,
                         dev->specname,
                         nodelist);
+                xfree (nodelist);
             }
         }
         list_iterator_destroy(itr);
@@ -386,9 +402,8 @@ static void _client_query_status_reply(Client * c, bool error)
         arglist_iterator_destroy(itr);
 
     } else {
-        char on[CP_LINEMAX], off[CP_LINEMAX], unknown[CP_LINEMAX];
+        char *on, *off, *unknown;
         hostlist_t hl_on, hl_off, hl_unknown;
-        int n = 0;
 
         hl_on = hostlist_create(NULL);
         hl_off = hostlist_create(NULL);
@@ -414,20 +429,19 @@ static void _client_query_status_reply(Client * c, bool error)
         hostlist_sort(hl_on);
         hostlist_sort(hl_off);
 
-        n |= hostlist_ranged_string(hl_unknown, CP_LINEMAX, unknown);
-        n |= hostlist_ranged_string(hl_on, CP_LINEMAX, on);
-        n |= hostlist_ranged_string(hl_off, CP_LINEMAX, off);
+        unknown = _xhostlist_ranged_string(hl_unknown);
+        on      = _xhostlist_ranged_string(hl_on);
+        off     = _xhostlist_ranged_string(hl_off);
 
         hostlist_destroy(hl_unknown);
         hostlist_destroy(hl_on);
         hostlist_destroy(hl_off);
 
-        if (n == -1) {
-            _internal_error_response(c);
-            return;
-        }
-
         _client_printf(c, CP_INFO_STATUS, on, off, unknown);
+
+        xfree (unknown);
+        xfree (on);
+        xfree (off);
     }
 
     if (error)
@@ -444,7 +458,7 @@ static void _client_query_status_reply_nointerp(Client * c, bool error)
     Arg *arg;
     ArgListIterator itr;
     hostlist_t hl = hostlist_create(NULL);
-    char tmpstr[CP_LINEMAX];
+    char *tmpstr;
     int n;
 
     assert(c->cmd != NULL);
@@ -459,12 +473,9 @@ static void _client_query_status_reply_nointerp(Client * c, bool error)
 
     if (!hostlist_is_empty(hl)) {
         hostlist_sort(hl);
-        n = hostlist_ranged_string(hl, sizeof(tmpstr), tmpstr);
-        if (n == -1) {
-            _internal_error_response(c); /* truncation */
-            goto done;
-        }
+        tmpstr = _xhostlist_ranged_string(hl);
         _client_printf(c, CP_INFO_XSTATUS, tmpstr, "unknown");
+        xfree (tmpstr);
     }
     if (error)
         _client_printf(c, CP_ERR_QRY_COMPLETE);

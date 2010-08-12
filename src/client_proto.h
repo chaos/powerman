@@ -37,7 +37,7 @@
  * If not quit, goto 3
  */
 
-#define CP_LINEMAX  16384               /* max request/response line length */
+#define CP_LINEMAX  8192                /* max request/response line length */
 #define CP_EOL      "\r\n"              /* line terminator */
 #define CP_PROMPT   "powerman> "        /* prompt */
 #define CP_VERSION  "001 %s" CP_EOL

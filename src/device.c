@@ -1144,6 +1144,24 @@ static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
     return finished;
 }
 
+/*
+ * Wrapped hostlist_ranged_string() with internal buffer allocation,
+ * which caller must xfree().
+ */
+#define CHUNKSIZE 80
+static char *_xhostlist_ranged_string(hostlist_t hl)
+{
+    int size = 0;
+    char *str;
+
+    do {
+        str = (size == 0) ? xmalloc(CHUNKSIZE) : xrealloc(str, size+CHUNKSIZE);
+        size += CHUNKSIZE;
+    } while (hostlist_ranged_string(hl, size, str) == -1);
+
+    return str;
+}
+
 static bool _process_send(Device *dev, Action *act, ExecCtx *e)
 {
     bool finished = FALSE;
@@ -1156,7 +1174,7 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
 
         if (e->plugs && list_count(e->plugs) > 0) {
             if (list_count(e->plugs) > 1) {
-                char names[CP_LINEMAX];
+                char *names;
                 ListIterator itr = NULL;
                 hostlist_t hl = NULL;
                 Plug *plug;
@@ -1179,12 +1197,9 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
                 }
 
                 hostlist_sort(hl);
-                if (hostlist_ranged_string(hl, CP_LINEMAX, names) < 0) {
-                    err(TRUE, "_process_send(%s): hostlist_ranged_string", dev->name);
-                    goto range_cleanup;
-                }
-
+                names = _xhostlist_ranged_string(hl);
                 str = hsprintf(e->cur->u.send.fmt, names);
+                xfree (names);
             range_cleanup:
                 if (itr)
                     list_iterator_destroy(itr);

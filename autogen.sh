@@ -2,7 +2,7 @@
 echo "Running aclocal ... "
 aclocal -I config
 echo "Running libtoolize ... "
-libtoolize --automake --copy 
+libtoolize --force --automake --copy 
 echo "Running autoheader ... "
 autoheader
 echo "Running automake ... "

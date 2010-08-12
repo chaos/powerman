@@ -77,7 +77,6 @@ static int  _connect_to_server_pipe(char *server_path, char *config_path,
 static void _usage(void);
 static void _license(void);
 static void _version(void);
-static void _getline(int fd, char *str, int len);
 static int  _process_line(int fd);
 static void _expect(int fd, char *str);
 static int  _process_response(int fd);
@@ -294,8 +293,11 @@ int main(int argc, char **argv)
                                             short_circuit_delays);
     else
         server_fd = _connect_to_server_tcp(host, port);
+    fprintf (stderr, "XXX connected\n");
     _process_version(server_fd);
+    fprintf (stderr, "XXX version\n");
     _expect(server_fd, CP_PROMPT);
+    fprintf (stderr, "XXX prompt\n");
 
     /* Execute the commands.
      */
@@ -562,32 +564,13 @@ static bool _supress(int num)
     return FALSE;
 }
 
-/* Read a line of data terminated with \r\n or just \n.
- */
-static void _getline(int fd, char *buf, int size)
-{
-    while (size > 1) {          /* leave room for terminating null */
-        if (xread(fd, buf, 1) <= 0)
-            err_exit(TRUE, "lost connection with server");
-        if (*buf == '\r')
-            continue;
-        if (*buf == '\n')
-            break;
-        size--;
-        buf++;
-    }
-    *buf = '\0';
-}
-
 /* Get a line from the socket and display on stdout.
  * Return the numerical portion of the repsonse.
  */
 static int _process_line(int fd)
 {
-    char buf[CP_LINEMAX];
+    char *buf = xreadstr(fd);
     long int num;
-
-    _getline(fd, buf, CP_LINEMAX);
 
     num = strtol(buf, NULL, 10);
     if (num == LONG_MIN || num == LONG_MAX)
@@ -597,6 +580,7 @@ static int _process_line(int fd)
             printf("%s\n", buf + 4);
     } else
         err_exit(FALSE, "unexpected response from server");
+    xfree(buf);
     return num;
 }
 
@@ -604,14 +588,16 @@ static int _process_line(int fd)
  */
 static void _process_version(int fd)
 {
-    char buf[CP_LINEMAX], vers[CP_LINEMAX];
+    char *buf = xreadstr(fd);
+    char *vers = xmalloc (strlen(buf)+1);
 
-    _getline(fd, buf, CP_LINEMAX);
     if (sscanf(buf, CP_VERSION, vers) != 1)
         err_exit(FALSE, "unexpected response from server");
     if (strcmp(vers, META_VERSION) != 0)
         err(FALSE, "warning: server version (%s) != client (%s)",
                 vers, META_VERSION);
+    xfree(buf);
+    xfree(vers);
 }
 
 static int _process_response(int fd)
@@ -629,16 +615,15 @@ static int _process_response(int fd)
  */
 static void _expect(int fd, char *str)
 {
-    char buf[CP_LINEMAX];
     int len = strlen(str);
+    char *buf = xmalloc (len + 1);
     char *p = buf;
     int res;
 
-    assert(len < sizeof(buf));
     do {
         res = xread(fd, p, len);
         if (res < 0)
-            err_exit(TRUE, "lost connection with server");
+           err_exit(TRUE, "lost connection with server");
         p += res;
         *p = '\0';
         len -= res;
@@ -649,6 +634,7 @@ static void _expect(int fd, char *str)
      */
     if (strcmp(str, buf) != 0)
         err_exit(FALSE, "unexpected response from server");
+    xfree (buf);
 }
 
 /*
