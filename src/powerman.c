@@ -293,11 +293,8 @@ int main(int argc, char **argv)
                                             short_circuit_delays);
     else
         server_fd = _connect_to_server_tcp(host, port);
-    fprintf (stderr, "XXX connected\n");
     _process_version(server_fd);
-    fprintf (stderr, "XXX version\n");
     _expect(server_fd, CP_PROMPT);
-    fprintf (stderr, "XXX prompt\n");
 
     /* Execute the commands.
      */
