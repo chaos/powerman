@@ -1,3 +1,11 @@
+2010-08-12 Jim Garlick <garlick@llnl.gov>
+
+	* src/client_proto.h, test/t10.exp, test/t18.exp : Bump CP_LINEMAX
+	from 8K to 16K as a temporary fix for bug 1009 and test 52 and
+	adjust affected test output.
+
+	* test/48.conf : Change hardwired hostname to localhost.
+
 2010-08-11 Jim Garlick <garlick@llnl.gov>
 
 	* etc/appro-greenblade.dev : New [Trent D'Hooge, chaos bz 1014].
