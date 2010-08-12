@@ -145,7 +145,7 @@ _prompt_loop(void)
             if (i < 0 || i >= num_plugs)
                 break;
             plug[i] = 0;
-        } else if (sscanf(buf, "cycle", &i) == 1) {
+        } else if (sscanf(buf, "cycle %d", &i) == 1) {
             i -= plug_origin;
             if (i < 0 || i >= num_plugs)
                 break;
