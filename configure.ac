@@ -82,6 +82,7 @@ AC_FORKPTY
 AC_WRAP
 AC_CHECK_FUNC([poll], AC_DEFINE([HAVE_POLL], [1], [Define if you have poll]))
 AC_CURL
+X_AC_LUA
 
 # for list.c, cbuf.c, hostlist.c, and wrappers.c */
 AC_DEFINE(WITH_LSD_FATAL_ERROR_FUNC, 1, [Define lsd_fatal_error])

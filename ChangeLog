@@ -1,3 +1,9 @@
+2010-08-11 Jim Garlick <garlick@llnl.gov>
+
+	* etc/appro-greenblade.dev : New [Trent D'Hooge, chaos bz 1014].
+
+	* test/t52, test/swpdu : Added test for chaos bz 1009.
+
 2009-06-22 Jim Garlick <garlick@llnl.gov>
 
 	* etc/apc7920.dev : New [Manfred Gruber].

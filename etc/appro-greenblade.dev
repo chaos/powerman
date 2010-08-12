@@ -1,0 +1,281 @@
+# 
+# GreenBlade Subrack
+# APPRO Inc.
+#
+# appro-greenblade.dev,v 1.0 2010/07/19 16:05:34 Francis Lee (kolee@appro.com)
+# /usr/local/etc/powerman/appro-greenblade.dev,v
+#
+#	iscb-gb     : Standard 10 Nodes
+#	iscb-gbgpu  : 5 Nodes with 5 GPU expansions
+#	iscb-hybrid : 6 Nodes with 4 GPU expansions
+#
+specification "iscb-gb" {
+	timeout 	10.0
+	plug name {
+		"01" "02" "03" "04" "05" "06" "07" "08" "09" "10"
+	}
+	script ping {
+		send "\r\n"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script login {
+		send "\r\n"
+		delay 0.5 
+		expect "Password: "
+		send "111111\r\n"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script logout {
+		send "exit\r\n"
+		expect "ok"
+		#expect "ok\niSCB-[0-9]+:[0-9]> "
+	}
+	script status_all {
+		send "pmnode all\r\n"
+		foreachplug {
+			expect "Node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script status_beacon_all {
+		send "pmled all\r\n"
+		foreachplug {
+			expect "Node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script status {
+		send "pmnode %s\r\n"
+		expect "Node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script status_beacon {
+		send "pmled %s\r\n"
+		expect "Node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script on {
+		send "on %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script off {
+		send "off %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script cycle {
+		send "cycle %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script beacon_on {
+		send "led on %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script beacon_off {
+		send "led off %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script reset_all {
+		send "reset all\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script reset {
+		send "reset %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+}
+
+specification "iscb-gbgpu" {
+	timeout 	10.0
+	plug name {
+		"01" "02" "03" "04" "05"
+	}
+	script ping {
+		send "\r\n"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script login {
+		send "\r\n"
+		delay 0.5 
+		expect "Password: "
+		send "111111\r\n"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script logout {
+		send "exit\r\n"
+		expect "ok"
+		#expect "ok\niSCB-[0-9]+:[0-9]> "
+	}
+	script status_all {
+		send "pmnode all\r\n"
+		foreachplug {
+			expect "Node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script status_beacon_all {
+		send "pmled all\r\n"
+		foreachplug {
+			expect "Node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script status {
+		send "pmnode %s\r\n"
+		expect "Node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script status_beacon {
+		send "pmled %s\r\n"
+		expect "Node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script on {
+		send "on %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script off {
+		send "off %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script cycle {
+		send "cycle %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script beacon_on {
+		send "led on %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script beacon_off {
+		send "led off %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script reset_all {
+		send "reset all\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script reset {
+		send "reset %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+}
+
+specification "iscb-hybrid" {
+	timeout 	10.0
+	plug name {
+		"01" "02" "03" "04" "05" "06"
+	}
+	script ping {
+		send "\r\n"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script login {
+		send "\r\n"
+		delay 0.5 
+		expect "Password: "
+		send "111111\r\n"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script logout {
+		send "exit\r\n"
+		expect "ok"
+		#expect "ok\niSCB-[0-9]+:[0-9]> "
+	}
+	script status_all {
+		send "pmnode all\r\n"
+		foreachplug {
+			expect "Node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script status_beacon_all {
+		send "pmled all\r\n"
+		foreachplug {
+			expect "Node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script status {
+		send "pmnode %s\r\n"
+		expect "Node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script status_beacon {
+		send "pmled %s\r\n"
+		expect "Node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script on {
+		send "on %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script off {
+		send "off %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script cycle {
+		send "cycle %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script beacon_on {
+		send "led on %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script beacon_off {
+		send "led off %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script reset_all {
+		send "reset all\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+	script reset {
+		send "reset %s\r\n"
+		expect "ok"
+		expect "iSCB-[0-9]+:[0-9]> "
+	}
+}
+

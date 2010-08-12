@@ -15,6 +15,7 @@ DEVFILES = \
 	apcold.dev \
 	apcpdu3.dev \
 	apcpdu.dev \
+	appro-greenblade.dev \
 	bashfun.dev \
 	baytech.dev \
 	baytech-rpc28-nc.dev \
