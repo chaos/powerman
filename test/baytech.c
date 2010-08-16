@@ -71,7 +71,7 @@ static const struct option longopts[] = {
 int 
 main(int argc, char *argv[])
 {
-    int i, c;
+    int c;
     baytype_t personality = NONE;
 
     prog = basename(argv[0]);
@@ -715,7 +715,7 @@ _prompt_loop_rpc3(void)
     char plug[8][4];
     int plug_origin = 1;
     enum { START, MENU, OUTLET, QUIT } state = START;
-    char *prompt;
+    char *prompt = NULL;
 
     for (i = 0; i < num_plugs; i++)
         strcpy(plug[i], "Off");
@@ -734,6 +734,8 @@ _prompt_loop_rpc3(void)
                 printf(RPC3_OUTLET, plug[0], plug[1], plug[2], plug[3],
                                     plug[4], plug[5], plug[6], plug[7]);
                 prompt = RPC3_PROMPT;
+                break;
+            case QUIT:
                 break;
         }
         if (xreadline(prompt, buf, sizeof(buf)) == NULL) {
@@ -783,6 +785,8 @@ _prompt_loop_rpc3(void)
                         goto err;
                 } else
                     goto err;
+                break;
+            case QUIT:
                 break;
         }
         continue;

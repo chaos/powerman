@@ -32,6 +32,7 @@
 #include "xtypes.h"
 #include "xregex.h"
 #include "xmalloc.h"
+#include "error.h"
 
 
 /* Return true if regex [r] matches exactly [p] in [s].

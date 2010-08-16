@@ -57,7 +57,7 @@ char *xreadstr(int fd)
 {
     int size = 0;
     int len = 0;
-    char *str;
+    char *str = NULL;
     int n;
 
     do {

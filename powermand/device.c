@@ -1152,7 +1152,7 @@ static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
 static char *_xhostlist_ranged_string(hostlist_t hl)
 {
     int size = 0;
-    char *str;
+    char *str = NULL;
 
     do {
         str = (size == 0) ? xmalloc(CHUNKSIZE) : xrealloc(str, size+CHUNKSIZE);

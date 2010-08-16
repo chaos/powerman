@@ -153,7 +153,7 @@ static int cli_id_seq = 1;      /* range 1...INT_MAX */
 static char *_xhostlist_ranged_string(hostlist_t hl)
 {
     int size = 0;
-    char *str;
+    char *str = NULL;
 
     do {
         str = (size == 0) ? xmalloc(CHUNKSIZE) : xrealloc(str, size+CHUNKSIZE);
@@ -459,7 +459,6 @@ static void _client_query_status_reply_nointerp(Client * c, bool error)
     ArgListIterator itr;
     hostlist_t hl = hostlist_create(NULL);
     char *tmpstr;
-    int n;
 
     assert(c->cmd != NULL);
 
@@ -481,7 +480,6 @@ static void _client_query_status_reply_nointerp(Client * c, bool error)
         _client_printf(c, CP_ERR_QRY_COMPLETE);
     else
         _client_printf(c, CP_RSP_QRY_COMPLETE);
-done:
     hostlist_destroy(hl);
 }
 

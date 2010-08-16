@@ -131,7 +131,7 @@ _setup_socket(char *serv)
 {
     struct addrinfo hints, *res, *r;
     int *fds, fd, fdlen, saved_errno, count, error, i, opt;
-    char *what;
+    char *what = NULL;
     xpollfd_t pfd;
     struct sockaddr_storage addr;
     socklen_t addr_size;
@@ -273,7 +273,7 @@ _spew(int lines)
 static void 
 _prompt_loop(void)
 {
-    int seq, i, res;
+    int seq, i;
     char buf[128];
     char prompt[16];
 

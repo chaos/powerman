@@ -69,7 +69,7 @@ static const struct option longopts[] = {
 int 
 main(int argc, char *argv[])
 {
-    int i, c;
+    int c;
 
     prog = basename(argv[0]);
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
@@ -148,8 +148,6 @@ _prompt_loop(void)
     int temp[12];
     int plug_origin = 1;
     int logged_in = 0;
-    int seq = 0;
-    int quit = 0;
     char arg[80];
  
     for (i = 0; i < num_plugs_ext; i++) {
@@ -169,6 +167,8 @@ _prompt_loop(void)
             break;
         case V4:
             printf(V4_BANNER);
+            break;
+        case NONE:
             break;
     }
     while (!logged_in) {
