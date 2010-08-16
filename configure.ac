@@ -100,9 +100,14 @@ AC_RUNAS
 ##
 AC_CONFIG_FILES( \
   Makefile \
-  src/Makefile \
-  lib/Makefile \
-  lib/libpowerman.pc \
+  libpowerman/Makefile \
+  libpowerman/libpowerman.pc \
+  liblsd/Makefile \
+  libcommon/Makefile \
+  powerman/Makefile \
+  powermand/Makefile \
+  httppower/Makefile \
+  plmpower/Makefile \
   etc/Makefile \
   scripts/Makefile \
   scripts/powerman.init \

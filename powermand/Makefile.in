@@ -35,14 +35,10 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-sbin_PROGRAMS = vpcd$(EXEEXT)
-check_PROGRAMS = tpl$(EXEEXT) tregex$(EXEEXT) targv$(EXEEXT) \
-	baytech$(EXEEXT) icebox$(EXEEXT) gpib$(EXEEXT) dli$(EXEEXT) \
-	phantom$(EXEEXT) cyclades$(EXEEXT) ipmipower$(EXEEXT) \
-	cli$(EXEEXT) ilom$(EXEEXT) lom$(EXEEXT) swpdu$(EXEEXT)
-XFAIL_TESTS =
-subdir = test
-DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+sbin_PROGRAMS = powermand$(EXEEXT)
+subdir = powermand
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in parse_lex.c \
+	parse_tab.c parse_tab.h
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_curses.m4 \
@@ -63,54 +59,16 @@ CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 PROGRAMS = $(sbin_PROGRAMS)
-am_baytech_OBJECTS = baytech.$(OBJEXT)
-baytech_OBJECTS = $(am_baytech_OBJECTS)
+am_powermand_OBJECTS = arglist.$(OBJEXT) client.$(OBJEXT) \
+	daemon.$(OBJEXT) device.$(OBJEXT) device_pipe.$(OBJEXT) \
+	device_serial.$(OBJEXT) device_tcp.$(OBJEXT) \
+	parse_lex.$(OBJEXT) parse_tab.$(OBJEXT) parse_util.$(OBJEXT) \
+	powermand.$(OBJEXT)
+powermand_OBJECTS = $(am_powermand_OBJECTS)
 am__DEPENDENCIES_1 =
-am__DEPENDENCIES_2 = $(top_srcdir)/liblsd/liblsd.a \
-	$(top_srcdir)/libcommon/libcommon.a $(am__DEPENDENCIES_1)
-baytech_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_cli_OBJECTS = cli.$(OBJEXT)
-cli_OBJECTS = $(am_cli_OBJECTS)
-cli_DEPENDENCIES =
-am_cyclades_OBJECTS = cyclades.$(OBJEXT)
-cyclades_OBJECTS = $(am_cyclades_OBJECTS)
-cyclades_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_dli_OBJECTS = dli.$(OBJEXT)
-dli_OBJECTS = $(am_dli_OBJECTS)
-dli_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_gpib_OBJECTS = gpib.$(OBJEXT)
-gpib_OBJECTS = $(am_gpib_OBJECTS)
-gpib_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_icebox_OBJECTS = icebox.$(OBJEXT)
-icebox_OBJECTS = $(am_icebox_OBJECTS)
-icebox_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_ilom_OBJECTS = ilom.$(OBJEXT)
-ilom_OBJECTS = $(am_ilom_OBJECTS)
-ilom_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_ipmipower_OBJECTS = ipmipower.$(OBJEXT)
-ipmipower_OBJECTS = $(am_ipmipower_OBJECTS)
-ipmipower_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_lom_OBJECTS = lom.$(OBJEXT)
-lom_OBJECTS = $(am_lom_OBJECTS)
-lom_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_phantom_OBJECTS = phantom.$(OBJEXT)
-phantom_OBJECTS = $(am_phantom_OBJECTS)
-phantom_DEPENDENCIES = $(am__DEPENDENCIES_2) $(am__DEPENDENCIES_1)
-am_swpdu_OBJECTS = swpdu.$(OBJEXT)
-swpdu_OBJECTS = $(am_swpdu_OBJECTS)
-swpdu_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_targv_OBJECTS = targv.$(OBJEXT)
-targv_OBJECTS = $(am_targv_OBJECTS)
-targv_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_tpl_OBJECTS = tpl.$(OBJEXT)
-tpl_OBJECTS = $(am_tpl_OBJECTS)
-tpl_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_tregex_OBJECTS = tregex.$(OBJEXT)
-tregex_OBJECTS = $(am_tregex_OBJECTS)
-tregex_DEPENDENCIES = $(am__DEPENDENCIES_2)
-am_vpcd_OBJECTS = vpcd.$(OBJEXT)
-vpcd_OBJECTS = $(am_vpcd_OBJECTS)
-vpcd_DEPENDENCIES = $(am__DEPENDENCIES_2)
+powermand_DEPENDENCIES = $(top_builddir)/liblsd/liblsd.a \
+	$(top_builddir)/libcommon/libcommon.a $(am__DEPENDENCIES_1) \
+	$(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)/config
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -124,20 +82,19 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(baytech_SOURCES) $(cli_SOURCES) $(cyclades_SOURCES) \
-	$(dli_SOURCES) $(gpib_SOURCES) $(icebox_SOURCES) \
-	$(ilom_SOURCES) $(ipmipower_SOURCES) $(lom_SOURCES) \
-	$(phantom_SOURCES) $(swpdu_SOURCES) $(targv_SOURCES) \
-	$(tpl_SOURCES) $(tregex_SOURCES) $(vpcd_SOURCES)
-DIST_SOURCES = $(baytech_SOURCES) $(cli_SOURCES) $(cyclades_SOURCES) \
-	$(dli_SOURCES) $(gpib_SOURCES) $(icebox_SOURCES) \
-	$(ilom_SOURCES) $(ipmipower_SOURCES) $(lom_SOURCES) \
-	$(phantom_SOURCES) $(swpdu_SOURCES) $(targv_SOURCES) \
-	$(tpl_SOURCES) $(tregex_SOURCES) $(vpcd_SOURCES)
+@MAINTAINER_MODE_FALSE@am__skiplex = test -f $@ ||
+LEXCOMPILE = $(LEX) $(LFLAGS) $(AM_LFLAGS)
+LTLEXCOMPILE = $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=compile $(LEX) $(LFLAGS) $(AM_LFLAGS)
+YLWRAP = $(top_srcdir)/config/ylwrap
+@MAINTAINER_MODE_FALSE@am__skipyacc = test -f $@ ||
+YACCCOMPILE = $(YACC) $(YFLAGS) $(AM_YFLAGS)
+LTYACCCOMPILE = $(LIBTOOL) $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=compile $(YACC) $(YFLAGS) $(AM_YFLAGS)
+SOURCES = $(powermand_SOURCES)
+DIST_SOURCES = $(powermand_SOURCES)
 ETAGS = etags
 CTAGS = ctags
-am__tty_colors = \
-red=; grn=; lgn=; blu=; std=
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMTAR = @AMTAR@
@@ -292,58 +249,41 @@ target_vendor = @target_vendor@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-TESTS_ENVIRONMENT = env \
-	"PATH_POWERMAN=$(top_builddir)/powerman/powerman" \
-	"PATH_POWERMAND=$(top_builddir)/powermand/powermand" \
-	"PATH_ETC=$(top_builddir)/etc"
-TESTS = t00 t01 t02 t03 t04 t05 t06 t07 t08 t09 t10 t11 t12 t13 t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39 t40 t41 t42 t43 t44 t45 t46 t47 t48 t49 t50 t51 t52
-EXTRA_DIST = $(TESTS) *.exp *.conf
-CLEANFILES = *.out *.err *.diff
 AM_CFLAGS = @GCCWARN@
-AM_CPPFLAGS = \
-	-I$(top_srcdir)/libcommon \
-	-I$(top_srcdir)/libpowerman \
-	-I$(top_srcdir)/liblsd
+AM_CPPFLAGS = -I$(top_srcdir)/liblsd -I$(top_srcdir)/libcommon
+powermand_SOURCES = \
+	arglist.c \
+	arglist.h \
+	client.c \
+	client.h \
+	daemon.c \
+	daemon.h \
+	device.c \
+	device.h \
+	device_pipe.c \
+	device_pipe.h \
+	device_private.h \
+	device_serial.c \
+	device_serial.h \
+	device_tcp.c \
+	device_tcp.h \
+	parse_lex.l \
+	parse_tab.y \
+	parse_util.c \
+	parse_util.h \
+	powermand.c
 
-common_ldadd = \
-	$(top_srcdir)/liblsd/liblsd.a \
-	$(top_srcdir)/libcommon/libcommon.a \
-	$(LIBFORKPTY)
+powermand_LDADD = \
+	$(top_builddir)/liblsd/liblsd.a \
+	$(top_builddir)/libcommon/libcommon.a \
+	$(LIBWRAP) $(LIBFORKPTY)
 
-vpcd_SOURCES = vpcd.c
-vpcd_LDADD = $(common_ldadd)
-tpl_SOURCES = tpl.c
-tpl_LDADD = $(common_ldadd)
-tregex_SOURCES = tregex.c
-tregex_LDADD = $(common_ldadd)
-targv_SOURCES = targv.c
-targv_LDADD = $(common_ldadd)
-baytech_SOURCES = baytech.c
-baytech_LDADD = $(common_ldadd)
-icebox_SOURCES = icebox.c
-icebox_LDADD = $(common_ldadd)
-swpdu_SOURCES = swpdu.c
-swpdu_LDADD = $(common_ldadd)
-gpib_SOURCES = gpib.c
-gpib_LDADD = $(common_ldadd)
-dli_SOURCES = dli.c
-dli_LDADD = $(common_ldadd)
-ilom_SOURCES = ilom.c
-ilom_LDADD = $(common_ldadd)
-lom_SOURCES = lom.c
-lom_LDADD = $(common_ldadd)
-phantom_SOURCES = phantom.c
-phantom_LDADD = $(common_ldadd) $(LIBCURSES)
-cyclades_SOURCES = cyclades.c
-cyclades_LDADD = $(common_ldadd)
-ipmipower_SOURCES = ipmipower.c
-ipmipower_LDADD = $(common_ldadd)
-cli_SOURCES = cli.c
-cli_LDADD = -L../libpowerman -lpowerman
+AM_YFLAGS = -d
+CLEANFILES = parse_lex.c parse_tab.c parse_tab.h
 all: all-am
 
 .SUFFIXES:
-.SUFFIXES: .c .lo .o .obj
+.SUFFIXES: .c .l .lo .o .obj .y
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -353,9 +293,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu test/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu powermand/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu test/Makefile
+	  $(AUTOMAKE) --gnu powermand/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -374,15 +314,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-
-clean-checkPROGRAMS:
-	@list='$(check_PROGRAMS)'; test -n "$$list" || exit 0; \
-	echo " rm -f" $$list; \
-	rm -f $$list || exit $$?; \
-	test -n "$(EXEEXT)" || exit 0; \
-	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
-	echo " rm -f" $$list; \
-	rm -f $$list
 install-sbinPROGRAMS: $(sbin_PROGRAMS)
 	@$(NORMAL_INSTALL)
 	test -z "$(sbindir)" || $(MKDIR_P) "$(DESTDIR)$(sbindir)"
@@ -426,51 +357,14 @@ clean-sbinPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-baytech$(EXEEXT): $(baytech_OBJECTS) $(baytech_DEPENDENCIES) 
-	@rm -f baytech$(EXEEXT)
-	$(LINK) $(baytech_OBJECTS) $(baytech_LDADD) $(LIBS)
-cli$(EXEEXT): $(cli_OBJECTS) $(cli_DEPENDENCIES) 
-	@rm -f cli$(EXEEXT)
-	$(LINK) $(cli_OBJECTS) $(cli_LDADD) $(LIBS)
-cyclades$(EXEEXT): $(cyclades_OBJECTS) $(cyclades_DEPENDENCIES) 
-	@rm -f cyclades$(EXEEXT)
-	$(LINK) $(cyclades_OBJECTS) $(cyclades_LDADD) $(LIBS)
-dli$(EXEEXT): $(dli_OBJECTS) $(dli_DEPENDENCIES) 
-	@rm -f dli$(EXEEXT)
-	$(LINK) $(dli_OBJECTS) $(dli_LDADD) $(LIBS)
-gpib$(EXEEXT): $(gpib_OBJECTS) $(gpib_DEPENDENCIES) 
-	@rm -f gpib$(EXEEXT)
-	$(LINK) $(gpib_OBJECTS) $(gpib_LDADD) $(LIBS)
-icebox$(EXEEXT): $(icebox_OBJECTS) $(icebox_DEPENDENCIES) 
-	@rm -f icebox$(EXEEXT)
-	$(LINK) $(icebox_OBJECTS) $(icebox_LDADD) $(LIBS)
-ilom$(EXEEXT): $(ilom_OBJECTS) $(ilom_DEPENDENCIES) 
-	@rm -f ilom$(EXEEXT)
-	$(LINK) $(ilom_OBJECTS) $(ilom_LDADD) $(LIBS)
-ipmipower$(EXEEXT): $(ipmipower_OBJECTS) $(ipmipower_DEPENDENCIES) 
-	@rm -f ipmipower$(EXEEXT)
-	$(LINK) $(ipmipower_OBJECTS) $(ipmipower_LDADD) $(LIBS)
-lom$(EXEEXT): $(lom_OBJECTS) $(lom_DEPENDENCIES) 
-	@rm -f lom$(EXEEXT)
-	$(LINK) $(lom_OBJECTS) $(lom_LDADD) $(LIBS)
-phantom$(EXEEXT): $(phantom_OBJECTS) $(phantom_DEPENDENCIES) 
-	@rm -f phantom$(EXEEXT)
-	$(LINK) $(phantom_OBJECTS) $(phantom_LDADD) $(LIBS)
-swpdu$(EXEEXT): $(swpdu_OBJECTS) $(swpdu_DEPENDENCIES) 
-	@rm -f swpdu$(EXEEXT)
-	$(LINK) $(swpdu_OBJECTS) $(swpdu_LDADD) $(LIBS)
-targv$(EXEEXT): $(targv_OBJECTS) $(targv_DEPENDENCIES) 
-	@rm -f targv$(EXEEXT)
-	$(LINK) $(targv_OBJECTS) $(targv_LDADD) $(LIBS)
-tpl$(EXEEXT): $(tpl_OBJECTS) $(tpl_DEPENDENCIES) 
-	@rm -f tpl$(EXEEXT)
-	$(LINK) $(tpl_OBJECTS) $(tpl_LDADD) $(LIBS)
-tregex$(EXEEXT): $(tregex_OBJECTS) $(tregex_DEPENDENCIES) 
-	@rm -f tregex$(EXEEXT)
-	$(LINK) $(tregex_OBJECTS) $(tregex_LDADD) $(LIBS)
-vpcd$(EXEEXT): $(vpcd_OBJECTS) $(vpcd_DEPENDENCIES) 
-	@rm -f vpcd$(EXEEXT)
-	$(LINK) $(vpcd_OBJECTS) $(vpcd_LDADD) $(LIBS)
+parse_tab.h: parse_tab.c
+	@if test ! -f $@; then \
+	  rm -f parse_tab.c; \
+	  $(MAKE) $(AM_MAKEFLAGS) parse_tab.c; \
+	else :; fi
+powermand$(EXEEXT): $(powermand_OBJECTS) $(powermand_DEPENDENCIES) 
+	@rm -f powermand$(EXEEXT)
+	$(LINK) $(powermand_OBJECTS) $(powermand_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -478,21 +372,17 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/baytech.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cli.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/cyclades.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/dli.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/gpib.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/icebox.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ilom.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/ipmipower.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/lom.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/phantom.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/swpdu.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/targv.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tpl.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/tregex.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/vpcd.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/arglist.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/client.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/daemon.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/device.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/device_pipe.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/device_serial.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/device_tcp.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_lex.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_tab.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/parse_util.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/powermand.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<
@@ -514,6 +404,12 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+.l.c:
+	$(am__skiplex) $(SHELL) $(YLWRAP) $< $(LEX_OUTPUT_ROOT).c $@ -- $(LEXCOMPILE)
+
+.y.c:
+	$(am__skipyacc) $(SHELL) $(YLWRAP) $< y.tab.c $@ y.tab.h $*.h y.output $*.output -- $(YACCCOMPILE)
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -573,98 +469,6 @@ GTAGS:
 distclean-tags:
 	-rm -f TAGS ID GTAGS GRTAGS GSYMS GPATH tags
 
-check-TESTS: $(TESTS)
-	@failed=0; all=0; xfail=0; xpass=0; skip=0; \
-	srcdir=$(srcdir); export srcdir; \
-	list=' $(TESTS) '; \
-	$(am__tty_colors); \
-	if test -n "$$list"; then \
-	  for tst in $$list; do \
-	    if test -f ./$$tst; then dir=./; \
-	    elif test -f $$tst; then dir=; \
-	    else dir="$(srcdir)/"; fi; \
-	    if $(TESTS_ENVIRONMENT) $${dir}$$tst; then \
-	      all=`expr $$all + 1`; \
-	      case " $(XFAIL_TESTS) " in \
-	      *[\ \	]$$tst[\ \	]*) \
-		xpass=`expr $$xpass + 1`; \
-		failed=`expr $$failed + 1`; \
-		col=$$red; res=XPASS; \
-	      ;; \
-	      *) \
-		col=$$grn; res=PASS; \
-	      ;; \
-	      esac; \
-	    elif test $$? -ne 77; then \
-	      all=`expr $$all + 1`; \
-	      case " $(XFAIL_TESTS) " in \
-	      *[\ \	]$$tst[\ \	]*) \
-		xfail=`expr $$xfail + 1`; \
-		col=$$lgn; res=XFAIL; \
-	      ;; \
-	      *) \
-		failed=`expr $$failed + 1`; \
-		col=$$red; res=FAIL; \
-	      ;; \
-	      esac; \
-	    else \
-	      skip=`expr $$skip + 1`; \
-	      col=$$blu; res=SKIP; \
-	    fi; \
-	    echo "$${col}$$res$${std}: $$tst"; \
-	  done; \
-	  if test "$$all" -eq 1; then \
-	    tests="test"; \
-	    All=""; \
-	  else \
-	    tests="tests"; \
-	    All="All "; \
-	  fi; \
-	  if test "$$failed" -eq 0; then \
-	    if test "$$xfail" -eq 0; then \
-	      banner="$$All$$all $$tests passed"; \
-	    else \
-	      if test "$$xfail" -eq 1; then failures=failure; else failures=failures; fi; \
-	      banner="$$All$$all $$tests behaved as expected ($$xfail expected $$failures)"; \
-	    fi; \
-	  else \
-	    if test "$$xpass" -eq 0; then \
-	      banner="$$failed of $$all $$tests failed"; \
-	    else \
-	      if test "$$xpass" -eq 1; then passes=pass; else passes=passes; fi; \
-	      banner="$$failed of $$all $$tests did not behave as expected ($$xpass unexpected $$passes)"; \
-	    fi; \
-	  fi; \
-	  dashes="$$banner"; \
-	  skipped=""; \
-	  if test "$$skip" -ne 0; then \
-	    if test "$$skip" -eq 1; then \
-	      skipped="($$skip test was not run)"; \
-	    else \
-	      skipped="($$skip tests were not run)"; \
-	    fi; \
-	    test `echo "$$skipped" | wc -c` -le `echo "$$banner" | wc -c` || \
-	      dashes="$$skipped"; \
-	  fi; \
-	  report=""; \
-	  if test "$$failed" -ne 0 && test -n "$(PACKAGE_BUGREPORT)"; then \
-	    report="Please report to $(PACKAGE_BUGREPORT)"; \
-	    test `echo "$$report" | wc -c` -le `echo "$$banner" | wc -c` || \
-	      dashes="$$report"; \
-	  fi; \
-	  dashes=`echo "$$dashes" | sed s/./=/g`; \
-	  if test "$$failed" -eq 0; then \
-	    echo "$$grn$$dashes"; \
-	  else \
-	    echo "$$red$$dashes"; \
-	  fi; \
-	  echo "$$banner"; \
-	  test -z "$$skipped" || echo "$$skipped"; \
-	  test -z "$$report" || echo "$$report"; \
-	  echo "$$dashes$$std"; \
-	  test "$$failed" -eq 0; \
-	else :; fi
-
 distdir: $(DISTFILES)
 	@srcdirstrip=`echo "$(srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
 	topsrcdirstrip=`echo "$(top_srcdir)" | sed 's/[].[^$$\\*]/\\\\&/g'`; \
@@ -696,8 +500,6 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
-	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-am
 all-am: Makefile $(PROGRAMS)
 installdirs:
@@ -730,10 +532,13 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-rm -f parse_lex.c
+	-rm -f parse_tab.c
+	-rm -f parse_tab.h
 clean: clean-am
 
-clean-am: clean-checkPROGRAMS clean-generic clean-libtool \
-	clean-sbinPROGRAMS mostlyclean-am
+clean-am: clean-generic clean-libtool clean-sbinPROGRAMS \
+	mostlyclean-am
 
 distclean: distclean-am
 	-rm -rf ./$(DEPDIR)
@@ -801,23 +606,24 @@ ps-am:
 
 uninstall-am: uninstall-sbinPROGRAMS
 
-.MAKE: check-am install-am install-strip
+.MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-TESTS check-am clean \
-	clean-checkPROGRAMS clean-generic clean-libtool \
-	clean-sbinPROGRAMS ctags distclean distclean-compile \
-	distclean-generic distclean-libtool distclean-tags distdir dvi \
-	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-dvi install-dvi-am \
-	install-exec install-exec-am install-html install-html-am \
-	install-info install-info-am install-man install-pdf \
-	install-pdf-am install-ps install-ps-am install-sbinPROGRAMS \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am \
-	uninstall-sbinPROGRAMS
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-libtool clean-sbinPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-sbinPROGRAMS install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags uninstall uninstall-am uninstall-sbinPROGRAMS
 
+
+parse_lex.c : parse_tab.h
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

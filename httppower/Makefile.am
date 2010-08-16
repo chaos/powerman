@@ -4,13 +4,12 @@
 ## Process this file with automake to produce Makefile.in.
 ##*****************************************************************************
 
-AM_CFLAGS = @GCCWARN@ -I$(top_srcdir)/src
+AM_CFLAGS = @GCCWARN@
 
-lib_LTLIBRARIES = libpowerman.la
+AM_CPPFLAGS = -I$(top_srcdir)/libcommon
 
-libpowerman_la_SOURCES = \
-	libpowerman.c
-if WITH_PKG_CONFIG
-pkgconfig_DATA = libpowerman.pc
-endif
-include_HEADERS = libpowerman.h
+sbin_PROGRAMS = httppower
+
+httppower_SOURCES = httppower.c
+
+httppower_LDADD = $(top_builddir)/libcommon/libcommon.a $(LIBCURL) $(LIBFORKPTY)

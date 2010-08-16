@@ -1,23 +1,16 @@
 ##*****************************************************************************
-## $Id: Makefile.am,v 1.4 2005/07/27 00:03:37 achu Exp $
+## $Id: Makefile.am,v 1.72 2005/08/25 22:04:32 achu Exp $
 ##*****************************************************************************
 ## Process this file with automake to produce Makefile.in.
 ##*****************************************************************************
 
-SUBDIRS = \
-	etc \
-	man \
-	scripts \
-	liblsd \
-	libcommon \
-	powerman \
-	powermand \
-	libpowerman \
-	test \
-	plmpower
+AM_CFLAGS = @GCCWARN@
 
-if WITH_HTTPPOWER
-SUBDIRS += httppower
-endif
+AM_CPPFLAGS = -I$(top_srcdir)/libcommon
 
-EXTRA_DIST = DISCLAIMER META 
+sbin_PROGRAMS = plmpower
+
+plmpower_SOURCES = plmpower.c
+
+plmpower_LDADD = $(top_builddir)/libcommon/libcommon.a
+
