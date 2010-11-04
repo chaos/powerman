@@ -114,7 +114,6 @@ AC_CONFIG_FILES( \
   man/libpowerman.3 \
   man/powerman.conf.5 \
   man/powerman.dev.5 \
-  man/powerman-devices.7 \
   man/httppower.8 \
   man/plmpower.8 \
   man/powermand.8 \

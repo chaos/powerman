@@ -1,3 +1,0 @@
-#!/bin/sh
-FILES="index.html  powerman47.jpg supported.html"
-scp $FILES shell.sourceforge.net:/home/groups/p/po/powerman/htdocs/

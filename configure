@@ -22015,7 +22015,7 @@ echo "${ECHO_T}${RUN_AS_USER}" >&6
 ##
 # Epilogue.
 ##
-                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile powerman.spec libpowerman/Makefile libpowerman/libpowerman.pc liblsd/Makefile libcommon/Makefile powerman/Makefile powermand/Makefile httppower/Makefile plmpower/Makefile etc/Makefile scripts/Makefile scripts/powerman heartbeat/Makefile test/Makefile man/Makefile man/powerman.1 man/libpowerman.3 man/powerman.conf.5 man/powerman.dev.5 man/powerman-devices.7 man/httppower.8 man/plmpower.8 man/powermand.8 man/vpcd.8"
+                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile powerman.spec libpowerman/Makefile libpowerman/libpowerman.pc liblsd/Makefile libcommon/Makefile powerman/Makefile powermand/Makefile httppower/Makefile plmpower/Makefile etc/Makefile scripts/Makefile scripts/powerman heartbeat/Makefile test/Makefile man/Makefile man/powerman.1 man/libpowerman.3 man/powerman.conf.5 man/powerman.dev.5 man/httppower.8 man/plmpower.8 man/powermand.8 man/vpcd.8"
 
 
 cat >confcache <<\_ACEOF
@@ -22622,7 +22622,6 @@ do
   "man/libpowerman.3" ) CONFIG_FILES="$CONFIG_FILES man/libpowerman.3" ;;
   "man/powerman.conf.5" ) CONFIG_FILES="$CONFIG_FILES man/powerman.conf.5" ;;
   "man/powerman.dev.5" ) CONFIG_FILES="$CONFIG_FILES man/powerman.dev.5" ;;
-  "man/powerman-devices.7" ) CONFIG_FILES="$CONFIG_FILES man/powerman-devices.7" ;;
   "man/httppower.8" ) CONFIG_FILES="$CONFIG_FILES man/httppower.8" ;;
   "man/plmpower.8" ) CONFIG_FILES="$CONFIG_FILES man/plmpower.8" ;;
   "man/powermand.8" ) CONFIG_FILES="$CONFIG_FILES man/powermand.8" ;;
