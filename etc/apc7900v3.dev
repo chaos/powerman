@@ -1,0 +1,216 @@
+#
+# APC MasterSwitch AP7900 (and most likely AP7901, AP7920 & AP7921)
+# - Firmware: APP v3.7.0 / AOS v3.7.0
+#
+# Firmware version 3 changes contributed by Py Watson.
+#
+specification "apc7900v3" {
+	timeout 	10  
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
+
+	script login {
+		expect "\rUser Name : "
+		send "apc\r\n"
+		expect "\rPassword  : "
+		send "apc\r\n"
+		expect "> "
+		send "1\r\n"  # device manager menu
+		expect "> "
+		send "2\r\n"  # outlet management
+		expect "> "
+		send "1\r\n"  # Outlet Control/Configuration
+		expect "> "
+	}
+	script logout {
+		send "\033"
+		expect "> "
+		send "\033"
+		expect "> "
+		send "4\r\n"
+	}
+	script status_all {
+		send "\r\n"  # refresh
+		foreachplug {
+			expect "([0-9]+)-[^\n]*(ON|OFF)[^\n]*\r\n"
+			setplugstate $1 $2 on="ON" off="OFF"
+		}
+		expect "> "
+	}
+	script on {
+		send "%s\r\n"
+		expect "> "
+		send "1\r\n" # select control outlet
+		expect "> "
+
+		send "7\r\n" # cancel any pending delays
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "1\r\n" # immediate on
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		send "\r\n"
+		expect "> "
+	}
+	script on_all {
+		send "9\r\n"
+		expect "> "
+		send "1\r\n" # select outlet control
+		expect "> "
+
+		send "7\r\n" # cancel any pending delays
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "4\r\n" # delayed on
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		send "\r\n"
+		expect "> "
+	}
+	script off {
+		send "%s\r\n"
+		expect "> "
+		send "1\r\n" # select outlet control
+		expect "> "
+
+		send "7\r\n" # cancel any pending delays
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "2\r\n" # immediate off
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		send "\r\n"
+		expect "> "
+	}
+	script off_all {
+		send "9\r\n"
+		expect "> "
+		send "1\r\n" # select outlet control
+		expect "> "
+
+		send "7\r\n" # cancel any pending delays
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "5\r\n" # delayed off
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		send "\r\n"
+		expect "> "
+	}
+# If outlet is initially off, "immediate reboot" (4) will leave it off.
+# This doesn't match PowerMan's semantics for cycle, therefore do explicit
+# immediate off + immediate on.
+	script cycle {
+		send "%s\r\n"
+		expect "> "
+		send "1\r\n" # select outlet control
+		expect "> "
+
+		send "7\r\n" # cancel any pending delays
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "2\r\n" # immediate off
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		delay 4
+
+		send "1\r\n" # immediate on
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		send "\r\n"
+	}
+	script cycle_all {
+		send "9\r\n"
+		expect "> "
+		send "1\r\n" # select outlet control
+		expect "> "
+
+		send "7\r\n" # cancel any pending delays
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "5\r\n" # delayed off
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		delay 4
+
+		send "4\r\n" # delayed on
+		expect "to cancel : "
+		send "YES\r\n"
+		expect "to continue..."
+		send "\r\n"
+		expect "> "
+
+		send "\033"
+		expect "> "
+		send "\033"
+		send "\r\n"
+		expect "> "
+	}
+}

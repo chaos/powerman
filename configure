@@ -22015,7 +22015,8 @@ echo "${ECHO_T}${RUN_AS_USER}" >&6
 ##
 # Epilogue.
 ##
-                                                                                                                                                                                                                                      ac_config_files="$ac_config_files Makefile libpowerman/Makefile libpowerman/libpowerman.pc liblsd/Makefile libcommon/Makefile powerman/Makefile powermand/Makefile httppower/Makefile plmpower/Makefile etc/Makefile scripts/Makefile scripts/powerman.init test/Makefile man/Makefile man/powerman.1 man/libpowerman.3 man/powerman.conf.5 man/powerman.dev.5 man/powerman-devices.7 man/httppower.8 man/plmpower.8 man/powermand.8 man/vpcd.8"
+                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile powerman.spec libpowerman/Makefile libpowerman/libpowerman.pc liblsd/Makefile libcommon/Makefile powerman/Makefile powermand/Makefile httppower/Makefile plmpower/Makefile etc/Makefile scripts/Makefile scripts/powerman heartbeat/Makefile test/Makefile man/Makefile man/powerman.1 man/libpowerman.3 man/powerman.conf.5 man/powerman.dev.5 man/powerman-devices.7 man/httppower.8 man/plmpower.8 man/powermand.8 man/vpcd.8"
+
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -22602,6 +22603,7 @@ do
   case "$ac_config_target" in
   # Handling of arguments.
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
+  "powerman.spec" ) CONFIG_FILES="$CONFIG_FILES powerman.spec" ;;
   "libpowerman/Makefile" ) CONFIG_FILES="$CONFIG_FILES libpowerman/Makefile" ;;
   "libpowerman/libpowerman.pc" ) CONFIG_FILES="$CONFIG_FILES libpowerman/libpowerman.pc" ;;
   "liblsd/Makefile" ) CONFIG_FILES="$CONFIG_FILES liblsd/Makefile" ;;
@@ -22612,7 +22614,8 @@ do
   "plmpower/Makefile" ) CONFIG_FILES="$CONFIG_FILES plmpower/Makefile" ;;
   "etc/Makefile" ) CONFIG_FILES="$CONFIG_FILES etc/Makefile" ;;
   "scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES scripts/Makefile" ;;
-  "scripts/powerman.init" ) CONFIG_FILES="$CONFIG_FILES scripts/powerman.init" ;;
+  "scripts/powerman" ) CONFIG_FILES="$CONFIG_FILES scripts/powerman" ;;
+  "heartbeat/Makefile" ) CONFIG_FILES="$CONFIG_FILES heartbeat/Makefile" ;;
   "test/Makefile" ) CONFIG_FILES="$CONFIG_FILES test/Makefile" ;;
   "man/Makefile" ) CONFIG_FILES="$CONFIG_FILES man/Makefile" ;;
   "man/powerman.1" ) CONFIG_FILES="$CONFIG_FILES man/powerman.1" ;;

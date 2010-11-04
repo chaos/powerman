@@ -37,7 +37,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-subdir = etc
+subdir = heartbeat
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
@@ -56,17 +56,11 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config/config.h
 CONFIG_CLEAN_FILES =
+am__installdirs = "$(DESTDIR)$(hblibdir)"
+hblibSCRIPT_INSTALL = $(INSTALL_SCRIPT)
+SCRIPTS = $(hblib_SCRIPTS)
 SOURCES =
 DIST_SOURCES =
-am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
-am__vpath_adj = case $$p in \
-    $(srcdir)/*) f=`echo "$$p" | sed "s|^$$srcdirstrip/||"`;; \
-    *) f=$$p;; \
-  esac;
-am__strip_dir = `echo $$p | sed -e 's|^.*/||'`;
-am__installdirs = "$(DESTDIR)$(pkgsysconfdir)"
-pkgsysconfDATA_INSTALL = $(INSTALL_DATA)
-DATA = $(pkgsysconf_DATA)
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 ACLOCAL = @ACLOCAL@
 AMDEP_FALSE = @AMDEP_FALSE@
@@ -215,50 +209,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-pkgsysconfdir = $(sysconfdir)/powerman
-pkgsysconf_DATA = \
-	powerman.conf.example \
-	apc7900.dev \
-	apc7900v3.dev \
-	apc7920.dev \
-	apc.dev \
-	apcnew.dev \
-	apcold.dev \
-	apcpdu3.dev \
-	apcpdu.dev \
-	appro-greenblade.dev \
-	bashfun.dev \
-	baytech.dev \
-	baytech-rpc28-nc.dev \
-	baytech-rpc3-nc.dev \
-	cb-7050.dev \
-	cyclades-pm8.dev \
-	cyclades-pm10.dev \
-	cyclades-pm20.dev \
-	cyclades-pm42.dev \
-	dli.dev \
-	hp3488.dev \
-	hpilo.dev \
-	hpmp.dev \
-	hpmpblade.dev \
-	hpmpcell.dev \
-	hpmpdome.dev \
-	ibmbladecenter.dev \
-	icebox.dev \
-	icebox3.dev \
-	ics8064.dev \
-	ilom.dev \
-	lom.dev \
-	ipmi.dev \
-	ipmipower.dev \
-	phantom.dev \
-	plmpower.dev \
-	powerman.dev \
-	swpdu.dev \
-	vpc.dev \
-	wti.dev \
-	wti-rps10.dev
-
+hblibdir = $(libdir)/stonith/plugins/external
+hblib_SCRIPTS = powerman
 all: all-am
 
 .SUFFIXES:
@@ -271,9 +223,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  etc/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  heartbeat/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  etc/Makefile
+	  $(AUTOMAKE) --gnu  heartbeat/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -291,6 +243,25 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
+install-hblibSCRIPTS: $(hblib_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	test -z "$(hblibdir)" || $(mkdir_p) "$(DESTDIR)$(hblibdir)"
+	@list='$(hblib_SCRIPTS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f $$d$$p; then \
+	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	    echo " $(hblibSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(hblibdir)/$$f'"; \
+	    $(hblibSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(hblibdir)/$$f"; \
+	  else :; fi; \
+	done
+
+uninstall-hblibSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(hblib_SCRIPTS)'; for p in $$list; do \
+	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	  echo " rm -f '$(DESTDIR)$(hblibdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(hblibdir)/$$f"; \
+	done
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -301,23 +272,6 @@ clean-libtool:
 distclean-libtool:
 	-rm -f libtool
 uninstall-info-am:
-install-pkgsysconfDATA: $(pkgsysconf_DATA)
-	@$(NORMAL_INSTALL)
-	test -z "$(pkgsysconfdir)" || $(mkdir_p) "$(DESTDIR)$(pkgsysconfdir)"
-	@list='$(pkgsysconf_DATA)'; for p in $$list; do \
-	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
-	  f=$(am__strip_dir) \
-	  echo " $(pkgsysconfDATA_INSTALL) '$$d$$p' '$(DESTDIR)$(pkgsysconfdir)/$$f'"; \
-	  $(pkgsysconfDATA_INSTALL) "$$d$$p" "$(DESTDIR)$(pkgsysconfdir)/$$f"; \
-	done
-
-uninstall-pkgsysconfDATA:
-	@$(NORMAL_UNINSTALL)
-	@list='$(pkgsysconf_DATA)'; for p in $$list; do \
-	  f=$(am__strip_dir) \
-	  echo " rm -f '$(DESTDIR)$(pkgsysconfdir)/$$f'"; \
-	  rm -f "$(DESTDIR)$(pkgsysconfdir)/$$f"; \
-	done
 tags: TAGS
 TAGS:
 
@@ -354,9 +308,9 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(DATA)
+all-am: Makefile $(SCRIPTS)
 installdirs:
-	for dir in "$(DESTDIR)$(pkgsysconfdir)"; do \
+	for dir in "$(DESTDIR)$(hblibdir)"; do \
 	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
 	done
 install: install-am
@@ -401,7 +355,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-pkgsysconfDATA
+install-data-am: install-hblibSCRIPTS
 
 install-exec-am:
 
@@ -427,18 +381,18 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-pkgsysconfDATA
+uninstall-am: uninstall-hblibSCRIPTS uninstall-info-am
 
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
 	distclean distclean-generic distclean-libtool distdir dvi \
 	dvi-am html html-am info info-am install install-am \
 	install-data install-data-am install-exec install-exec-am \
-	install-info install-info-am install-man \
-	install-pkgsysconfDATA install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-generic \
-	mostlyclean-libtool pdf pdf-am ps ps-am uninstall uninstall-am \
-	uninstall-info-am uninstall-pkgsysconfDATA
+	install-hblibSCRIPTS install-info install-info-am install-man \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	uninstall uninstall-am uninstall-hblibSCRIPTS \
+	uninstall-info-am
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

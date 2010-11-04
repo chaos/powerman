@@ -1,9 +1,3 @@
-##*****************************************************************************
-## $Id: configure.ac,v 1.40 2006/09/27 00:44:07 achu Exp $
-##*****************************************************************************
-## Process this file with autoconf to produce a configure script.
-##*****************************************************************************
-
 ##
 # Prologue.
 ##
@@ -101,6 +95,7 @@ AC_RUNAS
 ##
 AC_CONFIG_FILES( \
   Makefile \
+  powerman.spec \
   libpowerman/Makefile \
   libpowerman/libpowerman.pc \
   liblsd/Makefile \
@@ -111,7 +106,8 @@ AC_CONFIG_FILES( \
   plmpower/Makefile \
   etc/Makefile \
   scripts/Makefile \
-  scripts/powerman.init \
+  scripts/powerman \
+  heartbeat/Makefile \
   test/Makefile \
   man/Makefile \
   man/powerman.1 \
@@ -124,5 +120,6 @@ AC_CONFIG_FILES( \
   man/powermand.8 \
   man/vpcd.8 \
 )
+
 AC_OUTPUT
 

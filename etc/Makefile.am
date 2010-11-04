@@ -1,14 +1,9 @@
-##*****************************************************************************
-## $Id: Makefile.am,v 1.4 2005/07/27 00:03:37 achu Exp $
-##*****************************************************************************
-## Process this file with automake to produce Makefile.in.
-##*****************************************************************************
+pkgsysconfdir = $(sysconfdir)/powerman
 
-CONFFILE = \
-	powerman.conf.example
-
-DEVFILES = \
+pkgsysconf_DATA = \
+	powerman.conf.example \
 	apc7900.dev \
+	apc7900v3.dev \
 	apc7920.dev \
 	apc.dev \
 	apcnew.dev \
@@ -47,16 +42,3 @@ DEVFILES = \
 	vpc.dev \
 	wti.dev \
 	wti-rps10.dev
-
-install-data-local:
-	-$(top_srcdir)/config/install-sh -m 755 -d \
-	    $(DESTDIR)$(sysconfdir)/powerman
-	for file in $(DEVFILES); do \
-	    $(top_srcdir)/config/install-sh -m 644 \
-	      $(srcdir)/$$file $(DESTDIR)$(sysconfdir)/powerman; \
-	done
-	test -f $(DESTDIR)$(sysconfdir)/powerman/$(CONFFILE) || \
-	    $(top_srcdir)/config/install-sh -m 644 \
-	      $(srcdir)/$(CONFFILE) $(DESTDIR)$(sysconfdir)/powerman/$(CONFFILE)
-
-EXTRA_DIST = $(DEVFILES) $(CONFFILE)

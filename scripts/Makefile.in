@@ -13,6 +13,7 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
+
 srcdir = @srcdir@
 top_srcdir = @top_srcdir@
 VPATH = @srcdir@
@@ -38,7 +39,7 @@ host_triplet = @host@
 target_triplet = @target@
 subdir = scripts
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
-	$(srcdir)/powerman.init.in
+	$(srcdir)/powerman.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_curses.m4 \
@@ -55,7 +56,10 @@ am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config/config.h
-CONFIG_CLEAN_FILES = powerman.init
+CONFIG_CLEAN_FILES = powerman
+am__installdirs = "$(DESTDIR)$(initconfdir)"
+initconfSCRIPT_INSTALL = $(INSTALL_SCRIPT)
+SCRIPTS = $(initconf_SCRIPTS)
 SOURCES =
 DIST_SOURCES =
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -206,9 +210,8 @@ target_alias = @target_alias@
 target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
-EXTRA_DIST = \
-	powerman.init
-
+initconfdir = $(sysconfdir)/init.d
+initconf_SCRIPTS = powerman
 all: all-am
 
 .SUFFIXES:
@@ -241,8 +244,27 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-powerman.init: $(top_builddir)/config.status $(srcdir)/powerman.init.in
+powerman: $(top_builddir)/config.status $(srcdir)/powerman.in
 	cd $(top_builddir) && $(SHELL) ./config.status $(subdir)/$@
+install-initconfSCRIPTS: $(initconf_SCRIPTS)
+	@$(NORMAL_INSTALL)
+	test -z "$(initconfdir)" || $(mkdir_p) "$(DESTDIR)$(initconfdir)"
+	@list='$(initconf_SCRIPTS)'; for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  if test -f $$d$$p; then \
+	    f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	    echo " $(initconfSCRIPT_INSTALL) '$$d$$p' '$(DESTDIR)$(initconfdir)/$$f'"; \
+	    $(initconfSCRIPT_INSTALL) "$$d$$p" "$(DESTDIR)$(initconfdir)/$$f"; \
+	  else :; fi; \
+	done
+
+uninstall-initconfSCRIPTS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(initconf_SCRIPTS)'; for p in $$list; do \
+	  f=`echo "$$p" | sed 's|^.*/||;$(transform)'`; \
+	  echo " rm -f '$(DESTDIR)$(initconfdir)/$$f'"; \
+	  rm -f "$(DESTDIR)$(initconfdir)/$$f"; \
+	done
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -289,8 +311,11 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile
+all-am: Makefile $(SCRIPTS)
 installdirs:
+	for dir in "$(DESTDIR)$(initconfdir)"; do \
+	  test -z "$$dir" || $(mkdir_p) "$$dir"; \
+	done
 install: install-am
 install-exec: install-exec-am
 install-data: install-data-am
@@ -333,7 +358,7 @@ info: info-am
 
 info-am:
 
-install-data-am: install-data-local
+install-data-am: install-initconfSCRIPTS
 
 install-exec-am:
 
@@ -359,36 +384,19 @@ ps: ps-am
 
 ps-am:
 
-uninstall-am: uninstall-info-am uninstall-local
+uninstall-am: uninstall-info-am uninstall-initconfSCRIPTS
 
 .PHONY: all all-am check check-am clean clean-generic clean-libtool \
 	distclean distclean-generic distclean-libtool distdir dvi \
 	dvi-am html html-am info info-am install install-am \
-	install-data install-data-am install-data-local install-exec \
-	install-exec-am install-info install-info-am install-man \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	uninstall uninstall-am uninstall-info-am uninstall-local
+	install-data install-data-am install-exec install-exec-am \
+	install-info install-info-am install-initconfSCRIPTS \
+	install-man install-strip installcheck installcheck-am \
+	installdirs maintainer-clean maintainer-clean-generic \
+	mostlyclean mostlyclean-generic mostlyclean-libtool pdf pdf-am \
+	ps ps-am uninstall uninstall-am uninstall-info-am \
+	uninstall-initconfSCRIPTS
 
-
-install-data-local:
-	-$(top_srcdir)/config/install-sh -m 755 -d \
-		$(DESTDIR)$(sysconfdir)/init.d
-	$(top_srcdir)/config/install-sh -m 755 $(srcdir)/powerman.init \
-		$(DESTDIR)$(sysconfdir)/init.d/powerman
-	-$(top_srcdir)/config/install-sh -m 755 -d \
-		$(DESTDIR)$(libdir)/stonith/plugins/external
-	$(top_srcdir)/config/install-sh -m 755 $(srcdir)/stonith-powerman \
-		$(DESTDIR)$(libdir)/stonith/plugins/external/powerman
-	-$(top_srcdir)/config/install-sh -m 755 -d \
-		$(DESTDIR)$(localstatedir)/run
-	-$(top_srcdir)/config/install-sh -o $(RUN_AS_USER) -m 755 -d \
-		$(DESTDIR)$(localstatedir)/run/powerman
-
-uninstall-local:
-	$(RM) $(DESTDIR)$(sysconfdir)/init.d/powerman
-	$(RM) $(DESTDIR)$(libdir)/stonith/plugins/external/powerman
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:

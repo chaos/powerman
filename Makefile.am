@@ -1,13 +1,8 @@
-##*****************************************************************************
-## $Id: Makefile.am,v 1.4 2005/07/27 00:03:37 achu Exp $
-##*****************************************************************************
-## Process this file with automake to produce Makefile.in.
-##*****************************************************************************
-
 SUBDIRS = \
 	etc \
 	man \
 	scripts \
+	heartbeat \
 	liblsd \
 	libcommon \
 	powerman \
@@ -19,5 +14,12 @@ SUBDIRS = \
 if WITH_HTTPPOWER
 SUBDIRS += httppower
 endif
+
+# Create run dir for powerman.  Chown will fail if non root - ignore it.
+install-data-local:
+	-$(top_srcdir)/config/install-sh -m 755 -d \
+		$(DESTDIR)$(localstatedir)/run
+	-$(top_srcdir)/config/install-sh -o $(RUN_AS_USER) -m 755 -d \
+		$(DESTDIR)$(localstatedir)/run/powerman
 
 EXTRA_DIST = DISCLAIMER META 
