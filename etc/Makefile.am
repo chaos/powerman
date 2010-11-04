@@ -42,3 +42,5 @@ pkgsysconf_DATA = \
 	vpc.dev \
 	wti.dev \
 	wti-rps10.dev
+
+EXTRA_DIST = $(pkgsysconf_DATA)

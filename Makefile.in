@@ -235,7 +235,7 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 SUBDIRS = etc man scripts heartbeat liblsd libcommon powerman \
 	powermand libpowerman test plmpower $(am__append_1)
-EXTRA_DIST = DISCLAIMER META 
+EXTRA_DIST = DISCLAIMER META powerman.spec
 all: all-recursive
 
 .SUFFIXES:
@@ -674,6 +674,7 @@ uninstall-info: uninstall-info-recursive
 	uninstall uninstall-am uninstall-info-am
 
 
+# Create run dir for powerman.  Chown will fail if non root - ignore it.
 install-data-local:
 	-$(top_srcdir)/config/install-sh -m 755 -d \
 		$(DESTDIR)$(localstatedir)/run
