@@ -40,9 +40,12 @@
 #include "error.h"
 #include "argv.h"
 
-#define OPTIONS "o:"
+#define DEFAULT_COMMUNITY "public"
+
+#define OPTIONS "o:c:`"
 static struct option longopts[] = {
         {"oid", required_argument, 0, 'o' },
+        {"community", required_argument, 0, 'c' },
         {0,0,0,0},
 };
 
@@ -76,10 +79,10 @@ void get(char **av, struct snmp_session *ss)
             //print_variable (vars->name, vars->name_length, vars);
             switch (vars->type) {
                 case ASN_OCTET_STR:
-                    printf("%*s\n", vars->val_len, vars->val.string);
+                    printf("%s: %*s\n", av[1], vars->val_len, vars->val.string);
                     break;
                 case ASN_INTEGER:
-                    printf("%ld\n", vars->val.integer);
+                    printf("%s: %ld\n", av[1], *vars->val.integer);
                     break;
                 default:
                     break;
@@ -147,8 +150,8 @@ main(int argc, char *argv[])
     init_snmp ("snmppower");
     snmp_sess_init (&session);
     session.version = SNMP_VERSION_1;
-    session.community = "public";
-    session.community_len = strlen (session.community);
+    session.community = (u_char *)DEFAULT_COMMUNITY;
+    session.community_len = strlen (DEFAULT_COMMUNITY);
 
     while ((c = getopt_long(argc, argv, OPTIONS, longopts, NULL)) != EOF) {
         switch (c) {
@@ -156,7 +159,7 @@ main(int argc, char *argv[])
                 //oid = xstrdup(optarg);
                 break;
             case 'c': /* --community */
-                session.community = optarg;
+                session.community = (u_char *)optarg;
                 session.community_len = strlen (optarg);
                 break;
             default:
