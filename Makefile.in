@@ -37,6 +37,7 @@ build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
 @WITH_HTTPPOWER_TRUE@am__append_1 = httppower
+@WITH_SNMPPOWER_TRUE@am__append_2 = snmppower
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/powerman.spec.in \
 	$(top_srcdir)/config/config.h.in $(top_srcdir)/configure \
@@ -74,7 +75,7 @@ RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = etc man scripts heartbeat liblsd libcommon powerman \
-	powermand libpowerman test plmpower httppower
+	powermand libpowerman test plmpower httppower snmppower
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -132,6 +133,7 @@ LIBLUA = @LIBLUA@
 LIBMUNGE = @LIBMUNGE@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
+LIBSNMP = @LIBSNMP@
 LIBTOOL = @LIBTOOL@
 LIBWRAP = @LIBWRAP@
 LN_S = @LN_S@
@@ -170,6 +172,8 @@ WITH_HTTPPOWER_FALSE = @WITH_HTTPPOWER_FALSE@
 WITH_HTTPPOWER_TRUE = @WITH_HTTPPOWER_TRUE@
 WITH_PKG_CONFIG_FALSE = @WITH_PKG_CONFIG_FALSE@
 WITH_PKG_CONFIG_TRUE = @WITH_PKG_CONFIG_TRUE@
+WITH_SNMPPOWER_FALSE = @WITH_SNMPPOWER_FALSE@
+WITH_SNMPPOWER_TRUE = @WITH_SNMPPOWER_TRUE@
 X_BINDIR = @X_BINDIR@
 X_DATADIR = @X_DATADIR@
 X_EXEC_PREFIX = @X_EXEC_PREFIX@
@@ -234,7 +238,8 @@ target_cpu = @target_cpu@
 target_os = @target_os@
 target_vendor = @target_vendor@
 SUBDIRS = etc man scripts heartbeat liblsd libcommon powerman \
-	powermand libpowerman test plmpower $(am__append_1)
+	powermand libpowerman test plmpower $(am__append_1) \
+	$(am__append_2)
 EXTRA_DIST = DISCLAIMER META powerman.spec
 all: all-recursive
 

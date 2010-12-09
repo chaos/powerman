@@ -14,6 +14,9 @@ SUBDIRS = \
 if WITH_HTTPPOWER
 SUBDIRS += httppower
 endif
+if WITH_SNMPPOWER
+SUBDIRS += snmppower
+endif
 
 # Create run dir for powerman.  Chown will fail if non root - ignore it.
 install-data-local:

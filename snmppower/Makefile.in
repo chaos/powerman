@@ -37,8 +37,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 target_triplet = @target@
-sbin_PROGRAMS = plmpower$(EXEEXT)
-subdir = plmpower
+sbin_PROGRAMS = snmppower$(EXEEXT)
+subdir = snmppower
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
@@ -60,9 +60,11 @@ CONFIG_CLEAN_FILES =
 am__installdirs = "$(DESTDIR)$(sbindir)"
 sbinPROGRAMS_INSTALL = $(INSTALL_PROGRAM)
 PROGRAMS = $(sbin_PROGRAMS)
-am_plmpower_OBJECTS = plmpower.$(OBJEXT)
-plmpower_OBJECTS = $(am_plmpower_OBJECTS)
-plmpower_DEPENDENCIES = $(top_builddir)/libcommon/libcommon.a
+am_snmppower_OBJECTS = snmppower.$(OBJEXT)
+snmppower_OBJECTS = $(am_snmppower_OBJECTS)
+am__DEPENDENCIES_1 =
+snmppower_DEPENDENCIES = $(top_builddir)/libcommon/libcommon.a \
+	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 DEFAULT_INCLUDES = -I. -I$(srcdir) -I$(top_builddir)/config
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
 am__depfiles_maybe = depfiles
@@ -74,8 +76,8 @@ LTCOMPILE = $(LIBTOOL) --tag=CC --mode=compile $(CC) $(DEFS) \
 CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(AM_LDFLAGS) $(LDFLAGS) -o $@
-SOURCES = $(plmpower_SOURCES)
-DIST_SOURCES = $(plmpower_SOURCES)
+SOURCES = $(snmppower_SOURCES)
+DIST_SOURCES = $(snmppower_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -231,8 +233,8 @@ target_os = @target_os@
 target_vendor = @target_vendor@
 AM_CFLAGS = @GCCWARN@
 AM_CPPFLAGS = -I$(top_srcdir)/libcommon
-plmpower_SOURCES = plmpower.c
-plmpower_LDADD = $(top_builddir)/libcommon/libcommon.a
+snmppower_SOURCES = snmppower.c
+snmppower_LDADD = $(top_builddir)/libcommon/libcommon.a $(LIBSNMP) $(LIBFORKPTY)
 all: all-am
 
 .SUFFIXES:
@@ -246,9 +248,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  plmpower/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  snmppower/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  plmpower/Makefile
+	  $(AUTOMAKE) --gnu  snmppower/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -294,9 +296,9 @@ clean-sbinPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-plmpower$(EXEEXT): $(plmpower_OBJECTS) $(plmpower_DEPENDENCIES) 
-	@rm -f plmpower$(EXEEXT)
-	$(LINK) $(plmpower_LDFLAGS) $(plmpower_OBJECTS) $(plmpower_LDADD) $(LIBS)
+snmppower$(EXEEXT): $(snmppower_OBJECTS) $(snmppower_DEPENDENCIES) 
+	@rm -f snmppower$(EXEEXT)
+	$(LINK) $(snmppower_LDFLAGS) $(snmppower_OBJECTS) $(snmppower_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -304,7 +306,7 @@ mostlyclean-compile:
 distclean-compile:
 	-rm -f *.tab.c
 
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/plmpower.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/snmppower.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	if $(COMPILE) -MT $@ -MD -MP -MF "$(DEPDIR)/$*.Tpo" -c -o $@ $<; \

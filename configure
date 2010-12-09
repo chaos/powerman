@@ -464,7 +464,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os META_NAME META_VERSION META_RELEASE META_ALIAS META_DATE META_AUTHOR META_LT_CURRENT META_LT_REVISION META_LT_AGE X_PREFIX X_EXEC_PREFIX X_BINDIR X_SBINDIR X_LIBEXECDIR X_DATADIR X_SYSCONFDIR X_SHAREDSTATEDIR X_LOCALSTATEDIR X_LIBDIR X_INCLUDEDIR X_OLDINCLUDEDIR X_INFODIR X_MANDIR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE GCCWARN LN_S LEX LEXLIB LEX_OUTPUT_ROOT YACC SED EGREP ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL WITH_GNU_LD_TRUE WITH_GNU_LD_FALSE WITH_HTTPPOWER_TRUE WITH_HTTPPOWER_FALSE LIBGENDERS LIBCURSES LIBFORKPTY LIBWRAP LIBCURL LIBLUA LIBMUNGE WITH_PKG_CONFIG_TRUE WITH_PKG_CONFIG_FALSE pkgconfigdir RUN_AS_USER LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os META_NAME META_VERSION META_RELEASE META_ALIAS META_DATE META_AUTHOR META_LT_CURRENT META_LT_REVISION META_LT_AGE X_PREFIX X_EXEC_PREFIX X_BINDIR X_SBINDIR X_LIBEXECDIR X_DATADIR X_SYSCONFDIR X_SHAREDSTATEDIR X_LOCALSTATEDIR X_LIBDIR X_INCLUDEDIR X_OLDINCLUDEDIR X_INFODIR X_MANDIR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE GCCWARN LN_S LEX LEXLIB LEX_OUTPUT_ROOT YACC SED EGREP ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL WITH_GNU_LD_TRUE WITH_GNU_LD_FALSE WITH_HTTPPOWER_TRUE WITH_HTTPPOWER_FALSE WITH_SNMPPOWER_TRUE WITH_SNMPPOWER_FALSE LIBGENDERS LIBCURSES LIBFORKPTY LIBWRAP LIBCURL LIBLUA LIBMUNGE LIBSNMP WITH_PKG_CONFIG_TRUE WITH_PKG_CONFIG_FALSE pkgconfigdir RUN_AS_USER LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -20206,6 +20206,16 @@ else
 fi
 
 
+
+if test "$ac_with_snmppower" = "yes"; then
+  WITH_SNMPPOWER_TRUE=
+  WITH_SNMPPOWER_FALSE='#'
+else
+  WITH_SNMPPOWER_TRUE='#'
+  WITH_SNMPPOWER_FALSE=
+fi
+
+
   echo "$as_me:$LINENO: checking for whether to build genders support" >&5
 echo $ECHO_N "checking for whether to build genders support... $ECHO_C" >&6
 
@@ -21931,6 +21941,154 @@ fi
 
 
 
+  echo "$as_me:$LINENO: checking for init_snmp in default libs" >&5
+echo $ECHO_N "checking for init_snmp in default libs... $ECHO_C" >&6
+if test "${x_ac_cv_lib_none_init_snmp+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+    cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char init_snmp ();
+int
+main ()
+{
+init_snmp ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  x_ac_cv_lib_none_init_snmp=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+x_ac_cv_lib_none_init_snmp=no
+
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+
+fi
+echo "$as_me:$LINENO: result: $x_ac_cv_lib_none_init_snmp" >&5
+echo "${ECHO_T}$x_ac_cv_lib_none_init_snmp" >&6
+  if test $x_ac_cv_lib_none_init_snmp = no; then
+  echo "$as_me:$LINENO: checking for init_snmp in -lsnmp" >&5
+echo $ECHO_N "checking for init_snmp in -lsnmp... $ECHO_C" >&6
+if test "${ac_cv_lib_snmp_init_snmp+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  ac_check_lib_save_LIBS=$LIBS
+LIBS="-lsnmp  $LIBS"
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+
+/* Override any gcc2 internal prototype to avoid an error.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+/* We use char because int might match the return type of a gcc2
+   builtin and then its argument prototype would still apply.  */
+char init_snmp ();
+int
+main ()
+{
+init_snmp ();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
+  (eval $ac_link) 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } &&
+	 { ac_try='test -z "$ac_c_werror_flag"
+			 || test ! -s conftest.err'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; } &&
+	 { ac_try='test -s conftest$ac_exeext'
+  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
+  (eval $ac_try) 2>&5
+  ac_status=$?
+  echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); }; }; then
+  ac_cv_lib_snmp_init_snmp=yes
+else
+  echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+ac_cv_lib_snmp_init_snmp=no
+fi
+rm -f conftest.err conftest.$ac_objext \
+      conftest$ac_exeext conftest.$ac_ext
+LIBS=$ac_check_lib_save_LIBS
+fi
+echo "$as_me:$LINENO: result: $ac_cv_lib_snmp_init_snmp" >&5
+echo "${ECHO_T}$ac_cv_lib_snmp_init_snmp" >&6
+if test $ac_cv_lib_snmp_init_snmp = yes; then
+
+
+
+        LIBSNMP="-lsnmp";
+
+        cat >>confdefs.h <<_ACEOF
+#define HAVE_LIBSNMP 1
+_ACEOF
+
+
+
+fi
+
+
+fi
+
+
+
 # for list.c, cbuf.c, hostlist.c, and wrappers.c */
 
 cat >>confdefs.h <<\_ACEOF
@@ -22015,7 +22173,7 @@ echo "${ECHO_T}${RUN_AS_USER}" >&6
 ##
 # Epilogue.
 ##
-                                                                                                                                                                                                                                                ac_config_files="$ac_config_files Makefile powerman.spec libpowerman/Makefile libpowerman/libpowerman.pc liblsd/Makefile libcommon/Makefile powerman/Makefile powermand/Makefile httppower/Makefile plmpower/Makefile etc/Makefile scripts/Makefile scripts/powerman heartbeat/Makefile test/Makefile man/Makefile man/powerman.1 man/libpowerman.3 man/powerman.conf.5 man/powerman.dev.5 man/httppower.8 man/plmpower.8 man/powermand.8 man/vpcd.8"
+                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile powerman.spec libpowerman/Makefile libpowerman/libpowerman.pc liblsd/Makefile libcommon/Makefile powerman/Makefile powermand/Makefile httppower/Makefile snmppower/Makefile plmpower/Makefile etc/Makefile scripts/Makefile scripts/powerman heartbeat/Makefile test/Makefile man/Makefile man/powerman.1 man/libpowerman.3 man/powerman.conf.5 man/powerman.dev.5 man/httppower.8 man/plmpower.8 man/powermand.8 man/vpcd.8"
 
 
 cat >confcache <<\_ACEOF
@@ -22148,6 +22306,13 @@ if test -z "${WITH_HTTPPOWER_TRUE}" && test -z "${WITH_HTTPPOWER_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"WITH_HTTPPOWER\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"WITH_HTTPPOWER\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${WITH_SNMPPOWER_TRUE}" && test -z "${WITH_SNMPPOWER_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"WITH_SNMPPOWER\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"WITH_SNMPPOWER\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -22611,6 +22776,7 @@ do
   "powerman/Makefile" ) CONFIG_FILES="$CONFIG_FILES powerman/Makefile" ;;
   "powermand/Makefile" ) CONFIG_FILES="$CONFIG_FILES powermand/Makefile" ;;
   "httppower/Makefile" ) CONFIG_FILES="$CONFIG_FILES httppower/Makefile" ;;
+  "snmppower/Makefile" ) CONFIG_FILES="$CONFIG_FILES snmppower/Makefile" ;;
   "plmpower/Makefile" ) CONFIG_FILES="$CONFIG_FILES plmpower/Makefile" ;;
   "etc/Makefile" ) CONFIG_FILES="$CONFIG_FILES etc/Makefile" ;;
   "scripts/Makefile" ) CONFIG_FILES="$CONFIG_FILES scripts/Makefile" ;;
@@ -22818,6 +22984,8 @@ s,@WITH_GNU_LD_TRUE@,$WITH_GNU_LD_TRUE,;t t
 s,@WITH_GNU_LD_FALSE@,$WITH_GNU_LD_FALSE,;t t
 s,@WITH_HTTPPOWER_TRUE@,$WITH_HTTPPOWER_TRUE,;t t
 s,@WITH_HTTPPOWER_FALSE@,$WITH_HTTPPOWER_FALSE,;t t
+s,@WITH_SNMPPOWER_TRUE@,$WITH_SNMPPOWER_TRUE,;t t
+s,@WITH_SNMPPOWER_FALSE@,$WITH_SNMPPOWER_FALSE,;t t
 s,@LIBGENDERS@,$LIBGENDERS,;t t
 s,@LIBCURSES@,$LIBCURSES,;t t
 s,@LIBFORKPTY@,$LIBFORKPTY,;t t
@@ -22825,6 +22993,7 @@ s,@LIBWRAP@,$LIBWRAP,;t t
 s,@LIBCURL@,$LIBCURL,;t t
 s,@LIBLUA@,$LIBLUA,;t t
 s,@LIBMUNGE@,$LIBMUNGE,;t t
+s,@LIBSNMP@,$LIBSNMP,;t t
 s,@WITH_PKG_CONFIG_TRUE@,$WITH_PKG_CONFIG_TRUE,;t t
 s,@WITH_PKG_CONFIG_FALSE@,$WITH_PKG_CONFIG_FALSE,;t t
 s,@pkgconfigdir@,$pkgconfigdir,;t t
