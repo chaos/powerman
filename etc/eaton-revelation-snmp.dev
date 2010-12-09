@@ -5,7 +5,7 @@ specification  "eaton-revelation-snmp" {
                     "11" "12" "13" "14" "15" "16" "17" "18" "19" }
 
 	script login {
-		send "\n"
+		send "start_v2c private\n"
 		expect "snmppower> "
 	}
 	script status {

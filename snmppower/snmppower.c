@@ -31,6 +31,7 @@
 #include <getopt.h>
 #include <string.h>
 #include <stdlib.h>
+#include <assert.h>
 
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
@@ -42,21 +43,14 @@
 
 #define DEFAULT_COMMUNITY "public"
 
-#define OPTIONS "o:c:`"
+#define OPTIONS "h:"
 static struct option longopts[] = {
-        {"oid", required_argument, 0, 'o' },
-        {"community", required_argument, 0, 'c' },
-        {0,0,0,0},
+    {"hostname", required_argument, 0, 'h' },
+    {0,0,0,0},
 };
 
-void help(void)
-{
-    printf("Valid commands are:\n");
-    printf("  get oid\n");
-    printf("  set oid value\n");
-}
-
-void get(char **av, struct snmp_session *ss)
+static void
+get (char **av, struct snmp_session **ssp)
 {
     struct snmp_pdu *pdu;
     struct snmp_pdu *response;
@@ -69,11 +63,15 @@ void get(char **av, struct snmp_session *ss)
         err (FALSE, "missing oid");
         return;
     }
+    if (*ssp == NULL) {
+        err (FALSE, "start session first");
+        return;
+    }
 
     pdu = snmp_pdu_create (SNMP_MSG_GET);
     get_node(av[1], anOID, &anOID_len);
     snmp_add_null_var (pdu, anOID, anOID_len);
-    status = snmp_synch_response (ss, pdu, &response);
+    status = snmp_synch_response (*ssp, pdu, &response);
     if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
         for (vars = response->variables; vars; vars = vars->next_variable) {
             //print_variable (vars->name, vars->name_length, vars);
@@ -93,90 +91,199 @@ void get(char **av, struct snmp_session *ss)
             err_exit (FALSE, "error in packet: %s",
                       snmp_errstring (response->errstat));
         else
-            snmp_sess_perror ("snmpget", ss);
+            snmp_sess_perror ("snmpget", *ssp);
     }
     if (response)
         snmp_free_pdu (response);
 }
 
-int docmd(char **av, struct snmp_session *ss)
+static void
+start_v1 (char **av, char *hostname, struct snmp_session **ssp)
+{
+    struct snmp_session session;
+
+    if (av[1] == NULL) {
+        err (FALSE, "missing community");
+        return;
+    }
+    if (*ssp) {
+        err (FALSE, "finish current session first");
+        return;
+    }
+    snmp_sess_init (&session);
+    session.version = SNMP_VERSION_1;
+    session.community = (u_char *)xstrdup (av[1]);
+    session.community_len = strlen (av[1]);
+    session.peername = hostname;
+
+    if (!(*ssp = snmp_open (&session))) {
+        err (FALSE, "snmp_open failed");
+        xfree (session.community);
+    }
+}
+
+static void
+start_v2c (char **av, char *hostname, struct snmp_session **ssp)
+{
+    struct snmp_session session;
+
+    if (av[1] == NULL) {
+        err (FALSE, "missing community");
+        return;
+    }
+    if (*ssp) {
+        err (FALSE, "finish current session first");
+        return;
+    }
+    snmp_sess_init (&session);
+    session.version = SNMP_VERSION_2c;
+    session.community = (u_char *)xstrdup (av[1]);
+    session.community_len = strlen (av[1]);
+    session.peername = hostname;
+
+    if (!(*ssp = snmp_open (&session))) {
+        err (FALSE, "snmp_open failed");
+        xfree (session.community);
+    }
+}
+
+static void
+start_v3 (char **av, char *hostname, struct snmp_session **ssp)
+{
+    struct snmp_session session;
+
+    if (av[1] == NULL) {
+        err (FALSE, "missing security name");
+        return;
+    }
+    if (av[2] == NULL) {
+        err (FALSE, "missing passphrase");
+        return;
+    }
+    if (strlen (av[2]) < 8) {
+        err (FALSE, "passphrase must be at least 8 characters");
+        return;
+    }
+    snmp_sess_init (&session);
+    session.version = SNMP_VERSION_3;
+    session.peername = hostname;
+    session.securityName = xstrdup (av[1]);
+    session.securityNameLen = strlen (av[1]);
+
+    session.securityLevel = SNMP_SEC_LEVEL_AUTHNOPRIV;
+    session.securityAuthProto = usmHMACMD5AuthProtocol;
+    session.securityAuthProtoLen =
+                              sizeof (usmHMACMD5AuthProtocol) / sizeof (oid);
+    session.securityAuthKeyLen = USM_AUTH_KU_LEN;
+    
+    if (generate_Ku (session.securityAuthProto,
+                     session.securityAuthProtoLen,
+                     (u_char *)av[2], strlen (av[2]),
+                     session.securityAuthKey,
+                     &session.securityAuthKeyLen) != SNMPERR_SUCCESS) {
+        err (FALSE, "Error generating Ku from auth pass phrase");
+    }
+
+    if (!(*ssp = snmp_open (&session)))
+        err (FALSE, "snmp_open failed");
+}
+
+static void
+finish (char **av, struct snmp_session **ssp)
+{
+    snmp_close (*ssp); 
+    *ssp = NULL;
+}
+
+static void
+help (void)
+{
+    printf ("Valid commands are:\n");
+    printf ("  start_v1 community\n");
+    printf ("  start_v2c community\n");
+    printf ("  start_v3 name passphrase\n");
+    printf ("  finish\n");
+    printf ("  get oid\n");
+    printf ("  set oid\n");
+}
+
+static int
+docmd (char **av, char *hostname, struct snmp_session **ssp)
 {
     int rc = 0;
 
     if (av[0] != NULL) {
-        if (strcmp(av[0], "help") == 0)
-            help();
-        else if (strcmp(av[0], "get") == 0)
-            get(av, ss);
+        if (strcmp (av[0], "help") == 0)
+            help ();
+        else if (strcmp (av[0], "get") == 0)
+            get (av, ssp);
+        else if (strcmp (av[0], "start_v1") == 0)
+            start_v1 (av, hostname, ssp);
+        else if (strcmp (av[0], "start_v2c") == 0)
+            start_v2c (av, hostname, ssp);
+        else if (strcmp (av[0], "start_v3") == 0)
+            start_v3 (av, hostname, ssp);
+        else if (strcmp (av[0], "finish") == 0)
+            finish (av, ssp);
         else 
-            printf("type \"help\" for a list of commands\n");
+            printf ("type \"help\" for a list of commands\n");
     }
     return rc;
 }
 
-void shell(struct snmp_session *ss)
+static void
+shell (char *hostname)
 {
     char buf[128];
     char **av;
     int rc = 0;
+    struct snmp_session *ss = NULL;
 
     while (rc == 0) {
-        printf("snmppower> ");
-        fflush(stdout);
-        if (fgets(buf, sizeof(buf), stdin)) {
-            av = argv_create(buf, "");
-            rc = docmd(av, ss);
-            argv_destroy(av);
+        printf ("snmppower> ");
+        fflush (stdout);
+        if (fgets (buf, sizeof (buf), stdin)) {
+            av = argv_create (buf, "");
+            rc = docmd (av, hostname, &ss);
+            argv_destroy (av);
         } else
             rc = 1;
     }
 }
 
-void
-usage(void)
+static void
+usage (void)
 {
-    fprintf(stderr, "Usage: snmppower [--oid OID] --community COMMUNITY hostname\n");
+    fprintf (stderr, "Usage: snmppower -h hostname\n");
     exit(1);
 }
 
 int
-main(int argc, char *argv[])
+main (int argc, char *argv[])
 {
     int c;
-    struct snmp_session session, *ss;
+    char *hostname = NULL;
 
-    err_init(basename(argv[0]));
+    err_init (basename(argv[0]));
 
     init_snmp ("snmppower");
-    snmp_sess_init (&session);
-    session.version = SNMP_VERSION_1;
-    session.community = (u_char *)DEFAULT_COMMUNITY;
-    session.community_len = strlen (DEFAULT_COMMUNITY);
 
     while ((c = getopt_long(argc, argv, OPTIONS, longopts, NULL)) != EOF) {
         switch (c) {
-            case 'o': /* --oid */
-                //oid = xstrdup(optarg);
-                break;
-            case 'c': /* --community */
-                session.community = (u_char *)optarg;
-                session.community_len = strlen (optarg);
+            case 'h':  /* --hostname */
+                hostname = optarg;
                 break;
             default:
                 usage();
                 break;
         }
     }
-    if (optind != argc - 1)
-        usage();
-    session.peername = argv[optind];
+    if (optind != argc)
+        usage ();
+    if (hostname == NULL) 
+        usage ();
 
-    if (!(ss = snmp_open (&session)))
-        err_exit (FALSE, "snmp_open failed");
-
-    shell(ss);
-
-    snmp_close (ss); 
+    shell(hostname);
 
     exit(0);
 }
