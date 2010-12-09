@@ -60,6 +60,7 @@ AC_CHECK_TYPES(socklen_t, [], [], [#include <sys/socket.h>])
 # Check for httppower, genders
 ##
 AC_HTTPPOWER
+AC_SNMPPOWER
 AM_CONDITIONAL(WITH_HTTPPOWER, [test "$ac_with_httppower" = "yes"])
 AM_CONDITIONAL(WITH_SNMPPOWER, [test "$ac_with_snmppower" = "yes"])
 AC_GENDERS

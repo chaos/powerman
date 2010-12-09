@@ -53,6 +53,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_httppower.m4 \
 	$(top_srcdir)/config/ac_pkgconfig.m4 \
 	$(top_srcdir)/config/ac_runas.m4 \
+	$(top_srcdir)/config/ac_snmppower.m4 \
 	$(top_srcdir)/config/ac_wrap.m4 \
 	$(top_srcdir)/config/x_ac_check_cond_lib.m4 \
 	$(top_srcdir)/config/x_ac_expand_install_dirs.m4 \

@@ -67,22 +67,22 @@ get (char **av, struct snmp_session **ssp)
         err (FALSE, "start session first");
         return;
     }
-
     pdu = snmp_pdu_create (SNMP_MSG_GET);
-    get_node(av[1], anOID, &anOID_len);
+    get_node (av[1], anOID, &anOID_len);
     snmp_add_null_var (pdu, anOID, anOID_len);
     status = snmp_synch_response (*ssp, pdu, &response);
     if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
         for (vars = response->variables; vars; vars = vars->next_variable) {
-            //print_variable (vars->name, vars->name_length, vars);
             switch (vars->type) {
                 case ASN_OCTET_STR:
-                    printf("%s: %*s\n", av[1], vars->val_len, vars->val.string);
+                    printf("%s: %*s\n", av[1],
+                           (int)vars->val_len, vars->val.string);
                     break;
                 case ASN_INTEGER:
                     printf("%s: %ld\n", av[1], *vars->val.integer);
                     break;
                 default:
+                    print_variable (vars->name, vars->name_length, vars);
                     break;
             }
         }
@@ -98,32 +98,68 @@ get (char **av, struct snmp_session **ssp)
 }
 
 static void
-start_v1 (char **av, char *hostname, struct snmp_session **ssp)
+set (char **av, struct snmp_session **ssp)
 {
-    struct snmp_session session;
+    struct snmp_pdu *pdu;
+    struct snmp_pdu *response;
+    oid anOID[MAX_OID_LEN];
+    size_t anOID_len = MAX_OID_LEN;
+    struct variable_list *vars;
+    int status;
 
     if (av[1] == NULL) {
-        err (FALSE, "missing community");
+        err (FALSE, "missing oid");
         return;
     }
-    if (*ssp) {
-        err (FALSE, "finish current session first");
+    if (av[2] == NULL) {
+        err (FALSE, "missing type");
         return;
     }
-    snmp_sess_init (&session);
-    session.version = SNMP_VERSION_1;
-    session.community = (u_char *)xstrdup (av[1]);
-    session.community_len = strlen (av[1]);
-    session.peername = hostname;
-
-    if (!(*ssp = snmp_open (&session))) {
-        err (FALSE, "snmp_open failed");
-        xfree (session.community);
+    if (av[3] == NULL) {
+        err (FALSE, "missing value");
+        return;
     }
+    if (*ssp == NULL) {
+        err (FALSE, "start session first");
+        return;
+    }
+    pdu = snmp_pdu_create (SNMP_MSG_SET);
+    if (get_node (av[1], anOID, &anOID_len) == NULL) {
+        snmp_free_pdu (pdu);
+        printf ("error parsing oid\n");
+        return;
+    }
+    snmp_add_var (pdu, anOID, anOID_len, *(av[2]), av[3]);
+    status = snmp_synch_response (*ssp, pdu, &response);
+    if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
+        for (vars = response->variables; vars; vars = vars->next_variable) {
+            switch (vars->type) {
+                case ASN_OCTET_STR:
+                    printf("%s: %*s\n", av[1],
+                           (int)vars->val_len, vars->val.string);
+                    break;
+                case ASN_INTEGER:
+                    printf("%s: %ld\n", av[1], *vars->val.integer);
+                    break;
+                default:
+                    print_variable (vars->name, vars->name_length, vars);
+                    break;
+            }
+        }
+    } else {
+        if (status == STAT_SUCCESS)
+            err_exit (FALSE, "error in packet: %s",
+                      snmp_errstring (response->errstat));
+        else
+            snmp_sess_perror ("snmpset", *ssp);
+    }
+    if (response)
+        snmp_free_pdu (response);
 }
 
+
 static void
-start_v2c (char **av, char *hostname, struct snmp_session **ssp)
+start_v1v2c (char **av, int version, char *hostname, struct snmp_session **ssp)
 {
     struct snmp_session session;
 
@@ -136,7 +172,7 @@ start_v2c (char **av, char *hostname, struct snmp_session **ssp)
         return;
     }
     snmp_sess_init (&session);
-    session.version = SNMP_VERSION_2c;
+    session.version = version;
     session.community = (u_char *)xstrdup (av[1]);
     session.community_len = strlen (av[1]);
     session.peername = hostname;
@@ -204,7 +240,7 @@ help (void)
     printf ("  start_v3 name passphrase\n");
     printf ("  finish\n");
     printf ("  get oid\n");
-    printf ("  set oid\n");
+    printf ("  set oid type value\n");
 }
 
 static int
@@ -217,10 +253,12 @@ docmd (char **av, char *hostname, struct snmp_session **ssp)
             help ();
         else if (strcmp (av[0], "get") == 0)
             get (av, ssp);
+        else if (strcmp (av[0], "set") == 0)
+            set (av, ssp);
         else if (strcmp (av[0], "start_v1") == 0)
-            start_v1 (av, hostname, ssp);
+            start_v1v2c (av, SNMP_VERSION_1, hostname, ssp);
         else if (strcmp (av[0], "start_v2c") == 0)
-            start_v2c (av, hostname, ssp);
+            start_v1v2c (av, SNMP_VERSION_2c, hostname, ssp);
         else if (strcmp (av[0], "start_v3") == 0)
             start_v3 (av, hostname, ssp);
         else if (strcmp (av[0], "finish") == 0)

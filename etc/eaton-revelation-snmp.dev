@@ -5,27 +5,29 @@ specification  "eaton-revelation-snmp" {
                     "11" "12" "13" "14" "15" "16" "17" "18" "19" }
 
 	script login {
+		expect "snmppower> "
 		send "start_v2c private\n"
 		expect "snmppower> "
 	}
 	script status {
 		send "get enterprises.534.6.6.6.1.2.2.1.3.%s\n"
-		expect "enterprises.534.6.6.6.1.2.2.1.3.([0-9]+): (0|1)\r\n"
+		expect "enterprises.534.6.6.6.1.2.2.1.3.([0-9]+): (0|1)"
 		setplugstate $1 $2 on="1" off="0"
+		expect "snmppower> "
 	}
 	script on {
-		send "set enterprises.534.6.6.6.1.2.2.1.3.%s 1\n"
+		send "set enterprises.534.6.6.6.1.2.2.1.3.%s i 1\n"
 		expect "snmppower> "
 	}		
 	script off {
-		send "set enterprises.534.6.6.6.1.2.2.1.3.%s 0\n"
+		send "set enterprises.534.6.6.6.1.2.2.1.3.%s i 0\n"
 		expect "snmppower> "
 	}		
 	script cycle {
-		send "set enterprises.534.6.6.6.1.2.2.1.3.%s 0\n"
+		send "set enterprises.534.6.6.6.1.2.2.1.3.%s i 0\n"
 		expect "snmppower> "
 		delay "5"
-		send "set enterprises.534.6.6.6.1.2.2.1.3.%s 1\n"
+		send "set enterprises.534.6.6.6.1.2.2.1.3.%s i 1\n"
 		expect "snmppower> "
 	}		
 }

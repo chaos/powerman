@@ -13,6 +13,7 @@ pkgsysconf_DATA = \
 	appro-greenblade.dev \
 	bashfun.dev \
 	baytech.dev \
+	baytech-snmp.dev \
 	baytech-rpc28-nc.dev \
 	baytech-rpc3-nc.dev \
 	cb-7050.dev \
@@ -21,6 +22,7 @@ pkgsysconf_DATA = \
 	cyclades-pm20.dev \
 	cyclades-pm42.dev \
 	dli.dev \
+	eaton-revelation-snmp.dev \
 	hp3488.dev \
 	hpilo.dev \
 	hpmp.dev \
