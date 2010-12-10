@@ -17,21 +17,23 @@ specification  "eaton-revelation-snmp" {
 	}
 	script on {
 		send "set enterprises.534.6.6.6.1.2.2.1.3.%s i 1\n"
-		expect   "enterprises.534.6.6.6.1.2.2.1.3.[0-9]+ 1\n"
+		expect   "enterprises.534.6.6.6.1.2.2.1.3.[0-9]+: 1\n"
 		expect "snmppower> "
+                delay 0.3
 	}		
 	script off {
 		send "set enterprises.534.6.6.6.1.2.2.1.3.%s i 0\n"
-		expect   "enterprises.534.6.6.6.1.2.2.1.3.[0-9]+ 0\n"
+		expect   "enterprises.534.6.6.6.1.2.2.1.3.[0-9]+: 0\n"
 		expect "snmppower> "
 	}		
 	script cycle {
 		send "set enterprises.534.6.6.6.1.2.2.1.3.%s i 0\n"
-		expect   "enterprises.534.6.6.6.1.2.2.1.3.[0-9]+ 0\n"
+		expect   "enterprises.534.6.6.6.1.2.2.1.3.[0-9]+: 0\n"
 		expect "snmppower> "
-		delay "5"
+		delay 5
 		send "set enterprises.534.6.6.6.1.2.2.1.3.%s i 1\n"
-		expect   "enterprises.534.6.6.6.1.2.2.1.3.[0-9]+ 1\n"
+		expect   "enterprises.534.6.6.6.1.2.2.1.3.[0-9]+: 1\n"
 		expect "snmppower> "
+                delay 0.3
 	}		
 }
