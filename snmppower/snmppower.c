@@ -1,6 +1,5 @@
-/*****************************************************************************\ *  $Id:$
- *****************************************************************************
- *  Copyright (C) 2007-2008 The Regents of the University of California.
+/*****************************************************************************\
+ *  Copyright (C) 2010 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Jim Garlick <garlick@llnl.gov>
  *  UCRL-CODE-2002-008.

@@ -104,7 +104,6 @@ if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
 
 %files
 %defattr(-,root,root,0755)
-%doc ChangeLog 
 %doc DISCLAIMER 
 %doc COPYING
 %doc NEWS

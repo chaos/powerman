@@ -17,6 +17,9 @@ endif
 if WITH_SNMPPOWER
 SUBDIRS += snmppower
 endif
+if WITH_H8POWER
+SUBDIRS += h8power
+endif
 
 # Create run dir for powerman.  Chown will fail if non root - ignore it.
 install-data-local:

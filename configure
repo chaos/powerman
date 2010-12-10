@@ -464,7 +464,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os META_NAME META_VERSION META_RELEASE META_ALIAS META_DATE META_AUTHOR META_LT_CURRENT META_LT_REVISION META_LT_AGE X_PREFIX X_EXEC_PREFIX X_BINDIR X_SBINDIR X_LIBEXECDIR X_DATADIR X_SYSCONFDIR X_SHAREDSTATEDIR X_LOCALSTATEDIR X_LIBDIR X_INCLUDEDIR X_OLDINCLUDEDIR X_INFODIR X_MANDIR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE GCCWARN LN_S LEX LEXLIB LEX_OUTPUT_ROOT YACC SED EGREP ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL WITH_GNU_LD_TRUE WITH_GNU_LD_FALSE WITH_HTTPPOWER_TRUE WITH_HTTPPOWER_FALSE WITH_SNMPPOWER_TRUE WITH_SNMPPOWER_FALSE LIBGENDERS LIBCURSES LIBFORKPTY LIBWRAP LIBCURL LIBLUA LIBMUNGE LIBSNMP WITH_PKG_CONFIG_TRUE WITH_PKG_CONFIG_FALSE pkgconfigdir RUN_AS_USER LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS build build_cpu build_vendor build_os host host_cpu host_vendor host_os target target_cpu target_vendor target_os META_NAME META_VERSION META_RELEASE META_ALIAS META_DATE META_AUTHOR META_LT_CURRENT META_LT_REVISION META_LT_AGE X_PREFIX X_EXEC_PREFIX X_BINDIR X_SBINDIR X_LIBEXECDIR X_DATADIR X_SYSCONFDIR X_SHAREDSTATEDIR X_LOCALSTATEDIR X_LIBDIR X_INCLUDEDIR X_OLDINCLUDEDIR X_INFODIR X_MANDIR INSTALL_PROGRAM INSTALL_SCRIPT INSTALL_DATA CYGPATH_W PACKAGE VERSION ACLOCAL AUTOCONF AUTOMAKE AUTOHEADER MAKEINFO install_sh STRIP ac_ct_STRIP INSTALL_STRIP_PROGRAM mkdir_p AWK SET_MAKE am__leading_dot AMTAR am__tar am__untar MAINTAINER_MODE_TRUE MAINTAINER_MODE_FALSE MAINT CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT DEPDIR am__include am__quote AMDEP_TRUE AMDEP_FALSE AMDEPBACKSLASH CCDEPMODE am__fastdepCC_TRUE am__fastdepCC_FALSE GCCWARN LN_S LEX LEXLIB LEX_OUTPUT_ROOT YACC SED EGREP ECHO AR ac_ct_AR RANLIB ac_ct_RANLIB CPP CXX CXXFLAGS ac_ct_CXX CXXDEPMODE am__fastdepCXX_TRUE am__fastdepCXX_FALSE CXXCPP F77 FFLAGS ac_ct_F77 LIBTOOL WITH_GNU_LD_TRUE WITH_GNU_LD_FALSE WITH_HTTPPOWER_TRUE WITH_HTTPPOWER_FALSE WITH_SNMPPOWER_TRUE WITH_SNMPPOWER_FALSE WITH_H8POWER_TRUE WITH_H8POWER_FALSE LIBGENDERS LIBCURSES LIBFORKPTY LIBWRAP LIBCURL LIBLUA LIBMUNGE LIBSNMP WITH_PKG_CONFIG_TRUE WITH_PKG_CONFIG_FALSE pkgconfigdir RUN_AS_USER LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1047,6 +1047,7 @@ Optional Packages:
                           include additional configurations [automatic]
   --with-httppower        Build httppower executable
   --with-snmppower        Build snmppower executable
+  --with-h8power          Build h8power executable
   --with-genders          Build genders support
   --with-ncurses          Force the use of ncurses over curses
   --with-pkgconfig-dir=PATH
@@ -4389,7 +4390,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 4392 "configure"' > conftest.$ac_ext
+  echo '#line 4393 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -5988,7 +5989,7 @@ fi
 
 
 # Provide some information about the compiler.
-echo "$as_me:5991:" \
+echo "$as_me:5992:" \
      "checking for Fortran 77 compiler version" >&5
 ac_compiler=`set X $ac_compile; echo $2`
 { (eval echo "$as_me:$LINENO: \"$ac_compiler --version </dev/null >&5\"") >&5
@@ -7051,11 +7052,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7054: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7055: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7058: \$? = $ac_status" >&5
+   echo "$as_me:7059: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7319,11 +7320,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7322: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7323: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:7326: \$? = $ac_status" >&5
+   echo "$as_me:7327: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -7423,11 +7424,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:7426: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:7427: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:7430: \$? = $ac_status" >&5
+   echo "$as_me:7431: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -8892,7 +8893,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 8895 "configure"' > conftest.$ac_ext
+    echo '#line 8896 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -9789,7 +9790,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9792 "configure"
+#line 9793 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -9889,7 +9890,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<EOF
-#line 9892 "configure"
+#line 9893 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -12232,11 +12233,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12235: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12236: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12239: \$? = $ac_status" >&5
+   echo "$as_me:12240: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -12336,11 +12337,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12339: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12340: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:12343: \$? = $ac_status" >&5
+   echo "$as_me:12344: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -12872,7 +12873,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 12875 "configure"' > conftest.$ac_ext
+    echo '#line 12876 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -13930,11 +13931,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13933: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13934: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13937: \$? = $ac_status" >&5
+   echo "$as_me:13938: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -14034,11 +14035,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:14037: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:14038: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:14041: \$? = $ac_status" >&5
+   echo "$as_me:14042: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15483,7 +15484,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 15486 "configure"' > conftest.$ac_ext
+    echo '#line 15487 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -16261,11 +16262,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16264: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16265: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16268: \$? = $ac_status" >&5
+   echo "$as_me:16269: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16529,11 +16530,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16532: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16533: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:16536: \$? = $ac_status" >&5
+   echo "$as_me:16537: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -16633,11 +16634,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:16636: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:16637: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:16640: \$? = $ac_status" >&5
+   echo "$as_me:16641: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18102,7 +18103,7 @@ linux*)
   libsuff=
   case "$host_cpu" in
   x86_64*|s390x*|powerpc64*)
-    echo '#line 18105 "configure"' > conftest.$ac_ext
+    echo '#line 18106 "configure"' > conftest.$ac_ext
     if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -20223,6 +20224,32 @@ echo "${ECHO_T}${ac_snmppower_test=no}" >&6
   fi
 
 
+  echo "$as_me:$LINENO: checking for whether to build h8power executable" >&5
+echo $ECHO_N "checking for whether to build h8power executable... $ECHO_C" >&6
+
+# Check whether --with-h8power or --without-h8power was given.
+if test "${with_h8power+set}" = set; then
+  withval="$with_h8power"
+   case "$withval" in
+        no)  ac_h8power_test=no ;;
+        yes) ac_h8power_test=yes ;;
+        *)   { { echo "$as_me:$LINENO: error: bad value \"$withval\" for --with-h8power" >&5
+echo "$as_me: error: bad value \"$withval\" for --with-h8power" >&2;}
+   { (exit 1); exit 1; }; } ;;
+      esac
+
+
+fi;
+  echo "$as_me:$LINENO: result: ${ac_h8power_test=no}" >&5
+echo "${ECHO_T}${ac_h8power_test=no}" >&6
+
+  if test "$ac_h8power_test" = "yes"; then
+     ac_with_h8power=yes
+  else
+     ac_with_h8power=no
+  fi
+
+
 
 if test "$ac_with_httppower" = "yes"; then
   WITH_HTTPPOWER_TRUE=
@@ -20240,6 +20267,16 @@ if test "$ac_with_snmppower" = "yes"; then
 else
   WITH_SNMPPOWER_TRUE='#'
   WITH_SNMPPOWER_FALSE=
+fi
+
+
+
+if test "$ac_with_h8power" = "yes"; then
+  WITH_H8POWER_TRUE=
+  WITH_H8POWER_FALSE='#'
+else
+  WITH_H8POWER_TRUE='#'
+  WITH_H8POWER_FALSE=
 fi
 
 
@@ -22200,7 +22237,7 @@ echo "${ECHO_T}${RUN_AS_USER}" >&6
 ##
 # Epilogue.
 ##
-                                                                                                                                                                                                                                                          ac_config_files="$ac_config_files Makefile powerman.spec libpowerman/Makefile libpowerman/libpowerman.pc liblsd/Makefile libcommon/Makefile powerman/Makefile powermand/Makefile httppower/Makefile snmppower/Makefile plmpower/Makefile etc/Makefile scripts/Makefile scripts/powerman heartbeat/Makefile test/Makefile man/Makefile man/powerman.1 man/libpowerman.3 man/powerman.conf.5 man/powerman.dev.5 man/httppower.8 man/plmpower.8 man/powermand.8 man/vpcd.8"
+                                                                                                                                                                                                                                                                              ac_config_files="$ac_config_files Makefile powerman.spec libpowerman/Makefile libpowerman/libpowerman.pc liblsd/Makefile libcommon/Makefile powerman/Makefile powermand/Makefile httppower/Makefile h8power/Makefile h8power/h8power.1 snmppower/Makefile plmpower/Makefile etc/Makefile scripts/Makefile scripts/powerman heartbeat/Makefile test/Makefile man/Makefile man/powerman.1 man/libpowerman.3 man/powerman.conf.5 man/powerman.dev.5 man/httppower.8 man/plmpower.8 man/powermand.8 man/vpcd.8"
 
 
 cat >confcache <<\_ACEOF
@@ -22340,6 +22377,13 @@ if test -z "${WITH_SNMPPOWER_TRUE}" && test -z "${WITH_SNMPPOWER_FALSE}"; then
   { { echo "$as_me:$LINENO: error: conditional \"WITH_SNMPPOWER\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 echo "$as_me: error: conditional \"WITH_SNMPPOWER\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${WITH_H8POWER_TRUE}" && test -z "${WITH_H8POWER_FALSE}"; then
+  { { echo "$as_me:$LINENO: error: conditional \"WITH_H8POWER\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+echo "$as_me: error: conditional \"WITH_H8POWER\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -22803,6 +22847,8 @@ do
   "powerman/Makefile" ) CONFIG_FILES="$CONFIG_FILES powerman/Makefile" ;;
   "powermand/Makefile" ) CONFIG_FILES="$CONFIG_FILES powermand/Makefile" ;;
   "httppower/Makefile" ) CONFIG_FILES="$CONFIG_FILES httppower/Makefile" ;;
+  "h8power/Makefile" ) CONFIG_FILES="$CONFIG_FILES h8power/Makefile" ;;
+  "h8power/h8power.1" ) CONFIG_FILES="$CONFIG_FILES h8power/h8power.1" ;;
   "snmppower/Makefile" ) CONFIG_FILES="$CONFIG_FILES snmppower/Makefile" ;;
   "plmpower/Makefile" ) CONFIG_FILES="$CONFIG_FILES plmpower/Makefile" ;;
   "etc/Makefile" ) CONFIG_FILES="$CONFIG_FILES etc/Makefile" ;;
@@ -23013,6 +23059,8 @@ s,@WITH_HTTPPOWER_TRUE@,$WITH_HTTPPOWER_TRUE,;t t
 s,@WITH_HTTPPOWER_FALSE@,$WITH_HTTPPOWER_FALSE,;t t
 s,@WITH_SNMPPOWER_TRUE@,$WITH_SNMPPOWER_TRUE,;t t
 s,@WITH_SNMPPOWER_FALSE@,$WITH_SNMPPOWER_FALSE,;t t
+s,@WITH_H8POWER_TRUE@,$WITH_H8POWER_TRUE,;t t
+s,@WITH_H8POWER_FALSE@,$WITH_H8POWER_FALSE,;t t
 s,@LIBGENDERS@,$LIBGENDERS,;t t
 s,@LIBCURSES@,$LIBCURSES,;t t
 s,@LIBFORKPTY@,$LIBFORKPTY,;t t

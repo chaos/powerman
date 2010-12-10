@@ -1,0 +1,157 @@
+.TH h8power 1 "@META_DATE@" "@META_ALIAS@" "@META_NAME@"
+.SH NAME
+h8power \- power utility for xseries service processor
+.SH SYNOPSIS
+.B h8power
+.I "--device [/dev/ttySx|host:port] [options]"
+.SH DESCRIPTION
+.B h8power
+implements power control on IBM x335 and x345 systems using direct communication
+with the H8 service processors.  See the hardware.txt file provided with
+this package for a description of the hardware needed to accomplish this.
+.B h8power
+accepts the following options:
+.TP
+.I "-d, --device [/dev/ttySx|host:port]"
+[required] Sets the path to a serial device or raw terminal server port 
+connected to the RS-485 network that is to be controlled.
+.TP
+.I "-s, --spnames host1,host2,..."
+[optional] Sets the list of hostnames that can be the targets of 
+power operations.  The H8 SP names must be set to match these hostnames.  
+Without this argument, any H8 that sends out a heartbeat can be the target 
+of power operations, as long as it is not in the ``ignore'' list (see below).  
+Hostnames in the list may also be specified in a range format;
+see HOST RANGES below.
+.TP
+.I "-i, --ignore host1,host2,..."
+[optional] Sets the list of hostnames (SP names) whose heartbeat packets will 
+be ignored.  This is useful, for example, if the host running
+.B h8power
+is connected to the RS-485 network.  In that case, some other form of 
+power control such as an external remote power controller is desirable 
+for that host, but if it is merely omitted from the ``spnames'' list, each 
+heartbeat will cause an ``unexpected hearbeat from...'' message.
+Hostnames in the list may also be specified in a range format;
+see HOST RANGES below.
+.TP
+.I "-a, --address addr"
+[optional] Sets the address to something other than the default of 0x01.
+It should be possible to set a unique address between 0x01 and 0x1e 
+(inclusive) and operate multiple instances of
+.B h8power
+on a single RS-485 network, for example to have a redundant power control
+point, or to have a way to control a management node running 
+.B powerman(1) 
+from another node on the same RS-485 chain; however, this has not been 
+extensively tested.
+.LP
+Upon successful opening of the serial device or connection to the terminal
+server port, 
+.B h8power 
+begins listening
+for heartbeats on the RS-485 network and offers an interactive interface to 
+the user.
+.SH "ERROR HANDLING"
+.B h8power
+logs errors to the syslog LOG_DAEMON facility, unless debugging mode is on
+(see below), in which case stderr is used.
+Of particular interest in debugging problems are the ``no heartbeat from...''
+and ``unexpected heartbeat from...'' messages.  These messages indicate
+improperly set SP names or nodes that are missing from the RS-485 network.
+.SH "INTERACTIVE COMMANDS"
+.B h8power
+provides the following interactive commands at the h8power> prompt:
+.TP
+.I help
+lists available commands
+.TP
+.I list 
+lists nodes and their H8 status, based on heartbeat packets received.
+.TP
+.I "stat [node]"
+queries power status for all nodes or only the specified node.
+.TP
+.I "on [node]"
+turns on all nodes, or only the specified node.
+.TP
+.I "off [node]"
+turns off all nodes, or only the specified node.
+.TP
+.I "debug"
+toggles debug mode.  In debug mode, all errors go to the tty instead of
+syslog.  
+.TP
+.I "sniff [level]"
+Enable packet sniffing.  Level 0 is no sniffing, 1 is interpreted headers 
+only, 2 is interpreted headers plus a hex dump of data, and 3 interpreted
+headers, plus hex dump of headers, data, and trailers.  Note that 
+.B h8power
+never transmits packets on the RS-485 network unless it is processing an
+on, off, or stat command, thus it is possible to make a non-invasive packet 
+sniffing tool out of a laptop running h8power and an RS-232 to RS-485 protocol
+converter.  The sniffer can be attached at any point in the RS-485 chain and
+can, for example, observe an RSA adapter controlling a chain of nodes, or
+another instance of
+.B h8power
+running under
+.B powerman(1).
+.TP
+.I "quit"
+quits 
+.B h8power.
+.SH "HOST RANGES"
+As noted above, 
+.B h8power
+accepts a range of hostnames in
+the general form: prefix[n-m,l-k,...], where n < m and l < k, etc.,
+as an alternative to explicit comma seperated lists of hosts.  This form 
+should not be confused with regular expression character classes (also denoted
+by ``[]''). For example, foo[19] does not represent foo1 or foo9, but
+rather represents a degenerate range: foo19. 
+.LP
+This range syntax is meant
+only as a convenience on clusters with a prefixNN naming convention and
+specification of ranges should not be considered necessary -- the list
+foo1,foo9 could be specified as such, or by the range foo[1,9].
+.LP
+Some examples of range usage follow:
+.nf
+    foo[01-05] instead of foo01,foo02,foo03,foo04,foo05
+    foo[7,9-10] instead of foo7,foo9,foo10
+    foo[0-3] instead of foo0,foo1,foo2,foo3
+.fi
+.LP
+As a reminder to the reader, some shells will interpret brackets ('['
+and ']') for pattern matching.  Depending on your shell, it may be
+necessary to enclose ranged lists within quotes.  For example, in
+tcsh, the first example above should be executed as:
+.nf
+    h8power /dev/ttyD000 "foo[01-05]"
+.fi
+.SH "USE WITH POWERMAN"
+The 
+.B powerman
+device configuration file 
+.I ibmh8.dev
+supplied with
+.B powerman
+1.0.17 and beyond can be used to control one or more instances of
+.B h8power
+in coprocess mode.  Multiple RS-485 networks are attached to a single
+node running
+.B powerman,
+which then starts an instance of
+.B h8power
+for each network, and sends it commands via standard input.
+.SH "CAVEATS"
+.B h8power
+does not know how to retrieve other information kept by the H8's such
+as temperature.
+.SH "ORIGIN"
+PowerMan was originally developed by Andrew Uselton on LLNL's Linux clusters.
+This software is open source and distributed under the terms of the GNU GPL.
+.SH "SEE ALSO"
+powerman(1), powerman.conf(5), powermand(1)
+.PP
+\fBhttp://code.google.com/p/powerman\fR

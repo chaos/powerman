@@ -1,0 +1,137 @@
+This howto explains how x-series service processors are used with powerman
+and how to set up a new system.
+
++------------+
+| Background |
++------------+
+
+The service processor is an H8 microprocessor embedded in the motherboard
+of each node, which has a connection to an RS-485 service processor network.
+Up to about 20 nodes are daisy-chained on one RS-485 network.  Each RS-485 
+network is in turn connected to a "blue box" that converts RS-485 to RS-232, 
+and the blue box is connected to a serial port on the "i" suffix management 
+node.
+
+For each blue box, an instance of the "h8power" program runs on the management
+node.  H8power manages the service processor protocol running on one RS-485 
+network, and provides an interface that PowerMan can talk to which looks
+(to powerman) similar to a traditional remote power control device like a 
+Baytech.  PowerMan starts up as many instances of h8power as it needs, and
+communicates with them interactively over a pty.
+
+When powermand starts up, all the h8power processes are started, based on
+the configuration in /etc/powerman/powerman.conf.  Each one opens up a 
+unique serial port provided on its command line, and listens for heartbeats 
+on the attached RS-485 network.  Heartbeats are sent out by the nodes at 
+30 second intervals.  Until the first heartbeat is received from a node, 
+Powerman (h8power) will be unable to talk to that node.
+
+Heartbeats contain the "spname" of the node.  The spname should be set 
+equal to `hostname -s` by rc.local using the /usr/sbin/h8name utility.
+If the spname is set incorrectly, the node's heartbeat will contain an
+unrecognized name, and h8power will generate an "unexpected heartbeat from..."
+syslog message.  If a node that is expected to be on a particular chain
+never reports in, or fails to report in for 4 minutes, h8power will 
+generate a "no heartbeat" syslog message.  If a node finally reports in after 
+being absent, h8power will generate a "heartbeat restored" message.
+
+H8power supports three commands: on, off, and status.  On and off commands
+are followed automatically by status commands, so the success or failure of
+a power action can be reported.  Commands are serialized for a particular
+chain.  Requests that do not receive a response, or power action commands
+that do not result in the desired change of state are retried; after a fixed
+number of retries, h8power gies up.  Thus, garbled RS-485 packets from an 
+electrically unsound RS-485 network can appear as intermittant failures or 
+slow response time.  H8power generates "power command failed" or "status 
+query timed out" syslog entries when requests and power actions exceed the
+maximum number of retries.  PowerMan has a "master device timeout" of 30
+seconds.  If a query takes longer than that, powerman will kill and restart
+that instance of h8power, which will then have to start from scratch collecting
+heartbeats (things are really bad if a query takes 30 seconds!)
+
+The h8power command is further documented in a man page, see h8power(1).
+
++--------------+
+| Installation |
++--------------+
+
+The following steps are required to bring up a new service processor network:
+
+[obsolete gack about configuring DigiBoards removed.]
+[N.B. it is also possible to use a terminal server instead of a serial port]
+
+1) Attach CAT5 cables between blue boxes and serial ports
+
+2) Set up a powerman.conf appropriate for your config.    Here is an example
+   with one chain.  On larger systems, there would be one "device" line for
+   each RS-485 chain, and "h8" would become a unique device name.
+   Note the -i option to h8power is only wanted on the chain containing
+   the management node (to ignore that node).
+
+  include "/etc/powerman/ibmh8.dev"
+
+  tcpwrappers yes
+
+  device "h0" "ibmh8" "/usr/sbin/h8power -d /dev/ttyD000 -s adev[0-15],adevj -i adevi |&"
+
+  node "adevj" "h8" 
+  node "adev0" "h8" 
+  node "adev1" "h8" 
+  node "adev2" "h8" 
+  node "adev3" "h8" 
+  node "adev4" "h8" 
+  node "adev5" "h8" 
+  node "adev6" "h8" 
+  node "adev7" "h8" 
+  node "adev8" "h8" 
+  node "adev9" "h8" 
+  node "adev10" "h8"
+  node "adev11" "h8"
+  node "adev12" "h8"
+  node "adev13" "h8"
+  node "adev14" "h8"
+  node "adev15" "h8"
+
+3) Start powerman and monitor /var/log/messages for errors from h8power
+as described in the background section.
+
+  service powerman start
+  while true; do pm -q; done  # start exercising all the chains!
+
+  Log says				Possible problem
+  - "unexpected heartbeat from" 	- powerman device config line includes 
+					  wrong host range
+					- spname set incorrectly
+					- blue box plugged into wrong digi port
+
+  - "no heartbeat from"			- powerman device config line includes 
+					  wrong host range
+					- spname set incorrectly
+					- blue box plugged into wrong digi port
+					- rs485 chain open
+
+  - "power command failed"		- chain cables not properly seated
+    or "status query timed out" 	- improper termination
+
+  - h8power killed and restarted        - really bad version of above
+    (query took > 30sec)
+
+If desired you can watch powerman's interaction with the various h8power
+programs by adding a -T (telemetry) option to the powerman query.  This is 
+sometimes useful to get another level of insight into problems.
+
++--------------------+
+| Protocol Debugging |
++--------------------+
+
+Homebrew RS-485 sniffer: 
+  Blue box assembly attached to any point in the chain
+  Laptop with xseries-h8power installed, serial port connected to blue box
+  Make sure gettys are not running on ttyS0 then run 
+     h8power  --device /dev/ttyS0
+     h8power> sniff 2  # maximum dumpage  1= one-line summaries of packets only
+
+You can get the same effect by stopping powerman and running h8power manually
+on the management node.  To debug power commands you can set sniff to 1 or 2
+and start issuing on/off/stat commands and watch the network interchange 
+in all its gory detail.

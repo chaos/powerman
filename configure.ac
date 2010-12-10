@@ -61,8 +61,10 @@ AC_CHECK_TYPES(socklen_t, [], [], [#include <sys/socket.h>])
 ##
 AC_HTTPPOWER
 AC_SNMPPOWER
+AC_H8POWER
 AM_CONDITIONAL(WITH_HTTPPOWER, [test "$ac_with_httppower" = "yes"])
 AM_CONDITIONAL(WITH_SNMPPOWER, [test "$ac_with_snmppower" = "yes"])
+AM_CONDITIONAL(WITH_H8POWER, [test "$ac_with_h8power" = "yes"])
 AC_GENDERS
 
 ##
@@ -106,6 +108,8 @@ AC_CONFIG_FILES( \
   powerman/Makefile \
   powermand/Makefile \
   httppower/Makefile \
+  h8power/Makefile \
+  h8power/h8power.1 \
   snmppower/Makefile \
   plmpower/Makefile \
   etc/Makefile \
