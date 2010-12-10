@@ -6,7 +6,7 @@ Summary: PowerMan - centralized power control for clusters
 License: GPL
 Group: Applications/System
 Url: http://sourceforge.net/projects/powerman
-Source0: %{name}-%{version}.tar.bz2
+Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 %if 0%{?rhel}

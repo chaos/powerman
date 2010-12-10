@@ -1,7 +1,8 @@
 ##
 # Prologue.
 ##
-AC_INIT([powerman])
+AC_INIT(m4_esyscmd([awk '/Name:/ {printf "%s",$2; exit}' META]),
+        m4_esyscmd([awk '/Version:/ {printf "%s",$2; exit}' META]))
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([NEWS])
 AC_CANONICAL_SYSTEM

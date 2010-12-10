@@ -691,6 +691,16 @@ install-data-local:
 		$(DESTDIR)$(localstatedir)/run
 	-$(top_srcdir)/config/install-sh -o $(RUN_AS_USER) -m 755 -d \
 		$(DESTDIR)$(localstatedir)/run/powerman
+
+rpmdirs:
+	mkdir -p $(top_builddir)/rpm/SPECS
+	mkdir -p $(top_builddir)/rpm/SOURCES
+	mkdir -p $(top_builddir)/rpm/BUILD
+	mkdir -p $(top_builddir)/rpm/RPMS
+	mkdir -p $(top_builddir)/rpm/SRPMS
+
+rpm: dist rpmdirs
+	rpmbuild -ta --define "_topdir $(realpath $(top_builddir)/rpm)" $(DIST_ARCHIVES)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
