@@ -40,8 +40,6 @@
 #include "error.h"
 #include "argv.h"
 
-#define DEFAULT_COMMUNITY "public"
-
 #define OPTIONS "h:"
 static struct option longopts[] = {
     {"hostname", required_argument, 0, 'h' },

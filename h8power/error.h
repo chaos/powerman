@@ -1,7 +1,7 @@
 /*****************************************************************************\
  *  Copyright (C) 2001-2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
- *  Written by Andrew Uselton (uselton2@llnl.gov>
+ *  Written by Jim Garlick (garlick@llnl.gov)
  *  UCRL-CODE-2002-008.
  *  
  *  This file is part of PowerMan, a remote power management program.
