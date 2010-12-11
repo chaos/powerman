@@ -1,8 +1,9 @@
 # Baytech RPC3-NC via SNMP (also can drive with baytech-rpc3-nc.dev)
 #
 # Snmp v1 or v2c works.
+#
 # N.B. Occasionally snmp agent locks up and must be restarted by telnet or
-# serial: ;;;;; then Netwrok Interface Module Login, then Unit Reset.
+# serial: ;;;;; then Network Interface Module Login, then Unit Reset.
 #
 # Example device entry:
 #    device "b" "baytech-snmp" "/usr/sbin/snmppower -h 192.168.1.95|&"

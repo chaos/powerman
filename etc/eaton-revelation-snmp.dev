@@ -1,3 +1,6 @@
+# Eaton PowerWare model PW102MA0U025 via SNMP
+# Example powerman.conf device line:
+#   device "epdu1" "eaton-revelation-snmp" "/usr/sbin/snmppower -h epdu1|&"
 specification  "eaton-revelation-snmp" {
 	timeout 	10
 
