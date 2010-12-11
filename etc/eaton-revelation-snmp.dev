@@ -9,6 +9,10 @@ specification  "eaton-revelation-snmp" {
 		send "start_v2c private\n"
 		expect "snmppower> "
 	}
+	script logout {
+                send "finish\n"
+                expect "snmppower> "
+        }
 	script status {
 		send "get enterprises.534.6.6.6.1.2.2.1.3.%s\n"
 		expect "enterprises.534.6.6.6.1.2.2.1.3.([0-9]+): (0|1)"

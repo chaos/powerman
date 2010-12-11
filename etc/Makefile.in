@@ -229,6 +229,7 @@ pkgsysconf_DATA = \
 	apc7900v3.dev \
 	apc7920.dev \
 	apc.dev \
+	apc-snmp.dev \
 	apcnew.dev \
 	apcold.dev \
 	apcpdu3.dev \
