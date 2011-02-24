@@ -1,8 +1,17 @@
 =========================================================================
+Release Notes for PowerMan version 2.3.8                      24 Feb 2011
+=========================================================================
+
+* Add support for SNMP power controllers via 'snmppower' helper.
+
+* Add SNMP dev files for 8-port APC, 8-port Baytech, and 20 port
+  Eaton Revelation PDU.
+
+=========================================================================
 Release Notes for PowerMan version 2.3.7                      04 Nov 2010
 =========================================================================
 
-* Add uspport for APC 7900 revision 3 firmware [Py Watson]
+* Add support for APC 7900 revision 3 firmware [Py Watson]
 
 * Internal automake cleanup.
 
