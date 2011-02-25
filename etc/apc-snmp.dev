@@ -15,6 +15,7 @@ specification "apc-snmp" {
 		send "finish\n"
 		expect "snmppower> "
         }
+	# PowerNet-MIB::sPDUMasterState.0 
 	script status_all {
 		send "get enterprises.318.1.1.4.2.2.0\n"
 		expect   "enterprises.318.1.1.4.2.2.0: (On|Off)[[:space:]]+(On|Off)[[:space:]]+(On|Off)[[:space:]]+(On|Off)[[:space:]]+(On|Off)[[:space:]]+(On|Off)[[:space:]]+(On|Off)[[:space:]]+(On|Off)[[:space:]]*\n"
@@ -27,6 +28,8 @@ specification "apc-snmp" {
                 setplugstate "7" $7 off="Off" on="On"
                 setplugstate "8" $8 off="Off" on="On"
 	}
+	# PowerNet-MIB::sPDUOutletControl.sPDUOutletControlTable.
+	# 	        sPDUOutletControlEntry.sPDUOutletCtl.<outlet:1-8>
 	script on {
 		send "set enterprises.318.1.1.4.4.2.1.3.%s i 1\n"
 		expect   "enterprises.318.1.1.4.4.2.1.3.[1-8]: 1\n"
@@ -47,3 +50,4 @@ specification "apc-snmp" {
 		expect "snmppower> "
 	}		
 }
+

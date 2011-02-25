@@ -65,7 +65,11 @@ get (char **av, struct snmp_session **ssp)
         return;
     }
     pdu = snmp_pdu_create (SNMP_MSG_GET);
-    get_node (av[1], anOID, &anOID_len);
+    if (!get_node (av[1], anOID, &anOID_len)) {
+        snmp_free_pdu (pdu);
+        printf ("error parsing oid\n");
+        return;
+    }
     snmp_add_null_var (pdu, anOID, anOID_len);
     status = snmp_synch_response (*ssp, pdu, &response);
     if (status == STAT_SUCCESS && response->errstat == SNMP_ERR_NOERROR) {
@@ -121,7 +125,7 @@ set (char **av, struct snmp_session **ssp)
         return;
     }
     pdu = snmp_pdu_create (SNMP_MSG_SET);
-    if (get_node (av[1], anOID, &anOID_len) == NULL) {
+    if (!get_node (av[1], anOID, &anOID_len)) {
         snmp_free_pdu (pdu);
         printf ("error parsing oid\n");
         return;
@@ -153,7 +157,6 @@ set (char **av, struct snmp_session **ssp)
     if (response)
         snmp_free_pdu (response);
 }
-
 
 static void
 start_v1v2c (char **av, int version, char *hostname, struct snmp_session **ssp)
@@ -222,6 +225,22 @@ start_v3 (char **av, char *hostname, struct snmp_session **ssp)
 }
 
 static void
+mib (char **av, struct snmp_session **ssp)
+{
+    static int initialized = 0;
+
+    if (av[1] == NULL) {
+        err (FALSE, "missing name");
+        return;
+    }
+    if (!initialized) {
+        init_mib ();
+        initialized = 1;
+    }
+    netsnmp_read_module (av[1]); /* prints its own errors */
+}
+
+static void
 finish (char **av, struct snmp_session **ssp)
 {
     snmp_close (*ssp); 
@@ -235,6 +254,7 @@ help (void)
     printf ("  start_v1 community\n");
     printf ("  start_v2c community\n");
     printf ("  start_v3 name passphrase\n");
+    printf ("  mib name\n");
     printf ("  finish\n");
     printf ("  get oid\n");
     printf ("  set oid type value\n");
@@ -258,6 +278,8 @@ docmd (char **av, char *hostname, struct snmp_session **ssp)
             start_v1v2c (av, SNMP_VERSION_2c, hostname, ssp);
         else if (strcmp (av[0], "start_v3") == 0)
             start_v3 (av, hostname, ssp);
+        else if (strcmp (av[0], "mib") == 0)
+            mib (av, ssp);
         else if (strcmp (av[0], "finish") == 0)
             finish (av, ssp);
         else 
