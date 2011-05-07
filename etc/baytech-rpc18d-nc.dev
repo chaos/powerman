@@ -1,0 +1,82 @@
+#
+# $Id: baytech-rpc18d-nc.dev 964 2008-06-13 13:40:47Z garlick $
+# 
+# Baytech RPC18D-NC 
+#
+# Default config, then disable confirmation, and disable status menu.
+#
+# Firmware version: F3.01 (C) 2000
+#
+# Maybe it is accumulated serial noise or some other issue, but this 
+# model seems to require a little handshake:
+#		send "\r\n"
+#		expect ".*RPC-18>"
+# before each command to avoid dropping the command.
+#
+specification "baytech-rpc18d-nc" {
+	timeout 	7   # about 5 sec for cycle command
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
+
+	script login {
+		send "\r\n"
+		expect ".*RPC-18>"
+	}
+	script logout {
+		send "\r\n"
+		expect ".*RPC-18>"
+		send "exit\r\n"
+	}
+	script status_all {
+		send "\r\n"
+		expect ".*RPC-18>"
+		send "status\r\n"
+		foreachplug {
+			expect "([0-9]+)\)\.*.*: (On|Off)"
+			setplugstate $1 $2 on="On" off="Off"
+		}
+		expect "RPC-18>"
+	}
+	script on {
+		send "\r\n"
+		expect ".*RPC-18>"
+		send "on %s\r\n"
+		expect "RPC-18>"
+	}
+	script on_all {
+		send "\r\n"
+		expect ".*RPC-18>"
+		send "on 0\r\n"
+		expect "RPC-18>"
+	}
+	script off {
+		send "\r\n"
+		expect ".*RPC-18>"
+		send "off %s\r\n"
+		expect "RPC-18>"
+	}
+	script off_all {
+		send "\r\n"
+		expect ".*RPC-18>"
+		send "off 0\r\n"
+		expect "RPC-18>"
+	}
+	script cycle {
+		send "\r\n"
+		expect ".*RPC-18>"
+		send "off %s\r\n"
+		expect "RPC-18>"
+		delay 4
+		send "on %s\r\n"
+		expect "RPC-18>"
+	}
+	script cycle_all {
+		send "\r\n"
+		expect ".*RPC-18>"
+		send "off 0\r\n"
+		expect "RPC-18>"
+		delay 4
+		send "on 0\r\n"
+		expect "RPC-18>"
+	}
+}
