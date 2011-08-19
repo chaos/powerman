@@ -5,9 +5,9 @@
 # appro-greenblade.dev,v 1.0 2010/07/19 16:05:34 Francis Lee (kolee@appro.com)
 # /usr/local/etc/powerman/appro-greenblade.dev,v
 #
-#	iscb-gb     : Standard 10 Nodes
-#	iscb-gbgpu  : 5 Nodes with 5 GPU expansions
-#	iscb-hybrid : 6 Nodes with 4 GPU expansions
+#	iscb-gb     : Standard 10 nodes
+#	iscb-gbgpu  : 5 nodes with 5 GPU expansions
+#	iscb-hybrid : 6 nodes with 4 GPU expansions
 #
 specification "iscb-gb" {
 	timeout 	10.0
@@ -33,7 +33,7 @@ specification "iscb-gb" {
 	script status_all {
 		send "pmnode all\r\n"
 		foreachplug {
-			expect "Node([0-9]+): (on|off|n/a)"
+			expect "node([0-9]+): (on|off|n/a)"
 			setplugstate $1 $2 on="on" off="off"
 		}
 		expect "ok"
@@ -42,7 +42,7 @@ specification "iscb-gb" {
 	script status_beacon_all {
 		send "pmled all\r\n"
 		foreachplug {
-			expect "Node([0-9]+): (on|off|n/a)"
+			expect "node([0-9]+): (on|off|n/a)"
 			setplugstate $1 $2 on="on" off="off"
 		}
 		expect "ok"
@@ -50,14 +50,14 @@ specification "iscb-gb" {
 	}
 	script status {
 		send "pmnode %s\r\n"
-		expect "Node([0-9]+): (on|off|n/a)"
+		expect "node([0-9]+): (on|off|n/a)"
 		setplugstate $1 $2 on="on" off="off"
 		expect "ok"
 		expect "iSCB-[0-9]+:[0-9]> "
 	}
 	script status_beacon {
 		send "pmled %s\r\n"
-		expect "Node([0-9]+): (on|off|n/a)"
+		expect "node([0-9]+): (on|off|n/a)"
 		setplugstate $1 $2 on="on" off="off"
 		expect "ok"
 		expect "iSCB-[0-9]+:[0-9]> "
@@ -123,7 +123,7 @@ specification "iscb-gbgpu" {
 	script status_all {
 		send "pmnode all\r\n"
 		foreachplug {
-			expect "Node([0-9]+): (on|off|n/a)"
+			expect "node([0-9]+): (on|off|n/a)"
 			setplugstate $1 $2 on="on" off="off"
 		}
 		expect "ok"
@@ -132,7 +132,7 @@ specification "iscb-gbgpu" {
 	script status_beacon_all {
 		send "pmled all\r\n"
 		foreachplug {
-			expect "Node([0-9]+): (on|off|n/a)"
+			expect "node([0-9]+): (on|off|n/a)"
 			setplugstate $1 $2 on="on" off="off"
 		}
 		expect "ok"
@@ -140,14 +140,14 @@ specification "iscb-gbgpu" {
 	}
 	script status {
 		send "pmnode %s\r\n"
-		expect "Node([0-9]+): (on|off|n/a)"
+		expect "node([0-9]+): (on|off|n/a)"
 		setplugstate $1 $2 on="on" off="off"
 		expect "ok"
 		expect "iSCB-[0-9]+:[0-9]> "
 	}
 	script status_beacon {
 		send "pmled %s\r\n"
-		expect "Node([0-9]+): (on|off|n/a)"
+		expect "node([0-9]+): (on|off|n/a)"
 		setplugstate $1 $2 on="on" off="off"
 		expect "ok"
 		expect "iSCB-[0-9]+:[0-9]> "
@@ -192,7 +192,7 @@ specification "iscb-gbgpu" {
 specification "iscb-hybrid" {
 	timeout 	10.0
 	plug name {
-		"01" "02" "03" "04" "05" "06"
+		"01" "02" "03" "04" "05" "06" "07"
 	}
 	script ping {
 		send "\r\n"
@@ -213,7 +213,7 @@ specification "iscb-hybrid" {
 	script status_all {
 		send "pmnode all\r\n"
 		foreachplug {
-			expect "Node([0-9]+): (on|off|n/a)"
+			expect "node([0-9]+): (on|off|n/a)"
 			setplugstate $1 $2 on="on" off="off"
 		}
 		expect "ok"
@@ -222,7 +222,7 @@ specification "iscb-hybrid" {
 	script status_beacon_all {
 		send "pmled all\r\n"
 		foreachplug {
-			expect "Node([0-9]+): (on|off|n/a)"
+			expect "node([0-9]+): (on|off|n/a)"
 			setplugstate $1 $2 on="on" off="off"
 		}
 		expect "ok"
@@ -230,14 +230,14 @@ specification "iscb-hybrid" {
 	}
 	script status {
 		send "pmnode %s\r\n"
-		expect "Node([0-9]+): (on|off|n/a)"
+		expect "node([0-9]+): (on|off|n/a)"
 		setplugstate $1 $2 on="on" off="off"
 		expect "ok"
 		expect "iSCB-[0-9]+:[0-9]> "
 	}
 	script status_beacon {
 		send "pmled %s\r\n"
-		expect "Node([0-9]+): (on|off|n/a)"
+		expect "node([0-9]+): (on|off|n/a)"
 		setplugstate $1 $2 on="on" off="off"
 		expect "ok"
 		expect "iSCB-[0-9]+:[0-9]> "
