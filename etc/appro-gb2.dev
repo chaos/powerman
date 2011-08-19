@@ -1,0 +1,389 @@
+# 
+# GreenBlade Subrack
+# APPRO Inc.
+#
+# appro-greenblade.dev,v 1.0 2010/07/19 16:05:34 Francis Lee (kolee@appro.com)
+# /usr/local/etc/powerman/appro-greenblade.dev,v
+#
+#	sr5110      : Standard 10 Nodes
+#	sr5110_gpu  : 5 Nodes with 5 GPU expansions
+#	sr8116      : Standard 16 Nodes
+#	sr8116_gpu  : 8 Nodes with 8 GPU expansions
+#	sr8104      : 2U 4 Nodes same as sr8104_gpu
+#
+specification "sr5110" {
+	timeout 	10.0
+	plug name {
+		"01" "02" "03" "04" "05" "06" "07" "08" "09" "10"
+	}
+	script ping {
+		send "\r"
+		expect "-iSCB> "
+	}
+	script login {
+		#delay 0.5 
+		#send "\r"
+		expect "-iSCB> "
+	}
+	script logout {
+		send "exit\r"
+	}
+	script status_all {
+		send "pmnode all\r"
+		foreachplug {
+			expect "node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "-iSCB> "
+	}
+	script status_beacon_all {
+		send "pmled all\r"
+		foreachplug {
+			expect "node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "-iSCB> "
+	}
+	script status {
+		send "pmnode %s\r"
+		expect "node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "-iSCB> "
+	}
+	script status_beacon {
+		send "pmled %s\r"
+		expect "node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "-iSCB> "
+	}
+	script on {
+		send "power on %s\r"
+		expect "-iSCB> "
+	}
+	script off {
+		send "power off %s\r"
+		expect "-iSCB> "
+	}
+	script cycle {
+		send "cycle %s\r"
+		expect "-iSCB> "
+	}
+	script beacon_on {
+		send "led on %s\r"
+		expect "-iSCB> "
+	}
+	script beacon_off {
+		send "led off %s\r"
+		expect "-iSCB> "
+	}
+	script reset_all {
+		send "reset all\r"
+		expect "-iSCB> "
+	}
+	script reset {
+		send "reset %s\r"
+		expect "-iSCB> "
+	}
+}
+
+specification "sr5110_gpu" {
+	timeout 	10.0
+	plug name {
+		"01" "02" "03" "04" "05"
+	}
+	script ping {
+		send "\r"
+		expect "-iSCB> "
+	}
+	script login {
+		delay 0.5 
+		send "\r"
+		expect "-iSCB> "
+	}
+	script logout {
+		send "exit\r"
+	}
+	script status_all {
+		send "pmnode all\r"
+		foreachplug {
+			expect "node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "-iSCB> "
+	}
+	script status_beacon_all {
+		send "pmled all\r"
+		foreachplug {
+			expect "node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "-iSCB> "
+	}
+	script status {
+		send "pmnode %s\r"
+		expect "node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "-iSCB> "
+	}
+	script status_beacon {
+		send "pmled %s\r"
+		expect "node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "-iSCB> "
+	}
+	script on {
+		send "power on %s\r"
+		expect "-iSCB> "
+	}
+	script off {
+		send "power off %s\r"
+		expect "-iSCB> "
+	}
+	script cycle {
+		send "cycle %s\r"
+		expect "-iSCB> "
+	}
+	script beacon_on {
+		send "led on %s\r"
+		expect "-iSCB> "
+	}
+	script beacon_off {
+		send "led off %s\r"
+		expect "-iSCB> "
+	}
+	script reset_all {
+		send "reset all\r"
+		expect "-iSCB> "
+	}
+	script reset {
+		send "reset %s\r"
+		expect "-iSCB> "
+	}
+}
+
+specification "sr8116" {
+	timeout 	10.0
+	plug name {
+		"01" "02" "03" "04" "05" "06" "07" "08"
+		"09" "10" "11" "12" "13" "14" "15" "16"
+	}
+	script ping {
+		send "\r"
+		expect "-iSCB> "
+	}
+	script login {
+		delay 0.5 
+		send "\r"
+		expect "-iSCB> "
+	}
+	script logout {
+		send "exit\r"
+	}
+	script status_all {
+		send "pmnode all\r"
+		foreachplug {
+			expect "node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "-iSCB> "
+	}
+	script status_beacon_all {
+		send "pmled all\r"
+		foreachplug {
+			expect "node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "-iSCB> "
+	}
+	script status {
+		send "pmnode %s\r"
+		expect "node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "-iSCB> "
+	}
+	script status_beacon {
+		send "pmled %s\r"
+		expect "node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "-iSCB> "
+	}
+	script on {
+		send "power on %s\r"
+		expect "-iSCB> "
+	}
+	script off {
+		send "power off %s\r"
+		expect "-iSCB> "
+	}
+	script cycle {
+		send "cycle %s\r"
+		expect "-iSCB> "
+	}
+	script beacon_on {
+		send "led on %s\r"
+		expect "-iSCB> "
+	}
+	script beacon_off {
+		send "led off %s\r"
+		expect "-iSCB> "
+	}
+	script reset_all {
+		send "reset all\r"
+		expect "-iSCB> "
+	}
+	script reset {
+		send "reset %s\r"
+		expect "-iSCB> "
+	}
+}
+
+specification "sr8116_gpu" {
+	timeout 	10.0
+	plug name {
+		"01" "02" "03" "04"
+	}
+	script ping {
+		send "\r"
+		expect "-iSCB> "
+	}
+	script login {
+		delay 0.5 
+		send "\r"
+		expect "-iSCB> "
+	}
+	script logout {
+		send "exit\r"
+	}
+	script status_all {
+		send "pmnode all\r"
+		foreachplug {
+			expect "node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "-iSCB> "
+	}
+	script status_beacon_all {
+		send "pmled all\r"
+		foreachplug {
+			expect "node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "-iSCB> "
+	}
+	script status {
+		send "pmnode %s\r"
+		expect "node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "-iSCB> "
+	}
+	script status_beacon {
+		send "pmled %s\r"
+		expect "node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "-iSCB> "
+	}
+	script on {
+		send "power on %s\r"
+		expect "-iSCB> "
+	}
+	script off {
+		send "power off %s\r"
+		expect "-iSCB> "
+	}
+	script cycle {
+		send "cycle %s\r"
+		expect "-iSCB> "
+	}
+	script beacon_on {
+		send "led on %s\r"
+		expect "-iSCB> "
+	}
+	script beacon_off {
+		send "led off %s\r"
+		expect "-iSCB> "
+	}
+	script reset_all {
+		send "reset all\r"
+		expect "-iSCB> "
+	}
+	script reset {
+		send "reset %s\r"
+		expect "-iSCB> "
+	}
+}
+
+specification "sr8104" {
+	timeout 	10.0
+	plug name {
+		"01" "02" "03" "04"
+	}
+	script ping {
+		send "\r"
+		expect "-iSCB> "
+	}
+	script login {
+		delay 0.5 
+		send "\r"
+		expect "-iSCB> "
+	}
+	script logout {
+		send "exit\r"
+	}
+	script status_all {
+		send "pmnode all\r"
+		foreachplug {
+			expect "node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "-iSCB> "
+	}
+	script status_beacon_all {
+		send "pmled all\r"
+		foreachplug {
+			expect "node([0-9]+): (on|off|n/a)"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "-iSCB> "
+	}
+	script status {
+		send "pmnode %s\r"
+		expect "node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "-iSCB> "
+	}
+	script status_beacon {
+		send "pmled %s\r"
+		expect "node([0-9]+): (on|off|n/a)"
+		setplugstate $1 $2 on="on" off="off"
+		expect "-iSCB> "
+	}
+	script on {
+		send "power on %s\r"
+		expect "-iSCB> "
+	}
+	script off {
+		send "power off %s\r"
+		expect "-iSCB> "
+	}
+	script cycle {
+		send "cycle %s\r"
+		expect "-iSCB> "
+	}
+	script beacon_on {
+		send "led on %s\r"
+		expect "-iSCB> "
+	}
+	script beacon_off {
+		send "led off %s\r"
+		expect "-iSCB> "
+	}
+	script reset_all {
+		send "reset all\r"
+		expect "-iSCB> "
+	}
+	script reset {
+		send "reset %s\r"
+		expect "-iSCB> "
+	}
+}
+

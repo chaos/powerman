@@ -12,6 +12,7 @@ pkgsysconf_DATA = \
 	apcpdu3.dev \
 	apcpdu.dev \
 	appro-greenblade.dev \
+	appro-gb2.dev \
 	bashfun.dev \
 	baytech.dev \
 	baytech-snmp.dev \
@@ -42,6 +43,7 @@ pkgsysconf_DATA = \
 	phantom.dev \
 	plmpower.dev \
 	powerman.dev \
+	sentry_cdu.dev \
 	swpdu.dev \
 	vpc.dev \
 	wti.dev \

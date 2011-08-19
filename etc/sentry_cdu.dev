@@ -1,0 +1,124 @@
+# Sentry Switched CDU Version 6.0r
+
+specification "sentry_cdu" {
+	timeout 	10  
+
+	plug name { ".AA1" ".AA2" ".AA3" ".AA4" ".AA5" ".AA6" ".AA7" ".AA8" ".AB1" ".AB2" ".AB3" ".AB4" ".AB5" ".AB6" ".AB7" ".AB8" ".AC1" ".AC2" ".AC3" ".AC4" ".AC5" ".AC6" ".AC7" ".AC8" }
+
+	script login {
+		expect "Username: "
+		send "admn\r\n"
+		expect "Password: "
+		send "admn\r\n"
+		expect "Switched CDU: "
+	}
+
+	script logout {
+		send "logout\r\n"
+	}
+
+	script status_all {
+                send "status\r\n"
+                expect "\.AA1[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AA1" $1 on="On" off="Off"
+                expect "\.AA2[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AA2" $1 on="On" off="Off"
+                expect "\.AA3[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AA3" $1 on="On" off="Off"
+                expect "\.AA4[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AA4" $1 on="On" off="Off"
+                expect "\.AA5[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AA5" $1 on="On" off="Off"
+                expect "\.AA6[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AA6" $1 on="On" off="Off"
+                expect "\.AA7[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AA7" $1 on="On" off="Off"
+                expect "\.AA8[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AA8" $1 on="On" off="Off"
+                expect "\.AB1[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AB1" $1 on="On" off="Off"
+                expect "\.AB2[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AB2" $1 on="On" off="Off"
+                expect "\.AB3[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AB3" $1 on="On" off="Off"
+                expect "\.AB4[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AB4" $1 on="On" off="Off"
+                expect "\.AB5[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AB5" $1 on="On" off="Off"
+                expect "\.AB6[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AB6" $1 on="On" off="Off"
+                expect "\.AB7[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AB7" $1 on="On" off="Off"
+                expect "\.AB8[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AB8" $1 on="On" off="Off"
+                expect "More \\(Y/es N/o\\):"
+                send "y"
+                expect "y\r\n\r\n"
+                expect "\.AC1[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AC1" $1 on="On" off="Off"
+                expect "\.AC2[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AC2" $1 on="On" off="Off"
+                expect "\.AC3[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AC3" $1 on="On" off="Off"
+                expect "\.AC4[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AC4" $1 on="On" off="Off"
+                expect "\.AC5[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AC5" $1 on="On" off="Off"
+                expect "\.AC6[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AC6" $1 on="On" off="Off"
+                expect "\.AC7[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AC7" $1 on="On" off="Off"
+                expect "\.AC8[^\r\n]*(On|Off) *(On|Off) *\r\n"
+                setplugstate ".AC8" $1 on="On" off="Off"
+                expect "Command successful"
+                expect "\r\n\r\nSwitched CDU: "
+        }
+
+	script on {
+		send "on %s\r\n"
+		expect "Switched CDU: "
+	}
+
+	script on_all {
+		send "on all\r\n"
+                expect "More \\(Y/es N/o\\):"
+                send "y"
+                expect "y\r\n\r\n"
+		expect "Switched CDU: "
+	}
+
+	script off {
+		send "off %s\r\n"
+		expect "Switched CDU: "
+	}
+
+	script off_all {
+		send "off all\r\n"
+                expect "More \\(Y/es N/o\\):"
+                send "y"
+                expect "y\r\n\r\n"
+		expect "Switched CDU: "
+	}
+
+	script cycle {
+		send "off %s\r\n"
+		expect "Switched CDU: "
+		delay 4
+		send "on %s\r\n"
+		expect "Switched CDU: "
+	}
+
+	script cycle_all {
+		send "off all\r\n"
+                expect "More \\(Y/es N/o\\):"
+                send "y"
+                expect "y\r\n\r\n"
+		expect "Switched CDU: "
+		delay 4
+		send "on all\r\n"
+                expect "More \\(Y/es N/o\\):"
+                send "y"
+                expect "y\r\n\r\n"
+		expect "Switched CDU: "
+	}
+}
