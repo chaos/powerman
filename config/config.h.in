@@ -36,12 +36,6 @@
 /* Define to 1 if you have the `genders' library (-lgenders). */
 #undef HAVE_LIBGENDERS
 
-/* Define to 1 if you have the `lua' library (-llua). */
-#undef HAVE_LIBLUA
-
-/* Define to 1 if you have the `munge' library (-lmunge). */
-#undef HAVE_LIBMUNGE
-
 /* Define to 1 if you have the `snmp' library (-lsnmp). */
 #undef HAVE_LIBSNMP
 
