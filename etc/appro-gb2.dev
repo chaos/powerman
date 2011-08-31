@@ -2,8 +2,8 @@
 # GreenBlade Subrack
 # APPRO Inc.
 #
-# appro-greenblade.dev,v 1.0 2010/07/19 16:05:34 Francis Lee (kolee@appro.com)
-# /usr/local/etc/powerman/appro-greenblade.dev,v
+# appro-gb2.dev,v 1.0 2010/07/19 16:05:34 Francis Lee (kolee@appro.com)
+# /usr/local/etc/powerman/appro-gb2.dev,v
 #
 #	sr5110      : Standard 10 Nodes
 #	sr5110_gpu  : 5 Nodes with 5 GPU expansions
@@ -21,8 +21,8 @@ specification "sr5110" {
 		expect "-iSCB> "
 	}
 	script login {
-		#delay 0.5 
-		#send "\r"
+		delay 0.5 
+		send "\r"
 		expect "-iSCB> "
 	}
 	script logout {
