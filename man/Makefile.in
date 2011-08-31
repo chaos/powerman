@@ -45,7 +45,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_curses.m4 \
 	$(top_srcdir)/config/ac_forkpty.m4 \
 	$(top_srcdir)/config/ac_genders.m4 \
-	$(top_srcdir)/config/ac_h8power.m4 \
 	$(top_srcdir)/config/ac_httppower.m4 \
 	$(top_srcdir)/config/ac_pkgconfig.m4 \
 	$(top_srcdir)/config/ac_runas.m4 \

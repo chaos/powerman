@@ -36,7 +36,6 @@ host_triplet = @host@
 target_triplet = @target@
 @WITH_HTTPPOWER_TRUE@am__append_1 = httppower
 @WITH_SNMPPOWER_TRUE@am__append_2 = snmppower
-@WITH_H8POWER_TRUE@am__append_3 = h8power
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/powerman.spec.in \
@@ -50,7 +49,6 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
 	$(top_srcdir)/config/ac_curses.m4 \
 	$(top_srcdir)/config/ac_forkpty.m4 \
 	$(top_srcdir)/config/ac_genders.m4 \
-	$(top_srcdir)/config/ac_h8power.m4 \
 	$(top_srcdir)/config/ac_httppower.m4 \
 	$(top_srcdir)/config/ac_pkgconfig.m4 \
 	$(top_srcdir)/config/ac_runas.m4 \
@@ -84,8 +82,7 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = etc man scripts heartbeat liblsd libcommon powerman \
-	powermand libpowerman test plmpower httppower snmppower \
-	h8power
+	powermand libpowerman test plmpower httppower snmppower
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 distdir = $(PACKAGE)-$(VERSION)
 top_distdir = $(distdir)
@@ -278,7 +275,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = etc man scripts heartbeat liblsd libcommon powerman \
 	powermand libpowerman test plmpower $(am__append_1) \
-	$(am__append_2) $(am__append_3)
+	$(am__append_2)
 EXTRA_DIST = DISCLAIMER META powerman.spec
 all: all-recursive
 
