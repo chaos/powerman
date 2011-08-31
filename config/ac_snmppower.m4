@@ -1,20 +1,20 @@
+#
+# Add --with-snmppower configure option (no by default).
+# If yes, not finding netsnmp header file or lib is fatal.
+# Define HAVE_NET_SNMP_NET_SNMP_CONFIG_H=1 and HAVE_LIBSNMP=1 in config.h.
+# Substitute LIBSNMP with -lsnmp and define WITH_SNMPPOWER=1 in Makefiles.
+#
+
 AC_DEFUN([AC_SNMPPOWER],
 [
-  AC_MSG_CHECKING([for whether to build snmppower executable])
   AC_ARG_WITH([snmppower],
-    AC_HELP_STRING([--with-snmppower], [Build snmppower executable]),
-    [ case "$withval" in
-        no)  ac_snmppower_test=no ;;
-        yes) ac_snmppower_test=yes ;;
-        *)   AC_MSG_ERROR([bad value "$withval" for --with-snmppower]) ;;
-      esac
-    ]
-  )
-  AC_MSG_RESULT([${ac_snmppower_test=no}])
-  
-  if test "$ac_snmppower_test" = "yes"; then
-     ac_with_snmppower=yes
-  else
-     ac_with_snmppower=no
-  fi
+    AC_HELP_STRING([--with-snmppower], [Build snmppower executable]))
+  AS_IF([test "x$with_snmppower" = "xyes"], [
+    AC_CHECK_HEADERS([net-snmp/net-snmp-config.h])
+    X_AC_CHECK_COND_LIB([snmp], [init_snmp])
+  ])
+  AS_IF([test "x$with_snmppower" = "xyes" && test "x$ac_cv_header_net_snmp_net_snmp_config_h" = "xno" -o "x$ac_cv_lib_snmp_init_snmp" = "xno"], [
+    AC_MSG_ERROR([could not find snmp library])
+  ])
+  AM_CONDITIONAL(WITH_SNMPPOWER, [test "x$with_snmppower" = "xyes"])
 ])

@@ -51,6 +51,9 @@
 /* Define if you have ncurses.h */
 #undef HAVE_NCURSES_H
 
+/* Define to 1 if you have the <net-snmp/net-snmp-config.h> header file. */
+#undef HAVE_NET_SNMP_NET_SNMP_CONFIG_H
+
 /* Define if you have poll */
 #undef HAVE_POLL
 

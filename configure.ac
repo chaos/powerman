@@ -62,7 +62,6 @@ AC_CHECK_TYPES(socklen_t, [], [], [#include <sys/socket.h>])
 ##
 AC_HTTPPOWER
 AC_SNMPPOWER
-AM_CONDITIONAL(WITH_SNMPPOWER, [test "$ac_with_snmppower" = "yes"])
 AC_GENDERS
 
 ##
@@ -80,7 +79,6 @@ AC_WRAP
 AC_CHECK_FUNC([poll], AC_DEFINE([HAVE_POLL], [1], [Define if you have poll]))
 X_AC_CHECK_COND_LIB(lua, luaL_newstate)
 X_AC_CHECK_COND_LIB(munge, munge_ctx_create)
-X_AC_CHECK_COND_LIB(snmp, init_snmp)
 
 # for list.c, cbuf.c, hostlist.c, and wrappers.c */
 AC_DEFINE(WITH_LSD_FATAL_ERROR_FUNC, 1, [Define lsd_fatal_error])
