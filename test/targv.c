@@ -1,6 +1,4 @@
-/*****************************************************************************\
- *  $Id: arglist.c 955 2008-06-10 22:34:16Z garlick $
- *****************************************************************************
+/*****************************************************************************
  *  Copyright (C) 2004-2008 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Jim Garlick <garlick@llnl.gov>
