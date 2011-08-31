@@ -1,27 +1,20 @@
-##*****************************************************************************
-## $Id: ac_ncurses.m4,v 1.1.1.1 2003/09/05 16:05:42 achu Exp $
-##*****************************************************************************
-#  AUTHOR:
-#    Albert Chu  <chu11@llnl.gov>
 #
-#  SYNOPSIS:
-#    AC_WRAP
+# Add --with-tcp-wrappers configure option (no by default).
+# If yes, not finding tcpd.h header file or libwrap is fatal.
+# Define HAVE_TCP_WRAPPERS=1, HAVE_TCP_H=1, and HAVE_LIBWRAP=1 in config.h.
+# Substitute LIBWRAP with -lwrap in Makefiles.
 #
-#  DESCRIPTION:
-#    Check for wrap library
-#
-#  WARNINGS:
-#    This macro must be placed after AC_PROG_CC or equivalent.
-##*****************************************************************************
 
 AC_DEFUN([AC_WRAP],
 [
-  AC_CHECK_LIB([wrap], [hosts_ctl], [ac_have_wrap=yes], [ac_have_wrap=no])
-
-  if test "$ac_have_wrap" = "yes"; then
-    LIBWRAP="-lwrap"
-    AC_DEFINE([HAVE_TCP_WRAPPERS], [1], [Define if you have tcp wrappers])
-  fi        
-
-  AC_SUBST(LIBWRAP)
+  AC_ARG_WITH([tcp-wrappers],
+    AC_HELP_STRING([--with-tcp-wrappers], [Build with tcp wrappers support]))
+  AS_IF([test "x$with_tcp_wrappers" = "xyes"], [
+    AC_CHECK_HEADERS([tcpd.h])
+    X_AC_CHECK_COND_LIB([wrap], [hosts_ctl])
+    AC_DEFINE(HAVE_TCP_WRAPPERS, 1, [Define if building tcp wrappers support])
+  ])
+  AS_IF([test "x$with_tcp_wrappers" = "xyes" && test "x$ac_cv_header_tcpd_h" = "xno" -o "x$ac_cv_lib_wrap_hosts_ctl" = "xno"], [
+    AC_MSG_ERROR([could not find tcp wrappers library])
+  ])
 ])

@@ -39,6 +39,9 @@
 /* Define to 1 if you have the `snmp' library (-lsnmp). */
 #undef HAVE_LIBSNMP
 
+/* Define to 1 if you have the `wrap' library (-lwrap). */
+#undef HAVE_LIBWRAP
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 
@@ -84,7 +87,10 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
-/* Define if you have tcp wrappers */
+/* Define to 1 if you have the <tcpd.h> header file. */
+#undef HAVE_TCPD_H
+
+/* Define if building tcp wrappers support */
 #undef HAVE_TCP_WRAPPERS
 
 /* Define to 1 if you have the <unistd.h> header file. */

@@ -72,6 +72,7 @@ A shared library for applications using PowerMan.
   %{?_with_genders: --with-genders} \
   %{?_with_httppower: --with-httppower} \
   %{?_with_snmppower: --with-snmppower} \
+  %{?_with_tcp_wrappers: --with-tcp-wrappers} \
   --program-prefix=%{?_program_prefix:%{_program_prefix}}
 make
 
