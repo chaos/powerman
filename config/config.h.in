@@ -30,6 +30,9 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define to 1 if you have the `genders' library (-lgenders). */
+#undef HAVE_LIBGENDERS
+
 /* Define to 1 if you have the `lua' library (-llua). */
 #undef HAVE_LIBLUA
 
@@ -154,7 +157,7 @@
 /* Version number of package */
 #undef VERSION
 
-/* Define if you have genders. */
+/* Define if building genders support for client */
 #undef WITH_GENDERS
 
 /* Define lsd_fatal_error */
