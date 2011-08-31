@@ -27,7 +27,7 @@
 #endif
 #include <stdio.h>
 #include <libgen.h>
-#if HAVE_CURL
+#if HAVE_CURL_CURL_H
 #include <curl/curl.h>
 #else
 #error httppower needs curl support!

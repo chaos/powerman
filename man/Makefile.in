@@ -41,8 +41,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in \
 	$(srcdir)/powerman.conf.5.in $(srcdir)/powerman.dev.5.in \
 	$(srcdir)/powermand.8.in $(srcdir)/vpcd.8.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
-	$(top_srcdir)/config/ac_curses.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_curses.m4 \
 	$(top_srcdir)/config/ac_forkpty.m4 \
 	$(top_srcdir)/config/ac_genders.m4 \
 	$(top_srcdir)/config/ac_httppower.m4 \

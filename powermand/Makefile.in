@@ -40,8 +40,7 @@ subdir = powermand
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in parse_lex.c \
 	parse_tab.c parse_tab.h
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_curl.m4 \
-	$(top_srcdir)/config/ac_curses.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_curses.m4 \
 	$(top_srcdir)/config/ac_forkpty.m4 \
 	$(top_srcdir)/config/ac_genders.m4 \
 	$(top_srcdir)/config/ac_httppower.m4 \
