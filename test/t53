@@ -1,0 +1,5 @@
+#!/bin/sh
+TEST=t53
+$PATH_POWERMAND -f -c $TEST.conf >$TEST.out 2>&1
+test $? = 1 || exit 1
+diff $TEST.out $TEST.exp >$TEST.diff

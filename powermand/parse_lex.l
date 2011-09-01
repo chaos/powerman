@@ -214,6 +214,7 @@ include         BEGIN(lex_incl);
         err_exit(FALSE, "Includes nested too deeply" );
     
     include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
+    linenum[include_stack_ptr] = 1;
     
     yyin = fopen( yytext + 1, "r" );
     if ( yyin == NULL )

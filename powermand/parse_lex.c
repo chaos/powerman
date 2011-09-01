@@ -1371,6 +1371,7 @@ YY_RULE_SETUP
         err_exit(FALSE, "Includes nested too deeply" );
     
     include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
+    linenum[include_stack_ptr] = 1;
     
     yyin = fopen( yytext + 1, "r" );
     if ( yyin == NULL )
@@ -1384,7 +1385,7 @@ YY_RULE_SETUP
 case YY_STATE_EOF(INITIAL):
 case YY_STATE_EOF(lex_incl):
 case YY_STATE_EOF(lex_str):
-#line 227 "parse_lex.l"
+#line 228 "parse_lex.l"
 {
     if (include_stack_ptr == 0) {
         yyterminate();
@@ -1397,17 +1398,17 @@ case YY_STATE_EOF(lex_str):
 	YY_BREAK
 case 72:
 YY_RULE_SETUP
-#line 237 "parse_lex.l"
+#line 238 "parse_lex.l"
 {
     return TOK_UNRECOGNIZED; 
 }
 	YY_BREAK
 case 73:
 YY_RULE_SETUP
-#line 241 "parse_lex.l"
+#line 242 "parse_lex.l"
 ECHO;
 	YY_BREAK
-#line 1411 "parse_lex.c"
+#line 1412 "parse_lex.c"
 
 	case YY_END_OF_BUFFER:
 		{
@@ -2366,7 +2367,7 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 241 "parse_lex.l"
+#line 242 "parse_lex.l"
 
 
 
