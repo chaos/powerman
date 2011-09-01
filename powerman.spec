@@ -1,5 +1,5 @@
 Name:  powerman
-Version: 2.3.10
+Version: 2.3.11
 Release: 1
 
 Summary: PowerMan - centralized power control for clusters
@@ -31,7 +31,7 @@ BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 %endif
 
 %if 0%{?_with_tcp_wrappers}
-BuildRequires: tcp_wrappers
+BuildRequires: tcp_wrappers-devel
 %endif
 %if 0%{?_with_genders}
 BuildRequires: genders

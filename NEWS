@@ -1,4 +1,21 @@
 =========================================================================
+Release Notes for PowerMan version 2.3.11                     01 Sep 2011
+=========================================================================
+
+* Update appro-gb2.dev (chaos bug 1218)
+
+* Fix BuildRequires for tcp_wrappers-devel to work on el6/ch5.
+  Packagers: now you must add --with-tcp-wrappers on configure line
+  to enable this feature (before it was enabled if libs were present)
+
+* Re-autogen to pull in (new?) bison build dependency on el6/ch5.
+
+* Fix --with-feature options to fail if prereqs are missing, not just
+  silently disable the feature.
+
+* Fix line number accounting during parse error reporting (issue 3)
+
+=========================================================================
 Release Notes for PowerMan version 2.3.10                     19 Aug 2011
 =========================================================================
 
@@ -7,6 +24,8 @@ Release Notes for PowerMan version 2.3.10                     19 Aug 2011
 * Added appro-gb2.dev (chaos bug 1218)
 
 * Added sentry_cdu.dev (chaos bug 1218)
+
+* Added baytech-rpc18d-nc (issue 5)
 
 =========================================================================
 Release Notes for PowerMan version 2.3.9                      25 Feb 2011
