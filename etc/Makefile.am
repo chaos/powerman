@@ -43,6 +43,7 @@ pkgsysconf_DATA = \
 	phantom.dev \
 	plmpower.dev \
 	powerman.dev \
+	raritan-px4316.dev \
 	sentry_cdu.dev \
 	swpdu.dev \
 	vpc.dev \
