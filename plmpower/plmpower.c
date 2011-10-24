@@ -156,6 +156,7 @@ typedef struct {
 
 static void     usage(void);
 static int      open_serial(char *dev);
+static int      run_cmd(int fd, char *cmd);
 static void     shell(int fd);
 static void     docmd(int fd, char **av, int *quitp);
 static void     help(void);
@@ -183,7 +184,7 @@ static char             test_plug = 0;
 static unsigned long    x10_attempts = 3;
 static int              insteon_tmout = 1000; /* (msec) */
 
-#define OPTIONS "d:Tx:t:"
+#define OPTIONS "d:Tx:t:S:"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static struct option longopts[] = {
@@ -191,6 +192,7 @@ static struct option longopts[] = {
     { "testmode",       no_argument,       0, 'T' },
     { "x10-attempts",   required_argument, 0, 'x' },
     { "timeout",        required_argument, 0, 't' },
+    { "single-cmd",     required_argument, 0, 'S' },
     {0,0,0,0},
 };
 #else
@@ -203,6 +205,7 @@ main(int argc, char *argv[])
     char *device = NULL;
     int c;
     int fd = -1;
+    char *single_cmd = NULL;
 
     err_init(basename(argv[0]));
 
@@ -224,6 +227,9 @@ main(int argc, char *argv[])
                 if (x10_attempts < 1)
                     err_exit(FALSE, "X10 attempts must be >= 1");
                 break;
+            case 'S':   /* --single-cmd */
+                single_cmd = strdup(optarg);
+                break;
             default:
                 usage();
                 break;
@@ -238,7 +244,12 @@ main(int argc, char *argv[])
         fd = open_serial(device);
     }
 
-    shell(fd);
+    if (single_cmd) {
+        run_cmd(fd, single_cmd);
+        free(single_cmd);
+    } else
+        shell(fd);
+
 
     if (close(fd) < 0)
         err_exit(TRUE, "error closing %s", device);
@@ -279,23 +290,33 @@ open_serial(char *dev)
     return fd;
 }
 
-/* Prompt the user and parse the command line into an argv array which
- * is passed to docmd() for execution against PLM on [fd].  Returns when 
- * the user wants to quit.
+/* Parse the command line into an argv array which is passed to docmd() for
+ * execution against PLM on [fd].  Returns if the user wants to quit.
+ */
+static int
+run_cmd(int fd, char *cmd)
+{
+    int quit = 0;
+    char **av;
+    av = argv_create(cmd, "");
+    docmd(fd, av, &quit);
+    argv_destroy(av);
+    return (quit);
+}
+
+/* Prompt the user and run the command entered.
+ * Returns when the user wants to quit.
  */
 static void shell(int fd)
 {
     char buf[128];
-    char **av;
     int quit = 0;
 
     while (!quit) {
         printf("plmpower> ");
         fflush(stdout);
         if (fgets(buf, sizeof(buf), stdin)) {
-            av = argv_create(buf, "");
-            docmd(fd, av, &quit);
-            argv_destroy(av);
+            quit = run_cmd(fd, buf);
         } else
             quit = 1;
     }
