@@ -1,0 +1,58 @@
+# Support for 8-port Digital Loggers, Inc. web power switch III or IV
+#
+# Powerman.conf should look something like this:
+#   include "/etc/powerman/dli4.dev"
+#   device "lpc" "dli4" "/usr/sbin/httppower -u http://192.168.0.100 |&"
+#   node "p[1-8]" "lpc" "[1-8]"
+# 
+# Thanks to Gaylord Holder for providing info to create this script.
+# 
+specification "dli4" {
+	timeout 	30
+
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
+
+	script login {
+		expect "httppower> "
+		send "auth admin:1234\n"
+		expect "httppower> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status_all {
+		send "get index.htm\n"
+		expect "Controller:"
+		foreachplug {
+			expect "Outlet ([1-8]+)[^O]*(ON|OFF)"
+                        setplugstate $1 $2 on="ON" off="OFF"
+                }
+		expect "httppower> "
+	}
+	script on {
+		send "post outlet %s=ON\n"
+		expect "httppower> "
+	}
+	script off {
+		send "post outlet %s=OFF\n"
+		expect "httppower> "
+	}
+	script cycle {
+		send "post outlet %s=OFF\n"
+		expect "httppower> "
+		delay 4
+		send "post outlet %s=ON\n"
+		expect "httppower> "
+	}
+	script cycle_all {
+		foreachplug {
+			send "post outlet %s=OFF\n"
+			expect "httppower> "
+		}
+		delay 4
+		foreachplug {
+			send "post outlet %s=ON\n"
+			expect "httppower> "
+		}
+	}
+}

@@ -24,6 +24,7 @@ pkgsysconf_DATA = \
 	cyclades-pm20.dev \
 	cyclades-pm42.dev \
 	dli.dev \
+	dli4.dev \
 	eaton-revelation-snmp.dev \
 	eaton-epdu-blue-switched.dev \
 	hp3488.dev \
