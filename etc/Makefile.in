@@ -258,6 +258,7 @@ pkgsysconf_DATA = \
 	cyclades-pm20.dev \
 	cyclades-pm42.dev \
 	dli.dev \
+	dli4.dev \
 	eaton-revelation-snmp.dev \
 	eaton-epdu-blue-switched.dev \
 	hp3488.dev \
@@ -277,6 +278,7 @@ pkgsysconf_DATA = \
 	phantom.dev \
 	plmpower.dev \
 	powerman.dev \
+	raritan-px4316.dev \
 	sentry_cdu.dev \
 	swpdu.dev \
 	vpc.dev \

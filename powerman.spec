@@ -1,11 +1,11 @@
 Name:  powerman
-Version: 2.3.11
+Version: 2.3.12
 Release: 1
 
 Summary: PowerMan - centralized power control for clusters
 License: GPL
 Group: Applications/System
-Url: http://sourceforge.net/projects/powerman
+Url: http://code.google.com/p/powerman/
 Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 

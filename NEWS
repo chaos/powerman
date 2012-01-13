@@ -1,4 +1,16 @@
 =========================================================================
+Release Notes for PowerMan version 2.3.12                     13 Jan 2012
+=========================================================================
+
+* Add support for Raritan px4316 (chaos bz 1276)
+
+* Add support for DLI web power switches III and IV [Gaylord Holder]
+
+* Add --single-cmd option to plmpower (issue 7) [Ira Weiny]
+
+* Minor documentation updates
+
+=========================================================================
 Release Notes for PowerMan version 2.3.11                     01 Sep 2011
 =========================================================================
 
