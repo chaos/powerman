@@ -64,7 +64,7 @@
 #device "plm" "plmpower" "/usr/sbin/plmpower -d /dev/ttyS1 |&"
 #device "wti1" "wti-rps10" "/dev/ttyS0" "9600,8n1"
 #device "wti2" "wti-rps10" "/dev/ttyS2" "9600,8n1"
-#device "ipmi1" "ipmipower" "/usr/sbin/ipmipower -AgG -h py[0-10] |&"
+#device "ipmi1" "ipmipower" "/usr/sbin/ipmipower --wait-until-on --wait-until-off -h py[0-10] |&"
 
 # Define nodes (the entities you turn on and off with powerman)
 # - The longhand form is one line per node like this:
