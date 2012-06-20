@@ -250,6 +250,8 @@ pkgsysconf_DATA = \
 	bashfun.dev \
 	baytech.dev \
 	baytech-snmp.dev \
+	baytech-rpc18d-nc.dev \
+	baytech-rpc22.dev \
 	baytech-rpc28-nc.dev \
 	baytech-rpc3-nc.dev \
 	cb-7050.dev \
