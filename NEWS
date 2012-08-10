@@ -1,4 +1,11 @@
 =========================================================================
+Release Notes for PowerMan version 2.3.14                     10 Aug 2012
+=========================================================================
+
+* Fix issue 34: duplicate node name in configuration file
+  Updated hostlist code to the latest which fixes this issue.
+
+=========================================================================
 Release Notes for PowerMan version 2.3.13                     20 Jun 2012
 =========================================================================
 
