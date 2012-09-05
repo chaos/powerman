@@ -43,6 +43,7 @@ pkgsysconf_DATA = \
 	lom.dev \
 	ipmi.dev \
 	ipmipower.dev \
+	ipmipower-serial.dev \
 	phantom.dev \
 	plmpower.dev \
 	powerman.dev \

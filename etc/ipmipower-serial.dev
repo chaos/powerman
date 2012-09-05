@@ -1,0 +1,70 @@
+# 
+# $Id$
+#
+# This device configuration supports power control via the 
+# 'ipmipower' utility.
+#
+# This device file is identical to the ipmipower.dev device file,
+# except that power control scripts are not ranged.  Therefore, power
+# control operations are passed to ipmipower serially instead of in a
+# range.
+#
+# This device file may be more useful than ipmipower.dev on networks
+# that do not scale well and require power control operations to be
+# sent out more slowly.  It may also be useful when ipmipower is
+# executed with the --oem-power-type option.  A number of IPMI power
+# controllable devices may not be able to handle power control
+# operations quickly and the operations must be slowed down.
+#
+# off,delay,on used in place of IPMI cycle to ensure full command
+# completion before returning to the user.
+#
+specification "ipmipowerserial" {
+	timeout  	60
+
+	script login {
+		expect "ipmipower> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status_all {
+		send "stat\n"
+		foreachnode {
+			expect "([^\n:]+): ([^\n]+)\n"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "ipmipower> "
+	}
+	script status_beacon_all {
+		send "identify-status\n"
+		foreachnode {
+			expect "([^\n:]+): ([^\n]+)\n"
+			setplugstate $1 $2 on="on" off="off"
+		}
+		expect "ipmipower> "
+	}
+	script on {
+		send "on %s\n"
+		expect "ipmipower> "
+	}
+	script off {
+		send "off %s\n"
+		expect "ipmipower> "
+	}
+	script cycle {
+		send "off %s\n"
+		expect "ipmipower> "
+		delay 5
+		send "on %s\n"
+		expect "ipmipower> "
+	}
+	script beacon_on {
+		send "identify-on %s\n"
+		expect "ipmipower> "
+	}
+	script beacon_off {
+		send "identify-off %s\n"
+		expect "ipmipower> "
+	}
+}
