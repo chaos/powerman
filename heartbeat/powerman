@@ -6,21 +6,68 @@ PATH=/bin:/usr/sbin:$PATH
 
 #ha_logger -t heartbeat "powerman stonith agent called with args: $*"
 
+export pm_verbose=1
+
+pmlog () {
+	[ $pm_verbose == 1 ] && logger -t heartbeat "powerman-stonith: $*"
+}
+
+# N.B. agent must not exit 0 if the target is still on! (chaos bz 1439)
+# Heartbeat will retry if we fail (don't retry here)
+pmoff () {
+	local plug=$1
+	local state rc
+
+	pm -h $serverhost -0 $plug
+	rc=$?
+	pmlog "pm -h $serverhost -0 $plug, rc=$rc"
+	if [ $rc == 0 ]; then
+		state=$(pm -h $serverhost -qx $plug | awk '{ print $NF }')
+		[ "$state" == "off" ] || rc=1
+		pmlog "pm -h $serverhost -q $plug, state=$state, rc=$rc"
+	fi
+	return $rc  # 0=success
+}
+
+pmon () {
+	local plug=$1
+	local rc
+
+	pm -h $serverhost -1 $plug
+	rc=$?
+	pmlog "pm -h $serverhost -1 $plug, rc=$rc"
+	return $rc  # 0=success
+}
+
+pmcycle () {
+	local plug=$1
+	local rc
+
+	pm -h $serverhost -c $plug
+	rc=$?
+	pmlog "pm -h $serverhost -c $plug, rc=$rc"
+	return $rc  # 0=success
+}
+
 case $1 in
 gethosts)
 	exec pm -h $serverhost -lx
 	;;
 on)
-	exec pm -h $serverhost -1 $2
+	pmon $2
+	exit $?
 	;;
 off)
-	exec pm -h $serverhost -0 $2
+	pmoff $2
+	exit $?
 	;;
 reset)
 	if [ "$poweroff" == "1" ]; then
-		exec pm -h $serverhost -0 $2
+		pmoff $2
+		exit $?
 	else
-		exec pm -h $serverhost -c $2
+		pmcycle $2
+		exit $?
 	fi
 	;;
 status)
