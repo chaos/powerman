@@ -1,5 +1,5 @@
 /*****************************************************************************\
- *  $Id: hostlist.c 9950 2010-08-31 21:57:35Z grondo $
+ *  $Id: hostlist.c 11882 2012-10-03 17:31:41Z grondo $
  *****************************************************************************
  *  Copyright (C) 2002 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
@@ -968,9 +968,13 @@ static int hostrange_hn_within(hostrange_t hr, hostname_t hn)
 
     /*
      *  Finally, check whether [hn], with a valid numeric suffix,
-     *   falls within the range of [hr].
+     *   falls within the range of [hr] if [hn] and [hr] prefix are
+     *   identical.
      */
-    if (hn->num <= hr->hi && hn->num >= hr->lo) {
+    if ((len_hr == len_hn)
+        && (strcmp (hn->prefix, hr->prefix) == 0)
+        && (hn->num <= hr->hi)
+        && (hn->num >= hr->lo)) {
         int width = hostname_suffix_width (hn);
         if (!_width_equiv(hr->lo, &hr->width, hn->num, &width))
             return -1;
