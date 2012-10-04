@@ -1,4 +1,13 @@
 =========================================================================
+Release Notes for PowerMan version 2.3.16                     04 Oct 2012
+=========================================================================
+
+* Fix duplicate node name (issue 35)
+  Pulled in another hostlist fix (Mark Grondona)
+
+* Fix powerman stonith OFF should verify plug state (chaos bz 1439)
+
+=========================================================================
 Release Notes for PowerMan version 2.3.15                     05 Sep 2012
 =========================================================================
 

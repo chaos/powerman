@@ -1,5 +1,5 @@
 Name:  powerman
-Version: 2.3.15
+Version: 2.3.16
 Release: 1
 
 Summary: PowerMan - centralized power control for clusters
