@@ -4,12 +4,10 @@
 
 PATH=/bin:/usr/sbin:$PATH
 
-#ha_logger -t heartbeat "powerman stonith agent called with args: $*"
-
-export pm_verbose=1
+export pm_verbose=0
 
 pmlog () {
-	[ $pm_verbose == 1 ] && logger -t heartbeat "powerman-stonith: $*"
+	[ $pm_verbose == 1 ] && ha_logger -t heartbeat "powerman-stonith: $*"
 }
 
 # N.B. agent must not exit 0 if the target is still on! (chaos bz 1439)
