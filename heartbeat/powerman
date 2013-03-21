@@ -20,8 +20,14 @@ pmoff () {
 	rc=$?
 	pmlog "pm -h $serverhost -0 $plug, rc=$rc"
 	if [ $rc == 0 ]; then
-		state=$(pm -h $serverhost -qx $plug | awk '{ print $NF }')
-		[ "$state" == "off" ] || rc=1
+		# for multi-plug aliases, all must be off (jira TOSS-1962)
+		for state in $(pm -h $serverhost -qx $plug | awk '{ print $NF }'); do
+			if [ "$state" != "off" ]; then
+				state="unknown"
+				rc=1
+				break;
+			fi
+		done
 		pmlog "pm -h $serverhost -q $plug, state=$state, rc=$rc"
 	fi
 	return $rc  # 0=success
