@@ -68,9 +68,6 @@ as received from the RPC on one line per target, prefixed by target name.
 .I "-P, --temp targets"
 Query node temperature of specific targets (if implemented by RPC).  
 .TP
-.I "-h, --help"
-Display option summary.
-.TP
 .I "-L, --license"
 Show powerman license information.
 .TP
