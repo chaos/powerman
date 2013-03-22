@@ -20,6 +20,7 @@ TESTS_ENVIRONMENT = env
 TESTS_ENVIRONMENT += "PATH_POWERMAN=$(top_builddir)/powerman/powerman"
 TESTS_ENVIRONMENT += "PATH_POWERMAND=$(top_builddir)/powermand/powermand"
 TESTS_ENVIRONMENT += "PATH_ETC=$(top_builddir)/etc"
+TESTS_ENVIRONMENT += "PATH_POWERMAN_STONITH=$(top_builddir)/heartbeat/powerman"
 
 TESTS = t[0-9][0-9]
 

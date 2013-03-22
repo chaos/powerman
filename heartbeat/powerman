@@ -1,13 +1,25 @@
 #!/bin/bash
-
+#
 # heartbeat STONITH module for powerman
+#
+# Usage: powerman-stonith [on|off|reset|status] plug
+#
+#    $serverhost  - host:port of powerman server (required)
+#    $poweroff    - set to 1 if 'reset' should simply power off (optional)
+#    $PM_OVERRIDE - (undocumented, for test) override powerman path
+#    $PM_VERBOSE  - (undocumented, for test) set to enable verbose debug
+#                   (1=stderr, 2=syslog, 3=ha_log)
 
 PATH=/bin:/usr/sbin:$PATH
-
-export pm_verbose=0
+export PM_VERBOSE=${PM_VERBOSE:-0} # Logging disabled by default
+export pm=${PM_OVERRIDE:-pm -h $serverhost}
 
 pmlog () {
-	[ $pm_verbose == 1 ] && ha_logger -t heartbeat "powerman-stonith: $*"
+	case "$PM_VERBOSE" in
+		1) echo "powerman-stonith: $*" >&2 ;;
+		2) logger -t heartbeat "powerman-stonith: $*" ;;
+		3) ha_logger -t heartbeat "powerman-stonith: $*" ;;
+	esac
 }
 
 # N.B. agent must not exit 0 if the target is still on! (chaos bz 1439)
@@ -16,19 +28,19 @@ pmoff () {
 	local plug=$1
 	local state rc
 
-	pm -h $serverhost -0 $plug
+	$pm -0 $plug
 	rc=$?
-	pmlog "pm -h $serverhost -0 $plug, rc=$rc"
+	pmlog "$pm -0 $plug, rc=$rc"
 	if [ $rc == 0 ]; then
 		# for multi-plug aliases, all must be off (jira TOSS-1962)
-		for state in $(pm -h $serverhost -qx $plug | awk '{ print $NF }'); do
+		for state in $($pm -qx $plug | awk '{ print $NF }'); do
 			if [ "$state" != "off" ]; then
 				state="unknown"
 				rc=1
 				break;
 			fi
 		done
-		pmlog "pm -h $serverhost -q $plug, state=$state, rc=$rc"
+		pmlog "$pm -q $plug, state=$state, rc=$rc"
 	fi
 	return $rc  # 0=success
 }
@@ -37,9 +49,9 @@ pmon () {
 	local plug=$1
 	local rc
 
-	pm -h $serverhost -1 $plug
+	$pm -1 $plug
 	rc=$?
-	pmlog "pm -h $serverhost -1 $plug, rc=$rc"
+	pmlog "$pm -1 $plug, rc=$rc"
 	return $rc  # 0=success
 }
 
@@ -47,15 +59,15 @@ pmcycle () {
 	local plug=$1
 	local rc
 
-	pm -h $serverhost -c $plug
+	$pm -c $plug
 	rc=$?
-	pmlog "pm -h $serverhost -c $plug, rc=$rc"
+	pmlog "$pm -c $plug, rc=$rc"
 	return $rc  # 0=success
 }
 
 case $1 in
 gethosts)
-	exec pm -h $serverhost -lx
+	exec $pm -lx
 	;;
 on)
 	pmon $2
@@ -75,7 +87,7 @@ reset)
 	fi
 	;;
 status)
-	exec pm -h $serverhost -l >/dev/null
+	exec $pm -l >/dev/null
 	;;
 getconfignames)
 	echo serverhost

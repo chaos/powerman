@@ -1,0 +1,5 @@
+Command completed successfully
+powerman-stonith: ./pm-sim -1 t, rc=0
+Command completed successfully
+powerman-stonith: ./pm-sim -r -s -t -0 t, rc=0
+powerman-stonith: ./pm-sim -r -s -t -q t, state=unknown, rc=1
