@@ -99,7 +99,7 @@ getinfo-devid|getinfo-devname|getinfo-devdescr)
 	exit 0
 	;;
 getinfo-devurl)
-	echo "http://powerman.sourceforge.net/"
+	echo "http://code.google.com/p/powerman"
 	exit 0
 	;;
 getinfo-xml)
