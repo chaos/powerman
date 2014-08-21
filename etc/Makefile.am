@@ -5,6 +5,7 @@ pkgsysconf_DATA = \
 	apc7900.dev \
 	apc7900v3.dev \
 	apc7920.dev \
+	apc8941.dev \
 	apc.dev \
 	apc-snmp.dev \
 	apcnew.dev \
