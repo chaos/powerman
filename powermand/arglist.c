@@ -1,32 +1,32 @@
 /*****************************************************************************
- *  Copyright (C) 2004-2008 The Regents of the University of California.
+ *  Copyright (C) 2004 The Regents of the University of California.
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Jim Garlick <garlick@llnl.gov>
  *  UCRL-CODE-2002-008.
- *  
+ *
  *  This file is part of PowerMan, a remote power management program.
- *  For details, see <http://www.llnl.gov/linux/powerman/>.
- *  
+ *  For details, see http://code.google.com/p/powerman/
+ *
  *  PowerMan is free software; you can redistribute it and/or modify it under
  *  the terms of the GNU General Public License as published by the Free
  *  Software Foundation; either version 2 of the License, or (at your option)
  *  any later version.
- *  
- *  PowerMan is distributed in the hope that it will be useful, but WITHOUT 
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
+ *
+ *  PowerMan is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  *  for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License along
  *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-/* Args used to be stored in a List, but gprof showed that very large 
- * configurations spent a lot of time doing linear search of arg list for 
+/* Args used to be stored in a List, but gprof showed that very large
+ * configurations spent a lot of time doing linear search of arg list for
  * each arg->state update.  The List was traded for a hash, but as we still
- * want to iterate through args in the client in order, we keep the hostlist 
- * representation of the nodes in the ArgList, and use it to implement an 
+ * want to iterate through args in the client in order, we keep the hostlist
+ * representation of the nodes in the ArgList, and use it to implement an
  * 'iterator' interface.
  */
 
@@ -79,7 +79,7 @@ static Arg *_create_arg(char *node)
     arg->node = xstrdup(node);
     arg->state = ST_UNKNOWN;
     arg->val = NULL;
-    
+
     return arg;
 }
 
