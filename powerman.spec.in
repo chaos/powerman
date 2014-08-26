@@ -1,6 +1,6 @@
 Name:  @META_NAME@
 Version: @META_VERSION@
-Release: @META_RELEASE@
+Release: @META_RELEASE@%{?dist}
 
 Summary: PowerMan - centralized power control for clusters
 License: GPL
