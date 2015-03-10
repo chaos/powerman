@@ -11,7 +11,7 @@ AC_DEFUN([AC_SNMPPOWER],
     AC_HELP_STRING([--with-snmppower], [Build snmppower executable]))
   AS_IF([test "x$with_snmppower" = "xyes"], [
     AC_CHECK_HEADERS([net-snmp/net-snmp-config.h])
-    X_AC_CHECK_COND_LIB([snmp], [init_snmp])
+    X_AC_CHECK_COND_LIB([netsnmp], [init_snmp])
   ])
   AS_IF([test "x$with_snmppower" = "xyes" && test "x$ac_cv_header_net_snmp_net_snmp_config_h" = "xno" -o "x$ac_cv_lib_snmp_init_snmp" = "xno"], [
     AC_MSG_ERROR([could not find snmp library])
