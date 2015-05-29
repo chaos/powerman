@@ -43,6 +43,8 @@ BuildRequires: curl-devel
 BuildRequires: net-snmp-devel
 %endif
 
+BuildRequires: systemd
+
 %package devel
 Requires: %{name} = %{version}-%{release}
 Summary: Headers and libraries for developing applications using PowerMan
@@ -73,6 +75,7 @@ A shared library for applications using PowerMan.
   %{?_with_httppower: --with-httppower} \
   %{?_with_snmppower: --with-snmppower} \
   %{?_with_tcp_wrappers: --with-tcp-wrappers} \
+  --with-systemdsystemunitdir=%{_unitdir} \
   --program-prefix=%{?_program_prefix:%{_program_prefix}}
 make
 
@@ -84,20 +87,20 @@ make install DESTDIR=$RPM_BUILD_ROOT
 rm -rf $RPM_BUILD_ROOT
 
 %post
-if [ -x /sbin/chkconfig ]; then /sbin/chkconfig --add powerman; fi
+/bin/systemctl enable powerman > /dev/null 2>&1 ||:
 
 %post libs
 if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
 
 %preun
 if [ "$1" = 0 ]; then
-  %{_sysconfdir}/init.d/powerman stop >/dev/null 2>&1 || :
-  if [ -x /sbin/chkconfig ]; then /sbin/chkconfig --del powerman; fi
+  systemctl stop powerman >/dev/null 2>&1 || :
+  systemctl disable powerman > /dev/null 2>&1 || :
 fi
 
 %postun
 if [ "$1" -ge 1 ]; then
-  %{_sysconfdir}/init.d/powerman condrestart >/dev/null 2>&1 || :
+  systemctl try-restart powerman >/dev/null 2>&1 || :
 fi
 
 %postun libs
@@ -127,7 +130,7 @@ if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
 %{_mandir}/*5/*
 %{_mandir}/*8/*
 %{_libdir}/stonith/plugins/external/powerman
-%{_sysconfdir}/init.d/powerman
+%{_unitdir}/powerman.service
 %dir %attr(0755,daemon,root) %config %{_localstatedir}/run/powerman
 
 %files devel
@@ -150,6 +153,9 @@ if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
 %endif
 
 %changelog
+
+* Fri May 29 2015 Jim Garlick <garlick.jim@gmail.com> 2.3.20-1
+- Switch to systemd init
 
 * Tue Feb 14 2006 Ben Woodard <woodard@redhat.com> 1.0.22-3
 - Changed /usr/bin to bindir

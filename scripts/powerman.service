@@ -1,0 +1,14 @@
+[Unit]
+Description=PowerMan
+After=syslog.target network.target
+
+[Service]
+Type=forking
+PrivateTmp=yes
+User=daemon
+Group=daemon
+ExecStart=/usr/sbin/powermand
+PIDFile=/var/run/powerman/powermand.pid
+
+[Install]
+WantedBy=multi-user.target
