@@ -1,4 +1,15 @@
 =========================================================================
+Release Notes for PowerMan version 2.3.21                     29 May 2015
+=========================================================================
+
+* Added systemd unit file (bacaldwell, gc issue #42)
+  SystemVinit script support is dropped.
+
+* Build against -lnetsnmp not -lsnmp (TOSS-2815)
+
+* Add raritan-px5523.dev (Daryl Granau, TOSS-2486)
+
+=========================================================================
 Release Notes for PowerMan version 2.3.20                     26 Aug 2014
 =========================================================================
 
