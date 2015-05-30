@@ -65,6 +65,11 @@ AC_SNMPPOWER
 AC_GENDERS
 
 ##
+# Check for systemd
+##
+RRA_WITH_SYSTEMD_UNITDIR
+
+##
 # Checks for library functions.
 ##
 AC_CHECK_FUNCS( \

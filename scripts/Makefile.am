@@ -1,3 +1,1 @@
-initconfdir = $(sysconfdir)/init.d
-
-initconf_SCRIPTS = powerman
+systemdsystemunit_SCRIPTS = powerman.service
