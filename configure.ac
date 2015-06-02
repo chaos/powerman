@@ -112,7 +112,6 @@ AC_CONFIG_FILES( \
   scripts/Makefile \
   scripts/powerman \
   heartbeat/Makefile \
-  test/Makefile \
   man/Makefile \
   man/powerman.1 \
   man/libpowerman.3 \

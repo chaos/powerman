@@ -40,8 +40,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/liblsd
 
 common_ldadd = \
-	$(top_srcdir)/liblsd/liblsd.a \
-	$(top_srcdir)/libcommon/libcommon.a \
+	$(top_builddir)/liblsd/liblsd.a \
+	$(top_builddir)/libcommon/libcommon.a \
 	$(LIBFORKPTY)
 
 vpcd_SOURCES = vpcd.c
@@ -87,7 +87,7 @@ ipmipower_SOURCES = ipmipower.c
 ipmipower_LDADD = $(common_ldadd)
 
 cli_SOURCES = cli.c
-cli_LDADD = -L../libpowerman -lpowerman
+cli_LDADD = -L$(top_builddir)/libpowerman -lpowerman
 
 EXTRA_DIST = $(TESTS) $(TESTS:%=%.exp) \
 	mcr.conf sierra.conf \

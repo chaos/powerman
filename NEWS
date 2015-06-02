@@ -1,4 +1,13 @@
 =========================================================================
+Release Notes for PowerMan version 2.3.22                     01 Jun 2015
+=========================================================================
+
+* Assorted build system fixes to allow 'make distcheck'
+  and Koji builds on RHEL 7 to work.
+
+* Note: unit tests temporarily disabled pending rework.
+
+=========================================================================
 Release Notes for PowerMan version 2.3.21                     29 May 2015
 =========================================================================
 
