@@ -8,7 +8,8 @@ SUBDIRS = \
 	powerman \
 	powermand \
 	libpowerman \
-	plmpower
+	plmpower \
+	test
 
 if WITH_HTTPPOWER
 SUBDIRS += httppower

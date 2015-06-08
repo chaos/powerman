@@ -1,4 +1,22 @@
 =========================================================================
+Release Notes for PowerMan version 2.3.23                     08 Jun 2015
+=========================================================================
+
+* Build: silence CC lines, fix AC_LANG_CONFTEST warnings, fix $(EXEEXT)
+  warnings.
+
+* Build: install System V init scripts if --with-systemdsystemunitdir
+  is not configured and include both in EXTRA_DIST.
+
+* Build: re-enable 'make check' unit tests.
+
+* Build: fix some 'make distcheck' issues, but until unit tests are fixed
+  to find *.exp and *.conf files in $(srcdir), this will still fail.
+
+* RPM: configure genders, httppower, snmppower, and tcp-wrappers
+  unconditionally; update URL.
+
+=========================================================================
 Release Notes for PowerMan version 2.3.22                     01 Jun 2015
 =========================================================================
 
@@ -6,6 +24,8 @@ Release Notes for PowerMan version 2.3.22                     01 Jun 2015
   and Koji builds on RHEL 7 to work.
 
 * Note: unit tests temporarily disabled pending rework.
+
+[This release was not distributed as it was incomplete for RHEL 7/Koji]
 
 =========================================================================
 Release Notes for PowerMan version 2.3.21                     29 May 2015
