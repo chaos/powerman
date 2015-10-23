@@ -44,6 +44,7 @@
 #include "hostlist.h"
 #include "argv.h"
 #include "xmalloc.h"
+#include "xread.h"
 
 typedef enum { QUERY, OFF, ON } relayop_t;
 typedef enum { NONE, ICS8064, HP3488 } gptype_t;
@@ -77,7 +78,7 @@ static const struct option longopts[] = {
 int 
 main(int argc, char *argv[])
 {
-    int i, c;
+    int c;
 
     prog = basename(argv[0]);
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
@@ -131,7 +132,7 @@ relay_op(char *s, relayop_t op, int *plug, int num_plugs, int plug_origin)
     char *tmp;
     int i;
             
-    while (tmp = hostlist_next(it)) {
+    while ((tmp = hostlist_next(it))) {
         i = strtoul(tmp, NULL, 10);
         if (i < plug_origin || i >= num_plugs + plug_origin)
             break;

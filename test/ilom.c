@@ -133,7 +133,7 @@ static const struct option longopts[] = {
 int 
 main(int argc, char *argv[])
 {
-    int i, c;
+    int c;
 
     prog = basename(argv[0]);
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
@@ -185,6 +185,8 @@ prompt_loop(void)
         case SER_LOGIN:
             authenticated = 2;
             break;
+        case NONE:
+            authenticated = 0;
     }
     for (;;) { 
         switch (authenticated) {

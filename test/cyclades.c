@@ -66,7 +66,7 @@ static const struct option longopts[] = {
 int 
 main(int argc, char *argv[])
 {
-    int i, c;
+    int c;
 
     prog = basename(argv[0]);
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
@@ -281,14 +281,13 @@ _prompt_loop(void)
 {
     int i;
     char buf[128];
-    int num_plugs;
+    int num_plugs = 0;
     char plug[42][4];
     int plug_origin = 1;
     char user[32], pass[32];
     char status_all[32];
     char on_all[32];
     char off_all[32];
-    char c;
 
     switch (personality) {
         case PM8:

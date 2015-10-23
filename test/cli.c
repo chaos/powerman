@@ -40,8 +40,8 @@ main(int argc, char *argv[])
     pm_err_t err = PM_ESUCCESS;
     pm_node_state_t ns;
     pm_handle_t pm;
-    char *str, ebuf[64];
-    char *server, *node;
+    char ebuf[64];
+    char *server, *node = NULL;
     char cmd;
 
     if (argc < 3 || argc > 4)
