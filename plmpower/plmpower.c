@@ -138,9 +138,9 @@
 #define X10_STATUS_REQ              0xf
 
 /* X10 encoding of housecode A-P and device code 1-16 */
-static const int x10_enc[] = { 
-    0x6, 0xe, 0x2, 0xa, 0x1, 0x9, 0x5, 0xd, 
-    0x7, 0xf, 0x3, 0xb, 0x0, 0x8, 0x4, 0xc 
+static const int x10_enc[] = {
+    0x6, 0xe, 0x2, 0xa, 0x1, 0x9, 0x5, 0xd,
+    0x7, 0xf, 0x3, 0xb, 0x0, 0x8, 0x4, 0xc
 };
 
 typedef struct {
@@ -172,7 +172,7 @@ static char    *insaddr2str(insaddr_t *ip);
 static int      str2x10addr(char *s, x10addr_t *xp);
 static int      wait_until_ready(int fd, int timeout_msec);
 static int      plm_recv(int fd, char cmd, char *recv, int recvlen);
-static void     plm_docmd(int fd, char *send, int sendlen, 
+static void     plm_docmd(int fd, char *send, int sendlen,
                           char *recv, int recvlen);
 static void     plm_send_insteon(int fd, insaddr_t *ip, char cmd1, char cmd2);
 static int      plm_recv_insteon(int fd, insaddr_t *ip, char *cmd1, char *cmd2,
@@ -325,7 +325,7 @@ static void shell(int fd)
 /* Parse argv array [av] and execute any commands against PLM on [fd].
  * If the user wants to quit, set [*quitp] to 1.
  */
-static void 
+static void
 docmd(int fd, char **av, int *quitp)
 {
     if (av[0] != NULL) {
@@ -365,14 +365,14 @@ docmd(int fd, char **av, int *quitp)
                 printf("Usage: ping addr\n");
             else
                 plm_ping(fd, av[1]);
-        } else 
+        } else
             printf("type \"help\" for a list of commands\n");
     }
 }
 
 /* Summarize interactive "shell" commands.
  */
-static void 
+static void
 help(void)
 {
     printf("Valid commands are:\n");
@@ -392,14 +392,14 @@ help(void)
 static void
 plm_on(int fd, char *addrstr)
 {
-    insaddr_t i;    
+    insaddr_t i;
     x10addr_t x;
     char cmd2;
 
     if (str2insaddr(addrstr, &i)) {
         if (testmode) {
             test_plug = 1;
-        } else { 
+        } else {
             do {
                 plm_send_insteon(fd, &i, CMD_ON_FAST, 0xff);
             } while (!plm_recv_insteon(fd, &i, NULL, &cmd2, insteon_tmout));
@@ -441,7 +441,7 @@ plm_off(int fd, char *addrstr)
         err(FALSE, "could not parse address");
 }
 
-/* Send the Insteon STATUS command to [addrstr] via PLM on [fd] and print 
+/* Send the Insteon STATUS command to [addrstr] via PLM on [fd] and print
  * the result on stdout.  Retry the command until a response is received.
  * X10 addresses are accepted here, but we always report status as "unknown".
  */
@@ -467,8 +467,8 @@ plm_status(int fd, char *addrstr)
         err(FALSE, "could not parse address");
 }
 
-/* Send the Insteon PING command to [addrstr] via PLM on [fd] 
- * and print the round-trip time and number of retries on stdout.  
+/* Send the Insteon PING command to [addrstr] via PLM on [fd]
+ * and print the round-trip time and number of retries on stdout.
  * Retry the command until a response is received.
  */
 static void
@@ -502,7 +502,7 @@ plm_ping(int fd, char *addrstr)
 /* Convert a string [s] to Insteon address [ip].
  * Return 1 on success, 0 on failure.
  */
-static int 
+static int
 str2insaddr(char *s, insaddr_t *ip)
 {
     if (sscanf(s, "%2hhx.%2hhx.%2hhx", &ip->h, &ip->m, &ip->l) != 3)
@@ -551,7 +551,7 @@ wait_until_ready(int fd, int timeout_msec)
     struct timeval tv = { timeout_msec / 1000, (timeout_msec % 1000) * 1000 };
     xpollfd_t pfd = xpollfd_create();
     int res = 1;
-   
+
     xpollfd_set(pfd, fd, XPOLLIN);
     if (xpoll(pfd, &tv) == 0)
         res = 0;
@@ -560,10 +560,10 @@ wait_until_ready(int fd, int timeout_msec)
     return res;
 }
 
-/* Receive a command or a response from the PLM on [fd] and return it 
- * in [recv] of length [recvlen].  If the a command is received which does 
+/* Receive a command or a response from the PLM on [fd] and return it
+ * in [recv] of length [recvlen].  If the a command is received which does
  * not match [cmd], silently discard it.  If a NAK is received instead of STX
- * indicating the PLM was busy when the last command was sent, return 1, 
+ * indicating the PLM was busy when the last command was sent, return 1,
  * otherwise return 0.
  */
 static int
@@ -577,7 +577,7 @@ retry:
     else if (b[0] != IM_STX)
         err_exit(FALSE, "expected IM_STX or IM_NAK, got %.2hhX", b[0]);
     xread_all(fd, &b[1], 1);
-    if (b[1] != cmd) {  
+    if (b[1] != cmd) {
         switch (b[1]) {
             case IM_RECV_STD:
                 xread_all(fd, &b[2], 9);
@@ -628,7 +628,7 @@ plm_docmd(int fd, char *send, int sendlen, char *recv, int recvlen)
     do {
         xwrite_all(fd, send, sendlen);
         nak = plm_recv(fd, send[1], recv, recvlen);
-        if (!nak && recv[recvlen - 1] == IM_NAK) 
+        if (!nak && recv[recvlen - 1] == IM_NAK)
             nak = 1; /* FIXME: retry appropriate here or is command broken? */
         if (nak)
             usleep(1000*100); /* wait 100ms for PLM to become ready */
@@ -660,7 +660,7 @@ plm_info(int fd)
     i.h = recv[2];
     i.m = recv[3];
     i.l = recv[4];
-    printf("id=%s dev=%.2hhX.%.2hhX vers=%hhd\n", insaddr2str(&i), 
+    printf("id=%s dev=%.2hhX.%.2hhX vers=%hhd\n", insaddr2str(&i),
         recv[5], recv[6], recv[7]);
 }
 
@@ -681,7 +681,7 @@ plm_send_insteon(int fd, insaddr_t *ip, char cmd1, char cmd2)
  * give up and return 0, else return 1.
  */
 static int
-plm_recv_insteon(int fd, insaddr_t *ip, char *cmd1, char *cmd2, 
+plm_recv_insteon(int fd, insaddr_t *ip, char *cmd1, char *cmd2,
                  int timeout_msec)
 {
     char recv[11];
@@ -702,7 +702,7 @@ plm_recv_insteon(int fd, insaddr_t *ip, char *cmd1, char *cmd2,
     return 1;
 }
 
-/* Send an X10 command [cmd] to address [xp] via PLM on [fd].  
+/* Send an X10 command [cmd] to address [xp] via PLM on [fd].
  * Repeat the command x10_attempts times for good measure because we will
  * get no acknowledgement from the device.
  */

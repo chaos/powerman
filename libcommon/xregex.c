@@ -41,7 +41,7 @@
 struct xregex_struct {
     int         xr_magic;
     int         xr_cflags;
-    regex_t    *xr_regex; 
+    regex_t    *xr_regex;
 };
 #define XREGEX_MATCH_MAGIC 0x3456aaba
 struct xregex_match_struct {
@@ -53,7 +53,7 @@ struct xregex_match_struct {
     bool        xm_used;
 };
 
-xregex_t 
+xregex_t
 xregex_create(void)
 {
     xregex_t xrp = (xregex_t)xmalloc(sizeof(struct xregex_struct));
@@ -64,7 +64,7 @@ xregex_create(void)
     return xrp;
 }
 
-void 
+void
 xregex_destroy(xregex_t xrp)
 {
     assert(xrp->xr_magic == XREGEX_MAGIC);
@@ -76,10 +76,10 @@ xregex_destroy(xregex_t xrp)
     xfree(xrp);
 }
 
-/* Substitute all occurrences of s2 with s3 in s1, 
- * e.g. _str_subst(str, "\\r", "\r") 
+/* Substitute all occurrences of s2 with s3 in s1,
+ * e.g. _str_subst(str, "\\r", "\r")
  */
-static void 
+static void
 _str_subst(char *s1, int len, const char *s2, const char *s3)
 {
     int s2len = strlen(s2);
@@ -93,7 +93,7 @@ _str_subst(char *s1, int len, const char *s2, const char *s3)
     }
 }
 
-void 
+void
 xregex_compile(xregex_t xrp, const char *regex, bool withsub)
 {
     char tmpstr[256];
@@ -129,7 +129,7 @@ xregex_compile(xregex_t xrp, const char *regex, bool withsub)
     }
 }
 
-bool 
+bool
 xregex_exec(xregex_t xrp, const char *s, xregex_match_t xm)
 {
     int eflags = REG_NOTEOL;
@@ -142,7 +142,7 @@ xregex_exec(xregex_t xrp, const char *s, xregex_match_t xm)
         assert(xm->xm_used == FALSE);
     }
 
-    res = regexec(xrp->xr_regex, s, xm ? xm->xm_nmatch : 0, 
+    res = regexec(xrp->xr_regex, s, xm ? xm->xm_nmatch : 0,
                                     xm ? xm->xm_pmatch : NULL, eflags);
     if (xm != NULL) {
         xm->xm_result = res;
@@ -156,7 +156,7 @@ xregex_exec(xregex_t xrp, const char *s, xregex_match_t xm)
     return res == 0 ? TRUE : FALSE;
 }
 
-xregex_match_t 
+xregex_match_t
 xregex_match_create(int nmatch)
 {
     xregex_match_t xm;
@@ -171,7 +171,7 @@ xregex_match_create(int nmatch)
     return xm;
 }
 
-void 
+void
 xregex_match_destroy(xregex_match_t xm)
 {
     assert(xm->xm_magic == XREGEX_MATCH_MAGIC);
@@ -201,7 +201,7 @@ xregex_match_strdup(xregex_match_t xm)
 
     assert(xm->xm_magic == XREGEX_MATCH_MAGIC);
     assert(xm->xm_used);
-  
+
     if (xm->xm_result == 0) {
         s = (char *)xmalloc(xm->xm_pmatch[0].rm_eo + 1);
         assert(xm->xm_str != NULL);
@@ -227,8 +227,8 @@ xregex_match_sub_strdup(xregex_match_t xm, int i)
 
     assert(xm->xm_magic == XREGEX_MATCH_MAGIC);
     assert(xm->xm_used);
-  
-    if (xm->xm_result == 0 && i >= 0 && i < xm->xm_nmatch 
+
+    if (xm->xm_result == 0 && i >= 0 && i < xm->xm_nmatch
                            && xm->xm_pmatch[i].rm_so != -1) {
         regmatch_t m = xm->xm_pmatch[i];
 

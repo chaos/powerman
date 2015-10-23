@@ -16,7 +16,7 @@
 #define CP_PROMPT   "powerman> "        /* prompt */
 #define CP_VERSION  "001 %s" CP_EOL
 
-/* 
+/*
  * Requests
  */
 #define CP_HELP       "help"
@@ -39,8 +39,8 @@
 #define CP_TELEMETRY  "telemetry"
 #define CP_EXPRANGE   "exprange"
 
-/* 
- * Responses - 
+/*
+ * Responses -
  * 1XX's are successes (indicates end of response)
  * 2XX's are failures (indicates end of response)
  * 3XX's are informational messages (more data coming)
@@ -101,6 +101,6 @@
 
 #endif  /* PM_CLIENT_PROTO_H */
 
-/* 
- * vi:tabstop=4 shiftwidth=4 expandtab 
+/*
+ * vi:tabstop=4 shiftwidth=4 expandtab
  */

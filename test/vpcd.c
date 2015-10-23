@@ -70,7 +70,7 @@ static const struct option longopts[] = {
 #define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
 #endif
 
-int 
+int
 main(int argc, char *argv[])
 {
     int i, c;
@@ -104,18 +104,18 @@ main(int argc, char *argv[])
         temp[i] = 83 + i;
     }
     _prompt_loop();
-        
+
     exit(0);
 }
 
-static void 
+static void
 usage(void)
 {
     fprintf(stderr, "Usage: %s\n", prog);
     exit(1);
 }
 
-static void 
+static void
 _noop_handler(int signum)
 {
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
@@ -124,7 +124,7 @@ _noop_handler(int signum)
 /* Return with stdin/stdout reopened as a connected socket.
  */
 #define LISTEN_BACKLOG 5
-static void 
+static void
 _setup_socket(char *serv)
 {
     struct addrinfo hints, *res, *r;
@@ -197,7 +197,7 @@ _setup_socket(char *serv)
     pfd = xpollfd_create();
     fd = -1;
     while (fd == -1) {
-        xpollfd_zero(pfd); 
+        xpollfd_zero(pfd);
         for (i = 0; i < fdlen; i++) {
             if (fds[i] != -1)
                 xpollfd_set(pfd, fds[i], XPOLLIN);
@@ -224,7 +224,7 @@ _setup_socket(char *serv)
                 }
             }
         }
-    }      
+    }
     xpollfd_destroy(pfd);
     for (i = 0; i < fdlen; i++) {
         if (fds[i] != -1 && fds[i] != fd)
@@ -246,7 +246,7 @@ _setup_socket(char *serv)
 
 #define SPEW \
 "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]"
-static void 
+static void
 _spew_one(int linenum)
 {
     char buf[80];
@@ -259,7 +259,7 @@ _spew_one(int linenum)
     printf("%s\n", buf);
 }
 
-static void 
+static void
 _spew(int lines)
 {
     int i;
@@ -268,7 +268,7 @@ _spew(int lines)
         _spew_one(i);
 }
 
-static void 
+static void
 _prompt_loop(void)
 {
     int seq, i;

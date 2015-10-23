@@ -194,7 +194,7 @@ void cli_init(void)
     cli_clients = list_create((ListDelF) _destroy_client);
 }
 
-/* 
+/*
  * Finalize module.
  */
 void cli_fini(void)
@@ -203,9 +203,9 @@ void cli_fini(void)
     list_destroy(cli_clients);
 }
 
-/* 
- * Build a hostlist_t from a string, validating each node name against 
- * powerman configuration.  If any bogus nodes are found, issue error 
+/*
+ * Build a hostlist_t from a string, validating each node name against
+ * powerman configuration.  If any bogus nodes are found, issue error
  * response to client and return NULL.
  */
 static hostlist_t _hostlist_create_validated(Client * c, char *str)
@@ -224,7 +224,7 @@ static hostlist_t _hostlist_create_validated(Client * c, char *str)
             _internal_error_response(c);
         return NULL;
     }
-    conf_exp_aliases(hl);       
+    conf_exp_aliases(hl);
     if ((badhl = hostlist_create(NULL)) == NULL) {
         /* Note: other hostlist failures not user-induced so OK to be vague */
         _internal_error_response(c);
@@ -258,7 +258,7 @@ static hostlist_t _hostlist_create_validated(Client * c, char *str)
     return hl;
 }
 
-/* 
+/*
  * Reply to client request for list of nodes in powerman configuration.
  */
 static void _client_query_nodes_reply(Client * c)
@@ -270,7 +270,7 @@ static void _client_query_nodes_reply(Client * c)
     if (c->exprange) {
         hostlist_iterator_t itr;
         char *node;
-    
+
         if ((itr = hostlist_iterator_create(nodes)) == NULL) {
             _internal_error_response(c);
             return;
@@ -280,7 +280,7 @@ static void _client_query_nodes_reply(Client * c)
             free(node); /* hostlist_next strdups returned string */
         }
         hostlist_iterator_destroy(itr);
-        
+
     } else {
         char *hosts = _xhostlist_ranged_string(nodes);
 
@@ -291,7 +291,7 @@ static void _client_query_nodes_reply(Client * c)
     _client_printf(c, CP_RSP_QRY_COMPLETE);
 }
 
-/* 
+/*
  * Helper for _client_query_device_reply() .
  * Create a hostlist string for the nodes attached to the specified device.
  * Caller must xfree().
@@ -343,7 +343,7 @@ static bool _device_matches_targets(Device *dev, char *arg)
     return res;
 }
 
-/* 
+/*
  * Reply to client request for list of devices in powerman configuration.
  */
 static void _client_query_device_reply(Client * c, char *arg)
@@ -363,12 +363,12 @@ static void _client_query_device_reply(Client * c, char *arg)
                 continue;
 
             if ((nodelist = _make_pluglist_str(dev))) {
-                _client_printf(c, CP_INFO_DEVICE, 
+                _client_printf(c, CP_INFO_DEVICE,
                         dev->name,
                         dev->connect_state == DEV_CONNECTED ? "connected"
                           : dev->connect_state == DEV_CONNECTING ? "connecting"
                           : "disconnected",
-                        con > 0 ? con - 1 : 0, 
+                        con > 0 ? con - 1 : 0,
                         dev->stat_successful_actions,
                         dev->specname,
                         nodelist);
@@ -380,7 +380,7 @@ static void _client_query_device_reply(Client * c, char *arg)
     _client_printf(c, CP_RSP_QRY_COMPLETE);
 }
 
-/* 
+/*
  * Reply to client request for plug/soft status.
  */
 static void _client_query_status_reply(Client * c, bool error)
@@ -393,8 +393,8 @@ static void _client_query_status_reply(Client * c, bool error)
     if (c->exprange) {
         itr = arglist_iterator_create(c->cmd->arglist);
         while ((arg = arglist_next(itr))) {
-            _client_printf(c, CP_INFO_XSTATUS, arg->node, 
-                    arg->state == ST_ON ? "on" 
+            _client_printf(c, CP_INFO_XSTATUS, arg->node,
+                    arg->state == ST_ON ? "on"
                     : arg->state == ST_OFF ? "off" : "unknown");
         }
         arglist_iterator_destroy(itr);
@@ -448,7 +448,7 @@ static void _client_query_status_reply(Client * c, bool error)
         _client_printf(c, CP_RSP_QRY_COMPLETE);
 }
 
-/* 
+/*
  * Reply to client request for temperature/beacon status.
  */
 static void _client_query_status_reply_nointerp(Client * c, bool error)
@@ -510,7 +510,7 @@ static Command *_create_command(Client * c, int com, char *arg1)
         _client_printf(c, CP_ERR_UNIMPL);
         cmd = NULL;
     }
-    /* NOTE 1: cmd->arglist has a reference count and can persist after we 
+    /* NOTE 1: cmd->arglist has a reference count and can persist after we
      * unlink from it in _destroy_command().  If client goes away prematurely,
      * actions that write to arglist will still have valid pointers.
      * NOTE 2: we create arglist for all actions, rather than just query
@@ -611,9 +611,9 @@ static void _parse_input(Client * c, char *input)
     } else if (!strncasecmp(str, CP_BEACON_ALL, strlen(CP_BEACON_ALL))) {
         cmd = _create_command(c, PM_STATUS_BEACON, NULL);
     } else if (sscanf(str, CP_DEVICE, arg1) == 1) {     /* device [hostlist] */
-        _client_query_device_reply(c, arg1);              
+        _client_query_device_reply(c, arg1);
     } else if (!strncasecmp(str, CP_DEVICE_ALL, strlen(CP_DEVICE_ALL))) {
-        _client_query_device_reply(c, NULL);              
+        _client_query_device_reply(c, NULL);
     } else {                                            /* error: unknown */
         _client_printf(c, CP_ERR_UNKNOWN);
     }
@@ -622,8 +622,8 @@ static void _parse_input(Client * c, char *input)
     if (cmd) {
         assert(cmd->hl != NULL);
         dbg(DBG_CLIENT, "_parse_input: enqueuing actions");
-        cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish, 
-                c->telemetry ? _telemetry_printf : NULL, 
+        cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish,
+                c->telemetry ? _telemetry_printf : NULL,
                 c->client_id, cmd->arglist);
         if (cmd->pending == 0) {
             _client_printf(c, CP_ERR_UNIMPL);
@@ -717,7 +717,7 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
     }
 }
 
-/* 
+/*
  * Destroy a client.
  */
 static void _destroy_client(Client *c)
@@ -777,7 +777,7 @@ static void _listen_client(void)
     char *addr, *host, *port;
     char *what = "nothing";
     int saved_errno = 0;
-    List addrs; 
+    List addrs;
     ListIterator itr;
 
     i = 0;
@@ -811,11 +811,11 @@ static void _listen_client(void)
             listen_fds = (int *)xmalloc(sizeof(int) * listen_fds_len);
         else
             listen_fds = (int *)xrealloc((char *)listen_fds,
-                                         sizeof(int) * listen_fds_len); 
+                                         sizeof(int) * listen_fds_len);
 
         /* bind sockets to addresses */
         for (r = res; r != NULL; r = r->ai_next, i++) {
-            assert(i < listen_fds_len); 
+            assert(i < listen_fds_len);
 
             listen_fds[i] = NO_FD;
             if ((fd = socket(r->ai_family, r->ai_socktype, 0)) < 0) {
@@ -885,11 +885,11 @@ static void _create_client_socket(int fd)
     c->client_quit = FALSE;
 
     c->fd = accept(fd, (struct sockaddr *)&addr, &addr_size);
-    if (c->fd < 0){ 
-        /* client died after it initiated connect and before we could accept 
-         * Ref. Stevens, UNP p424 
+    if (c->fd < 0){
+        /* client died after it initiated connect and before we could accept
+         * Ref. Stevens, UNP p424
          */
-        if (errno == EWOULDBLOCK || errno == ECONNABORTED 
+        if (errno == EWOULDBLOCK || errno == ECONNABORTED
                                  || errno == EPROTO || errno == EINTR) {
             _destroy_client(c);
             err(TRUE, "_create_client: accept");
@@ -898,8 +898,8 @@ static void _create_client_socket(int fd)
         err_exit(TRUE, "accept");
     }
 
-    if ((error = getnameinfo((struct sockaddr *)&addr, addr_size, 
-                             hbuf, sizeof(hbuf), pbuf, sizeof(pbuf), 
+    if ((error = getnameinfo((struct sockaddr *)&addr, addr_size,
+                             hbuf, sizeof(hbuf), pbuf, sizeof(pbuf),
                              NI_NUMERICHOST | NI_NUMERICSERV))) {
         _destroy_client(c);
         err(TRUE, "_create_client: getnameinfo: %s", gai_strerror(error));
@@ -908,7 +908,7 @@ static void _create_client_socket(int fd)
     c->ip   = xstrdup(hbuf);
     c->port = strtoul(pbuf, NULL, 10);
 
-    if ((error = getnameinfo((struct sockaddr *)&addr, addr_size, 
+    if ((error = getnameinfo((struct sockaddr *)&addr, addr_size,
                              hbuf, sizeof(hbuf), NULL, 0, NI_NAMEREQD)))
         err(FALSE, "_create_client: getnameinfo: %s", gai_strerror(error));
     else
@@ -977,8 +977,8 @@ static void _create_client_stdio(void)
     _client_printf(c, CP_PROMPT);
 }
 
-/* 
- * select(2) read handler for the client 
+/*
+ * select(2) read handler for the client
  */
 static void _handle_read(Client * c)
 {
@@ -1001,8 +1001,8 @@ static void _handle_read(Client * c)
         err(FALSE, "dropped %d bytes of client input", dropped);
 }
 
-/* 
- * select(2) write handler for the client 
+/*
+ * select(2) write handler for the client
  */
 static void _handle_write(Client * c)
 {
@@ -1066,7 +1066,7 @@ void cli_pre_poll(xpollfd_t pfd)
     list_iterator_destroy(itr);
 }
 
-/* 
+/*
  * Handle any client activity (new connection or read/write).
  */
 void cli_post_poll(xpollfd_t pfd)

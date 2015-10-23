@@ -146,10 +146,10 @@ void pipe_disconnect(Device * dev)
         if (waitpid(pd->cpid, &wstat, 0) < 0)
             err(TRUE, "_pipe_disconnect(%s): wait", dev->name);
         if (WIFEXITED(wstat)) {
-            err(FALSE, "_pipe_disconnect(%s): %s exited with status %d", 
+            err(FALSE, "_pipe_disconnect(%s): %s exited with status %d",
                     dev->name, pd->argv[0], WEXITSTATUS(wstat));
         } else if (WIFSIGNALED(wstat)) {
-            err(FALSE, "_pipe_disconnect(%s): %s terminated with signal %d", 
+            err(FALSE, "_pipe_disconnect(%s): %s terminated with signal %d",
                     dev->name, pd->argv[0], WTERMSIG(wstat));
         } else {
             err(FALSE, "_pipe_disconnect(%s): %s terminated",

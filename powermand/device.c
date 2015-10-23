@@ -117,14 +117,14 @@ typedef struct {
 } Action;
 
 
-static bool _process_stmt(Device *dev, Action *act, ExecCtx *e, 
+static bool _process_stmt(Device *dev, Action *act, ExecCtx *e,
         struct timeval *timeout);
 static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e);
 static bool _process_foreach(Device *dev, Action *act, ExecCtx *e);
 static bool _process_setplugstate(Device * dev, Action *act, ExecCtx *e);
 static bool _process_expect(Device * dev, Action *act, ExecCtx *e);
 static bool _process_send(Device * dev, Action *act, ExecCtx *e);
-static bool _process_delay(Device * dev, Action *act, ExecCtx *e, 
+static bool _process_delay(Device * dev, Action *act, ExecCtx *e,
         struct timeval *timeout);
 static int _match_name(Device * dev, void *key);
 static bool _handle_read(Device * dev);
@@ -141,7 +141,7 @@ static Action *_create_action(Device * dev, int com, List plugs,
                               ActionCB complete_fun, VerbosePrintf vpf_fun,
                               int client_id, ArgList arglist);
 static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
-                                      ActionCB complete_fun, 
+                                      ActionCB complete_fun,
                                       VerbosePrintf vpf_fun,
                                       int client_id, ArgList arglist);
 static char *_getregex_buf(cbuf_t b, xregex_t re, xregex_match_t xm);
@@ -160,8 +160,8 @@ static void _dbg_actions(Device * dev)
 {
     char tmpstr[1024];
     Action *act;
-    ListIterator itr; 
-    
+    ListIterator itr;
+
     tmpstr[0] = '\0';
     itr = list_iterator_create(dev->acts);
     while ((act = list_next(itr))) {
@@ -188,8 +188,8 @@ static void _memtrans(char *m, int len, char from, char to)
  * Apply regular expression to the contents of a cbuf_t.
  * If there is a match, return (and consume) from the beginning
  * of the buffer to the last character of the match.
- * NOTE: embedded \0 chars are converted to \377 because libc regex 
- * functions would treat these as string terminators.  As a result, 
+ * NOTE: embedded \0 chars are converted to \377 because libc regex
+ * functions would treat these as string terminators.  As a result,
  * \0 chars cannot be matched explicitly.
  *  b (IN)   buffer to apply regex to
  *  re (IN)  regular expression
@@ -230,7 +230,7 @@ static ExecCtx *_create_exec_ctx(Device *dev, List block, List plugs)
     ExecCtx *new = (ExecCtx *)xmalloc(sizeof(ExecCtx));
 
     new->stmtitr = list_iterator_create(block);
-    new->cur = list_next(new->stmtitr); 
+    new->cur = list_next(new->stmtitr);
     new->block = block;
     new->plugs = plugs;
     new->plugitr = NULL;
@@ -266,7 +266,7 @@ static void _rewind_action(Action *act)
     /* reset outer block iterator and current pointer */
     if (e) {
         list_iterator_reset(e->stmtitr);
-        e->cur = list_next(e->stmtitr); 
+        e->cur = list_next(e->stmtitr);
     }
 }
 
@@ -328,7 +328,7 @@ void dev_add(Device * dev)
     list_append(dev_devices, dev);
 }
 
-/* 
+/*
  * Client needs access to device list to process "devices" query.
  */
 List dev_getdevices(void)
@@ -338,7 +338,7 @@ List dev_getdevices(void)
 
 /*
  * Test whether timeout has occurred
- *  time_stamp (IN) 
+ *  time_stamp (IN)
  *  timeout (IN)
  *  timeleft (OUT)  if timeout has not occurred, put time left here
  *  RETURN          TRUE if (time_stamp + timeout > now)
@@ -366,7 +366,7 @@ static bool _timeout(struct timeval *time_stamp, struct timeval *timeout,
     return result;
 }
 
-/* 
+/*
  * If tv is less than timeout, or timeout is zero, set timeout = tv.
  */
 void _update_timeout(struct timeval *timeout, struct timeval *tv)
@@ -375,9 +375,9 @@ void _update_timeout(struct timeval *timeout, struct timeval *tv)
         *timeout = *tv;
 }
 
-/* 
+/*
  * Helper for _reconnect().
- * Return TRUE if OK to attempt reconnect.  If FALSE, put the time left 
+ * Return TRUE if OK to attempt reconnect.  If FALSE, put the time left
  * in timeout if it is less than timeout or if timeout is zero.
  */
 static bool _time_to_reconnect(Device * dev, struct timeval *timeout)
@@ -481,7 +481,7 @@ bool dev_check_actions(int com, hostlist_t hl)
  * Return an action count so the client be notified when all the
  * actions "check in".
  */
-int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun, 
+int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
         VerbosePrintf vpf_fun, int client_id, ArgList arglist)
 {
     Device *dev;
@@ -497,7 +497,7 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
             continue;                               /* unimplemented script */
         if (hl && !_command_needs_device(dev, hl))
             continue;                               /* uninvolved device */
-        count = _enqueue_actions(dev, com, hl, complete_fun, vpf_fun, 
+        count = _enqueue_actions(dev, com, hl, complete_fun, vpf_fun,
                 client_id, arglist);
         if (count > 0 && dev->connect_state != DEV_CONNECTED)
             dev->retry_count = 0;   /* expedite retries on this device since */
@@ -530,7 +530,7 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
         break;
     case PM_LOG_OUT:
     case PM_PING:
-        act = _create_action(dev, com, NULL, complete_fun, vpf_fun, client_id, 
+        act = _create_action(dev, com, NULL, complete_fun, vpf_fun, client_id,
                 arglist);
         list_append(dev->acts, act);
         count++;
@@ -649,8 +649,8 @@ static bool _is_query_action(int com)
 
 
 static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
-                                      ActionCB complete_fun, 
-                                      VerbosePrintf vpf_fun, 
+                                      ActionCB complete_fun,
+                                      VerbosePrintf vpf_fun,
                                       int client_id, ArgList arglist)
 {
     List new_acts = list_create((ListDelF) _destroy_action);
@@ -709,7 +709,7 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
         int ncom = _get_all_script(dev, com);
 
         if (ncom != -1) {
-            act = _create_action(dev, ncom, NULL, complete_fun, 
+            act = _create_action(dev, ncom, NULL, complete_fun,
                                  vpf_fun, client_id, arglist);
             list_append(dev->acts, act);
             count++;
@@ -722,7 +722,7 @@ static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
         int ncom = _get_ranged_script(dev, com);
 
         if (ncom != -1) {
-            act = _create_action(dev, ncom, ranged_plugs, complete_fun, 
+            act = _create_action(dev, ncom, ranged_plugs, complete_fun,
                                  vpf_fun, client_id, arglist);
             list_append(dev->acts, act);
             used_ranged_plugs++;
@@ -780,19 +780,19 @@ static void _act_completion(Action *act, Device *dev)
 
     switch (act->errnum) {
     case ACT_ECONNECTTIMEOUT:
-        act->complete_fun(act->client_id, act->errnum, 
+        act->complete_fun(act->client_id, act->errnum,
                 "%s: connect timeout", dev->name);
         break;
     case ACT_ELOGINTIMEOUT:
-        act->complete_fun(act->client_id, act->errnum, 
+        act->complete_fun(act->client_id, act->errnum,
                 "%s: login timeout", dev->name);
         break;
     case ACT_EEXPFAIL:
-        act->complete_fun(act->client_id, act->errnum, 
+        act->complete_fun(act->client_id, act->errnum,
                 "%s: action timed out waiting for expected response", dev->name);
         break;
     case ACT_EABORT:
-        act->complete_fun(act->client_id, act->errnum, 
+        act->complete_fun(act->client_id, act->errnum,
                 "%s: action aborted due to previous action timeout", dev->name);
         break;
     case ACT_ESUCCESS:
@@ -827,7 +827,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
 
         /* timeout exceeded? */
         if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
-            if (!(dev->connect_state == DEV_CONNECTED)) 
+            if (!(dev->connect_state == DEV_CONNECTED))
                 act->errnum = ACT_ECONNECTTIMEOUT;
             else if (!dev->logged_in) {
                 act->errnum = ACT_ELOGINTIMEOUT;
@@ -838,8 +838,8 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 static char mem[MAX_DEV_BUF];
                 int len = cbuf_peek(dev->from, mem, MAX_DEV_BUF);
                 char *memstr = dbg_memstr(mem, len);
-    
-                if (!(dev->connect_state == DEV_CONNECTED)) 
+
+                if (!(dev->connect_state == DEV_CONNECTED))
                     act->vpf_fun(act->client_id, "connect(%s): timeout",
                             dev->name);
                 else
@@ -854,15 +854,15 @@ static void _process_action(Device * dev, struct timeval *timeout)
 
         /* connected - process statements */
         } else {
-            /* If a statement has an inner block to execute, it pushes a new 
-             * ExecCtx onto the action's exec stack and returns.  We notice 
-             * the top of the exec stack has changed and try to exec the next 
-             * stmt (now of the new context) and so on.  When the inner block 
+            /* If a statement has an inner block to execute, it pushes a new
+             * ExecCtx onto the action's exec stack and returns.  We notice
+             * the top of the exec stack has changed and try to exec the next
+             * stmt (now of the new context) and so on.  When the inner block
              * is done, the stack is popped and the "current" stmt is back to
              * the one that initiated the inner block.
              */
             do {
-                e = list_peek(act->exec); 
+                e = list_peek(act->exec);
                 stalled = !_process_stmt(dev, act, e, timeout);
             } while (e != list_peek(act->exec));
         }
@@ -900,10 +900,10 @@ static void _process_action(Device * dev, struct timeval *timeout)
                 _act_completion(act, dev);
             _destroy_action(list_dequeue(dev->acts));
 
-            /* if one action failed, abort the rest in the device queue 
+            /* if one action failed, abort the rest in the device queue
              * in preparation for reconnect.
              */
-            while ((act = list_dequeue(dev->acts)) != NULL) { 
+            while ((act = list_dequeue(dev->acts)) != NULL) {
                 act->errnum = (res == ACT_EEXPFAIL ? ACT_EABORT : res);
                 if (act->complete_fun)
                     _act_completion(act, dev);
@@ -920,7 +920,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
     } /* while loop */
 }
 
-bool _process_stmt(Device *dev, Action *act, ExecCtx *e, 
+bool _process_stmt(Device *dev, Action *act, ExecCtx *e,
         struct timeval *timeout)
 {
     bool finished = 0;
@@ -958,7 +958,7 @@ static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
     Plug *plug = NULL;
 
     /* we store a plug iterator in the ExecCtx */
-    if (e->plugitr == NULL)  
+    if (e->plugitr == NULL)
         e->plugitr = pluglist_iterator_create(dev->plugs);
 
     /* Each time the inner block is executed, its argument will be
@@ -1002,13 +1002,13 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
     bool finished = TRUE;
 
     if (e->processing) { /* if returning from subblock, we are done */
-        e->processing = FALSE; 
+        e->processing = FALSE;
 
     } else {
         InterpState state = ST_UNKNOWN;
         bool condition = FALSE;
         ExecCtx *new;
-      
+
         if (e->plugs && list_count(e->plugs) > 0) {
             Plug *plug = list_peek(e->plugs);
             Arg *arg = arglist_find(act->arglist, plug->node);
@@ -1054,8 +1054,8 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
             new = _create_exec_ctx(dev, e->cur->u.ifonoff.stmts, plugs);
             list_push(act->exec, new);
             list_iterator_destroy(itr);
-        } 
-    } 
+        }
+    }
 
  cleanup:
     return finished;
@@ -1066,15 +1066,15 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
     bool finished = TRUE;
     char *plug_name = NULL;
 
-    /* 
+    /*
      * Usage: setplugstate [plug] status [interps]
-     * plug can be literal plug name, or regex match, or omitted, 
+     * plug can be literal plug name, or regex match, or omitted,
      * (implying target plug name).
      */
     if (e->cur->u.setplugstate.plug_name)    /* literal */
         plug_name = xstrdup(e->cur->u.setplugstate.plug_name);
     if (!plug_name)                         /* regex match */
-        plug_name = xregex_match_sub_strdup(dev->xmatch, 
+        plug_name = xregex_match_sub_strdup(dev->xmatch,
                                             e->cur->u.setplugstate.plug_mp);
     if (!plug_name && (e->plugs && list_count(e->plugs) > 0)) {
         Plug *plug = list_peek(e->plugs);
@@ -1084,7 +1084,7 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
     /* if no plug name, do nothing */
 
     if (plug_name) {
-        char *str = xregex_match_sub_strdup(dev->xmatch, 
+        char *str = xregex_match_sub_strdup(dev->xmatch,
                                             e->cur->u.setplugstate.stat_mp);
         Plug *plug = pluglist_find(dev->plugs, plug_name);
 
@@ -1105,15 +1105,15 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
 
             if ((arg = arglist_find(act->arglist, plug->node))) {
                 arg->state = state;
-                if (arg->val) 
+                if (arg->val)
                     xfree(arg->val);
                 arg->val = xstrdup(str);
             }
-        } 
+        }
         if (str)
             xfree(str);
         /* if no match, do nothing */
-        xfree(plug_name); 
+        xfree(plug_name);
     }
 
     return finished;
@@ -1138,7 +1138,7 @@ static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
         }
         xfree(str);
         finished = TRUE;
-    } 
+    }
     return finished;
 }
 
@@ -1181,7 +1181,7 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
                     err(TRUE, "_process_send(%s): hostlist_create", dev->name);
                     goto range_cleanup;
                 }
-                
+
                 if (!(itr = list_iterator_create(e->plugs))) {
                     err(TRUE, "_process_send(%s): list_iterator_create", dev->name);
                     goto range_cleanup;
@@ -1216,16 +1216,16 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
             written = cbuf_write(dev->to, str, strlen(str), &dropped);
 
             if (written < 0)
-                err(TRUE, "_process_send(%s): cbuf_write returned %d", 
+                err(TRUE, "_process_send(%s): cbuf_write returned %d",
                     dev->name, written);
             else if (dropped > 0)
-                err(FALSE, "_process_send(%s): buffer overrun, %d dropped", 
+                err(FALSE, "_process_send(%s): buffer overrun, %d dropped",
                     dev->name, dropped);
             else {
                 char *memstr = dbg_memstr(str, strlen(str));
 
                 if (act->vpf_fun)
-                    act->vpf_fun(act->client_id, "send(%s): '%s'", 
+                    act->vpf_fun(act->client_id, "send(%s): '%s'",
                                  dev->name, memstr);
                 xfree(memstr);
             }
@@ -1233,14 +1233,14 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
         }
 
         e->processing = TRUE;
-      
+
         xfree(str);
     }
 
     if (cbuf_is_empty(dev->to)) {           /* finished! */
         e->processing = FALSE;
         finished = TRUE;
-    } 
+    }
 
     return finished;
 }
@@ -1257,7 +1257,7 @@ static bool _process_delay(Device *dev, Action *act, ExecCtx *e,
     /* first time */
     if (!e->processing) {
         if (act->vpf_fun)
-            act->vpf_fun(act->client_id, "delay(%s): %ld.%-6.6ld", dev->name, 
+            act->vpf_fun(act->client_id, "delay(%s): %ld.%-6.6ld", dev->name,
                     delay.tv_sec, delay.tv_usec);
         e->processing = TRUE;
         if (gettimeofday(&act->delay_start, NULL) < 0)
@@ -1487,7 +1487,7 @@ void dev_pre_poll(xpollfd_t pfd)
         if (dev->fd < 0)
             continue;
 
-        /* always set read set bits so select will unblock if the 
+        /* always set read set bits so select will unblock if the
          * connection is dropped.
          */
         flags |= XPOLLIN;
@@ -1507,7 +1507,7 @@ void dev_pre_poll(xpollfd_t pfd)
     list_iterator_destroy(itr);
 }
 
-/* 
+/*
  * Called after select to process ready file descriptors, timeouts, etc.
  */
 void dev_post_poll(xpollfd_t pfd, struct timeval *timeout)
@@ -1538,9 +1538,9 @@ void dev_post_poll(xpollfd_t pfd, struct timeval *timeout)
         if (dev->connect_state == DEV_CONNECTED)
             _enqueue_ping(dev, timeout);
 
-        /* If any actions are enqueued, process them.  This is state machine 
-         * activity and I/O to/from cbufs, not device I/O.  Update timeout so 
-         * poll will unblock to handle non-responsive devices, or processing 
+        /* If any actions are enqueued, process them.  This is state machine
+         * activity and I/O to/from cbufs, not device I/O.  Update timeout so
+         * poll will unblock to handle non-responsive devices, or processing
          * of scripted delays.  Note that we are not necessarily connected
          * to the device - users may enqueue actions on an unconnected device,
          * which expedites a reconnect;  if the reconnect then times out,

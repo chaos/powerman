@@ -79,7 +79,7 @@ static int tiocmp(struct termios *a, struct termios *b)
 {
     if (            memcmp(a->c_cc, b->c_cc, sizeof(a->c_cc)) == 0
                     && a->c_cc[VTIME] == b->c_cc[VTIME]
-                    && a->c_iflag == b->c_iflag 
+                    && a->c_iflag == b->c_iflag
                     && a->c_oflag == b->c_oflag
                     && a->c_cflag == b->c_cflag
                     && a->c_lflag == b->c_lflag)
@@ -134,85 +134,85 @@ pid_t xforkpty(int *amaster, char *name, int len)
         assert(strlen(name) < len);
     }
 #else
-#if HAVE__DEV_PTMX 
-    /* solaris style - this code initially borrowed from 
+#if HAVE__DEV_PTMX
+    /* solaris style - this code initially borrowed from
      *  http://bugs.mysql.com/bug.php?id=22429
      */
-    int master, slave; 
-    char *slave_name; 
-  
-    master = open("/dev/ptmx", O_RDWR); 
-    if (master < 0) 
-        return -1; 
-    if (grantpt (master) < 0) { 
-        close (master); 
-        return -1; 
-    } 
-    if (unlockpt (master) < 0) { 
-        close (master); 
-        return -1; 
-    } 
-    slave_name = ptsname (master); 
-    if (slave_name == NULL) { 
-        close (master); 
-        return -1; 
-    } 
-    slave = open (slave_name, O_RDWR); 
-    if (slave < 0) { 
-        close (master); 
-        return -1; 
-    } 
-    if (ioctl (slave, I_PUSH, "ptem") < 0 
-      || ioctl (slave, I_PUSH, "ldterm") < 0) { 
-        close (slave); 
-        close (master); 
-        return -1; 
-    } 
+    int master, slave;
+    char *slave_name;
+
+    master = open("/dev/ptmx", O_RDWR);
+    if (master < 0)
+        return -1;
+    if (grantpt (master) < 0) {
+        close (master);
+        return -1;
+    }
+    if (unlockpt (master) < 0) {
+        close (master);
+        return -1;
+    }
+    slave_name = ptsname (master);
+    if (slave_name == NULL) {
+        close (master);
+        return -1;
+    }
+    slave = open (slave_name, O_RDWR);
+    if (slave < 0) {
+        close (master);
+        return -1;
+    }
+    if (ioctl (slave, I_PUSH, "ptem") < 0
+      || ioctl (slave, I_PUSH, "ldterm") < 0) {
+        close (slave);
+        close (master);
+        return -1;
+    }
 #elif HAVE__DEV_PTC
     /* aix style */
-    int master, slave; 
-    char *slave_name; 
+    int master, slave;
+    char *slave_name;
 
-    master = open("/dev/ptc", O_RDWR); 
-    if (master < 0) 
-        return -1; 
-    if (grantpt (master) < 0) { 
-        close (master); 
-        return -1; 
-    } 
-    if (unlockpt (master) < 0) { 
-        close (master); 
-        return -1; 
-    } 
-    slave_name = ttyname (master); 
-    if (slave_name == NULL) { 
-        close (master); 
-        return -1; 
-    } 
-    slave = open (slave_name, O_RDWR); 
-    if (slave < 0) { 
-        close (master); 
-        return -1; 
-    } 
+    master = open("/dev/ptc", O_RDWR);
+    if (master < 0)
+        return -1;
+    if (grantpt (master) < 0) {
+        close (master);
+        return -1;
+    }
+    if (unlockpt (master) < 0) {
+        close (master);
+        return -1;
+    }
+    slave_name = ttyname (master);
+    if (slave_name == NULL) {
+        close (master);
+        return -1;
+    }
+    slave = open (slave_name, O_RDWR);
+    if (slave < 0) {
+        close (master);
+        return -1;
+    }
 #else
 #error unknown pty master device path
 #endif
-    if (amaster) 
-        *amaster = master; 
-    if (name) 
-        strncpy (name, slave_name, len); 
-    pid = fork (); 
-    switch (pid) { 
-        case -1: /* Error */ 
-            return -1; 
-        case 0: /* Child */ 
-            close (master); 
-            dup2 (slave, STDIN_FILENO); 
-            dup2 (slave, STDOUT_FILENO); 
-            dup2 (slave, STDERR_FILENO); 
-            return 0; 
-        default: /* Parent */ 
-            close (slave); 
+    if (amaster)
+        *amaster = master;
+    if (name)
+        strncpy (name, slave_name, len);
+    pid = fork ();
+    switch (pid) {
+        case -1: /* Error */
+            return -1;
+        case 0: /* Child */
+            close (master);
+            dup2 (slave, STDIN_FILENO);
+            dup2 (slave, STDOUT_FILENO);
+            dup2 (slave, STDERR_FILENO);
+            return 0;
+        default: /* Parent */
+            close (slave);
             break;
     } 
 #endif

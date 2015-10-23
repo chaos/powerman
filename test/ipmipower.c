@@ -30,7 +30,7 @@
  * reset, pulse, soft).  Many of the commands accepts all, hostrange,
  * or single host.
  *
- * Assumptions: 
+ * Assumptions:
  *
  * Users configure ipmipower authentication via FreeIPMI's
  * configuration file. So there is no ipmipower authentication
@@ -86,10 +86,10 @@ static const struct option longopts[] = {
 #define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
 #endif
 
-int 
+int
 main(int argc, char *argv[])
 {
-    int i, c;
+    int c;
 
     prog = basename(argv[0]);
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
@@ -115,14 +115,14 @@ main(int argc, char *argv[])
     exit(0);
 }
 
-static void 
+static void
 usage(void)
 {
     fprintf(stderr, "Usage: %s -h hostlist\n", prog);
     exit(1);
 }
 
-static void 
+static void
 _noop_handler(int signum)
 {
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
@@ -203,10 +203,9 @@ _onoff(hash_t hstatus, const char *nodes, const char *state)
     hostlist_destroy(hlnodes);
 }
 
-static void 
+static void
 _prompt_loop(void)
 {
-    int i;
     char buf[128];
     char bufnode[128];
     hash_t hstatus = NULL;

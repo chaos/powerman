@@ -66,7 +66,7 @@ static Plug *_create_plug(char *name)
 
     plug->name = xstrdup(name);
     plug->node = NULL;
-    
+
     return plug;
 }
 
@@ -90,7 +90,7 @@ PlugList pluglist_create(List plugnames)
 
     /* create plug for each element of plugnames list */
     if (plugnames) {
-        ListIterator itr; 
+        ListIterator itr;
         char *name;
 
         itr = list_iterator_create(plugnames);
@@ -203,7 +203,7 @@ pl_err_t pluglist_map(PlugList pl, char *nodelist, char *pluglist)
         hostlist_iterator_destroy(nitr);
         hostlist_destroy(nhl);
 
-    /* We have a pluglist so we just map plugs to nodes. 
+    /* We have a pluglist so we just map plugs to nodes.
      */
     } else {
         hostlist_t nhl = hostlist_create(nodelist);

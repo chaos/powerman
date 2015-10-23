@@ -51,7 +51,7 @@ int main(int argc, char *argv[])
 	int c;
 	PlugList pl = NULL;
 	char *hwplugs = NULL;
-	char *nodelist = NULL; 
+	char *nodelist = NULL;
 	char *pluglist = NULL;
 	char *findplug = NULL;
 
@@ -90,14 +90,14 @@ int main(int argc, char *argv[])
 		hostlist_destroy(hl);
 		pl = pluglist_create(l);
 		list_destroy(l);
-	} else 
+	} else
 		pl = pluglist_create(NULL);
 
 	switch (pluglist_map(pl, nodelist, pluglist)) {
-		case EPL_DUPNODE: 
+		case EPL_DUPNODE:
 			fprintf(stderr, "duplicate node\n");
 			break;
-		case EPL_UNKPLUG: 
+		case EPL_UNKPLUG:
 			fprintf(stderr, "unknown plug\n");
 			break;
 		case EPL_DUPPLUG:
@@ -109,7 +109,7 @@ int main(int argc, char *argv[])
 		case EPL_NONODES:
 			fprintf(stderr, "more plugs than nodes\n");
 			break;
-		case EPL_SUCCESS: 
+		case EPL_SUCCESS:
 			break;
 	}
 
@@ -117,16 +117,16 @@ int main(int argc, char *argv[])
 		Plug *plug = pluglist_find(pl, findplug);
 
 		if (plug)
-			printf("plug=%s node=%s\n", plug->name, 
+			printf("plug=%s node=%s\n", plug->name,
 					plug->node ? plug->node : "NULL");
 		else
 			printf("plug %s: not found\n", findplug);
 	} else {
 		PlugListIterator itr = pluglist_iterator_create(pl);
 		Plug *plug;
-		
+
 		while ((plug = pluglist_next(itr))) {
-			printf("plug=%s node=%s\n", plug->name, 
+			printf("plug=%s node=%s\n", plug->name,
 					plug->node ? plug->node : "NULL");
 		}
 		pluglist_iterator_destroy(itr);

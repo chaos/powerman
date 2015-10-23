@@ -37,7 +37,7 @@
 static char *_nextargv(char **strp, char *ignore)
 {
     char *str = *strp;
-    char *word; 
+    char *word;
     int len;
     char *cpy = NULL;
 
@@ -93,11 +93,11 @@ char **argv_append(char **argv, char *s)
     argv[argc - 1] = xstrdup(s);
     argv[argc] = NULL;
 
-    return argv; 
+    return argv;
 }
 
 /* Create a null-terminated argv array given a command line.
- * Characters in the 'ignore' set are treated like white space. 
+ * Characters in the 'ignore' set are treated like white space.
  */
 char **argv_create(char *cmdline, char *ignore)
 {

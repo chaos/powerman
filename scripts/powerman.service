@@ -8,6 +8,8 @@ PrivateTmp=yes
 User=daemon
 Group=daemon
 ExecStart=/usr/sbin/powermand
+RuntimeDirectory=powerman
+RuntimeDirectoryMode=0755
 PIDFile=/var/run/powerman/powermand.pid
 
 [Install]

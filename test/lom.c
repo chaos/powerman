@@ -73,10 +73,10 @@ static const struct option longopts[] = {
 #define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
 #endif
 
-int 
+int
 main(int argc, char *argv[])
 {
-    int i, c;
+    int c;
 
     prog = basename(argv[0]);
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
@@ -103,7 +103,7 @@ main(int argc, char *argv[])
     exit(0);
 }
 
-static void 
+static void
 usage(void)
 {
     fprintf(stderr, "Usage: %s -p ssh|serial|serial_loggedin\n", prog);
@@ -128,8 +128,10 @@ prompt_loop(void)
         case SER_LOGIN:
             authenticated = 2;
             break;
+        case NONE:
+            break;
     }
-    for (;;) { 
+    for (;;) {
         switch (authenticated) {
             case 0:
                 if (xreadline(LOM_LOGIN_PROMPT, buf, sizeof(buf)) == NULL)
@@ -170,7 +172,7 @@ prompt_loop(void)
 done:
     break;
     }
-}                    
+}
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

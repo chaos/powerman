@@ -138,7 +138,7 @@ int main(int argc, char **argv)
     char *config_path = NULL;
     List commands;  /* list-o-cmd_t's */
     ListIterator itr;
-    cmd_t *cp; 
+    cmd_t *cp;
     bool short_circuit_delays = FALSE;
 
     prog = basename(argv[0]);
@@ -200,7 +200,7 @@ int main(int argc, char **argv)
             break;
         case 'h':              /* --server-host host[:port] */
             if ((p = strchr(optarg, ':'))) {
-                *p++ = '\0';  
+                *p++ = '\0';
                 port = p;
             }
             host = optarg;
@@ -257,7 +257,7 @@ int main(int argc, char **argv)
 
         itr = list_iterator_create(commands);
         while ((cp = list_next(itr)))
-            last = cp;            
+            last = cp;
         list_iterator_destroy(itr);
         if (last == NULL)
             _usage();
@@ -287,7 +287,7 @@ int main(int argc, char **argv)
     /* Establish connection to server and start protocol.
      */
     if (server_path)
-        server_fd = _connect_to_server_pipe(server_path, config_path, 
+        server_fd = _connect_to_server_pipe(server_path, config_path,
                                             short_circuit_delays);
     else
         server_fd = _connect_to_server_tcp(host, port);
@@ -425,7 +425,7 @@ static void _cmd_append(cmd_t *cp, char *arg)
             cp->argv = argv_create(arg, "");
         } else
             err_exit(FALSE, "option takes no arguments");
-    } else 
+    } else
         cp->argv = argv_append(cp->argv, arg);
 }
 
@@ -494,7 +494,7 @@ static int _connect_to_server_pipe(char *server_path, char *config_path,
         err_exit(TRUE, "dup stderr");
     snprintf(cmd, sizeof(cmd), "powermand -sf -c %s", config_path);
     argv = argv_create(cmd, "");
-    if (short_circuit_delays) 
+    if (short_circuit_delays)
         argv = argv_append(argv, "-Y");
     pid = xforkpty(&fd, NULL, 0);
     switch (pid) {
@@ -507,7 +507,7 @@ static int _connect_to_server_pipe(char *server_path, char *config_path,
             xcfmakeraw(STDIN_FILENO);
             execv(server_path, argv);
             err_exit(TRUE, "exec %s", server_path);
-        default: /* parent */ 
+        default: /* parent */
             close(saved_stderr);
             break;
     }

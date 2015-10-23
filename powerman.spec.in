@@ -97,7 +97,6 @@ if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
 %{_mandir}/*8/*
 %{_libdir}/stonith/plugins/external/powerman
 %{_unitdir}/powerman.service
-%dir %attr(0755,daemon,root) %config %{_localstatedir}/run/powerman
 
 %files devel
 %defattr(-,root,root,0755)
@@ -113,6 +112,9 @@ if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
 %{_libdir}/*.so.*
 
 %changelog
+
+* Fri Oct 23 2015 Jim Garlick <garlick.jim@gmail.com> 2.3.24-1
+- Don't package /var/run/powerman; let systemd manage this directory.
 
 * Fri May 29 2015 Jim Garlick <garlick.jim@gmail.com> 2.3.23-1
 - Drop conditional builds as full build works everywhere now, more or less

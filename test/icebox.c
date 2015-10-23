@@ -64,7 +64,7 @@ static const struct option longopts[] = {
 #endif
 
 
-int 
+int
 main(int argc, char *argv[])
 {
     int c;
@@ -100,14 +100,14 @@ main(int argc, char *argv[])
     exit(0);
 }
 
-static void 
+static void
 usage(void)
 {
     fprintf(stderr, "Usage: %s -p v2|v3|v4\n", prog);
     exit(1);
 }
 
-static void 
+static void
 _noop_handler(int signum)
 {
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
@@ -147,7 +147,7 @@ _prompt_loop(void)
     int plug_origin = 1;
     int logged_in = 0;
     char arg[80];
- 
+
     for (i = 0; i < num_plugs_ext; i++) {
         plug[i] = 0;
         temp[i] = 73 + i;
@@ -189,21 +189,21 @@ _prompt_loop(void)
         } else if (!strcmp(buf, "q")) {
             logged_in = 0;
         } else if (!strcmp(buf, "ps *") || !strcmp(buf, "ns *")) {
-            printf(V3_POWER_STATUS, plug[0], plug[1], plug[2], plug[3], 
-                                    plug[4], plug[5], plug[6], plug[7], 
+            printf(V3_POWER_STATUS, plug[0], plug[1], plug[2], plug[3],
+                                    plug[4], plug[5], plug[6], plug[7],
                                     plug[8], plug[9]);
         } else if (personality != V2 && !strcmp(buf, "be *")) {
-            printf(V3_BEACON_STATUS, beacon[0], beacon[1], beacon[2], 
-                                     beacon[3], beacon[4], beacon[5], 
-                                     beacon[6], beacon[7], beacon[8], 
+            printf(V3_BEACON_STATUS, beacon[0], beacon[1], beacon[2],
+                                     beacon[3], beacon[4], beacon[5],
+                                     beacon[6], beacon[7], beacon[8],
                                      beacon[9], beacon[10], beacon[11]);
         } else if (personality != V2 && !strcmp(buf, "is *")) {
-            printf(V3_TEMP, temp[0], temp[1], temp[2], temp[3], 
-                            temp[4], temp[5], temp[6], temp[7], 
+            printf(V3_TEMP, temp[0], temp[1], temp[2], temp[3],
+                            temp[4], temp[5], temp[6], temp[7],
                             temp[8], temp[9], temp[10], temp[11]);
         } else if (personality == V2 && !strcmp(buf, "ts *")) {
-            printf(V2_TEMP, temp[0], temp[1], temp[2], temp[3], 
-                            temp[4], temp[5], temp[6], temp[7], 
+            printf(V2_TEMP, temp[0], temp[1], temp[2], temp[3],
+                            temp[4], temp[5], temp[6], temp[7],
                             temp[8], temp[9], temp[10], temp[11]);
         } else if (!strcmp(buf, "ph *")) {
             for (i = 0; i < num_plugs; i++)
