@@ -83,10 +83,10 @@ void conf_init(char *filename)
     if ((stbuf.st_mode & S_IFMT) != S_IFREG)
         err_exit(FALSE, "%s is not a regular file\n", filename);
 
-    /* 
-     * Call yacc parser against config file.  The parser calls support 
+    /*
+     * Call yacc parser against config file.  The parser calls support
      * functions below and builds 'dev_devices' (devices.c),
-     * 'conf_cluster', 'conf_specs' (config.c), and various other 
+     * 'conf_cluster', 'conf_specs' (config.c), and various other
      * conf_* attributes (config.c).
      */
     parse_config_file(filename);
@@ -128,7 +128,7 @@ static bool _validate_config(void)
                 valid = FALSE;
                 free(host);
                 break;
-            } else 
+            } else
                 free(host);
         }
         hostlist_iterator_destroy(hitr);
@@ -174,7 +174,7 @@ bool conf_addnodes(char *nodelist)
         if (conf_node_exists(node)) {
             free(node);
             res = FALSE;
-            break; 
+            break;
         } else {
             hostlist_push(conf_nodes, node);
             free(node);
@@ -228,7 +228,7 @@ static int _alias_match(alias_t *a, char *name)
     return (strcmp(a->name, name) == 0);
 }
 
-/* Expand any aliases present in hostlist.  
+/* Expand any aliases present in hostlist.
  * N.B. Aliases cannot contain other aliases.
  */
 void conf_exp_aliases(hostlist_t hl)
@@ -236,8 +236,8 @@ void conf_exp_aliases(hostlist_t hl)
     hostlist_iterator_t itr = NULL;
     hostlist_t newhosts = hostlist_create(NULL);
     char *host;
-  
-    /* Put the expansion of any aliases in the hostlist into 'newhosts', 
+
+    /* Put the expansion of any aliases in the hostlist into 'newhosts',
      * deleting the original reference from the hostlist.
      */
     if (newhosts == NULL)
@@ -246,10 +246,10 @@ void conf_exp_aliases(hostlist_t hl)
         err_exit(FALSE, "hostlist_iterator_create failed");
     while ((host = hostlist_next(itr)) != NULL) {
         alias_t *a;
-            
+
         a = list_find_first(conf_aliases, (ListFindF) _alias_match, host);
         if (a) {
-            hostlist_delete_host(hl, host); 
+            hostlist_delete_host(hl, host);
             hostlist_push_list(newhosts, a->hl);
             hostlist_iterator_reset(itr); /* not sure of itr position after
                                              insertion/deletion so reset */

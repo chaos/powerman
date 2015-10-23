@@ -71,7 +71,7 @@ struct xpollfd {
 };
 
 #if HAVE_POLL
-static short 
+static short
 xflag2flag(short x)
 {
     short f = 0;
@@ -90,7 +90,7 @@ xflag2flag(short x)
     return f;
 }
 
-static short 
+static short
 flag2xflag(short f)
 {
     short x = 0;
@@ -114,7 +114,7 @@ flag2xflag(short f)
 int
 xpoll(xpollfd_t pfd, struct timeval *tv)
 {
-    struct timeval tv_cpy, *tvp = NULL; 
+    struct timeval tv_cpy, *tvp = NULL;
     struct timeval start, end, delta;
     int n;
 
@@ -123,7 +123,7 @@ xpoll(xpollfd_t pfd, struct timeval *tv)
         if (gettimeofday(&start, NULL) < 0)
             err_exit(TRUE, "gettimeofday");
         tvp = &tv_cpy;
-    } 
+    }
 
     /* repeat poll if interrupted */
     do {
@@ -165,7 +165,7 @@ xpollfd_t
 xpollfd_create(void)
 {
     xpollfd_t pfd = (xpollfd_t)xmalloc(sizeof(struct xpollfd));
-  
+
     pfd->magic = XPOLLFD_MAGIC;
 #if HAVE_POLL
     pfd->ufds_size += XPOLLFD_ALLOC_CHUNK;
@@ -257,7 +257,7 @@ xpollfd_str(xpollfd_t pfd, char *str, int len)
                     str[fd] = 'I';
                 else if (revents & POLLOUT)
                     str[fd] = 'O';
-            } 
+            }
             if (fd > maxfd)
                 maxfd = fd;
         }
@@ -301,7 +301,7 @@ xpollfd_revents(xpollfd_t pfd, int fd)
         flags |= XPOLLOUT;
 #endif
     return flags;
-} 
+}
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

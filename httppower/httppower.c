@@ -106,7 +106,7 @@ void get(CURL *h, char **av)
         if (curl_easy_perform(h) != 0)
             printf("Error: %s\n", errbuf);
         curl_easy_setopt(h, CURLOPT_URL, "");
-    } else 
+    } else
         printf("Nothing to get!\n");
 
     if (myurl)
@@ -154,7 +154,7 @@ int docmd(CURL *h, char **av)
             get(h, av + 1);
         else if (strcmp(av[0], "post") == 0)
             post(h, av + 1);
-        else 
+        else
             printf("type \"help\" for a list of commands\n");
     }
     return rc;

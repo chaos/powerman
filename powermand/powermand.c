@@ -138,7 +138,7 @@ int main(int argc, char **argv)
         err_exit(FALSE, "--stdio should only be used with --foreground");
 
     if (!config_filename)
-        config_filename = hsprintf("%s/%s/%s", X_SYSCONFDIR, 
+        config_filename = hsprintf("%s/%s/%s", X_SYSCONFDIR,
                                    "powerman", "powerman.conf");
 
     dev_init(short_circuit_delay);
@@ -160,7 +160,7 @@ int main(int argc, char **argv)
         int *fds, len;
 
         cli_listen_fds(&fds, &len);
-        daemon_init(fds, len, rundir, pidfile, DAEMON_NAME); 
+        daemon_init(fds, len, rundir, pidfile, DAEMON_NAME);
         xfree(rundir);
         xfree(pidfile);
         err_notty();
@@ -214,7 +214,7 @@ static void _select_loop(void)
         n = xpoll(pfd, timerisset(&tmout) ? &tmout : NULL);
         timerclear(&tmout);
 
-        /* 
+        /*
          * Process activity on client and device fd's.
          * If a device requires a timeout, for example to reconnect or
          * to process a scripted delay, tmout is updated.

@@ -130,7 +130,7 @@ static const struct option longopts[] = {
 #define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
 #endif
 
-int 
+int
 main(int argc, char *argv[])
 {
     int c;
@@ -160,7 +160,7 @@ main(int argc, char *argv[])
     exit(0);
 }
 
-static void 
+static void
 usage(void)
 {
     fprintf(stderr, "Usage: %s -p ssh|serial|serial_loggedin\n", prog);
@@ -188,7 +188,7 @@ prompt_loop(void)
         case NONE:
             authenticated = 0;
     }
-    for (;;) { 
+    for (;;) {
         switch (authenticated) {
             case 0:
                 if (xreadline(ILOM_LOGIN_PROMPT, buf, sizeof(buf)) == NULL)
@@ -219,18 +219,18 @@ prompt_loop(void)
                     if (!strcmp(plug, "Off")) {
                         strcpy(plug, "On");
                         printf(ILOM_START_RESP);
-                    } else 
+                    } else
                         printf(ILOM_START_RESP2);
                 } else if (!strcmp(buf, "stop -script -force /SYS")) {
                     if (!strcmp(plug, "On")) {
                         strcpy(plug, "Off");
                         printf(ILOM_STOP_RESP);
-                    } else 
+                    } else
                         printf(ILOM_STOP_RESP2);
                 } else if (!strcmp(buf, "reset -script /SYS")) {
                     if (!strcmp(plug, "On")) {
                         printf(ILOM_RESET_RESP);
-                    } else 
+                    } else
                         printf(ILOM_RESET_RESP2);
                 } else {
                     printf(ILOM_CMD_INVAL, buf);
@@ -240,7 +240,7 @@ prompt_loop(void)
 done:
     break;
     }
-}                    
+}
 
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab

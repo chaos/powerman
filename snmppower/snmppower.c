@@ -211,7 +211,7 @@ start_v3 (char **av, char *hostname, struct snmp_session **ssp)
     session.securityAuthProtoLen =
                               sizeof (usmHMACMD5AuthProtocol) / sizeof (oid);
     session.securityAuthKeyLen = USM_AUTH_KU_LEN;
-    
+
     if (generate_Ku (session.securityAuthProto,
                      session.securityAuthProtoLen,
                      (u_char *)av[2], strlen (av[2]),
@@ -243,7 +243,7 @@ mib (char **av, struct snmp_session **ssp)
 static void
 finish (char **av, struct snmp_session **ssp)
 {
-    snmp_close (*ssp); 
+    snmp_close (*ssp);
     *ssp = NULL;
 }
 
@@ -282,7 +282,7 @@ docmd (char **av, char *hostname, struct snmp_session **ssp)
             mib (av, ssp);
         else if (strcmp (av[0], "finish") == 0)
             finish (av, ssp);
-        else 
+        else
             printf ("type \"help\" for a list of commands\n");
     }
     return rc;
@@ -337,7 +337,7 @@ main (int argc, char *argv[])
     }
     if (optind != argc)
         usage ();
-    if (hostname == NULL) 
+    if (hostname == NULL)
         usage ();
 
     shell(hostname);

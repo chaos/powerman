@@ -66,7 +66,7 @@ static const struct option longopts[] = {
 #endif
 
 
-int 
+int
 main(int argc, char *argv[])
 {
     int c;
@@ -118,14 +118,14 @@ main(int argc, char *argv[])
     exit(0);
 }
 
-static void 
+static void
 usage(void)
 {
     fprintf(stderr, "Usage: %s -p rpc3|rpc3-nc|rpc28-nc|rpc3-de\n", prog);
     exit(1);
 }
 
-static void 
+static void
 _noop_handler(int signum)
 {
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
@@ -215,7 +215,7 @@ Maximum Detected:     6.9 Amps      :      2.8 Amps\r\n\
 Type \"Help\" for a list of commands\r\n\
 \r\n"
 
-static void 
+static void
 _prompt_loop_rpc28_nc(void)
 {
     int i;
@@ -238,22 +238,22 @@ _prompt_loop_rpc28_nc(void)
             break;
         if (strlen(buf) == 0) {
             continue;
-        } else if (!strcmp(buf, "logoff") || !strcmp(buf, "logout") 
+        } else if (!strcmp(buf, "logoff") || !strcmp(buf, "logout")
                                           || !strcmp(buf, "exit")) {
             break;
         } else if (!strcmp(buf, "help")) {
-            printf(RPC28_NC_HELP); 
+            printf(RPC28_NC_HELP);
         } else if (!strcmp(buf, "temp"))
-            printf(RPC28_NC_TEMP); 
+            printf(RPC28_NC_TEMP);
         else if (!strcmp(buf, "voltage"))
-            printf(RPC28_NC_VOLTAGE); 
+            printf(RPC28_NC_VOLTAGE);
         else if (!strcmp(buf, "current"))
-            printf(RPC28_NC_CURRENT); 
+            printf(RPC28_NC_CURRENT);
         else if (!strcmp(buf, "status")) {
-            printf(RPC28_NC_STATUS, 
-                   plug[0], plug[1], plug[2], plug[3],  
+            printf(RPC28_NC_STATUS,
+                   plug[0], plug[1], plug[2], plug[3],
                    plug[4], plug[5], plug[6], plug[7],
-                   plug[8], plug[9], plug[10], plug[11],  
+                   plug[8], plug[9], plug[10], plug[11],
                    plug[12], plug[13], plug[14], plug[15],
                    plug[16], plug[17], plug[18], plug[19]);
 /* NOTE: we only suport one plug at a time or all for on,off,reboot */
@@ -282,7 +282,7 @@ _prompt_loop_rpc28_nc(void)
                     fflush(stdout);
                     sleep(1);
                 }
-                printf("\r\n");   
+                printf("\r\n");
             } else
                 goto err;
         } else
@@ -405,7 +405,7 @@ Type Help for a list of commands\r\n\
 \r\n"
 
 
-static void 
+static void
 _prompt_loop_rpc3_de(void)
 {
     int i;
@@ -425,22 +425,22 @@ _prompt_loop_rpc3_de(void)
             break;
         if (strlen(buf) == 0) {
             continue;
-        } else if (!strcmp(buf, "logoff") || !strcmp(buf, "logout") 
+        } else if (!strcmp(buf, "logoff") || !strcmp(buf, "logout")
                                           || !strcmp(buf, "exit")) {
             break;
         } else if (!strcmp(buf, "help")) {
-            printf(RPC3_DE_HELP); 
+            printf(RPC3_DE_HELP);
         } else if (!strcmp(buf, "temp"))
-            printf(RPC3_DE_TEMP); 
+            printf(RPC3_DE_TEMP);
         else if (!strcmp(buf, "voltage"))
-            printf(RPC3_DE_VOLTAGE); 
+            printf(RPC3_DE_VOLTAGE);
         else if (!strcmp(buf, "current"))
-            printf(RPC3_DE_CURRENT); 
+            printf(RPC3_DE_CURRENT);
         else if (!strcmp(buf, "power"))
-            printf(RPC3_DE_POWER); 
+            printf(RPC3_DE_POWER);
         else if (!strcmp(buf, "status")) {
-            printf(RPC3_DE_STATUS, 
-                   plug[0], plug[1], plug[2], plug[3],  
+            printf(RPC3_DE_STATUS,
+                   plug[0], plug[1], plug[2], plug[3],
                    plug[4], plug[5], plug[6], plug[7]);
 /* NOTE: we only suport one plug at a time or all for on,off,reboot */
         } else if (sscanf(buf, "on %d", &i) == 1) {
@@ -468,7 +468,7 @@ _prompt_loop_rpc3_de(void)
                     fflush(stdout);
                     sleep(1);
                 }
-                printf("\r\n");   
+                printf("\r\n");
             } else
                 goto err;
         } else
@@ -559,7 +559,7 @@ Maximum Detected:     4.3 Amps\r\n\
 Type \"Help\" for a list of commands\r\n\
 \r\n"
 
-static void 
+static void
 _prompt_loop_rpc3_nc(void)
 {
     int i;
@@ -579,20 +579,20 @@ _prompt_loop_rpc3_nc(void)
             break;
         if (strlen(buf) == 0) {
             continue;
-        } else if (!strcmp(buf, "logoff") || !strcmp(buf, "logout") 
+        } else if (!strcmp(buf, "logoff") || !strcmp(buf, "logout")
                                           || !strcmp(buf, "exit")) {
             break;
         } else if (!strcmp(buf, "help")) {
-            printf(RPC3_NC_HELP); 
+            printf(RPC3_NC_HELP);
         } else if (!strcmp(buf, "temp"))
-            printf(RPC3_NC_TEMP); 
+            printf(RPC3_NC_TEMP);
         else if (!strcmp(buf, "voltage"))
-            printf(RPC3_NC_VOLTAGE); 
+            printf(RPC3_NC_VOLTAGE);
         else if (!strcmp(buf, "current"))
-            printf(RPC3_NC_CURRENT); 
+            printf(RPC3_NC_CURRENT);
         else if (!strcmp(buf, "status")) {
-            printf(RPC3_NC_STATUS, 
-                   plug[0], plug[1], plug[2], plug[3],  
+            printf(RPC3_NC_STATUS,
+                   plug[0], plug[1], plug[2], plug[3],
                    plug[4], plug[5], plug[6], plug[7]);
 /* NOTE: we only suport one plug at a time or all for on,off,reboot */
         } else if (sscanf(buf, "on %d", &i) == 1) {
@@ -620,7 +620,7 @@ _prompt_loop_rpc3_nc(void)
                     fflush(stdout);
                     sleep(1);
                 }
-                printf("\r\n");   
+                printf("\r\n");
             } else
                 goto err;
         } else
@@ -704,7 +704,7 @@ err:
 \r\n\
   <Strike CR to continue.>"
 
-static void 
+static void
 _prompt_loop_rpc3(void)
 {
     int i;
@@ -792,7 +792,7 @@ err:
         printf("\r\n  Input error.\r\n\r\n");
     }
 }
-        
+
 /*
  * vi:tabstop=4 shiftwidth=4 expandtab
  */

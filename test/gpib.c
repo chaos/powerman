@@ -52,11 +52,11 @@ typedef enum { NONE, ICS8064, HP3488 } gptype_t;
 static void usage(void);
 static void _noop_handler(int signum);
 static void _prompt_loop(void);
-static int relay_op(char *s, relayop_t op, int *plug, 
+static int relay_op(char *s, relayop_t op, int *plug,
                     int num_plugs, int plug_origin);
-static int ics8064_cmd(char **av, int plug[], 
+static int ics8064_cmd(char **av, int plug[],
                        int num_plugs, int plug_origin, int *qp);
-static int hp3488_cmd(char **av, int plug[], 
+static int hp3488_cmd(char **av, int plug[],
                       int num_plugs, int plug_origin, int *qp);
 
 static gptype_t personality = NONE;
@@ -75,7 +75,7 @@ static const struct option longopts[] = {
 #endif
 
 
-int 
+int
 main(int argc, char *argv[])
 {
     int c;
@@ -108,14 +108,14 @@ main(int argc, char *argv[])
     exit(0);
 }
 
-static void 
+static void
 usage(void)
 {
     fprintf(stderr, "Usage: %s -p ics8064|hp3488\n", prog);
     exit(1);
 }
 
-static void 
+static void
 _noop_handler(int signum)
 {
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
@@ -131,7 +131,7 @@ relay_op(char *s, relayop_t op, int *plug, int num_plugs, int plug_origin)
     hostlist_iterator_t it = hostlist_iterator_create(h);
     char *tmp;
     int i;
-            
+
     while ((tmp = hostlist_next(it))) {
         i = strtoul(tmp, NULL, 10);
         if (i < plug_origin || i >= num_plugs + plug_origin)
@@ -172,16 +172,16 @@ ics8064_cmd(char **av, int plug[], int num_plugs, int plug_origin, int *qp)
     } else if (!strcmp(av[0], "status")) {
         if (argv_length(av) != 1)
             return 0;
-        printf(ICS8064_STATUS, plug[0],  plug[1],  plug[2],  plug[3], 
-                               plug[4],  plug[5],  plug[6],  plug[7], 
-                               plug[8],  plug[9],  plug[10], plug[11], 
+        printf(ICS8064_STATUS, plug[0],  plug[1],  plug[2],  plug[3],
+                               plug[4],  plug[5],  plug[6],  plug[7],
+                               plug[8],  plug[9],  plug[10], plug[11],
                                plug[12], plug[13], plug[14], plug[15]);
-    } else if (!strcmp(av[0], "close")) { 
+    } else if (!strcmp(av[0], "close")) {
         if (argv_length(av) != 2)
             return 0;
         if (!relay_op(av[1], ON, plug, num_plugs, plug_origin))
             return 0;
-    } else if (!strcmp(av[0], "open")) { 
+    } else if (!strcmp(av[0], "open")) {
         if (argv_length(av) != 2)
             return 0;
         if (!relay_op(av[1], OFF, plug, num_plugs, plug_origin))
@@ -233,7 +233,7 @@ void
 _prompt_loop(void)
 {
     char buf[128];
-    int num_plugs; 
+    int num_plugs;
     int plug_origin;
     int res, quit = 0;
     int *plug;
@@ -247,7 +247,7 @@ _prompt_loop(void)
         num_plugs = 500; /* 100-599 */
         plug_origin = 100;
     }
- 
+
     plug = (int *)xmalloc(sizeof(int) * num_plugs);
     memset(plug, 0, sizeof(int) * num_plugs);
     while (!quit) {

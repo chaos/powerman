@@ -119,7 +119,7 @@ void *tcp_create(char *host, char *port, char *flags)
     hints.ai_family = PF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     if ((error = getaddrinfo(tcp->host, tcp->port, &hints, &tcp->addrs)) != 0)
-        err_exit(FALSE, "getaddrinfo %s:%s: %s", tcp->host, tcp->port, 
+        err_exit(FALSE, "getaddrinfo %s:%s: %s", tcp->host, tcp->port,
                                                  gai_strerror(error));
     if (tcp->addrs == NULL)
         err_exit(FALSE, "no addresses for server %s:%s", tcp->host, tcp->port);
@@ -138,7 +138,7 @@ void tcp_destroy(void *data)
         xfree(tcp->port);
     if (tcp->addrs)
         freeaddrinfo(tcp->addrs);
-        
+
     xfree(tcp);
 }
 
@@ -234,8 +234,8 @@ bool tcp_finish_connect(Device * dev)
 }
 
 /*
- * Initiate a non-blocking TCP connect.  tcp_finish_connect() will try to 
- * finish the job when the main poll() loop unblocks again, unless we 
+ * Initiate a non-blocking TCP connect.  tcp_finish_connect() will try to
+ * finish the job when the main poll() loop unblocks again, unless we
  * finish here.
  */
 bool tcp_connect(Device * dev)
@@ -276,7 +276,7 @@ bool tcp_connect(Device * dev)
  */
 void tcp_disconnect(Device * dev)
 {
-    TcpDev *tcp; 
+    TcpDev *tcp;
 
     assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_CONNECTING
@@ -306,7 +306,7 @@ static void _telnet_sendopt(Device *dev, int cmd, int opt)
     unsigned char str[] = { IAC, cmd, opt };
     int n;
 
-    dbg(DBG_TELNET, "%s: _telnet_sendopt: %s %s", dev->name, 
+    dbg(DBG_TELNET, "%s: _telnet_sendopt: %s %s", dev->name,
             TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>",
             TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
 
@@ -321,7 +321,7 @@ static void _telnet_sendcmd(Device *dev, unsigned char cmd)
     unsigned char str[] = { IAC, cmd };
     int n;
 
-    dbg(DBG_TELNET, "%s: _telnet_sendcmd: %s", dev->name, 
+    dbg(DBG_TELNET, "%s: _telnet_sendcmd: %s", dev->name,
             TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>");
 
     n = cbuf_write(dev->to, str, 2, NULL);
@@ -332,7 +332,7 @@ static void _telnet_sendcmd(Device *dev, unsigned char cmd)
 
 static void _telnet_recvcmd(Device *dev, int cmd)
 {
-    dbg(DBG_TELNET, "%s: _telnet_recvcmd: %s", dev->name, 
+    dbg(DBG_TELNET, "%s: _telnet_recvcmd: %s", dev->name,
             TELCMD_OK(cmd) ?  TELCMD(cmd) : "<unknown>");
 }
 
@@ -341,8 +341,8 @@ static void _telnet_recvopt(Device *dev, int cmd, int opt)
 {
     TcpDev *tcp = (TcpDev *)dev->data;
 
-    dbg(DBG_TELNET, "%s: _telnet_recvopt: %s %s", dev->name, 
-            TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>", 
+    dbg(DBG_TELNET, "%s: _telnet_recvopt: %s %s", dev->name,
+            TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>",
             TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
     switch (cmd) {
     case DO:
@@ -353,7 +353,7 @@ static void _telnet_recvopt(Device *dev, int cmd, int opt)
                 break;
             case TELOPT_TTYPE:          /* rfc 1091 - terminal type */
             case TELOPT_NAWS:           /* rfc 1073 - window size */
-            /* next three added for gnat powerman/634 - jg */ 
+            /* next three added for gnat powerman/634 - jg */
             case TELOPT_NEW_ENVIRON:    /* environment variables */
             case TELOPT_XDISPLOC:       /* X display location */
             case TELOPT_TSPEED:         /* terminal speed */
@@ -367,7 +367,7 @@ static void _telnet_recvopt(Device *dev, int cmd, int opt)
             default:
                 if (!tcp->quiet)
                     err(0, "%s: _telnet_recvopt: ignoring %s %s", dev->name,
-                            TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>", 
+                            TELCMD_OK(cmd) ? TELCMD(cmd) : "<unknown>",
                             TELOPT_OK(opt) ? TELOPT(opt) : "<unknown>");
                 break;
         }
@@ -396,7 +396,7 @@ static void _telnet_init(Device * dev)
 /*
  * Telnet state machine.  This is called when new data has arrived in the
  * input buffer.  We get to look first to process any telnet escapes.
- * Except for a little bit of state stored in the dev->u.tcp union, 
+ * Except for a little bit of state stored in the dev->u.tcp union,
  * we do all the processing now.
  */
 static void _telnet_preprocess(Device * dev)

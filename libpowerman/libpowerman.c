@@ -70,7 +70,7 @@ struct pm_node_iterator_struct {
     struct list_struct *pmi_pos;
 };
 
-static pm_err_t _list_add(struct list_struct **head, char *s, 
+static pm_err_t _list_add(struct list_struct **head, char *s,
                                 list_free_t freefun);
 static void     _list_free(struct list_struct **head);
 static int      _list_search(struct list_struct *head, char *s);
@@ -78,18 +78,18 @@ static int      _list_search(struct list_struct *head, char *s);
 static int      _strncmpend(char *s1, char *s2, int len);
 static char *   _strndup(char *s, int len);
 static void     _parse_hostport(char *s, char *host, char *port);
-static pm_err_t _connect_to_server_tcp(pm_handle_t pmh, 
+static pm_err_t _connect_to_server_tcp(pm_handle_t pmh,
                                 char *server, int family);
-static pm_err_t _parse_response(char *buf, int len, 
+static pm_err_t _parse_response(char *buf, int len,
                                 struct list_struct **respp);
-static pm_err_t _server_recv_response(pm_handle_t pmh, 
+static pm_err_t _server_recv_response(pm_handle_t pmh,
                                 struct list_struct **respp);
 static pm_err_t _server_send_command(pm_handle_t pmh, char *cmd, char *arg);
-static pm_err_t _server_command(pm_handle_t pmh, char *cmd, char *arg, 
+static pm_err_t _server_command(pm_handle_t pmh, char *cmd, char *arg,
                                 struct list_struct **respp);
 
 
-/* Add [s] to the list referenced by [head], registering [freefun] to 
+/* Add [s] to the list referenced by [head], registering [freefun] to
  * be called on [s] when the list is freed.
  */
 static pm_err_t
@@ -116,7 +116,7 @@ _list_free(struct list_struct **head)
     for (lp = *head; lp != NULL; lp = tmp) {
         tmp = lp->next;
         if (lp->freefun)
-            lp->freefun(lp->data); 
+            lp->freefun(lp->data);
         free(lp);
     }
     *head = NULL;
@@ -156,7 +156,7 @@ _strndup(char *s, int len)
         memcpy(c, s, len);
         c[len] = '\0';
     }
-    return c;     
+    return c;
 }
 
 static void
@@ -173,13 +173,12 @@ _parse_hostport(char *s, char *host, char *port)
         snprintf(port, MAXPORTNAMELEN, "%s", p);
     } else
         snprintf(port, MAXPORTNAMELEN, "%s", PM_DFLT_PORT);
-        
 }
 
 /* Establish connection to powermand [server].
  * Connection state is returned in the handle.
  */
-static pm_err_t 
+static pm_err_t
 _connect_to_server_tcp(pm_handle_t pmh, char *server, int family)
 {
     struct addrinfo hints, *res, *r;
@@ -244,8 +243,8 @@ _server_retcode(struct list_struct *resp)
 {
     int code;
     pm_err_t err = PM_ESERVERPARSE;
-   
-    /* N.B. there will only be one 1xx or 2xx code in a response */ 
+
+    /* N.B. there will only be one 1xx or 2xx code in a response */
     while (resp != NULL) {
         if (sscanf(resp->data, "%d ", &code) == 1) {
             switch (code) {
@@ -256,7 +255,7 @@ _server_retcode(struct list_struct *resp)
                 case 104:   /* telemetry on|off */
                 case 105:   /* hostrange expansion on|off */
                     err = PM_ESUCCESS;
-                    break; 
+                    break;
                 case PM_EUNKNOWN:
                 case PM_EPARSE:
                 case PM_ETOOLONG:
@@ -285,7 +284,7 @@ static pm_err_t
 _server_recv_response(pm_handle_t pmh, struct list_struct **respp)
 {
     int buflen = 0, count = 0, n;
-    char *buf = NULL; 
+    char *buf = NULL;
     pm_err_t err = PM_ESUCCESS;
     struct list_struct *resp;
 
@@ -297,7 +296,7 @@ _server_recv_response(pm_handle_t pmh, struct list_struct **respp)
                 err = PM_ENOMEM;
                 break;
             }
-        } 
+        }
         n = read(pmh->pmh_fd, buf + count, buflen - count);
         if (n == 0) {
             err = PM_ESERVEREOF;
@@ -332,7 +331,7 @@ _server_recv_response(pm_handle_t pmh, struct list_struct **respp)
 static pm_err_t
 _server_send_command(pm_handle_t pmh, char *cmd, char *arg)
 {
-    char buf[CP_LINEMAX];    
+    char buf[CP_LINEMAX];
     int count, len, n;
     pm_err_t err = PM_ESUCCESS;
 
@@ -379,7 +378,7 @@ pm_connect(char *server, void *arg, pm_handle_t *pmhp, int flags)
         return PM_ENOMEM;
     pmh->pmh_magic = PMH_MAGIC;
 
-    if ((err = _connect_to_server_tcp(pmh, server, (flags & PM_CONN_INET6) 
+    if ((err = _connect_to_server_tcp(pmh, server, (flags & PM_CONN_INET6)
                                 ? PF_INET6 : PF_UNSPEC)) != PM_ESUCCESS) {
         (void)close(pmh->pmh_fd);
         free(pmh);
@@ -405,7 +404,7 @@ pm_connect(char *server, void *arg, pm_handle_t *pmhp, int flags)
 static pm_err_t
 _node_iterator_create(pm_node_iterator_t *pmip)
 {
-    pm_node_iterator_t pmi; 
+    pm_node_iterator_t pmi;
 
     if (!(pmi = malloc(sizeof(struct pm_node_iterator_struct))))
         return PM_ENOMEM;
@@ -482,7 +481,7 @@ pm_node_iterator_reset(pm_node_iterator_t pmi)
 
 /* Disconnect from server handle [pmh] and free the handle.
  */
-void 
+void
 pm_disconnect(pm_handle_t pmh)
 {
     if (pmh != NULL && pmh->pmh_magic == PMH_MAGIC) {

@@ -62,7 +62,7 @@ static const struct option longopts[] = {
 #endif
 
 
-int 
+int
 main(int argc, char *argv[])
 {
     int c;
@@ -86,14 +86,14 @@ main(int argc, char *argv[])
     exit(0);
 }
 
-static void 
+static void
 usage(void)
 {
     fprintf(stderr, "Usage: %s -p v2|v3|v4\n", prog);
     exit(1);
 }
 
-static void 
+static void
 _noop_handler(int signum)
 {
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
@@ -107,7 +107,7 @@ _prompt_loop(void)
     int num_plugs = 48;
     int plug[48];
     int plug_origin = 1;
- 
+
     for (i = 0; i < num_plugs; i++) {
         plug[i] = 0;
     }

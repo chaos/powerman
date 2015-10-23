@@ -108,7 +108,7 @@ void serial_destroy(void *data)
 }
 
 /* Set up serial port: 0 on success, <0 on error */
-static int _serial_setup(char *devname, int fd, int baud, int databits, 
+static int _serial_setup(char *devname, int fd, int baud, int databits,
         char parity, int stopbits)
 {
     int res;
@@ -196,7 +196,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
 bool serial_connect(Device * dev)
 {
     SerialDev *ser;
-    int baud = 9600, databits = 8, stopbits = 1; 
+    int baud = 9600, databits = 8, stopbits = 1;
     char parity = 'N';
     int res;
     int n;
@@ -246,7 +246,7 @@ bool serial_connect(Device * dev)
     err(FALSE, "_serial_connect(%s): opened", dev->name);
     return TRUE;
 
-out: 
+out:
     if (dev->fd >= 0) {
         if (close(dev->fd) < 0)
             err(TRUE, "_serial_connect(%s): close", dev->name);

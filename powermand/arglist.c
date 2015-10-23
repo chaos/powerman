@@ -92,7 +92,7 @@ ArgList arglist_create(hostlist_t hl)
 
     new->refcount = 1;
     hash_size = hostlist_count(hl); /* reasonable? */
-    new->args = hash_create(hash_size, (hash_key_f)hash_key_string, 
+    new->args = hash_create(hash_size, (hash_key_f)hash_key_string,
             (hash_cmp_f)strcmp, (hash_del_f)_destroy_arg);
 
     if ((itr = hostlist_iterator_create(hl)) == NULL) {

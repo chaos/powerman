@@ -63,7 +63,7 @@ static const struct option longopts[] = {
 #define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
 #endif
 
-int 
+int
 main(int argc, char *argv[])
 {
     int c;
@@ -101,14 +101,14 @@ main(int argc, char *argv[])
     exit(0);
 }
 
-static void 
+static void
 usage(void)
 {
     fprintf(stderr, "Usage: %s -p pm8|pm10|pm20|pm42\n", prog);
     exit(1);
 }
 
-static void 
+static void
 _noop_handler(int signum)
 {
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
@@ -132,7 +132,7 @@ V 1.9.1 May 2, 2007\n\
 #define CMD_PROMPT "pm>"
 
 #define FAILED_MSG "\nAuthentication failed.\n"
-                                                              
+
 #define HELP_MSG "\n\n\n\
 Available commands:\n\
 \n\
@@ -276,7 +276,7 @@ IPDU #1: RMS current for phase Z: 2.5A. Maximum current for phase Z: 11.0A\n"
 #define OFF_MSG "%d: Outlet turned off.\n"
 #define ON_MSG  "%d: Outlet turned on.\n"
 
-static void 
+static void
 _prompt_loop(void)
 {
     int i;
@@ -327,31 +327,31 @@ login_again:
         } else if (strlen(buf) == 0) {
             continue;
         } else if (!strcmp(buf, "exit")) {
-            sleep(1); 
+            sleep(1);
             goto login_again;
         } else if (!strcmp(buf, "help")) {
-            printf(personality == PM42 ? HELP_MSG2 : HELP_MSG); 
+            printf(personality == PM42 ? HELP_MSG2 : HELP_MSG);
         } else if (!strcmp(buf, status_all)) {
             if (personality == PM8) {
-                printf(STATUS_TMPL_PM8, 
+                printf(STATUS_TMPL_PM8,
                        plug[0],  plug[1],  plug[2],  plug[3],
                        plug[4],  plug[5],  plug[6],  plug[7]);
             } else if (personality == PM10) {
-                printf(STATUS_TMPL_PM10, 
+                printf(STATUS_TMPL_PM10,
                        plug[0],  plug[1],  plug[2],  plug[3],
                        plug[4],  plug[5],  plug[6],  plug[7],
                        plug[8],  plug[9]);
             } else if (personality == PM20) {
-                printf(STATUS_TMPL_PM20, 
+                printf(STATUS_TMPL_PM20,
                        plug[0],  plug[1],  plug[2],  plug[3],
-                       plug[4],  plug[5],  plug[6],  plug[7], 
+                       plug[4],  plug[5],  plug[6],  plug[7],
                        plug[8],  plug[9],  plug[10], plug[11],
                        plug[12], plug[13], plug[14], plug[15],
                        plug[16], plug[17], plug[18], plug[19]);
             } else if (personality == PM42) {
-                printf(STATUS_TMPL_PM42, 
+                printf(STATUS_TMPL_PM42,
                        plug[0],  plug[1],  plug[2],  plug[3],
-                       plug[4],  plug[5],  plug[6],  plug[7], 
+                       plug[4],  plug[5],  plug[6],  plug[7],
                        plug[8],  plug[9],  plug[10], plug[11],
                        plug[12], plug[13], plug[14], plug[15],
                        plug[16], plug[17], plug[18], plug[19],

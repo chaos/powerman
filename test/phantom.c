@@ -68,7 +68,7 @@ static const struct option longopts[] = {
 #endif
 
 
-int 
+int
 main(int argc, char *argv[])
 {
     int c;
@@ -102,14 +102,14 @@ main(int argc, char *argv[])
     exit(0);
 }
 
-static void 
+static void
 usage(void)
 {
     fprintf(stderr, "Usage: %s -p v3|v4\n", prog);
     exit(1);
 }
 
-static void 
+static void
 _noop_handler(int signum)
 {
     fprintf(stderr, "%s: received signal %d\n", prog, signum);
@@ -179,9 +179,9 @@ _prompt_loop(void)
     int temp = 32;
     int plug = 0;
     int c;
- 
-    initscr(); 
-    cbreak(); 
+
+    initscr();
+    cbreak();
     noecho();
     nonl();
 
@@ -216,8 +216,8 @@ menu:
                 break;
         }
     }
-    
-cmd:        
+
+cmd:
     move(0,0);
     clear();
     refresh();

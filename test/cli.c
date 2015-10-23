@@ -92,7 +92,7 @@ main(int argc, char *argv[])
     exit(0);
 }
 
-static pm_err_t 
+static pm_err_t
 list_nodes(pm_handle_t pm)
 {
     pm_node_iterator_t pmi;

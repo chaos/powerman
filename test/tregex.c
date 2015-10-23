@@ -75,10 +75,10 @@ _match(char *r, char *s)
 	return _matchstr(r, s, NULL);
 }
 
-static void 
+static void
 _check_substr_match(void)
 {
-	xregex_t re; 
+	xregex_t re;
 	xregex_match_t rm;
 	char *s;
 
@@ -175,9 +175,9 @@ main(int argc, char *argv[])
 	assert(!_match("CHOCOLATE", s));
 	xfree(s);
 
-	/* end of line handling should be disabled since end of string 
-	 * (which normally matches) is non-deterministic in powerman.  
-	 * We should be explicitly matching end-of-line sentinels like 
+	/* end of line handling should be disabled since end of string
+	 * (which normally matches) is non-deterministic in powerman.
+	 * We should be explicitly matching end-of-line sentinels like
 	 * \n in scripts.
 	 */
 	assert(!_match("foo$", "foo"));
@@ -189,7 +189,7 @@ main(int argc, char *argv[])
 	/* regex takes first match if there are > 1,
 	 * but leading wildcard matches greedily
 	 */
-	assert(_matchstr("foo", "abfoocdfoo", 
+	assert(_matchstr("foo", "abfoocdfoo",
                                 "abfoo"));
 	assert(_matchstr_all(".*foo", "abfoocdfoo"));
 

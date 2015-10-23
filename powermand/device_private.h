@@ -34,7 +34,7 @@
 #define PM_RESOLVE            27
 #define NUM_SCRIPTS           28 /* count of scripts above */
 
-#define MAX_MATCH_POS   20 
+#define MAX_MATCH_POS   20
 
 #define INTERP_MAGIC 0x13434550
 typedef struct {
@@ -47,14 +47,14 @@ typedef struct {
 /*
  * A Script is a list of Stmts.
  */
-typedef enum { 
-    STMT_SEND, 
-    STMT_EXPECT, 
-    STMT_SETPLUGSTATE, 
-    STMT_DELAY, 
-    STMT_FOREACHPLUG, 
-    STMT_FOREACHNODE, 
-    STMT_IFOFF, 
+typedef enum {
+    STMT_SEND,
+    STMT_EXPECT,
+    STMT_SETPLUGSTATE,
+    STMT_DELAY,
+    STMT_FOREACHPLUG,
+    STMT_FOREACHNODE,
+    STMT_IFOFF,
     STMT_IFON,
 } StmtType;
 
@@ -124,7 +124,7 @@ typedef struct _device {
     int stat_successful_connects;
     int stat_successful_actions;
                                 /* network (e.g. tcp/serial)-specific methods */
-    bool (*connect)(struct _device *dev); 
+    bool (*connect)(struct _device *dev);
     bool (*finish_connect)(struct _device *dev);
     void (*preprocess)(struct _device *dev);
     void (*disconnect)(struct _device *dev);
@@ -142,7 +142,7 @@ typedef void (*VerbosePrintf) (int client_id, const char *fmt, ...);
 #define MAX_DEV_BUF     1024*64
 
 void dev_add(Device * dev);
-int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun, 
+int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
         VerbosePrintf vpf_fun, int client_id, ArgList arglist);
 bool dev_check_actions(int com, hostlist_t hl);
 

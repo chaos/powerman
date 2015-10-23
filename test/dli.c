@@ -281,8 +281,8 @@ prompt_loop(void)
         } else
             goto err;
 
-        continue;    
-err: 
+        continue;
+err:
         printf("Error\n");
     }
 }

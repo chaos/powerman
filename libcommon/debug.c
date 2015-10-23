@@ -96,17 +96,17 @@ void dbg_wrapped(unsigned long channel, const char *fmt, ...)
         va_end(ap);
 
         if (dbg_ttyvalid)
-            fprintf(stderr, "%s %s: %s\n", 
+            fprintf(stderr, "%s %s: %s\n",
                     _time(), _channel_name(channel), buf);
         else
-            syslog(LOG_DEBUG, "%s: %s", 
+            syslog(LOG_DEBUG, "%s: %s",
                     _channel_name(channel), buf);
     }
 }
 
 /*
- * Convert memory to string, turning non-printable character into "C" 
- * representation.  
+ * Convert memory to string, turning non-printable character into "C"
+ * representation.
  *  mem (IN) target memory
  *  len (IN) number of characters to convert
  *  RETURN   string (caller must free)

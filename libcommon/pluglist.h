@@ -28,14 +28,14 @@ PlugList          pluglist_create(List plugnames);
 void              pluglist_destroy(PlugList pl);
 
 /* Assign node names to plugs.  nodelist and pluglist are strings in compressed
- * hostlist format (the degenerate case of which is a single name).  pluglist 
- * can be NULL, indicating 
+ * hostlist format (the degenerate case of which is a single name).  pluglist
+ * can be NULL, indicating
  * - if hardwired plugs, available plugs should be assigned to nodes in order
  * - else (not hardwired), assume plug names are the same as node names.
  */
 pl_err_t          pluglist_map(PlugList pl, char *nodelist, char *pluglist);
 
-/* Search PlugList for a Plug with matching plug name.  Return pointer to Plug 
+/* Search PlugList for a Plug with matching plug name.  Return pointer to Plug
  * on success (points to actual list entry), or NULL on search failure.
  * Only plugs with non-NULL node fields are returned.
  */
