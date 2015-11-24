@@ -14,6 +14,7 @@ BuildRequires: genders
 BuildRequires: curl-devel
 BuildRequires: net-snmp-devel
 BuildRequires: systemd
+BuildRequires: pkgconfig
 
 %package devel
 Requires: %{name} = %{version}-%{release}
