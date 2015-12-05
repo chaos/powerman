@@ -13,8 +13,8 @@ BuildRequires: tcp_wrappers-devel
 BuildRequires: genders
 BuildRequires: curl-devel
 BuildRequires: net-snmp-devel
-BuildRequires: systemd
 BuildRequires: pkgconfig
+BuildRequires: pkgconfig(systemd)
 
 %package devel
 Requires: %{name} = %{version}-%{release}
