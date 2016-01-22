@@ -1,0 +1,41 @@
+###KVM (Kernel-based Virtual Machine) over ssh script###
+# PowerMan script for controlling virtual machines running on remote KVM (Kernel-based Virtual Machine) hypervisors, e.g.
+#  after setting up passwordless ssh access to hypervisor:
+#  device   "hypervisor_hostname/IP_address"    "kvm-ssh"                           "/usr/bin/ssh -o StrictHostKeyChecking=no -a -l username -p 22 hypervisor_hostname/IP_address|&"
+#  node     "vm_name"                           "hypervisor_hostname/IP_address"    "vm_name"
+#
+
+specification "kvm-ssh" {
+	timeout 	5   
+
+	script login {
+		expect "#"
+	}
+	script logout {
+		send "exit\n"
+	}
+
+	script status {
+		send "virsh domstate %s\n"
+		expect "(running|off)"
+		setplugstate $1 off="off" on="running"
+	}
+
+	script on {
+		send "virsh start %s\n"
+		expect "started|Domain is already active"
+	}
+	script off {
+		send "virsh destroy %s\n"
+		expect "destroyed|domain is not running"
+	}
+	script cycle {
+		#yes, there is a reset command, but it does nothing if the vm is powered off
+		send "virsh destroy %s\n"
+		expect "destroyed|domain is not running"
+		delay 1
+		send "virsh start %s\n"
+		expect "started|Domain is already active"
+	}
+}
+
