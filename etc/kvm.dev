@@ -1,11 +1,11 @@
-###KVM (Kernel-based Virtual Machine) over ssh script###
+###KVM (Kernel-based Virtual Machine) script###
 # PowerMan script for controlling virtual machines running on local KVM (Kernel-based Virtual Machine) hypervisors, e.g.
 #
 #  device   "kvm"       "kvm"   "/usr/bin/virsh |&"
 #  node     "vm_name"   "kvm"   "vm_name"
 #
 
-specification "kvm-ssh" {
+specification "kvm" {
 	timeout 	5   
 
 	script login {

@@ -45,6 +45,8 @@ pkgsysconf_DATA = \
 	ipmi.dev \
 	ipmipower.dev \
 	ipmipower-serial.dev \
+	kvm.dev \
+	kvm-ssh.dev \
 	phantom.dev \
 	plmpower.dev \
 	powerman.dev \
