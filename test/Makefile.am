@@ -101,5 +101,5 @@ EXTRA_DIST = $(TESTS) $(TESTS:%=%.exp) \
 	t35.conf t36.conf t37.conf t38.conf t39.conf t40.conf t41.conf \
 	t42.conf t43.conf t44.conf t45.conf t46.conf t47.conf t48.conf \
 	t49.conf t50.conf t51.conf t53.conf t54.conf t55.conf test4.conf \
-	test.conf
+	test.conf t53.dev
 
