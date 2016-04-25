@@ -1,0 +1,9 @@
+# issue 34 (google code)
+include "@top_srcdir@/etc/vpc.dev"
+
+device "linkfarm"       "vpc"     "@top_builddir@/test/vpcd |&"
+device "mds"    	"vpc"     "@top_builddir@/test/vpcd |&"
+
+node "widow-mds"        "linkfarm"      "1"
+node "widow-mds[0-3]"   "mds"		"[2-5]"
+

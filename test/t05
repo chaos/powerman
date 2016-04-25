@@ -1,4 +1,4 @@
 #!/bin/sh
 TEST=t05
-./tregex >$TEST.out 2>&1 || exit 1
-diff $TEST.out $TEST.exp >$TEST.diff
+${TEST_BUILDDIR}/tregex >$TEST.out 2>&1 || exit 1
+diff $TEST.out ${TEST_SRCDIR}/$TEST.exp >$TEST.diff

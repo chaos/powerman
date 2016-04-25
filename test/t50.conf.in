@@ -1,0 +1,4 @@
+include "@top_srcdir@/etc/bashfun.dev"
+device "bf0" "bashfun" "/bin/bash |&"
+node "t1" "bf0" "1"
+

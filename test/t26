@@ -1,6 +1,6 @@
 #!/bin/sh
 TEST=t26
-$PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf \
+$PATH_POWERMAN -S $PATH_POWERMAND -C ${TEST_BUILDDIR}/$TEST.conf \
     -c t1 -c t1 -c t1 -c t1 \
     -c t1 -c t1 -c t1 -c t1 \
     -c t1 -c t1 -c t1 -c t1 \
@@ -35,4 +35,4 @@ $PATH_POWERMAN -S $PATH_POWERMAND -C $TEST.conf \
     -c t1 -c t1 -c t1 -c t1 \
     >$TEST.out 2>$TEST.err
 test $? = 0 || exit 1
-diff $TEST.out $TEST.exp >$TEST.diff
+diff $TEST.out ${TEST_SRCDIR}/$TEST.exp >$TEST.diff

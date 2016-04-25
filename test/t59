@@ -6,7 +6,7 @@ TEST=t59
 PM_SIMSTATE=$(mktemp) || exit 1
 export PM_SIMSTATE
 
-PM_OVERRIDE="./pm-sim -A"
+PM_OVERRIDE="${TEST_SRCDIR}/pm-sim -A"
 export PM_OVERRIDE
 
 PM_VERBOSE=1
@@ -14,8 +14,9 @@ export PM_VERBOSE
 
 $PATH_POWERMAN_STONITH on t >$TEST.out 2>&1
 test $? = 0 || exit 1
-PM_OVERRIDE="./pm-sim -A -s"
+PM_OVERRIDE="${TEST_SRCDIR}/pm-sim -A -s"
 $PATH_POWERMAN_STONITH off t >>$TEST.out 2>&1
 test $? = 1 || exit 1
 rm -f $PM_SIMSTATE
-diff $TEST.out $TEST.exp >$TEST.diff
+sed -i -e 's/ [^ ]*pm-sim/ pm-sim/g' $TEST.out
+diff $TEST.out ${TEST_SRCDIR}/$TEST.exp >$TEST.diff
