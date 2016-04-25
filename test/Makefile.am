@@ -16,6 +16,10 @@ check_PROGRAMS = \
 	lom \
 	swpdu
 
+check_SCRIPTS = \
+	pm-sim \
+	mkconf.pl
+
 TESTS_ENVIRONMENT = env 
 TESTS_ENVIRONMENT += "PATH_POWERMAN=$(top_builddir)/powerman/powerman"
 TESTS_ENVIRONMENT += "PATH_POWERMAND=$(top_builddir)/powermand/powermand"
