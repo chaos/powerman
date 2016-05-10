@@ -74,12 +74,14 @@ static void _prompt_loop(void);
 
 static char *prog;
 static char *hostname = NULL;
+static int auth_failure = 0;
 
-#define OPTIONS "p:h:"
+#define OPTIONS "p:h:A"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
     { "hostname", required_argument, 0, 'h' },
+    { "auth-failure", no_argument, 0, 'A' },
     {0, 0, 0, 0},
 };
 #else
@@ -96,6 +98,9 @@ main(int argc, char *argv[])
         switch (c) {
             case 'h':
                 hostname = optarg;
+                break;
+            case 'A':
+                auth_failure = 1;
                 break;
             default:
                 usage();
@@ -155,9 +160,17 @@ _stat(hash_t hstatus, const char *nodes)
         exit(1);
     }
     while ((node = hostlist_next(hlitr))) {
-        if ((str = hash_find(hstatus, node)))
-            printf("%s: %s\n", node, str);
-        else
+        if ((str = hash_find(hstatus, node))) {
+            if (auth_failure) {
+                /* github issue #14
+                 * The error string contains "on".
+                 * Ideally we want to return "unknown" state without delay.
+                 */
+                printf ("%s: %s\n", node, "password verification timeout");
+                auth_failure = 0;
+            } else 
+                printf("%s: %s\n", node, str);
+        } else
             printf("%s: %s\n", node, "invalid hostname");
         free(node);
     }
