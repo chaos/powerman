@@ -1,0 +1,1656 @@
+# sierra powerman.conf, modified to work in test harness
+
+include "@top_srcdir@/etc/swpdu.dev"
+include "@top_srcdir@/etc/ipmipower.dev"
+
+#tcpwrappers yes
+
+# IPMI Control
+device "ipmi0" "ipmipower" "ipmipower -h psierra[0,2-143] |&"
+device "ipmi1" "ipmipower" "ipmipower -h psierra[144-287] |&"
+device "ipmi2" "ipmipower" "ipmipower -h psierra[288-431] |&"
+device "ipmi3" "ipmipower" "ipmipower -h psierra[432-575] |&"
+device "ipmi4" "ipmipower" "ipmipower -h psierra[576-719] |&"
+device "ipmi5" "ipmipower" "ipmipower -h psierra[720-863] |&"
+device "ipmi6" "ipmipower" "ipmipower -h psierra[864-1007] |&"
+device "ipmi7" "ipmipower" "ipmipower -h psierra[1008-1151] |&"
+device "ipmi8" "ipmipower" "ipmipower -h psierra[1152-1295] |&"
+device "ipmi9" "ipmipower" "ipmipower -h psierra[1296-1439] |&"
+device "ipmi10" "ipmipower" "ipmipower -h psierra[1440-1583] |&"
+device "ipmi11" "ipmipower" "ipmipower -h psierra[1584-1727] |&"
+device "ipmi12" "ipmipower" "ipmipower -h psierra[1728-1871] |&"
+device "ipmi13" "ipmipower" "ipmipower -h psierra[1872-1943] |&"
+
+
+node "sierra[0,2-143]"     	"ipmi0" "psierra[0,2-143]"
+node "sierra[144-287]"   	"ipmi1" "psierra[144-287]"
+node "sierra[288-431]"	 	"ipmi2" "psierra[288-431]"
+node "sierra[432-575]"    	"ipmi3" "psierra[432-575]"
+node "sierra[576-719]"    	"ipmi4" "psierra[576-719]"
+node "sierra[720-863]"    	"ipmi5" "psierra[720-863]"
+node "sierra[864-1007]"   	"ipmi6" "psierra[864-1007]"
+node "sierra[1008-1151]"  	"ipmi7" "psierra[1008-1151]"
+node "sierra[1152-1295]"  	"ipmi8" "psierra[1152-1295]"
+node "sierra[1296-1439]"  	"ipmi9" "psierra[1296-1439]"
+node "sierra[1440-1583]"  	"ipmi10" "psierra[1440-1583]"
+node "sierra[1584-1727]"  	"ipmi11" "psierra[1584-1727]"
+node "sierra[1728-1871]"  	"ipmi12" "psierra[1728-1871]"
+node "sierra[1872-1943]"  	"ipmi13" "psierra[1872-1943]"
+
+
+# PDU Control
+# PDU Switches
+device "pdu1" "swpdu"	"swpdu |&"
+device "pdu2" "swpdu"	"swpdu |&"
+device "pdu3" "swpdu"	"swpdu |&"
+device "pdu4" "swpdu"	"swpdu |&"
+device "pdu5" "swpdu"	"swpdu |&"
+device "pdu6" "swpdu"	"swpdu |&"
+device "pdu7" "swpdu"	"swpdu |&"
+device "pdu8" "swpdu"	"swpdu |&"
+device "pdu9" "swpdu"	"swpdu |&"
+device "pdu10" "swpdu"	"swpdu |&"
+device "pdu11" "swpdu"	"swpdu |&"
+device "pdu12" "swpdu"	"swpdu |&"
+device "pdu13" "swpdu"	"swpdu |&"
+device "pdu14" "swpdu"	"swpdu |&"
+device "pdu15" "swpdu"	"swpdu |&"
+##device "pdu16" "swpdu"	"swpdu |&"
+##device "pdu17" "swpdu"	"swpdu |&"
+##device "pdu18" "swpdu"	"swpdu |&"
+device "pdu19" "swpdu"	"swpdu |&"
+device "pdu20" "swpdu"	"swpdu |&"
+device "pdu21" "swpdu"	"swpdu |&"
+device "pdu22" "swpdu"	"swpdu |&"
+device "pdu23" "swpdu"	"swpdu |&"
+device "pdu24" "swpdu"	"swpdu |&"
+device "pdu25" "swpdu"	"swpdu |&"
+device "pdu26" "swpdu"	"swpdu |&"
+device "pdu27" "swpdu"	"swpdu |&"
+device "pdu28" "swpdu"	"swpdu |&"
+device "pdu29" "swpdu"	"swpdu |&"
+device "pdu30" "swpdu"	"swpdu |&"
+device "pdu31" "swpdu"	"swpdu |&"
+device "pdu32" "swpdu"	"swpdu |&"
+device "pdu33" "swpdu"	"swpdu |&"
+
+# PDU Chassis Control
+
+# Rack 1 LSM,RPS,GW nodes
+node	"pdu-sierra1a"	"pdu1"	"47"	#sierra1ps1
+node	"pdu-sierra0"	"pdu1"	"46"	#sierra0
+node	"pdu-sierra1b"	"pdu1"	"44"	#sierra1ps2
+node	"pdu-sierra2"	"pdu1"	"43"	#sierra2
+node	"pdu-sierra3"	"pdu1"	"42"	#sierra3
+node	"pdu-sierra4"	"pdu1"	"41"	#sierra4
+node	"pdu-sierra7a"	"pdu1"	"40"	#sierra7ps1
+node	"pdu-sierra5"	"pdu1"	"39"	#sierra5
+node	"pdu-sierra7b"	"pdu1"	"37"	#sierra7ps2
+node	"pdu-sierra6"	"pdu1"	"36"	#sierra6
+node	"pdu-sierra8"	"pdu1"	"34"	#sierra8
+node	"pdu-sierra9"	"pdu1"	"32"	#sierra9
+node	"pdu-sierra10"	"pdu1"	"31"	#sierra10
+node	"pdu-sierra11"	"pdu1"	"29"	#sierra11
+
+# Rack 1 Compute nodes
+node	"chassis1a"	"pdu1"	"23"	#sierra[12,14]
+node	"chassis1b"	"pdu1"	"20"	#sierra[13,15]
+node	"chassis2a"	"pdu1"	"18"	#sierra[16,18]
+node	"chassis2b"	"pdu1"	"15"	#sierra[17,19]
+node	"chassis3a"	"pdu1"	"13"	#sierra[20,22]
+node	"chassis3b"	"pdu1"	"10"	#sierra[21,23]
+node	"chassis4a"	"pdu1"	"12"	#sierra[24,26]
+node	"chassis4b"	"pdu1"	"9"	#sierra[25,27]
+node	"chassis5a"	"pdu1"	"5"	#sierra[28,30]
+node	"chassis5b"	"pdu1"	"2"	#sierra[29,31]
+node	"chassis6a"	"pdu1"	"4"	#sierra[32,34]
+node	"chassis6b"	"pdu1"	"1"	#sierra[33,35]
+
+# Rack 2
+node    "chassis7a"     "pdu2"  "48"	#sierra[36,38]
+node    "chassis7b"     "pdu2"  "45"	#sierra[37,39]
+node    "chassis8a"     "pdu2"  "47"	#sierra[40,42]
+node    "chassis8b"     "pdu2"  "44"	#sierra[41,43]
+node    "chassis9a"     "pdu2"  "43"	#sierra[44,46]
+node    "chassis9b"     "pdu2"  "40"	#sierra[45,47]
+node    "chassis10a"     "pdu2"  "41"	#sierra[48,50]
+node    "chassis10b"     "pdu2"  "38"	#sierra[49,51]
+node    "chassis11a"     "pdu2"  "39"	#sierra[52,54]
+node    "chassis11b"     "pdu2"  "36"	#sierra[53,55]
+node    "chassis12a"     "pdu2"  "37"	#sierra[56,58]
+node    "chassis12b"     "pdu2"  "34"	#sierra[57,59]
+node    "chassis13a"     "pdu2"  "30"	#sierra[60,62]
+node    "chassis13b"     "pdu2"  "27"	#sierra[61,63]
+node    "chassis14a"     "pdu2"  "29"	#sierra[64,66]
+node    "chassis14b"     "pdu2"  "26"	#sierra[65,67]
+node    "chassis15a"     "pdu2"  "28"	#sierra[68,70]
+node    "chassis15b"     "pdu2"  "25"	#sierra[69,71]
+node    "chassis16a"     "pdu2"  "23"	#sierra[72,74]
+node    "chassis16b"     "pdu2"  "20"	#sierra[73,75]
+node    "chassis17a"     "pdu2"  "19"	#sierra[76,78]
+node    "chassis17b"     "pdu2"  "16"	#sierra[77,79]
+node    "chassis18a"     "pdu2"  "18"	#sierra[80,82]
+node    "chassis18b"     "pdu2"  "15"	#sierra[81,83]
+node    "chassis19a"     "pdu2"  "13"	#sierra[84,86]
+node    "chassis19b"     "pdu2"  "10"	#sierra[85,87]
+node    "chassis20a"     "pdu2"  "12"	#sierra[88,90]
+node    "chassis20b"     "pdu2"  "9"	#sierra[89,91]
+node    "chassis21a"     "pdu2"  "11"	#sierra[92,94]
+node    "chassis21b"     "pdu2"  "8"	#sierra[93,95]
+node    "chassis22a"     "pdu2"  "6"	#sierra[96,98]
+node    "chassis22b"     "pdu2"  "3"	#sierra[97,99]
+node    "chassis23a"     "pdu2"  "5"	#sierra[100,102]
+node    "chassis23b"     "pdu2"  "2"	#sierra[101,103]
+node    "chassis24a"     "pdu2"  "4"	#sierra[104,106]
+node    "chassis24b"     "pdu2"  "1"	#sierra[105,107]
+
+# Rack 3
+node    "chassis25a"     "pdu3"  "48"	#sierra[108,110]
+node    "chassis25b"     "pdu3"  "45"	#sierra[109,111]
+node    "chassis26a"     "pdu3"  "47"
+node    "chassis26b"     "pdu3"  "44"
+node    "chassis27a"     "pdu3"  "43"	
+node    "chassis27b"     "pdu3"  "40"
+node    "chassis28a"     "pdu3"  "41"	
+node    "chassis28b"     "pdu3"  "38"	
+node    "chassis29a"     "pdu3"  "39"	
+node    "chassis29b"     "pdu3"  "36"	
+node    "chassis30a"     "pdu3"  "37"	
+node    "chassis30b"     "pdu3"  "34"	
+node    "chassis31a"     "pdu3"  "30"	
+node    "chassis31b"     "pdu3"  "27"	
+node    "chassis32a"     "pdu3"  "29"	
+node    "chassis32b"     "pdu3"  "26"	
+node    "chassis33a"     "pdu3"  "28"	
+node    "chassis33b"     "pdu3"  "25"	
+node    "chassis34a"     "pdu3"  "23"	
+node    "chassis34b"     "pdu3"  "20"	
+node    "chassis35a"     "pdu3"  "19"	
+node    "chassis35b"     "pdu3"  "16"	
+node    "chassis36a"     "pdu3"  "18"	
+node    "chassis36b"     "pdu3"  "15"	
+node    "chassis37a"     "pdu3"  "13"	
+node    "chassis37b"     "pdu3"  "10"	
+node    "chassis38a"     "pdu3"  "12"	
+node    "chassis38b"     "pdu3"  "9"	
+node    "chassis39a"     "pdu3"  "11"	
+node    "chassis39b"     "pdu3"  "8"	
+node    "chassis40a"     "pdu3"  "6"	
+node    "chassis40b"     "pdu3"  "3"	
+node    "chassis41a"     "pdu3"  "5"	
+node    "chassis41b"     "pdu3"  "2"	
+node    "chassis42a"     "pdu3"  "4"	#sierra[176,178]
+node    "chassis42b"     "pdu3"  "1"	#sierra[177,179]
+
+# Rack 4
+node    "chassis43a"     "pdu4"  "48"	#sierra[180,182]
+node    "chassis43b"     "pdu4"  "45"	#sierra[181,183]
+node    "chassis44a"     "pdu4"  "47"
+node    "chassis44b"     "pdu4"  "44"
+node    "chassis45a"     "pdu4"  "43"	
+node    "chassis45b"     "pdu4"  "40"
+node    "chassis46a"     "pdu4"  "41"	
+node    "chassis46b"     "pdu4"  "38"	
+node    "chassis47a"     "pdu4"  "39"	
+node    "chassis47b"     "pdu4"  "36"	
+node    "chassis48a"     "pdu4"  "37"	
+node    "chassis48b"     "pdu4"  "34"	
+node    "chassis49a"     "pdu4"  "30"	
+node    "chassis49b"     "pdu4"  "27"	
+node    "chassis50a"     "pdu4"  "29"	
+node    "chassis50b"     "pdu4"  "26"	
+node    "chassis51a"     "pdu4"  "28"	
+node    "chassis51b"     "pdu4"  "25"	
+node    "chassis52a"     "pdu4"  "23"	
+node    "chassis52b"     "pdu4"  "20"	
+node    "chassis53a"     "pdu4"  "19"	
+node    "chassis53b"     "pdu4"  "16"	
+node    "chassis54a"     "pdu4"  "18"	
+node    "chassis54b"     "pdu4"  "15"	
+node    "chassis55a"     "pdu4"  "13"	
+node    "chassis55b"     "pdu4"  "10"	
+node    "chassis56a"     "pdu4"  "12"	
+node    "chassis56b"     "pdu4"  "9"	
+node    "chassis57a"     "pdu4"  "11"	
+node    "chassis57b"     "pdu4"  "8"	
+node    "chassis58a"     "pdu4"  "6"	
+node    "chassis58b"     "pdu4"  "3"	
+node    "chassis59a"     "pdu4"  "5"	
+node    "chassis59b"     "pdu4"  "2"	
+node    "chassis60a"     "pdu4"  "4"	#sierra[248,250]
+node    "chassis60b"     "pdu4"  "1"	#sierra[249,251]
+
+# Rack 5
+node    "chassis61a"     "pdu5"  "48"	#sierra[252,254]
+node    "chassis61b"     "pdu5"  "45"	#sierra[253,255]
+node    "chassis62a"     "pdu5"  "47"
+node    "chassis62b"     "pdu5"  "44"
+node    "chassis63a"     "pdu5"  "43"	
+node    "chassis63b"     "pdu5"  "40"
+node    "chassis64a"     "pdu5"  "41"	
+node    "chassis64b"     "pdu5"  "38"	
+node    "chassis65a"     "pdu5"  "39"	
+node    "chassis65b"     "pdu5"  "36"	
+node    "chassis66a"     "pdu5"  "37"	
+node    "chassis66b"     "pdu5"  "34"	
+node    "chassis67a"     "pdu5"  "30"	
+node    "chassis67b"     "pdu5"  "27"	
+node    "chassis68a"     "pdu5"  "29"	
+node    "chassis68b"     "pdu5"  "26"	
+node    "chassis69a"     "pdu5"  "28"	
+node    "chassis69b"     "pdu5"  "25"	
+node    "chassis70a"     "pdu5"  "23"	
+node    "chassis70b"     "pdu5"  "20"	
+node    "chassis71a"     "pdu5"  "19"	
+node    "chassis71b"     "pdu5"  "16"	
+node    "chassis72a"     "pdu5"  "18"	
+node    "chassis72b"     "pdu5"  "15"	
+node    "chassis73a"     "pdu5"  "13"	
+node    "chassis73b"     "pdu5"  "10"	
+node    "chassis74a"     "pdu5"  "12"	
+node    "chassis74b"     "pdu5"  "9"	
+node    "chassis75a"     "pdu5"  "11"	
+node    "chassis75b"     "pdu5"  "8"	
+node    "chassis76a"     "pdu5"  "6"	
+node    "chassis76b"     "pdu5"  "3"	
+node    "chassis77a"     "pdu5"  "5"	
+node    "chassis77b"     "pdu5"  "2"	
+node    "chassis78a"     "pdu5"  "4"	#sierra[320,322]
+node    "chassis78b"     "pdu5"  "1"	#sierra[321,323]
+
+# Rack 6 LSM,RPS,GW nodes
+node	"pdu-sierra325a"	"pdu6"	"47"	#sierra325ps1
+node	"pdu-sierra324"		"pdu6"	"46"	#sierra324
+node	"pdu-sierra325b"	"pdu6"	"44"	#sierra325ps2
+node	"pdu-sierra326"		"pdu6"	"43"	#sierra326
+node	"pdu-sierra327"		"pdu6"	"42"	#sierra327
+node	"pdu-sierra328"		"pdu6"	"41"	#sierra328
+node	"pdu-sierra331a"	"pdu6"	"40"	#sierra331ps1
+node	"pdu-sierra329"		"pdu6"	"39"	#sierra329
+node	"pdu-sierra331b"	"pdu6"	"37"	#sierra331ps2
+node	"pdu-sierra330"		"pdu6"	"36"	#sierra330
+node	"pdu-sierra332"		"pdu6"	"34"	#sierra332
+node	"pdu-sierra333"		"pdu6"	"32"	#sierra333
+node	"pdu-sierra334"		"pdu6"	"31"	#sierra334
+node	"pdu-sierra335"		"pdu6"	"29"	#sierra335
+
+# Rack 6 Compute nodes
+node	"chassis79a"	"pdu6"	"23"	#sierra[336,338]
+node	"chassis79b"	"pdu6"	"20"	#sierra[337,339]
+node	"chassis80a"	"pdu6"	"18"	
+node	"chassis80b"	"pdu6"	"15"	
+node	"chassis81a"	"pdu6"	"13"	
+node	"chassis81b"	"pdu6"	"10"	
+node	"chassis82a"	"pdu6"	"12"	
+node	"chassis82b"	"pdu6"	"9"	
+node	"chassis83a"	"pdu6"	"5"	
+node	"chassis83b"	"pdu6"	"2"	
+node	"chassis84a"	"pdu6"	"4"	#sierra[356,358]
+node	"chassis84b"	"pdu6"	"1"	#sierra[357,359]
+
+# Rack 7
+node    "chassis85a"     "pdu7"  "48"	#sierra[360,362]
+node    "chassis85b"     "pdu7"  "45"	#sierra[361,363]
+node    "chassis86a"     "pdu7"  "47"
+node    "chassis86b"     "pdu7"  "44"
+node    "chassis87a"     "pdu7"  "43"	
+node    "chassis87b"     "pdu7"  "40"
+node    "chassis88a"     "pdu7"  "41"	
+node    "chassis88b"     "pdu7"  "38"	
+node    "chassis89a"     "pdu7"  "39"	
+node    "chassis89b"     "pdu7"  "36"	
+node    "chassis90a"     "pdu7"  "37"	
+node    "chassis90b"     "pdu7"  "34"	
+node    "chassis91a"     "pdu7"  "30"	
+node    "chassis91b"     "pdu7"  "27"	
+node    "chassis92a"     "pdu7"  "29"	
+node    "chassis92b"     "pdu7"  "26"	
+node    "chassis93a"     "pdu7"  "28"	
+node    "chassis93b"     "pdu7"  "25"	
+node    "chassis94a"     "pdu7"  "23"	
+node    "chassis94b"     "pdu7"  "20"	
+node    "chassis95a"     "pdu7"  "19"	
+node    "chassis95b"     "pdu7"  "16"	
+node    "chassis96a"     "pdu7"  "18"	
+node    "chassis96b"     "pdu7"  "15"	
+node    "chassis97a"     "pdu7"  "13"	
+node    "chassis97b"     "pdu7"  "10"	
+node    "chassis98a"     "pdu7"  "12"	
+node    "chassis98b"     "pdu7"  "9"	
+node    "chassis99a"     "pdu7"  "11"	
+node    "chassis99b"     "pdu7"  "8"	
+node    "chassis100a"     "pdu7"  "6"	
+node    "chassis100b"     "pdu7"  "3"	
+node    "chassis101a"     "pdu7"  "5"	
+node    "chassis101b"     "pdu7"  "2"	
+node    "chassis102a"     "pdu7"  "4"	#sierra[428,430]
+node    "chassis102b"     "pdu7"  "1"	#sierra[429,431]
+
+# Rack 8
+node    "chassis103a"     "pdu8"  "48"	#sierra[432,434]
+node    "chassis103b"     "pdu8"  "45"	#sierra[433,435]
+node    "chassis104a"     "pdu8"  "47"
+node    "chassis104b"     "pdu8"  "44"
+node    "chassis105a"     "pdu8"  "43"	
+node    "chassis105b"     "pdu8"  "40"
+node    "chassis106a"     "pdu8"  "41"	
+node    "chassis106b"     "pdu8"  "38"	
+node    "chassis107a"     "pdu8"  "39"	
+node    "chassis107b"     "pdu8"  "36"	
+node    "chassis108a"     "pdu8"  "37"	
+node    "chassis108b"     "pdu8"  "34"	
+node    "chassis109a"     "pdu8"  "30"	
+node    "chassis109b"     "pdu8"  "27"	
+node    "chassis110a"     "pdu8"  "29"	
+node    "chassis110b"     "pdu8"  "26"	
+node    "chassis111a"     "pdu8"  "28"	
+node    "chassis111b"     "pdu8"  "25"	
+node    "chassis112a"     "pdu8"  "23"	
+node    "chassis112b"     "pdu8"  "20"	
+node    "chassis113a"     "pdu8"  "19"	
+node    "chassis113b"     "pdu8"  "16"	
+node    "chassis114a"     "pdu8"  "18"	
+node    "chassis114b"     "pdu8"  "15"	
+node    "chassis115a"     "pdu8"  "13"	
+node    "chassis115b"     "pdu8"  "10"	
+node    "chassis116a"     "pdu8"  "12"	
+node    "chassis116b"     "pdu8"  "9"	
+node    "chassis117a"     "pdu8"  "11"	
+node    "chassis117b"     "pdu8"  "8"	
+node    "chassis118a"     "pdu8"  "6"	
+node    "chassis118b"     "pdu8"  "3"	
+node    "chassis119a"     "pdu8"  "5"	
+node    "chassis119b"     "pdu8"  "2"	
+node    "chassis120a"     "pdu8"  "4"	#sierra[500,502]
+node    "chassis120b"     "pdu8"  "1"	#sierra[501,503]
+
+# Rack 9
+node    "chassis121a"     "pdu9"  "48"	#sierra[504,506]
+node    "chassis121b"     "pdu9"  "45"	#sierra[505,507]
+node    "chassis122a"     "pdu9"  "47"
+node    "chassis122b"     "pdu9"  "44"
+node    "chassis123a"     "pdu9"  "43"	
+node    "chassis123b"     "pdu9"  "40"
+node    "chassis124a"     "pdu9"  "41"	
+node    "chassis124b"     "pdu9"  "38"	
+node    "chassis125a"     "pdu9"  "39"	
+node    "chassis125b"     "pdu9"  "36"	
+node    "chassis126a"     "pdu9"  "37"	
+node    "chassis126b"     "pdu9"  "34"	
+node    "chassis127a"     "pdu9"  "30"	
+node    "chassis127b"     "pdu9"  "27"	
+node    "chassis128a"     "pdu9"  "29"	
+node    "chassis128b"     "pdu9"  "26"	
+node    "chassis129a"     "pdu9"  "28"	
+node    "chassis129b"     "pdu9"  "25"	
+node    "chassis130a"     "pdu9"  "23"	
+node    "chassis130b"     "pdu9"  "20"	
+node    "chassis131a"     "pdu9"  "19"	
+node    "chassis131b"     "pdu9"  "16"	
+node    "chassis132a"     "pdu9"  "18"	
+node    "chassis132b"     "pdu9"  "15"	
+node    "chassis133a"     "pdu9"  "13"	
+node    "chassis133b"     "pdu9"  "10"	
+node    "chassis134a"     "pdu9"  "12"	
+node    "chassis134b"     "pdu9"  "9"	
+node    "chassis135a"     "pdu9"  "11"	
+node    "chassis135b"     "pdu9"  "8"	
+node    "chassis136a"     "pdu9"  "6"	
+node    "chassis136b"     "pdu9"  "3"	
+node    "chassis137a"     "pdu9"  "5"	
+node    "chassis137b"     "pdu9"  "2"	
+node    "chassis138a"     "pdu9"  "4"	#sierra[572,574]
+node    "chassis138b"     "pdu9"  "1"	#sierra[573,575]
+
+# Rack 10
+node    "chassis139a"     "pdu10"  "48"	#sierra[576,578]
+node    "chassis139b"     "pdu10"  "45"	#sierra[577,579]
+node    "chassis140a"     "pdu10"  "47"
+node    "chassis140b"     "pdu10"  "44"
+node    "chassis141a"     "pdu10"  "43"	
+node    "chassis141b"     "pdu10"  "40"
+node    "chassis142a"     "pdu10"  "41"	
+node    "chassis142b"     "pdu10"  "38"	
+node    "chassis143a"     "pdu10"  "39"	
+node    "chassis143b"     "pdu10"  "36"	
+node    "chassis144a"     "pdu10"  "37"	
+node    "chassis144b"     "pdu10"  "34"	
+node    "chassis145a"     "pdu10"  "30"	
+node    "chassis145b"     "pdu10"  "27"	
+node    "chassis146a"     "pdu10"  "29"	
+node    "chassis146b"     "pdu10"  "26"	
+node    "chassis147a"     "pdu10"  "28"	
+node    "chassis147b"     "pdu10"  "25"	
+node    "chassis148a"     "pdu10"  "23"	
+node    "chassis148b"     "pdu10"  "20"	
+node    "chassis149a"     "pdu10"  "19"	
+node    "chassis149b"     "pdu10"  "16"	
+node    "chassis150a"     "pdu10"  "18"	
+node    "chassis150b"     "pdu10"  "15"	
+node    "chassis151a"     "pdu10"  "13"	
+node    "chassis151b"     "pdu10"  "10"	
+node    "chassis152a"     "pdu10"  "12"	
+node    "chassis152b"     "pdu10"  "9"	
+node    "chassis153a"     "pdu10"  "11"	
+node    "chassis153b"     "pdu10"  "8"	
+node    "chassis154a"     "pdu10"  "6"	
+node    "chassis154b"     "pdu10"  "3"	
+node    "chassis155a"     "pdu10"  "5"	
+node    "chassis155b"     "pdu10"  "2"	
+node    "chassis156a"     "pdu10"  "4"	#sierra[644,646]
+node    "chassis156b"     "pdu10"  "1"	#sierra[645,647]
+
+# Rack 11 LSM,RPS,GW nodes
+node	"pdu-sierra649a"	"pdu11"	"47"	#sierra649ps1
+node	"pdu-sierra648"		"pdu11"	"46"	#sierra648
+node	"pdu-sierra649b"	"pdu11"	"44"	#sierra649ps2
+node	"pdu-sierra650"		"pdu11"	"43"	#sierra650
+node	"pdu-sierra651"		"pdu11"	"42"	#sierra651
+node	"pdu-sierra652"		"pdu11"	"41"	#sierra652
+node	"pdu-sierra655a"	"pdu11"	"40"	#sierra655ps1
+node	"pdu-sierra653"		"pdu11"	"39"	#sierra653
+node	"pdu-sierra655b"	"pdu11"	"37"	#sierra655ps2
+node	"pdu-sierra654"		"pdu11"	"36"	#sierra654
+node	"pdu-sierra656"		"pdu11"	"34"	#sierra656
+node	"pdu-sierra657"		"pdu11"	"32"	#sierra657
+node	"pdu-sierra658"		"pdu11"	"31"	#sierra658
+node	"pdu-sierra659"		"pdu11"	"29"	#sierra659
+
+# Rack 11 Compute nodes
+node	"chassis157a"	"pdu11"	"23"	#sierra[660,662]
+node	"chassis157b"	"pdu11"	"20"	#sierra[661,663]
+node	"chassis158a"	"pdu11"	"18"	
+node	"chassis158b"	"pdu11"	"15"	
+node	"chassis159a"	"pdu11"	"13"	
+node	"chassis159b"	"pdu11"	"10"	
+node	"chassis160a"	"pdu11"	"12"	
+node	"chassis160b"	"pdu11"	"9"	
+node	"chassis161a"	"pdu11"	"5"	
+node	"chassis161b"	"pdu11"	"2"	
+node	"chassis162a"	"pdu11"	"4"	#sierra[680,682]
+node	"chassis162b"	"pdu11"	"1"	#sierra[681,683]
+
+# Rack 12
+node    "chassis163a"     "pdu12"  "48"	#sierra[684,686]
+node    "chassis163b"     "pdu12"  "45" #sierra[685,687]
+node    "chassis164a"     "pdu12"  "47"
+node    "chassis164b"     "pdu12"  "44"
+node    "chassis165a"     "pdu12"  "43"	
+node    "chassis165b"     "pdu12"  "40"
+node    "chassis166a"     "pdu12"  "41"	
+node    "chassis166b"     "pdu12"  "38"	
+node    "chassis167a"     "pdu12"  "39"	
+node    "chassis167b"     "pdu12"  "36"	
+node    "chassis168a"     "pdu12"  "37"	
+node    "chassis168b"     "pdu12"  "34"	
+node    "chassis169a"     "pdu12"  "30"	
+node    "chassis169b"     "pdu12"  "27"	
+node    "chassis170a"     "pdu12"  "29"	
+node    "chassis170b"     "pdu12"  "26"	
+node    "chassis171a"     "pdu12"  "28"	
+node    "chassis171b"     "pdu12"  "25"	
+node    "chassis172a"     "pdu12"  "23"	
+node    "chassis172b"     "pdu12"  "20"	
+node    "chassis173a"     "pdu12"  "19"	
+node    "chassis173b"     "pdu12"  "16"	
+node    "chassis174a"     "pdu12"  "18"	
+node    "chassis174b"     "pdu12"  "15"	
+node    "chassis175a"     "pdu12"  "13"	
+node    "chassis175b"     "pdu12"  "10"	
+node    "chassis176a"     "pdu12"  "12"	
+node    "chassis176b"     "pdu12"  "9"	
+node    "chassis177a"     "pdu12"  "11"	
+node    "chassis177b"     "pdu12"  "8"	
+node    "chassis178a"     "pdu12"  "6"	
+node    "chassis178b"     "pdu12"  "3"	
+node    "chassis179a"     "pdu12"  "5"	
+node    "chassis179b"     "pdu12"  "2"	
+node    "chassis180a"     "pdu12"  "4"  #sierra[752,754]
+node    "chassis180b"     "pdu12"  "1"	#sierra[753,755]
+
+# Rack 13
+node    "chassis181a"     "pdu13"  "48"	#sierra[756,758]
+node    "chassis181b"     "pdu13"  "45" #sierra[757,759]
+node    "chassis182a"     "pdu13"  "47"
+node    "chassis182b"     "pdu13"  "44"
+node    "chassis183a"     "pdu13"  "43"	
+node    "chassis183b"     "pdu13"  "40"
+node    "chassis184a"     "pdu13"  "41"	
+node    "chassis184b"     "pdu13"  "38"	
+node    "chassis185a"     "pdu13"  "39"	
+node    "chassis185b"     "pdu13"  "36"	
+node    "chassis186a"     "pdu13"  "37"	
+node    "chassis186b"     "pdu13"  "34"	
+node    "cyclades22b"     "pdu13"  "33"	
+node    "chassis187a"     "pdu13"  "30"	
+node    "chassis187b"     "pdu13"  "27"	
+node    "chassis188a"     "pdu13"  "29"	
+node    "chassis188b"     "pdu13"  "26"	
+node    "chassis189a"     "pdu13"  "28"	
+node    "chassis189b"     "pdu13"  "25"	
+node    "chassis190a"     "pdu13"  "23"	
+node    "chassis190b"     "pdu13"  "20"	
+node    "chassis191a"     "pdu13"  "19"	
+node    "chassis191b"     "pdu13"  "16"	
+node    "chassis192a"     "pdu13"  "18"	
+node    "chassis192b"     "pdu13"  "15"	
+node    "chassis193a"     "pdu13"  "13"	
+node    "chassis193b"     "pdu13"  "10"	
+node    "chassis194a"     "pdu13"  "12"	
+node    "chassis194b"     "pdu13"  "9"	
+node    "chassis195a"     "pdu13"  "11"	
+node    "chassis195b"     "pdu13"  "8"	
+node    "chassis196a"     "pdu13"  "6"	
+node    "chassis196b"     "pdu13"  "3"	
+node    "chassis197a"     "pdu13"  "5"	
+node    "chassis197b"     "pdu13"  "2"	
+node    "chassis198a"     "pdu13"  "4"  #sierra[824,826]
+node    "chassis198b"     "pdu13"  "1"	#sierra[825,827]
+
+# Rack 14
+node    "chassis199a"     "pdu14"  "48"	#sierra[828,830]
+node    "chassis199b"     "pdu14"  "45" #sierra[829,831]
+node    "chassis200a"     "pdu14"  "47"
+node    "chassis200b"     "pdu14"  "44"
+node    "chassis201a"     "pdu14"  "43"	
+node    "chassis201b"     "pdu14"  "40"
+node    "chassis202a"     "pdu14"  "41"	
+node    "chassis202b"     "pdu14"  "38"	
+node    "chassis203a"     "pdu14"  "39"	
+node    "chassis203b"     "pdu14"  "36"	
+node    "chassis204a"     "pdu14"  "37"	
+node    "chassis204b"     "pdu14"  "34"	
+node    "chassis205a"     "pdu14"  "30"	
+node    "chassis205b"     "pdu14"  "27"	
+node    "chassis206a"     "pdu14"  "29"	
+node    "chassis206b"     "pdu14"  "26"	
+node    "chassis207a"     "pdu14"  "28"	
+node    "chassis207b"     "pdu14"  "25"	
+node    "chassis208a"     "pdu14"  "23"	
+node    "chassis208b"     "pdu14"  "20"	
+node    "chassis209a"     "pdu14"  "19"	
+node    "chassis209b"     "pdu14"  "16"	
+node    "chassis210a"     "pdu14"  "18"	
+node    "chassis210b"     "pdu14"  "15"	
+node    "chassis211a"     "pdu14"  "13"	
+node    "chassis211b"     "pdu14"  "10"	
+node    "chassis212a"     "pdu14"  "12"	
+node    "chassis212b"     "pdu14"  "9"	
+node    "chassis213a"     "pdu14"  "11"	
+node    "chassis213b"     "pdu14"  "8"	
+node    "chassis214a"     "pdu14"  "6"	
+node    "chassis214b"     "pdu14"  "3"	
+node    "chassis215a"     "pdu14"  "5"	
+node    "chassis215b"     "pdu14"  "2"	
+node    "chassis216a"     "pdu14"  "4"  #sierra[896,898]
+node    "chassis216b"     "pdu14"  "1"	#sierra[897,899]
+
+# Rack 15
+node    "chassis217a"     "pdu15"  "48"	#sierra[900,902]
+node    "chassis217b"     "pdu15"  "45" #sierra[901,903]
+node    "chassis218a"     "pdu15"  "47"
+node    "chassis218b"     "pdu15"  "44"
+node    "chassis219a"     "pdu15"  "43"	
+node    "chassis219b"     "pdu15"  "40"
+node    "chassis220a"     "pdu15"  "41"	
+node    "chassis220b"     "pdu15"  "38"	
+node    "chassis221a"     "pdu15"  "39"	
+node    "chassis221b"     "pdu15"  "36"	
+node    "chassis222a"     "pdu15"  "37"	
+node    "chassis222b"     "pdu15"  "34"	
+node    "chassis223a"     "pdu15"  "30"	
+node    "chassis223b"     "pdu15"  "27"	
+node    "chassis224a"     "pdu15"  "29"	
+node    "chassis224b"     "pdu15"  "26"	
+node    "chassis225a"     "pdu15"  "28"	
+node    "chassis225b"     "pdu15"  "25"	
+node    "chassis226a"     "pdu15"  "23"	
+node    "chassis226b"     "pdu15"  "20"	
+node    "chassis227a"     "pdu15"  "19"	
+node    "chassis227b"     "pdu15"  "16"	
+node    "chassis228a"     "pdu15"  "18"	
+node    "chassis228b"     "pdu15"  "15"	
+node    "chassis229a"     "pdu15"  "13"	
+node    "chassis229b"     "pdu15"  "10"	
+node    "chassis230a"     "pdu15"  "12"	
+node    "chassis230b"     "pdu15"  "9"	
+node    "chassis231a"     "pdu15"  "11"	
+node    "chassis231b"     "pdu15"  "8"	
+node    "chassis232a"     "pdu15"  "6"	
+node    "chassis232b"     "pdu15"  "3"	
+node    "chassis233a"     "pdu15"  "5"	
+node    "chassis233b"     "pdu15"  "2"	
+node    "chassis234a"     "pdu15"  "4"  #sierra[968,970]
+node    "chassis234b"     "pdu15"  "1"	#sierra[969,971]
+
+# Racks 16 - 18 IBCORE switches
+
+# Rack 19 LSM,RPS,GW nodes
+node	"pdu-sierra973a"	"pdu19"	"47"	#sierra973ps1
+node	"pdu-sierra972"		"pdu19"	"46"	#sierra972
+node	"pdu-sierra973b"	"pdu19"	"44"	#sierra973ps2
+node	"pdu-sierra974"		"pdu19"	"43"	#sierra974
+node	"pdu-sierra975"		"pdu19"	"42"	#sierra975
+node	"pdu-sierra976"		"pdu19"	"41"	#sierra976
+node	"pdu-sierra979a"	"pdu19"	"40"	#sierra979ps1
+node	"pdu-sierra977"		"pdu19"	"39"	#sierra977
+node	"pdu-sierra979b"	"pdu19"	"37"	#sierra979ps2
+node	"pdu-sierra978"		"pdu19"	"36"	#sierra978
+node	"pdu-sierra980"		"pdu19"	"34"	#sierra980
+node	"pdu-sierra981"		"pdu19"	"32"	#sierra981
+node	"pdu-sierra982"		"pdu19"	"31"	#sierra982
+node	"pdu-sierra983"		"pdu19"	"29"	#sierra983
+
+# Rack 19 Compute nodes
+node	"chassis235a"	"pdu19"	"23"	#sierra[984,986]
+node	"chassis235b"	"pdu19"	"20"    #sierra[985,987]
+node	"chassis236a"	"pdu19"	"18"	
+node	"chassis236b"	"pdu19"	"15"	
+node	"chassis237a"	"pdu19"	"13"	
+node	"chassis237b"	"pdu19"	"10"	
+node	"chassis238a"	"pdu19"	"12"	
+node	"chassis238b"	"pdu19"	"9"	
+node	"chassis239a"	"pdu19"	"5"	
+node	"chassis239b"	"pdu19"	"2"	
+node	"chassis240a"	"pdu19"	"4"     #sierra[1004,1006]
+node	"chassis240b"	"pdu19"	"1"	#sierra[1005,1007]
+
+# Rack 20
+node    "chassis241a"     "pdu20"  "48"	#sierra[1008,1010]
+node    "chassis241b"     "pdu20"  "45" #sierra[1009,1011]
+node    "chassis242a"     "pdu20"  "47"
+node    "chassis242b"     "pdu20"  "44"
+node    "chassis243a"     "pdu20"  "43"	
+node    "chassis243b"     "pdu20"  "40"
+node    "chassis244a"     "pdu20"  "41"	
+node    "chassis244b"     "pdu20"  "38"	
+node    "chassis245a"     "pdu20"  "39"	
+node    "chassis245b"     "pdu20"  "36"	
+node    "chassis246a"     "pdu20"  "37"	
+node    "chassis246b"     "pdu20"  "34"	
+node    "chassis247a"     "pdu20"  "30"	
+node    "chassis247b"     "pdu20"  "27"	
+node    "chassis248a"     "pdu20"  "29"	
+node    "chassis248b"     "pdu20"  "26"	
+node    "chassis249a"     "pdu20"  "28"	
+node    "chassis249b"     "pdu20"  "25"	
+node    "chassis250a"     "pdu20"  "23"	
+node    "chassis250b"     "pdu20"  "20"	
+node    "chassis251a"     "pdu20"  "19"	
+node    "chassis251b"     "pdu20"  "16"	
+node    "chassis252a"     "pdu20"  "18"	
+node    "chassis252b"     "pdu20"  "15"	
+node    "chassis253a"     "pdu20"  "13"	
+node    "chassis253b"     "pdu20"  "10"	
+node    "chassis254a"     "pdu20"  "12"	
+node    "chassis254b"     "pdu20"  "9"	
+node    "chassis255a"     "pdu20"  "11"	
+node    "chassis255b"     "pdu20"  "8"	
+node    "chassis256a"     "pdu20"  "6"	
+node    "chassis256b"     "pdu20"  "3"	
+node    "chassis257a"     "pdu20"  "5"	
+node    "chassis257b"     "pdu20"  "2"	
+node    "chassis258a"     "pdu20"  "4"  #sierra[1076,1078]
+node    "chassis258b"     "pdu20"  "1"	#sierra[1077,1079]
+
+# Rack 21
+node    "chassis259a"     "pdu21"  "48"	#sierra[1080,1082]
+node    "chassis259b"     "pdu21"  "45" #sierra[1081,1083]
+node    "chassis260a"     "pdu21"  "47"
+node    "chassis260b"     "pdu21"  "44"
+node    "chassis261a"     "pdu21"  "43"	
+node    "chassis261b"     "pdu21"  "40"
+node    "chassis262a"     "pdu21"  "41"	
+node    "chassis262b"     "pdu21"  "38"	
+node    "chassis263a"     "pdu21"  "39"	
+node    "chassis263b"     "pdu21"  "36"	
+node    "chassis264a"     "pdu21"  "37"	
+node    "chassis264b"     "pdu21"  "34"	
+node    "chassis265a"     "pdu21"  "30"	
+node    "chassis265b"     "pdu21"  "27"	
+node    "chassis266a"     "pdu21"  "29"	
+node    "chassis266b"     "pdu21"  "26"	
+node    "chassis267a"     "pdu21"  "28"	
+node    "chassis267b"     "pdu21"  "25"	
+node    "chassis268a"     "pdu21"  "23"	
+node    "chassis268b"     "pdu21"  "20"	
+node    "chassis269a"     "pdu21"  "19"	
+node    "chassis269b"     "pdu21"  "16"	
+node    "chassis270a"     "pdu21"  "18"	
+node    "chassis270b"     "pdu21"  "15"	
+node    "chassis271a"     "pdu21"  "13"	
+node    "chassis271b"     "pdu21"  "10"	
+node    "chassis272a"     "pdu21"  "12"	
+node    "chassis272b"     "pdu21"  "9"	
+node    "chassis273a"     "pdu21"  "11"	
+node    "chassis273b"     "pdu21"  "8"	
+node    "chassis274a"     "pdu21"  "6"	
+node    "chassis274b"     "pdu21"  "3"	
+node    "chassis275a"     "pdu21"  "5"	
+node    "chassis275b"     "pdu21"  "2"	
+node    "chassis276a"     "pdu21"  "4"  #sierra[1148,1150]
+node    "chassis276b"     "pdu21"  "1"	#sierra[1149,1151]
+
+# Rack 22
+node    "chassis277a"     "pdu22"  "48"	#sierra[1152,1154]
+node    "chassis277b"     "pdu22"  "45" #sierra[1153,1155]
+node    "chassis278a"     "pdu22"  "47"
+node    "chassis278b"     "pdu22"  "44"
+node    "chassis279a"     "pdu22"  "43"	
+node    "chassis279b"     "pdu22"  "40"
+node    "chassis280a"     "pdu22"  "41"	
+node    "chassis280b"     "pdu22"  "38"	
+node    "chassis281a"     "pdu22"  "39"	
+node    "chassis281b"     "pdu22"  "36"	
+node    "chassis282a"     "pdu22"  "37"	
+node    "chassis282b"     "pdu22"  "34"	
+node    "chassis283a"     "pdu22"  "30"	
+node    "chassis283b"     "pdu22"  "27"	
+node    "chassis284a"     "pdu22"  "29"	
+node    "chassis284b"     "pdu22"  "26"	
+node    "chassis285a"     "pdu22"  "28"	
+node    "chassis285b"     "pdu22"  "25"	
+node    "chassis286a"     "pdu22"  "23"	
+node    "chassis286b"     "pdu22"  "20"	
+node    "chassis287a"     "pdu22"  "19"	
+node    "chassis287b"     "pdu22"  "16"	
+node    "chassis288a"     "pdu22"  "18"	
+node    "chassis288b"     "pdu22"  "15"	
+node    "chassis289a"     "pdu22"  "13"	
+node    "chassis289b"     "pdu22"  "10"	
+node    "chassis290a"     "pdu22"  "12"	
+node    "chassis290b"     "pdu22"  "9"	
+node    "chassis291a"     "pdu22"  "11"	
+node    "chassis291b"     "pdu22"  "8"	
+node    "chassis292a"     "pdu22"  "6"	
+node    "chassis292b"     "pdu22"  "3"	
+node    "chassis293a"     "pdu22"  "5"	
+node    "chassis293b"     "pdu22"  "2"	
+node    "chassis294a"     "pdu22"  "4"  #sierra[1220,1222]
+node    "chassis294b"     "pdu22"  "1"	#sierra[1221,1223]
+
+# Rack 23
+node    "chassis295a"     "pdu23"  "48"	#sierra[1224,1226]
+node    "chassis295b"     "pdu23"  "45" #sierra[1225,1227]
+node    "chassis296a"     "pdu23"  "47"
+node    "chassis296b"     "pdu23"  "44"
+node    "chassis297a"     "pdu23"  "43"	
+node    "chassis297b"     "pdu23"  "40"
+node    "chassis298a"     "pdu23"  "41"	
+node    "chassis298b"     "pdu23"  "38"	
+node    "chassis299a"     "pdu23"  "39"	
+node    "chassis299b"     "pdu23"  "36"	
+node    "chassis300a"     "pdu23"  "37"	
+node    "chassis300b"     "pdu23"  "34"	
+node    "chassis301a"     "pdu23"  "30"	
+node    "chassis301b"     "pdu23"  "27"	
+node    "chassis302a"     "pdu23"  "29"	
+node    "chassis302b"     "pdu23"  "26"	
+node    "chassis303a"     "pdu23"  "28"	
+node    "chassis303b"     "pdu23"  "25"	
+node    "chassis304a"     "pdu23"  "23"	
+node    "chassis304b"     "pdu23"  "20"	
+node    "chassis305a"     "pdu23"  "19"	
+node    "chassis305b"     "pdu23"  "16"	
+node    "chassis306a"     "pdu23"  "18"	
+node    "chassis306b"     "pdu23"  "15"	
+node    "chassis307a"     "pdu23"  "13"	
+node    "chassis307b"     "pdu23"  "10"	
+node    "chassis308a"     "pdu23"  "12"	
+node    "chassis308b"     "pdu23"  "9"	
+node    "chassis309a"     "pdu23"  "11"	
+node    "chassis309b"     "pdu23"  "8"	
+node    "chassis310a"     "pdu23"  "6"	
+node    "chassis310b"     "pdu23"  "3"	
+node    "chassis311a"     "pdu23"  "5"	
+node    "chassis311b"     "pdu23"  "2"	
+node    "chassis312a"     "pdu23"  "4"  #sierra[1292,1294]
+node    "chassis312b"     "pdu23"  "1"	#sierra[1293,1295]
+
+# Rack 24 LSM,RPS,GW nodes
+node	"pdu-sierra1297a"	"pdu24"	"47"	#sierra1297ps1
+node	"pdu-sierra1296"	"pdu24"	"46"	#sierra1296
+node	"pdu-sierra1297b"	"pdu24"	"44"	#sierra1297ps2
+node	"pdu-sierra1298"	"pdu24"	"43"	#sierra1298
+node	"pdu-sierra1299"	"pdu24"	"42"	#sierra1299
+node	"pdu-sierra1300"	"pdu24"	"41"	#sierra1300
+node	"pdu-sierra1303a"	"pdu24"	"40"	#sierra1303ps1
+node	"pdu-sierra1301"	"pdu24"	"39"	#sierra1301
+node	"pdu-sierra1303b"	"pdu24"	"37"	#sierra1303ps2
+node	"pdu-sierra1302"	"pdu24"	"36"	#sierra1302
+node	"pdu-sierra1304"	"pdu24"	"34"	#sierra1304
+node	"pdu-sierra1305"	"pdu24"	"32"	#sierra1305
+node	"pdu-sierra1306"	"pdu24"	"31"	#sierra1306
+node	"pdu-sierra1307"	"pdu24"	"29"	#sierra1307
+
+# Rack 24 Compute nodes
+node	"chassis313a"	"pdu24"	"23"	#sierra[1308,1310]
+node	"chassis313b"	"pdu24"	"20"    #sierra[1309,1311]
+node	"chassis314a"	"pdu24"	"18"	
+node	"chassis314b"	"pdu24"	"15"	
+node	"chassis315a"	"pdu24"	"13"	
+node	"chassis315b"	"pdu24"	"10"	
+node	"chassis316a"	"pdu24"	"12"	
+node	"chassis316b"	"pdu24"	"9"	
+node	"chassis317a"	"pdu24"	"5"	
+node	"chassis317b"	"pdu24"	"2"	
+node	"chassis318a"	"pdu24"	"4"     #sierra[1328,1330]
+node	"chassis318b"	"pdu24"	"1"	#sierra[1329,1331]
+
+# Rack 25
+node    "chassis319a"     "pdu25"  "48"	#sierra[1332,1334]
+node    "chassis319b"     "pdu25"  "45" #sierra[1333,1335]
+node    "chassis320a"     "pdu25"  "47"
+node    "chassis320b"     "pdu25"  "44"
+node    "chassis321a"     "pdu25"  "43"	
+node    "chassis321b"     "pdu25"  "40"
+node    "chassis322a"     "pdu25"  "41"	
+node    "chassis322b"     "pdu25"  "38"	
+node    "chassis323a"     "pdu25"  "39"	
+node    "chassis323b"     "pdu25"  "36"	
+node    "chassis324a"     "pdu25"  "37"	
+node    "chassis324b"     "pdu25"  "34"	
+node    "chassis325a"     "pdu25"  "30"	
+node    "chassis325b"     "pdu25"  "27"	
+node    "chassis326a"     "pdu25"  "29"	
+node    "chassis326b"     "pdu25"  "26"	
+node    "chassis327a"     "pdu25"  "28"	
+node    "chassis327b"     "pdu25"  "25"	
+node    "chassis328a"     "pdu25"  "23"	
+node    "chassis328b"     "pdu25"  "20"	
+node    "chassis329a"     "pdu25"  "19"	
+node    "chassis329b"     "pdu25"  "16"	
+node    "chassis330a"     "pdu25"  "18"	
+node    "chassis330b"     "pdu25"  "15"	
+node    "chassis331a"     "pdu25"  "13"	
+node    "chassis331b"     "pdu25"  "10"	
+node    "chassis332a"     "pdu25"  "12"	
+node    "chassis332b"     "pdu25"  "9"	
+node    "chassis333a"     "pdu25"  "11"	
+node    "chassis333b"     "pdu25"  "8"	
+node    "chassis334a"     "pdu25"  "6"	
+node    "chassis334b"     "pdu25"  "3"	
+node    "chassis335a"     "pdu25"  "5"	
+node    "chassis335b"     "pdu25"  "2"	
+node    "chassis336a"     "pdu25"  "4"  #sierra[1400,1402]
+node    "chassis336b"     "pdu25"  "1"	#sierra[1401,1403]
+
+# Rack 26
+node    "chassis337a"     "pdu26"  "48"	#sierra[1404,1406]
+node    "chassis337b"     "pdu26"  "45" #sierra[1405,1407]
+node    "chassis338a"     "pdu26"  "47"
+node    "chassis338b"     "pdu26"  "44"
+node    "chassis339a"     "pdu26"  "43"	
+node    "chassis339b"     "pdu26"  "40"
+node    "chassis340a"     "pdu26"  "41"	
+node    "chassis340b"     "pdu26"  "38"	
+node    "chassis341a"     "pdu26"  "39"	
+node    "chassis341b"     "pdu26"  "36"	
+node    "chassis342a"     "pdu26"  "37"	
+node    "chassis342b"     "pdu26"  "34"	
+node    "chassis343a"     "pdu26"  "30"	
+node    "chassis343b"     "pdu26"  "27"	
+node    "chassis344a"     "pdu26"  "29"	
+node    "chassis344b"     "pdu26"  "26"	
+node    "chassis345a"     "pdu26"  "28"	
+node    "chassis345b"     "pdu26"  "25"	
+node    "chassis346a"     "pdu26"  "23"	
+node    "chassis346b"     "pdu26"  "20"	
+node    "chassis347a"     "pdu26"  "19"	
+node    "chassis347b"     "pdu26"  "16"	
+node    "chassis348a"     "pdu26"  "18"	
+node    "chassis348b"     "pdu26"  "15"	
+node    "chassis349a"     "pdu26"  "13"	
+node    "chassis349b"     "pdu26"  "10"	
+node    "chassis350a"     "pdu26"  "12"	
+node    "chassis350b"     "pdu26"  "9"	
+node    "chassis351a"     "pdu26"  "11"	
+node    "chassis351b"     "pdu26"  "8"	
+node    "chassis352a"     "pdu26"  "6"	
+node    "chassis352b"     "pdu26"  "3"	
+node    "chassis353a"     "pdu26"  "5"	
+node    "chassis353b"     "pdu26"  "2"	
+node    "chassis354a"     "pdu26"  "4"  #sierra[1472,1474]
+node    "chassis354b"     "pdu26"  "1"	#sierra[1473,1475]
+
+# Rack 27
+node    "chassis355a"     "pdu27"  "48"	#sierra[1476,1478]
+node    "chassis355b"     "pdu27"  "45" #sierra[1475,1477]
+node    "chassis356a"     "pdu27"  "47"
+node    "chassis356b"     "pdu27"  "44"
+node    "chassis357a"     "pdu27"  "43"	
+node    "chassis357b"     "pdu27"  "40"
+node    "chassis358a"     "pdu27"  "41"	
+node    "chassis358b"     "pdu27"  "38"	
+node    "chassis359a"     "pdu27"  "39"	
+node    "chassis359b"     "pdu27"  "36"	
+node    "chassis360a"     "pdu27"  "37"	
+node    "chassis360b"     "pdu27"  "34"	
+node    "chassis361a"     "pdu27"  "30"	
+node    "chassis361b"     "pdu27"  "27"	
+node    "chassis362a"     "pdu27"  "29"	
+node    "chassis362b"     "pdu27"  "26"	
+node    "chassis363a"     "pdu27"  "28"	
+node    "chassis363b"     "pdu27"  "25"	
+node    "chassis364a"     "pdu27"  "23"	
+node    "chassis364b"     "pdu27"  "20"	
+node    "chassis365a"     "pdu27"  "19"	
+node    "chassis365b"     "pdu27"  "16"	
+node    "chassis366a"     "pdu27"  "18"	
+node    "chassis366b"     "pdu27"  "15"	
+node    "chassis367a"     "pdu27"  "13"	
+node    "chassis367b"     "pdu27"  "10"	
+node    "chassis368a"     "pdu27"  "12"	
+node    "chassis368b"     "pdu27"  "9"	
+node    "chassis369a"     "pdu27"  "11"	
+node    "chassis369b"     "pdu27"  "8"	
+node    "chassis370a"     "pdu27"  "6"	
+node    "chassis370b"     "pdu27"  "3"	
+node    "chassis371a"     "pdu27"  "5"	
+node    "chassis371b"     "pdu27"  "2"	
+node    "chassis372a"     "pdu27"  "4"  #sierra[1544,1546]
+node    "chassis372b"     "pdu27"  "1"	#sierra[1545,1547]
+
+# Rack 28
+node    "chassis373a"     "pdu28"  "48"	#sierra[1548,1550]
+node    "chassis373b"     "pdu28"  "45" #sierra[1549,1551]
+node    "chassis374a"     "pdu28"  "47"
+node    "chassis374b"     "pdu28"  "44"
+node    "chassis375a"     "pdu28"  "43"	
+node    "chassis375b"     "pdu28"  "40"
+node    "chassis376a"     "pdu28"  "41"	
+node    "chassis376b"     "pdu28"  "38"	
+node    "chassis377a"     "pdu28"  "39"	
+node    "chassis377b"     "pdu28"  "36"	
+node    "chassis378a"     "pdu28"  "37"	
+node    "chassis378b"     "pdu28"  "34"	
+node    "chassis379a"     "pdu28"  "30"	
+node    "chassis379b"     "pdu28"  "27"	
+node    "chassis380a"     "pdu28"  "29"	
+node    "chassis380b"     "pdu28"  "26"	
+node    "chassis381a"     "pdu28"  "28"	
+node    "chassis381b"     "pdu28"  "25"	
+node    "chassis382a"     "pdu28"  "23"	
+node    "chassis382b"     "pdu28"  "20"	
+node    "chassis383a"     "pdu28"  "19"	
+node    "chassis383b"     "pdu28"  "16"	
+node    "chassis384a"     "pdu28"  "18"	
+node    "chassis384b"     "pdu28"  "15"	
+node    "chassis385a"     "pdu28"  "13"	
+node    "chassis385b"     "pdu28"  "10"	
+node    "chassis386a"     "pdu28"  "12"	
+node    "chassis386b"     "pdu28"  "9"	
+node    "chassis387a"     "pdu28"  "11"	
+node    "chassis387b"     "pdu28"  "8"	
+node    "chassis388a"     "pdu28"  "6"	
+node    "chassis388b"     "pdu28"  "3"	
+node    "chassis389a"     "pdu28"  "5"	
+node    "chassis389b"     "pdu28"  "2"	
+node    "chassis390a"     "pdu28"  "4"  #sierra[1616,1618]
+node    "chassis390b"     "pdu28"  "1"	#sierra[1617,1619]
+
+# Rack 29 LSM,RPS,GW nodes
+node	"pdu-sierra1621a"	"pdu29"	"47"	#sierra1621ps1
+node	"pdu-sierra1620"	"pdu29"	"46"	#sierra1620
+node	"pdu-sierra1621b"	"pdu29"	"44"	#sierra1621ps2
+node	"pdu-sierra1622"	"pdu29"	"43"	#sierra1622
+node	"pdu-sierra1623"	"pdu29"	"42"	#sierra1623
+node	"pdu-sierra1624"	"pdu29"	"41"	#sierra1624
+node	"pdu-sierra1627a"	"pdu29"	"40"	#sierra1627ps1
+node	"pdu-sierra1625"	"pdu29"	"39"	#sierra1625
+node	"pdu-sierra1627b"	"pdu29"	"37"	#sierra1627ps2
+node	"pdu-sierra1626"	"pdu29"	"36"	#sierra1626
+node	"pdu-sierra1628"	"pdu29"	"34"	#sierra1628
+node	"pdu-sierra1629"	"pdu29"	"32"	#sierra1629
+node	"pdu-sierra1630"	"pdu29"	"31"	#sierra1630
+node	"pdu-sierra1631"	"pdu29"	"29"	#sierra1631
+
+# Rack 29 Compute nodes
+node	"chassis391a"	"pdu29"	"23"	#sierra[1632,1634]
+node	"chassis391b"	"pdu29"	"20"    #sierra[1633,1635]
+node	"chassis392a"	"pdu29"	"18"	
+node	"chassis392b"	"pdu29"	"15"	
+node	"chassis393a"	"pdu29"	"13"	
+node	"chassis393b"	"pdu29"	"10"	
+node	"chassis394a"	"pdu29"	"12"	
+node	"chassis394b"	"pdu29"	"9"	
+node	"chassis395a"	"pdu29"	"5"	
+node	"chassis395b"	"pdu29"	"2"	
+node	"chassis396a"	"pdu29"	"4"     #sierra[1652,1654]
+node	"chassis396b"	"pdu29"	"1"	#sierra[1653,1655]
+
+# Rack 30
+node    "chassis397a"     "pdu30"  "48"	#sierra[1656,1658]
+node    "chassis397b"     "pdu30"  "45" #sierra[1657,1659]
+node    "chassis398a"     "pdu30"  "47"
+node    "chassis398b"     "pdu30"  "44"
+node    "chassis399a"     "pdu30"  "43"	
+node    "chassis399b"     "pdu30"  "40"
+node    "chassis400a"     "pdu30"  "41"	
+node    "chassis400b"     "pdu30"  "38"	
+node    "chassis401a"     "pdu30"  "39"	
+node    "chassis401b"     "pdu30"  "36"	
+node    "chassis402a"     "pdu30"  "37"	
+node    "chassis402b"     "pdu30"  "34"	
+node    "chassis403a"     "pdu30"  "30"	
+node    "chassis403b"     "pdu30"  "27"	
+node    "chassis404a"     "pdu30"  "29"	
+node    "chassis404b"     "pdu30"  "26"	
+node    "chassis405a"     "pdu30"  "28"	
+node    "chassis405b"     "pdu30"  "25"	
+node    "chassis406a"     "pdu30"  "23"	
+node    "chassis406b"     "pdu30"  "20"	
+node    "chassis407a"     "pdu30"  "19"	
+node    "chassis407b"     "pdu30"  "16"	
+node    "chassis408a"     "pdu30"  "18"	
+node    "chassis408b"     "pdu30"  "15"	
+node    "chassis409a"     "pdu30"  "13"	
+node    "chassis409b"     "pdu30"  "10"	
+node    "chassis410a"     "pdu30"  "12"	
+node    "chassis410b"     "pdu30"  "9"	
+node    "chassis411a"     "pdu30"  "11"	
+node    "chassis411b"     "pdu30"  "8"	
+node    "chassis412a"     "pdu30"  "6"	
+node    "chassis412b"     "pdu30"  "3"	
+node    "chassis413a"     "pdu30"  "5"	
+node    "chassis413b"     "pdu30"  "2"	
+node    "chassis414a"     "pdu30"  "4"  #sierra[1724,1726]
+node    "chassis414b"     "pdu30"  "1"	#sierra[1725,1727]
+
+# Rack 31
+node    "chassis415a"     "pdu31"  "48"	#sierra[1728,1730]
+node    "chassis415b"     "pdu31"  "45" #sierra[1729,1731]
+node    "chassis416a"     "pdu31"  "47"
+node    "chassis416b"     "pdu31"  "44"
+node    "chassis417a"     "pdu31"  "43"	
+node    "chassis417b"     "pdu31"  "40"
+node    "chassis418a"     "pdu31"  "41"	
+node    "chassis418b"     "pdu31"  "38"	
+node    "chassis419a"     "pdu31"  "39"	
+node    "chassis419b"     "pdu31"  "36"	
+node    "chassis420a"     "pdu31"  "37"	
+node    "chassis420b"     "pdu31"  "34"	
+node    "chassis421a"     "pdu31"  "30"	
+node    "chassis421b"     "pdu31"  "27"	
+node    "chassis422a"     "pdu31"  "29"	
+node    "chassis422b"     "pdu31"  "26"	
+node    "chassis423a"     "pdu31"  "28"	
+node    "chassis423b"     "pdu31"  "25"	
+node    "chassis424a"     "pdu31"  "23"	
+node    "chassis424b"     "pdu31"  "20"	
+node    "chassis425a"     "pdu31"  "19"	
+node    "chassis425b"     "pdu31"  "16"	
+node    "chassis426a"     "pdu31"  "18"	
+node    "chassis426b"     "pdu31"  "15"	
+node    "chassis427a"     "pdu31"  "13"	
+node    "chassis427b"     "pdu31"  "10"	
+node    "chassis428a"     "pdu31"  "12"	
+node    "chassis428b"     "pdu31"  "9"	
+node    "chassis429a"     "pdu31"  "11"	
+node    "chassis429b"     "pdu31"  "8"	
+node    "chassis430a"     "pdu31"  "6"	
+node    "chassis430b"     "pdu31"  "3"	
+node    "chassis431a"     "pdu31"  "5"	
+node    "chassis431b"     "pdu31"  "2"	
+node    "chassis432a"     "pdu31"  "4"  #sierra[1796,1798]
+node    "chassis432b"     "pdu31"  "1"	#sierra[1797,1799]
+
+# Rack 32
+node    "chassis433a"     "pdu32"  "48"	#sierra[1800,1802]
+node    "chassis433b"     "pdu32"  "45" #sierra[1801,1803]
+node    "chassis434a"     "pdu32"  "47"
+node    "chassis434b"     "pdu32"  "44"
+node    "chassis435a"     "pdu32"  "43"	
+node    "chassis435b"     "pdu32"  "40"
+node    "chassis436a"     "pdu32"  "41"	
+node    "chassis436b"     "pdu32"  "38"	
+node    "chassis437a"     "pdu32"  "39"	
+node    "chassis437b"     "pdu32"  "36"	
+node    "chassis438a"     "pdu32"  "37"	
+node    "chassis438b"     "pdu32"  "34"	
+node    "chassis439a"     "pdu32"  "30"	
+node    "chassis439b"     "pdu32"  "27"	
+node    "chassis440a"     "pdu32"  "29"	
+node    "chassis440b"     "pdu32"  "26"	
+node    "chassis441a"     "pdu32"  "28"	
+node    "chassis441b"     "pdu32"  "25"	
+node    "chassis442a"     "pdu32"  "23"	
+node    "chassis442b"     "pdu32"  "20"	
+node    "chassis443a"     "pdu32"  "19"	
+node    "chassis443b"     "pdu32"  "16"	
+node    "chassis444a"     "pdu32"  "18"	
+node    "chassis444b"     "pdu32"  "15"	
+node    "chassis445a"     "pdu32"  "13"	
+node    "chassis445b"     "pdu32"  "10"	
+node    "chassis446a"     "pdu32"  "12"	
+node    "chassis446b"     "pdu32"  "9"	
+node    "chassis447a"     "pdu32"  "11"	
+node    "chassis447b"     "pdu32"  "8"	
+node    "chassis448a"     "pdu32"  "6"	
+node    "chassis448b"     "pdu32"  "3"	
+node    "chassis449a"     "pdu32"  "5"	
+node    "chassis449b"     "pdu32"  "2"	
+node    "chassis450a"     "pdu32"  "4"  #sierra[1868,1870]
+node    "chassis450b"     "pdu32"  "1"	#sierra[1869,1871]
+
+# Rack 33
+node    "chassis451a"     "pdu33"  "48"	#sierra[1872,1874]
+node    "chassis451b"     "pdu33"  "45" #sierra[1873,1875]
+node    "chassis452a"     "pdu33"  "47"
+node    "chassis452b"     "pdu33"  "44"
+node    "chassis453a"     "pdu33"  "43"	
+node    "chassis453b"     "pdu33"  "40"
+node    "chassis454a"     "pdu33"  "41"	
+node    "chassis454b"     "pdu33"  "38"	
+node    "chassis455a"     "pdu33"  "39"	
+node    "chassis455b"     "pdu33"  "36"	
+node    "chassis456a"     "pdu33"  "37"	
+node    "chassis456b"     "pdu33"  "34"	
+node    "chassis457a"     "pdu33"  "30"	
+node    "chassis457b"     "pdu33"  "27"	
+node    "chassis458a"     "pdu33"  "29"	
+node    "chassis458b"     "pdu33"  "26"	
+node    "chassis459a"     "pdu33"  "28"	
+node    "chassis459b"     "pdu33"  "25"	
+node    "chassis460a"     "pdu33"  "23"	
+node    "chassis460b"     "pdu33"  "20"	
+node    "chassis461a"     "pdu33"  "19"	
+node    "chassis461b"     "pdu33"  "16"	
+node    "chassis462a"     "pdu33"  "18"	
+node    "chassis462b"     "pdu33"  "15"	
+node    "chassis463a"     "pdu33"  "13"	
+node    "chassis463b"     "pdu33"  "10"	
+node    "chassis464a"     "pdu33"  "12"	
+node    "chassis464b"     "pdu33"  "9"	
+node    "chassis465a"     "pdu33"  "11"	
+node    "chassis465b"     "pdu33"  "8"	
+node    "chassis466a"     "pdu33"  "6"	
+node    "chassis466b"     "pdu33"  "3"	
+node    "chassis467a"     "pdu33"  "5"	
+node    "chassis467b"     "pdu33"  "2"	
+node    "chassis468a"     "pdu33"  "4"  #sierra[1940,1942]
+node    "chassis468b"     "pdu33"  "1"	#sierra[1941,1943]
+
+# ALIAS section.
+# mgmt alias
+#alias   "sierra1"       "pdu-sierra1a pdu-sierra1b"
+#alias   "sierra7"       "pdu-sierra7a pdu-sierra7b"
+#alias   "sierra325"     "pdu-sierra325a pdu-sierra325b"
+#alias   "sierra331"     "pdu-sierra331a pdu-sierra331b"
+#alias   "sierra649"     "pdu-sierra649a pdu-sierra649b"
+#alias   "sierra655"     "pdu-sierra655a pdu-sierra655b"
+#alias   "sierra973"     "pdu-sierra973a pdu-sierra973b"
+#alias   "sierra979"     "pdu-sierra979a pdu-sierra979b"
+#alias   "sierra1297"    "pdu-sierra1297a pdu-sierra1297b"
+#alias   "sierra1303"    "pdu-sierra1303a pdu-sierra1303b"
+#alias   "sierra1621"    "pdu-sierra1621a pdu-sierra1621b"
+#alias   "sierra1627"    "pdu-sierra1627a pdu-sierra1627b"
+# more alias
+alias  "chassis1"  "chassis1a chassis1b"
+alias  "chassis2"  "chassis2a chassis2b"
+alias  "chassis3"  "chassis3a chassis3b"
+alias  "chassis4"  "chassis4a chassis4b"
+alias  "chassis5"  "chassis5a chassis5b"
+alias  "chassis6"  "chassis6a chassis6b"
+alias  "chassis7"  "chassis7a chassis7b"
+alias  "chassis8"  "chassis8a chassis8b"
+alias  "chassis9"  "chassis9a chassis9b"
+alias  "chassis10"  "chassis10a chassis10b"
+alias  "chassis11"  "chassis11a chassis11b"
+alias  "chassis12"  "chassis12a chassis12b"
+alias  "chassis13"  "chassis13a chassis13b"
+alias  "chassis14"  "chassis14a chassis14b"
+alias  "chassis15"  "chassis15a chassis15b"
+alias  "chassis16"  "chassis16a chassis16b"
+alias  "chassis17"  "chassis17a chassis17b"
+alias  "chassis18"  "chassis18a chassis18b"
+alias  "chassis19"  "chassis19a chassis19b"
+alias  "chassis20"  "chassis20a chassis20b"
+alias  "chassis21"  "chassis21a chassis21b"
+alias  "chassis22"  "chassis22a chassis22b"
+alias  "chassis23"  "chassis23a chassis23b"
+alias  "chassis24"  "chassis24a chassis24b"
+alias  "chassis25"  "chassis25a chassis25b"
+alias  "chassis26"  "chassis26a chassis26b"
+alias  "chassis27"  "chassis27a chassis27b"
+alias  "chassis28"  "chassis28a chassis28b"
+alias  "chassis29"  "chassis29a chassis29b"
+alias  "chassis30"  "chassis30a chassis30b"
+alias  "chassis31"  "chassis31a chassis31b"
+alias  "chassis32"  "chassis32a chassis32b"
+alias  "chassis33"  "chassis33a chassis33b"
+alias  "chassis34"  "chassis34a chassis34b"
+alias  "chassis35"  "chassis35a chassis35b"
+alias  "chassis36"  "chassis36a chassis36b"
+alias  "chassis37"  "chassis37a chassis37b"
+alias  "chassis38"  "chassis38a chassis38b"
+alias  "chassis39"  "chassis39a chassis39b"
+alias  "chassis40"  "chassis40a chassis40b"
+alias  "chassis41"  "chassis41a chassis41b"
+alias  "chassis42"  "chassis42a chassis42b"
+alias  "chassis43"  "chassis43a chassis43b"
+alias  "chassis44"  "chassis44a chassis44b"
+alias  "chassis45"  "chassis45a chassis45b"
+alias  "chassis46"  "chassis46a chassis46b"
+alias  "chassis47"  "chassis47a chassis47b"
+alias  "chassis48"  "chassis48a chassis48b"
+alias  "chassis49"  "chassis49a chassis49b"
+alias  "chassis50"  "chassis50a chassis50b"
+alias  "chassis51"  "chassis51a chassis51b"
+alias  "chassis52"  "chassis52a chassis52b"
+alias  "chassis53"  "chassis53a chassis53b"
+alias  "chassis54"  "chassis54a chassis54b"
+alias  "chassis55"  "chassis55a chassis55b"
+alias  "chassis56"  "chassis56a chassis56b"
+alias  "chassis57"  "chassis57a chassis57b"
+alias  "chassis58"  "chassis58a chassis58b"
+alias  "chassis59"  "chassis59a chassis59b"
+alias  "chassis60"  "chassis60a chassis60b"
+alias  "chassis61"  "chassis61a chassis61b"
+alias  "chassis62"  "chassis62a chassis62b"
+alias  "chassis63"  "chassis63a chassis63b"
+alias  "chassis64"  "chassis64a chassis64b"
+alias  "chassis65"  "chassis65a chassis65b"
+alias  "chassis66"  "chassis66a chassis66b"
+alias  "chassis67"  "chassis67a chassis67b"
+alias  "chassis68"  "chassis68a chassis68b"
+alias  "chassis69"  "chassis69a chassis69b"
+alias  "chassis70"  "chassis70a chassis70b"
+alias  "chassis71"  "chassis71a chassis71b"
+alias  "chassis72"  "chassis72a chassis72b"
+alias  "chassis73"  "chassis73a chassis73b"
+alias  "chassis74"  "chassis74a chassis74b"
+alias  "chassis75"  "chassis75a chassis75b"
+alias  "chassis76"  "chassis76a chassis76b"
+alias  "chassis77"  "chassis77a chassis77b"
+alias  "chassis78"  "chassis78a chassis78b"
+alias  "chassis79"  "chassis79a chassis79b"
+alias  "chassis80"  "chassis80a chassis80b"
+alias  "chassis81"  "chassis81a chassis81b"
+alias  "chassis82"  "chassis82a chassis82b"
+alias  "chassis83"  "chassis83a chassis83b"
+alias  "chassis84"  "chassis84a chassis84b"
+alias  "chassis85"  "chassis85a chassis85b"
+alias  "chassis86"  "chassis86a chassis86b"
+alias  "chassis87"  "chassis87a chassis87b"
+alias  "chassis88"  "chassis88a chassis88b"
+alias  "chassis89"  "chassis89a chassis89b"
+alias  "chassis90"  "chassis90a chassis90b"
+alias  "chassis91"  "chassis91a chassis91b"
+alias  "chassis92"  "chassis92a chassis92b"
+alias  "chassis93"  "chassis93a chassis93b"
+alias  "chassis94"  "chassis94a chassis94b"
+alias  "chassis95"  "chassis95a chassis95b"
+alias  "chassis96"  "chassis96a chassis96b"
+alias  "chassis97"  "chassis97a chassis97b"
+alias  "chassis98"  "chassis98a chassis98b"
+alias  "chassis99"  "chassis99a chassis99b"
+alias  "chassis100"  "chassis100a chassis100b"
+alias  "chassis101"  "chassis101a chassis101b"
+alias  "chassis102"  "chassis102a chassis102b"
+alias  "chassis103"  "chassis103a chassis103b"
+alias  "chassis104"  "chassis104a chassis104b"
+alias  "chassis105"  "chassis105a chassis105b"
+alias  "chassis106"  "chassis106a chassis106b"
+alias  "chassis107"  "chassis107a chassis107b"
+alias  "chassis108"  "chassis108a chassis108b"
+alias  "chassis109"  "chassis109a chassis109b"
+alias  "chassis110"  "chassis110a chassis110b"
+alias  "chassis111"  "chassis111a chassis111b"
+alias  "chassis112"  "chassis112a chassis112b"
+alias  "chassis113"  "chassis113a chassis113b"
+alias  "chassis114"  "chassis114a chassis114b"
+alias  "chassis115"  "chassis115a chassis115b"
+alias  "chassis116"  "chassis116a chassis116b"
+alias  "chassis117"  "chassis117a chassis117b"
+alias  "chassis118"  "chassis118a chassis118b"
+alias  "chassis119"  "chassis119a chassis119b"
+alias  "chassis120"  "chassis120a chassis120b"
+alias  "chassis121"  "chassis121a chassis121b"
+alias  "chassis122"  "chassis122a chassis122b"
+alias  "chassis123"  "chassis123a chassis123b"
+alias  "chassis124"  "chassis124a chassis124b"
+alias  "chassis125"  "chassis125a chassis125b"
+alias  "chassis126"  "chassis126a chassis126b"
+alias  "chassis127"  "chassis127a chassis127b"
+alias  "chassis128"  "chassis128a chassis128b"
+alias  "chassis129"  "chassis129a chassis129b"
+alias  "chassis130"  "chassis130a chassis130b"
+alias  "chassis131"  "chassis131a chassis131b"
+alias  "chassis132"  "chassis132a chassis132b"
+alias  "chassis133"  "chassis133a chassis133b"
+alias  "chassis134"  "chassis134a chassis134b"
+alias  "chassis135"  "chassis135a chassis135b"
+alias  "chassis136"  "chassis136a chassis136b"
+alias  "chassis137"  "chassis137a chassis137b"
+alias  "chassis138"  "chassis138a chassis138b"
+alias  "chassis139"  "chassis139a chassis139b"
+alias  "chassis140"  "chassis140a chassis140b"
+alias  "chassis141"  "chassis141a chassis141b"
+alias  "chassis142"  "chassis142a chassis142b"
+alias  "chassis143"  "chassis143a chassis143b"
+alias  "chassis144"  "chassis144a chassis144b"
+alias  "chassis145"  "chassis145a chassis145b"
+alias  "chassis146"  "chassis146a chassis146b"
+alias  "chassis147"  "chassis147a chassis147b"
+alias  "chassis148"  "chassis148a chassis148b"
+alias  "chassis149"  "chassis149a chassis149b"
+alias  "chassis150"  "chassis150a chassis150b"
+alias  "chassis151"  "chassis151a chassis151b"
+alias  "chassis152"  "chassis152a chassis152b"
+alias  "chassis153"  "chassis153a chassis153b"
+alias  "chassis154"  "chassis154a chassis154b"
+alias  "chassis155"  "chassis155a chassis155b"
+alias  "chassis156"  "chassis156a chassis156b"
+alias  "chassis157"  "chassis157a chassis157b"
+alias  "chassis158"  "chassis158a chassis158b"
+alias  "chassis159"  "chassis159a chassis159b"
+alias  "chassis160"  "chassis160a chassis160b"
+alias  "chassis161"  "chassis161a chassis161b"
+alias  "chassis162"  "chassis162a chassis162b"
+alias  "chassis163"  "chassis163a chassis163b"
+alias  "chassis164"  "chassis164a chassis164b"
+alias  "chassis165"  "chassis165a chassis165b"
+alias  "chassis166"  "chassis166a chassis166b"
+alias  "chassis167"  "chassis167a chassis167b"
+alias  "chassis168"  "chassis168a chassis168b"
+alias  "chassis169"  "chassis169a chassis169b"
+alias  "chassis170"  "chassis170a chassis170b"
+alias  "chassis171"  "chassis171a chassis171b"
+alias  "chassis172"  "chassis172a chassis172b"
+alias  "chassis173"  "chassis173a chassis173b"
+alias  "chassis174"  "chassis174a chassis174b"
+alias  "chassis175"  "chassis175a chassis175b"
+alias  "chassis176"  "chassis176a chassis176b"
+alias  "chassis177"  "chassis177a chassis177b"
+alias  "chassis178"  "chassis178a chassis178b"
+alias  "chassis179"  "chassis179a chassis179b"
+alias  "chassis180"  "chassis180a chassis180b"
+alias  "chassis181"  "chassis181a chassis181b"
+alias  "chassis182"  "chassis182a chassis182b"
+alias  "chassis183"  "chassis183a chassis183b"
+alias  "chassis184"  "chassis184a chassis184b"
+alias  "chassis185"  "chassis185a chassis185b"
+alias  "chassis186"  "chassis186a chassis186b"
+alias  "chassis187"  "chassis187a chassis187b"
+alias  "chassis188"  "chassis188a chassis188b"
+alias  "chassis189"  "chassis189a chassis189b"
+alias  "chassis190"  "chassis190a chassis190b"
+alias  "chassis191"  "chassis191a chassis191b"
+alias  "chassis192"  "chassis192a chassis192b"
+alias  "chassis193"  "chassis193a chassis193b"
+alias  "chassis194"  "chassis194a chassis194b"
+alias  "chassis195"  "chassis195a chassis195b"
+alias  "chassis196"  "chassis196a chassis196b"
+alias  "chassis197"  "chassis197a chassis197b"
+alias  "chassis198"  "chassis198a chassis198b"
+alias  "chassis199"  "chassis199a chassis199b"
+alias  "chassis200"  "chassis200a chassis200b"
+alias  "chassis201"  "chassis201a chassis201b"
+alias  "chassis202"  "chassis202a chassis202b"
+alias  "chassis203"  "chassis203a chassis203b"
+alias  "chassis204"  "chassis204a chassis204b"
+alias  "chassis205"  "chassis205a chassis205b"
+alias  "chassis206"  "chassis206a chassis206b"
+alias  "chassis207"  "chassis207a chassis207b"
+alias  "chassis208"  "chassis208a chassis208b"
+alias  "chassis209"  "chassis209a chassis209b"
+alias  "chassis210"  "chassis210a chassis210b"
+alias  "chassis211"  "chassis211a chassis211b"
+alias  "chassis212"  "chassis212a chassis212b"
+alias  "chassis213"  "chassis213a chassis213b"
+alias  "chassis214"  "chassis214a chassis214b"
+alias  "chassis215"  "chassis215a chassis215b"
+alias  "chassis216"  "chassis216a chassis216b"
+alias  "chassis217"  "chassis217a chassis217b"
+alias  "chassis218"  "chassis218a chassis218b"
+alias  "chassis219"  "chassis219a chassis219b"
+alias  "chassis220"  "chassis220a chassis220b"
+alias  "chassis221"  "chassis221a chassis221b"
+alias  "chassis222"  "chassis222a chassis222b"
+alias  "chassis223"  "chassis223a chassis223b"
+alias  "chassis224"  "chassis224a chassis224b"
+alias  "chassis225"  "chassis225a chassis225b"
+alias  "chassis226"  "chassis226a chassis226b"
+alias  "chassis227"  "chassis227a chassis227b"
+alias  "chassis228"  "chassis228a chassis228b"
+alias  "chassis229"  "chassis229a chassis229b"
+alias  "chassis230"  "chassis230a chassis230b"
+alias  "chassis231"  "chassis231a chassis231b"
+alias  "chassis232"  "chassis232a chassis232b"
+alias  "chassis233"  "chassis233a chassis233b"
+alias  "chassis234"  "chassis234a chassis234b"
+alias  "chassis235"  "chassis235a chassis235b"
+alias  "chassis236"  "chassis236a chassis236b"
+alias  "chassis237"  "chassis237a chassis237b"
+alias  "chassis238"  "chassis238a chassis238b"
+alias  "chassis239"  "chassis239a chassis239b"
+alias  "chassis240"  "chassis240a chassis240b"
+alias  "chassis241"  "chassis241a chassis241b"
+alias  "chassis242"  "chassis242a chassis242b"
+alias  "chassis243"  "chassis243a chassis243b"
+alias  "chassis244"  "chassis244a chassis244b"
+alias  "chassis245"  "chassis245a chassis245b"
+alias  "chassis246"  "chassis246a chassis246b"
+alias  "chassis247"  "chassis247a chassis247b"
+alias  "chassis248"  "chassis248a chassis248b"
+alias  "chassis249"  "chassis249a chassis249b"
+alias  "chassis250"  "chassis250a chassis250b"
+alias  "chassis251"  "chassis251a chassis251b"
+alias  "chassis252"  "chassis252a chassis252b"
+alias  "chassis253"  "chassis253a chassis253b"
+alias  "chassis254"  "chassis254a chassis254b"
+alias  "chassis255"  "chassis255a chassis255b"
+alias  "chassis256"  "chassis256a chassis256b"
+alias  "chassis257"  "chassis257a chassis257b"
+alias  "chassis258"  "chassis258a chassis258b"
+alias  "chassis259"  "chassis259a chassis259b"
+alias  "chassis260"  "chassis260a chassis260b"
+alias  "chassis261"  "chassis261a chassis261b"
+alias  "chassis262"  "chassis262a chassis262b"
+alias  "chassis263"  "chassis263a chassis263b"
+alias  "chassis264"  "chassis264a chassis264b"
+alias  "chassis265"  "chassis265a chassis265b"
+alias  "chassis266"  "chassis266a chassis266b"
+alias  "chassis267"  "chassis267a chassis267b"
+alias  "chassis268"  "chassis268a chassis268b"
+alias  "chassis269"  "chassis269a chassis269b"
+alias  "chassis270"  "chassis270a chassis270b"
+alias  "chassis271"  "chassis271a chassis271b"
+alias  "chassis272"  "chassis272a chassis272b"
+alias  "chassis273"  "chassis273a chassis273b"
+alias  "chassis274"  "chassis274a chassis274b"
+alias  "chassis275"  "chassis275a chassis275b"
+alias  "chassis276"  "chassis276a chassis276b"
+alias  "chassis277"  "chassis277a chassis277b"
+alias  "chassis278"  "chassis278a chassis278b"
+alias  "chassis279"  "chassis279a chassis279b"
+alias  "chassis280"  "chassis280a chassis280b"
+alias  "chassis281"  "chassis281a chassis281b"
+alias  "chassis282"  "chassis282a chassis282b"
+alias  "chassis283"  "chassis283a chassis283b"
+alias  "chassis284"  "chassis284a chassis284b"
+alias  "chassis285"  "chassis285a chassis285b"
+alias  "chassis286"  "chassis286a chassis286b"
+alias  "chassis287"  "chassis287a chassis287b"
+alias  "chassis288"  "chassis288a chassis288b"
+alias  "chassis289"  "chassis289a chassis289b"
+alias  "chassis290"  "chassis290a chassis290b"
+alias  "chassis291"  "chassis291a chassis291b"
+alias  "chassis292"  "chassis292a chassis292b"
+alias  "chassis293"  "chassis293a chassis293b"
+alias  "chassis294"  "chassis294a chassis294b"
+alias  "chassis295"  "chassis295a chassis295b"
+alias  "chassis296"  "chassis296a chassis296b"
+alias  "chassis297"  "chassis297a chassis297b"
+alias  "chassis298"  "chassis298a chassis298b"
+alias  "chassis299"  "chassis299a chassis299b"
+alias  "chassis300"  "chassis300a chassis300b"
+alias  "chassis301"  "chassis301a chassis301b"
+alias  "chassis302"  "chassis302a chassis302b"
+alias  "chassis303"  "chassis303a chassis303b"
+alias  "chassis304"  "chassis304a chassis304b"
+alias  "chassis305"  "chassis305a chassis305b"
+alias  "chassis306"  "chassis306a chassis306b"
+alias  "chassis307"  "chassis307a chassis307b"
+alias  "chassis308"  "chassis308a chassis308b"
+alias  "chassis309"  "chassis309a chassis309b"
+alias  "chassis310"  "chassis310a chassis310b"
+alias  "chassis311"  "chassis311a chassis311b"
+alias  "chassis312"  "chassis312a chassis312b"
+alias  "chassis313"  "chassis313a chassis313b"
+alias  "chassis314"  "chassis314a chassis314b"
+alias  "chassis315"  "chassis315a chassis315b"
+alias  "chassis316"  "chassis316a chassis316b"
+alias  "chassis317"  "chassis317a chassis317b"
+alias  "chassis318"  "chassis318a chassis318b"
+alias  "chassis319"  "chassis319a chassis319b"
+alias  "chassis320"  "chassis320a chassis320b"
+alias  "chassis321"  "chassis321a chassis321b"
+alias  "chassis322"  "chassis322a chassis322b"
+alias  "chassis323"  "chassis323a chassis323b"
+alias  "chassis324"  "chassis324a chassis324b"
+alias  "chassis325"  "chassis325a chassis325b"
+alias  "chassis326"  "chassis326a chassis326b"
+alias  "chassis327"  "chassis327a chassis327b"
+alias  "chassis328"  "chassis328a chassis328b"
+alias  "chassis329"  "chassis329a chassis329b"
+alias  "chassis330"  "chassis330a chassis330b"
+alias  "chassis331"  "chassis331a chassis331b"
+alias  "chassis332"  "chassis332a chassis332b"
+alias  "chassis333"  "chassis333a chassis333b"
+alias  "chassis334"  "chassis334a chassis334b"
+alias  "chassis335"  "chassis335a chassis335b"
+alias  "chassis336"  "chassis336a chassis336b"
+alias  "chassis337"  "chassis337a chassis337b"
+alias  "chassis338"  "chassis338a chassis338b"
+alias  "chassis339"  "chassis339a chassis339b"
+alias  "chassis340"  "chassis340a chassis340b"
+alias  "chassis341"  "chassis341a chassis341b"
+alias  "chassis342"  "chassis342a chassis342b"
+alias  "chassis343"  "chassis343a chassis343b"
+alias  "chassis344"  "chassis344a chassis344b"
+alias  "chassis345"  "chassis345a chassis345b"
+alias  "chassis346"  "chassis346a chassis346b"
+alias  "chassis347"  "chassis347a chassis347b"
+alias  "chassis348"  "chassis348a chassis348b"
+alias  "chassis349"  "chassis349a chassis349b"
+alias  "chassis350"  "chassis350a chassis350b"
+alias  "chassis351"  "chassis351a chassis351b"
+alias  "chassis352"  "chassis352a chassis352b"
+alias  "chassis353"  "chassis353a chassis353b"
+alias  "chassis354"  "chassis354a chassis354b"
+alias  "chassis355"  "chassis355a chassis355b"
+alias  "chassis356"  "chassis356a chassis356b"
+alias  "chassis357"  "chassis357a chassis357b"
+alias  "chassis358"  "chassis358a chassis358b"
+alias  "chassis359"  "chassis359a chassis359b"
+alias  "chassis360"  "chassis360a chassis360b"
+alias  "chassis361"  "chassis361a chassis361b"
+alias  "chassis362"  "chassis362a chassis362b"
+alias  "chassis363"  "chassis363a chassis363b"
+alias  "chassis364"  "chassis364a chassis364b"
+alias  "chassis365"  "chassis365a chassis365b"
+alias  "chassis366"  "chassis366a chassis366b"
+alias  "chassis367"  "chassis367a chassis367b"
+alias  "chassis368"  "chassis368a chassis368b"
+alias  "chassis369"  "chassis369a chassis369b"
+alias  "chassis370"  "chassis370a chassis370b"
+alias  "chassis371"  "chassis371a chassis371b"
+alias  "chassis372"  "chassis372a chassis372b"
+alias  "chassis373"  "chassis373a chassis373b"
+alias  "chassis374"  "chassis374a chassis374b"
+alias  "chassis375"  "chassis375a chassis375b"
+alias  "chassis376"  "chassis376a chassis376b"
+alias  "chassis377"  "chassis377a chassis377b"
+alias  "chassis378"  "chassis378a chassis378b"
+alias  "chassis379"  "chassis379a chassis379b"
+alias  "chassis380"  "chassis380a chassis380b"
+alias  "chassis381"  "chassis381a chassis381b"
+alias  "chassis382"  "chassis382a chassis382b"
+alias  "chassis383"  "chassis383a chassis383b"
+alias  "chassis384"  "chassis384a chassis384b"
+alias  "chassis385"  "chassis385a chassis385b"
+alias  "chassis386"  "chassis386a chassis386b"
+alias  "chassis387"  "chassis387a chassis387b"
+alias  "chassis388"  "chassis388a chassis388b"
+alias  "chassis389"  "chassis389a chassis389b"
+alias  "chassis390"  "chassis390a chassis390b"
+alias  "chassis391"  "chassis391a chassis391b"
+alias  "chassis392"  "chassis392a chassis392b"
+alias  "chassis393"  "chassis393a chassis393b"
+alias  "chassis394"  "chassis394a chassis394b"
+alias  "chassis395"  "chassis395a chassis395b"
+alias  "chassis396"  "chassis396a chassis396b"
+alias  "chassis397"  "chassis397a chassis397b"
+alias  "chassis398"  "chassis398a chassis398b"
+alias  "chassis399"  "chassis399a chassis399b"
+alias  "chassis400"  "chassis400a chassis400b"
+alias  "chassis401"  "chassis401a chassis401b"
+alias  "chassis402"  "chassis402a chassis402b"
+alias  "chassis403"  "chassis403a chassis403b"
+alias  "chassis404"  "chassis404a chassis404b"
+alias  "chassis405"  "chassis405a chassis405b"
+alias  "chassis406"  "chassis406a chassis406b"
+alias  "chassis407"  "chassis407a chassis407b"
+alias  "chassis408"  "chassis408a chassis408b"
+alias  "chassis409"  "chassis409a chassis409b"
+alias  "chassis410"  "chassis410a chassis410b"
+alias  "chassis411"  "chassis411a chassis411b"
+alias  "chassis412"  "chassis412a chassis412b"
+alias  "chassis413"  "chassis413a chassis413b"
+alias  "chassis414"  "chassis414a chassis414b"
+alias  "chassis415"  "chassis415a chassis415b"
+alias  "chassis416"  "chassis416a chassis416b"
+alias  "chassis417"  "chassis417a chassis417b"
+alias  "chassis418"  "chassis418a chassis418b"
+alias  "chassis419"  "chassis419a chassis419b"
+alias  "chassis420"  "chassis420a chassis420b"
+alias  "chassis421"  "chassis421a chassis421b"
+alias  "chassis422"  "chassis422a chassis422b"
+alias  "chassis423"  "chassis423a chassis423b"
+alias  "chassis424"  "chassis424a chassis424b"
+alias  "chassis425"  "chassis425a chassis425b"
+alias  "chassis426"  "chassis426a chassis426b"
+alias  "chassis427"  "chassis427a chassis427b"
+alias  "chassis428"  "chassis428a chassis428b"
+alias  "chassis429"  "chassis429a chassis429b"
+alias  "chassis430"  "chassis430a chassis430b"
+alias  "chassis431"  "chassis431a chassis431b"
+alias  "chassis432"  "chassis432a chassis432b"
+alias  "chassis433"  "chassis433a chassis433b"
+alias  "chassis434"  "chassis434a chassis434b"
+alias  "chassis435"  "chassis435a chassis435b"
+alias  "chassis436"  "chassis436a chassis436b"
+alias  "chassis437"  "chassis437a chassis437b"
+alias  "chassis438"  "chassis438a chassis438b"
+alias  "chassis439"  "chassis439a chassis439b"
+alias  "chassis440"  "chassis440a chassis440b"
+alias  "chassis441"  "chassis441a chassis441b"
+alias  "chassis442"  "chassis442a chassis442b"
+alias  "chassis443"  "chassis443a chassis443b"
+alias  "chassis444"  "chassis444a chassis444b"
+alias  "chassis445"  "chassis445a chassis445b"
+alias  "chassis446"  "chassis446a chassis446b"
+alias  "chassis447"  "chassis447a chassis447b"
+alias  "chassis448"  "chassis448a chassis448b"
+alias  "chassis449"  "chassis449a chassis449b"
+alias  "chassis450"  "chassis450a chassis450b"
+alias  "chassis451"  "chassis451a chassis451b"
+alias  "chassis452"  "chassis452a chassis452b"
+alias  "chassis453"  "chassis453a chassis453b"
+alias  "chassis454"  "chassis454a chassis454b"
+alias  "chassis455"  "chassis455a chassis455b"
+alias  "chassis456"  "chassis456a chassis456b"
+alias  "chassis457"  "chassis457a chassis457b"
+alias  "chassis458"  "chassis458a chassis458b"
+alias  "chassis459"  "chassis459a chassis459b"
+alias  "chassis460"  "chassis460a chassis460b"
+alias  "chassis461"  "chassis461a chassis461b"
+alias  "chassis462"  "chassis462a chassis462b"
+alias  "chassis463"  "chassis463a chassis463b"
+alias  "chassis464"  "chassis464a chassis464b"
+alias  "chassis465"  "chassis465a chassis465b"
+alias  "chassis466"  "chassis466a chassis466b"
+alias  "chassis467"  "chassis467a chassis467b"
+alias  "chassis468"  "chassis468a chassis468b"

@@ -1,0 +1,4 @@
+# comment
+include "@top_srcdir@/etc/vpc.dev"
+# comment
+include "@top_srcdir@/test/t53.dev"

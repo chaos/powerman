@@ -1,0 +1,26 @@
+specification "vpc" {
+	timeout 	5.0
+
+	plug name { "0" "1" "2" "3" "4" "5" "6" "7" "8" 
+		    "9" "10" "11" "12" "13" "14" "15" }
+
+	script login {
+		send "login\n"
+		expect "[0-9]* OK\n"
+		expect "[0-9]* vpc> "
+	}
+	script logout {
+		send "logoff\n"
+		expect "[0-9]* OK\n"
+	}
+	script status {
+		send "stat %s\n"
+		expect "plug ([0-9]+): (ON|OFF)\n"
+		setplugstate $1 $2 on="ON" off="OFF"
+		expect "[0-9]* OK\n"
+		expect "[0-9]* vpc> "
+	}
+}
+
+device "test0" "vpc" "@top_builddir@/test/vpcd |&"
+node "t[0-15]" "test0"

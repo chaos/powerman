@@ -1,12 +1,11 @@
 ##
 # Prologue.
 ##
-AC_INIT(m4_esyscmd([awk '/Name:/ {printf "%s",$2; exit}' META]),
-        m4_esyscmd([awk '/Version:/ {printf "%s",$2; exit}' META]))
+AC_INIT([powerman],
+        m4_esyscmd([git describe --always | awk '/.*/ {printf "%s",$1; exit}']))
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_SRCDIR([NEWS])
 AC_CANONICAL_SYSTEM
-X_AC_META
 X_AC_EXPAND_INSTALL_DIRS
 
 ##
@@ -123,6 +122,52 @@ AC_CONFIG_FILES( \
   man/powermand.8 \
   man/vpcd.8 \
   test/Makefile \
+  test/mcr.conf
+  test/sierra.conf \
+  test/t07.conf \
+  test/t09.conf \
+  test/t10.conf \
+  test/t17.conf \
+  test/t18.conf \
+  test/t19.conf \
+  test/t20.conf \
+  test/t21.conf \
+  test/t22.conf \
+  test/t23.conf \
+  test/t24.conf \
+  test/t25.conf \
+  test/t26.conf \
+  test/t27.conf \
+  test/t28.conf \
+  test/t29.conf \
+  test/t30.conf \
+  test/t31.conf \
+  test/t32.conf \
+  test/t33.conf \
+  test/t34.conf \
+  test/t35.conf \
+  test/t36.conf \
+  test/t37.conf \
+  test/t38.conf \
+  test/t39.conf \
+  test/t40.conf \
+  test/t41.conf \
+  test/t42.conf \
+  test/t43.conf \
+  test/t44.conf \
+  test/t45.conf \
+  test/t46.conf \
+  test/t47.conf \
+  test/t48.conf \
+  test/t49.conf \
+  test/t50.conf \
+  test/t51.conf \
+  test/t53.conf \
+  test/t54.conf \
+  test/t55.conf \
+  test/t60.conf \
+  test/test.conf \
+  test/test4.conf \
 )
 
 AC_OUTPUT

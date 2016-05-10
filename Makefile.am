@@ -25,4 +25,4 @@ install-data-local:
 	-$(top_srcdir)/config/install-sh -o $(RUN_AS_USER) -m 755 -d \
 		$(DESTDIR)$(localstatedir)/run/powerman
 
-EXTRA_DIST = DISCLAIMER META powerman.spec
+EXTRA_DIST = DISCLAIMER powerman.spec

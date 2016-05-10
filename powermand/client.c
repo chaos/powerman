@@ -942,7 +942,7 @@ static void _create_client_socket(int fd)
         c->port, c->fd);
 
     /* prompt the client */
-    _client_printf(c, CP_VERSION, META_VERSION);
+    _client_printf(c, CP_VERSION, PACKAGE_VERSION);
     _client_printf(c, CP_PROMPT);
 }
 
@@ -973,7 +973,7 @@ static void _create_client_stdio(void)
     list_append(cli_clients, c);
 
     /* prompt the client */
-    _client_printf(c, CP_VERSION, META_VERSION);
+    _client_printf(c, CP_VERSION, PACKAGE_VERSION);
     _client_printf(c, CP_PROMPT);
 }
 

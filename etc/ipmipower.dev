@@ -26,16 +26,16 @@ specification "ipmipower" {
 	script status_all {
 		send "stat\n"
 		foreachnode {
-			expect "([^\n:]+): ([^\n]+)\n"
-			setplugstate $1 $2 on="on" off="off"
+			expect "([^\n:]+): ([^\n]+\n)"
+			setplugstate $1 $2 on="^on\n" off="^off\n"
 		}
 		expect "ipmipower> "
 	}
 	script status_beacon_all {
 		send "identify-status\n"
 		foreachnode {
-			expect "([^\n:]+): ([^\n]+)\n"
-			setplugstate $1 $2 on="on" off="off"
+			expect "([^\n:]+): ([^\n]+\n)"
+			setplugstate $1 $2 on="^on\n" off="^off\n"
 		}
 		expect "ipmipower> "
 	}
