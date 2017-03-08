@@ -10,7 +10,7 @@ Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: tcp_wrappers-devel
-BuildRequires: genders
+BuildRequires: libgenders-devel
 BuildRequires: curl-devel
 BuildRequires: net-snmp-devel
 BuildRequires: systemd
