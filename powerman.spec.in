@@ -97,6 +97,7 @@ if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
 %{_mandir}/*8/*
 %{_libdir}/stonith/plugins/external/powerman
 %{_unitdir}/powerman.service
+%{_tmpfilesdir}/powerman.conf
 
 %files devel
 %defattr(-,root,root,0755)
