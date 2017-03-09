@@ -98,7 +98,7 @@ AC_RUNAS
 ##
 AC_CONFIG_FILES( \
   Makefile \
-  powerman.spec \
+  examples/powerman_el72.spec \
   libpowerman/Makefile \
   libpowerman/libpowerman.pc \
   liblsd/Makefile \
