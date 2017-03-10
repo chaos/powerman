@@ -30,6 +30,7 @@
 #endif
 /* N.B. must define YYSTYPE before including parse_tab.h or type will be int. */
 #define YYSTYPE char *
+extern YYSTYPE yylval;
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>

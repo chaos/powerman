@@ -10,7 +10,7 @@ Source0: %{name}-%{version}.tar.gz
 BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
 
 BuildRequires: tcp_wrappers-devel
-BuildRequires: genders
+BuildRequires: libgenders-devel
 BuildRequires: curl-devel
 BuildRequires: net-snmp-devel
 BuildRequires: systemd
@@ -97,6 +97,7 @@ if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
 %{_mandir}/*8/*
 %{_libdir}/stonith/plugins/external/powerman
 %{_unitdir}/powerman.service
+%{_tmpfilesdir}/powerman.conf
 
 %files devel
 %defattr(-,root,root,0755)
@@ -112,6 +113,11 @@ if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
 %{_libdir}/*.so.*
 
 %changelog
+
+* Wed Mar 08 2017 Brian J. Murrell <brian.murrell@intel.com> 2.3.25-1
+- Move the powerman.spec to the examples dir and rename it to
+  powerman_el72.spec to indicate that this spec is just an example
+  that works on EL7.2
 
 * Fri Oct 23 2015 Jim Garlick <garlick.jim@gmail.com> 2.3.24-1
 - Don't package /var/run/powerman; let systemd manage this directory.
