@@ -111,6 +111,7 @@ AC_CONFIG_FILES( \
   etc/Makefile \
   scripts/Makefile \
   scripts/powerman \
+  scripts/powerman.service \
   scripts/tmpfiles.d/powerman.conf \
   heartbeat/Makefile \
   man/Makefile \

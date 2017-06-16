@@ -5,8 +5,8 @@ After=syslog.target network.target
 [Service]
 Type=forking
 PrivateTmp=yes
-User=daemon
-Group=daemon
+User=@RUN_AS_USER@
+Group=@RUN_AS_GROUP@
 ExecStart=/usr/sbin/powermand
 PIDFile=/var/run/powerman/powermand.pid
 
