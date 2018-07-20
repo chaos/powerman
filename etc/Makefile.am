@@ -50,6 +50,7 @@ pkgsysconf_DATA = \
 	phantom.dev \
 	plmpower.dev \
 	powerman.dev \
+	rancid-cisco-poe.dev \
 	raritan-px4316.dev \
 	raritan-px5523.dev \
 	sentry_cdu.dev \
