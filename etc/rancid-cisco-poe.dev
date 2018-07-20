@@ -1,0 +1,62 @@
+#
+# Control POE on Cisco switches via rancid (http://www.shrubbery.net/rancid/)
+#
+#   device "cisco-switch" "rancid-cisco-poe" "/usr/lib/rancid/bin/clogin hostname |&"
+#
+# Plug names are the device interface name:
+#   node "mydevice"		"cisco-switch" "Gi2/0/1"
+#
+# The user running the powerman must have a .cloginrc file in its home directory
+# with an appropriate configuration to allow querying and setting PoE status
+#
+specification "rancid-cisco-poe" {
+	timeout 	10
+
+	script login {
+		expect ".*#"
+	}
+	script logout {
+		send "exit\n"
+	}
+	script status {
+		send "show power inline %s | section (on|off) \n"
+		expect "\r\n([^ ]+) +[^ ]+ +(on|off)"
+		setplugstate $1 $2 off="off" on="on"
+		expect ".*#"
+	}
+	script on {
+		send "conf t\n"
+		expect ".*\\(config\\)#"
+		send "int %s\n"
+		expect ".*\\(config-if\\)#"
+		send "no power inline never\n"
+		expect ".*\\(config-if\\)#"
+		send "end\n"
+		expect ".*#"
+	}
+	script off {
+		send "conf t\n"
+		expect ".*\\(config\\)#"
+		send "int %s\n"
+		expect ".*\\(config-if\\)#"
+		send "power inline never\n"
+		expect ".*\\(config-if\\)#"
+		send "end\n"
+		expect ".*#"
+	}
+	script cycle {
+		send "conf t\n"
+		expect ".*\\(config\\)#"
+		send "int %s\n"
+		expect ".*\\(config-if\\)#"
+		send "power inline never\n"
+		expect ".*\\(config-if\\)#"
+		delay 4
+		send "no power inline never\n"
+		expect ".*\\(config-if\\)#"
+		send "end\n"
+		expect ".*#"
+		send "off %s\n"
+		expect ".*#"
+	}
+}
