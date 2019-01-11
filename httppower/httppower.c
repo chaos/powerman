@@ -78,11 +78,22 @@ _make_url(char *str)
 
 void post(CURL *h, char **av)
 {
-    char *myurl = _make_url(av[0]);
-    char *postdata = av[1] ? xstrdup(av[1]) : NULL;
+    char *myurl = NULL;
+    char *postdata = NULL;
+    char *url_ptr;
+
+    if (av[0] && av[1]) {
+        postdata = xstrdup(av[1]);
+        myurl = _make_url(av[0]);
+        url_ptr = myurl;
+    }
+    else if (av[0]) {
+        postdata = xstrdup(av[0]);
+        url_ptr = url;
+    }
 
     if (postdata && myurl) {
-        curl_easy_setopt(h, CURLOPT_URL, myurl);
+        curl_easy_setopt(h, CURLOPT_URL, url_ptr);
         curl_easy_setopt(h, CURLOPT_POSTFIELDS, postdata);
         if (curl_easy_perform(h) != 0)
             printf("Error: %s\n", errbuf);
