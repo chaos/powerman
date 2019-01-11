@@ -42,12 +42,15 @@
 #include "argv.h"
 
 static char *url = NULL;
+static char *header = NULL;
+static struct curl_slist *header_list = NULL;
 static char *userpwd = NULL;
 static char errbuf[CURL_ERROR_SIZE];
 
-#define OPTIONS "u:"
+#define OPTIONS "u:H:"
 static struct option longopts[] = {
         {"url", required_argument, 0, 'u' },
+        {"header", required_argument, 0, 'H' },
         {0,0,0,0},
 };
 
@@ -56,6 +59,7 @@ void help(void)
     printf("Valid commands are:\n");
     printf("  auth user:passwd\n");
     printf("  seturl url\n");
+    printf("  setheader string\n");
     printf("  get [url]\n");
     printf("  post [url] key=val[&key=val]...\n");
 }
@@ -96,10 +100,12 @@ void post(CURL *h, char **av)
         curl_easy_setopt(h, CURLOPT_POST, 1);
         curl_easy_setopt(h, CURLOPT_URL, url_ptr);
         curl_easy_setopt(h, CURLOPT_POSTFIELDS, postdata);
+        curl_easy_setopt(h, CURLOPT_POSTFIELDSIZE, strlen (postdata));
         if (curl_easy_perform(h) != 0)
             printf("Error: %s\n", errbuf);
         curl_easy_setopt(h, CURLOPT_URL, "");
         curl_easy_setopt(h, CURLOPT_POSTFIELDS, "");
+        curl_easy_setopt(h, CURLOPT_POSTFIELDSIZE, 0);
     } else
         printf("Nothing to post!\n");
 
@@ -137,6 +143,24 @@ void seturl(CURL *h, char **av)
     url = xstrdup(av[0]);
 }
 
+void setheader(CURL *h, char **av)
+{
+    if (header) {
+        xfree(header);
+        curl_slist_free_all(header_list);
+        header = NULL;
+        header_list = NULL;
+    }
+    if (av[0]) {
+        header = xstrdup(av[0]);
+        header_list = curl_slist_append(header_list, header);
+        curl_easy_setopt(h, CURLOPT_HTTPHEADER, header_list);
+    }
+    else {
+	curl_easy_setopt(h, CURLOPT_HTTPHEADER, header_list);
+    }
+}
+
 void auth(CURL *h, char **av)
 {
     if (av[0] == NULL) {
@@ -163,6 +187,8 @@ int docmd(CURL *h, char **av)
             auth(h, av + 1);
         else if (strcmp(av[0], "seturl") == 0)
             seturl(h, av + 1);
+        else if (strcmp(av[0], "setheader") == 0)
+            setheader(h, av + 1);
         else if (strcmp(av[0], "get") == 0)
             get(h, av + 1);
         else if (strcmp(av[0], "post") == 0)
@@ -194,7 +220,7 @@ void shell(CURL *h)
 void
 usage(void)
 {
-    fprintf(stderr, "Usage: httppower [--url URL]\n");
+    fprintf(stderr, "Usage: httppower [--url URL] [--header string]\n");
     exit(1);
 }
 
@@ -210,6 +236,9 @@ main(int argc, char *argv[])
         switch (c) {
             case 'u': /* --url */
                 url = xstrdup(optarg);
+                break;
+            case 'H': /* --header */
+                header = xstrdup(optarg);
                 break;
             default:
                 usage();
@@ -227,6 +256,11 @@ main(int argc, char *argv[])
     curl_easy_setopt(h, CURLOPT_TIMEOUT, 5);
     curl_easy_setopt(h, CURLOPT_ERRORBUFFER, errbuf);
     curl_easy_setopt(h, CURLOPT_FAILONERROR, 1);
+
+    if (header) {
+        header_list = curl_slist_append(header_list, header);
+        curl_easy_setopt(h, CURLOPT_HTTPHEADER, header_list);
+    }
 
     shell(h);
 
