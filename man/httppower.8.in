@@ -35,9 +35,11 @@ Set extra HEADER to use.  Do not specify data to clear.  Overrides the command l
 .I "get [URL-suffix]"
 Send an HTTP GET to the base URL with the optional URL-suffix appended.
 .TP
-.I "post [URL-suffix] key=val[&key=val]..."
-Send an HTTP POST to the base URL with the optional URL-suffix appended,
-and key-value pairs as argument.
+.I "post [URL-suffix] <string data>"
+Send an HTTP POST to the base URL with the optional URL-suffix
+appended, and string data as argument.  Typically, the data is
+key=value pairs (multiple of which can be concatenated with the
+&-symbol), but there can be exceptions.
 
 .SH "FILES"
 @X_SBINDIR@/httppower

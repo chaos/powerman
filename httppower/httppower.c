@@ -61,7 +61,7 @@ void help(void)
     printf("  seturl url\n");
     printf("  setheader string\n");
     printf("  get [url]\n");
-    printf("  post [url] key=val[&key=val]...\n");
+    printf("  post [url] <string data>\n");
 }
 
 char *
