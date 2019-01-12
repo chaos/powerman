@@ -47,7 +47,7 @@ static struct curl_slist *header_list = NULL;
 static char *userpwd = NULL;
 static char errbuf[CURL_ERROR_SIZE];
 
-#define OPTIONS "u:H:"
+#define OPTIONS "u:H:c"
 static struct option longopts[] = {
         {"url", required_argument, 0, 'u' },
         {"header", required_argument, 0, 'H' },
@@ -62,6 +62,7 @@ void help(void)
     printf("  setheader string\n");
     printf("  get [url]\n");
     printf("  post [url] <string data>\n");
+    printf("  put [url] <string data>\n");
 }
 
 char *
@@ -113,6 +114,57 @@ void post(CURL *h, char **av)
         xfree(myurl);
     if (postdata)
         xfree(postdata);
+}
+
+struct put_cb_data {
+  char *data;
+  int offset;
+};
+
+size_t put_read_cb(char *buffer, size_t size, size_t nitems, void *userdata) {
+    struct put_cb_data *pcd = userdata;
+
+    memcpy (buffer, pcd->data + pcd->offset, size);
+    pcd->offset += size;
+    return size;
+}
+
+void put(CURL *h, char **av)
+{
+    char *myurl = NULL;
+    char *putdata = NULL;
+    struct put_cb_data pcd;
+    char *url_ptr;
+
+    if (av[0] && av[1]) {
+        putdata = xstrdup(av[1]);
+        myurl = _make_url(av[0]);
+        url_ptr = myurl;
+    }
+    else if (av[0]) {
+        putdata = xstrdup(av[0]);
+        url_ptr = url;
+    }
+
+    if (putdata && myurl) {
+        curl_easy_setopt(h, CURLOPT_UPLOAD, 1);
+        curl_easy_setopt(h, CURLOPT_URL, url_ptr);
+        curl_easy_setopt(h, CURLOPT_READFUNCTION, put_read_cb);
+        pcd.data = putdata;
+        pcd.offset = 0;
+        curl_easy_setopt(h, CURLOPT_READDATA, &pcd);
+        curl_easy_setopt(h, CURLOPT_INFILESIZE, strlen (putdata));
+        if (curl_easy_perform(h) != 0)
+            printf("Error: %s\n", errbuf);
+        curl_easy_setopt(h, CURLOPT_URL, "");
+	curl_easy_setopt(h, CURLOPT_UPLOAD, 0);
+    } else
+        printf("Nothing to put!\n");
+
+    if (myurl)
+        xfree(myurl);
+    if (putdata)
+        xfree(putdata);
 }
 
 void get(CURL *h, char **av)
@@ -193,6 +245,8 @@ int docmd(CURL *h, char **av)
             get(h, av + 1);
         else if (strcmp(av[0], "post") == 0)
             post(h, av + 1);
+        else if (strcmp(av[0], "put") == 0)
+            put(h, av + 1);
         else
             printf("type \"help\" for a list of commands\n");
     }

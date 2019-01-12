@@ -40,6 +40,10 @@ Send an HTTP POST to the base URL with the optional URL-suffix
 appended, and string data as argument.  Typically, the data is
 key=value pairs (multiple of which can be concatenated with the
 &-symbol), but there can be exceptions.
+.TP
+.I "put [URL-suffix] <string data>"
+Send an HTTP PUT to the base URL with the optional URL-suffix
+appended, and string data as argument.
 
 .SH "FILES"
 @X_SBINDIR@/httppower
