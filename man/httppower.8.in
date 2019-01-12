@@ -18,6 +18,9 @@ Set the base URL.
 .TP
 .I "-H, --header string"
 Set extra HEADER to use.
+.TP
+.I "-c, --cookies"
+Enable cookies in session.
 .SH INTERACTIVE COMMANDS
 The following commands are accepted at the httppower> prompt:
 .TP
@@ -31,6 +34,9 @@ Set the base URL.  Overrides the command line option.
 .TP
 .I "setheader [string data]"
 Set extra HEADER to use.  Do not specify data to clear.  Overrides the command line option.
+.TP
+.I "cookies <enable|disable>"
+Enable or disable use of cookies.  Overrides the command line option.
 .TP
 .I "get [URL-suffix]"
 Send an HTTP GET to the base URL with the optional URL-suffix appended.

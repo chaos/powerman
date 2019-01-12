@@ -44,6 +44,7 @@
 static char *url = NULL;
 static char *header = NULL;
 static struct curl_slist *header_list = NULL;
+static int cookies = 0;
 static char *userpwd = NULL;
 static char errbuf[CURL_ERROR_SIZE];
 
@@ -51,6 +52,7 @@ static char errbuf[CURL_ERROR_SIZE];
 static struct option longopts[] = {
         {"url", required_argument, 0, 'u' },
         {"header", required_argument, 0, 'H' },
+        {"cookies", no_argument, 0, 'c' },
         {0,0,0,0},
 };
 
@@ -60,6 +62,7 @@ void help(void)
     printf("  auth user:passwd\n");
     printf("  seturl url\n");
     printf("  setheader string\n");
+    printf("  cookies <enable|disable>\n");
     printf("  get [url]\n");
     printf("  post [url] <string data>\n");
     printf("  put [url] <string data>\n");
@@ -213,6 +216,25 @@ void setheader(CURL *h, char **av)
     }
 }
 
+void cookies_enable(CURL *h, char **av)
+{
+    if (av[0] == NULL
+	|| (strcasecmp (av[0], "enable")
+	    && strcasecmp (av[0], "disable"))) {
+        printf("Usage: cookies <enable|disable>\n");
+        return;
+    }
+    if (!strcasecmp (av[0], "enable")) {
+        /* enable cookie engine with empty string, no need to read from
+           a real file */
+        curl_easy_setopt(h, CURLOPT_COOKIEFILE, "");
+    }
+    else {
+	curl_easy_setopt(h, CURLOPT_COOKIELIST, "ALL");
+        curl_easy_setopt(h, CURLOPT_COOKIEFILE, NULL);
+    }
+}
+
 void auth(CURL *h, char **av)
 {
     if (av[0] == NULL) {
@@ -241,6 +263,8 @@ int docmd(CURL *h, char **av)
             seturl(h, av + 1);
         else if (strcmp(av[0], "setheader") == 0)
             setheader(h, av + 1);
+        else if (strcmp(av[0], "cookies") == 0)
+            cookies_enable(h, av + 1);
         else if (strcmp(av[0], "get") == 0)
             get(h, av + 1);
         else if (strcmp(av[0], "post") == 0)
@@ -274,7 +298,7 @@ void shell(CURL *h)
 void
 usage(void)
 {
-    fprintf(stderr, "Usage: httppower [--url URL] [--header string]\n");
+    fprintf(stderr, "Usage: httppower [--url URL] [--header string] [--cookies]\n");
     exit(1);
 }
 
@@ -294,6 +318,9 @@ main(int argc, char *argv[])
             case 'H': /* --header */
                 header = xstrdup(optarg);
                 break;
+	    case 'c': /* --cookies */
+	        cookies = 1;
+	        break;
             default:
                 usage();
                 break;
@@ -315,6 +342,11 @@ main(int argc, char *argv[])
         header_list = curl_slist_append(header_list, header);
         curl_easy_setopt(h, CURLOPT_HTTPHEADER, header_list);
     }
+
+    /* enable cookie engine with empty string, no need to read from
+       a real file */
+    if (cookies)
+        curl_easy_setopt(h, CURLOPT_COOKIEFILE, "");
 
     shell(h);
 
