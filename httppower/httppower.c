@@ -45,14 +45,16 @@ static char *url = NULL;
 static char *header = NULL;
 static struct curl_slist *header_list = NULL;
 static int cookies = 0;
+static int verbose = 0;
 static char *userpwd = NULL;
 static char errbuf[CURL_ERROR_SIZE];
 
-#define OPTIONS "u:H:c"
+#define OPTIONS "u:H:cv"
 static struct option longopts[] = {
         {"url", required_argument, 0, 'u' },
         {"header", required_argument, 0, 'H' },
         {"cookies", no_argument, 0, 'c' },
+        {"verbose", no_argument, 0, 'v' },
         {0,0,0,0},
 };
 
@@ -321,6 +323,9 @@ main(int argc, char *argv[])
 	    case 'c': /* --cookies */
 	        cookies = 1;
 	        break;
+            case 'v': /* --verbose */
+                verbose = 1;
+                break;
             default:
                 usage();
                 break;
@@ -341,6 +346,9 @@ main(int argc, char *argv[])
     /* for time being */
     curl_easy_setopt(h, CURLOPT_SSL_VERIFYPEER, 0L);
     curl_easy_setopt(h, CURLOPT_SSL_VERIFYHOST, 0L);
+
+    if (verbose)
+        curl_easy_setopt(h, CURLOPT_VERBOSE, 1L);
 
     if (header) {
         header_list = curl_slist_append(header_list, header);
