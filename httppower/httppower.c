@@ -338,6 +338,10 @@ main(int argc, char *argv[])
     curl_easy_setopt(h, CURLOPT_ERRORBUFFER, errbuf);
     curl_easy_setopt(h, CURLOPT_FAILONERROR, 1);
 
+    /* for time being */
+    curl_easy_setopt(h, CURLOPT_SSL_VERIFYPEER, 0L);
+    curl_easy_setopt(h, CURLOPT_SSL_VERIFYHOST, 0L);
+
     if (header) {
         header_list = curl_slist_append(header_list, header);
         curl_easy_setopt(h, CURLOPT_HTTPHEADER, header_list);
