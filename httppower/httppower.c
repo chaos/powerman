@@ -93,6 +93,7 @@ void post(CURL *h, char **av)
     }
 
     if (postdata && myurl) {
+        curl_easy_setopt(h, CURLOPT_POST, 1);
         curl_easy_setopt(h, CURLOPT_URL, url_ptr);
         curl_easy_setopt(h, CURLOPT_POSTFIELDS, postdata);
         if (curl_easy_perform(h) != 0)
@@ -113,6 +114,7 @@ void get(CURL *h, char **av)
     char *myurl = _make_url(av[0]);
 
     if (myurl) {
+        curl_easy_setopt(h, CURLOPT_HTTPGET, 1);
         curl_easy_setopt(h, CURLOPT_URL, myurl);
         if (curl_easy_perform(h) != 0)
             printf("Error: %s\n", errbuf);
