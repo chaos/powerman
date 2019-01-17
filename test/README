@@ -114,3 +114,5 @@ t50
 	Test bashfun demo script.
 t51
 	Test Sun LOM using lom.c
+t61
+        Test httppower openbmc using openbmc-httppower.c
