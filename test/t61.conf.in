@@ -1,0 +1,13 @@
+include "@top_srcdir@/etc/openbmc.dev"
+
+device "b0" "openbmc" "@top_builddir@/test/openbmc-httppower |&"
+device "b1" "openbmc" "@top_builddir@/test/openbmc-httppower |&"
+device "b2" "openbmc" "@top_builddir@/test/openbmc-httppower |&"
+device "b3" "openbmc" "@top_builddir@/test/openbmc-httppower |&"
+device "b4" "openbmc" "@top_builddir@/test/openbmc-httppower |&"
+
+node "t0" "b0" "t0"
+node "t1" "b1" "t1"
+node "t2" "b2" "t2"
+node "t3" "b3" "t3"
+node "t4" "b4" "t4"

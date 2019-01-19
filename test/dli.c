@@ -22,7 +22,7 @@
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
 \*****************************************************************************/
 
-/* dli.c - mimic httpposer talking to a Digital Loggers Inc LPC */
+/* dli.c - mimic httppower talking to a Digital Loggers Inc LPC */
 
 #include <stdio.h>
 #include <string.h>
