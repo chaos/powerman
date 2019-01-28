@@ -1,4 +1,16 @@
 =========================================================================
+Release Notes for PowerMan version 2.3.25                     28 Jan 2019
+=========================================================================
+
+* Add etc/rancid-cisco-poe.dev (Daniel Rich, PR #28)
+
+* Add etc/openbmc.dev (Albert Chu, PR #33)
+
+* Add etc/kvm.dev & etc/kvm-ssh.dev (tisbeok, PR #8)
+
+* Fix misinterpretation of error strings in ipmipower.dev.
+
+=========================================================================
 Release Notes for PowerMan version 2.3.24                     23 Oct 2015
 =========================================================================
 
