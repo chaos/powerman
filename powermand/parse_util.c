@@ -36,6 +36,20 @@
 #include <assert.h>
 #include <stdio.h>
 
+/*
+ * Define SYSLOG_NAMES to allow access to level names
+ * needed for parsing in string_to_level().
+ */
+#ifndef SYSLOG_NAMES
+#define SYSLOG_NAMES 1
+#define UNDO_SYSLOG_NAMES 1
+#endif
+#include <syslog.h>
+#ifdef UNDO_SYSLOG_NAMES
+#undef SYSLOG_NAMES
+#undef UNDO_SYSLOG_NAMES
+#endif
+
 #include "list.h"
 #include "hostlist.h"
 #include "xtypes.h"
@@ -53,6 +67,7 @@ typedef struct {
 } alias_t;
 
 static bool         conf_use_tcp_wrap = FALSE;
+static int          conf_plug_log_level = LOG_DEBUG;    /* syslog level */
 static List         conf_listen = NULL;     /* list of host:port strings */
 static hostlist_t   conf_nodes = NULL;
 static List         conf_aliases = NULL;    /* list of alias_t's */
@@ -217,6 +232,46 @@ List conf_get_listen(void)
 void conf_add_listen(char *hostport)
 {
     list_append(conf_listen, xstrdup(hostport));
+}
+
+/*
+ * Return the corresponding integer value if syslog prioritynames
+ * contains a name identical to s. If no match can be found, return (-1)
+ * and set errno to EINVAL.
+ */
+static int string_to_level(char *s)
+{
+    int level = -1;
+    CODE *record = prioritynames;
+
+    if (!s || *s == '\0')
+        return -1;
+
+    while (record->c_val != -1) {
+        if (strcmp(s, record->c_name) == 0) {
+            level = record->c_val;
+            break;
+        }
+        record++;
+    }
+
+    return level;
+}
+
+
+int conf_get_plug_log_level(void)
+{
+    return conf_plug_log_level;
+}
+
+void conf_set_plug_log_level(char *level_string)
+{
+    int level = string_to_level(level_string);
+
+    if (level < 0)
+        err_exit(FALSE, "unable to recognize plug_log_level config value");
+
+    conf_plug_log_level = level;
 }
 
 /*

@@ -147,6 +147,7 @@ static List line_ptrs;
 
 listen          return TOK_LISTEN;
 tcpwrappers     return TOK_TCP_WRAPPERS;
+plug_log_level  return TOK_PLUG_LOG_LEVEL;
 timeout         return TOK_DEV_TIMEOUT;
 pingperiod      return TOK_PING_PERIOD;
 specification   return TOK_SPEC;

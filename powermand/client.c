@@ -662,6 +662,7 @@ static void log_state_change(Client *c)
     char *action = NULL;
     char *hosts;
     char *with_errors = " with errors";
+    int level = conf_get_plug_log_level();
 
     if (c->cmd->com == PM_POWER_ON)
         action = "powered on";
@@ -676,7 +677,7 @@ static void log_state_change(Client *c)
         return;
 
     hosts = _xhostlist_ranged_string(c->cmd->hl);
-    syslog(LOG_DEBUG, "%s %s%s", action, hosts,
+    syslog(level, "%s %s%s", action, hosts,
         (c->cmd->error == TRUE ? with_errors : ""));
     xfree(hosts);
 }

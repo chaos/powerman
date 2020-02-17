@@ -6,6 +6,10 @@
 # Uncomment to listen on all ports (default is 127.0.0.1:10101)
 #listen "0.0.0.0:10101"
 
+# Uncomment to set syslog level for power on/off/reset/cycle requests
+# (default is debug). Accepts the same level strings as logger(1).
+#plug_log_level "info"
+
 # Include device specifications for power controllers
 #include "/etc/powerman/apc7900.dev"
 #include "/etc/powerman/apc.dev"
