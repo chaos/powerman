@@ -48,8 +48,6 @@
   and 2) not always cleaning up properly.  Consider providing a "native"
   sshpower tool using one of the ssh libs. [Jim Garlick]
 
-* Optionally log plug state changes to syslog (or conman?) [Jim Garlick]
-
 * Allow pm -q 'rpc name' and report all pugs (even if not mapped) [Jim Garlick]
 
 * Implement power (watt) monitoring.  Convert units.  When querying by rpc
