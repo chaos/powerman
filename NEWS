@@ -1,4 +1,12 @@
 =========================================================================
+Release Notes for PowerMan version 2.3.26                     18 Feb 2020
+=========================================================================
+
+* Log power state changes to syslog (Olaf Faaland, PR #37)
+
+* Fix default systemd unit file path for 'make distcheck'
+
+=========================================================================
 Release Notes for PowerMan version 2.3.25                     28 Jan 2019
 =========================================================================
 
