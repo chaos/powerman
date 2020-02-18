@@ -14,3 +14,11 @@ such as SNMP, IPMI, Insteon, X-10, and VXI-11.
 *powerman* can control equipment connected using any combination of the
 above methods and provide unified naming for the equipment and parallel
 execution of control actions. 
+
+#### Origin and license
+
+Originally written by Andrew Uselton in 2002 for early Linux clusters at LLNL.
+
+SPDX-License-Identifier: GPL-2.0-or-later
+
+UCRL-CODE-2002-008
