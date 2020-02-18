@@ -141,7 +141,7 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 %token TOK_PLUG_NAME TOK_SCRIPT 
 
 /* powerman.conf stuff */
-%token TOK_DEVICE TOK_NODE TOK_ALIAS TOK_TCP_WRAPPERS TOK_LISTEN
+%token TOK_DEVICE TOK_NODE TOK_ALIAS TOK_TCP_WRAPPERS TOK_LISTEN TOK_PLUG_LOG_LEVEL 
 
 /* general */
 %token TOK_MATCHPOS TOK_STRING_VAL TOK_NUMERIC_VAL TOK_YES TOK_NO
@@ -162,6 +162,7 @@ config_list     : config_list config_item
 ;
 config_item     : listen
                 | TCP_wrappers 
+                | plug_log_level
                 | device
                 | node
                 | alias
@@ -174,6 +175,10 @@ TCP_wrappers    : TOK_TCP_WRAPPERS         {
     conf_set_use_tcp_wrappers(TRUE);
 }               | TOK_TCP_WRAPPERS TOK_NO  { 
     conf_set_use_tcp_wrappers(FALSE);
+}
+;
+plug_log_level          : TOK_PLUG_LOG_LEVEL TOK_STRING_VAL { 
+    conf_set_plug_log_level($2);
 }
 ;
 listen          : TOK_LISTEN TOK_STRING_VAL { 

@@ -657,6 +657,31 @@ static void _telemetry_printf(int client_id, const char *fmt, ...)
     }
 }
 
+static void log_state_change(Client *c)
+{
+    char *action = NULL;
+    char *hosts;
+    char *with_errors = " with errors";
+    int level = conf_get_plug_log_level();
+
+    if (c->cmd->com == PM_POWER_ON)
+        action = "powered on";
+    if (c->cmd->com == PM_POWER_OFF)
+        action = "powered off";
+    if (c->cmd->com == PM_POWER_CYCLE)
+        action = "power cycled";
+    if (c->cmd->com == PM_RESET)
+        action = "reset";
+
+    if (!action)
+        return;
+
+    hosts = _xhostlist_ranged_string(c->cmd->hl);
+    syslog(level, "%s %s%s", action, hosts,
+        (c->cmd->error == TRUE ? with_errors : ""));
+    xfree(hosts);
+}
+
 /*
  * Callback for device action completion.
  */
@@ -685,6 +710,8 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
 
     /* all actions have called back - return response to client */
     if (--c->cmd->pending == 0) {
+        log_state_change(c);
+
         switch (c->cmd->com) {
         case PM_STATUS_PLUGS:      /* status */
         case PM_STATUS_BEACON:     /* beacon */

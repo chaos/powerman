@@ -38,6 +38,10 @@ tcpwrappers yes                      # enable TCP wrappers
 
 # listen "0.0.0.0:10101"             # uncomment to listen on all interfaces
 
+# plug_log_level "info"              # uncomment to change syslog messages
+                                     # for plug state changes to level
+                                     # info (default level is debug)
+
 # Alias example - alias can be used in target specifications
 alias "pengra_service" "pengra[0-1]"
 alias "pengra_compute" "pengra[2-15]"
