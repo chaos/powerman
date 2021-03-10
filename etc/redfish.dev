@@ -1,0 +1,68 @@
+# Support for Redfish Rest Interface
+#
+# Powerman.conf should look something like this:
+#   include "/etc/powerman/redfish.dev"
+#   device "redfish1" "redfish" "/usr/sbin/httppower -u https://pnode1 -H Content-Type:application/json |&"
+#   node "node1" "redfish1" "pnode1"
+#
+# - Set your system's username/password in the login section below
+# - There is a chance the URIs below will not work on your system, as
+#   the exact path is not defined and may technically be different.
+#   Please adjust as needed.  Some simple curl commands can be used to
+#   discover the path, such as:
+#
+#   curl -s -u USER:PASS -k -X GET https://pnode1/redfish/v1/Systems/1
+#
+# Tested on Supermicro H12DSG-O-CPU.  Known issues:
+# - redfish's power on/off can return success before the operation has
+#   been completed on the node.  To ensure powerman does not return
+#   before the on/off is completed, we add a delay of 30 seconds.
+# - httppower can be configured with only one node, so one httppower
+#   co-process is needed for every redfish node in a cluster.  This
+#   can present scalability problems at larger scales.
+# - There is no background management of up/down status of redfish
+#   targets.  At larger scales, when there will almost always be one
+#   node removed for servicing, and unresponsive target will always
+#   lead to powerman to timeout.
+# - A longer term solution is being investigated, see:
+#   https://github.com/chaos/powerman/issues/34.
+#
+specification "redfish" {
+	timeout 	40
+
+	script login {
+		expect "httppower> "
+		send "auth USER:PASS\n"
+		expect "httppower> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status {
+		send "get redfish/v1/Systems/1/\n"
+	        expect "\"PowerState\":\"(On|Off)\""
+                setplugstate $1 on="On" off="Off"
+		expect "httppower> "
+	}
+	script on {
+		send "post redfish/v1/Systems/1/Actions/ComputerSystem.Reset {\"ResetType\":\"On\"}\n"
+		expect "httppower> "
+                delay 30
+                send "get redfish/v1/Systems/1/\n"
+	        expect "\"PowerState\":\"On\""
+	}
+	script off {
+		send "post redfish/v1/Systems/1/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceOff\"}\n"
+		expect "httppower> "
+                delay 30
+                send "get redfish/v1/Systems/1/\n"
+	        expect "\"PowerState\":\"Off\""
+	}
+	script cycle {
+		send "post redfish/v1/Systems/1/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceRestart\"}\n"
+		expect "httppower> "
+                delay 30
+                send "get redfish/v1/Systems/1/\n"
+	        expect "\"PowerState\":\"On\""
+	}
+}
