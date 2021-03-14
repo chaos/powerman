@@ -3,7 +3,7 @@
 httppower \- communicate with HTTP based power distribution units
 .SH SYNOPSIS
 .B httppower
-.I "[--url URL]"
+.I "[--url URL] [--header string] [--cookies]"
 .LP
 .SH DESCRIPTION
 .B httppower

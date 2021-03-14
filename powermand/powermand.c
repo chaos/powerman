@@ -204,14 +204,12 @@ static void _select_loop(void)
     dev_initial_connect();
 
     while (1) {
-        int n;
-
         xpollfd_zero(pfd);
 
         cli_pre_poll(pfd);
         dev_pre_poll(pfd);
 
-        n = xpoll(pfd, timerisset(&tmout) ? &tmout : NULL);
+        xpoll(pfd, timerisset(&tmout) ? &tmout : NULL);
         timerclear(&tmout);
 
         /*
