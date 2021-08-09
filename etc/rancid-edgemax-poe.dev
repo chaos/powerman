@@ -1,15 +1,15 @@
 #
 # Control POE on UniFi switches via rancid (http://www.shrubbery.net/rancid/)
 #
-#   device "ubnt-switch" "rancid-ubnt-poe" "/usr/lib/rancid/bin/clogin -t600 myswitch |&"
+#   device "edgemax-switch" "rancid-edgemax-poe" "/usr/lib/rancid/bin/clogin -t600 myswitch |&"
 #
 # Plug names are the device interface name:
-#   node "mydevice"		"ubnt-switch" "0/1"
+#   node "mydevice"		"edgemax-switch" "0/1"
 #
 # The user running the powerman must have a .cloginrc file in its home directory
 # with an appropriate configuration to allow querying and setting power status
 #
-specification "rancid-ubnt-poe" {
+specification "rancid-edgemax-poe" {
 	timeout 	10
 
 	script login {
