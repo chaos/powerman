@@ -49,6 +49,7 @@ pkgsysconf_DATA = \
 	kvm-ssh.dev \
 	openbmc.dev \
 	redfish-supermicro.dev \
+	redfishpower.dev \
 	phantom.dev \
 	plmpower.dev \
 	powerman.dev \

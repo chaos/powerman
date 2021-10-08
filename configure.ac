@@ -61,6 +61,7 @@ AC_CHECK_TYPES(socklen_t, [], [], [#include <sys/socket.h>])
 # Check for httppower, genders
 ##
 AC_HTTPPOWER
+AC_REDFISHPOWER
 AC_SNMPPOWER
 AC_GENDERS
 
@@ -106,6 +107,7 @@ AC_CONFIG_FILES( \
   powerman/Makefile \
   powermand/Makefile \
   httppower/Makefile \
+  redfishpower/Makefile \
   snmppower/Makefile \
   plmpower/Makefile \
   etc/Makefile \
@@ -119,6 +121,7 @@ AC_CONFIG_FILES( \
   man/powerman.conf.5 \
   man/powerman.dev.5 \
   man/httppower.8 \
+  man/redfishpower.8 \
   man/plmpower.8 \
   man/powermand.8 \
   man/vpcd.8 \
@@ -169,6 +172,7 @@ AC_CONFIG_FILES( \
   test/t60.conf \
   test/t61.conf \
   test/t62.conf \
+  test/t63.conf \
   test/test.conf \
   test/test4.conf \
 )

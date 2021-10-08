@@ -1,0 +1,107 @@
+.TH redfishpower 8 "1 October 2021" "@PACKAGE_NAME@-@PACKAGE_VERSION@"
+.SH NAME
+redfishpower \- communicate with redfish service processors in parallel
+.SH SYNOPSIS
+.B redfishpower
+.I "<--hostname hostname(s) | --hostsfile file> [OPTIONS]"
+.LP
+.SH DESCRIPTION
+.B redfishpower
+is a helper program for
+.B powerman
+which enables it to communicate with redfish service processors in parallel.
+It is run interactively by the powerman daemon.
+.SH OPTIONS
+.TP
+.I "-h, --hostname hostname(s)"
+Set legal hostnames that redfishpower can communicate with.  Host
+ranges are acceptable.  Note that the maximum number of hosts that can be
+set simultaneously is limited by the file descriptor limit of the
+.B select(2)
+system call.
+.TP
+.I "-f, --hostsfile file"
+Alternate option to
+.I --hostname,
+specify a file with all hosts.  File shall have one host or hostrange
+listed per line.
+.TP
+.I "-H, --header string"
+Set extra HEADER to use.
+.TP
+.I "-S, --statpath string"
+Set Redfish path for obtaining power status.  Typically is redfish/v1/Systems/1.
+.TP
+.I "-O, --onpath string"
+Set Redfish path for performing power on.  Typically is redfish/v1/Systems/1/Actions/ComputerSystem.Reset.
+.TP
+.I "-F, --offpath string"
+Set Redfish path for performing power off.  Typically is redfish/v1/Systems/1/Actions/ComputerSystem.Reset.
+.TP
+.I "-C, --cyclepath string"
+Set Redfish path for performing power cycle.  Typically is redfish/v1/Systems/1/Actions/ComputerSystem.Reset.
+.TP
+.I "-P, --onpostdata string"
+Set Redfish postdata for performing power on.  Typically is {"ResetType":"On"}
+.TP
+.I "-G, --offpostdata string"
+Set Redfish postdata for performing power off.  Typically is {"ResetType":"ForceOff"}
+.TP
+.I "-D, --cyclepostdata string"
+Set Redfish postdata for performing power cycle.  Typically is {"ResetType":"ForceRestart"}
+.TP
+.I "-v, --verbose"
+Increase output verbosity.
+.SH INTERACTIVE COMMANDS
+The following commands are accepted at the redfishpower> prompt:
+.TP
+.I "auth user:pass"
+Authenticate to the base URL with specified user and password,
+using ``basic'' HTTP authentication which sends the user and password
+over the network in plain text.
+.TP
+.I "setheader [string data]"
+Set extra HEADER to use.  Do not specify data to clear.
+.TP
+.I "setstatpath <path>"
+Set path to obtain power status.
+.TP
+.I "setonpath <path> [data]"
+Set path and optional post data to turn on node.
+.TP
+.I "setoffpath <path> [data]"
+Set path and optional post data to turn off node.
+.TP
+.I "setcyclepath <path> [data]"
+Set path and optional post data to turn cycle node.
+.TP
+.I "stat [nodes]"
+Get power status of all nodes or specified subset of nodes.
+.TP
+.I "on [nodes]"
+Turn on all nodes or specified subset of nodes.  Will return "ok" after confirmation "on" has completed.
+.TP
+.I "off [nodes]"
+Turn off all nodes or specified subset of nodes.  Will return "ok" after confirmation "off" has completed.
+.TP
+.I "cycle [nodes]"
+Turn off all nodes or specified subset of nodes.
+
+.SH "FILES"
+@X_SBINDIR@/redfishpower
+.br
+@X_SYSCONFDIR@/powerman/powerman.conf
+
+.SH "ORIGIN"
+PowerMan was originally developed by Andrew Uselton on LLNL's Linux clusters.
+This software is open source and distributed under the terms of the GNU GPL.
+
+.SH "SEE ALSO"
+.BR powerman (1),
+.BR powermand (8),
+.BR plmpower (8),
+.BR vpcd (8),
+.BR powerman.conf (5),
+.BR powerman.dev (5).
+.PP
+\fBhttp://github.com/chaos/powerman\fR

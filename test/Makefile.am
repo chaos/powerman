@@ -11,6 +11,7 @@ check_PROGRAMS = \
 	phantom \
 	cyclades \
 	ipmipower \
+	redfishpower \
 	cli \
 	ilom \
 	lom \
@@ -35,7 +36,7 @@ TESTS = t00 t01 t02 t03 t04 t05 t06 t07 t08 t09 t10 t11 t12 t13 \
 	t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 \
 	t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39 t40 t41 \
 	t42 t43 t44 t45 t46 t47 t48 t49 t50 t51 t52 t53 t54 t55 \
-	t56 t57 t58 t59 t60 t61 t62
+	t56 t57 t58 t59 t60 t61 t62 t63
 
 XFAIL_TESTS = 
 
@@ -94,6 +95,9 @@ cyclades_LDADD = $(common_ldadd)
 
 ipmipower_SOURCES = ipmipower.c
 ipmipower_LDADD = $(common_ldadd)
+
+redfishpower_SOURCES = redfishpower.c
+redfishpower_LDADD = $(common_ldadd)
 
 openbmc_httppower_SOURCES = openbmc-httppower.c
 openbmc_httppower_LDADD = $(common_ldadd)
