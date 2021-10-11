@@ -90,7 +90,7 @@ void post(CURL *h, char **av)
 {
     char *myurl = NULL;
     char *postdata = NULL;
-    char *url_ptr;
+    char *url_ptr = NULL;
 
     if (av[0] && av[1]) {
         postdata = xstrdup(av[1]);
@@ -102,7 +102,7 @@ void post(CURL *h, char **av)
         url_ptr = url;
     }
 
-    if (postdata && myurl) {
+    if (postdata && url_ptr) {
         curl_easy_setopt(h, CURLOPT_POST, 1);
         curl_easy_setopt(h, CURLOPT_URL, url_ptr);
         curl_easy_setopt(h, CURLOPT_POSTFIELDS, postdata);
@@ -139,7 +139,7 @@ void put(CURL *h, char **av)
     char *myurl = NULL;
     char *putdata = NULL;
     struct put_cb_data pcd;
-    char *url_ptr;
+    char *url_ptr = NULL;
 
     if (av[0] && av[1]) {
         putdata = xstrdup(av[1]);
@@ -151,7 +151,7 @@ void put(CURL *h, char **av)
         url_ptr = url;
     }
 
-    if (putdata && myurl) {
+    if (putdata && url_ptr) {
         curl_easy_setopt(h, CURLOPT_UPLOAD, 1);
         curl_easy_setopt(h, CURLOPT_URL, url_ptr);
         curl_easy_setopt(h, CURLOPT_READFUNCTION, put_read_cb);
@@ -162,7 +162,7 @@ void put(CURL *h, char **av)
         if (curl_easy_perform(h) != 0)
             printf("Error: %s\n", errbuf);
         curl_easy_setopt(h, CURLOPT_URL, "");
-	curl_easy_setopt(h, CURLOPT_UPLOAD, 0);
+        curl_easy_setopt(h, CURLOPT_UPLOAD, 0);
     } else
         printf("Nothing to put!\n");
 
@@ -362,7 +362,7 @@ main(int argc, char *argv[])
 
     shell(h);
 
-    curl_easy_cleanup(h);    	
+    curl_easy_cleanup(h);
     if (userpwd)
         xfree(userpwd);
     if (url)
