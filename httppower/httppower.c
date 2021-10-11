@@ -162,7 +162,7 @@ void put(CURL *h, char **av)
         if (curl_easy_perform(h) != 0)
             printf("Error: %s\n", errbuf);
         curl_easy_setopt(h, CURLOPT_URL, "");
-	curl_easy_setopt(h, CURLOPT_UPLOAD, 0);
+        curl_easy_setopt(h, CURLOPT_UPLOAD, 0);
     } else
         printf("Nothing to put!\n");
 
@@ -362,7 +362,7 @@ main(int argc, char *argv[])
 
     shell(h);
 
-    curl_easy_cleanup(h);    	
+    curl_easy_cleanup(h);
     if (userpwd)
         xfree(userpwd);
     if (url)
