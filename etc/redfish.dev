@@ -27,6 +27,10 @@
 # - A longer term solution is being investigated, see:
 #   https://github.com/chaos/powerman/issues/34.
 #
+# Notes:
+# - Some Redfish systems may not support power cycling
+#   (i.e. ForceRestart)
+#
 specification "redfish" {
 	timeout 	40
 
