@@ -3,7 +3,7 @@
 httppower \- communicate with HTTP based power distribution units
 .SH SYNOPSIS
 .B httppower
-.I "[--url URL] [--header string] [--cookies]"
+.I "[--url URL] [--header string] [--cookies] [--verbose]"
 .LP
 .SH DESCRIPTION
 .B httppower
@@ -21,6 +21,9 @@ Set extra HEADER to use.
 .TP
 .I "-c, --cookies"
 Enable cookies in session.
+.TP
+.I "-v, --verbose"
+Increase output verbosity.
 .SH INTERACTIVE COMMANDS
 The following commands are accepted at the httppower> prompt:
 .TP
