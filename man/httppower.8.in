@@ -3,7 +3,7 @@
 httppower \- communicate with HTTP based power distribution units
 .SH SYNOPSIS
 .B httppower
-.I "[--url URL] [--header string] [--cookies]"
+.I "[--url URL] [--header string] [--cookies] [--verbose]"
 .LP
 .SH DESCRIPTION
 .B httppower
@@ -21,6 +21,9 @@ Set extra HEADER to use.
 .TP
 .I "-c, --cookies"
 Enable cookies in session.
+.TP
+.I "-v, --verbose"
+Increase output verbosity.
 .SH INTERACTIVE COMMANDS
 The following commands are accepted at the httppower> prompt:
 .TP
@@ -69,4 +72,4 @@ This software is open source and distributed under the terms of the GNU GPL.
 .BR powerman.conf (5),
 .BR powerman.dev (5).
 .PP
-\fBhttp://code.google.com/p/powerman\fR
+\fBhttp://github.com/chaos/powerman\fR
