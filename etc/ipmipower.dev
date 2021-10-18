@@ -1,11 +1,18 @@
 # 
 # $Id$
 #
-# This device configuration supports power control via the 
+# This device configuration supports power control via the FreeIPMI
 # 'ipmipower' utility.
 #
-# See powerman-devices(7) for more info on running ipmipower under
-# powerman.
+# Powerman.conf will typically be setup like this:
+#
+#   include "/etc/powerman/ipmipower.dev"
+#   device "ipmipower1" "ipmipower" "/usr/sbin/ipmipower -h pnode1 --wait-until-on --wait-until-off |&"
+#   node "node1" "ipmipower1" "pnode1"
+#
+# If may also be necessary to configure a username and password for
+# ipmipower.  It may be configured on the command line above or
+# (recommended) via the FreeIPMI configuration file.
 #
 # some IPMI devices require some time for the firmware to
 # reload/re-settle itself after a power-off.  A delay of 5 seconds
