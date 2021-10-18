@@ -76,7 +76,7 @@ static char *prog;
 static char *hostname = NULL;
 static int auth_failure = 0;
 
-#define OPTIONS "p:h:A"
+#define OPTIONS "h:A"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
