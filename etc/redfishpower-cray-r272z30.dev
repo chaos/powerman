@@ -1,0 +1,60 @@
+# Support for Redfish Rest Interface
+#
+# Powerman.conf should look something like this:
+#   include "/etc/powerman/redfishpower-cray-r272z30.dev"
+#   device "redfishpower" "redfishpower-cray-r272z30" "/usr/sbin/redfishpower -h pnode[1-2] |&"
+#   node "node1" "redfishpower" "pnode1"
+#   node "node2" "redfishpower" "pnode2"
+#
+# - Set your system's username/password in the login section below
+#
+# - This device specification was tested on a Cray with Gigabyte R272-Z30.
+#
+# - If using a slightly different model or BMC firmware version, its
+#   possible the URI paths will be different.  A good starting point
+#   is to run the following command to discover the correct paths:
+#
+#   curl -s -u USER:PASS -k -X GET https://pnode1/redfish/v1/Systems
+#
+specification "redfishpower-cray-r272z30" {
+	timeout 	60
+
+	script login {
+		expect "redfishpower> "
+		send "auth USER:PASS\n"
+		expect "redfishpower> "
+		send "setheader Content-Type:application/json\n"
+		expect "redfishpower> "
+		send "setstatpath redfish/v1/Systems/Self\n"
+		expect "redfishpower> "
+		send "setonpath redfish/v1/Systems/Self/Actions/ComputerSystem.Reset {\"ResetType\":\"On\"}\n"
+		expect "redfishpower> "
+		send "setoffpath redfish/v1/Systems/Self/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceOff\"}\n"
+		expect "redfishpower> "
+		send "setcyclepath redfish/v1/Systems/Self/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceRestart\"}\n"
+		expect "redfishpower> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status_all {
+		send "stat\n"
+		foreachnode {
+			expect "([^\n:]+): ([^\n]+\n)"
+			setplugstate $1 $2 on="^on\n" off="^off\n"
+		}
+		expect "redfishpower> "
+	}
+	script on_ranged {
+		send "on %s\n"
+		expect "redfishpower> "
+	}
+	script off_ranged {
+		send "off %s\n"
+		expect "redfishpower> "
+	}
+	script cycle_ranged {
+		send "cycle %s\n"
+		expect "redfishpower> "
+	}
+}
