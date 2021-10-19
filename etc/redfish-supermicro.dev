@@ -1,19 +1,21 @@
 # Support for Redfish Rest Interface
 #
 # Powerman.conf should look something like this:
-#   include "/etc/powerman/redfish.dev"
-#   device "redfish1" "redfish" "/usr/sbin/httppower -u https://pnode1 -H Content-Type:application/json |&"
+#   include "/etc/powerman/redfish-supermicro.dev"
+#   device "redfish1" "redfish-supermicro" "/usr/sbin/httppower -u https://pnode1 -H Content-Type:application/json |&"
 #   node "node1" "redfish1" "pnode1"
 #
 # - Set your system's username/password in the login section below
-# - There is a chance the URIs below will not work on your system, as
-#   the exact path is not defined and may technically be different.
-#   Please adjust as needed.  Some simple curl commands can be used to
-#   discover the path, such as:
+#
+# - This device specification was tested on a Supermicro H12DSG-O-CPU.
+#
+# - If using a slightly different model or BMC firmware version, its
+#   possible the URI paths will be different.  A good starting point
+#   is to run the following command to discover the correct paths:
 #
 #   curl -s -u USER:PASS -k -X GET https://pnode1/redfish/v1/Systems/1
 #
-# Tested on Supermicro H12DSG-O-CPU.  Known issues:
+# Known issues:
 # - redfish's power on/off can return success before the operation has
 #   been completed on the node.  To ensure powerman does not return
 #   before the on/off is completed, we add a delay of 30 seconds.
@@ -27,11 +29,7 @@
 # - A longer term solution is being investigated, see:
 #   https://github.com/chaos/powerman/issues/34.
 #
-# Notes:
-# - Some Redfish systems may not support power cycling
-#   (i.e. ForceRestart)
-#
-specification "redfish" {
+specification "redfish-supermicro" {
 	timeout 	40
 
 	script login {
