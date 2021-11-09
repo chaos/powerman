@@ -1,9 +1,50 @@
 name: ci
 
-on: [ workflow_dispatch ]
+on: [ pull_request, push ]
 
 jobs:
-  dummyjob:
-    runs-on: ubuntu-latest
+  build:
+    runs-on: ${{matrix.os}}
+
+    strategy:
+      matrix:
+        cc: [gcc, clang]
+        os: [ubuntu-latest, ubuntu-18.04]
+
     steps:
-    - run: /bin/true
+    - uses: actions/checkout@v2
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+            libsnmp-dev \
+            libwrap0-dev \
+            libcurl4-gnutls-dev \
+            libgenders0-dev \
+            libjansson-dev \
+            automake \
+            autoconf \
+            pkg-config \
+            ${{matrix.cc}}
+    - name: Display configuration
+      run: |
+        echo "C compiler:"
+        ${CC} --version
+      env:
+        CC: ${{matrix.cc}}
+    - name: autogen
+      run: ./autogen.sh
+    - name: configure
+      run: |
+        ./configure \
+           --with-genders \
+           --with-snmppower \
+           --with-httppower \
+           --with-redfishpower \
+           --with-tcp-wrappers
+    - name: make
+      run: make
+    - name: make check
+      run: make check
+    - name: make distcheck
+      run: make distcheck
