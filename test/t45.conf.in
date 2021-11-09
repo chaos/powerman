@@ -1,5 +1,0 @@
-include "@top_srcdir@/etc/phantom.dev"
-device "d0" "phantom" "@top_builddir@/test/phantom -p v3|&"
-device "d1" "phantom" "@top_builddir@/test/phantom -p v4|&"
-node "t0" "d0"
-node "t1" "d1"

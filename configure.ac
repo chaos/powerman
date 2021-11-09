@@ -79,7 +79,6 @@ AC_CHECK_FUNCS( \
 )
 AC_SEARCH_LIBS([bind],[socket])
 AC_SEARCH_LIBS([gethostbyaddr],[nsl])
-AC_CURSES
 AC_FORKPTY
 AC_WRAP
 AC_CHECK_FUNC([poll], AC_DEFINE([HAVE_POLL], [1], [Define if you have poll]))
@@ -159,7 +158,6 @@ AC_CONFIG_FILES( \
   test/t42.conf \
   test/t43.conf \
   test/t44.conf \
-  test/t45.conf \
   test/t46.conf \
   test/t47.conf \
   test/t48.conf \
