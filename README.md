@@ -13,7 +13,7 @@ such as SNMP, IPMI, Insteon, X-10, and VXI-11.
 
 *powerman* can control equipment connected using any combination of the
 above methods and provide unified naming for the equipment and parallel
-execution of control actions. 
+execution of control actions.
 
 #### Origin and license
 
