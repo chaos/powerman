@@ -44,6 +44,7 @@ extern YYSTYPE yylval;
 #include "parse_util.h"
 extern void yyerror();
 
+#define YY_NO_INPUT /* silence compiler warnings about unused input() */
 #define MAX_INCLUDE_DEPTH 10
 static YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
 static int linenum[MAX_INCLUDE_DEPTH];
