@@ -93,16 +93,10 @@ static List line_ptrs;
 
 <lex_str>{ 
     \" {   
-        /* end of string */
-        int len;
-
         BEGIN(INITIAL); 
         *string_buf_ptr = '\0';
-        len = strlen(string_buf);
-        yylval = xmalloc(len + 1);
+        yylval = xstrdup (string_buf);
         list_append(line_ptrs, yylval);
-        strncpy(yylval, string_buf, len);
-        yylval[len] = '\0';
         return TOK_STRING_VAL; 
     }
     "\\a" {
