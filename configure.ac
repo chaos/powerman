@@ -22,8 +22,7 @@ AM_MAINTAINER_MODE([enable])
 ##
 AC_PROG_CC
 if test "$GCC" = yes; then
-  #GCCWARN="-Wall -Werror"
-  GCCWARN="-Wall"
+  GCCWARN="-Wall -Werror"
   AC_SUBST([GCCWARN])
 fi
 AC_PROG_LN_S
