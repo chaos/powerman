@@ -1,5 +1,5 @@
-AM_CFLAGS = @GCCWARN@
-
+AM_CFLAGS = @GCCWARN@ \
+	-Wno-parentheses -Wno-error=parentheses
 AM_CPPFLAGS =
 
 noinst_LIBRARIES = liblsd.a
