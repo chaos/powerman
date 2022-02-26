@@ -172,7 +172,7 @@ prompt_loop(void)
 {
     char buf[128];
     static char plug[4];
-    int authenticated;
+    int authenticated = 0;
 
     strcpy(plug, "Off");
     switch (personality) {
