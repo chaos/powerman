@@ -236,7 +236,7 @@ static void _exit_handler(int signum)
     cli_fini();
     dev_fini();
     conf_fini();
-    err_exit(FALSE, "exiting on signal %d", signum);
+    exit(0);
 }
 
 /*
