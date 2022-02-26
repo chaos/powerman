@@ -273,7 +273,7 @@ _prompt_loop(void)
 {
     int seq, i;
     char buf[128];
-    char prompt[16];
+    char prompt[128];
 
     for (seq = 0;; seq++) {
         snprintf(prompt, sizeof(prompt), "%d vpc> ", seq);
