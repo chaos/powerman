@@ -369,7 +369,7 @@ static char * _next_tok(char *sep, char **str)
     int level = 0;
 
     /* push str past any leading separators */
-    while (**str != '\0' && strchr(sep, **str) != '\0')
+    while (**str != '\0' && strchr(sep, **str) != NULL)
         (*str)++;
 
     if (**str == '\0')
@@ -386,7 +386,7 @@ static char * _next_tok(char *sep, char **str)
     }
     
    /* nullify consecutive separators and push str beyond them */
-    while (**str != '\0' && strchr(sep, **str) != '\0')
+    while (**str != '\0' && strchr(sep, **str) != NULL)
         *(*str)++ = '\0';
 
     return tok;
@@ -1512,7 +1512,7 @@ _hostlist_create_bracketed(const char *hostlist, char *sep, char *r_op)
     }
 
     while ((tok = _next_tok(sep, &str)) != NULL) {
-        strncpy(cur_tok, tok, 1024);
+        strncpy(cur_tok, tok, sizeof (cur_tok) - 1);
 
         if ((p = strchr(tok, '[')) != NULL) {
             char *q, *prefix = tok;

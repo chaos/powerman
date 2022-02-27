@@ -4,6 +4,7 @@
 AC_INIT([powerman],
         m4_esyscmd([git describe --always | awk '/.*/ {printf "%s",$1; exit}']))
 AC_CONFIG_AUX_DIR([config])
+AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_SRCDIR([NEWS])
 AC_CANONICAL_SYSTEM
 X_AC_EXPAND_INSTALL_DIRS
@@ -14,17 +15,23 @@ X_AC_EXPAND_INSTALL_DIRS
 AM_INIT_AUTOMAKE([subdir-objects foreign])
 AM_SILENT_RULES([yes])
 AM_CONFIG_HEADER([config/config.h])
-AM_MAINTAINER_MODE
+AM_MAINTAINER_MODE([enable])
 
 ##
 # Checks for programs.
 ##
 AC_PROG_CC
-if test "$GCC" = yes; then
-  #GCCWARN="-Wall -Werror"
-  GCCWARN="-Wall"
-  AC_SUBST([GCCWARN])
-fi
+AX_COMPILER_VENDOR
+AS_CASE($ax_cv_c_compiler_vendor,
+  [gnu], [
+      WARNING_CFLAGS="-Wall -Werror"
+  ]
+  [clang], [
+      WARNING_CFLAGS="-Wall -Werror -Wno-unknown-warning-option -Wno-error=unknown-warning-option"
+  ]
+)
+AC_SUBST([WARNING_CFLAGS])
+
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AM_PROG_LEX

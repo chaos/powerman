@@ -44,6 +44,7 @@ extern YYSTYPE yylval;
 #include "parse_util.h"
 extern void yyerror();
 
+#define YY_NO_INPUT /* silence compiler warnings about unused input() */
 #define MAX_INCLUDE_DEPTH 10
 static YY_BUFFER_STATE include_stack[MAX_INCLUDE_DEPTH];
 static int linenum[MAX_INCLUDE_DEPTH];
@@ -92,16 +93,10 @@ static List line_ptrs;
 
 <lex_str>{ 
     \" {   
-        /* end of string */
-        int len;
-
         BEGIN(INITIAL); 
         *string_buf_ptr = '\0';
-        len = strlen(string_buf);
-        yylval = xmalloc(len + 1);
+        yylval = xstrdup (string_buf);
         list_append(line_ptrs, yylval);
-        strncpy(yylval, string_buf, len);
-        yylval[len] = '\0';
         return TOK_STRING_VAL; 
     }
     "\\a" {
