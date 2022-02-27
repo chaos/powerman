@@ -126,7 +126,6 @@ AC_CONFIG_FILES( \
   plmpower/Makefile \
   etc/Makefile \
   scripts/Makefile \
-  scripts/powerman \
   scripts/tmpfiles.d/powerman.conf \
   heartbeat/Makefile \
   man/Makefile \
