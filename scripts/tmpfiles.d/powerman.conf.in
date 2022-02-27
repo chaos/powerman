@@ -1,1 +1,1 @@
-d @X_LOCALSTATEDIR@/run/powerman   755 daemon daemon
+d @X_RUNSTATEDIR@/powerman   755 daemon daemon
