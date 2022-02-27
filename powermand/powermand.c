@@ -155,7 +155,7 @@ int main(int argc, char **argv)
     cli_start(use_stdio, one_client);
 
     if (daemonize) {
-        char *rundir = hsprintf("%s/run/powerman", X_LOCALSTATEDIR);
+        char *rundir = hsprintf("%s/powerman", X_RUNSTATEDIR);
         char *pidfile = hsprintf("%s/powermand.pid", rundir);
         int *fds, len;
 
@@ -236,7 +236,7 @@ static void _exit_handler(int signum)
     cli_fini();
     dev_fini();
     conf_fini();
-    err_exit(FALSE, "exiting on signal %d", signum);
+    exit(0);
 }
 
 /*

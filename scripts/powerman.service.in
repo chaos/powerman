@@ -7,8 +7,8 @@ Type=forking
 PrivateTmp=yes
 User=daemon
 Group=daemon
-ExecStart=/usr/sbin/powermand
-PIDFile=/var/run/powerman/powermand.pid
+ExecStart=@X_SBINDIR@/powermand
+PIDFile=@X_RUNSTATEDIR@/powerman/powermand.pid
 
 [Install]
 WantedBy=multi-user.target
