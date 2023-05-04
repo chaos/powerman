@@ -1067,9 +1067,10 @@ void cli_pre_poll(xpollfd_t pfd)
     int i;
 
     for (i = 0; i < listen_fds_len; i++) {
-        if (listen_fds[i] != NO_FD)
+        if (listen_fds[i] != NO_FD) {
             assert(listen_fds[i] >= 0);
             xpollfd_set(pfd, listen_fds[i], XPOLLIN);
+        }
     }
 
     itr = list_iterator_create(cli_clients);
