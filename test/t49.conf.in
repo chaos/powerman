@@ -1,4 +1,4 @@
-listen "0.0.0.0:10103"
+listen "0.0.0.0:10104"
 
 include "@top_srcdir@/etc/vpc.dev"
 device "test0" "vpc" "@top_builddir@/test/vpcd |&"
