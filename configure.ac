@@ -141,7 +141,6 @@ AC_CONFIG_FILES( \
   man/redfishpower.8 \
   man/plmpower.8 \
   man/powermand.8 \
-  man/vpcd.8 \
   test/Makefile \
   test/mcr.conf
   test/sierra.conf \
