@@ -16,7 +16,8 @@ EXTRA_DIST = \
 	DISCLAIMER \
 	examples/powerman_el72.spec \
 	config/tap-driver.sh \
-	scripts/debbuild.sh
+	scripts/debbuild.sh \
+	scripts/install-deps-deb.sh
 
 export DEB_BUILD_OPTIONS ?= nocheck terse
 deb: debian scripts/debbuild.sh
