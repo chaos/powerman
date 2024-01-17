@@ -8,7 +8,7 @@ sbin_PROGRAMS = redfishpower
 
 redfishpower_SOURCES = redfishpower.c
 redfishpower_LDADD = \
-	$(top_builddir)/src/liblsd/liblsd.a \
-	$(top_builddir)/src/libcommon/libcommon.a \
+	$(top_builddir)/src/liblsd/liblsd.la \
+	$(top_builddir)/src/libcommon/libcommon.la \
 	$(LIBCURL) \
 	$(LIBJANSSON)

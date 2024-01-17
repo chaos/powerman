@@ -43,8 +43,8 @@ AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/powerman
 
 common_ldadd = \
-	$(top_builddir)/src/liblsd/liblsd.a \
-	$(top_builddir)/src/libcommon/libcommon.a \
+	$(top_builddir)/src/liblsd/liblsd.la \
+	$(top_builddir)/src/libcommon/libcommon.la \
 	$(LIBFORKPTY)
 
 vpcd_SOURCES = vpcd.c

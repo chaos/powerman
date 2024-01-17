@@ -3,9 +3,9 @@ AM_CFLAGS = @WARNING_CFLAGS@
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/liblsd
 
-noinst_LIBRARIES = libcommon.a
+noinst_LTLIBRARIES = libcommon.la
 
-libcommon_a_SOURCES = \
+libcommon_la_SOURCES = \
 	argv.c \
 	argv.h \
 	debug.c \
@@ -45,12 +45,12 @@ test_argv_t_CPPFLAGS = \
 	-I$(top_srcdir)/src/libtap
 test_argv_t_SOURCES = test/argv.c
 test_argv_t_LDADD = \
-	$(builddir)/libcommon.a \
+	$(builddir)/libcommon.la \
 	$(top_builddir)/src/libtap/libtap.la
 
 test_xregex_t_CPPFLAGS = \
 	-I$(top_srcdir)/src/libtap
 test_xregex_t_SOURCES = test/xregex.c
 test_xregex_t_LDADD = \
-	$(builddir)/libcommon.a \
+	$(builddir)/libcommon.la \
 	$(top_builddir)/src/libtap/libtap.la
