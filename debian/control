@@ -1,0 +1,18 @@
+Source: powerman
+Section: devel
+Priority: optional
+Maintainer: Jim Garlick <garlick.jim@gmail.com>
+Standards-Version: 4.1.2
+Build-Depends:
+  debhelper (>= 10),
+  bison,
+  flex,
+  libsnmp-dev,
+  libcurl4-gnutls-dev,
+  libgenders-dev
+
+Homepage: https://github.com/chaos/powerman
+Package: powerman
+Architecture: any
+Depends: ${shlibs:Depends}, ${misc:Depends}
+Description:  Power Control Utility
