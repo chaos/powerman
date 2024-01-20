@@ -426,6 +426,11 @@ static void power_cmd(List activecmds,
         return;
     }
 
+    if (!postdata) {
+        printf("%s postdata not setup\n", cmd);
+        return;
+    }
+
     if (av[0]) {
         if (!(lhosts = parse_input_hosts(av[0])))
             return;
