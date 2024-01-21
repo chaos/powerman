@@ -20,8 +20,10 @@
 #include <jansson.h>
 #include <unistd.h>
 #include <sys/select.h>
+#include <limits.h>
 #include <sys/time.h>
 #include <ctype.h>
+#include <errno.h>
 #include <assert.h>
 
 #include "xtypes.h"
@@ -46,7 +48,7 @@ static char *cyclepostdata = NULL;
 
 /* in seconds */
 #define MESSAGE_TIMEOUT            10
-#define CMD_TIMEOUT                60
+#define CMD_TIMEOUT_DEFAULT        60
 
 /* Per documentation, wait incremental time then proceed if timeout < 0 */
 #define INCREMENTAL_WAIT           500
@@ -109,6 +111,8 @@ static struct option longopts[] = {
         {0,0,0,0},
 };
 
+static time_t cmd_timeout = CMD_TIMEOUT_DEFAULT;
+
 void help(void)
 {
     printf("Valid commands are:\n");
@@ -118,6 +122,7 @@ void help(void)
     printf("  setonpath url [data]\n");
     printf("  setoffpath url [data]\n");
     printf("  setcyclepath url [data]\n");
+    printf("  settimeout seconds\n");
     printf("  stat [nodes]\n");
     printf("  on [nodes]\n");
     printf("  off [nodes]\n");
@@ -218,7 +223,10 @@ static struct powermsg *powermsg_create(CURLM *mh,
     else
         gettimeofday(&pm->start, NULL);
 
-    pm->timeout.tv_sec = pm->start.tv_sec + CMD_TIMEOUT;
+    if (cmd_timeout > (LONG_MAX - pm->start.tv_sec))
+        err_exit(FALSE, "cmd_timeout overflow");
+
+    pm->timeout.tv_sec = pm->start.tv_sec + cmd_timeout;
     pm->timeout.tv_usec = pm->start.tv_usec;
 
     if (delay_usec) {
@@ -589,6 +597,22 @@ static void setpowerpath(char **av, char **path, char **postdata)
         (*postdata) = xstrdup(av[1]);
 }
 
+static void settimeout(char **av)
+{
+  if (av[0]) {
+      char *endptr;
+      long tmp;
+
+      errno = 0;
+      tmp = strtol (av[0], &endptr, 10);
+      if (errno
+          || endptr[0] != '\0'
+          || tmp <= 0)
+        printf("invalid timeout specified\n");
+      cmd_timeout = tmp;
+  }
+}
+
 static void process_cmd(List activecmds, CURLM *mh, char **av, int *exitflag)
 {
     if (av[0] != NULL) {
@@ -608,6 +632,8 @@ static void process_cmd(List activecmds, CURLM *mh, char **av, int *exitflag)
             setpowerpath(av + 1, &offpath, &offpostdata);
         else if (strcmp(av[0], "setcyclepath") == 0)
             setpowerpath(av + 1, &cyclepath, &cyclepostdata);
+        else if (strcmp(av[0], "settimeout") == 0)
+            settimeout(av + 1);
         else if (strcmp(av[0], "stat") == 0)
             stat_cmd(activecmds, mh, av + 1);
         else if (strcmp(av[0], "on") == 0)

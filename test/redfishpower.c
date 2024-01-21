@@ -220,7 +220,8 @@ _prompt_loop(void)
                    || !strcmp(buf, "setstatpath")
                    || !strcmp(buf, "setonpath")
                    || !strcmp(buf, "setoffpath")
-                   || !strcmp(buf, "setcyclepath")) {
+                   || !strcmp(buf, "setcyclepath")
+                   || !strcmp(buf, "settimeout")) {
             /* do nothing with config, just accept */
             ;
         } else if (!strcmp(buf, "stat")) {

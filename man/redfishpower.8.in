@@ -75,6 +75,9 @@ Set path and optional post data to turn off node.
 .I "setcyclepath <path> [data]"
 Set path and optional post data to turn cycle node.
 .TP
+.I "settimeout <seconds>"
+Set command timeout in seconds.
+.TP
 .I "stat [nodes]"
 Get power status of all nodes or specified subset of nodes.
 .TP
