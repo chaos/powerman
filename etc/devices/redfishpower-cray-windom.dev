@@ -39,6 +39,8 @@ specification "redfishpower-cray-windom-node0" {
 		expect "redfishpower> "
 		send "setoffpath redfish/v1/Systems/Node0/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceOff\"}\n"
 		expect "redfishpower> "
+		send "settimeout 60\n"
+		expect "redfishpower> "
 	}
 	script logout {
 		send "quit\n"
@@ -81,6 +83,8 @@ specification "redfishpower-cray-windom-node1" {
 		send "setonpath redfish/v1/Systems/Node1/Actions/ComputerSystem.Reset {\"ResetType\":\"On\"}\n"
 		expect "redfishpower> "
 		send "setoffpath redfish/v1/Systems/Node1/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceOff\"}\n"
+		expect "redfishpower> "
+		send "settimeout 60\n"
 		expect "redfishpower> "
 	}
 	script logout {

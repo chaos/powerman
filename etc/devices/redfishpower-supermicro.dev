@@ -33,6 +33,8 @@ specification "redfishpower-supermicro" {
 		expect "redfishpower> "
 		send "setcyclepath redfish/v1/Systems/1/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceRestart\"}\n"
 		expect "redfishpower> "
+		send "settimeout 60\n"
+		expect "redfishpower> "
 	}
 	script logout {
 		send "quit\n"
