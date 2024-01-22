@@ -158,7 +158,7 @@ static struct powermsg *powermsg_create(CURLM *mh,
                                         const char *path,
                                         const char *postdata,
                                         struct timeval *start,
-                                        unsigned long delay_usec)
+                                        long int delay_usec)
 {
     struct powermsg *pm = calloc(1, sizeof(*pm));
     struct timeval now;
