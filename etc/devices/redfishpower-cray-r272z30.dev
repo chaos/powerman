@@ -33,6 +33,8 @@ specification "redfishpower-cray-r272z30" {
 		expect "redfishpower> "
 		send "settimeout 60\n"
 		expect "redfishpower> "
+		send "setstatuspollinginterval 1\n"
+		expect "redfishpower> "
 	}
 	script logout {
 		send "quit\n"

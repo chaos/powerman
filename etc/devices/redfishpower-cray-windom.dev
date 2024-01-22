@@ -39,6 +39,8 @@ specification "redfishpower-cray-windom-node0" {
 		expect "redfishpower> "
 		send "settimeout 60\n"
 		expect "redfishpower> "
+		send "setstatuspollinginterval 1\n"
+		expect "redfishpower> "
 	}
 	script logout {
 		send "quit\n"
@@ -83,6 +85,8 @@ specification "redfishpower-cray-windom-node1" {
 		send "setoffpath redfish/v1/Systems/Node1/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceOff\"}\n"
 		expect "redfishpower> "
 		send "settimeout 60\n"
+		expect "redfishpower> "
+		send "setstatuspollinginterval 1\n"
 		expect "redfishpower> "
 	}
 	script logout {
