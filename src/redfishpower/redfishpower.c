@@ -22,6 +22,7 @@
 #include <sys/select.h>
 #include <limits.h>
 #include <sys/time.h>
+#include <limits.h>
 #include <ctype.h>
 #include <errno.h>
 #include <assert.h>
@@ -54,11 +55,13 @@ static char *cyclepostdata = NULL;
 
 /* in usec
  *
- * status polling interval of 1 second may seem long, but testing
- * shows wait ranges from a few seconds to 20 seconds
+ * status polling interval of 1 second may seem long, but testing shows wait ranges
+ * from a few seconds to almost a minute.  Device files should adjust
+ * to longer times for really bad systems.
  */
-#define STATUS_POLLING_INTERVAL  1000000
+#define STATUS_POLLING_INTERVAL_DEFAULT  1000000
 
+#define USEC_IN_SEC              1000000
 #define MS_IN_SEC                1000
 
 struct powermsg {
@@ -111,6 +114,10 @@ static struct option longopts[] = {
 };
 
 static time_t cmd_timeout = CMD_TIMEOUT_DEFAULT;
+/* typically is of type suseconds_t, but has questionable portability,
+ * so use 'long int' instead
+ */
+static long int status_polling_interval = STATUS_POLLING_INTERVAL_DEFAULT;
 
 void help(void)
 {
@@ -122,6 +129,7 @@ void help(void)
     printf("  setoffpath url [data]\n");
     printf("  setcyclepath url [data]\n");
     printf("  settimeout seconds\n");
+    printf("  setstatuspollinginterval seconds\n");
     printf("  stat [nodes]\n");
     printf("  on [nodes]\n");
     printf("  off [nodes]\n");
@@ -501,7 +509,7 @@ static void on_off_process(List delayedcmds, struct powermsg *pm)
                              statpath,
                              NULL,
                              &pm->start,
-                             STATUS_POLLING_INTERVAL);
+                             status_polling_interval);
     Curl_easy_setopt((nextpm->eh, CURLOPT_HTTPGET, 1));
     nextpm->wait_until_on_off = 1;
     if (!list_append(delayedcmds, nextpm))
@@ -612,6 +620,23 @@ static void settimeout(char **av)
   }
 }
 
+static void setstatuspollinginterval(char **av)
+{
+  if (av[0]) {
+      char *endptr;
+      long tmp;
+
+      errno = 0;
+      tmp = strtol (av[0], &endptr, 10);
+      if (errno
+          || endptr[0] != '\0'
+          || tmp <= 0
+          || (tmp > (LONG_MAX / USEC_IN_SEC)))
+        printf("invalid wait until delay specified\n");
+      status_polling_interval = tmp * USEC_IN_SEC;
+  }
+}
+
 static void process_cmd(List activecmds, CURLM *mh, char **av, int *exitflag)
 {
     if (av[0] != NULL) {
@@ -633,6 +658,8 @@ static void process_cmd(List activecmds, CURLM *mh, char **av, int *exitflag)
             setpowerpath(av + 1, &cyclepath, &cyclepostdata);
         else if (strcmp(av[0], "settimeout") == 0)
             settimeout(av + 1);
+        else if (strcmp(av[0], "setstatuspollinginterval") == 0)
+            setstatuspollinginterval(av + 1);
         else if (strcmp(av[0], "stat") == 0)
             stat_cmd(activecmds, mh, av + 1);
         else if (strcmp(av[0], "on") == 0)

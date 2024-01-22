@@ -214,7 +214,8 @@ _prompt_loop(void)
                    || !strcmp(buf, "setonpath")
                    || !strcmp(buf, "setoffpath")
                    || !strcmp(buf, "setcyclepath")
-                   || !strcmp(buf, "settimeout")) {
+                   || !strcmp(buf, "settimeout")
+                   || !strcmp(buf, "setstatuspollinginterval")) {
             /* do nothing with config, just accept */
             ;
         } else if (!strcmp(buf, "stat")) {

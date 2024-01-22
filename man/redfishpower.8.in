@@ -78,6 +78,10 @@ Set path and optional post data to turn cycle node.
 .I "settimeout <seconds>"
 Set command timeout in seconds.
 .TP
+.I "setstatuspollinginterval <seconds>"
+Set status polling interval in seconds.  This is the polling interval
+to determine an on/off command has completed.
+.TP
 .I "stat [nodes]"
 Get power status of all nodes or specified subset of nodes.
 .TP
