@@ -67,7 +67,7 @@ static zhashx_t *test_power_status;
  * status polling interval of 1 second may seem long, but testing
  * shows wait ranges from a few seconds to 20 seconds
  */
-#define STATUS_POLLING_INTERVAL  1000000
+#define STATUS_POLLING_INTERVAL_DEFAULT  1000000
 
 #define MS_IN_SEC                1000
 
@@ -138,6 +138,10 @@ static struct option longopts[] = {
 };
 
 static time_t cmd_timeout = CMD_TIMEOUT_DEFAULT;
+/* typically is of type suseconds_t, but has questionable portability,
+ * so use 'long int' instead
+ */
+static long int status_polling_interval = STATUS_POLLING_INTERVAL_DEFAULT;
 
 void help(void)
 {
@@ -569,7 +573,7 @@ static void send_status_poll(struct powermsg *pm)
                              statpath,
                              NULL,
                              &pm->start,
-                             STATUS_POLLING_INTERVAL,
+                             status_polling_interval,
                              STATE_WAIT_UNTIL_ON_OFF);
     if (!(nextpm->handle = zlistx_add_end(delayedcmds, nextpm)))
         err_exit(true, "zlistx_add_end");
@@ -1134,6 +1138,11 @@ int main(int argc, char *argv[])
             free(hostname);
         }
         hostlist_iterator_destroy(itr);
+
+        /* under test mode we can make the polling interval a lot smaller
+         * lets put it to a millisecond.
+         */
+        status_polling_interval = 1000;
     }
 
     shell(mh);
