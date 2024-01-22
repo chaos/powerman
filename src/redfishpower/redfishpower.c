@@ -492,7 +492,7 @@ static void on_off_process(List delayedcmds, struct powermsg *pm)
     }
 
     /* issue a follow on stat to wait until the on/off is complete.
-     * note that we initial start time of this new command to
+     * note that we set the initial start time of this new command to
      * the original on/off, so we can timeout correctly
      */
     nextpm = powermsg_create(pm->mh,
