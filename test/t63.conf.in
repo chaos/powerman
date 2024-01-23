@@ -1,3 +1,3 @@
-include "@top_srcdir@/etc/ipmipower.dev"
-device "d0" "ipmipower" "@top_builddir@/test/ipmipower -h t[0-15]|&"
+include "@top_srcdir@/etc/redfishpower-cray-r272z30.dev"
+device "d0" "redfishpower-cray-r272z30" "@top_builddir@/test/redfishpower -h t[0-15]|&"
 node "t[0-15]" "d0"

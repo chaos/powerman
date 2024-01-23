@@ -112,7 +112,7 @@ check_DATA = \
 	t35.conf t36.conf t37.conf t38.conf t39.conf t40.conf t41.conf \
 	t42.conf t43.conf t44.conf t46.conf t47.conf t48.conf \
 	t49.conf t50.conf t51.conf t53.conf t54.conf t55.conf t60.conf \
-	t61.conf test4.conf test.conf
+	t61.conf t62.conf t63.conf test4.conf test.conf
 
 EXTRA_DIST = $(TESTS:%=%.exp) t53.dev
 
