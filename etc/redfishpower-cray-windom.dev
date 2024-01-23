@@ -60,9 +60,9 @@ specification "redfishpower-cray-windom-node0" {
 		expect "redfishpower> "
 	}
 	script cycle_ranged {
-		send "on %s\n"
-		expect "redfishpower> "
 		send "off %s\n"
+		expect "redfishpower> "
+		send "on %s\n"
 		expect "redfishpower> "
 	}
 }
@@ -103,9 +103,9 @@ specification "redfishpower-cray-windom-node1" {
 		expect "redfishpower> "
 	}
 	script cycle_ranged {
-		send "on %s\n"
-		expect "redfishpower> "
 		send "off %s\n"
+		expect "redfishpower> "
+		send "on %s\n"
 		expect "redfishpower> "
 	}
 }
