@@ -1,4 +1,4 @@
-# 
+#
 # GreenBlade Subrack
 # APPRO Inc.
 #
@@ -21,7 +21,7 @@ specification "sr5110" {
 		expect "-iSCB> "
 	}
 	script login {
-		delay 0.5 
+		delay 0.5
 		send "\r"
 		expect "-iSCB> "
 	}
@@ -96,7 +96,7 @@ specification "sr5110_gpu" {
 		expect "-iSCB> "
 	}
 	script login {
-		delay 0.5 
+		delay 0.5
 		send "\r"
 		expect "-iSCB> "
 	}
@@ -172,7 +172,7 @@ specification "sr8116" {
 		expect "-iSCB> "
 	}
 	script login {
-		delay 0.5 
+		delay 0.5
 		send "\r"
 		expect "-iSCB> "
 	}
@@ -247,7 +247,7 @@ specification "sr8116_gpu" {
 		expect "-iSCB> "
 	}
 	script login {
-		delay 0.5 
+		delay 0.5
 		send "\r"
 		expect "-iSCB> "
 	}
@@ -322,7 +322,7 @@ specification "sr8104" {
 		expect "-iSCB> "
 	}
 	script login {
-		delay 0.5 
+		delay 0.5
 		send "\r"
 		expect "-iSCB> "
 	}

@@ -10,7 +10,7 @@ common_ldadd = \
 
 powerman_SOURCES = powerman.c
 
-powerman_LDADD = $(common_ldadd) $(LIBGENDERS) $(LIBFORKPTY) 
+powerman_LDADD = $(common_ldadd) $(LIBGENDERS) $(LIBFORKPTY)
 
 pm_SOURCES =
 

@@ -1,5 +1,5 @@
 #
-# Cyclades PM10 
+# Cyclades PM10
 #
 specification "pm10" {
 	timeout 	10

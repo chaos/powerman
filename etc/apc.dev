@@ -1,7 +1,7 @@
 #
 # $Id$
 #
-# APC MasterSwitch Plus 
+# APC MasterSwitch Plus
 #
 # Firmware rev may not be the best indicator of whether you need "apc"
 # or "apcnew" scripts.  We have one data point for "apc":
@@ -9,7 +9,7 @@
 # - Firmware: APP v2.0.0 / AOS v2.5.4
 #
 specification "apc" {
-	timeout 	10  
+	timeout 	10
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
 
@@ -22,7 +22,7 @@ specification "apc" {
 		expect "> "
 		send "1\r\n"  # device manager menu
 		expect "> "
-		send "1\r\n"  # select master switch plus 1 
+		send "1\r\n"  # select master switch plus 1
 		expect "> "
 	}
 	script logout {

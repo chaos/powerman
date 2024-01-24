@@ -23,7 +23,7 @@ specification  "phantom" {
 			send "PT"
 			expect "ok\r"
 		}
-	}		
+	}
 	script off {
 		send "P?"
 		expect "(0|1)\r"
@@ -32,7 +32,7 @@ specification  "phantom" {
 			send "PT"
 			expect "ok\r"
 		}
-	}		
+	}
 	script cycle {
 		send "P?"
 		expect "(0|1)\r"

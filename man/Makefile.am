@@ -7,7 +7,7 @@ pm.1: powerman.1
 	cp powerman.1 $@
 
 CLEANFILES = pm.1
-	
+
 EXTRA_DIST = \
 	powerman.1 \
 	libpowerman.3 \

@@ -1,6 +1,6 @@
 #!/usr/bin/perl
 #
-# Usage: mkconf.pl plugcount 
+# Usage: mkconf.pl plugcount
 #
 # Builds a powerman.conf file for a vpc config for plugcount plugs.
 

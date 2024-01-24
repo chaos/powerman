@@ -6,9 +6,9 @@
 #  device "cartman" "powerman" "cartman.llnl.gov:10101"
 #  node "b[1-4]" "cartman" "b[1-4]"
 #
-# N.B. master powerman.conf must contain the union of all slave 
+# N.B. master powerman.conf must contain the union of all slave
 # powerman.conf plugs, or status_all script will not work.
-# 
+#
 specification "powerman" {
 	timeout 	100.0
 

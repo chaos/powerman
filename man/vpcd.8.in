@@ -31,7 +31,7 @@ Return
 to the initial state.
 .TP
 .I "stat PLUG|*"
-Show the power status of PLUG.  
+Show the power status of PLUG.
 If PLUG is ``*'', perform this action on all plugs.
 .TP
 .I "beacon PLUG|*"

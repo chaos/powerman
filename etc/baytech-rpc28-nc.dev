@@ -1,13 +1,13 @@
 #
 # $Id$
-# 
-# Baytech RPC28-30NC 
+#
+# Baytech RPC28-30NC
 #
 # Default config, then disable confirmation, and disable status menu.
 #
 # Firmware version: F3.01 (C) 2000
 #
-# Maybe it is accumulated serial noise or some other issue, but this 
+# Maybe it is accumulated serial noise or some other issue, but this
 # model seems to require a little handshake:
 #		send "\r\n"
 #		expect ".*RPC-28[A]*>"
@@ -16,7 +16,7 @@
 specification "baytech-rpc28-nc" {
 	timeout 	10   # about 5 sec for cycle command
 
-	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" 
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11"
 		    "12" "13" "14" "15" "16" "17" "18" "19" "20" }
 
 	script login {

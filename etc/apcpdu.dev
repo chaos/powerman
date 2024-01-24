@@ -6,13 +6,13 @@
 # Should support the following 24-plug APC Switched Rack PDU models:
 #   AP7930, AP7932
 #   AP7940, AP7941
-#   AP7960, AP7961, AP7968, AP7990, AP7991, AP7998 
+#   AP7960, AP7961, AP7968, AP7990, AP7991, AP7998
 #   AP7951, AP7952, AP7953, AP7954
 #
 # - Firmware: APP v2.6.5 / AOS v2.6.4
 #
 specification "apcpdu" {
-	timeout 	10  
+	timeout 	10
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" "11" "12" "13" "14" "15" "16" "17" "18" "19" "20" "21" "22" "23" "24" }
 

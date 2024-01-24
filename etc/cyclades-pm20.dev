@@ -1,5 +1,5 @@
 #
-# Cyclades PM20 
+# Cyclades PM20
 #
 specification "pm20" {
 	timeout 	25

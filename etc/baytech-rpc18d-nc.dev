@@ -1,13 +1,13 @@
 #
 # $Id: baytech-rpc18d-nc.dev 964 2008-06-13 13:40:47Z garlick $
-# 
-# Baytech RPC18D-NC 
+#
+# Baytech RPC18D-NC
 #
 # Default config, then disable confirmation, and disable status menu.
 #
 # Firmware version: F3.01 (C) 2000
 #
-# Maybe it is accumulated serial noise or some other issue, but this 
+# Maybe it is accumulated serial noise or some other issue, but this
 # model seems to require a little handshake:
 #		send "\r\n"
 #		expect ".*RPC-18>"

@@ -1,11 +1,11 @@
 #
 # Measurement Computing Corp. CB-7050 digital I/O module
 #
-# This is "laboratory quality" power control as it requires wires 
-# connected directly to motherboards and some hand tuning of delay values.  
+# This is "laboratory quality" power control as it requires wires
+# connected directly to motherboards and some hand tuning of delay values.
 #
 # Ref: CB-7000 DIO User's Manual
-# 
+#
 # Notes:
 # - Important note: CB-7050 data lines are not isolated and share a common
 #   ground.  Beware of ground loops!
@@ -62,7 +62,7 @@ specification  "cb7050" {
 			send "#01A%s00\r"	# 0xA0 | bitnum (clear)
 			expect ">\r"
 		}
-	}		
+	}
 	script off {
 		send "$016\r"
 		expect "!..(.)(.)00\r"
@@ -81,8 +81,8 @@ specification  "cb7050" {
 			send "#01A%s00\r"	# 0xA0 | bitnum (clear)
 			expect ">\r"
 		}
-	}		
-# XXX Evil hack - short init* to ground on the module and run pm -f to set 
+	}
+# XXX Evil hack - short init* to ground on the module and run pm -f to set
 # baud rate to 115000 (0A).  If beacon isn't shorted, this will just time out.
 # Power cycle the module after the change.
 	script beacon_on {
@@ -90,7 +90,7 @@ specification  "cb7050" {
 		expect "!01\r"
 	}
 #
-# TODO: add support for a CB-7018P at address 02 wired to eight 
+# TODO: add support for a CB-7018P at address 02 wired to eight
 # thermocouples for status_temp support?
 #
 }

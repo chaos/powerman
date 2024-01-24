@@ -1,4 +1,4 @@
-# 
+#
 # GreenBlade Subrack
 # APPRO Inc.
 #
@@ -20,7 +20,7 @@ specification "iscb-gb" {
 	}
 	script login {
 		send "\r\n"
-		delay 0.5 
+		delay 0.5
 		expect "Password: "
 		send "111111\r\n"
 		expect "iSCB-[0-9]+:[0-9]> "
@@ -110,7 +110,7 @@ specification "iscb-gbgpu" {
 	}
 	script login {
 		send "\r\n"
-		delay 0.5 
+		delay 0.5
 		expect "Password: "
 		send "111111\r\n"
 		expect "iSCB-[0-9]+:[0-9]> "
@@ -200,7 +200,7 @@ specification "iscb-hybrid" {
 	}
 	script login {
 		send "\r\n"
-		delay 0.5 
+		delay 0.5
 		expect "Password: "
 		send "111111\r\n"
 		expect "iSCB-[0-9]+:[0-9]> "

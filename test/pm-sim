@@ -20,11 +20,11 @@ topt=0
 if [ -n "PM_SIMSTATE" ]; then
 	[ -r $PM_SIMSTATE ] && source ${PM_SIMSTATE}
 fi
-    
+
 PATH=/usr/bin:/bin:$PATH
-        
+
 die()
-{   
+{
     echo "${prog}: $1" >&2
     exit 1
 }

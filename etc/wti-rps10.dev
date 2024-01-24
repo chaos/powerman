@@ -9,7 +9,7 @@
 # Format of commands is ^X^X^B^X^X^B^X^XPC\r
 #   where P is port number (0-9) and C is command (0,1,T,?)
 #
-# N.B. The 0.5 sec delays mentioned in the documentation don't seem to be 
+# N.B. The 0.5 sec delays mentioned in the documentation don't seem to be
 # needed on my setup...
 #
 specification  "wti-rps10" {

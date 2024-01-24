@@ -1,8 +1,8 @@
 On running 'make check':
 
 The test methodology here is to run the powerman daemon as a child
-of the powerman client, connected via pty.   The powerman daemon in 
-turn spawns copies of 'vpcd' (virtual power control device), connected 
+of the powerman client, connected via pty.   The powerman daemon in
+turn spawns copies of 'vpcd' (virtual power control device), connected
 via ptys.  Each test starts a fresh powerman+powermand+vpcd(s) so no
 state is preserved between tests.  Root privilage or available well known
 ports are not required to run these tests.
@@ -34,7 +34,7 @@ t09
 	of data returned by device.
 	pm --telemetry --query-all
 t10
-	Check handling of large volume (min < size < max) 
+	Check handling of large volume (min < size < max)
 	of data returned by device.
 	pm --telemetry --query-all
 t11
@@ -43,7 +43,7 @@ t11
            --cycle t5 --query-all
 t12
 	Check handling of "dangling" target args.
-	pm --query t1 t2 
+	pm --query t1 t2
 t13
 	Check beacon options:
 	pm --beacon-all --flash t[13-15] --beacon-all --unflash t13 \
@@ -59,11 +59,11 @@ t16
 	pm --list \
            --device-all --query t1 --device-all --query t1 --device test0
 t17
-	Check handling of large volume (max < size) 
+	Check handling of large volume (max < size)
 	of data returned by device.
 	pm --telemetry --query-all
 t18
-	Check handling of large volume (2*max < size) 
+	Check handling of large volume (2*max < size)
 	of data returned by device.
 	pm --telemetry --query-all
 t19

@@ -3,20 +3,20 @@
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton (uselton2@llnl.gov>
  *  UCRL-CODE-2002-008.
- *  
+ *
  *  This file is part of PowerMan, a remote power management program.
  *  For details, see <http://www.llnl.gov/linux/powerman/>.
- *  
+ *
  *  PowerMan is free software; you can redistribute it and/or modify it under
  *  the terms of the GNU General Public License as published by the Free
  *  Software Foundation; either version 2 of the License, or (at your option)
  *  any later version.
- *  
- *  PowerMan is distributed in the hope that it will be useful, but WITHOUT 
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
+ *
+ *  PowerMan is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  *  for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License along
  *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
@@ -90,11 +90,11 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr);
 static void makeAlias(char *namestr, char *hostsstr);
 static Stmt *makeStmt(PreStmt *p);
 static void destroyStmt(Stmt *stmt);
-static void makeDevice(char *devstr, char *specstr, char *hoststr, 
+static void makeDevice(char *devstr, char *specstr, char *hoststr,
                         char *portstr);
 
 /* device config */
-static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr, 
+static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
                       char *mp1str, char *mp2str, List prestmts, List interps);
 static void destroyPreStmt(PreStmt *p);
 static Spec *makeSpec(char *name);
@@ -127,9 +127,9 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 %token TOK_STATUS_TEMP TOK_STATUS_TEMP_ALL
 %token TOK_STATUS_BEACON TOK_STATUS_BEACON_ALL
 %token TOK_BEACON_ON TOK_BEACON_ON_RANGED TOK_BEACON_OFF TOK_BEACON_OFF_RANGED
-%token TOK_ON TOK_ON_RANGED TOK_ON_ALL TOK_OFF TOK_OFF_RANGED TOK_OFF_ALL 
-%token TOK_CYCLE TOK_CYCLE_RANGED TOK_CYCLE_ALL 
-%token TOK_RESET TOK_RESET_RANGED TOK_RESET_ALL TOK_PING TOK_SPEC 
+%token TOK_ON TOK_ON_RANGED TOK_ON_ALL TOK_OFF TOK_OFF_RANGED TOK_OFF_ALL
+%token TOK_CYCLE TOK_CYCLE_RANGED TOK_CYCLE_ALL
+%token TOK_RESET TOK_RESET_RANGED TOK_RESET_ALL TOK_PING TOK_SPEC
 
 /* script statements */
 %token TOK_EXPECT TOK_SETPLUGSTATE TOK_SEND TOK_DELAY
@@ -138,10 +138,10 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 /* other device configuration stuff */
 %token TOK_OFF_STRING TOK_ON_STRING
 %token TOK_MAX_PLUG_COUNT TOK_TIMEOUT TOK_DEV_TIMEOUT TOK_PING_PERIOD
-%token TOK_PLUG_NAME TOK_SCRIPT 
+%token TOK_PLUG_NAME TOK_SCRIPT
 
 /* powerman.conf stuff */
-%token TOK_DEVICE TOK_NODE TOK_ALIAS TOK_TCP_WRAPPERS TOK_LISTEN TOK_PLUG_LOG_LEVEL 
+%token TOK_DEVICE TOK_NODE TOK_ALIAS TOK_TCP_WRAPPERS TOK_LISTEN TOK_PLUG_LOG_LEVEL
 
 /* general */
 %token TOK_MATCHPOS TOK_STRING_VAL TOK_NUMERIC_VAL TOK_YES TOK_NO
@@ -161,31 +161,31 @@ config_list     : config_list config_item
                 |
 ;
 config_item     : listen
-                | TCP_wrappers 
+                | TCP_wrappers
                 | plug_log_level
                 | device
                 | node
                 | alias
                 | spec
 ;
-TCP_wrappers    : TOK_TCP_WRAPPERS         { 
-    _warnmsg("'tcpwrappers' without yes|no"); 
+TCP_wrappers    : TOK_TCP_WRAPPERS         {
+    _warnmsg("'tcpwrappers' without yes|no");
     conf_set_use_tcp_wrappers(TRUE);
-}               | TOK_TCP_WRAPPERS TOK_YES { 
+}               | TOK_TCP_WRAPPERS TOK_YES {
     conf_set_use_tcp_wrappers(TRUE);
-}               | TOK_TCP_WRAPPERS TOK_NO  { 
+}               | TOK_TCP_WRAPPERS TOK_NO  {
     conf_set_use_tcp_wrappers(FALSE);
 }
 ;
-plug_log_level          : TOK_PLUG_LOG_LEVEL TOK_STRING_VAL { 
+plug_log_level          : TOK_PLUG_LOG_LEVEL TOK_STRING_VAL {
     conf_set_plug_log_level($2);
 }
 ;
-listen          : TOK_LISTEN TOK_STRING_VAL { 
+listen          : TOK_LISTEN TOK_STRING_VAL {
     conf_add_listen($2);
 }
 ;
-device          : TOK_DEVICE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL 
+device          : TOK_DEVICE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL
                   TOK_STRING_VAL {
     makeDevice($2, $3, $4, $5);
 }               | TOK_DEVICE TOK_STRING_VAL TOK_STRING_VAL TOK_STRING_VAL {
@@ -205,13 +205,13 @@ alias           : TOK_ALIAS TOK_STRING_VAL TOK_STRING_VAL {
 /**************************************************************/
 /* specifications                                             */
 /**************************************************************/
-spec            : TOK_SPEC TOK_STRING_VAL TOK_BEGIN 
-                  spec_item_list 
+spec            : TOK_SPEC TOK_STRING_VAL TOK_BEGIN
+                  spec_item_list
                   TOK_END {
     makeSpec($2);
 }
 ;
-spec_item_list  : spec_item_list spec_item 
+spec_item_list  : spec_item_list spec_item
                 | spec_item
 ;
 spec_item       : spec_timeout
@@ -228,11 +228,11 @@ spec_ping_period: TOK_PING_PERIOD TOK_NUMERIC_VAL {
 }
 ;
 string_list     : string_list TOK_STRING_VAL {
-    list_append((List)$1, xstrdup($2)); 
-    $$ = $1; 
+    list_append((List)$1, xstrdup($2));
+    $$ = $1;
 }               | TOK_STRING_VAL {
     $$ = (char *)list_create((ListDelF)xfree);
-    list_append((List)$$, xstrdup($1)); 
+    list_append((List)$$, xstrdup($1));
 }
 ;
 spec_plug_list  : TOK_PLUG_NAME TOK_BEGIN string_list TOK_END {
@@ -241,8 +241,8 @@ spec_plug_list  : TOK_PLUG_NAME TOK_BEGIN string_list TOK_END {
     current_spec.plugs = (List)$3;
 }
 ;
-spec_script_list  : spec_script_list spec_script 
-                | spec_script 
+spec_script_list  : spec_script_list spec_script
+                | spec_script
 ;
 spec_script     : TOK_SCRIPT TOK_LOGIN stmt_block {
     makeScript(PM_LOG_IN, (List)$3);
@@ -300,12 +300,12 @@ stmt_block      : TOK_BEGIN stmt_list TOK_END {
     $$ = $2;
 }
 ;
-stmt_list       : stmt_list stmt { 
-    list_append((List)$1, $2); 
-    $$ = $1; 
-}               | stmt { 
+stmt_list       : stmt_list stmt {
+    list_append((List)$1, $2);
+    $$ = $1;
+}               | stmt {
     $$ = (char *)list_create((ListDelF)destroyPreStmt);
-    list_append((List)$$, $1); 
+    list_append((List)$$, $1);
 }
 ;
 stmt            : TOK_EXPECT TOK_STRING_VAL {
@@ -328,25 +328,25 @@ stmt            : TOK_EXPECT TOK_STRING_VAL {
 }               | TOK_SETPLUGSTATE regmatch interp_list {
     $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL,$2,NULL,(List)$3);
 }               | TOK_FOREACHNODE stmt_block {
-    $$ = (char *)makePreStmt(STMT_FOREACHNODE, NULL, NULL, NULL, NULL, 
+    $$ = (char *)makePreStmt(STMT_FOREACHNODE, NULL, NULL, NULL, NULL,
                              (List)$2, NULL);
 }               | TOK_FOREACHPLUG stmt_block {
-    $$ = (char *)makePreStmt(STMT_FOREACHPLUG, NULL, NULL, NULL, NULL, 
+    $$ = (char *)makePreStmt(STMT_FOREACHPLUG, NULL, NULL, NULL, NULL,
                              (List)$2, NULL);
 }               | TOK_IFOFF stmt_block {
-    $$ = (char *)makePreStmt(STMT_IFOFF, NULL, NULL, NULL, NULL, 
+    $$ = (char *)makePreStmt(STMT_IFOFF, NULL, NULL, NULL, NULL,
                              (List)$2, NULL);
 }               | TOK_IFON stmt_block {
-    $$ = (char *)makePreStmt(STMT_IFON, NULL, NULL, NULL, NULL, 
+    $$ = (char *)makePreStmt(STMT_IFON, NULL, NULL, NULL, NULL,
                              (List)$2, NULL);
 }
 ;
-interp_list       : interp_list interp { 
-    list_append((List)$1, $2); 
-    $$ = $1; 
-}               | interp { 
+interp_list       : interp_list interp {
+    list_append((List)$1, $2);
+    $$ = $1;
+}               | interp {
     $$ = (char *)list_create((ListDelF)destroyInterp);
-    list_append((List)$$, $1); 
+    list_append((List)$$, $1);
 }
 ;
 interp            : TOK_ON TOK_EQUALS TOK_STRING_VAL {
@@ -390,11 +390,11 @@ int parse_config_file (char *filename)
     list_destroy(device_specs);
 
     return 0;
-} 
+}
 
 /* makePreStmt(type, str, tv, mp1(plug), mp2(stat/node), prestmts, interps */
-static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr, 
-                      char *mp1str, char *mp2str, List prestmts, 
+static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
+                      char *mp1str, char *mp2str, List prestmts,
                       List interps)
 {
     PreStmt *new;
@@ -505,8 +505,8 @@ static Interp *makeInterp(InterpState state, char *str)
 {
     Interp *new = (Interp *)xmalloc(sizeof(Interp));
 
-    new->magic = INTERP_MAGIC; 
-    new->str = xstrdup(str); 
+    new->magic = INTERP_MAGIC;
+    new->str = xstrdup(str);
     new->re = xregex_create();
     new->state = state;
 
@@ -590,7 +590,7 @@ static Stmt *makeStmt(PreStmt *p)
         stmt->u.send.fmt = xstrdup(p->str);
         break;
     case STMT_EXPECT:
-        stmt->u.expect.exp = xregex_create(); 
+        stmt->u.expect.exp = xregex_create();
         xregex_compile(stmt->u.expect.exp, p->str, TRUE);
         break;
     case STMT_SETPLUGSTATE:
@@ -645,7 +645,7 @@ static void _parse_hoststr(Device *dev, char *hoststr, char *flagstr)
     } else if (hoststr[0] == '/') {
         struct stat sb;
 
-        if (stat(hoststr, &sb) == -1 || (!(sb.st_mode & S_IFCHR))) 
+        if (stat(hoststr, &sb) == -1 || (!(sb.st_mode & S_IFCHR)))
             _errormsg("serial device not found or not a char special file");
 
         dev->data           = serial_create(hoststr, flagstr);
@@ -677,7 +677,7 @@ static void _parse_hoststr(Device *dev, char *hoststr, char *flagstr)
     }
 }
 
-static void makeDevice(char *devstr, char *specstr, char *hoststr, 
+static void makeDevice(char *devstr, char *specstr, char *hoststr,
                         char *flagstr)
 {
     ListIterator itr;
@@ -687,7 +687,7 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
 
     /* find that spec */
     spec = findSpec(specstr);
-    if ( spec == NULL ) 
+    if ( spec == NULL )
         _errormsg("device specification not found");
 
     /* make the Device */
@@ -733,7 +733,7 @@ static void makeNode(char *nodestr, char *devstr, char *plugstr)
 {
     Device *dev = dev_findbyname(devstr);
 
-    if (dev == NULL) 
+    if (dev == NULL)
         _errormsg("unknown device");
 
     /* plugstr can be NULL - see comment in pluglist.h */

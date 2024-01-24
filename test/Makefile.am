@@ -23,7 +23,7 @@ dist_check_SCRIPTS = \
 	mkconf.pl \
 	$(TESTS)
 
-TESTS_ENVIRONMENT = env 
+TESTS_ENVIRONMENT = env
 TESTS_ENVIRONMENT += "PATH_POWERMAN=$(top_builddir)/powerman/powerman"
 TESTS_ENVIRONMENT += "PATH_POWERMAND=$(top_builddir)/powermand/powermand"
 TESTS_ENVIRONMENT += "PATH_ETC=$(top_builddir)/etc"
@@ -37,7 +37,7 @@ TESTS = t00 t01 t02 t03 t04 t05 t06 t07 t08 t09 t10 t11 t12 t13 \
 	t42 t43 t44 t46 t47 t48 t49 t50 t51 t52 t53 t54 t55 \
 	t56 t57 t58 t59 t60 t61 t62 t63
 
-XFAIL_TESTS = 
+XFAIL_TESTS =
 
 CLEANFILES = *.out *.err *.diff
 

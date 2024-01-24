@@ -4,10 +4,10 @@
 powerman.conf \- configuration file for PowerMan
 
 .SH DESCRIPTION
-The powerman.conf file typically includes one or more of the remote power 
-controller (RPC) device files provided in the /etc/powerman directory; 
-sets a few global options; 
-instantiates RPC devices with unique names, hostnames, and ports;  
+The powerman.conf file typically includes one or more of the remote power
+controller (RPC) device files provided in the /etc/powerman directory;
+sets a few global options;
+instantiates RPC devices with unique names, hostnames, and ports;
 and maps node names to RPC's and plug numbers.
 .LP
 Network-attached RPC's are instantiated with device lines of the form:
@@ -19,8 +19,8 @@ Serial-attached RPC's are instantiated with device lines of the form:
 device "name" "type" "special file" "flags"
 .LP
 where special file is the full path to a tty device, and flags is a serial
-parameter specification in a form similar to that used by lilo, e.g. 
-"9600,8n1".  RPC's that are accessed via coprocesses are instantiated 
+parameter specification in a form similar to that used by lilo, e.g.
+"9600,8n1".  RPC's that are accessed via coprocesses are instantiated
 as follows:
 .IP
 device "name" "type" "process |&"
