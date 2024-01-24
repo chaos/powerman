@@ -7,8 +7,8 @@
 #    v3.02
 # Assumes:
 # 1. password: "wti" (/g general params, 1 system passwd)
-# 3. command confirmation: off (/g general params, 8 command confirmation)
-# 4. disconnect timeout: set to max (30 min)
+# 2. command confirmation: off (/g general params, 8 command confirmation)
+# 3. disconnect timeout: set to max (30 min)
 # Note: prompt is not returned until device is ready to accept another command
 #
 specification "wti" {
