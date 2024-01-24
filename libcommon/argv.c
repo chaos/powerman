@@ -58,7 +58,7 @@ static char *_nextargv(char **strp, char *ignore)
     return cpy;
 }
 
-/* return number of space seperated words in str */
+/* return number of space separated words in str */
 static int _sizeargv(char *str, char *ignore)
 {
     int count = 0;

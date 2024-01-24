@@ -27,7 +27,7 @@
 #include "config.h"
 #endif
 #define YYSTYPE char *  /*  The generic type returned by all parse matches */
-#undef YYDEBUG          /* no debug code plese */
+#undef YYDEBUG          /* no debug code please */
 #include <sys/stat.h>
 #include <errno.h>
 #include <string.h>

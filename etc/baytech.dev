@@ -10,7 +10,7 @@
 # 1. command confirmation : disabled (3/configuration, 6/outlets, 2/...)
 # 2. admin account password : "baytech" (2/manage users, 2/admin, 1/...)
 # 3. net: prompt for password : enabled (3/configuration, 5/access, 2/...)
-# Note: prompt is not returned until device is ready to accept another commmand
+# Note: prompt is not returned until device is ready to accept another command
 #
 specification "baytech" {
 	timeout 	10   # about 5 sec for cycle command

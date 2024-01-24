@@ -10,7 +10,7 @@
 #
 # Note:
 #   Type ";;;;;" to access "network interface module".
-#   Prompt is not returned until device is ready to accept another commmand.
+#   Prompt is not returned until device is ready to accept another command.
 #
 # Assumes:
 #   Command confirmation : disabled

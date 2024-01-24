@@ -121,7 +121,7 @@ Server responded with ``parse error''.
 Server responded with ``command too long''.
 .TP
 .B PM_EINTERNAL
-Server responed with ``internal error''.
+Server responded with ``internal error''.
 .TP
 .B PM_EHOSTLIST
 Server responded with ``hostlist error''.

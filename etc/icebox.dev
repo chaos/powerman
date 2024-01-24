@@ -4,7 +4,7 @@
 # Linux Networx ICE box firmware version 2.x on port 1010.
 #
 specification "icebox" {
-	timeout 	20 # accomodate 14 sec plus "cycle *" time */
+	timeout 	20 # accommodate 14 sec plus "cycle *" time */
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" "10" }
 

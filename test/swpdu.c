@@ -112,7 +112,7 @@ _prompt_loop(void)
         plug[i] = 0;
     }
 
-    /* Process comands.
+    /* Process commands.
      */
     while (1) {
         if (xreadline("", buf, sizeof(buf)) == NULL)

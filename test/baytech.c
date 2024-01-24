@@ -256,7 +256,7 @@ _prompt_loop_rpc28_nc(void)
                    plug[8], plug[9], plug[10], plug[11],
                    plug[12], plug[13], plug[14], plug[15],
                    plug[16], plug[17], plug[18], plug[19]);
-/* NOTE: we only suport one plug at a time or all for on,off,reboot */
+/* NOTE: we only support one plug at a time or all for on,off,reboot */
         } else if (sscanf(buf, "on %d", &i) == 1) {
             if (i >= plug_origin && i < num_plugs + plug_origin)
                 strcpy(plug[i - plug_origin], "On ");
@@ -442,7 +442,7 @@ _prompt_loop_rpc3_de(void)
             printf(RPC3_DE_STATUS,
                    plug[0], plug[1], plug[2], plug[3],
                    plug[4], plug[5], plug[6], plug[7]);
-/* NOTE: we only suport one plug at a time or all for on,off,reboot */
+/* NOTE: we only support one plug at a time or all for on,off,reboot */
         } else if (sscanf(buf, "on %d", &i) == 1) {
             if (i >= plug_origin && i < num_plugs + plug_origin)
                 strcpy(plug[i - plug_origin], "On ");
@@ -594,7 +594,7 @@ _prompt_loop_rpc3_nc(void)
             printf(RPC3_NC_STATUS,
                    plug[0], plug[1], plug[2], plug[3],
                    plug[4], plug[5], plug[6], plug[7]);
-/* NOTE: we only suport one plug at a time or all for on,off,reboot */
+/* NOTE: we only support one plug at a time or all for on,off,reboot */
         } else if (sscanf(buf, "on %d", &i) == 1) {
             if (i >= plug_origin && i < num_plugs + plug_origin)
                 strcpy(plug[i - plug_origin], "On ");

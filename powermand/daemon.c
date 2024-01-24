@@ -89,7 +89,7 @@ void daemon_init(int *skipfds, int skipfdslen, char *rundir, char *pidfile,
     /* clear our file mode creation mask */
     umask(0022);
 
-    /* craete pidfile */
+    /* create pidfile */
     (void)unlink(pidfile);
     if (!(fp = fopen(pidfile, "w")))
         err_exit(TRUE, "fopen %s", pidfile);

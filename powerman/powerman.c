@@ -548,7 +548,7 @@ static int _connect_to_server_tcp(char *host, char *port)
 
 /* Return true if response should be suppressed.
  */
-static bool _supress(int num)
+static bool _suppress(int num)
 {
     if (strtol(CP_RSP_QRY_COMPLETE, NULL, 10) == num)
         return TRUE;
@@ -560,7 +560,7 @@ static bool _supress(int num)
 }
 
 /* Get a line from the socket and display on stdout.
- * Return the numerical portion of the repsonse.
+ * Return the numerical portion of the response.
  */
 static int _process_line(int fd)
 {
@@ -571,7 +571,7 @@ static int _process_line(int fd)
     if (num == LONG_MIN || num == LONG_MAX)
         num = -1;
     if (strlen(buf) > 4) {
-        if (!_supress(num))
+        if (!_suppress(num))
             printf("%s\n", buf + 4);
     } else
         err_exit(FALSE, "unexpected response from server");

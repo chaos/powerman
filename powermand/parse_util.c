@@ -138,7 +138,7 @@ static bool _validate_config(void)
             err_exit(FALSE, "hostlist_iterator_create failed");
         while ((host = hostlist_next(hitr)) != NULL) {
             if (!conf_node_exists(host)) {
-                err(FALSE, "alias '%s' references nonexistant node '%s'",
+                err(FALSE, "alias '%s' references nonexistent node '%s'",
                         a->name, host);
                 valid = FALSE;
                 free(host);

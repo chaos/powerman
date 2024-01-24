@@ -179,7 +179,7 @@ _prompt_loop(void)
             printf(V3_ERROR_AUTH);
     }
 
-    /* Process comands.
+    /* Process commands.
      */
     while (logged_in) {
         if (xreadline("", buf, sizeof(buf)) == NULL)

@@ -53,7 +53,7 @@
 #     device "name" "type" "host:port"
 # - Serial-attached devices use the form
 #     device "name" "type" "special file" "flags"
-#   where "flags" specifies baud and parms such as "9600,8n1"
+#   where "flags" specifies baud and params such as "9600,8n1"
 # - Devices that are accessed via coprocesses use the form
 #     device "name" "type" "executable-path [args...] |&"
 # - The "name" field should be unique, and will be referenced in node defs.
