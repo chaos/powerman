@@ -3,7 +3,7 @@ AC_DEFUN([AC_RUNAS],
     RUN_AS_USER="daemon"
     AC_MSG_CHECKING(user to run as)
     AC_ARG_WITH(user,
-    AC_HELP_STRING([--with-user=username], [user for powerman daemon (daemon)]),
+    AS_HELP_STRING([--with-user=username], [user for powerman daemon (daemon)]),
     [       case "${withval}" in
             yes|no)
                     ;;

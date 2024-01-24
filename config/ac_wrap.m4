@@ -8,7 +8,7 @@
 AC_DEFUN([AC_WRAP],
 [
   AC_ARG_WITH([tcp-wrappers],
-    AC_HELP_STRING([--with-tcp-wrappers], [Build with tcp wrappers support]))
+    AS_HELP_STRING([--with-tcp-wrappers], [Build with tcp wrappers support]))
   AS_IF([test "x$with_tcp_wrappers" = "xyes"], [
     AC_CHECK_HEADERS([tcpd.h])
     X_AC_CHECK_COND_LIB([wrap], [hosts_ctl])

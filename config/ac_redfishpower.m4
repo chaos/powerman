@@ -5,7 +5,7 @@
 AC_DEFUN([AC_REDFISHPOWER],
 [
   AC_ARG_WITH([redfishpower],
-    AC_HELP_STRING([--with-redfishpower], [Build redfishpower executable]))
+    AS_HELP_STRING([--with-redfishpower], [Build redfishpower executable]))
   AS_IF([test "x$with_redfishpower" = "xyes"], [
     AC_CHECK_HEADERS([curl/curl.h])
     X_AC_CHECK_COND_LIB([curl], [curl_multi_perform])
