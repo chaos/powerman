@@ -10,7 +10,7 @@
 #   device "ipmipower1" "ipmipower" "/usr/sbin/ipmipower -h pnode1 --wait-until-on --wait-until-off |&"
 #   node "node1" "ipmipower1" "pnode1"
 #
-# If may also be necessary to configure a username and password for
+# It may also be necessary to configure a username and password for
 # ipmipower.  It may be configured on the command line above or
 # (recommended) via the FreeIPMI configuration file.
 #
