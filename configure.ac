@@ -45,7 +45,11 @@ AC_SUBST([WARNING_CFLAGS])
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
 AC_PROG_LEX([noyywrap])
+AS_IF([test "x$LEX" = "x:"],AC_MSG_ERROR([could not find flex]),[])
 AC_PROG_YACC
+# AC_PROG_YACC sets YACC=yacc when nothing is found, even yacc
+# Just assume bison is the preferred compiler-compiler and call yacc a failure
+AS_IF([test "x$YACC" = "xyacc"],AC_MSG_ERROR([could not find bison]),[])
 AM_CONDITIONAL(WITH_GNU_LD, test "$with_gnu_ld" = "yes")
 
 ##
