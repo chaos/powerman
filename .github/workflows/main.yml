@@ -48,3 +48,10 @@ jobs:
       run: make check
     - name: make distcheck
       run: make distcheck
+
+  spelling:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v3
+    - name: Check Spelling
+      uses: crate-ci/typos@e477391cc0243daaeeb154a7bfa67cb7d6fc5831 # v1.16.8
