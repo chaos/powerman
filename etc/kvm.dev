@@ -6,7 +6,7 @@
 #
 
 specification "kvm" {
-	timeout 	5   
+	timeout 	5
 
 	script login {
 		expect "virsh #"

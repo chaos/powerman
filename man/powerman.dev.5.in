@@ -28,22 +28,22 @@ A device script is surrounded by an outer block:
 .IP
 .nf
 specification "my_device_name" {
-    # configuration settings 
+    # configuration settings
     # script blocks
 }
 .fi
 .LP
 The possible configuration settings are:
-.TP 
+.TP
 .I "timeout <float>"
 (optional) device script timeout in seconds - applies to each script,
 the whole thing, not just a particular "expect".
-.TP 
+.TP
 .I "plug name { <string list> }"
 (optional) if plug names are static, they should be defined.  Any
 reference to a plug name in the powerman.conf must match one of the
 defined plug names.
-.TP 
+.TP
 .I "pingperiod <float>"
 (optional) if a ping script is defined, and pingperiod is nonzero, the
 ping script will be executed periodically, every <float> seconds.
@@ -65,7 +65,7 @@ by including a %s (printf style).
 Warning: all the send strings are processed with printf and you can
 cause powermand to segfault if you include any printf tokens other than
 the appropriate zero or one %s.
-.TP 
+.TP
 .I "login"
 Executed immediately on (re-)connect.
 If you need to login to the box, do it here.
@@ -83,10 +83,10 @@ Get device in a state so login script will work
 .I "status_all, status[%s]"
 Obtain plug state for all plugs or only the specified plug.
 When all plugs of a device are involved in a plug status query,
-the status_all script, if defined, will be called in preference to the 
+the status_all script, if defined, will be called in preference to the
 status script; otherwise the status script is called for each plug.
 .TP
-.I "on_all, on_range[%s], on[%s]" 
+.I "on_all, on_range[%s], on[%s]"
 Power on all plugs, a range of plugs, or the specified plug.
 .TP
 .I "off_all, off_range[%s], off[%s]"
@@ -94,7 +94,7 @@ Power off all plugs, a range of plugs, or the specified plug.
 .TP
 .I "cycle_all, cycle_range[%s], cycle[%s]"
 Power cycle all plugs, a range of plugs, or the specified plug.
-The intent of this command was to map to the RPC's cycle command; 
+The intent of this command was to map to the RPC's cycle command;
 however, device script are increasingly implementing this in terms of
 a power off/delay/power so the off time can be controlled by the script.
 .TP
@@ -135,17 +135,17 @@ Send <string> to the device.
 Pause script for <float> seconds.
 .TP
 .I "expect <string>"
-<string> is compiled as a regular expression with regcomp(3).  The 
-regular expression is matched against device input.  The script blocks 
-until the regex is matched or the device timeout occurs (in which case the 
-script is aborted).  Upon matching, any parenthesized expressiones are 
-assigned to variables: $1 for the first match, $2 for the second match, 
+<string> is compiled as a regular expression with regcomp(3).  The
+regular expression is matched against device input.  The script blocks
+until the regex is matched or the device timeout occurs (in which case the
+script is aborted).  Upon matching, any parenthesized expressiones are
+assigned to variables: $1 for the first match, $2 for the second match,
 and so on.  Warning: some implementations of regex(3) silently fail if
 the regular expression exceeds available static storage.
 .TP
 .I "setplugstate [<string>|<regmatch>]  <regmatch> [off=<string>] [on=<string>]"
 Set the plug state.  The first argument, if present, is the literal
-plug name or a <regmatch> from the previous expect which contains the 
+plug name or a <regmatch> from the previous expect which contains the
 plug name.  If omitted, the plug name is presumed to be the script argument.
 The off and on strings are compiled regexes, which if matched by
 the second argument, result in the plug state being set to off or on.
@@ -171,7 +171,7 @@ decimal number - exponent forms not supported
 .TP
 .I "<string>"
 Text surrounded by double quotes.
-May contain C style backslash-escaped characters, including 
+May contain C style backslash-escaped characters, including
 three digit octal values, and most common backslash-escaped
 single character values.
 .TP

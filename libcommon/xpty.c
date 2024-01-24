@@ -214,7 +214,7 @@ pid_t xforkpty(int *amaster, char *name, int len)
         default: /* Parent */
             close (slave);
             break;
-    } 
+    }
 #endif
     return pid;
 }

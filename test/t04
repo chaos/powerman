@@ -1,4 +1,4 @@
 #!/bin/sh
 TEST=t04
 ${TEST_BUILDDIR}/targv >$TEST.out 2>&1 || exit 1
-diff $TEST.out ${TEST_SRCDIR}/$TEST.exp >$TEST.diff 
+diff $TEST.out ${TEST_SRCDIR}/$TEST.exp >$TEST.diff

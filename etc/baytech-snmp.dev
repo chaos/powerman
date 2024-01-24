@@ -39,12 +39,12 @@ specification "baytech-snmp" {
 		send "set enterprises.4779.1.3.5.3.1.3.1.%s i 1\n"
 		expect   "enterprises.4779.1.3.5.3.1.3.1.[1-8]: 1\n"
 		expect "snmppower> "
-	}		
+	}
 	script off {
 		send "set enterprises.4779.1.3.5.3.1.3.1.%s i 0\n"
 		expect   "enterprises.4779.1.3.5.3.1.3.1.[1-8]: 0\n"
 		expect "snmppower> "
-	}		
+	}
 	script cycle {
 		send "set enterprises.4779.1.3.5.3.1.3.1.%s i 0\n"
 		expect   "enterprises.4779.1.3.5.3.1.3.1.[1-8]: 0\n"
@@ -53,5 +53,5 @@ specification "baytech-snmp" {
 		send "set enterprises.4779.1.3.5.3.1.3.1.%s i 1\n"
 		expect   "enterprises.4779.1.3.5.3.1.3.1.[1-8]: 1\n"
 		expect "snmppower> "
-	}		
+	}
 }

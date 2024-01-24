@@ -9,7 +9,7 @@ specification  "bashfun" {
 	timeout 5
 
 	plug name { "1" }
- 
+
 	script login {
 		send "export PS1='Pm>'\n"
 		expect "Pm>"

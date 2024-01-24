@@ -10,7 +10,7 @@ sleep 1
 
 # -1 means handle one client connection and exit when it exits
 # $TEST.conf file specifies nonstandard port of 10103
-$PATH_POWERMAND -c ${TEST_BUILDDIR}/$TEST.conf -f -1 2>/dev/null&  
+$PATH_POWERMAND -c ${TEST_BUILDDIR}/$TEST.conf -f -1 2>/dev/null&
 sleep 1
 
 $PATH_POWERMAN -h localhost:10103 \

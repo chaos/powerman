@@ -74,8 +74,8 @@
 # - The longhand form is one line per node like this:
 #     node "node" "device" "plug"
 #   where "node" is the name you will use to refer to the node,
-#   "device" refers to the name you assigned above to the device the 
-#   node is plugged into, and "plug" is the (device specific) plug identifier 
+#   "device" refers to the name you assigned above to the device the
+#   node is plugged into, and "plug" is the (device specific) plug identifier
 #   defined in the "plug name" portion of the device specification or
 #   otherwise following the pattern expected by that device.
 # - It is possible to use hostranges to map ranges of nodes to ranges

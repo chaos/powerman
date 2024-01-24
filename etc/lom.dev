@@ -39,16 +39,16 @@ specification  "lom" {
 		send "platform set power state -W -f -q on\n"
 		expect "\\$"
 		delay 3
-	}		
+	}
 	script off {
 		send "platform set power state -W -f -q off\n"
 		expect "\\$"
 		delay 3
-	}		
+	}
 	script cycle {
 		send "platform set power state -W -f -q off\n"
 		expect "\\$"
-		delay 4	
+		delay 4
 		send "platform set power state -W -f -q on\n"
 		expect "\\$"
 		delay 3

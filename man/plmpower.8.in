@@ -9,16 +9,16 @@ plmpower \- control Insteon/X10 devices via SmartLabs PLM 2412S
 .B plmpower
 is a helper program for
 .B powerman
-which enables communication with Insteon/X10 devices via SmartLabs 
+which enables communication with Insteon/X10 devices via SmartLabs
 Power Line Modem, model 2412S.
 It is run interactively by the powerman daemon.
 It can also be useful as a standalone tool for debugging X10/Insteon
 networks based on the above device.
 .SH NETWORK SETUP
 Note the addresses of your Insteon/X10 devices.
-Plug the PLM into an AC outlet, preferably on the same electrical phase 
+Plug the PLM into an AC outlet, preferably on the same electrical phase
 as the devices under control.  Devices are available to bridge phases
-if this is not possible.  
+if this is not possible.
 .LP
 Attach the PLM's serial port to your computer,
 and ensure that nothing else is using the serial port such as the system
@@ -26,9 +26,9 @@ console or getty(8).  Run
 .B plmpower
 and try the interactive commands below to see if the devices respond reliably.
 .LP
-Once everything is working, configure 
+Once everything is working, configure
 .B powermand
-to run 
+to run
 .B plmpower
 as a coprocess as described in powerman.conf(5).
 .SH OPTIONS
@@ -42,7 +42,7 @@ Set the Insteon timeout to the specified number of milliseconds (default 1000).
 .I "-x, --x10-attempts number"
 Set the number of times to run every X10 command (default 3).
 X10 does not provide an ACK/NAK mechanism like Insteon so we cannot
-be certain that any particular X10 command completed, 
+be certain that any particular X10 command completed,
 therefore X10 commands are issued multiple times to increase confidence.
 .SH INTERACTIVE COMMANDS
 The following commands are accepted at the plmpower> prompt.
@@ -58,10 +58,10 @@ Get info about the PLM.
 Reset the PLM (clears the all-link db).
 .TP
 .I "on addr"
-Turn on device.  
+Turn on device.
 .TP
 .I "off addr"
-Turn off device.  
+Turn off device.
 .TP
 .I "status addr"
 Query status of device (Insteon only).

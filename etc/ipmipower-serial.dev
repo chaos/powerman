@@ -1,7 +1,7 @@
-# 
+#
 # $Id$
 #
-# This device configuration supports power control via the 
+# This device configuration supports power control via the
 # 'ipmipower' utility.
 #
 # This device file is identical to the ipmipower.dev device file,

@@ -5,7 +5,7 @@
 # Firmware version 3 changes contributed by Py Watson.
 #
 specification "apc7900v3" {
-	timeout 	10  
+	timeout 	10
 
 	plug name { "1" "2" "3" "4" "5" "6" "7" "8" }
 

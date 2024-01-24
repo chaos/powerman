@@ -7,7 +7,7 @@
 #   RPC3-NC Series (C) 2002 by BayTech F4.00
 #   RPC-3/4(A)DE Series (C) 2004 BayTech F1.08
 #   RPC-3/4(A)DE Series (C) 2004 BayTech F1.09
-# 
+#
 # Note:
 #   Type ";;;;;" to access "network interface module".
 #   Prompt is not returned until device is ready to accept another commmand.

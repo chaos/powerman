@@ -7,7 +7,7 @@
 #
 specification "ibmbladecenter" {
 	timeout  	15
-	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9" 
+	plug name { "1" "2" "3" "4" "5" "6" "7" "8" "9"
                     "10" "11" "12" "13" "14" "15" }
 
 	script login {
@@ -24,7 +24,7 @@ specification "ibmbladecenter" {
 	}
 	script status {
 		send "power -state -T blade\[%s\]\r\n"
-		expect "(On|Off)\r\nsystem> "	
+		expect "(On|Off)\r\nsystem> "
 		setplugstate $1 on="On" off="Off"
 	}
 	script on {

@@ -6,7 +6,7 @@
 #
 
 specification "kvm-ssh" {
-	timeout 	5   
+	timeout 	5
 
 	script login {
 		expect "#"

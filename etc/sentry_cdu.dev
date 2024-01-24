@@ -1,7 +1,7 @@
 # Sentry Switched CDU Version 6.0r
 
 specification "sentry_cdu" {
-	timeout 	10  
+	timeout 	10
 
 	plug name { ".AA1" ".AA2" ".AA3" ".AA4" ".AA5" ".AA6" ".AA7" ".AA8" ".AB1" ".AB2" ".AB3" ".AB4" ".AB5" ".AB6" ".AB7" ".AB8" ".AC1" ".AC2" ".AC3" ".AC4" ".AC5" ".AC6" ".AC7" ".AC8" }
 

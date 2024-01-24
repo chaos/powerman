@@ -37,7 +37,7 @@ specification "baytech" {
 	}
 	script status_all {
 		send "status\r\n"
-		expect "Circuit Breaker:[^\n]*\r\n"	
+		expect "Circuit Breaker:[^\n]*\r\n"
 		foreachplug {
 			expect "([0-9]+)[ ]+(On|Off)"
 			setplugstate $1 $2 on="On" off="Off"

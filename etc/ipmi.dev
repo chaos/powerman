@@ -35,11 +35,11 @@ specification  "ipmi" {
 	script on {
 		send "[SYS POWER ON]\r"
 		expect "\\[OK\\]\r\n"
-	}		
+	}
 	script off {
 		send "[SYS POWER OFF]\r"
 		expect "\\[OK\\]\r\n"
-	}		
+	}
 	script reset {
 		send "[SYS RESET]\r"
 		expect "\\[OK\\]\r\n"

@@ -4,9 +4,9 @@
 #   include "/etc/powerman/dli4.dev"
 #   device "lpc" "dli4" "/usr/sbin/httppower -u http://192.168.0.100 |&"
 #   node "p[1-8]" "lpc" "[1-8]"
-# 
+#
 # Thanks to Gaylord Holder for providing info to create this script.
-# 
+#
 specification "dli4" {
 	timeout 	30
 

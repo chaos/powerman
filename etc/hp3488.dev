@@ -7,7 +7,7 @@
 # a single digit slot number (1-5) followed by two digit channel number.
 #
 specification "hp3488" {
-	timeout 	5 
+	timeout 	5
 
 	script login {
 		expect "hp3488> "

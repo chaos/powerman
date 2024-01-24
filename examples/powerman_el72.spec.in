@@ -26,8 +26,8 @@ Summary: Libraries for applications using PowerMan
 Group: System Environment/Libraries
 
 %description
-PowerMan is a tool for manipulating remote power control (RPC) devices from a 
-central location. Several RPC varieties are supported natively by PowerMan and 
+PowerMan is a tool for manipulating remote power control (RPC) devices from a
+central location. Several RPC varieties are supported natively by PowerMan and
 Expect-like configurability simplifies the addition of new devices.
 
 %description devel
@@ -51,7 +51,7 @@ make
 
 %install
 rm -rf $RPM_BUILD_ROOT
-make install DESTDIR=$RPM_BUILD_ROOT 
+make install DESTDIR=$RPM_BUILD_ROOT
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -78,7 +78,7 @@ if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
 
 %files
 %defattr(-,root,root,0755)
-%doc DISCLAIMER 
+%doc DISCLAIMER
 %doc COPYING
 %doc NEWS
 %doc TODO

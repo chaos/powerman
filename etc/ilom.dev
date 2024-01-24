@@ -39,15 +39,15 @@ specification  "ilom" {
 	script on {
 		send "start -script /SYS\n"
 		expect "->"
-	}		
+	}
 	script off {
 		send "stop -script -force /SYS\n"
 		expect "->"
-	}		
+	}
 	script cycle {
 		send "stop -script -force /SYS\n"
 		expect "->"
-		delay 4	
+		delay 4
 		send "start -script /SYS\n"
 		expect "->"
 	}

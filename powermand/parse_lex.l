@@ -3,20 +3,20 @@
  *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
  *  Written by Andrew Uselton (uselton2@llnl.gov>
  *  UCRL-CODE-2002-008.
- *  
+ *
  *  This file is part of PowerMan, a remote power management program.
  *  For details, see <http://www.llnl.gov/linux/powerman/>.
- *  
+ *
  *  PowerMan is free software; you can redistribute it and/or modify it under
  *  the terms of the GNU General Public License as published by the Free
  *  Software Foundation; either version 2 of the License, or (at your option)
  *  any later version.
- *  
- *  PowerMan is distributed in the hope that it will be useful, but WITHOUT 
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or 
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License 
+ *
+ *  PowerMan is distributed in the hope that it will be useful, but WITHOUT
+ *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  *  for more details.
- *  
+ *
  *  You should have received a copy of the GNU General Public License along
  *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
  *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
@@ -65,7 +65,7 @@ static List line_ptrs;
     /* yyin gets initialized in parse.y */
 %}
 
-#[^\n]*\n { 
+#[^\n]*\n {
     linenum[include_stack_ptr]++;
 }
 
@@ -77,12 +77,12 @@ static List line_ptrs;
     linenum[include_stack_ptr]++;
 }
 
-([0-9]+)|([0-9]+"."[0-9]*)|("."[0-9]+)  { 
+([0-9]+)|([0-9]+"."[0-9]*)|("."[0-9]+)  {
     yylval = yytext;
-    return TOK_NUMERIC_VAL; 
+    return TOK_NUMERIC_VAL;
 }
 
-\$ { 
+\$ {
     return TOK_MATCHPOS;
 }
 
@@ -91,13 +91,13 @@ static List line_ptrs;
     BEGIN(lex_str);
 }
 
-<lex_str>{ 
-    \" {   
-        BEGIN(INITIAL); 
+<lex_str>{
+    \" {
+        BEGIN(INITIAL);
         *string_buf_ptr = '\0';
         yylval = xstrdup (string_buf);
         list_append(line_ptrs, yylval);
-        return TOK_STRING_VAL; 
+        return TOK_STRING_VAL;
     }
     "\\a" {
         *string_buf_ptr++ = '\a';
@@ -134,7 +134,7 @@ static List line_ptrs;
     }
     [^\\\n\"]+ {
         char *yptr = yytext;
-    
+
         while ( *yptr )
             *string_buf_ptr++ = *yptr++;
     }
@@ -196,28 +196,28 @@ include         BEGIN(lex_incl);
     /* eat white space */
 }
 
-<lex_incl>[\n] { 
+<lex_incl>[\n] {
     linenum[include_stack_ptr]++;
 }
 
 <lex_incl>[^ \t\n]+ {
     /* got include file name */
     int len;
-    
+
     len = strlen(yytext);
     yytext[len - 1] = '\0';
-    
+
     if ( include_stack_ptr >= MAX_INCLUDE_DEPTH - 1 )
         err_exit(FALSE, "Includes nested too deeply" );
-    
+
     include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
     linenum[include_stack_ptr] = 1;
-    
+
     yyin = fopen( yytext + 1, "r" );
     if ( yyin == NULL )
         err_exit(TRUE, "%s", yytext + 1);
     filename[include_stack_ptr] = xstrdup(yytext + 1);
-    
+
     yy_switch_to_buffer( yy_create_buffer( yyin, YY_BUF_SIZE ) );
     BEGIN(INITIAL);
 }
@@ -233,7 +233,7 @@ include         BEGIN(lex_incl);
 }
 
 . {
-    return TOK_UNRECOGNIZED; 
+    return TOK_UNRECOGNIZED;
 }
 
 %%
