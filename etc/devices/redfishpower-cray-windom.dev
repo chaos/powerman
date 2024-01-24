@@ -18,11 +18,9 @@
 #   attached to a blade's service processor.  Some experimentation may
 #   be needed to determine which node is attached to which suffix.
 #
-# - If using a slightly different model or BMC firmware version, its
-#   possible the URI paths will be different.  A good starting point
-#   is to run the following command to discover the correct paths:
-#
-#   curl -s -u USER:PASS -k -X GET https://pnode1/redfish/v1/Systems
+# - CAUTION: If you intend to use this file as the basis for a different
+#   Redfish system, read the section "UPDATING REDFISHPOWER DEVICE FILES"
+#   in redfishpower(8).
 #
 specification "redfishpower-cray-windom-node0" {
 	timeout 	60

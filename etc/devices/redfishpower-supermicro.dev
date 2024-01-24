@@ -10,11 +10,9 @@
 #
 # - This device specification was tested on a Supermicro H12DSG-O-CPU.
 #
-# - If using a slightly different model or BMC firmware version, its
-#   possible the URI paths will be different.  A good starting point
-#   is to run the following command to discover the correct paths:
-#
-#   curl -s -u USER:PASS -k -X GET https://pnode1/redfish/v1/Systems/1
+# - CAUTION: If you intend to use this file as the basis for a different
+#   Redfish system, read the section "UPDATING REDFISHPOWER DEVICE FILES"
+#   in redfishpower(8).
 #
 specification "redfishpower-supermicro" {
 	timeout 	60

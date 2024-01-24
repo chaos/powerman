@@ -90,6 +90,65 @@ Turn off all nodes or specified subset of nodes.  Will return "ok" after confirm
 .I "cycle [nodes]"
 Turn off all nodes or specified subset of nodes.
 
+.SH "UPDATING REDFISHPOWER DEVICE FILES"
+.LP
+Users may often need to modify
+.B redfishpower
+device files for other systems, as URI paths may be slightly different.
+.LP
+To find the URI paths on your system, a good starting point is to
+use
+.B curl(1)
+to discover the correct paths at the following standard location.
+Note that the output can be easier to read if piped to
+.B jq(1),
+but that is optional.
+.PP
+.B # curl -s -u USER:PASS -k -X GET https://<node>/redfish/v1/Systems | jq
+.LP
+Information in the response will point you on how to dig further.
+Several paths the authors have seen include:
+.PP
+.B # curl -s -u USER:PASS -k -X GET https://<node>/redfish/v1/Systems/1
+.PP
+.B # curl -s -u USER:PASS -k -X GET https://<node>/redfish/v1/Systems/Node0
+.PP
+.B # curl -s -u USER:PASS -k -X GET https://<node>/redfish/v1/Systems/Self
+.LP
+To discover if \fIcycle\fR is supported, a path similar to the following might
+be found:
+.PP
+.B # curl -s -u USER:PASS -k -X GET https://<node>/redfish/v1/Systems/Node0/ResetActionInfo
+.LP
+If \fIcycle\fR (i.e. \fIForceRestart\fR) is not available, the
+\fIcycle_ranged\fR script could be replaced with.
+.PP
+.nf
+      script cycle_ranged {
+              send "off %s\\n"
+              expect "redfishpower> "
+              send "on %s\\n"
+              expect "redfishpower> "
+      }
+.fi
+.LP
+Internally within
+.B redfishpower,
+an \fIon\fR or \fIoff\fR command will not return until the
+\fIon\fR/\fIoff\fR is confirmed to complete.  i.e. \fIstat\fR returns
+the expected status.
+.LP
+This can sometimes take awhile and on some systems may push the
+timeout limit specified in the device file (typically 60 seconds).  If
+necessary, it should be increased at the top of the specification file
+(via \fItimeout\fR) and the login section of device file (via
+\fIsettimeout\fR).
+.LP
+Note that if \fIcycle_ranged\fR is scripted as an \fIoff\fR followed by an
+\fIon\fR, the
+.B powerman
+timeout should account for the combined time of both.
+
 .SH "FILES"
 @X_SBINDIR@/redfishpower
 .br
