@@ -4,7 +4,7 @@
 powerman.dev \- PowerMan device specification files
 
 .SH DESCRIPTION
-PowerMan device specifications are rather wierd.  For this reason, we
+PowerMan device specifications are rather weird.  For this reason, we
 suggest that you leave the writing of these scripts to the PowerMan
 authors.  However, if you insist, here is how they work.
 .LP

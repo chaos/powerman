@@ -65,7 +65,7 @@ specification  "phantom" {
 # N.B. phantom 3 requires probe #, phantom 4 ignores it
 	script status_temp {
 		send "T0"	# get temp probe 0
-		expect "([0-9]+)\r" # value is 8-bit Celcius  
+		expect "([0-9]+)\r" # value is 8-bit Celsius  
 		setplugstate "1" $1
 	}
 }

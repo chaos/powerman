@@ -140,10 +140,10 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
 static Action *_create_action(Device * dev, int com, List plugs,
                               ActionCB complete_fun, VerbosePrintf vpf_fun,
                               int client_id, ArgList arglist);
-static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
-                                      ActionCB complete_fun,
-                                      VerbosePrintf vpf_fun,
-                                      int client_id, ArgList arglist);
+static int _enqueue_targeted_actions(Device * dev, int com, hostlist_t hl,
+                                     ActionCB complete_fun,
+                                     VerbosePrintf vpf_fun,
+                                     int client_id, ArgList arglist);
 static char *_getregex_buf(cbuf_t b, xregex_t re, xregex_match_t xm);
 static bool _command_needs_device(Device * dev, hostlist_t hl);
 static void _enqueue_ping(Device * dev, struct timeval *timeout);
@@ -451,7 +451,7 @@ static bool _command_needs_device(Device * dev, hostlist_t hl)
 }
 
 /*
- * Return true if all devices targetted by hostlist implement the
+ * Return true if all devices targeted by hostlist implement the
  * specified action.
  */
 bool dev_check_actions(int com, hostlist_t hl)
@@ -545,8 +545,8 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
     case PM_STATUS_PLUGS:
     case PM_STATUS_TEMP:
     case PM_STATUS_BEACON:
-        count += _enqueue_targetted_actions(dev, com, hl, complete_fun,
-                                                vpf_fun, client_id, arglist);
+        count += _enqueue_targeted_actions(dev, com, hl, complete_fun,
+                                           vpf_fun, client_id, arglist);
         break;
     default:
         assert(FALSE);
@@ -648,10 +648,10 @@ static bool _is_query_action(int com)
 }
 
 
-static int _enqueue_targetted_actions(Device * dev, int com, hostlist_t hl,
-                                      ActionCB complete_fun,
-                                      VerbosePrintf vpf_fun,
-                                      int client_id, ArgList arglist)
+static int _enqueue_targeted_actions(Device * dev, int com, hostlist_t hl,
+                                     ActionCB complete_fun,
+                                     VerbosePrintf vpf_fun,
+                                     int client_id, ArgList arglist)
 {
     List new_acts = list_create((ListDelF) _destroy_action);
     bool all = TRUE;
@@ -850,7 +850,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
 
         /* not connected but timeout not yet exceeded */
         } else if (!(dev->connect_state == DEV_CONNECTED)) {
-            stalled = TRUE;                             /* not connnected */
+            stalled = TRUE;                             /* not connected */
 
         /* connected - process statements */
         } else {

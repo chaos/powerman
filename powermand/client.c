@@ -86,7 +86,7 @@ typedef struct {
 #define CLI_MAGIC    0xdadadada
 typedef struct {
     int magic;
-    int fd;                     /* file desriptor for the socket */
+    int fd;                     /* file descriptor for the socket */
     int ofd;                    /* separate output file descriptor (if used) */
     char *ip;                   /* IP address of the client's host */
     unsigned short int port;    /* Port of client connection */

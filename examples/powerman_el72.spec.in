@@ -140,6 +140,6 @@ if [ -x /sbin/ldconfig ]; then /sbin/ldconfig %{_libdir}; fi
 - Added a patch which should fix a fc4 build problem.
 
 * Thu Feb 09 2006 Ben Woodard <woodard@redhat.com> 1.0.22-2
-- changed the buildroot to match fedora guidlines
+- changed the buildroot to match fedora guidelines
 - changed permissions of spec and src files.
 - added changelog to spec file

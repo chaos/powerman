@@ -33,7 +33,7 @@ Release Notes for PowerMan version 2.3.25                     28 Jan 2019
 Release Notes for PowerMan version 2.3.24                     23 Oct 2015
 =========================================================================
 
-* Don't pacakge /var/run/powerman; let systemd manage it [TOSS-2987]
+* Don't package /var/run/powerman; let systemd manage it [TOSS-2987]
 
 * Cleanup: drop trailing whitespace
 
@@ -134,7 +134,7 @@ Release Notes for PowerMan version 2.3.13                     20 Jun 2012
 
 * Updated appro-gb2.dev per Appro
 
-* Add suport for Baytech RPC22 (Olof Johansson)
+* Add support for Baytech RPC22 (Olof Johansson)
 
 =========================================================================
 Release Notes for PowerMan version 2.3.12                     13 Jan 2012
@@ -395,7 +395,7 @@ Release Notes for PowerMan version 1.0.26                     21 Dec 2006
 * Support 8-port APC AP7900 and likely AP7901, AP7920, and AP7921.
   [Martin Petersen]
 
-* Work around a bug that causes baytech rpc3's to resturn some plugs
+* Work around a bug that causes baytech rpc3's to return some plugs
   as status "unknown" on login timeout/reconnect.
 
 * Add ranged power control support for faster power control w/ ipmipower.

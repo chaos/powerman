@@ -91,7 +91,7 @@ struct powermsg {
     /* start - when power op started, may be set to start time of a
      * previous message if this is a follow on message.
      *
-     * timeout - when the overal power command times out
+     * timeout - when the overall power command times out
      *
      * delaystart - if message should be sent after a wait
      */
