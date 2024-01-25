@@ -25,7 +25,6 @@ dist_check_SCRIPTS = \
 TESTS_ENVIRONMENT = env
 TESTS_ENVIRONMENT += "PATH_POWERMAN=$(top_builddir)/src/powerman/powerman"
 TESTS_ENVIRONMENT += "PATH_POWERMAND=$(top_builddir)/src/powerman/powermand"
-TESTS_ENVIRONMENT += "PATH_ETC=$(top_builddir)/etc"
 TESTS_ENVIRONMENT += "PATH_POWERMAN_STONITH=$(top_srcdir)/heartbeat/powerman"
 TESTS_ENVIRONMENT += "TEST_SRCDIR=$(top_srcdir)/test"
 TESTS_ENVIRONMENT += "TEST_BUILDDIR=$(top_builddir)/test"
