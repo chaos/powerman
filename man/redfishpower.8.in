@@ -146,7 +146,11 @@ This can sometimes take awhile and on some systems may push the
 timeout limit specified in the device file (typically 60 seconds).  If
 necessary, it should be increased at the top of the specification file
 (via \fItimeout\fR) and the login section of device file (via
-\fIsettimeout\fR).
+\fIsettimeout\fR).  The polling interval that
+.B redfishpower
+uses can be tuned with via \fIsetstatuspollinginterval\fR.  It may be wise
+to tune this when the timeout is large and avoid sending out an excessive
+number of status checks.
 .LP
 Note that if \fIcycle_ranged\fR is scripted as an \fIoff\fR followed by an
 \fIon\fR, the
