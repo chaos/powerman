@@ -1,0 +1,26 @@
+queue_rules:
+  - name: default
+    conditions:
+      - base=master
+      - label="merge-when-passing"
+      - label!="work-in-progress"
+      - "approved-reviews-by=@chaos/powerman"
+      - "#approved-reviews-by>0"
+      - "#changes-requested-reviews-by=0"
+      - -title~=^\[*[Ww][Ii][Pp]
+
+pull_request_rules:
+  - name: rebase and merge when passing all checks
+    conditions:
+      - base=master
+      - label="merge-when-passing"
+      - label!="work-in-progress"
+      - -title~=^\[*[Ww][Ii][Pp]
+      - "approved-reviews-by=@flux-framework/core"
+      - "#approved-reviews-by>0"
+      - "#changes-requested-reviews-by=0"
+    actions:
+      queue:
+        name: default
+        method: merge
+        update_method: rebase
