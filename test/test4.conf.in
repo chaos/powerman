@@ -1,4 +1,4 @@
-include "@top_srcdir@/etc/vpc.dev"
+include "@top_srcdir@/etc/devices/vpc.dev"
 device "test0" "vpc" "@top_builddir@/test/vpcd |&"
 device "test1" "vpc" "@top_builddir@/test/vpcd |&"
 device "test2" "vpc" "@top_builddir@/test/vpcd |&"

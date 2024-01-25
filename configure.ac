@@ -118,20 +118,18 @@ AC_RUNAS
 AC_CONFIG_FILES( \
   Makefile \
   examples/powerman_el72.spec \
-  libpowerman/Makefile \
-  libpowerman/libpowerman.pc \
-  liblsd/Makefile \
-  libcommon/Makefile \
-  powerman/Makefile \
-  powermand/Makefile \
-  httppower/Makefile \
-  redfishpower/Makefile \
-  snmppower/Makefile \
-  plmpower/Makefile \
+  src/Makefile \
+  src/liblsd/Makefile \
+  src/libcommon/Makefile \
+  src/powerman/Makefile \
+  src/httppower/Makefile \
+  src/redfishpower/Makefile \
+  src/snmppower/Makefile \
+  src/plmpower/Makefile \
   etc/Makefile \
-  scripts/Makefile \
-  scripts/powerman.service \
-  scripts/tmpfiles.d/powerman.conf \
+  etc/libpowerman.pc \
+  etc/powerman.service \
+  etc/tmpfiles.d/powerman.conf \
   heartbeat/Makefile \
   man/Makefile \
   man/powerman.1 \

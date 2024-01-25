@@ -1,7 +1,7 @@
 # sierra powerman.conf, modified to work in test harness
 
-include "@top_srcdir@/etc/swpdu.dev"
-include "@top_srcdir@/etc/ipmipower.dev"
+include "@top_srcdir@/etc/devices/swpdu.dev"
+include "@top_srcdir@/etc/devices/ipmipower.dev"
 
 #tcpwrappers yes
 

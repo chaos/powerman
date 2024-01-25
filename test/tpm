@@ -1,6 +1,6 @@
 #!/bin/bash
 
 if [ "$PATH_POWERMAND" = "" ]; then
-    PATH_POWERMAND=../src/powermand
+    PATH_POWERMAND=../src/powerman/powermand
 fi
 $PATH_POWERMAND -f -c t51.conf -s

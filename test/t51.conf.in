@@ -1,4 +1,4 @@
-include "@top_srcdir@/etc/lom.dev"
+include "@top_srcdir@/etc/devices/lom.dev"
 device "d0" "lom" "@top_builddir@/test/lom -p ssh|&"
 device "d1" "lom" "@top_builddir@/test//lom -p serial|&"
 device "d2" "lom" "@top_builddir@/test//lom -p serial_loggedin|&"

@@ -1,25 +1,9 @@
 SUBDIRS = \
 	etc \
 	man \
-	scripts \
 	heartbeat \
-	liblsd \
-	libcommon \
-	powerman \
-	powermand \
-	libpowerman \
-	plmpower \
+	src \
 	test
-
-if WITH_HTTPPOWER
-SUBDIRS += httppower
-endif
-if WITH_SNMPPOWER
-SUBDIRS += snmppower
-endif
-if WITH_REDFISHPOWER
-SUBDIRS += redfishpower
-endif
 
 # Create run dir for powerman.  Chown will fail if non root - ignore it.
 install-data-local:

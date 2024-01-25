@@ -1,3 +1,3 @@
-include "@top_srcdir@/etc/powerman.dev"
-device "p0" "powerman" "@top_builddir@/powermand/powermand -f -c @top_builddir@/test/test4.conf -s |&"
+include "@top_srcdir@/etc/devices/powerman.dev"
+device "p0" "powerman" "@top_builddir@/src/powerman/powermand -f -c @top_builddir@/test/test4.conf -s |&"
 node "x[0-63]" "p0" "t[0-63]"

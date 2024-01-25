@@ -1,4 +1,4 @@
-include "@top_srcdir@/etc/baytech-rpc28-nc.dev"
+include "@top_srcdir@/etc/devices/baytech-rpc28-nc.dev"
 device "b0" "baytech-rpc28-nc" "@top_builddir@/test/baytech -p rpc28-nc |&"
 device "b1" "baytech-rpc28-nc" "@top_builddir@/test/baytech -p rpc28-nc |&"
 device "b2" "baytech-rpc28-nc" "@top_builddir@/test/baytech -p rpc28-nc |&"
