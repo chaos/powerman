@@ -1,16 +1,11 @@
 #!/bin/sh
-echo "Running aclocal ... "
-aclocal -I config
-echo "Running libtoolize ... "
-libtoolize --force --automake --copy 
-echo "Running autoheader ... "
-autoheader
-echo "Running automake ... "
-automake --copy --add-missing 
-echo "Running autoconf ... "
-autoconf
-echo "Cleaning up ..."
-mv aclocal.m4 config/
-rm -rf autom4te.cache
-
+#
+# Run an extra libtoolize before autoreconf to ensure that
+# libtool macros can be found if libtool is in PATH, but its
+# macros are not in default aclocal search path.
+#
+echo "Running libtoolize --automake --copy ... "
+libtoolize --automake --copy || exit
+echo "Running autoreconf --force --verbose --install"
+autoreconf --force --verbose --install || exit
 echo "Now run ./configure."

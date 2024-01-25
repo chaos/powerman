@@ -21,8 +21,8 @@ powerman_SOURCES = \
 	powerman.c
 
 powerman_LDADD = \
-	$(top_builddir)/src/liblsd/liblsd.a \
-	$(top_builddir)/src/libcommon/libcommon.a \
+	$(top_builddir)/src/liblsd/liblsd.la \
+	$(top_builddir)/src/libcommon/libcommon.la \
 	$(LIBGENDERS) \
 	$(LIBFORKPTY)
 
@@ -57,9 +57,10 @@ powermand_SOURCES = \
 	powermand.c
 
 powermand_LDADD = \
-	$(top_builddir)/src/liblsd/liblsd.a \
-	$(top_builddir)/src/libcommon/libcommon.a \
-	$(LIBWRAP) $(LIBFORKPTY)
+	$(top_builddir)/src/liblsd/liblsd.la \
+	$(top_builddir)/src/libcommon/libcommon.la \
+	$(LIBWRAP) \
+	$(LIBFORKPTY)
 
 AM_YFLAGS = -d
 
@@ -80,8 +81,8 @@ check_PROGRAMS = \
 test_pluglist_SOURCES = test/pluglist.c
 test_pluglist_LDADD = \
 	$(builddir)/pluglist.o \
-	$(top_builddir)/src/libcommon/libcommon.a \
-	$(top_builddir)/src/liblsd/liblsd.a
+	$(top_builddir)/src/libcommon/libcommon.la \
+	$(top_builddir)/src/liblsd/liblsd.la
 
 test_apiclient_SOURCES = test/apiclient.c
 test_apiclient_LDADD = \

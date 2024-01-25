@@ -7,6 +7,6 @@ sbin_PROGRAMS = snmppower
 
 snmppower_SOURCES = snmppower.c
 snmppower_LDADD = \
-	$(top_builddir)/src/libcommon/libcommon.a \
+	$(top_builddir)/src/libcommon/libcommon.la \
 	$(LIBNETSNMP) \
 	$(LIBFORKPTY)

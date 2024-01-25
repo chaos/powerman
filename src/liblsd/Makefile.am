@@ -5,9 +5,9 @@ AM_CFLAGS = \
 
 AM_CPPFLAGS =
 
-noinst_LIBRARIES = liblsd.a
+noinst_LTLIBRARIES = liblsd.la
 
-liblsd_a_SOURCES = \
+liblsd_la_SOURCES = \
 	hostlist.c \
 	hostlist.h \
 	list.c \

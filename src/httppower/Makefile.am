@@ -7,6 +7,6 @@ sbin_PROGRAMS = httppower
 
 httppower_SOURCES = httppower.c
 httppower_LDADD = \
-	$(top_builddir)/src/libcommon/libcommon.a \
+	$(top_builddir)/src/libcommon/libcommon.la \
 	$(LIBCURL) \
 	$(LIBFORKPTY)

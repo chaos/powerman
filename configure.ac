@@ -2,7 +2,7 @@
 # Prologue.
 ##
 AC_INIT([powerman],
-        m4_esyscmd([git describe --always | awk '/.*/ {printf "%s",$1; exit}']))
+	m4_esyscmd([git describe --always | awk '/.*/ {sub(/^v/, ""); printf "%s",$1; exit}']))
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_SRCDIR([NEWS])
@@ -141,7 +141,6 @@ AC_CONFIG_FILES( \
   man/redfishpower.8 \
   man/plmpower.8 \
   man/powermand.8 \
-  man/vpcd.8 \
   test/Makefile \
   test/mcr.conf
   test/sierra.conf \
