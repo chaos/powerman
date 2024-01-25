@@ -70,7 +70,3 @@ CLEANFILES = \
 
 libpowerman_la_SOURCES = \
 	libpowerman.c
-
-if WITH_PKG_CONFIG
-pkgconfig_DATA = libpowerman.pc
-endif

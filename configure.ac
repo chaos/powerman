@@ -119,7 +119,6 @@ AC_CONFIG_FILES( \
   Makefile \
   examples/powerman_el72.spec \
   src/Makefile \
-  src/powerman/libpowerman.pc \
   src/liblsd/Makefile \
   src/libcommon/Makefile \
   src/powerman/Makefile \
@@ -128,6 +127,7 @@ AC_CONFIG_FILES( \
   src/snmppower/Makefile \
   src/plmpower/Makefile \
   etc/Makefile \
+  etc/libpowerman.pc \
   etc/powerman.service \
   etc/tmpfiles.d/powerman.conf \
   heartbeat/Makefile \
