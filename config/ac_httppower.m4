@@ -8,7 +8,7 @@
 AC_DEFUN([AC_HTTPPOWER],
 [
   AC_ARG_WITH([httppower],
-    AC_HELP_STRING([--with-httppower], [Build httppower executable]))
+    AS_HELP_STRING([--with-httppower], [Build httppower executable]))
   AS_IF([test "x$with_httppower" = "xyes"], [
     AC_CHECK_HEADERS([curl/curl.h])
     X_AC_CHECK_COND_LIB([curl], [curl_easy_setopt])

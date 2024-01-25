@@ -8,7 +8,7 @@
 AC_DEFUN([AC_SNMPPOWER],
 [
   AC_ARG_WITH([snmppower],
-    AC_HELP_STRING([--with-snmppower], [Build snmppower executable]))
+    AS_HELP_STRING([--with-snmppower], [Build snmppower executable]))
   AS_IF([test "x$with_snmppower" = "xyes"], [
     AC_CHECK_HEADERS([net-snmp/net-snmp-config.h])
     X_AC_CHECK_COND_LIB([netsnmp], [init_snmp])

@@ -6,7 +6,9 @@ AC_INIT([powerman],
 AC_CONFIG_AUX_DIR([config])
 AC_CONFIG_MACRO_DIR([config])
 AC_CONFIG_SRCDIR([NEWS])
-AC_CANONICAL_SYSTEM
+AC_CANONICAL_TARGET
+
+LT_INIT
 
 ##
 # If runstatedir not explicitly set on command line, use '/run' as default
@@ -22,7 +24,7 @@ X_AC_EXPAND_INSTALL_DIRS
 ##
 AM_INIT_AUTOMAKE([subdir-objects foreign])
 AM_SILENT_RULES([yes])
-AM_CONFIG_HEADER([config/config.h])
+AC_CONFIG_HEADERS([config/config.h])
 AM_MAINTAINER_MODE([enable])
 
 ##
@@ -42,9 +44,12 @@ AC_SUBST([WARNING_CFLAGS])
 
 AC_PROG_LN_S
 AC_PROG_MAKE_SET
-AM_PROG_LEX
+AC_PROG_LEX([noyywrap])
+AS_IF([test "x$LEX" = "x:"],AC_MSG_ERROR([could not find flex]),[])
 AC_PROG_YACC
-AC_PROG_LIBTOOL
+# AC_PROG_YACC sets YACC=yacc when nothing is found, even yacc
+# Just assume bison is the preferred compiler-compiler and call yacc a failure
+AS_IF([test "x$YACC" = "xyacc"],AC_MSG_ERROR([could not find bison]),[])
 AM_CONDITIONAL(WITH_GNU_LD, test "$with_gnu_ld" = "yes")
 
 ##
@@ -56,7 +61,6 @@ AC_CHECK_FILES(/dev/ptc)
 ##
 # Checks for header files.
 ##
-AC_HEADER_STDC
 AC_CHECK_HEADERS( \
   getopt.h \
   poll.h \

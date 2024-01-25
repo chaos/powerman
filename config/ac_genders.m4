@@ -7,7 +7,7 @@
 AC_DEFUN([AC_GENDERS],
 [
   AC_ARG_WITH([genders],
-    AC_HELP_STRING([--with-genders], [Build genders support for client]))
+    AS_HELP_STRING([--with-genders], [Build genders support for client]))
   AS_IF([test "x$with_genders" = "xyes"], [
     AC_CHECK_HEADERS([genders.h])
     X_AC_CHECK_COND_LIB([genders], [genders_handle_create])
