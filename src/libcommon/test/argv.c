@@ -29,6 +29,7 @@
 #include <assert.h>
 #include <string.h>
 
+#include "tap.h"
 #include "argv.h"
 
 int
@@ -36,25 +37,47 @@ main(int argc, char *argv[])
 {
 	char **av;
 
+	plan(NO_PLAN);
+
 	av = argv_create("foo bar baz", "");
-	assert(argv_length(av) == 3);
+	ok (av != NULL,
+        "argv_create foo bar baz works");
+    ok (argv_length(av) == 3,
+        "argv_length returns 3");
 	av = argv_append(av, "bonk");
-	assert(argv_length(av) == 4);
-	assert(strcmp(av[0], "foo") == 0);
-	assert(strcmp(av[1], "bar") == 0);
-	assert(strcmp(av[2], "baz") == 0);
-	assert(strcmp(av[3], "bonk") == 0);
-	assert(av[4] == NULL);
+    ok (argv_length(av) == 4,
+        "argv_length returns 4");
+    is (av[0], "foo",
+        "first arg is foo");
+	is (av[1], "bar",
+        "second arg is bar");
+    is (av[2], "baz",
+        "third arg is baz");
+    is (av[3], "bonk",
+        "fourth arg is bonk");
+    ok (av[4] == NULL,
+        "vector is NULL terminated");
 	argv_destroy(av);
 
 	av = argv_create("a,b:c d", ",:");
-	assert(argv_length(av) == 4);
-	assert(strcmp(av[0], "a") == 0);
-	assert(strcmp(av[1], "b") == 0);
-	assert(strcmp(av[2], "c") == 0);
-	assert(strcmp(av[3], "d") == 0);
-	assert(av[4] == NULL);
+	ok (av != NULL,
+        "argv_create a,:c d with , and : separators works");
+	ok (argv_length(av) == 4,
+        "argv_length is 4");
+	is (av[0], "a",
+        "first arg is a");
+	is (av[1], "b",
+        "second arg is b");
+	is (av[2], "c",
+        "third arg is c");
+	is (av[3], "d",
+        "fourth arg is d");
+	ok (av[4] == NULL,
+        "vector is null terminated");
 	argv_destroy(av);
 
+	done_testing();
 	exit(0);
 }
+
+// vi:ts=4 sw=4 expandtab
