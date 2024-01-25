@@ -1,6 +1,5 @@
-sbin_PROGRAMS = vpcd
-
 check_PROGRAMS = \
+	vpcd \
 	tpl \
 	tregex \
 	targv \

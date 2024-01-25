@@ -8,6 +8,9 @@ if WITH_PKG_CONFIG
 pkgconfig_DATA = libpowerman.pc
 endif
 
+check_DATA = \
+	devices/vpc.dev
+
 pkgsysconfdir = $(sysconfdir)/powerman
 
 pkgsysconf_DATA = \
@@ -70,8 +73,7 @@ pkgsysconf_DATA = \
 	devices/raritan-px5523.dev \
 	devices/sentry_cdu.dev \
 	devices/swpdu.dev \
-	devices/vpc.dev \
 	devices/wti.dev \
 	devices/wti-rps10.dev
 
-EXTRA_DIST = $(pkgsysconf_DATA)
+EXTRA_DIST = $(pkgsysconf_DATA) $(check_DATA)
