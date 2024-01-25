@@ -128,9 +128,8 @@ AC_CONFIG_FILES( \
   src/snmppower/Makefile \
   src/plmpower/Makefile \
   etc/Makefile \
-  scripts/Makefile \
-  scripts/powerman.service \
-  scripts/tmpfiles.d/powerman.conf \
+  etc/powerman.service \
+  etc/tmpfiles.d/powerman.conf \
   heartbeat/Makefile \
   man/Makefile \
   man/powerman.1 \

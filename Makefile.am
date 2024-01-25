@@ -1,7 +1,6 @@
 SUBDIRS = \
 	etc \
 	man \
-	scripts \
 	heartbeat \
 	src \
 	test
