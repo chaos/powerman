@@ -16,7 +16,7 @@ pull_request_rules:
       - label="merge-when-passing"
       - label!="work-in-progress"
       - -title~=^\[*[Ww][Ii][Pp]
-      - "approved-reviews-by=@flux-framework/core"
+      - "approved-reviews-by=@chaos/powerman"
       - "#approved-reviews-by>0"
       - "#changes-requested-reviews-by=0"
     actions:
