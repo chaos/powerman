@@ -1,26 +1,12 @@
-/*****************************************************************************
- *  Copyright (C) 2001 The Regents of the University of California.
- *  Produced at Lawrence Livermore National Laboratory (cf, DISCLAIMER).
- *  Written by Andrew Uselton <uselton2@llnl.gov>
- *  UCRL-CODE-2002-008.
+/************************************************************\
+ * Copyright (C) 2001 The Regents of the University of California.
+ * (c.f. DISCLAIMER, COPYING)
  *
- *  This file is part of PowerMan, a remote power management program.
- *  For details, see http://github.com/chaos/powerman/
+ * This file is part of PowerMan, a remote power management program.
+ * For details, see https://github.com/chaos/powerman.
  *
- *  PowerMan is free software; you can redistribute it and/or modify it under
- *  the terms of the GNU General Public License as published by the Free
- *  Software Foundation; either version 2 of the License, or (at your option)
- *  any later version.
- *
- *  PowerMan is distributed in the hope that it will be useful, but WITHOUT
- *  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- *  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
- *  for more details.
- *
- *  You should have received a copy of the GNU General Public License along
- *  with PowerMan; if not, write to the Free Software Foundation, Inc.,
- *  59 Temple Place, Suite 330, Boston, MA  02111-1307  USA.
-\*****************************************************************************/
+ * SPDX-License-Identifier: GPL-2.0-or-later
+\************************************************************/
 
 #if HAVE_CONFIG_H
 #include "config.h"
@@ -333,14 +319,13 @@ static void _usage(void)
 static void _license(void)
 {
     printf(
- "Copyright (C) 2001-2008 The Regents of the University of California.\n"
- "Produced at Lawrence Livermore National Laboratory.\n"
- "Written by Andrew Uselton <uselton2@llnl.gov>.\n"
- "http://www.llnl.gov/linux/powerman/\n"
- "UCRL-CODE-2002-008\n\n"
- "PowerMan is free software; you can redistribute it and/or modify it\n"
- "under the terms of the GNU General Public License as published by\n"
- "the Free Software Foundation.\n");
+ "Copyright (C) 2001 The Regents of the University of California.\n"
+ "(c.f. DISCLAIMER, COPYING)\n"
+ "\n"
+ "This file is part of Powerman, a remote power management program.\n"
+ "For details, see https://github.com/chaos/powerman.\n"
+ "\n"
+ "SPDX-License-Identifier: GPL-2.0-or-later\n");
     exit(1);
 }
 
