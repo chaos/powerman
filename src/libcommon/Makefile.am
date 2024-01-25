@@ -32,3 +32,10 @@ libcommon_a_SOURCES = \
 	xsignal.h \
 	xtime.h \
 	xtypes.h
+
+TESTS = test_argv
+
+check_PROGRAMS = $(TESTS)
+
+test_argv_SOURCES = test/argv.c
+test_argv_LDADD = $(builddir)/libcommon.a

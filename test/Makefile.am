@@ -2,7 +2,6 @@ check_PROGRAMS = \
 	vpcd \
 	tpl \
 	tregex \
-	targv \
 	baytech \
 	icebox \
 	gpib \
@@ -29,7 +28,7 @@ TESTS_ENVIRONMENT += "PATH_POWERMAN_STONITH=$(top_srcdir)/heartbeat/powerman"
 TESTS_ENVIRONMENT += "TEST_SRCDIR=$(top_srcdir)/test"
 TESTS_ENVIRONMENT += "TEST_BUILDDIR=$(top_builddir)/test"
 
-TESTS = t00 t01 t02 t03 t04 t05 t06 t07 t08 t09 t10 t11 t12 t13 \
+TESTS = t00 t01 t02 t03 t05 t06 t07 t08 t09 t10 t11 t12 t13 \
 	t14 t15 t16 t17 t18 t19 t20 t21 t22 t23 t24 t25 t26 t27 \
 	t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39 t40 t41 \
 	t42 t43 t44 t46 t47 t48 t49 t50 t51 t52 t53 t54 t55 \
@@ -59,9 +58,6 @@ tpl_LDADD = $(common_ldadd)
 
 tregex_SOURCES = tregex.c
 tregex_LDADD = $(common_ldadd)
-
-targv_SOURCES = targv.c
-targv_LDADD = $(common_ldadd)
 
 baytech_SOURCES = baytech.c
 baytech_LDADD = $(common_ldadd)
