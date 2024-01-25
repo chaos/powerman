@@ -33,7 +33,7 @@ libcommon_a_SOURCES = \
 
 TESTS = \
 	test_argv.t \
-	test_xregex
+	test_xregex.t
 
 check_PROGRAMS = $(TESTS)
 
@@ -48,5 +48,9 @@ test_argv_t_LDADD = \
 	$(builddir)/libcommon.a \
 	$(top_builddir)/src/libtap/libtap.la
 
-test_xregex_SOURCES = test/xregex.c
-test_xregex_LDADD = $(builddir)/libcommon.a
+test_xregex_t_CPPFLAGS = \
+	-I$(top_srcdir)/src/libtap
+test_xregex_t_SOURCES = test/xregex.c
+test_xregex_t_LDADD = \
+	$(builddir)/libcommon.a \
+	$(top_builddir)/src/libtap/libtap.la
