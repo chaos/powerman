@@ -24,8 +24,8 @@ dist_check_SCRIPTS = \
 	$(TESTS)
 
 TESTS_ENVIRONMENT = env
-TESTS_ENVIRONMENT += "PATH_POWERMAN=$(top_builddir)/powerman/powerman"
-TESTS_ENVIRONMENT += "PATH_POWERMAND=$(top_builddir)/powermand/powermand"
+TESTS_ENVIRONMENT += "PATH_POWERMAN=$(top_builddir)/src/powerman/powerman"
+TESTS_ENVIRONMENT += "PATH_POWERMAND=$(top_builddir)/src/powerman/powermand"
 TESTS_ENVIRONMENT += "PATH_ETC=$(top_builddir)/etc"
 TESTS_ENVIRONMENT += "PATH_POWERMAN_STONITH=$(top_srcdir)/heartbeat/powerman"
 TESTS_ENVIRONMENT += "TEST_SRCDIR=$(top_srcdir)/test"
@@ -44,13 +44,13 @@ CLEANFILES = *.out *.err *.diff
 AM_CFLAGS = @WARNING_CFLAGS@
 
 AM_CPPFLAGS = \
-	-I$(top_srcdir)/libcommon \
-	-I$(top_srcdir)/libpowerman \
-	-I$(top_srcdir)/liblsd
+	-I$(top_srcdir)/src/libcommon \
+	-I$(top_srcdir)/src/liblsd \
+	-I$(top_srcdir)/src/powerman
 
 common_ldadd = \
-	$(top_builddir)/liblsd/liblsd.a \
-	$(top_builddir)/libcommon/libcommon.a \
+	$(top_builddir)/src/liblsd/liblsd.a \
+	$(top_builddir)/src/libcommon/libcommon.a \
 	$(LIBFORKPTY)
 
 vpcd_SOURCES = vpcd.c
@@ -102,7 +102,9 @@ redfish_httppower_SOURCES = redfish-httppower.c
 redfish_httppower_LDADD = $(common_ldadd)
 
 cli_SOURCES = cli.c
-cli_LDADD = -L$(top_builddir)/libpowerman -lpowerman
+cli_LDADD = \
+	-L$(top_builddir)/src/powerman \
+	-lpowerman
 
 check_DATA = \
 	mcr.conf sierra.conf \

@@ -1,6 +1,7 @@
 AM_CFLAGS = @WARNING_CFLAGS@
 
-AM_CPPFLAGS = -I$(top_srcdir)/liblsd
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/src/liblsd
 
 noinst_LIBRARIES = libcommon.a
 

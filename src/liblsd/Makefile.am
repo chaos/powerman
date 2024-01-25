@@ -1,5 +1,8 @@
-AM_CFLAGS = @WARNING_CFLAGS@ \
-	-Wno-parentheses -Wno-error=parentheses
+AM_CFLAGS = \
+	@WARNING_CFLAGS@ \
+	-Wno-parentheses \
+	-Wno-error=parentheses
+
 AM_CPPFLAGS =
 
 noinst_LIBRARIES = liblsd.a
