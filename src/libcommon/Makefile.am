@@ -31,9 +31,14 @@ libcommon_a_SOURCES = \
 	xtime.h \
 	xtypes.h
 
-TESTS = test_argv
+TESTS = \
+	test_argv \
+	test_xregex
 
 check_PROGRAMS = $(TESTS)
 
 test_argv_SOURCES = test/argv.c
 test_argv_LDADD = $(builddir)/libcommon.a
+
+test_xregex_SOURCES = test/xregex.c
+test_xregex_LDADD = $(builddir)/libcommon.a
