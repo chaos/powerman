@@ -126,6 +126,7 @@ AC_CONFIG_FILES( \
   src/redfishpower/Makefile \
   src/snmppower/Makefile \
   src/plmpower/Makefile \
+  src/libtap/Makefile \
   etc/Makefile \
   etc/libpowerman.pc \
   etc/powerman.service \
