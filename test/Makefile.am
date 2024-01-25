@@ -7,7 +7,6 @@ check_PROGRAMS = \
 	cyclades \
 	ipmipower \
 	redfishpower \
-	cli \
 	ilom \
 	lom \
 	swpdu \
@@ -86,11 +85,6 @@ openbmc_httppower_LDADD = $(common_ldadd)
 
 redfish_httppower_SOURCES = redfish-httppower.c
 redfish_httppower_LDADD = $(common_ldadd)
-
-cli_SOURCES = cli.c
-cli_LDADD = \
-	-L$(top_builddir)/src/powerman \
-	-lpowerman
 
 check_DATA = \
 	mcr.conf sierra.conf \

@@ -74,10 +74,15 @@ libpowerman_la_SOURCES = \
 	libpowerman.c
 
 check_PROGRAMS = \
-	test_pluglist
+	test_pluglist \
+	test_apiclient
 
 test_pluglist_SOURCES = test/pluglist.c
 test_pluglist_LDADD = \
 	$(builddir)/pluglist.o \
 	$(top_builddir)/src/libcommon/libcommon.a \
 	$(top_builddir)/src/liblsd/liblsd.a
+
+test_apiclient_SOURCES = test/apiclient.c
+test_apiclient_LDADD = \
+	$(builddir)/libpowerman.la
