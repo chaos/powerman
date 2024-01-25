@@ -54,10 +54,10 @@ static char *cyclepostdata = NULL;
 
 /* in usec
  *
- * wait delay of 1 second may seem long, but testing shows
- * wait ranges from a few seconds to 20 seconds
+ * status polling interval of 1 second may seem long, but testing
+ * shows wait ranges from a few seconds to 20 seconds
  */
-#define WAIT_UNTIL_DELAY      1000000
+#define STATUS_POLLING_INTERVAL  1000000
 
 #define MS_IN_SEC                1000
 
@@ -501,7 +501,7 @@ static void on_off_process(List delayedcmds, struct powermsg *pm)
                              statpath,
                              NULL,
                              &pm->start,
-                             WAIT_UNTIL_DELAY);
+                             STATUS_POLLING_INTERVAL);
     Curl_easy_setopt((nextpm->eh, CURLOPT_HTTPGET, 1));
     nextpm->wait_until_on_off = 1;
     if (!list_append(delayedcmds, nextpm))
