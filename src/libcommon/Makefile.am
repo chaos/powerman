@@ -10,12 +10,10 @@ libcommon_la_SOURCES = \
 	argv.h \
 	debug.c \
 	debug.h \
-	client_proto.h \
 	error.c \
 	error.h \
 	hprintf.c \
 	hprintf.h \
-	powerman.h \
 	xmalloc.c \
 	xmalloc.h \
 	xpoll.c \

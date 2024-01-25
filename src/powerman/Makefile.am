@@ -37,6 +37,7 @@ powermand_SOURCES = \
 	arglist.h \
 	client.c \
 	client.h \
+	client_proto.h \
 	daemon.c \
 	daemon.h \
 	device.c \
@@ -54,6 +55,7 @@ powermand_SOURCES = \
 	parse_util.h \
 	pluglist.c \
 	pluglist.h \
+	powerman.h \
 	powermand.c
 
 powermand_LDADD = \
