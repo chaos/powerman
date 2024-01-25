@@ -1,3 +1,3 @@
-include "@top_srcdir@/etc/ics8064.dev"
+include "@top_srcdir@/etc/devices/ics8064.dev"
 device "i0" "ics8064" "@top_builddir@/test/gpib -p ics8064|&"
 node "t[0-15]"  "i0"

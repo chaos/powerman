@@ -1,5 +1,5 @@
 # issue 35 (google code)
-include "@top_srcdir@/etc/vpc.dev"
+include "@top_srcdir@/etc/devices/vpc.dev"
 
 device "pdu1"       "vpc"     "@top_builddir@/test/vpcd |&"
 

@@ -4,7 +4,7 @@
 # MCR powerman.conf (1152 nodes, 121 iceboxes) - mod to work in test harness.
 # FIXME: we run out of ptys on some platforms with this many (121) coprocesses
 #
-include "@top_srcdir@/etc/icebox3.dev"
+include "@top_srcdir@/etc/devices/icebox3.dev"
 
 tcpwrappers yes
 

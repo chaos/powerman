@@ -1,4 +1,4 @@
-include "@top_srcdir@/etc/icebox3.dev"
+include "@top_srcdir@/etc/devices/icebox3.dev"
 device "i0" "icebox3" "@top_builddir@/test/icebox -p v4 |&"
 device "i1" "icebox3" "@top_builddir@/test/icebox -p v4 |&"
 device "i2" "icebox3" "@top_builddir@/test/icebox -p v4 |&"

@@ -1,4 +1,4 @@
-include "@top_srcdir@/etc/openbmc.dev"
+include "@top_srcdir@/etc/devices/openbmc.dev"
 
 device "b0" "openbmc" "@top_builddir@/test/openbmc-httppower |&"
 device "b1" "openbmc" "@top_builddir@/test/openbmc-httppower |&"

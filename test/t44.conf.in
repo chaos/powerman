@@ -1,4 +1,4 @@
-include "@top_srcdir@/etc/ilom.dev"
+include "@top_srcdir@/etc/devices/ilom.dev"
 device "d0" "ilom" "@top_builddir@/test/ilom -p ssh|&"
 device "d1" "ilom" "@top_builddir@/test/ilom -p serial|&"
 device "d2" "ilom" "@top_builddir@/test/ilom -p serial_loggedin|&"

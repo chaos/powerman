@@ -1,5 +1,5 @@
 # issue 34 (google code)
-include "@top_srcdir@/etc/vpc.dev"
+include "@top_srcdir@/etc/devices/vpc.dev"
 
 device "linkfarm"       "vpc"     "@top_builddir@/test/vpcd |&"
 device "mds"    	"vpc"     "@top_builddir@/test/vpcd |&"

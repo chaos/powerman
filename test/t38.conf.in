@@ -1,4 +1,4 @@
-include "@top_srcdir@/etc/hp3488.dev"
+include "@top_srcdir@/etc/devices/hp3488.dev"
 device "h0" "hp3488"  "@top_builddir@/test/gpib -p hp3488|&"
 device "h1" "hp3488"  "@top_builddir@/test/gpib -p hp3488|&"
 device "h2" "hp3488"  "@top_builddir@/test/gpib -p hp3488|&"

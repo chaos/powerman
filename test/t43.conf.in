@@ -1,4 +1,4 @@
-include "@top_srcdir@/etc/dli.dev"
+include "@top_srcdir@/etc/devices/dli.dev"
 device "b0" "dli" "@top_builddir@/test/dli |&"
 device "b1" "dli" "@top_builddir@/test/dli |&"
 device "b2" "dli" "@top_builddir@/test/dli |&"
