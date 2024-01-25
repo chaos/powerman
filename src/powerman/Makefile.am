@@ -52,6 +52,8 @@ powermand_SOURCES = \
 	parse_tab.y \
 	parse_util.c \
 	parse_util.h \
+	pluglist.c \
+	pluglist.h \
 	powermand.c
 
 powermand_LDADD = \
@@ -70,3 +72,12 @@ CLEANFILES = \
 
 libpowerman_la_SOURCES = \
 	libpowerman.c
+
+check_PROGRAMS = \
+	test_pluglist
+
+test_pluglist_SOURCES = test/pluglist.c
+test_pluglist_LDADD = \
+	$(builddir)/pluglist.o \
+	$(top_builddir)/src/libcommon/libcommon.a \
+	$(top_builddir)/src/liblsd/liblsd.a

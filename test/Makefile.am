@@ -1,6 +1,5 @@
 check_PROGRAMS = \
 	vpcd \
-	tpl \
 	tregex \
 	baytech \
 	icebox \
@@ -52,9 +51,6 @@ common_ldadd = \
 
 vpcd_SOURCES = vpcd.c
 vpcd_LDADD = $(common_ldadd)
-
-tpl_SOURCES = tpl.c
-tpl_LDADD = $(common_ldadd)
 
 tregex_SOURCES = tregex.c
 tregex_LDADD = $(common_ldadd)
