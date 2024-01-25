@@ -27,6 +27,8 @@
 #include <assert.h>
 #include <string.h>
 
+#include "tap.h"
+
 #include "xtypes.h"
 #include "xregex.h"
 #include "xmalloc.h"
@@ -86,54 +88,89 @@ _check_substr_match(void)
 	rm = xregex_match_create(2);
 
 	xregex_compile(re, "foo([0-9]+)bar([0-9]+)", TRUE);
-	assert(xregex_exec(re, "xxxfoo1bar2", rm) == TRUE);
+	ok (xregex_exec(re, "xxxfoo1bar2", rm) == TRUE,
+        "regex with substrings matches xxxfoo1bar2");
+
 	s = xregex_match_sub_strdup(rm, 0);
-	assert(s != NULL);
-	assert(strcmp(s, "foo1bar2") == 0);
+	ok (s != NULL,
+        "substring 0 matched");
+	is (s, "foo1bar2",
+        "substring 0 is foo1bar2");
 	xfree(s);
+
 	s = xregex_match_sub_strdup(rm, 1);
-	assert(s != NULL);
-	assert(strcmp(s, "1") == 0);
+	ok (s != NULL,
+        "substring 1 matched");
+	is (s, "1",
+        "substring 1 is 1");
 	xfree(s);
+
 	s = xregex_match_sub_strdup(rm, 2);
-	assert(s != NULL);
-	assert(strcmp(s, "2") == 0);
+	ok (s != NULL,
+        "substring 2 matched");
+	is (s, "2",
+        "substring 2 is 2");
 	xfree(s);
+
 	s = xregex_match_sub_strdup(rm, 3);
-	assert(s == NULL);
+	ok (s == NULL,
+        "substring 4 did NOT match");
+
 	s = xregex_match_sub_strdup(rm, -1); /* powerman actually does this! */
-	assert(s == NULL);
+	ok (s == NULL,
+        "substring -1 did NOT match");
+
 	s = xregex_match_strdup(rm);
-	assert(strcmp(s, "xxxfoo1bar2") == 0);
-	assert(xregex_match_strlen(rm) == strlen(s));
+	is (s, "xxxfoo1bar2",
+        "overall match is xxxfoo1bar2");
+
+	ok (xregex_match_strlen(rm) == strlen(s),
+        "xregex_match_strlen returns expected length");
 	xfree(s);
 
 	xregex_match_recycle(rm);
 
-	assert(xregex_exec(re, "foobar2", rm) == FALSE);
+	ok (xregex_exec(re, "foobar2", rm) == FALSE,
+        "regex does NOT match foobar2");
+
 	s = xregex_match_sub_strdup(rm, 0);
-	assert(s == NULL);
+	ok (s == NULL,
+        "substring 0 did NOT match");
 	s = xregex_match_sub_strdup(rm, 1);
-	assert(s == NULL);
+	ok (s == NULL,
+        "substring 1 did NOT match");
 
 	xregex_match_recycle(rm);
 
-	assert(xregex_exec(re, "xxxfoo1bar2yyy", rm) == TRUE);
+	ok (xregex_exec(re, "xxxfoo1bar2yyy", rm) == TRUE,
+        "regex does matches xxxfoo1bar2yyy");
+
 	s = xregex_match_sub_strdup(rm, 0);
-	assert(s != NULL);
-	assert(strcmp(s, "foo1bar2") == 0);
+	ok (s != NULL,
+        "substring 0 matched");
+	is (s, "foo1bar2",
+        "substring 0 is foo1bar2");
 	xfree(s);
+
 	s = xregex_match_sub_strdup(rm, 1);
-	assert(s != NULL);
-	assert(strcmp(s, "1") == 0);
+	ok (s != NULL,
+        "substring 1 matched");
+	is (s, "1",
+        "substring 1 is 1");
 	xfree(s);
+
 	s = xregex_match_sub_strdup(rm, 2);
-	assert(s != NULL);
-	assert(strcmp(s, "2") == 0);
+	ok (s != NULL,
+        "substring 2 matched");
+	is (s, "2",
+        "substring 2 is 2");
 	xfree(s);
+
 	s = xregex_match_strdup(rm);
-	assert(strcmp(s, "xxxfoo1bar2") == 0);
-	assert(xregex_match_strlen(rm) == strlen(s));
+	is (s, "xxxfoo1bar2",
+        "overall match is xxxfoo1bar2");
+	ok (xregex_match_strlen(rm) == strlen(s),
+        "xregex_match_strlen returned expected length");
 	xfree(s);
 
 	xregex_match_destroy(rm);
@@ -145,18 +182,24 @@ main(int argc, char *argv[])
 {
 	char *s;
 
-	err_init("tregex");
+	plan(NO_PLAN);
 
-	assert(_match("foo", "foo"));
-	assert(_match("foo", "fooxxx"));
-	assert(_match("foo", "xxxfoo"));
-	assert(!_match("foo", "bar"));
+	ok (_match("foo", "foo"),
+        "regex foo matches foo");
+	ok (_match("foo", "fooxxx"),
+        "regex foo matches fooxxx");
+	ok (_match("foo", "xxxfoo"),
+        "regex foo matches xxxfoo");
+	ok (!_match("foo", "bar"),
+        "regex foo does NOT match bar");
 
 	_check_substr_match();
 
 	/* verify that \\n and \\r are converted into \r and \r */
-	assert(!_match("foo\\r\\n", "foo\\r\\n"));
-	assert( _match("foo\\r\\n", "foo\r\n"));
+	ok (!_match("foo\\r\\n", "foo\\r\\n"),
+        "regex foo\\\\r\\\\n matches foo\\\\r\\\\n");
+	ok ( _match("foo\\r\\n", "foo\r\n"),
+        "regex foo\\\\r\\\\n does NOT match foo\\r\\n");
 
 	/* check a really long string for a regex */
 #define LONG_STR_LEN 	(64*1024*1024)
@@ -169,10 +212,14 @@ main(int argc, char *argv[])
 	memcpy(s + POS_WONDERFUL, "WONDERFUL", 9);
 	memcpy(s + POS_COOKIE,    "COOKIE",    6);
 	s[LONG_STR_LEN - 1] = '\0';
-	assert( _match("MAGIC", s));
-	assert( _match("WONDERFUL", s));
-	assert( _match("COOKIE", s));
-	assert(!_match("CHOCOLATE", s));
+	ok (_match("MAGIC", s),
+        "regex MAGIC matched %d bytes into a string", POS_MAGIC);
+	ok (_match("WONDERFUL", s),
+        "regex WONDERFUL matched %d bytes into a string", POS_WONDERFUL);
+	ok (_match("COOKIE", s),
+        "regex COOKIE matched %d bytes into a string", POS_COOKIE);
+	ok (!_match("CHOCOLATE", s),
+        "regex CHOCOLATE did NOT match in that long string");
 	xfree(s);
 
 	/* end of line handling should be disabled since end of string
@@ -180,29 +227,42 @@ main(int argc, char *argv[])
 	 * We should be explicitly matching end-of-line sentinels like
 	 * \n in scripts.
 	 */
-	assert(!_match("foo$", "foo"));
-	assert(!_match("foo$", "foo\n"));
-	assert(!_match("foo\n", "foo"));
-	assert(!_match("foo\n", "bar\nfoo"));
-	assert( _match("foo\n", "barfoo\n"));
+    ok (!_match("foo$", "foo"),
+        "regex foo$ did NOT match foo");
+	ok (!_match("foo$", "foo\n"),
+        "regex foo$ did NOT match foo\\n");
+	ok (!_match("foo\n", "foo"),
+        "regex foo\\n did NOT match foo");
+	ok (!_match("foo\n", "bar\nfoo"),
+        "regex foo\\n did NOT match bar\\nfoo");
+	ok (_match("foo\n", "barfoo\n"),
+        "regex foo\\n matched barfoo\\n");
 
 	/* regex takes first match if there are > 1,
 	 * but leading wildcard matches greedily
 	 */
-	assert(_matchstr("foo", "abfoocdfoo",
-                                "abfoo"));
-	assert(_matchstr_all(".*foo", "abfoocdfoo"));
+	ok (_matchstr("foo", "abfoocdfoo", "abfoo"),
+        "regex takes first match if there are more than one");
+	ok (_matchstr_all(".*foo", "abfoocdfoo"),
+        "leading wildcard matches greedily");
 
 	/* check that [:space:] character class works inside bracket
 	 * expression
 	 */
-	assert(_matchstr_all("bar[0-9[:space:]]*foo", "bar  42  foo"));
+	ok (_matchstr_all("bar[0-9[:space:]]*foo", "bar  42  foo"),
+        "[:space:] character class works inside bracket expression");
 
 	/* debug apcpdu3 regex
 	 */
 #define B3RX "([0-9])*[^\r\n]*(ON|OFF)\r\n"
-	assert(_matchstr_all(B3RX, "     2- Outlet 2                 ON\r\n"));
-	assert(_matchstr_all(B3RX, "     9-                          ON\r\n"));
+	ok (_matchstr_all(B3RX, "     2- Outlet 2                 ON\r\n"),
+        "apcpdu3 regex test 1 works");
+	ok (_matchstr_all(B3RX, "     9-                          ON\r\n"),
+        "apcpdu3 regex test 2 works");
+
+	done_testing();
 
 	exit(0);
 }
+
+// vi:ts=4 sw=4 expandtab

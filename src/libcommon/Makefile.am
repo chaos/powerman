@@ -15,8 +15,6 @@ libcommon_a_SOURCES = \
 	error.h \
 	hprintf.c \
 	hprintf.h \
-	pluglist.c \
-	pluglist.h \
 	powerman.h \
 	xmalloc.c \
 	xmalloc.h \
@@ -32,3 +30,27 @@ libcommon_a_SOURCES = \
 	xsignal.h \
 	xtime.h \
 	xtypes.h
+
+TESTS = \
+	test_argv.t \
+	test_xregex.t
+
+check_PROGRAMS = $(TESTS)
+
+TEST_EXTENSIONS = .t
+T_LOG_DRIVER = env AM_TAP_AWK='$(AWK)' $(SHELL) \
+	$(top_srcdir)/config/tap-driver.sh
+
+test_argv_t_CPPFLAGS = \
+	-I$(top_srcdir)/src/libtap
+test_argv_t_SOURCES = test/argv.c
+test_argv_t_LDADD = \
+	$(builddir)/libcommon.a \
+	$(top_builddir)/src/libtap/libtap.la
+
+test_xregex_t_CPPFLAGS = \
+	-I$(top_srcdir)/src/libtap
+test_xregex_t_SOURCES = test/xregex.c
+test_xregex_t_LDADD = \
+	$(builddir)/libcommon.a \
+	$(top_builddir)/src/libtap/libtap.la
