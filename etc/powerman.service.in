@@ -3,6 +3,7 @@ Description=PowerMan
 After=syslog.target network.target
 
 [Service]
+Environment=SHELL=/bin/sh
 Type=forking
 PrivateTmp=yes
 User=daemon
