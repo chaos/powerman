@@ -15,24 +15,24 @@
 #include <assert.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <stdbool.h>
 #include <syslog.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <ctype.h>
 #include <time.h>
 
-#include "xtypes.h"
 #include "xmalloc.h"
 #include "debug.h"
 
 #define DBG_BUFLEN 1024
 
 static unsigned long dbg_channel_mask = 0;
-static bool dbg_ttyvalid = TRUE;
+static bool dbg_ttyvalid = true;
 
 void dbg_notty(void)
 {
-    dbg_ttyvalid = FALSE;
+    dbg_ttyvalid = false;
 }
 
 void dbg_setmask(unsigned long mask)

@@ -109,7 +109,7 @@ typedef struct _device {
     char *specname;             /* name of specification, e.g. "icebox3" */
 
     ConnectState connect_state; /* is device connected/open? */
-    bool logged_in;             /* TRUE if login script has run successfully */
+    bool logged_in;             /* true if login script has run successfully */
 
     xregex_match_t xmatch;      /* cache regex matches for future $N ref */
 

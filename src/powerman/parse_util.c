@@ -38,7 +38,6 @@
 
 #include "list.h"
 #include "hostlist.h"
-#include "xtypes.h"
 #include "error.h"
 #include "parse_util.h"
 #include "xmalloc.h"
@@ -52,7 +51,7 @@ typedef struct {
     hostlist_t hl;
 } alias_t;
 
-static bool         conf_use_tcp_wrap = FALSE;
+static bool         conf_use_tcp_wrap = false;
 static int          conf_plug_log_level = LOG_DEBUG;    /* syslog level */
 static List         conf_listen = NULL;     /* list of host:port strings */
 static hostlist_t   conf_nodes = NULL;
@@ -80,9 +79,9 @@ void conf_init(char *filename)
 
     /* validate config file */
     if (stat(filename, &stbuf) < 0)
-        err_exit(TRUE, "%s", filename);
+        err_exit(true, "%s", filename);
     if ((stbuf.st_mode & S_IFMT) != S_IFREG)
-        err_exit(FALSE, "%s is not a regular file\n", filename);
+        err_exit(false, "%s is not a regular file\n", filename);
 
     /*
      * Call yacc parser against config file.  The parser calls support
@@ -111,7 +110,7 @@ void conf_fini(void)
 static bool _validate_config(void)
 {
     ListIterator itr;
-    bool valid = TRUE;
+    bool valid = true;
     alias_t *a;
 
     /* make sure aliases do not point to bogus node names */
@@ -121,12 +120,12 @@ static bool _validate_config(void)
         char *host;
 
         if (hitr == NULL)
-            err_exit(FALSE, "hostlist_iterator_create failed");
+            err_exit(false, "hostlist_iterator_create failed");
         while ((host = hostlist_next(hitr)) != NULL) {
             if (!conf_node_exists(host)) {
-                err(FALSE, "alias '%s' references nonexistent node '%s'",
+                err(false, "alias '%s' references nonexistent node '%s'",
                         a->name, host);
-                valid = FALSE;
+                valid = false;
                 free(host);
                 break;
             } else
@@ -138,8 +137,8 @@ static bool _validate_config(void)
 
     /* make sure there is at least one node defined */
     if (hostlist_is_empty(conf_nodes)) {
-        err(FALSE, "no nodes are defined");
-        valid = FALSE;
+        err(false, "no nodes are defined");
+        valid = false;
     }
 
     /* if no listen ports, add the default */
@@ -161,7 +160,7 @@ bool conf_node_exists(char *node)
     int res;
 
     res = hostlist_find(conf_nodes, node);
-    return (res == -1 ? FALSE : TRUE);
+    return (res == -1 ? false : true);
 }
 
 bool conf_addnodes(char *nodelist)
@@ -169,12 +168,12 @@ bool conf_addnodes(char *nodelist)
     hostlist_t hl = hostlist_create(nodelist);
     hostlist_iterator_t itr = hostlist_iterator_create(hl);
     char *node;
-    int res = TRUE;
+    int res = true;
 
     while ((node = hostlist_next(itr))) {
         if (conf_node_exists(node)) {
             free(node);
-            res = FALSE;
+            res = false;
             break;
         } else {
             hostlist_push(conf_nodes, node);
@@ -204,8 +203,8 @@ bool conf_get_use_tcp_wrappers(void)
 void conf_set_use_tcp_wrappers(bool val)
 {
 #if ! HAVE_TCP_WRAPPERS
-    if (val == TRUE)
-        err_exit(FALSE, "powerman was not built with tcp_wrapper support");
+    if (val == true)
+        err_exit(false, "powerman was not built with tcp_wrapper support");
 #endif
     conf_use_tcp_wrap = val;
 }
@@ -255,7 +254,7 @@ void conf_set_plug_log_level(char *level_string)
     int level = string_to_level(level_string);
 
     if (level < 0)
-        err_exit(FALSE, "unable to recognize plug_log_level config value");
+        err_exit(false, "unable to recognize plug_log_level config value");
 
     conf_plug_log_level = level;
 }
@@ -282,9 +281,9 @@ void conf_exp_aliases(hostlist_t hl)
      * deleting the original reference from the hostlist.
      */
     if (newhosts == NULL)
-        err_exit(FALSE, "hostlist_create failed");
+        err_exit(false, "hostlist_create failed");
     if ((itr = hostlist_iterator_create(hl)) == NULL)
-        err_exit(FALSE, "hostlist_iterator_create failed");
+        err_exit(false, "hostlist_iterator_create failed");
     while ((host = hostlist_next(itr)) != NULL) {
         alias_t *a;
 
@@ -338,9 +337,9 @@ bool conf_add_alias(char *name, char *hosts)
 
     if ((a = _alias_create(name, hosts))) {
         list_push(conf_aliases, a);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 /*

@@ -26,8 +26,7 @@ libcommon_la_SOURCES = \
 	xregex.h \
 	xsignal.c \
 	xsignal.h \
-	xtime.h \
-	xtypes.h
+	xtime.h
 
 TESTS = \
 	test_argv.t \

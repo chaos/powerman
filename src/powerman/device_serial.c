@@ -24,7 +24,6 @@
 #include <termios.h>
 #include <sys/time.h>
 
-#include "xtypes.h"
 #include "cbuf.h"
 #include "hostlist.h"
 #include "list.h"
@@ -102,7 +101,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
     int i;
     res = tcgetattr(fd, &tio);
     if (res < 0) {
-        err(TRUE, "%s: error getting serial attributes", devname);
+        err(true, "%s: error getting serial attributes", devname);
         return -1;
     }
 
@@ -115,7 +114,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
         }
     }
     if (res < 0) {
-        err(FALSE, "%s: error setting baud rate to %d", devname, baud);
+        err(false, "%s: error setting baud rate to %d", devname, baud);
         return -1;
     }
 
@@ -129,7 +128,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
             tio.c_cflag |= CS8;
             break;
         default:
-            err(FALSE, "%s: error setting data bits to %d", devname, databits);
+            err(false, "%s: error setting data bits to %d", devname, databits);
             return -1;
     }
 
@@ -141,7 +140,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
             tio.c_cflag |= CSTOPB;
             break;
         default:
-            err(FALSE, "%s: error setting stop bits to %d", devname, stopbits);
+            err(false, "%s: error setting stop bits to %d", devname, stopbits);
             return -1;
     }
 
@@ -161,7 +160,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
             tio.c_cflag |= PARODD;
             break;
         default:
-            err(FALSE, "%s: error setting parity to %c", devname, parity);
+            err(false, "%s: error setting parity to %c", devname, parity);
             return -1;
     }
 
@@ -170,7 +169,7 @@ static int _serial_setup(char *devname, int fd, int baud, int databits,
 
 
     if (tcsetattr(fd, TCSANOW, &tio) < 0) {
-        err(TRUE, "%s: error setting serial attributes", devname);
+        err(true, "%s: error setting serial attributes", devname);
         return -1;
     }
     return 0;
@@ -195,11 +194,11 @@ bool serial_connect(Device * dev)
 
     dev->fd = open(ser->special, O_RDWR | O_NONBLOCK | O_NOCTTY);
     if (dev->fd < 0) {
-        err(TRUE, "_serial_connect(%s): open %s", dev->name, ser->special);
+        err(true, "_serial_connect(%s): open %s", dev->name, ser->special);
         goto out;
     }
     if (!isatty(dev->fd)) {
-        err(FALSE, "_serial_connect(%s): not a tty", dev->name);
+        err(false, "_serial_connect(%s): not a tty", dev->name);
         goto out;
     }
     /*  [lifted from conman] According to the UNIX Programming FAQ v1.37
@@ -215,7 +214,7 @@ bool serial_connect(Device * dev)
      * Powerman should respect conman's locks and vice-versa.
      */
     if (lockf(dev->fd, F_TLOCK, 0) < 0) {
-        err(TRUE, "_serial_connect(%s): could not lock device\n", dev->name);
+        err(true, "_serial_connect(%s): could not lock device\n", dev->name);
         goto out;
     }
 
@@ -229,16 +228,16 @@ bool serial_connect(Device * dev)
     dev->connect_state = DEV_CONNECTED;
     dev->stat_successful_connects++;
 
-    err(FALSE, "_serial_connect(%s): opened", dev->name);
-    return TRUE;
+    err(false, "_serial_connect(%s): opened", dev->name);
+    return true;
 
 out:
     if (dev->fd >= 0) {
         if (close(dev->fd) < 0)
-            err(TRUE, "_serial_connect(%s): close", dev->name);
+            err(true, "_serial_connect(%s): close", dev->name);
         dev->fd = NO_FD;
     }
-    return FALSE;
+    return false;
 }
 
 
@@ -253,11 +252,11 @@ void serial_disconnect(Device * dev)
     /* close device if open */
     if (dev->fd >= 0) {
         if (close(dev->fd) < 0)
-            err(TRUE, "_serial_disconnect(%s): close", dev->name);
+            err(true, "_serial_disconnect(%s): close", dev->name);
         dev->fd = NO_FD;
     }
 
-    err(FALSE, "_serial_disconnect(%s): closed", dev->name);
+    err(false, "_serial_disconnect(%s): closed", dev->name);
 }
 
 /*

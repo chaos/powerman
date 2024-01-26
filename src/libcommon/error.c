@@ -17,16 +17,16 @@
 #include <stdlib.h>
 #include <syslog.h>
 #include <stdarg.h>
+#include <stdbool.h>
 #include <stdio.h>
 
-#include "xtypes.h"
 #include "list.h"
 #include "error.h"
 #include "debug.h"
 #include "xmalloc.h"
 
 static char *err_prog = NULL;           /* basename of calling program */
-static bool err_ttyvalid = TRUE;        /* use stderr until told otherwise */
+static bool err_ttyvalid = true;        /* use stderr until told otherwise */
 
 #define ERROR_BUFLEN 1024
 
@@ -45,7 +45,7 @@ void err_init(char *prog)
  */
 void err_notty(void)
 {
-    err_ttyvalid = FALSE;
+    err_ttyvalid = false;
 }
 
 /* helper for err, err_exit */
@@ -98,12 +98,12 @@ void err(bool errno_valid, const char *fmt, ...)
 
 void lsd_fatal_error(char *file, int line, char *mesg)
 {
-    err_exit(TRUE, "%s", mesg);
+    err_exit(true, "%s", mesg);
 }
 
 void *lsd_nomem_error(char *file, int line, char *mesg)
 {
-    err_exit(FALSE, "%s: out of memory", mesg);
+    err_exit(false, "%s: out of memory", mesg);
     /*NOTREACHED*/
     return NULL;
 }

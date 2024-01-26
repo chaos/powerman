@@ -30,7 +30,6 @@
 #include "hostlist.h"
 #include "list.h"
 #include "cbuf.h"
-#include "xtypes.h"
 #include "parse_util.h"
 #include "xmalloc.h"
 #include "xpoll.h"
@@ -86,11 +85,11 @@ bool pipe_connect(Device * dev)
 
     pid = xforkpty(&fd, ptyname, sizeof(ptyname));
     if (pid < 0) {
-        err_exit(TRUE, "_pipe_connect(%s): forkpty error", dev->name);
+        err_exit(true, "_pipe_connect(%s): forkpty error", dev->name);
     } else if (pid == 0) {      /* child */
         xcfmakeraw(STDIN_FILENO);
         execv(pd->argv[0], pd->argv);
-        err_exit(TRUE, "exec %s", pd->argv[0]);
+        err_exit(true, "exec %s", pd->argv[0]);
     } else {                    /* parent */
         nonblock_set(fd);
 
@@ -101,7 +100,7 @@ bool pipe_connect(Device * dev)
 
         pd->cpid = pid;
 
-        err(FALSE, "_pipe_connect(%s): opened on %s", dev->name, ptyname);
+        err(false, "_pipe_connect(%s): opened on %s", dev->name, ptyname);
     }
 
     return (dev->connect_state == DEV_CONNECTED);
@@ -120,7 +119,7 @@ void pipe_disconnect(Device * dev)
 
     if (dev->fd >= 0) {
         if (close(dev->fd) < 0)
-            err(TRUE, "_pipe_disconnect: %s close fd %d", dev->name, dev->fd);
+            err(true, "_pipe_disconnect: %s close fd %d", dev->name, dev->fd);
         dev->fd = NO_FD;
     }
 
@@ -130,15 +129,15 @@ void pipe_disconnect(Device * dev)
 
         kill(pd->cpid, SIGTERM); /* ignore errors */
         if (waitpid(pd->cpid, &wstat, 0) < 0)
-            err(TRUE, "_pipe_disconnect(%s): wait", dev->name);
+            err(true, "_pipe_disconnect(%s): wait", dev->name);
         if (WIFEXITED(wstat)) {
-            err(FALSE, "_pipe_disconnect(%s): %s exited with status %d",
+            err(false, "_pipe_disconnect(%s): %s exited with status %d",
                     dev->name, pd->argv[0], WEXITSTATUS(wstat));
         } else if (WIFSIGNALED(wstat)) {
-            err(FALSE, "_pipe_disconnect(%s): %s terminated with signal %d",
+            err(false, "_pipe_disconnect(%s): %s terminated with signal %d",
                     dev->name, pd->argv[0], WTERMSIG(wstat));
         } else {
-            err(FALSE, "_pipe_disconnect(%s): %s terminated",
+            err(false, "_pipe_disconnect(%s): %s terminated",
                     dev->name, pd->argv[0]);
         }
         pd->cpid = -1;

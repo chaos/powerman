@@ -26,7 +26,6 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "xtypes.h"
 #include "xmalloc.h"
 #include "list.h"
 #include "hostlist.h"
@@ -92,7 +91,7 @@ struct powermsg {
     do {                                                                       \
         CURLcode _ec;                                                          \
         if ((_ec = curl_easy_setopt args) != CURLE_OK)                         \
-            err_exit(FALSE, "curl_easy_setopt: %s", curl_easy_strerror(_ec));  \
+            err_exit(false, "curl_easy_setopt: %s", curl_easy_strerror(_ec));  \
     } while(0)
 
 #define OPTIONS "h:H:S:O:F:C:P:G:D:v"
@@ -137,7 +136,7 @@ static size_t output_cb(void *contents, size_t size, size_t nmemb, void *userp)
   if (pm->output) {
       char *tmp = calloc(1, pm->output_len + realsize + 1);
       if (!tmp)
-          err_exit(TRUE, "calloc");
+          err_exit(true, "calloc");
       memcpy(tmp, pm->output, pm->output_len);
       memcpy(tmp + pm->output_len, contents, realsize);
       pm->output_len += realsize;
@@ -146,7 +145,7 @@ static size_t output_cb(void *contents, size_t size, size_t nmemb, void *userp)
   }
   else {
       if (!(pm->output = calloc(1, realsize + 1)))
-          err_exit(TRUE, "calloc");
+          err_exit(true, "calloc");
       memcpy(pm->output, contents, realsize);
       pm->output_len = realsize;
   }
@@ -167,12 +166,12 @@ static struct powermsg *powermsg_create(CURLM *mh,
     CURLMcode mc;
 
     if (!pm)
-        err_exit(TRUE, "calloc");
+        err_exit(true, "calloc");
 
     pm->mh = mh;
 
     if ((pm->eh = curl_easy_init()) == NULL)
-        err_exit(FALSE, "curl_easy_init failed");
+        err_exit(false, "curl_easy_init failed");
 
     Curl_easy_setopt((pm->eh, CURLOPT_TIMEOUT, MESSAGE_TIMEOUT));
     Curl_easy_setopt((pm->eh, CURLOPT_FAILONERROR, 1));
@@ -187,7 +186,7 @@ static struct powermsg *powermsg_create(CURLM *mh,
     if (header) {
         if (!header_list) {
             if (!(header_list = curl_slist_append(header_list, header)))
-                err_exit(FALSE, "curl_slist_append");
+                err_exit(false, "curl_slist_append");
         }
         Curl_easy_setopt((pm->eh, CURLOPT_HTTPHEADER, header_list));
     }
@@ -203,7 +202,7 @@ static struct powermsg *powermsg_create(CURLM *mh,
     Curl_easy_setopt((pm->eh, CURLOPT_PRIVATE, pm));
 
     if ((mc = curl_multi_add_handle(pm->mh, pm->eh)) != CURLM_OK)
-        err_exit(FALSE, "curl_multi_add_handle: %s", curl_multi_strerror(mc));
+        err_exit(false, "curl_multi_add_handle: %s", curl_multi_strerror(mc));
 
     pm->cmd = xstrdup(cmd);
     pm->hostname = xstrdup(hostname);
@@ -224,7 +223,7 @@ static struct powermsg *powermsg_create(CURLM *mh,
         gettimeofday(&pm->start, NULL);
 
     if (cmd_timeout > (LONG_MAX - pm->start.tv_sec))
-        err_exit(FALSE, "cmd_timeout overflow");
+        err_exit(false, "cmd_timeout overflow");
 
     pm->timeout.tv_sec = pm->start.tv_sec + cmd_timeout;
     pm->timeout.tv_usec = pm->start.tv_usec;
@@ -250,7 +249,7 @@ static void powermsg_destroy(struct powermsg *pm)
             xfree(pm->postdata);
         free(pm->output);
         if ((mc = curl_multi_remove_handle(pm->mh, pm->eh)) != CURLM_OK)
-            err_exit(FALSE,
+            err_exit(false,
                      "curl_multi_remove_handle: %s",
                      curl_multi_strerror(mc));
         curl_easy_cleanup(pm->eh);
@@ -271,7 +270,7 @@ static hostlist_t parse_input_hosts(const char *inputhosts)
         return NULL;
     }
     if (!(itr = hostlist_iterator_create(lhosts)))
-        err_exit(TRUE, "hostlist_iterator_create");
+        err_exit(true, "hostlist_iterator_create");
     while ((hostname = hostlist_next(itr))) {
         if (hostlist_find(hosts, hostname) < 0) {
             printf("unknown host specified: %s\n", hostname);
@@ -323,12 +322,12 @@ static void stat_cmd(List activecmds, CURLM *mh, char **av)
         hostsptr = &hosts;
 
     if (!(itr = hostlist_iterator_create(*hostsptr)))
-        err_exit(TRUE, "hostlist_iterator_create");
+        err_exit(true, "hostlist_iterator_create");
 
     while ((hostname = hostlist_next(itr))) {
         struct powermsg *pm = stat_cmd_host(mh, hostname);
         if (!list_append(activecmds, pm))
-            err_exit(TRUE, "list_append");
+            err_exit(true, "list_append");
         free(hostname);
     }
     hostlist_iterator_destroy(itr);
@@ -434,12 +433,12 @@ static void power_cmd(List activecmds,
         hostsptr = &hosts;
 
     if (!(itr = hostlist_iterator_create(*hostsptr)))
-        err_exit(TRUE, "hostlist_iterator_create");
+        err_exit(true, "hostlist_iterator_create");
 
     while ((hostname = hostlist_next(itr))) {
         struct powermsg *pm = power_cmd_host(mh, hostname, cmd, path, postdata);
         if (!list_append(activecmds, pm))
-            err_exit(TRUE, "list_append");
+            err_exit(true, "list_append");
         free(hostname);
     }
     hostlist_iterator_destroy(itr);
@@ -506,7 +505,7 @@ static void on_off_process(List delayedcmds, struct powermsg *pm)
     Curl_easy_setopt((nextpm->eh, CURLOPT_HTTPGET, 1));
     nextpm->wait_until_on_off = 1;
     if (!list_append(delayedcmds, nextpm))
-        err_exit(TRUE, "list_append");
+        err_exit(true, "list_append");
 }
 
 static void on_process(List delayedcmds, struct powermsg *pm)
@@ -677,10 +676,10 @@ static void shell(CURLM *mh)
     int exitflag = 0;
 
     if (!(activecmds = list_create(cleanup_powermsg)))
-        err_exit(TRUE, "list_create");
+        err_exit(true, "list_create");
 
     if (!(delayedcmds = list_create(NULL)))
-        err_exit(TRUE, "list_create");
+        err_exit(true, "list_create");
 
     while (exitflag == 0) {
         CURLMcode mc;
@@ -721,7 +720,7 @@ static void shell(CURLM *mh)
                         break;
                     list_remove(itr);
                     if (!list_append(activecmds, tmp))
-                        err_exit(TRUE, "list_append");
+                        err_exit(true, "list_append");
                 }
 
                 delaypm = list_peek(delayedcmds);
@@ -734,7 +733,7 @@ static void shell(CURLM *mh)
             }
 
             if ((mc = curl_multi_timeout(mh, &curl_timeout_ms)) != CURLM_OK)
-                err_exit(FALSE, "curl_multi_timeout: %s", curl_multi_strerror(mc));
+                err_exit(false, "curl_multi_timeout: %s", curl_multi_strerror(mc));
             /* Per documentation, wait incremental time then proceed if timeout < 0 */
             if (curl_timeout_ms < 0)
                 curl_timeout_ms = INCREMENTAL_WAIT;
@@ -762,13 +761,13 @@ static void shell(CURLM *mh)
                                        &fdwrite,
                                        &fderror,
                                        &maxfd)) != CURLM_OK)
-                err_exit(FALSE, "curl_multi_fdset: %s", curl_multi_strerror(mc));
+                err_exit(false, "curl_multi_fdset: %s", curl_multi_strerror(mc));
         }
 
         /* XXX: use curl_multi_poll/wait on newer versions of curl */
 
         if (select(maxfd+1, &fdread, &fdwrite, &fderror, timeoutptr) < 0)
-            err_exit(TRUE, "select");
+            err_exit(true, "select");
 
         if (FD_ISSET(STDIN_FILENO, &fdread)) {
             char buf[256];
@@ -789,7 +788,7 @@ static void shell(CURLM *mh)
             int stillrunning;
 
             if ((mc = curl_multi_perform(mh, &stillrunning)) != CURLM_OK)
-                err_exit(FALSE,
+                err_exit(false,
                          "curl_multi_perform: %s",
                          curl_multi_strerror(mc));
 
@@ -803,12 +802,12 @@ static void shell(CURLM *mh)
                     if ((ec = curl_easy_getinfo(eh,
                                                 CURLINFO_PRIVATE,
                                                 (char **)&pm)) != CURLE_OK)
-                        err_exit(FALSE,
+                        err_exit(false,
                                  "curl_easy_getinfo: %s",
                                  curl_easy_strerror(ec));
 
                     if (!pm)
-                        err_exit(FALSE, "private data not set in easy handle");
+                        err_exit(false, "private data not set in easy handle");
 
                     if (cmsg->data.result != 0) {
                         printf("%s: %s\n", pm->hostname, "error");
@@ -870,11 +869,11 @@ static void readhostsfile(const char *file)
 
     if (!hosts) {
         if (!(hosts = hostlist_create(NULL)))
-            err_exit(TRUE, "hostlist_create");
+            err_exit(true, "hostlist_create");
     }
 
     if (!(stream = fopen(file, "r")))
-        err_exit(TRUE, "error opening file %s", file);
+        err_exit(true, "error opening file %s", file);
 
     while (fgets(buf, 1024, stream)) {
         _remove_trailing_whitespace(buf);
@@ -885,7 +884,7 @@ static void readhostsfile(const char *file)
         if (buf[0] == '#')
             continue;
         if (!hostlist_push(hosts, buf))
-            err_exit(TRUE, "hostlist_push error on %s", optarg);
+            err_exit(true, "hostlist_push error on %s", optarg);
     }
 
     fclose(stream);
@@ -904,11 +903,11 @@ int main(int argc, char *argv[])
             case 'h': /* --hostname */
                 if (hosts) {
                     if (!hostlist_push(hosts, optarg))
-                        err_exit(TRUE, "hostlist_push error on %s", optarg);
+                        err_exit(true, "hostlist_push error on %s", optarg);
                 }
                 else {
                     if (!(hosts = hostlist_create(optarg)))
-                        err_exit(TRUE, "hostlist_create error on %s", optarg);
+                        err_exit(true, "hostlist_create error on %s", optarg);
                 }
                 break;
             case 'f': /* --hostsfile */
@@ -953,10 +952,10 @@ int main(int argc, char *argv[])
         usage();
 
     if ((ec = curl_global_init(CURL_GLOBAL_ALL)) != CURLE_OK)
-        err_exit(FALSE, "curl_global_init: %s", curl_easy_strerror(ec));
+        err_exit(false, "curl_global_init: %s", curl_easy_strerror(ec));
 
     if (!(mh = curl_multi_init()))
-        err_exit(FALSE, "curl_multi_init failed");
+        err_exit(false, "curl_multi_init failed");
 
     shell(mh);
 

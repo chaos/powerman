@@ -30,7 +30,6 @@
 #include "list.h"
 #include "cbuf.h"
 #include "hostlist.h"
-#include "xtypes.h"
 #include "xmalloc.h"
 #include "xpoll.h"
 #include "xregex.h"
@@ -156,11 +155,11 @@ config_item     : listen
 ;
 TCP_wrappers    : TOK_TCP_WRAPPERS         {
     _warnmsg("'tcpwrappers' without yes|no");
-    conf_set_use_tcp_wrappers(TRUE);
+    conf_set_use_tcp_wrappers(true);
 }               | TOK_TCP_WRAPPERS TOK_YES {
-    conf_set_use_tcp_wrappers(TRUE);
+    conf_set_use_tcp_wrappers(true);
 }               | TOK_TCP_WRAPPERS TOK_NO  {
-    conf_set_use_tcp_wrappers(FALSE);
+    conf_set_use_tcp_wrappers(false);
 }
 ;
 plug_log_level          : TOK_PLUG_LOG_LEVEL TOK_STRING_VAL {
@@ -363,7 +362,7 @@ int parse_config_file (char *filename)
 
     yyin = fopen(filename, "r");
     if (!yyin)
-        err_exit(TRUE, "%s", filename);
+        err_exit(true, "%s", filename);
 
     device_specs = list_create((ListDelF) destroySpec);
     _clear_current_spec();
@@ -520,7 +519,7 @@ static List copyInterpList(List il)
         while((ip = list_next(itr))) {
             assert(ip->magic == INTERP_MAGIC);
             icpy = makeInterp(ip->state, ip->str);
-            xregex_compile(icpy->re, icpy->str, FALSE);
+            xregex_compile(icpy->re, icpy->str, false);
             assert(icpy->magic == INTERP_MAGIC);
             list_append(new, icpy);
         }
@@ -577,7 +576,7 @@ static Stmt *makeStmt(PreStmt *p)
         break;
     case STMT_EXPECT:
         stmt->u.expect.exp = xregex_create();
-        xregex_compile(stmt->u.expect.exp, p->str, TRUE);
+        xregex_compile(stmt->u.expect.exp, p->str, true);
         break;
     case STMT_SETPLUGSTATE:
         stmt->u.setplugstate.stat_mp = p->mp2;
@@ -778,12 +777,12 @@ static void _doubletotv(struct timeval *tv, double val)
 
 static void _errormsg(char *msg)
 {
-    err_exit(FALSE, "%s: %s::%d", msg, scanner_file(), scanner_line());
+    err_exit(false, "%s: %s::%d", msg, scanner_file(), scanner_line());
 }
 
 static void _warnmsg(char *msg)
 {
-    err(FALSE, "warning: %s: %s::%d", msg, scanner_file(), scanner_line());
+    err(false, "warning: %s: %s::%d", msg, scanner_file(), scanner_line());
 }
 
 void yyerror()

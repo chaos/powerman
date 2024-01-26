@@ -21,7 +21,6 @@
 #include <net-snmp/net-snmp-config.h>
 #include <net-snmp/net-snmp-includes.h>
 
-#include "xtypes.h"
 #include "xmalloc.h"
 #include "error.h"
 #include "argv.h"
@@ -43,11 +42,11 @@ get (char **av, struct snmp_session **ssp)
     int status;
 
     if (av[1] == NULL) {
-        err (FALSE, "missing oid");
+        err (false, "missing oid");
         return;
     }
     if (*ssp == NULL) {
-        err (FALSE, "start session first");
+        err (false, "start session first");
         return;
     }
     pdu = snmp_pdu_create (SNMP_MSG_GET);
@@ -75,7 +74,7 @@ get (char **av, struct snmp_session **ssp)
         }
     } else {
         if (status == STAT_SUCCESS)
-            err_exit (FALSE, "error in packet: %s",
+            err_exit (false, "error in packet: %s",
                       snmp_errstring (response->errstat));
         else
             snmp_sess_perror ("snmpget", *ssp);
@@ -95,19 +94,19 @@ set (char **av, struct snmp_session **ssp)
     int status;
 
     if (av[1] == NULL) {
-        err (FALSE, "missing oid");
+        err (false, "missing oid");
         return;
     }
     if (av[2] == NULL) {
-        err (FALSE, "missing type");
+        err (false, "missing type");
         return;
     }
     if (av[3] == NULL) {
-        err (FALSE, "missing value");
+        err (false, "missing value");
         return;
     }
     if (*ssp == NULL) {
-        err (FALSE, "start session first");
+        err (false, "start session first");
         return;
     }
     pdu = snmp_pdu_create (SNMP_MSG_SET);
@@ -135,7 +134,7 @@ set (char **av, struct snmp_session **ssp)
         }
     } else {
         if (status == STAT_SUCCESS)
-            err_exit (FALSE, "error in packet: %s",
+            err_exit (false, "error in packet: %s",
                       snmp_errstring (response->errstat));
         else
             snmp_sess_perror ("snmpset", *ssp);
@@ -150,11 +149,11 @@ start_v1v2c (char **av, int version, char *hostname, struct snmp_session **ssp)
     struct snmp_session session;
 
     if (av[1] == NULL) {
-        err (FALSE, "missing community");
+        err (false, "missing community");
         return;
     }
     if (*ssp) {
-        err (FALSE, "finish current session first");
+        err (false, "finish current session first");
         return;
     }
     snmp_sess_init (&session);
@@ -164,7 +163,7 @@ start_v1v2c (char **av, int version, char *hostname, struct snmp_session **ssp)
     session.peername = hostname;
 
     if (!(*ssp = snmp_open (&session))) {
-        err (FALSE, "snmp_open failed");
+        err (false, "snmp_open failed");
         xfree (session.community);
     }
 }
@@ -175,15 +174,15 @@ start_v3 (char **av, char *hostname, struct snmp_session **ssp)
     struct snmp_session session;
 
     if (av[1] == NULL) {
-        err (FALSE, "missing security name");
+        err (false, "missing security name");
         return;
     }
     if (av[2] == NULL) {
-        err (FALSE, "missing passphrase");
+        err (false, "missing passphrase");
         return;
     }
     if (strlen (av[2]) < 8) {
-        err (FALSE, "passphrase must be at least 8 characters");
+        err (false, "passphrase must be at least 8 characters");
         return;
     }
     snmp_sess_init (&session);
@@ -203,11 +202,11 @@ start_v3 (char **av, char *hostname, struct snmp_session **ssp)
                      (u_char *)av[2], strlen (av[2]),
                      session.securityAuthKey,
                      &session.securityAuthKeyLen) != SNMPERR_SUCCESS) {
-        err (FALSE, "Error generating Ku from auth pass phrase");
+        err (false, "Error generating Ku from auth pass phrase");
     }
 
     if (!(*ssp = snmp_open (&session)))
-        err (FALSE, "snmp_open failed");
+        err (false, "snmp_open failed");
 }
 
 static void
@@ -216,7 +215,7 @@ mib (char **av, struct snmp_session **ssp)
     static int initialized = 0;
 
     if (av[1] == NULL) {
-        err (FALSE, "missing name");
+        err (false, "missing name");
         return;
     }
     if (!initialized) {

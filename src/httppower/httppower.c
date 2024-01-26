@@ -22,7 +22,6 @@
 #include <string.h>
 #include <stdlib.h>
 
-#include "xtypes.h"
 #include "xmalloc.h"
 #include "error.h"
 #include "argv.h"
@@ -321,9 +320,9 @@ main(int argc, char *argv[])
         usage();
 
     if (curl_global_init(CURL_GLOBAL_ALL) != 0)
-        err_exit(FALSE, "curl_global_init failed");
+        err_exit(false, "curl_global_init failed");
     if ((h = curl_easy_init()) == NULL)
-        err_exit(FALSE, "curl_easy_init failed");
+        err_exit(false, "curl_easy_init failed");
 
     curl_easy_setopt(h, CURLOPT_TIMEOUT, 5);
     curl_easy_setopt(h, CURLOPT_ERRORBUFFER, errbuf);

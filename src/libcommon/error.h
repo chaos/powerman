@@ -11,6 +11,8 @@
 #ifndef PM_ERROR_H
 #define PM_ERROR_H
 
+#include <stdbool.h>
+
 void err_init(char *prog);
 void err_notty(void);
 void err_exit(bool errno_valid, const char *fmt, ...);

@@ -21,10 +21,10 @@
 #include <stdarg.h>
 #include <assert.h>
 #include <unistd.h>
+#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 
-#include "xtypes.h"
 #include "list.h"
 #include "xmalloc.h"
 #include "hostlist.h"
@@ -72,7 +72,7 @@ PlugList pluglist_create(List plugnames)
 
     pl->magic = PLUGLIST_MAGIC;
     pl->pluglist = list_create((ListDelF)_destroy_plug);
-    pl->hardwired = FALSE;
+    pl->hardwired = false;
 
     /* create plug for each element of plugnames list */
     if (plugnames) {
@@ -83,7 +83,7 @@ PlugList pluglist_create(List plugnames)
         while ((name = list_next(itr)))
             list_append(pl->pluglist, _create_plug(name));
         list_iterator_destroy(itr);
-        pl->hardwired = TRUE;
+        pl->hardwired = true;
     }
 
     return pl;

@@ -33,7 +33,6 @@
 #include <stdio.h>
 #include <fcntl.h>
 
-#include "xtypes.h"
 #include "xmalloc.h"
 #include "xpoll.h"
 #include "xregex.h"
@@ -117,8 +116,8 @@ int deny_severity = LOG_WARNING;/* logging level for rejected reqs */
 static int *listen_fds;         /* powermand listen sockets */
 static int listen_fds_len = 0;  /* count of above sockets */
 static List cli_clients = NULL; /* list of clients */
-static bool one_client = FALSE; /* terminate after first client */
-static bool server_done = FALSE;/* true when stdio client exits */
+static bool one_client = false; /* terminate after first client */
+static bool server_done = false;/* true when stdio client exits */
 
 static int cli_id_seq = 1;      /* range 1...INT_MAX */
 #define _next_cli_id() \
@@ -163,9 +162,9 @@ static void _client_printf(Client *c, const char *fmt, ...)
     /* Write to the client buffer */
     written = cbuf_write(c->to, str, strlen(str), &dropped);
     if (written < 0)
-        err(TRUE, "_client_printf: cbuf_write returned %d", written);
+        err(true, "_client_printf: cbuf_write returned %d", written);
     else if (dropped > 0)
-        err(FALSE, "_client_printf: cbuf_write dropped %d chars", dropped);
+        err(false, "_client_printf: cbuf_write dropped %d chars", dropped);
 
     /* Free the tmp string */
     xfree(str);
@@ -200,7 +199,7 @@ static hostlist_t _hostlist_create_validated(Client * c, char *str)
     hostlist_t badhl = NULL;
     hostlist_iterator_t itr = NULL;
     char *host;
-    bool valid = TRUE;
+    bool valid = true;
 
     if ((hl = hostlist_create(str)) == NULL) {
         /* Note: report detailed error since 'str' comes from the user */
@@ -223,7 +222,7 @@ static hostlist_t _hostlist_create_validated(Client * c, char *str)
     }
     while ((host = hostlist_next(itr)) != NULL) {
         if (!conf_node_exists(host)) {
-            valid = FALSE;
+            valid = false;
             hostlist_push_host(badhl, host);
         }
         free(host); /* hostlist_next strdups returned string */
@@ -306,20 +305,20 @@ static char *_make_pluglist_str(Device * dev)
 
 /*
  * Helper for _client_query_device_reply.
- * Return TRUE if hostlist string in 'arg' matches any plugs on device.
+ * Return true if hostlist string in 'arg' matches any plugs on device.
  */
 static bool _device_matches_targets(Device *dev, char *arg)
 {
     hostlist_t targ = hostlist_create(arg);
     PlugListIterator itr;
     Plug *plug;
-    bool res = FALSE;
+    bool res = false;
 
     if (targ != NULL) {
         itr = pluglist_iterator_create(dev->plugs);
         while ((plug = pluglist_next(itr))) {
             if (hostlist_find(targ, plug->node) != -1) {
-                res = TRUE;
+                res = true;
                 break;
             }
         }
@@ -476,7 +475,7 @@ static Command *_create_command(Client * c, int com, char *arg1)
     Command *cmd = (Command *) xmalloc(sizeof(Command));
 
     cmd->com = com;
-    cmd->error = FALSE;
+    cmd->error = false;
     cmd->pending = 0;
     cmd->hl = NULL;
     cmd->arglist = NULL;
@@ -569,7 +568,7 @@ static void _parse_input(Client * c, char *input)
         c->exprange = !c->exprange;                     /* exprange */
         _client_printf(c, CP_RSP_EXPRANGE, c->exprange ? "ON" : "OFF");
     } else if (!strncasecmp(str, CP_QUIT, strlen(CP_QUIT))) {
-        c->client_quit = TRUE;
+        c->client_quit = true;
         _client_printf(c, CP_RSP_QUIT);                 /* quit */
         _handle_write(c);
     } else if (sscanf(str, CP_ON, arg1) == 1) {         /* on hostlist */
@@ -664,7 +663,7 @@ static void log_state_change(Client *c)
 
     hosts = _xhostlist_ranged_string(c->cmd->hl);
     syslog(level, "%s %s%s", action, hosts,
-        (c->cmd->error == TRUE ? with_errors : ""));
+        (c->cmd->error == true ? with_errors : ""));
     xfree(hosts);
 }
 
@@ -691,7 +690,7 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
         _client_printf(c, CP_INFO_ACTERROR, str);
         xfree(str);
 
-        c->cmd->error = TRUE;       /* when done say "completed with errors" */
+        c->cmd->error = true;       /* when done say "completed with errors" */
     }
 
     /* all actions have called back - return response to client */
@@ -718,7 +717,7 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
                 _client_printf(c, CP_RSP_COM_COMPLETE);
             break;
         default:
-            assert(FALSE);
+            assert(false);
             _internal_error_response(c);
             break;
         }
@@ -740,13 +739,13 @@ static void _destroy_client(Client *c)
     if (c->fd != NO_FD) {
         dbg(DBG_CLIENT, "_destroy_client: closing fd %d", c->fd);
         if (close(c->fd) < 0)
-            err(TRUE, "close fd %d", c->fd);
+            err(true, "close fd %d", c->fd);
         c->fd = NO_FD;
     }
     if (c->ofd != NO_FD) {
         dbg(DBG_CLIENT, "_destroy_client: closing fd %d", c->ofd);
         if (close(c->ofd) < 0)
-            err(TRUE, "close fd %d", c->ofd);
+            err(true, "close fd %d", c->ofd);
         c->ofd = NO_FD;
     }
     if (c->to)
@@ -761,7 +760,7 @@ static void _destroy_client(Client *c)
         xfree(c->host);
     xfree(c);
     if (one_client)
-        server_done = TRUE;
+        server_done = true;
 }
 
 /* helper for _find_client */
@@ -802,7 +801,7 @@ static void _listen_client(void)
     while ((addr = list_next(itr))) {
         host = addr;
         if (!(port = strchr(addr, ':')))
-            err_exit(FALSE, "error parsing listen address: %s", addr);
+            err_exit(false, "error parsing listen address: %s", addr);
         *port++ = '\0';
 
         memset(&hints, 0, sizeof(hints));
@@ -813,9 +812,9 @@ static void _listen_client(void)
          * while host="0.0.0.0" is IPv4-specific INADDR_ANY.
          */
         if ((error = getaddrinfo(host, port, &hints, &res)))
-            err_exit(FALSE, "getaddrinfo: %s", gai_strerror(error));
+            err_exit(false, "getaddrinfo: %s", gai_strerror(error));
         if (res == NULL)
-            err_exit(FALSE, "listen address has no addrinfo: %s", addr);
+            err_exit(false, "listen address has no addrinfo: %s", addr);
 
         /* allocate the listen_fds array */
         for (r = res; r != NULL; r = r->ai_next)
@@ -872,7 +871,7 @@ static void _listen_client(void)
 
     if (count == 0) {
         errno = saved_errno;
-        err_exit(TRUE, "%s", what);
+        err_exit(true, "%s", what);
     }
     dbg(DBG_CLIENT, "listening on %d sockets", count);
 }
@@ -892,10 +891,10 @@ static void _create_client_socket(int fd)
     c->from = NULL;
     c->cmd = NULL;
     c->client_id = _next_cli_id();
-    c->telemetry = FALSE;
-    c->exprange = FALSE;
+    c->telemetry = false;
+    c->exprange = false;
     c->ofd = NO_FD;
-    c->client_quit = FALSE;
+    c->client_quit = false;
 
     c->fd = accept(fd, (struct sockaddr *)&addr, &addr_size);
     if (c->fd < 0){
@@ -905,17 +904,17 @@ static void _create_client_socket(int fd)
         if (errno == EWOULDBLOCK || errno == ECONNABORTED
                                  || errno == EPROTO || errno == EINTR) {
             _destroy_client(c);
-            err(TRUE, "_create_client: accept");
+            err(true, "_create_client: accept");
             return;
         }
-        err_exit(TRUE, "accept");
+        err_exit(true, "accept");
     }
 
     if ((error = getnameinfo((struct sockaddr *)&addr, addr_size,
                              hbuf, sizeof(hbuf), pbuf, sizeof(pbuf),
                              NI_NUMERICHOST | NI_NUMERICSERV))) {
         _destroy_client(c);
-        err(TRUE, "_create_client: getnameinfo: %s", gai_strerror(error));
+        err(true, "_create_client: getnameinfo: %s", gai_strerror(error));
         return;
     }
     c->ip   = xstrdup(hbuf);
@@ -923,7 +922,7 @@ static void _create_client_socket(int fd)
 
     if ((error = getnameinfo((struct sockaddr *)&addr, addr_size,
                              hbuf, sizeof(hbuf), NULL, 0, NI_NAMEREQD)))
-        err(FALSE, "_create_client: getnameinfo: %s", gai_strerror(error));
+        err(false, "_create_client: getnameinfo: %s", gai_strerror(error));
     else
         c->host = xstrdup(hbuf);
 
@@ -933,7 +932,7 @@ static void _create_client_socket(int fd)
         if (!hosts_ctl(DAEMON_NAME,
                        c->host ? c->host : STRING_UNKNOWN,
                        c->ip, STRING_UNKNOWN)) {
-            err(FALSE, "_create_client: tcp wrappers denies %s:%d",
+            err(false, "_create_client: tcp wrappers denies %s:%d",
                 c->host ? c->host : c->ip, c->port);
             _destroy_client(c);
             return;
@@ -968,9 +967,9 @@ static void _create_client_stdio(void)
     c->magic = CLI_MAGIC;
     c->cmd = NULL;
     c->client_id = _next_cli_id();
-    c->telemetry = FALSE;
-    c->exprange = FALSE;
-    c->client_quit = FALSE;
+    c->telemetry = false;
+    c->exprange = false;
+    c->client_quit = false;
     c->fd = STDIN_FILENO;
     c->ofd = STDOUT_FILENO;
     c->host = xstrdup("localhost");
@@ -1001,17 +1000,17 @@ static void _handle_read(Client * c)
     assert(c->magic == CLI_MAGIC);
     n = cbuf_write_from_fd(c->from, c->fd, -1, &dropped);
     if (n < 0) {
-        c->client_quit = TRUE;
-        err(TRUE, "client read error");
+        c->client_quit = true;
+        err(true, "client read error");
         return;
     }
     if (n == 0) {
-        c->client_quit = TRUE;
-        err(FALSE, "client read returned EOF");
+        c->client_quit = true;
+        err(false, "client read returned EOF");
         return;
     }
     if (dropped != 0)
-        err(FALSE, "dropped %d bytes of client input", dropped);
+        err(false, "dropped %d bytes of client input", dropped);
 }
 
 /*
@@ -1027,8 +1026,8 @@ static void _handle_write(Client * c)
         nonblock_clr(ofd);
     n = cbuf_read_to_fd(c->to, ofd, -1);
     if (n < 0) {
-        err(TRUE, "write error on client");
-        c->client_quit = TRUE;
+        err(true, "write error on client");
+        c->client_quit = true;
     }
 }
 
@@ -1040,7 +1039,7 @@ static void _handle_input(Client *c)
     while ((len = cbuf_read_line(c->from, buf, sizeof(buf), 1)) > 0)
         _parse_input(c, buf);
     if (len < 0)
-        err(TRUE, "client cbuf_read_line returned %d", len);
+        err(true, "client cbuf_read_line returned %d", len);
 }
 
 /*
@@ -1101,11 +1100,11 @@ void cli_post_poll(xpollfd_t pfd)
             short flags = xpollfd_revents(pfd, c->fd);
 
             if (flags & XPOLLERR)
-                err(FALSE, "client poll: error");
+                err(false, "client poll: error");
             if (flags & XPOLLHUP)
-                err(FALSE, "client poll: hangup");
+                err(false, "client poll: hangup");
             if (flags & XPOLLNVAL)
-                err(FALSE, "client poll: fd not open");
+                err(false, "client poll: fd not open");
             if (flags & (XPOLLERR | XPOLLHUP | XPOLLNVAL))
                 goto client_dead;
             if ((flags & XPOLLIN))
@@ -1117,11 +1116,11 @@ void cli_post_poll(xpollfd_t pfd)
             short flags = xpollfd_revents(pfd, c->ofd);
 
             if (flags & XPOLLERR)
-                err(FALSE, "client poll: error");
+                err(false, "client poll: error");
             if (flags & XPOLLHUP)
-                err(FALSE, "client poll: hangup");
+                err(false, "client poll: hangup");
             if (flags & XPOLLNVAL)
-                err(FALSE, "client poll: fd not open");
+                err(false, "client poll: fd not open");
             if (flags & (XPOLLERR | XPOLLHUP | XPOLLNVAL))
                 goto client_dead;
             if (c->fd == NO_FD)
