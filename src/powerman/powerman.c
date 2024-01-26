@@ -304,11 +304,24 @@ int main(int argc, char **argv)
 static void _usage(void)
 {
     printf("Usage: %s [action] [targets]\n", prog);
-    printf("-1,--on targets      Power on targets\n");
-    printf("-0,--off targets     Power off targets\n");
-    printf("-c,--cycle targets   Power cycle targets\n");
-    printf("-q,--query-all       Query power state of all targets\n");
-    printf("-Q,--query targets   Query power state of specific targets\n");
+    printf("  -1,--on targets      Power on targets\n");
+    printf("  -0,--off targets     Power off targets\n");
+    printf("  -c,--cycle targets   Power cycle targets\n");
+    printf("  -q,--query-all       Query power state of all targets\n");
+    printf("  -Q,--query targets   Query power state of specific targets\n");
+#if WITH_GENDERS
+    printf("  -g,--genders         Interpret targets as attributes\n");
+#endif
+    printf("  -h,--server-host host[:port]  Connect to remote server\n");
+    printf("  -x,--exprange        Expand host ranges in query response\n");
+    printf("  -T,--telemtery       Show device conversation for debugging\n");
+    printf("  -l,--list            List available targets\n");
+    printf ("The following are not implemented by all devices:\n");
+    printf("  -r,--reset targets   Assert hardware reset\n");
+    printf("  -f,--flash targets   Turn beacon on\n");
+    printf("  -u,--unflash targets Turn beacon off\n");
+    printf("  -b,--beacon targets  Query beacon status\n");
+    printf("  -P,--temp targets    Query temperature\n");
     exit(1);
 }
 
