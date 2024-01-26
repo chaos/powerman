@@ -1,0 +1,57 @@
+#
+# Control POE on UniFi switches via rancid (http://www.shrubbery.net/rancid/)
+#
+#   device "ubnt-switch" "rancid-ubnt-poe" "/usr/lib/rancid/bin/clogin -t600 myswitch |&"
+#
+# Plug names are the device interface name:
+#   node "mydevice"		"ubnt-switch" "0/1"
+#
+# The user running the powerman must have a .cloginrc file in its home directory
+# with an appropriate configuration to allow querying and setting power status
+#
+specification "rancid-ubnt-poe" {
+	timeout 	10
+
+	script login {
+		expect ".*#"
+	}
+	script logout {
+		send "exit\n"
+	}
+	script status {
+		send "show poe status %s | section (Good|Circuit|Short|Low) \n"
+		expect "\r\n\r\n([^ ]+) +(Good|Open Circuit|Short|R Sig Too Low)"
+		setplugstate $1 $2 on="Good" off=".*"
+		expect ".*#"
+	}
+	script on {
+		send "configure\n"
+		expect ".*\\(Config\\)#"
+		send "interface %s\n"
+		expect ".*\\(Interface [0-9\/]+\\)#"
+		send "poe opmode auto\n"
+		expect ".*\\(Interface [0-9\/]+\\)#"
+		send "end\n"
+		expect ".*#"
+	}
+	script off {
+		send "configure\n"
+		expect ".*\\(Config\\)#"
+		send "interface %s\n"
+		expect ".*\\(Interface [0-9\/]+\\)#"
+		send "poe opmode shutdown\n"
+		expect ".*\\(Interface [0-9\/]+\\)#"
+		send "end\n"
+		expect ".*#"
+	}
+	script cycle {
+		send "configure\n"
+		expect ".*\\(Config\\)#"
+		send "interface %s\n"
+		expect ".*\\(Interface [0-9\/]+\\)#"
+		send "poe opmode shutdown poe opmode auto\n"
+		expect ".*\\(Interface [0-9\/]+\\)#"
+		send "end\n"
+		expect ".*#"
+	}
+}
