@@ -25,9 +25,7 @@
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
-#include <stdarg.h>
 
-#include "xtypes.h"
 #include "list.h"
 #include "hostlist.h"
 #include "parse_util.h"
@@ -72,24 +70,24 @@ int main(int argc, char **argv)
 {
     int c;
     char *config_filename = NULL;
-    bool daemonize = TRUE;
-    bool use_stdio = FALSE;
-    bool short_circuit_delay = FALSE;
-    bool one_client = FALSE;
+    bool daemonize = true;
+    bool use_stdio = false;
+    bool short_circuit_delay = false;
+    bool one_client = false;
 
     /* parse command line options */
     err_init(argv[0]);
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
         case 'Y': /* --short-circuit-delay */
-            short_circuit_delay = TRUE;
+            short_circuit_delay = true;
             break;
         case 'c': /* --conf */
             if (!config_filename)
                 config_filename = xstrdup(optarg);
             break;
         case 'f': /* --foreground */
-            daemonize = FALSE;
+            daemonize = false;
             break;
         case 'd': /* --debug */
             {
@@ -97,7 +95,7 @@ int main(int argc, char **argv)
 
                 if ((val == LONG_MAX || val == LONG_MIN)
                     && errno == ERANGE)
-                    err_exit(TRUE, "strtol on debug mask");
+                    err_exit(true, "strtol on debug mask");
                 dbg_setmask(val);
             }
             break;
@@ -106,11 +104,11 @@ int main(int argc, char **argv)
             /*NOTREACHED*/
             break;
         case 's': /* --stdio */
-            use_stdio = TRUE;
-            one_client = TRUE;
+            use_stdio = true;
+            one_client = true;
             break;
         case '1': /* --one-client */
-            one_client = TRUE;
+            one_client = true;
             break;
         case 'h': /* --help */
         default:
@@ -121,7 +119,7 @@ int main(int argc, char **argv)
     }
 
     if (use_stdio && daemonize)
-        err_exit(FALSE, "--stdio should only be used with --foreground");
+        err_exit(false, "--stdio should only be used with --foreground");
 
     if (!config_filename)
         config_filename = hsprintf("%s/%s/%s", X_SYSCONFDIR,

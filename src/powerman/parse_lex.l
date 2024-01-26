@@ -23,7 +23,6 @@ extern YYSTYPE yylval;
 
 #include "hostlist.h"
 #include "parse_tab.h"
-#include "xtypes.h"
 #include "list.h"
 #include "xmalloc.h"
 #include "error.h"
@@ -194,14 +193,14 @@ include         BEGIN(lex_incl);
     yytext[len - 1] = '\0';
 
     if ( include_stack_ptr >= MAX_INCLUDE_DEPTH - 1 )
-        err_exit(FALSE, "Includes nested too deeply" );
+        err_exit(false, "Includes nested too deeply" );
 
     include_stack[include_stack_ptr++] = YY_CURRENT_BUFFER;
     linenum[include_stack_ptr] = 1;
 
     yyin = fopen( yytext + 1, "r" );
     if ( yyin == NULL )
-        err_exit(TRUE, "%s", yytext + 1);
+        err_exit(true, "%s", yytext + 1);
     filename[include_stack_ptr] = xstrdup(yytext + 1);
 
     yy_switch_to_buffer( yy_create_buffer( yyin, YY_BUF_SIZE ) );

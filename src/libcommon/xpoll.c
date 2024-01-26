@@ -31,7 +31,6 @@
 #include <assert.h>
 
 #include "xtime.h"
-#include "xtypes.h"
 #include "xmalloc.h"
 #include "error.h"
 #include "xpoll.h"
@@ -107,7 +106,7 @@ xpoll(xpollfd_t pfd, struct timeval *tv)
     if (tv) {
         tv_cpy = *tv;
         if (gettimeofday(&start, NULL) < 0)
-            err_exit(TRUE, "gettimeofday");
+            err_exit(true, "gettimeofday");
         tvp = &tv_cpy;
     }
 
@@ -124,10 +123,10 @@ xpoll(xpollfd_t pfd, struct timeval *tv)
         n = select(pfd->maxfd + 1, &pfd->rset, &pfd->wset, NULL, tvp);
 #endif
         if (n < 0 && errno != EINTR)
-            err_exit(TRUE, "select/poll");
+            err_exit(true, "select/poll");
         if (n < 0 && tv != NULL) {
             if (gettimeofday(&end, NULL) < 0)
-                err_exit(TRUE, "gettimeofday");
+                err_exit(true, "gettimeofday");
             timersub(&end, &start, &delta);     /* delta = end - start */
             timersub(tv, &delta, tvp);          /* *tvp = tv - delta */
         }

@@ -47,7 +47,6 @@
 #include <fcntl.h>
 #include <ctype.h>
 #include <string.h>
-#include <stdarg.h>
 #include <assert.h>
 #include <unistd.h>
 #include <stdio.h>
@@ -55,7 +54,6 @@
 #include "list.h"
 #include "hostlist.h"
 #include "cbuf.h"
-#include "xtypes.h"
 #include "parse_util.h"
 #include "xpoll.h"
 #include "xmalloc.h"
@@ -140,7 +138,7 @@ static bool _reconnect(Device * dev, struct timeval *timeout);
 static bool _time_to_reconnect(Device * dev, struct timeval *timeout);
 
 static List dev_devices = NULL;
-static bool short_circuit_delay = FALSE;
+static bool short_circuit_delay = false;
 
 static void _dbg_actions(Device * dev)
 {
@@ -192,7 +190,7 @@ static char *_getregex_buf(cbuf_t b, xregex_t re, xregex_match_t xm)
     bytes_peeked = cbuf_peek(b, str, maxpeeksize);
     if (bytes_peeked <= 0) {            /* FIXME: any -1 handling needed? */
         if (bytes_peeked < 0)
-            err(TRUE, "_getregex_buf: cbuf_peek returned %d", bytes_peeked);
+            err(true, "_getregex_buf: cbuf_peek returned %d", bytes_peeked);
         xfree(str);
         return NULL;
     }
@@ -220,7 +218,7 @@ static ExecCtx *_create_exec_ctx(Device *dev, List block, List plugs)
     new->block = block;
     new->plugs = plugs;
     new->plugitr = NULL;
-    new->processing = FALSE;
+    new->processing = false;
 
     return new;
 }
@@ -327,24 +325,24 @@ List dev_getdevices(void)
  *  time_stamp (IN)
  *  timeout (IN)
  *  timeleft (OUT)  if timeout has not occurred, put time left here
- *  RETURN          TRUE if (time_stamp + timeout > now)
+ *  RETURN          true if (time_stamp + timeout > now)
  */
 static bool _timeout(struct timeval *time_stamp, struct timeval *timeout,
                      struct timeval *timeleft)
 {
     struct timeval now;
     struct timeval limit;
-    bool result = FALSE;
+    bool result = false;
     /* limit = time_stamp + timeout */
     timeradd(time_stamp, timeout, &limit);
 
     if (gettimeofday(&now, NULL) < 0)
-        err_exit(TRUE, "gettimeofday");
+        err_exit(true, "gettimeofday");
 
     if (timercmp(&now, &limit, >=))      /* if now >= limit */
-        result = TRUE;
+        result = true;
 
-    if (result == FALSE)
+    if (result == false)
         timersub(&limit, &now, timeleft);       /* timeleft = limit - now */
     else
         timerclear(timeleft);
@@ -363,7 +361,7 @@ void _update_timeout(struct timeval *timeout, struct timeval *tv)
 
 /*
  * Helper for _reconnect().
- * Return TRUE if OK to attempt reconnect.  If FALSE, put the time left
+ * Return true if OK to attempt reconnect.  If false, put the time left
  * in timeout if it is less than timeout or if timeout is zero.
  */
 static bool _time_to_reconnect(Device * dev, struct timeval *timeout)
@@ -372,7 +370,7 @@ static bool _time_to_reconnect(Device * dev, struct timeval *timeout)
     int max_rtab_index = sizeof(rtab) / sizeof(int) - 1;
     int rix = dev->retry_count - 1;
     struct timeval timeleft, retry;
-    bool reconnect = TRUE;
+    bool reconnect = true;
 
     if (dev->retry_count > 0) {
 
@@ -380,7 +378,7 @@ static bool _time_to_reconnect(Device * dev, struct timeval *timeout)
         retry.tv_sec = rtab[rix > max_rtab_index ? max_rtab_index : rix];
 
         if (!_timeout(&dev->last_retry, &retry, &timeleft))
-            reconnect = FALSE;
+            reconnect = false;
         if (timeout && !reconnect)
             _update_timeout(timeout, &timeleft);
     }
@@ -394,7 +392,7 @@ static bool _connect(Device * dev)
     assert(dev->connect != NULL);
 
     if (gettimeofday(&dev->last_retry, NULL) < 0)
-        err_exit(TRUE, "gettimeofday");
+        err_exit(true, "gettimeofday");
     dev->retry_count++;
 
     connected = dev->connect(dev);
@@ -407,7 +405,7 @@ static bool _connect(Device * dev)
 
 static bool _reconnect(Device *dev, struct timeval *timeout)
 {
-    bool connected = FALSE;
+    bool connected = false;
 
     if (dev->connect_state != DEV_NOT_CONNECTED)
         _disconnect(dev);
@@ -421,14 +419,14 @@ static bool _reconnect(Device *dev, struct timeval *timeout)
 /* helper for dev_check_actions/dev_enqueue_actions */
 static bool _command_needs_device(Device * dev, hostlist_t hl)
 {
-    bool needed = FALSE;
+    bool needed = false;
     PlugListIterator itr;
     Plug *plug;
 
     itr = pluglist_iterator_create(dev->plugs);
     while ((plug = pluglist_next(itr))) {
         if (plug->node != NULL && hostlist_find(hl, plug->node) != -1) {
-            needed = TRUE;
+            needed = true;
             break;
         }
     }
@@ -444,7 +442,7 @@ bool dev_check_actions(int com, hostlist_t hl)
 {
     Device *dev;
     ListIterator itr;
-    bool valid = TRUE;
+    bool valid = true;
 
     assert(hl != NULL);
 
@@ -453,7 +451,7 @@ bool dev_check_actions(int com, hostlist_t hl)
         if (_command_needs_device(dev, hl)) {
             if (!dev->scripts[com] && _get_all_script(dev, com) == -1
                                    && _get_ranged_script(dev, com) == -1)  {
-                valid = FALSE;
+                valid = false;
                 break;
             }
         }
@@ -535,7 +533,7 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
                                            vpf_fun, client_id, arglist);
         break;
     default:
-        assert(FALSE);
+        assert(false);
     }
 
     return count;
@@ -626,9 +624,9 @@ static bool _is_query_action(int com)
         case PM_STATUS_TEMP_ALL:
         case PM_STATUS_BEACON:
         case PM_STATUS_BEACON_ALL:
-            return TRUE;
+            return true;
         default:
-            return FALSE;
+            return false;
     }
     /*NOTREACHED*/
 }
@@ -640,7 +638,7 @@ static int _enqueue_targeted_actions(Device * dev, int com, hostlist_t hl,
                                      int client_id, ArgList arglist)
 {
     List new_acts = list_create((ListDelF) _destroy_action);
-    bool all = TRUE;
+    bool all = true;
     Plug *plug;
     PlugListIterator itr;
     int count = 0;
@@ -658,13 +656,13 @@ static int _enqueue_targeted_actions(Device * dev, int com, hostlist_t hl,
 
         /* antisocial to gratuitously turn on/off unused plug */
         if (plug->node == NULL) {
-            all = FALSE;
+            all = false;
             continue;
         }
 
         /* check if node name for plug matches the target */
         if (hostlist_find(hl, plug->node) == -1) {
-            all = FALSE;
+            all = false;
             continue;
         }
 
@@ -753,7 +751,7 @@ static void _disconnect(Device * dev)
 
     /* update state */
     dev->connect_state = DEV_NOT_CONNECTED;
-    dev->logged_in = FALSE;
+    dev->logged_in = false;
 
     /* delete PM_LOG_IN action queued for this device, if any */
     if (((act = list_peek(dev->acts)) != NULL) && act->com == PM_LOG_IN)
@@ -794,7 +792,7 @@ static void _act_completion(Action *act, Device *dev)
  */
 static void _process_action(Device * dev, struct timeval *timeout)
 {
-    bool stalled = FALSE;
+    bool stalled = false;
     Action *act;
 
     while ((act = list_peek(dev->acts)) && !stalled) {
@@ -809,7 +807,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
         /* initialize timeout (action is brand new) */
         if (!timerisset(&act->time_stamp))
             if (gettimeofday(&act->time_stamp, NULL) < 0)
-                err_exit(TRUE, "gettimeofday");
+                err_exit(true, "gettimeofday");
 
         /* timeout exceeded? */
         if (_timeout(&act->time_stamp, &dev->timeout, &timeleft)) {
@@ -836,7 +834,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
 
         /* not connected but timeout not yet exceeded */
         } else if (!(dev->connect_state == DEV_CONNECTED)) {
-            stalled = TRUE;                             /* not connected */
+            stalled = true;                             /* not connected */
 
         /* connected - process statements */
         } else {
@@ -871,7 +869,7 @@ static void _process_action(Device * dev, struct timeval *timeout)
             /* completed action successfully! */
             if (e == NULL) {
                 if (act->com == PM_LOG_IN)
-                    dev->logged_in = TRUE;
+                    dev->logged_in = true;
                 if (act->complete_fun)
                     _act_completion(act, dev);
                 _destroy_action(list_dequeue(dev->acts));
@@ -939,7 +937,7 @@ bool _process_stmt(Device *dev, Action *act, ExecCtx *e,
 
 static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
 {
-    bool finished = TRUE;
+    bool finished = true;
     ExecCtx *new;
     Plug *plug = NULL;
 
@@ -985,14 +983,14 @@ static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
 
 static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
 {
-    bool finished = TRUE;
+    bool finished = true;
 
     if (e->processing) { /* if returning from subblock, we are done */
-        e->processing = FALSE;
+        e->processing = false;
 
     } else {
         InterpState state = ST_UNKNOWN;
-        bool condition = FALSE;
+        bool condition = false;
         ExecCtx *new;
 
         if (e->plugs && list_count(e->plugs) > 0) {
@@ -1004,9 +1002,9 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
         }
 
         if (e->cur->type == STMT_IFON && state == ST_ON)
-            condition = TRUE;
+            condition = true;
         else if (e->cur->type == STMT_IFOFF && state == ST_OFF)
-            condition = TRUE;
+            condition = true;
         else if (state == ST_UNKNOWN) {
             act->errnum = ACT_EEXPFAIL; /* FIXME */
         }
@@ -1017,7 +1015,7 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
             ListIterator itr;
             Plug *plug;
 
-            e->processing = TRUE;
+            e->processing = true;
 
             /* achu: previous context's plugs could get destroy,
              * so must copy plugs to a new list.
@@ -1049,7 +1047,7 @@ static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e)
 
 static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
 {
-    bool finished = TRUE;
+    bool finished = true;
     char *plug_name = NULL;
 
     /*
@@ -1105,10 +1103,10 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
     return finished;
 }
 
-/* return TRUE if expect is finished */
+/* return true if expect is finished */
 static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
 {
-    bool finished = FALSE;
+    bool finished = false;
     char *str;
 
     xregex_match_recycle(dev->xmatch);
@@ -1123,7 +1121,7 @@ static bool _process_expect(Device *dev, Action *act, ExecCtx *e)
             xfree(matchstr);
         }
         xfree(str);
-        finished = TRUE;
+        finished = true;
     }
     return finished;
 }
@@ -1148,7 +1146,7 @@ static char *_xhostlist_ranged_string(hostlist_t hl)
 
 static bool _process_send(Device *dev, Action *act, ExecCtx *e)
 {
-    bool finished = FALSE;
+    bool finished = false;
 
     /* first time through? */
     if (!e->processing) {
@@ -1164,18 +1162,18 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
                 Plug *plug;
 
                 if (!(hl = hostlist_create(NULL))) {
-                    err(TRUE, "_process_send(%s): hostlist_create", dev->name);
+                    err(true, "_process_send(%s): hostlist_create", dev->name);
                     goto range_cleanup;
                 }
 
                 if (!(itr = list_iterator_create(e->plugs))) {
-                    err(TRUE, "_process_send(%s): list_iterator_create", dev->name);
+                    err(true, "_process_send(%s): list_iterator_create", dev->name);
                     goto range_cleanup;
                 }
 
                 while ((plug = list_next(itr))) {
                     if (!hostlist_push(hl, plug->name)) {
-                        err(TRUE, "_process_send(%s): hostlist_push", dev->name);
+                        err(true, "_process_send(%s): hostlist_push", dev->name);
                         goto range_cleanup;
                     }
                 }
@@ -1202,10 +1200,10 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
             written = cbuf_write(dev->to, str, strlen(str), &dropped);
 
             if (written < 0)
-                err(TRUE, "_process_send(%s): cbuf_write returned %d",
+                err(true, "_process_send(%s): cbuf_write returned %d",
                     dev->name, written);
             else if (dropped > 0)
-                err(FALSE, "_process_send(%s): buffer overrun, %d dropped",
+                err(false, "_process_send(%s): buffer overrun, %d dropped",
                     dev->name, dropped);
             else {
                 char *memstr = dbg_memstr(str, strlen(str));
@@ -1218,24 +1216,24 @@ static bool _process_send(Device *dev, Action *act, ExecCtx *e)
             assert(written < 0 || (dropped == strlen(str) - written));
         }
 
-        e->processing = TRUE;
+        e->processing = true;
 
         xfree(str);
     }
 
     if (cbuf_is_empty(dev->to)) {           /* finished! */
-        e->processing = FALSE;
-        finished = TRUE;
+        e->processing = false;
+        finished = true;
     }
 
     return finished;
 }
 
-/* return TRUE if delay is finished */
+/* return true if delay is finished */
 static bool _process_delay(Device *dev, Action *act, ExecCtx *e,
         struct timeval *timeout)
 {
-    bool finished = FALSE;
+    bool finished = false;
     struct timeval delay, timeleft;
 
     delay = e->cur->u.delay.tv;
@@ -1245,15 +1243,15 @@ static bool _process_delay(Device *dev, Action *act, ExecCtx *e,
         if (act->vpf_fun)
             act->vpf_fun(act->client_id, "delay(%s): %ld.%-6.6ld", dev->name,
                     delay.tv_sec, delay.tv_usec);
-        e->processing = TRUE;
+        e->processing = true;
         if (gettimeofday(&act->delay_start, NULL) < 0)
-            err_exit(TRUE, "gettimeofday");
+            err_exit(true, "gettimeofday");
     }
 
     /* timeout expired? */
     if (short_circuit_delay || _timeout(&act->delay_start, &delay, &timeleft)) {
-        e->processing = FALSE;
-        finished = TRUE;
+        e->processing = false;
+        finished = true;
     } else
         _update_timeout(timeout, &timeleft);
 
@@ -1340,7 +1338,7 @@ static void _enqueue_ping(Device * dev, struct timeval *timeout)
         if (_timeout(&dev->last_ping, &dev->ping_period, &timeleft)) {
             _enqueue_actions(dev, PM_PING, NULL, NULL, NULL, 0, NULL);
             if (gettimeofday(&dev->last_ping, NULL) < 0)
-                err_exit(TRUE, "gettimeofday");
+                err_exit(true, "gettimeofday");
             dbg(DBG_ACTION, "%s: enqeuuing ping", dev->name);
         } else
             _update_timeout(timeout, &timeleft);
@@ -1374,7 +1372,7 @@ static bool _handle_read(Device * dev)
     assert(dev->magic == DEV_MAGIC);
     n = cbuf_write_from_fd(dev->from, dev->fd, -1, &dropped);
     if (n < 0) {
-        err(TRUE, "read error on %s", dev->name);
+        err(true, "read error on %s", dev->name);
         goto err;
     }
     if (n == 0) {
@@ -1382,10 +1380,10 @@ static bool _handle_read(Device * dev)
         goto err;
     }
     if (dropped > 0)
-        err(FALSE, "%s lost %d chars due to buffer wrap", dev->name, dropped);
-    return FALSE;
+        err(false, "%s lost %d chars due to buffer wrap", dev->name, dropped);
+    return false;
 err:
-    return TRUE;
+    return true;
 }
 
 /*
@@ -1398,16 +1396,16 @@ static bool _handle_write(Device * dev)
     assert(dev->magic == DEV_MAGIC);
     n = cbuf_read_to_fd(dev->to, dev->fd, -1);
     if (n < 0) {
-        err(TRUE, "write error on %s", dev->name);
+        err(true, "write error on %s", dev->name);
         goto err;
     }
     if (n == 0) {
-        err(FALSE, "write sent no data on %s", dev->name);
+        err(false, "write sent no data on %s", dev->name);
         goto err;
     }
-    return FALSE;
+    return false;
 err:
-    return TRUE;
+    return true;
 }
 
 /* One of the poll bits is set for the device - handle it! */
@@ -1419,15 +1417,15 @@ _handle_ready_device(Device *dev, short flags)
 
     /* error cases (won't get here with select - only poll) */
     if (flags & XPOLLHUP) {
-        err(FALSE, "%s: poll: hangup", dev->name);
+        err(false, "%s: poll: hangup", dev->name);
         goto ioerr;
     }
     if (flags & XPOLLERR) {
-        err(FALSE, "%s: poll: error", dev->name);
+        err(false, "%s: poll: error", dev->name);
         goto ioerr;
     }
     if (flags & XPOLLNVAL) {
-        err(FALSE, "%s: poll: fd not open", dev->name);
+        err(false, "%s: poll: fd not open", dev->name);
         goto ioerr;
     }
     /* ready for writing */
@@ -1453,9 +1451,9 @@ _handle_ready_device(Device *dev, short flags)
             dev->preprocess(dev);   /* preprocess input, e.g. telnet escapes */
     }
 success:
-    return FALSE;
+    return false;
 ioerr:
-    return TRUE;
+    return true;
 }
 
 /*
@@ -1504,7 +1502,7 @@ void dev_post_poll(xpollfd_t pfd, struct timeval *timeout)
     itr = list_iterator_create(dev_devices);
     while ((dev = list_next(itr))) {
         short flags = dev->fd != NO_FD ? xpollfd_revents(pfd, dev->fd) : 0;
-        bool ioerr = FALSE;
+        bool ioerr = false;
 
         /* A device is "ready", e.g. it can be read/written or has an error */
         if (flags)

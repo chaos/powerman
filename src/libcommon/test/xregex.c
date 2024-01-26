@@ -15,7 +15,6 @@
 
 #include "tap.h"
 
-#include "xtypes.h"
 #include "xregex.h"
 #include "xmalloc.h"
 #include "error.h"
@@ -33,12 +32,12 @@ _matchstr(char *r, char *s, char *p)
 
 	re = xregex_create();
 	rm = xregex_match_create(2);
-	xregex_compile(re, r, TRUE);
+	xregex_compile(re, r, true);
 	res = xregex_exec(re, s, rm);
 	if (res && p) {
 		tmp = xregex_match_strdup(rm);
 		if (strcmp(tmp, p) != 0)
-			res = FALSE;
+			res = false;
 		xfree(tmp);
 	}
 	xregex_match_destroy(rm);
@@ -73,8 +72,8 @@ _check_substr_match(void)
 	re = xregex_create();
 	rm = xregex_match_create(2);
 
-	xregex_compile(re, "foo([0-9]+)bar([0-9]+)", TRUE);
-	ok (xregex_exec(re, "xxxfoo1bar2", rm) == TRUE,
+	xregex_compile(re, "foo([0-9]+)bar([0-9]+)", true);
+	ok (xregex_exec(re, "xxxfoo1bar2", rm) == true,
         "regex with substrings matches xxxfoo1bar2");
 
 	s = xregex_match_sub_strdup(rm, 0);
@@ -116,7 +115,7 @@ _check_substr_match(void)
 
 	xregex_match_recycle(rm);
 
-	ok (xregex_exec(re, "foobar2", rm) == FALSE,
+	ok (xregex_exec(re, "foobar2", rm) == false,
         "regex does NOT match foobar2");
 
 	s = xregex_match_sub_strdup(rm, 0);
@@ -128,7 +127,7 @@ _check_substr_match(void)
 
 	xregex_match_recycle(rm);
 
-	ok (xregex_exec(re, "xxxfoo1bar2yyy", rm) == TRUE,
+	ok (xregex_exec(re, "xxxfoo1bar2yyy", rm) == true,
         "regex does matches xxxfoo1bar2yyy");
 
 	s = xregex_match_sub_strdup(rm, 0);

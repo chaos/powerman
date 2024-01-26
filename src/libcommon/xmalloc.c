@@ -16,7 +16,6 @@
 #include <assert.h>
 #include <stdlib.h>
 
-#include "xtypes.h"
 #include "xmalloc.h"
 #include "error.h"
 
@@ -53,7 +52,7 @@ char *xmalloc(int size)
     assert(size > 0);
     p = (int *) malloc(2*sizeof(int) + size + MALLOC_PAD_SIZE);
     if (p == NULL)
-        err_exit(FALSE, "out of memory");
+        err_exit(false, "out of memory");
     p[0] = MALLOC_MAGIC;                           /* magic cookie */
     p[1] = size;                                   /* store size in buffer */
 #ifndef NDEBUG
@@ -79,7 +78,7 @@ char *xrealloc(char *item , int newsize)
     assert(_checkfill(item + oldsize, MALLOC_PAD_FILL, MALLOC_PAD_SIZE));
     p = (int *)realloc(p, 2*sizeof(int) + newsize + MALLOC_PAD_SIZE);
     if (p == NULL)
-        err_exit(FALSE, "out of memory");
+        err_exit(false, "out of memory");
     assert(p[0] == MALLOC_MAGIC);
     p[1] = newsize;
 #ifndef NDEBUG

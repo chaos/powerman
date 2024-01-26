@@ -28,11 +28,9 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <stdarg.h>
 
 #include "powerman.h"
 #include "xmalloc.h"
-#include "xtypes.h"
 #include "xread.h"
 #include "error.h"
 #include "hostlist.h"
@@ -117,15 +115,15 @@ int main(int argc, char **argv)
     int server_fd;
     char *p, *port = DFLT_PORT;
     char *host = DFLT_HOSTNAME;
-    bool genders = FALSE;
-    bool dumpcmds = FALSE;
-    bool ignore_errs = FALSE;
+    bool genders = false;
+    bool dumpcmds = false;
+    bool ignore_errs = false;
     char *server_path = NULL;
     char *config_path = NULL;
     List commands;  /* list-o-cmd_t's */
     ListIterator itr;
     cmd_t *cp;
-    bool short_circuit_delays = FALSE;
+    bool short_circuit_delays = false;
 
     prog = basename(argv[0]);
     err_init(prog);
@@ -137,52 +135,52 @@ int main(int argc, char **argv)
     while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
         switch (c) {
         case '1':              /* --on */
-            _cmd_create(commands, CP_ON, optarg, FALSE);
+            _cmd_create(commands, CP_ON, optarg, false);
             break;
         case '0':              /* --off */
-            _cmd_create(commands, CP_OFF, optarg, FALSE);
+            _cmd_create(commands, CP_OFF, optarg, false);
             break;
         case 'c':              /* --cycle */
-            _cmd_create(commands, CP_CYCLE, optarg, FALSE);
+            _cmd_create(commands, CP_CYCLE, optarg, false);
             break;
         case 'r':              /* --reset */
-            _cmd_create(commands, CP_RESET, optarg, FALSE);
+            _cmd_create(commands, CP_RESET, optarg, false);
             break;
         case 'l':              /* --list */
-            _cmd_create(commands, CP_NODES, NULL, FALSE);
+            _cmd_create(commands, CP_NODES, NULL, false);
             break;
         case 'Q':              /* --query */
-            _cmd_create(commands, CP_STATUS, optarg, FALSE);
+            _cmd_create(commands, CP_STATUS, optarg, false);
             break;
         case 'q':              /* --query-all */
-            _cmd_create(commands, CP_STATUS_ALL, NULL, FALSE);
+            _cmd_create(commands, CP_STATUS_ALL, NULL, false);
             break;
         case 'f':              /* --flash */
-            _cmd_create(commands, CP_BEACON_ON, optarg, FALSE);
+            _cmd_create(commands, CP_BEACON_ON, optarg, false);
             break;
         case 'u':              /* --unflash */
-            _cmd_create(commands, CP_BEACON_OFF, optarg, FALSE);
+            _cmd_create(commands, CP_BEACON_OFF, optarg, false);
             break;
         case 'B':              /* --beacon */
-            _cmd_create(commands, CP_BEACON, optarg, FALSE);
+            _cmd_create(commands, CP_BEACON, optarg, false);
             break;
         case 'b':              /* --beacon-all */;
-            _cmd_create(commands, CP_BEACON_ALL, NULL, FALSE);
+            _cmd_create(commands, CP_BEACON_ALL, NULL, false);
             break;
         case 'P':              /* --temp */
-            _cmd_create(commands, CP_TEMP, optarg, FALSE);
+            _cmd_create(commands, CP_TEMP, optarg, false);
             break;
         case 't':              /* --temp-all */
-            _cmd_create(commands, CP_TEMP_ALL, NULL, FALSE);
+            _cmd_create(commands, CP_TEMP_ALL, NULL, false);
             break;
         case 'D':              /* --device */
-            _cmd_create(commands, CP_DEVICE, optarg, FALSE);
+            _cmd_create(commands, CP_DEVICE, optarg, false);
             break;
         case 'd':              /* --device-all */
-            _cmd_create(commands, CP_DEVICE_ALL, NULL, FALSE);
+            _cmd_create(commands, CP_DEVICE_ALL, NULL, false);
             break;
         case 'Y':              /* --short-circuit-delays */
-            short_circuit_delays = TRUE;
+            short_circuit_delays = true;
             break;
         case 'h':              /* --server-host host[:port] */
             if ((p = strchr(optarg, ':'))) {
@@ -200,16 +198,16 @@ int main(int argc, char **argv)
             /*NOTREACHED*/
             break;
         case 'T':              /* --telemetry */
-            _cmd_create(commands, CP_TELEMETRY, NULL, TRUE);
+            _cmd_create(commands, CP_TELEMETRY, NULL, true);
             break;
         case 'x':              /* --exprange */
-            _cmd_create(commands, CP_EXPRANGE, NULL, TRUE);
+            _cmd_create(commands, CP_EXPRANGE, NULL, true);
             break;
         case 'g':              /* --genders */
 #if WITH_GENDERS
-            genders = TRUE;
+            genders = true;
 #else
-            err_exit(FALSE, "not configured with genders support");
+            err_exit(false, "not configured with genders support");
 #endif
             break;
         case 'S':              /* --server-path */
@@ -219,10 +217,10 @@ int main(int argc, char **argv)
             config_path = optarg;
             break;
         case 'Z':              /* --dump-cmds */
-            dumpcmds = TRUE;
+            dumpcmds = true;
             break;
         case 'I':              /* --ignore-errs */
-            ignore_errs = TRUE;
+            ignore_errs = true;
             break;
         default:
             _usage();
@@ -306,11 +304,24 @@ int main(int argc, char **argv)
 static void _usage(void)
 {
     printf("Usage: %s [action] [targets]\n", prog);
-    printf("-1,--on targets      Power on targets\n");
-    printf("-0,--off targets     Power off targets\n");
-    printf("-c,--cycle targets   Power cycle targets\n");
-    printf("-q,--query-all       Query power state of all targets\n");
-    printf("-Q,--query targets   Query power state of specific targets\n");
+    printf("  -1,--on targets      Power on targets\n");
+    printf("  -0,--off targets     Power off targets\n");
+    printf("  -c,--cycle targets   Power cycle targets\n");
+    printf("  -q,--query-all       Query power state of all targets\n");
+    printf("  -Q,--query targets   Query power state of specific targets\n");
+#if WITH_GENDERS
+    printf("  -g,--genders         Interpret targets as attributes\n");
+#endif
+    printf("  -h,--server-host host[:port]  Connect to remote server\n");
+    printf("  -x,--exprange        Expand host ranges in query response\n");
+    printf("  -T,--telemtery       Show device conversation for debugging\n");
+    printf("  -l,--list            List available targets\n");
+    printf ("The following are not implemented by all devices:\n");
+    printf("  -r,--reset targets   Assert hardware reset\n");
+    printf("  -f,--flash targets   Turn beacon on\n");
+    printf("  -u,--unflash targets Turn beacon off\n");
+    printf("  -b,--beacon targets  Query beacon status\n");
+    printf("  -P,--temp targets    Query temperature\n");
     exit(1);
 }
 
@@ -347,19 +358,19 @@ static void _push_genders_hosts(hostlist_t targets, char *s)
     if (strlen(s) == 0)
         return;
     if (!(g = genders_handle_create()))
-        err_exit(FALSE, "genders_handle_create failed");
+        err_exit(false, "genders_handle_create failed");
     if (genders_load_data(g, NULL) < 0)
-        err_exit(FALSE, "genders_load_data: %s", genders_errormsg(g));
+        err_exit(false, "genders_load_data: %s", genders_errormsg(g));
     if ((len = genders_nodelist_create(g, &nodes)) < 0)
-        err_exit(FALSE, "genders_nodelist_create: %s", genders_errormsg(g));
+        err_exit(false, "genders_nodelist_create: %s", genders_errormsg(g));
     if ((n = genders_query(g, nodes, len, s)) < 0)
-        err_exit(FALSE, "genders_query: %s", genders_errormsg(g));
+        err_exit(false, "genders_query: %s", genders_errormsg(g));
     genders_handle_destroy(g);
     if (n == 0)
-        err_exit(FALSE, "genders expression did not match any nodes");
+        err_exit(false, "genders expression did not match any nodes");
     for (i = 0; i < n; i++) {
         if (!hostlist_push(targets, nodes[i]))
-            err_exit(FALSE, "hostlist error");
+            err_exit(false, "hostlist error");
     }
 }
 #endif
@@ -409,7 +420,7 @@ static void _cmd_append(cmd_t *cp, char *arg)
             cp->fmt = CP_TEMP;
             cp->argv = argv_create(arg, "");
         } else
-            err_exit(FALSE, "option takes no arguments");
+            err_exit(false, "option takes no arguments");
     } else
         cp->argv = argv_append(cp->argv, arg);
 }
@@ -433,11 +444,11 @@ static void _cmd_prepare(cmd_t *cp, bool genders)
 #endif
             } else {
                 if (hostlist_push(hl, cp->argv[i]) == 0)
-                    err_exit(FALSE, "hostlist error");
+                    err_exit(false, "hostlist error");
             }
         }
         if (hostlist_ranged_string(hl, sizeof(tmpstr), tmpstr) == -1)
-            err_exit(FALSE, "hostlist error");
+            err_exit(false, "hostlist error");
         hostlist_destroy(hl);
     }
     cp->sendstr = hsprintf(cp->fmt, tmpstr);
@@ -476,7 +487,7 @@ static int _connect_to_server_pipe(char *server_path, char *config_path,
 
     saved_stderr = dup(STDERR_FILENO);
     if (saved_stderr < 0)
-        err_exit(TRUE, "dup stderr");
+        err_exit(true, "dup stderr");
     snprintf(cmd, sizeof(cmd), "powermand -sf -c %s", config_path);
     argv = argv_create(cmd, "");
     if (short_circuit_delays)
@@ -484,14 +495,14 @@ static int _connect_to_server_pipe(char *server_path, char *config_path,
     pid = xforkpty(&fd, NULL, 0);
     switch (pid) {
         case -1:
-            err_exit(TRUE, "forkpty error");
+            err_exit(true, "forkpty error");
         case 0: /* child */
             if (dup2(saved_stderr, STDERR_FILENO) < 0)
-                err_exit(TRUE, "dup2 stderr");
+                err_exit(true, "dup2 stderr");
             close(saved_stderr);
             xcfmakeraw(STDIN_FILENO);
             execv(server_path, argv);
-            err_exit(TRUE, "exec %s", server_path);
+            err_exit(true, "exec %s", server_path);
         default: /* parent */
             close(saved_stderr);
             break;
@@ -510,10 +521,10 @@ static int _connect_to_server_tcp(char *host, char *port)
     hints.ai_socktype = SOCK_STREAM;
 
     if ((error = getaddrinfo(host, port, &hints, &res)) != 0)
-        err_exit(FALSE, "getaddrinfo %s:%s: %s", host, port,
+        err_exit(false, "getaddrinfo %s:%s: %s", host, port,
                        gai_strerror(error));
     if (res == NULL)
-        err_exit(FALSE, "no addresses for server %s:%s", host, port);
+        err_exit(false, "no addresses for server %s:%s", host, port);
 
     for (r = res; r != NULL; r = r->ai_next) {
         if ((fd = socket(r->ai_family, r->ai_socktype, 0)) < 0)
@@ -525,7 +536,7 @@ static int _connect_to_server_tcp(char *host, char *port)
         break; /* success! */
     }
     if (r == NULL)
-        err_exit(FALSE, "could not connect to address %s:%s", host, port);
+        err_exit(false, "could not connect to address %s:%s", host, port);
 
     freeaddrinfo(res);
     return fd;
@@ -536,12 +547,12 @@ static int _connect_to_server_tcp(char *host, char *port)
 static bool _suppress(int num)
 {
     if (strtol(CP_RSP_QRY_COMPLETE, NULL, 10) == num)
-        return TRUE;
+        return true;
     if (strtol(CP_RSP_TELEMETRY, NULL, 10) == num)
-        return TRUE;
+        return true;
     if (strtol(CP_RSP_EXPRANGE, NULL, 10) == num)
-        return TRUE;
-    return FALSE;
+        return true;
+    return false;
 }
 
 /* Get a line from the socket and display on stdout.
@@ -559,7 +570,7 @@ static int _process_line(int fd)
         if (!_suppress(num))
             printf("%s\n", buf + 4);
     } else
-        err_exit(FALSE, "unexpected response from server");
+        err_exit(false, "unexpected response from server");
     xfree(buf);
     return num;
 }
@@ -572,9 +583,9 @@ static void _process_version(int fd)
     char *vers = xmalloc (strlen(buf)+1);
 
     if (sscanf(buf, CP_VERSION, vers) != 1)
-        err_exit(FALSE, "unexpected response from server");
+        err_exit(false, "unexpected response from server");
     if (strcmp(vers, PACKAGE_VERSION) != 0)
-        err(FALSE, "warning: server version (%s) != client (%s)",
+        err(false, "warning: server version (%s) != client (%s)",
                 vers, PACKAGE_VERSION);
     xfree(buf);
     xfree(vers);
@@ -603,7 +614,7 @@ static void _expect(int fd, char *str)
     do {
         res = xread(fd, p, len);
         if (res < 0)
-           err_exit(TRUE, "lost connection with server");
+           err_exit(true, "lost connection with server");
         p += res;
         *p = '\0';
         len -= res;
@@ -613,7 +624,7 @@ static void _expect(int fd, char *str)
      * returning the wrong response.  Read() loop above may hang in that case.
      */
     if (strcmp(str, buf) != 0)
-        err_exit(FALSE, "unexpected response from server");
+        err_exit(false, "unexpected response from server");
     xfree (buf);
 }
 

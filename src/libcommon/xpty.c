@@ -35,7 +35,6 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "xtypes.h"
 #include "xpty.h"
 #include "error.h"
 
@@ -45,9 +44,9 @@ void nonblock_set(int fd)
 
     flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0)
-        err_exit(TRUE, "fcntl F_GETFL");
+        err_exit(true, "fcntl F_GETFL");
     if (fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0)
-        err_exit(TRUE, "fcntl F_SETFL");
+        err_exit(true, "fcntl F_SETFL");
 }
 
 void nonblock_clr(int fd)
@@ -56,9 +55,9 @@ void nonblock_clr(int fd)
 
     flags = fcntl(fd, F_GETFL, 0);
     if (flags < 0)
-        err_exit(TRUE, "fcntl F_GETFL");
+        err_exit(true, "fcntl F_GETFL");
     if (fcntl(fd, F_SETFL, flags & ~(O_NONBLOCK)) < 0)
-        err_exit(TRUE, "fcntl F_SETFL");
+        err_exit(true, "fcntl F_SETFL");
 }
 
 static int tiocmp(struct termios *a, struct termios *b)
@@ -81,12 +80,12 @@ static void xtcsetattr(int fd, int flags, struct termios *tio)
     struct termios act;
 
     if (tcsetattr(fd, flags, tio) < 0)
-        err_exit(TRUE, "tcsetattr");
+        err_exit(true, "tcsetattr");
     memset(&act, 0, sizeof(act));
     if (tcgetattr(fd, &act) < 0)
-        err_exit(TRUE, "tcgetattr");
+        err_exit(true, "tcgetattr");
     if (!tiocmp(tio, &act))
-        err_exit(FALSE, "tcsetattr failed");
+        err_exit(false, "tcsetattr failed");
 }
 
 void xcfmakeraw(int fd)
@@ -94,7 +93,7 @@ void xcfmakeraw(int fd)
     struct termios tio;
 
     if (tcgetattr(fd, &tio) < 0)
-        err_exit(TRUE, "xcfmakeraw: tcgetattr");
+        err_exit(true, "xcfmakeraw: tcgetattr");
 #if HAVE_CFMAKERAW && !defined(_AIX)
     cfmakeraw(&tio);
 #else

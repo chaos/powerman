@@ -18,7 +18,6 @@
 #include <sys/types.h>
 #include <regex.h>
 
-#include "xtypes.h"
 #include "error.h"
 #include "xregex.h"
 #include "xmalloc.h"
@@ -96,7 +95,7 @@ xregex_compile(xregex_t xrp, const char *regex, bool withsub)
  * pliant.  -- regex(7) on RHEL 5
  */
     if (strlen(regex) > 256)
-        err_exit(FALSE, "refusing to compile regex > 256 bytes");
+        err_exit(false, "refusing to compile regex > 256 bytes");
 
     xrp->xr_regex = (regex_t *)xmalloc(sizeof(regex_t));
     xrp->xr_cflags = REG_EXTENDED;
@@ -111,7 +110,7 @@ xregex_compile(xregex_t xrp, const char *regex, bool withsub)
 
     if (n != 0) {
         regerror(n, xrp->xr_regex, tmpstr, sizeof(tmpstr));
-        err_exit(FALSE, "regcomp failed: %s", tmpstr);
+        err_exit(false, "regcomp failed: %s", tmpstr);
     }
 }
 
@@ -125,21 +124,21 @@ xregex_exec(xregex_t xrp, const char *s, xregex_match_t xm)
     assert(xrp->xr_regex != NULL);
     if (xm != NULL) {
         assert(xm->xm_magic == XREGEX_MATCH_MAGIC);
-        assert(xm->xm_used == FALSE);
+        assert(xm->xm_used == false);
     }
 
     res = regexec(xrp->xr_regex, s, xm ? xm->xm_nmatch : 0,
                                     xm ? xm->xm_pmatch : NULL, eflags);
     if (xm != NULL) {
         xm->xm_result = res;
-        xm->xm_used = TRUE;
+        xm->xm_used = true;
         if (res == 0) {
             if (xm->xm_str)
                 xfree(xm->xm_str);
             xm->xm_str = xstrdup(s);
         }
     }
-    return res == 0 ? TRUE : FALSE;
+    return res == 0 ? true : false;
 }
 
 xregex_match_t
@@ -153,7 +152,7 @@ xregex_match_create(int nmatch)
     xm->xm_pmatch = (regmatch_t *)xmalloc(sizeof(regmatch_t) * (nmatch + 1));
     xm->xm_str = NULL;
     xm->xm_result = -1;
-    xm->xm_used = FALSE;
+    xm->xm_used = false;
     return xm;
 }
 
@@ -177,7 +176,7 @@ xregex_match_recycle(xregex_match_t xm)
         xm->xm_str = NULL;
     }
     xm->xm_result = -1;
-    xm->xm_used = FALSE;
+    xm->xm_used = false;
 }
 
 char *

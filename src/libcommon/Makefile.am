@@ -10,12 +10,10 @@ libcommon_la_SOURCES = \
 	argv.h \
 	debug.c \
 	debug.h \
-	client_proto.h \
 	error.c \
 	error.h \
 	hprintf.c \
 	hprintf.h \
-	powerman.h \
 	xmalloc.c \
 	xmalloc.h \
 	xpoll.c \
@@ -28,8 +26,7 @@ libcommon_la_SOURCES = \
 	xregex.h \
 	xsignal.c \
 	xsignal.h \
-	xtime.h \
-	xtypes.h
+	xtime.h
 
 TESTS = \
 	test_argv.t \

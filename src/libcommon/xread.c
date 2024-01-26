@@ -15,12 +15,10 @@
 #include <errno.h>
 #include <assert.h>
 #include <unistd.h>
-#include <stdarg.h>
 #include <ctype.h>
 #include <string.h>
 
 #include "xread.h"
-#include "xtypes.h"
 #include "xmalloc.h"
 #include "error.h"
 
@@ -32,7 +30,7 @@ int xread(int fd, char *p, int max)
         n = read(fd, p, max);
     } while (n < 0 && errno == EINTR);
     if (n < 0 && errno != EWOULDBLOCK && errno != ECONNRESET)
-        err_exit(TRUE, "read");
+        err_exit(true, "read");
     return n;
 }
 
@@ -53,9 +51,9 @@ char *xreadstr(int fd)
         //n = xread(fd, str + len, size - len - 1);
         n = xread(fd, str + len, 1);
         if (n < 0)
-            err_exit (TRUE, "read");
+            err_exit (true, "read");
         if (n == 0)
-            err_exit (FALSE, "EOF on read");
+            err_exit (false, "EOF on read");
         len += n;
         str[len] = '\0';
     } while (len < 2 || strcmp(&str[len - 2], "\r\n") != 0);
@@ -72,7 +70,7 @@ int xwrite(int fd, char *p, int max)
         n = write(fd, p, max);
     } while (n < 0 && errno == EINTR);
     if (n < 0 && errno != EAGAIN && errno != ECONNRESET && errno != EPIPE)
-        err_exit(TRUE, "write");
+        err_exit(true, "write");
     return n;
 }
 
@@ -84,7 +82,7 @@ void xwrite_all(int fd, char *p, int count)
     while (done < count) {
         n = xwrite(fd, p + done, count - done);
         if (n < 0)
-            err_exit(TRUE, "write");
+            err_exit(true, "write");
         done += n;
     }
 }
@@ -97,9 +95,9 @@ void xread_all(int fd, char *p, int count)
     while (done < count) {
         n = xread(fd, p + done, count - done);
         if (n < 0)
-            err_exit(TRUE, "read");
+            err_exit(true, "read");
         if (n == 0)
-            err_exit(FALSE, "EOF on read");
+            err_exit(false, "EOF on read");
          done += n;
     }
 }

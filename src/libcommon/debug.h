@@ -11,6 +11,8 @@
 #ifndef PM_DEBUG_H
 #define PM_DEBUG_H
 
+#include <stdarg.h>
+
 #define DBG_ALWAYS          0x0000
 #define DBG_DEVICE          0x0001
 #define DBG_POLL            0x0002
@@ -31,7 +33,8 @@
 
 void dbg_notty(void);
 void dbg_setmask(unsigned long mask);
-void dbg_wrapped(unsigned long channel, const char *fmt, ...);
+void dbg_wrapped(unsigned long channel, const char *fmt, ...)
+    __attribute__ ((format (printf, 2, 3)));
 char *dbg_memstr(char *mem, int len);
 
 #define dbg(channel, fmt...)    dbg_wrapped(channel, fmt)

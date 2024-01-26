@@ -39,7 +39,6 @@
 #include <ctype.h>
 #include <sys/time.h>
 
-#include "xtypes.h"
 #include "xmalloc.h"
 #include "error.h"
 #include "argv.h"
@@ -206,12 +205,12 @@ main(int argc, char *argv[])
             case 't':   /* --timeout */
                 insteon_tmout = strtoul(optarg, NULL, 10);
                 if (insteon_tmout < 1)
-                    err_exit(FALSE, "timeout must be >= 1 msec");
+                    err_exit(false, "timeout must be >= 1 msec");
                 break;
             case 'x':   /* --x10-attempts */
                 x10_attempts = strtoul(optarg, NULL, 10);
                 if (x10_attempts < 1)
-                    err_exit(FALSE, "X10 attempts must be >= 1");
+                    err_exit(false, "X10 attempts must be >= 1");
                 break;
             case 'S':   /* --single-cmd */
                 single_cmd = strdup(optarg);
@@ -238,7 +237,7 @@ main(int argc, char *argv[])
 
 
     if (close(fd) < 0)
-        err_exit(TRUE, "error closing %s", device);
+        err_exit(true, "error closing %s", device);
     exit(0);
 }
 
@@ -261,9 +260,9 @@ open_serial(char *dev)
 
     fd = open(dev, O_RDWR | O_NOCTTY);
     if (fd < 0)
-        err_exit(TRUE, "could not open %s", dev);
+        err_exit(true, "could not open %s", dev);
     if (lockf(fd, F_TLOCK, 0) < 0)
-        err_exit(TRUE, "could not lock %s", dev);
+        err_exit(true, "could not lock %s", dev);
     tcgetattr(fd, &tio);
     tio.c_cflag = B19200 | CS8 | CLOCAL | CREAD;
     tio.c_iflag = IGNBRK | IGNPAR;
@@ -390,13 +389,13 @@ plm_on(int fd, char *addrstr)
                 plm_send_insteon(fd, &i, CMD_ON_FAST, 0xff);
             } while (!plm_recv_insteon(fd, &i, NULL, &cmd2, insteon_tmout));
             if (cmd2 == 0)
-                err_exit(FALSE, "on command failed");
+                err_exit(false, "on command failed");
         }
     } else if (str2x10addr(addrstr, &x)) {
         if (!testmode)
             plm_send_x10(fd, &x, X10_ON);
     } else
-        err(FALSE, "could not parse address");
+        err(false, "could not parse address");
 }
 
 /* Send the OFF command to [addrstr], either X10 or Insteon, via PLM on [fd].
@@ -418,13 +417,13 @@ plm_off(int fd, char *addrstr)
                 plm_send_insteon(fd, &i, CMD_OFF_FAST, 0);
             } while (!plm_recv_insteon(fd, &i, NULL, &cmd2, insteon_tmout));
             if (cmd2 != 0)
-                err_exit(FALSE, "off command failed");
+                err_exit(false, "off command failed");
         }
     } else if (str2x10addr(addrstr, &x)) {
         if (!testmode)
            plm_send_x10(fd, &x, X10_OFF);
     } else
-        err(FALSE, "could not parse address");
+        err(false, "could not parse address");
 }
 
 /* Send the Insteon STATUS command to [addrstr] via PLM on [fd] and print
@@ -450,7 +449,7 @@ plm_status(int fd, char *addrstr)
     } else if (str2x10addr(addrstr, &x))
         printf("%s: unknown\n", addrstr);
     else
-        err(FALSE, "could not parse address");
+        err(false, "could not parse address");
 }
 
 /* Send the Insteon PING command to [addrstr] via PLM on [fd]
@@ -469,20 +468,20 @@ plm_ping(int fd, char *addrstr)
 
     if (str2insaddr(addrstr, &i)) {
         if (gettimeofday(&t1, NULL) < 0)
-            err_exit(TRUE, "gettimeofday");
+            err_exit(true, "gettimeofday");
         do {
             tries++;
             plm_send_insteon(fd, &i, CMD_PING, 0);
         } while (!plm_recv_insteon(fd, &i, NULL, NULL, insteon_tmout));
         if (gettimeofday(&t2, NULL) < 0)
-            err_exit(TRUE, "gettimeofday");
+            err_exit(true, "gettimeofday");
         timersub(&t2, &t1, &delta);
         printf("PING from %s: retries=%d time=%.2lf ms\n", addrstr, tries - 1,
                (double)delta.tv_usec / 1000.0 + (double)delta.tv_sec * 1000.0);
     } else if (str2x10addr(addrstr, &x))
-        err(FALSE, "ping is only for Insteon devices");
+        err(false, "ping is only for Insteon devices");
     else
-        err(FALSE, "could not parse address");
+        err(false, "could not parse address");
 }
 
 /* Convert a string [s] to Insteon address [ip].
@@ -561,7 +560,7 @@ retry:
     if (b[0] == IM_NAK)
         return 1;
     else if (b[0] != IM_STX)
-        err_exit(FALSE, "expected IM_STX or IM_NAK, got %.2hhX", b[0]);
+        err_exit(false, "expected IM_STX or IM_NAK, got %.2hhX", b[0]);
     xread_all(fd, &b[1], 1);
     if (b[1] != cmd) {
         switch (b[1]) {
@@ -592,7 +591,7 @@ retry:
                 xread_all(fd, &b[2], 1);
                 break;
             default:
-                err_exit(FALSE, "unexpected command: %.2hhX", b[1]);
+                err_exit(false, "unexpected command: %.2hhX", b[1]);
                 break;
         }
         goto retry;
@@ -679,7 +678,7 @@ plm_recv_insteon(int fd, insaddr_t *ip, char *cmd1, char *cmd2,
             return 0;
         nak = plm_recv(fd, IM_RECV_STD, recv, sizeof(recv));
         if (nak)
-            err_exit(FALSE, "unexpected NAK while waiting for Insteon packet");
+            err_exit(false, "unexpected NAK while waiting for Insteon packet");
     } while (ip->h != recv[2] || ip->m != recv[3] || ip->l != recv[4]);
     if (cmd1)
         *cmd1 = recv[9];

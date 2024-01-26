@@ -23,7 +23,6 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "xtypes.h"
 #include "xsignal.h"
 #include "error.h"
 #include "daemon.h"
@@ -44,7 +43,7 @@ void daemon_init(int *skipfds, int skipfdslen, char *rundir, char *pidfile,
 
     switch (fork()) {
         case -1:
-            err_exit(TRUE, "fork");
+            err_exit(true, "fork");
         case 0: /* child */
             break;
         default: /* parent */
@@ -54,13 +53,13 @@ void daemon_init(int *skipfds, int skipfdslen, char *rundir, char *pidfile,
 
     /* become session leader */
     if (setsid() < 0)
-        err_exit(TRUE, "setsid");
+        err_exit(true, "setsid");
 
     xsignal(SIGHUP, SIG_IGN);
 
     switch(fork()) {
         case -1:
-            err_exit(TRUE, "fork");
+            err_exit(true, "fork");
         case 0: /* child */
             break;
         default: /* parent */
@@ -70,7 +69,7 @@ void daemon_init(int *skipfds, int skipfdslen, char *rundir, char *pidfile,
 
     /* change working directory */
     if (chdir(rundir) < 0)
-        err_exit(TRUE, "chdir %s", rundir);
+        err_exit(true, "chdir %s", rundir);
 
     /* clear our file mode creation mask */
     umask(0022);
@@ -78,14 +77,14 @@ void daemon_init(int *skipfds, int skipfdslen, char *rundir, char *pidfile,
     /* create pidfile */
     (void)unlink(pidfile);
     if (!(fp = fopen(pidfile, "w")))
-        err_exit(TRUE, "fopen %s", pidfile);
+        err_exit(true, "fopen %s", pidfile);
     if (fprintf(fp, "%d\n", (int)getpid()) == EOF) {
         (void)unlink(pidfile);
-        err_exit(TRUE, "fwrite %s", pidfile);
+        err_exit(true, "fwrite %s", pidfile);
     }
     if (fclose(fp) == EOF) {
         (void)unlink(pidfile);
-        err_exit(TRUE, "fclose %s", pidfile);
+        err_exit(true, "fclose %s", pidfile);
     }
 
     /* close fd's */

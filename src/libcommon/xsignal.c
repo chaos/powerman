@@ -13,7 +13,6 @@
 #endif
 #include <signal.h>
 
-#include "xtypes.h"
 #include "error.h"
 #include "xsignal.h"
 
@@ -36,7 +35,7 @@ xsigfunc_t *xsignal(int signo, xsigfunc_t *func)
     }
     n = sigaction(signo, &act, &oact);
     if (n < 0)
-        err_exit(TRUE, "sigaction");
+        err_exit(true, "sigaction");
 
     return (oact.sa_handler);
 }

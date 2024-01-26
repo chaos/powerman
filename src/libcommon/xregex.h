@@ -11,6 +11,8 @@
 #ifndef PM_XREGEX_H
 #define PM_XREGEX_H
 
+#include <stdbool.h>
+
 /* A compiled regex.
  */
 typedef struct xregex_struct *xregex_t;
@@ -27,14 +29,14 @@ void xregex_destroy(xregex_t x);
 /* Compile a regex defined by 's' into a regex object created with
  * xregex_create().  's' may contain the strings "\n" or "\r" in expanded
  * form and they will be converted into 0xa and 0xd respectively.
- * If 'withsub' is TRUE, the regex will support subexpression matches.
+ * If 'withsub' is true, the regex will support subexpression matches.
  * Program terminates with detailed message on compilation error.
  */
 void xregex_compile(xregex_t x, const char *s, bool withsub);
 
 /* Execute a compiled regex against the provided string 's'.
  * If xm is non-NULL, place match info there.
- * Returns TRUE on a match.
+ * Returns true on a match.
  */
 bool xregex_exec(xregex_t x, const char *s, xregex_match_t xm);
 

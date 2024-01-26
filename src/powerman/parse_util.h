@@ -11,6 +11,8 @@
 #ifndef PM_PARSE_UTIL_H
 #define PM_PARSE_UTIL_H
 
+#include <stdbool.h>
+
 void conf_init(char *filename);
 void conf_fini(void);
 

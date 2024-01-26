@@ -38,7 +38,6 @@
 #include "list.h"
 #include "hostlist.h"
 #include "cbuf.h"
-#include "xtypes.h"
 #include "parse_util.h"
 #include "xmalloc.h"
 #include "xpoll.h"
@@ -76,9 +75,9 @@ static void _parse_options(TcpDev *tcp, char *flags)
 
     while (opt) {
         if (strcmp(opt, "quiet") == 0)
-            tcp->quiet = TRUE;
+            tcp->quiet = true;
         else
-            err_exit(FALSE, "bad device option: %s\n", opt);
+            err_exit(false, "bad device option: %s\n", opt);
         opt = strtok(NULL, ",");
     }
     xfree(tmp);
@@ -94,7 +93,7 @@ void *tcp_create(char *host, char *port, char *flags)
     tcp->port = xstrdup(port);
     tcp->tstate = TELNET_NONE;
     tcp->tcmd = 0;
-    tcp->quiet = FALSE;
+    tcp->quiet = false;
     if (flags)
         _parse_options(tcp, flags);
 
@@ -105,10 +104,10 @@ void *tcp_create(char *host, char *port, char *flags)
     hints.ai_family = PF_UNSPEC;
     hints.ai_socktype = SOCK_STREAM;
     if ((error = getaddrinfo(tcp->host, tcp->port, &hints, &tcp->addrs)) != 0)
-        err_exit(FALSE, "getaddrinfo %s:%s: %s", tcp->host, tcp->port,
+        err_exit(false, "getaddrinfo %s:%s: %s", tcp->host, tcp->port,
                                                  gai_strerror(error));
     if (tcp->addrs == NULL)
-        err_exit(FALSE, "no addresses for server %s:%s", tcp->host, tcp->port);
+        err_exit(false, "no addresses for server %s:%s", tcp->host, tcp->port);
     tcp->cur = tcp->addrs;
 
     return (void *)tcp;
@@ -129,7 +128,7 @@ void tcp_destroy(void *data)
 }
 
 /* After a successful connect, perform some management on
- * the connection.  Returns TRUE on success, FALSE on error.
+ * the connection.  Returns true on success, false on error.
  */
 static bool tcp_finish_connect_one(Device *dev)
 {
@@ -149,13 +148,13 @@ static bool tcp_finish_connect_one(Device *dev)
         dev->connect_state = DEV_CONNECTED;
         dev->stat_successful_connects++;
         _telnet_init(dev);
-        return TRUE;
+        return true;
     }
-    return FALSE;
+    return false;
 }
 
 /* Obtain a socket for the specified address and attempt to connect it.
- * Return TRUE on completion or connection in progress, FALSE on error.
+ * Return true on completion or connection in progress, false on error.
  */
 static bool tcp_connect_one(Device *dev, struct addrinfo *addr)
 {
@@ -165,27 +164,27 @@ static bool tcp_connect_one(Device *dev, struct addrinfo *addr)
     assert(tcp->cur != NULL);
 
     if ((dev->fd = socket(addr->ai_family, addr->ai_socktype, 0)) < 0)
-        return FALSE;
+        return false;
     opt = 1;
     if (setsockopt(dev->fd, SOL_SOCKET, SO_REUSEADDR, &opt, sizeof(opt)) < 0) {
         close(dev->fd);
-        return FALSE;
+        return false;
     }
     nonblock_set(dev->fd);
 
     if (connect(dev->fd, addr->ai_addr, addr->ai_addrlen) >= 0)
         return tcp_finish_connect_one(dev);
     else if (errno == EINPROGRESS)
-        return TRUE;
+        return true;
 
     close(dev->fd);
-    return FALSE;
+    return false;
 }
 
 /*
  * Continue TCP connect when fd unblocks.
- * Return FALSE on error, which triggers timed retry of tcp_connect().
- * Return TRUE if connected or still connecting (on the next address).
+ * Return false on error, which triggers timed retry of tcp_connect().
+ * Return true if connected or still connecting (on the next address).
  */
 bool tcp_finish_connect(Device * dev)
 {
@@ -205,15 +204,15 @@ bool tcp_finish_connect(Device * dev)
     }
     switch(dev->connect_state) {
         case DEV_NOT_CONNECTED:
-            err(FALSE, "tcp_finish_connect(%s): connection refused", dev->name);
+            err(false, "tcp_finish_connect(%s): connection refused", dev->name);
             break;
         case DEV_CONNECTED:
             if (!tcp->quiet)
-                err(FALSE, "tcp_finish_connect(%s): connected", dev->name);
+                err(false, "tcp_finish_connect(%s): connected", dev->name);
             break;
         case DEV_CONNECTING:
             if (!tcp->quiet)
-                err(FALSE, "tcp_finish_connect(%s): connecting", dev->name);
+                err(false, "tcp_finish_connect(%s): connecting", dev->name);
             break;
     }
     return (dev->connect_state != DEV_NOT_CONNECTED);
@@ -242,15 +241,15 @@ bool tcp_connect(Device * dev)
 
     switch(dev->connect_state) {
         case DEV_NOT_CONNECTED:
-            err(FALSE, "tcp_connect(%s): connection refused", dev->name);
+            err(false, "tcp_connect(%s): connection refused", dev->name);
             break;
         case DEV_CONNECTED:
             if (!tcp->quiet)
-                err(FALSE, "tcp_connect(%s): connected", dev->name);
+                err(false, "tcp_connect(%s): connected", dev->name);
             break;
         case DEV_CONNECTING:
             if (!tcp->quiet)
-                err(FALSE, "tcp_connect(%s): connecting", dev->name);
+                err(false, "tcp_connect(%s): connecting", dev->name);
             break;
     }
 
@@ -274,12 +273,12 @@ void tcp_disconnect(Device * dev)
     /* close socket if open */
     if (dev->fd >= 0) {
         if (close(dev->fd) < 0)
-            err(TRUE, "tcp_disconnect: %s close fd %d", dev->name, dev->fd);
+            err(true, "tcp_disconnect: %s close fd %d", dev->name, dev->fd);
         dev->fd = NO_FD;
     }
 
     if (!tcp->quiet)
-        err(FALSE, "tcp_disconnect(%s): disconnected", dev->name);
+        err(false, "tcp_disconnect(%s): disconnected", dev->name);
 }
 
 void tcp_preprocess(Device *dev)
