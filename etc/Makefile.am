@@ -69,6 +69,7 @@ pkgsysconf_DATA = \
 	devices/plmpower.dev \
 	devices/powerman.dev \
 	devices/rancid-cisco-poe.dev \
+	devices/rancid-edgemax-poe.dev \
 	devices/raritan-px4316.dev \
 	devices/raritan-px5523.dev \
 	devices/sentry_cdu.dev \

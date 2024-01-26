@@ -3,10 +3,11 @@ Description=PowerMan
 After=syslog.target network.target
 
 [Service]
+Environment=SHELL=/bin/sh
 Type=forking
 PrivateTmp=yes
-User=daemon
-Group=daemon
+User=@RUN_AS_USER@
+Group=@RUN_AS_GROUP@
 ExecStart=@X_SBINDIR@/powermand
 PIDFile=@X_RUNSTATEDIR@/powerman/powermand.pid
 

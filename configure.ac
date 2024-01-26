@@ -109,7 +109,7 @@ AC_DEFINE(WITH_LSD_NOMEM_ERROR_FUNC, 1, [Define lsd_fatal_error])
 # whether to install pkg-config file for API
 AC_PKGCONFIG
 
-# what user to run daemon as
+# what user and group to run daemon as
 AC_RUNAS
 
 ##
