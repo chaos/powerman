@@ -1,3 +1,13 @@
+/************************************************************\
+ * Copyright (C) 2003 The Regents of the University of California.
+ * (c.f. DISCLAIMER, COPYING)
+ *
+ * This file is part of PowerMan, a remote power management program.
+ * For details, see https://github.com/chaos/powerman.
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+\************************************************************/
+
 #ifndef PM_ARGV_H
 #define PM_ARGV_H
 

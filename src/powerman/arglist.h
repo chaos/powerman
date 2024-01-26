@@ -1,3 +1,13 @@
+/************************************************************\
+ * Copyright (C) 2004 The Regents of the University of California.
+ * (c.f. DISCLAIMER, COPYING)
+ *
+ * This file is part of PowerMan, a remote power management program.
+ * For details, see https://github.com/chaos/powerman.
+ *
+ * SPDX-License-Identifier: GPL-2.0-or-later
+\************************************************************/
+
 /*
  * The ArgList is used to pass the list of "target nodes" into a device
  * script, and then to pass the result back to the client.
