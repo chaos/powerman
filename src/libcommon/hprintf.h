@@ -11,6 +11,8 @@
 #ifndef PM_HPRINTF_H
 #define PM_HPRINTF_H
 
+#include <stdarg.h>
+
 /* A vsprintf-like function that allocates the string on the heap and ensures
  * that no truncation occurs.  The caller must Free() the resulting string.
  */

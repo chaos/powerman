@@ -12,6 +12,7 @@
 #define PM_ERROR_H
 
 #include <stdbool.h>
+#include <stdarg.h>
 
 void err_init(char *prog);
 void err_notty(void);

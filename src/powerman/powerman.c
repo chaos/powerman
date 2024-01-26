@@ -28,7 +28,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
-#include <stdarg.h>
 
 #include "powerman.h"
 #include "xmalloc.h"

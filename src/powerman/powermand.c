@@ -25,7 +25,6 @@
 #include <stdio.h>
 #include <assert.h>
 #include <limits.h>
-#include <stdarg.h>
 
 #include "list.h"
 #include "hostlist.h"

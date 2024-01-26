@@ -11,6 +11,8 @@
 #ifndef PM_DEBUG_H
 #define PM_DEBUG_H
 
+#include <stdarg.h>
+
 #define DBG_ALWAYS          0x0000
 #define DBG_DEVICE          0x0001
 #define DBG_POLL            0x0002

@@ -15,7 +15,6 @@
 #include <errno.h>
 #include <assert.h>
 #include <unistd.h>
-#include <stdarg.h>
 #include <ctype.h>
 #include <string.h>
 
