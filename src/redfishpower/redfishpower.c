@@ -810,7 +810,31 @@ static void shell(CURLM *mh)
                         err_exit(false, "private data not set in easy handle");
 
                     if (cmsg->data.result != 0) {
-                        printf("%s: %s\n", pm->hostname, "error");
+                        if (cmsg->data.result == CURLE_COULDNT_CONNECT
+                            || cmsg->data.result == CURLE_OPERATION_TIMEDOUT)
+                            printf("%s: %s\n", pm->hostname, "network error");
+                        else if (cmsg->data.result == CURLE_HTTP_RETURNED_ERROR) {
+                            /* N.B. curl returns this error code for all response
+                             * codes >= 400.  So gotta dig in more.
+                             */
+                            long code;
+
+                            if (curl_easy_getinfo(cmsg->easy_handle,
+                                                  CURLINFO_RESPONSE_CODE,
+                                                  &code) != CURLE_OK)
+                                printf("%s: %s\n", pm->hostname, "http error");
+                            if (code == 401)
+                                printf("%s: %s\n", pm->hostname, "unauthorized");
+                            else if (code == 404)
+                                printf("%s: %s\n", pm->hostname, "not found");
+                            else
+                                printf("%s: %s (%ld)\n",
+                                       pm->hostname,
+                                       "http error",
+                                       code);
+                        }
+                        else
+                            printf("%s: %s\n", pm->hostname, "error");
                         if (verbose)
                             printf("%s: %s\n", pm->hostname,
                                    curl_easy_strerror(cmsg->data.result));
