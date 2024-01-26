@@ -112,6 +112,14 @@ static struct option longopts[] = {
 
 static time_t cmd_timeout = CMD_TIMEOUT_DEFAULT;
 
+/* global counters for when command is issued, should be re-initialized
+ * before counting begins.
+ */
+unsigned int ok_count = 0;
+unsigned int timeout_count = 0;
+unsigned int error_count = 0;
+unsigned int expected_count = 0;
+
 void help(void)
 {
     printf("Valid commands are:\n");
@@ -126,6 +134,14 @@ void help(void)
     printf("  on [nodes]\n");
     printf("  off [nodes]\n");
     printf("  cycle [nodes]\n");
+}
+
+static void init_counters ()
+{
+    ok_count = 0;
+    timeout_count = 0;
+    error_count = 0;
+    expected_count = 0;
 }
 
 static size_t output_cb(void *contents, size_t size, size_t nmemb, void *userp)
@@ -329,6 +345,7 @@ static void stat_cmd(List activecmds, CURLM *mh, char **av)
         if (!list_append(activecmds, pm))
             err_exit(true, "list_append");
         free(hostname);
+        expected_count++;
     }
     hostlist_iterator_destroy(itr);
     hostlist_destroy(lhosts);
@@ -375,6 +392,7 @@ static void stat_process (struct powermsg *pm)
     const char *str;
     parse_onoff(pm, &str);
     printf("%s: %s\n", pm->hostname, str);
+    ok_count++;
 }
 
 static void stat_cleanup(struct powermsg *pm)
@@ -440,6 +458,7 @@ static void power_cmd(List activecmds,
         if (!list_append(activecmds, pm))
             err_exit(true, "list_append");
         free(hostname);
+        expected_count++;
     }
     hostlist_iterator_destroy(itr);
     hostlist_destroy(lhosts);
@@ -480,6 +499,7 @@ static void on_off_process(List delayedcmds, struct powermsg *pm)
         parse_onoff(pm, &str);
         if (strcmp(str, pm->cmd) == 0) {
             printf("%s: %s\n", pm->hostname, "ok");
+            ok_count++;
             return;
         }
         /* fallthrough, check again */
@@ -488,6 +508,7 @@ static void on_off_process(List delayedcmds, struct powermsg *pm)
     gettimeofday(&now, NULL);
     if (timercmp(&now, &pm->timeout, >)) {
         printf("%s: %s\n", pm->hostname, "timeout");
+        timeout_count++;
         return;
     }
 
@@ -521,6 +542,7 @@ static void off_process(List delayedcmds, struct powermsg *pm)
 static void cycle_process(struct powermsg *pm)
 {
     printf("%s: %s\n", pm->hostname, "ok");
+    ok_count++;
 }
 
 static void power_cleanup(struct powermsg *pm)
@@ -695,6 +717,11 @@ static void shell(CURLM *mh)
         FD_ZERO(&fderror);
 
         if (list_is_empty(activecmds) && list_is_empty(delayedcmds)) {
+            if (expected_count) {
+                printf ("summary: ok: %u timeout: %u error: %u\n",
+                        ok_count, timeout_count, error_count);
+                init_counters();
+            }
             printf("redfishpower> ");
             fflush(stdout);
 
@@ -835,6 +862,9 @@ static void shell(CURLM *mh)
                         }
                         else
                             printf("%s: %s\n", pm->hostname, "error");
+
+                        error_count++;
+
                         if (verbose)
                             printf("%s: %s\n", pm->hostname,
                                    curl_easy_strerror(cmsg->data.result));
