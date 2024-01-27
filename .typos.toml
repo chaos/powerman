@@ -5,6 +5,9 @@
 extend-exclude = [
   "config/*",
   "src/liblsd/*",
+  "t/sharness.sh",
+  "t/t0000-sharness.sh",
+  "t/aggregate-results.sh",
 ]
 
 [default.extend-words]
