@@ -28,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #include <netdb.h>
+#include <errno.h>
 
 #include "powerman.h"
 #include "xmalloc.h"
@@ -53,7 +54,7 @@ typedef struct {
 #if WITH_GENDERS
 static void _push_genders_hosts(hostlist_t targets, char *s);
 #endif
-static int  _connect_to_server_tcp(char *host, char *port);
+static int  _connect_to_server_tcp(char *host, char *port, int retries);
 static int  _connect_to_server_pipe(char *server_path, char *config_path,
                                     bool short_circuit_delays);
 static void _usage(void);
@@ -72,7 +73,7 @@ static void _cmd_print(cmd_t *cp);
 
 static char *prog;
 
-#define OPTIONS "0:1:c:r:f:u:B:blQ:qP:tD:dTxgh:S:C:YVLZI"
+#define OPTIONS "0:1:c:r:f:u:B:blQ:qP:tD:dTxgh:S:C:YVLZIR:"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
@@ -102,6 +103,7 @@ static const struct option longopts[] = {
     {"license",     no_argument,        0, 'L'},
     {"dump-cmds",   no_argument,        0, 'Z'},
     {"ignore-errs", no_argument,        0, 'I'},
+    {"retry-connect", required_argument, 0, 'R'},
     {0, 0, 0, 0},
 };
 #else
@@ -120,6 +122,7 @@ int main(int argc, char **argv)
     bool ignore_errs = false;
     char *server_path = NULL;
     char *config_path = NULL;
+    unsigned long retry_connect = 0;
     List commands;  /* list-o-cmd_t's */
     ListIterator itr;
     cmd_t *cp;
@@ -222,6 +225,12 @@ int main(int argc, char **argv)
         case 'I':              /* --ignore-errs */
             ignore_errs = true;
             break;
+        case 'R':              /* --retry-connect=N (sleep 1s after fail) */
+            errno = 0;
+            retry_connect = strtoul (optarg, NULL, 10);
+            if (errno != 0 || retry_connect < 1)
+                err_exit(false, "invalid --retry-connect argument");
+            break;
         default:
             _usage();
             /*NOTREACHED*/
@@ -274,7 +283,7 @@ int main(int argc, char **argv)
         server_fd = _connect_to_server_pipe(server_path, config_path,
                                             short_circuit_delays);
     else
-        server_fd = _connect_to_server_tcp(host, port);
+        server_fd = _connect_to_server_tcp(host, port, retry_connect);
     _process_version(server_fd);
     _expect(server_fd, CP_PROMPT);
 
@@ -511,10 +520,27 @@ static int _connect_to_server_pipe(char *server_path, char *config_path,
     return fd;
 }
 
-static int _connect_to_server_tcp(char *host, char *port)
+static int _connect_any(struct addrinfo *addr)
+{
+    struct addrinfo *r;
+    int fd = -1;
+    for (r = addr; r != NULL; r = r->ai_next) {
+        if ((fd = socket(r->ai_family, r->ai_socktype, 0)) < 0)
+            continue;
+        if (connect(fd, r->ai_addr, r->ai_addrlen) < 0) {
+            close(fd);
+            fd = -1;
+            continue;
+        }
+        break; /* success! */
+    }
+    return fd;
+}
+
+static int _connect_to_server_tcp(char *host, char *port, int retries)
 {
     int error, fd = -1;
-    struct addrinfo hints, *res, *r;
+    struct addrinfo hints, *res;
 
     memset(&hints, 0, sizeof(hints));
     hints.ai_family = PF_UNSPEC;
@@ -526,16 +552,9 @@ static int _connect_to_server_tcp(char *host, char *port)
     if (res == NULL)
         err_exit(false, "no addresses for server %s:%s", host, port);
 
-    for (r = res; r != NULL; r = r->ai_next) {
-        if ((fd = socket(r->ai_family, r->ai_socktype, 0)) < 0)
-            continue;
-        if (connect(fd, r->ai_addr, r->ai_addrlen) < 0) {
-            close(fd);
-            continue;
-        }
-        break; /* success! */
-    }
-    if (r == NULL)
+    while ((fd = _connect_any(res)) < 0 && retries-- > 0)
+        sleep(1);
+    if (fd < 0)
         err_exit(false, "could not connect to address %s:%s", host, port);
 
     freeaddrinfo(res);
