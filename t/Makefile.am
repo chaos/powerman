@@ -11,7 +11,8 @@ clean-local:
 TESTSCRIPTS = \
 	t0000-sharness.t \
 	t0001-powerman-client.t \
-	t0002-pluglist.t
+	t0002-pluglist.t \
+	t0003-api-client.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
