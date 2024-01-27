@@ -3,6 +3,7 @@ SUBDIRS = \
 	man \
 	heartbeat \
 	src \
+	t \
 	test
 
 # Create run dir for powerman.  Chown will fail if non root - ignore it.
