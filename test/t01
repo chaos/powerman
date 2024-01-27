@@ -1,4 +1,0 @@
-#!/bin/sh
-TEST=t01
-${TEST_BUILDDIR}/../src/powerman/test_pluglist 't[1,2,3]' 'p[999-1001]' >$TEST.out 2>&1 || exit 1
-diff $TEST.out ${TEST_SRCDIR}/$TEST.exp >$TEST.diff

@@ -1,6 +1,0 @@
-plug=1 node=foo11
-plug=2 node=foo12
-plug=3 node=foo13
-plug=4 node=foo14
-plug=5 node=foo15
-plug=6 node=NULL
