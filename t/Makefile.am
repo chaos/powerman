@@ -14,7 +14,8 @@ TESTSCRIPTS = \
 	t0002-pluglist.t \
 	t0003-api-client.t \
 	t0004-status-query.t \
-	t0005-telemetry.t
+	t0005-telemetry.t \
+	t0006-on-off-cycle.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
