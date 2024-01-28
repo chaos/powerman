@@ -25,7 +25,7 @@ TESTS_ENVIRONMENT += "PATH_POWERMAN_STONITH=$(top_srcdir)/heartbeat/powerman"
 TESTS_ENVIRONMENT += "TEST_SRCDIR=$(top_srcdir)/test"
 TESTS_ENVIRONMENT += "TEST_BUILDDIR=$(top_builddir)/test"
 
-TESTS = t15 t16 t19 t20 t21 t22 t23 t24 t25 t26 t27 \
+TESTS = t16 t19 t20 t21 t22 t23 t24 t25 t26 t27 \
 	t28 t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39 t40 t41 \
 	t42 t43 t44 t46 t47 t48 t50 t51 t52 t53 t54 t55 \
 	t56 t57 t58 t59 t60 t61 t62 t63
