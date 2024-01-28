@@ -18,7 +18,8 @@ TESTSCRIPTS = \
 	t0006-on-off-cycle.t \
 	t0007-temperature.t \
 	t0008-beacon.t \
-	t0009-reset.t
+	t0009-reset.t \
+	t0010-device-status.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
