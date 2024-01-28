@@ -553,7 +553,7 @@ static int _connect_to_server_tcp(char *host, char *port, int retries)
         err_exit(false, "no addresses for server %s:%s", host, port);
 
     while ((fd = _connect_any(res)) < 0 && retries-- > 0)
-        sleep(1);
+        usleep(100000); // 100ms
     if (fd < 0)
         err_exit(false, "could not connect to address %s:%s", host, port);
 

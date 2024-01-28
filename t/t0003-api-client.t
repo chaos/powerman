@@ -26,7 +26,7 @@ test_expect_success 'create test powerman.conf' '
 test_expect_success 'start powerman daemon and wait for it to start' '
 	$powermand -c powerman.conf -f &
 	echo $! >powermand.pid &&
-	$powerman --retry-connect=10 --server-host=$testaddr -q >/dev/null
+	$powerman --retry-connect=100 --server-host=$testaddr -q >/dev/null
 '
 
 test_expect_success 'API query works' '
