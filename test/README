@@ -14,58 +14,10 @@ The output of each command is compared against expected output.
 
 The tests are summarized here:
 
-t00-t03
-	pluglist.c tests using tpl.c.
-t04
-	argv.c test using targv.c.
-t05
-	xregex.c tests using tregex.c.
-t06
-	Check power status query options
-	pm --query-all --query t1 --query t[3-5]
-t07
-	Check power status query options with no status_all script implemented.
-	pm --query-all --query t1 --query t[3-5]
-t08
-	Telemetry option check.
-	pm --telemetry --query-all
-t09
-	Check handling of large volume (size < min)
-	of data returned by device.
-	pm --telemetry --query-all
-t10
-	Check handling of large volume (min < size < max)
-	of data returned by device.
-	pm --telemetry --query-all
-t11
-	Check power options.
-	pm --query-all --on t4 --query-all --off t4 --query-all \
-           --cycle t5 --query-all
-t12
-	Check handling of "dangling" target args.
-	pm --query t1 t2
-t13
-	Check beacon options:
-	pm --beacon-all --flash t[13-15] --beacon-all --unflash t13 \
-	   --beacon-all --beacon t13 --beacon t14
-t14
-	Check temperature options:
-	pm --temp-all --temp t13 --temp t[13-15]
-t15
-	Check reset options
-	pm --reset t1 --reset t[3-5]
 t16
 	Check list and device options
 	pm --list \
            --device-all --query t1 --device-all --query t1 --device test0
-t17
-	Check handling of large volume (max < size)
-	of data returned by device.
-	pm --telemetry --query-all
-t18
-	Check handling of large volume (2*max < size)
-	of data returned by device.
-	pm --telemetry --query-all
 t19
 	Check timeout/reconnect.
 	pm -I --query-all <modified to hang>
@@ -108,8 +60,6 @@ t47
 	Test FreeIPMI ipmipower using ipmipower.c
 t48
 	Run some simple vpcd tests using sockets.
-t49
-	Test libpowerman API
 t50
 	Test bashfun demo script.
 t51
