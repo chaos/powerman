@@ -13,7 +13,8 @@ TESTSCRIPTS = \
 	t0001-powerman-client.t \
 	t0002-pluglist.t \
 	t0003-api-client.t \
-	t0004-status-query.t
+	t0004-status-query.t \
+	t0005-telemetry.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
