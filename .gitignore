@@ -59,14 +59,7 @@ Makefile
 *.diff
 *.swp
 *.tar.gz
-
-# Project specific build products
-plmpower/plmpower
-powerman/pm
-powerman/powerman
-powermand/parse_lex.c
-powermand/parse_tab.c
-powermand/parse_tab.h
-powermand/powermand
-scripts/powerman
-test/vpcd
+*.trs
+*.log
+.dirstsamp
+test_*.t
