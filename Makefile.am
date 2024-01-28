@@ -3,8 +3,8 @@ SUBDIRS = \
 	man \
 	heartbeat \
 	src \
-	t \
-	test
+	test \
+	t
 
 # Create run dir for powerman.  Chown will fail if non root - ignore it.
 install-data-local:
