@@ -145,8 +145,6 @@ AC_CONFIG_FILES( \
   test/Makefile \
   test/mcr.conf
   test/sierra.conf \
-  test/t19.conf \
-  test/t20.conf \
   test/t35.conf \
   test/t36.conf \
   test/t41.conf \
