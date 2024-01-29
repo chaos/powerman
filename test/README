@@ -14,36 +14,16 @@ The output of each command is compared against expected output.
 
 The tests are summarized here:
 
-t21-t22
-	Test baytech-rpc3-nc script using baytech.c.
-t23-t24
-	Test baytech-rpc28-nc script using baytech.c.
-t27-t28
-	Test baytech script using baytech.c.
-t29-t30
-	Test icebox v3 using icebox.c.
-t31-t32
-	Test icebox v2 using icebox.c.
-t33-t34
-	Test icebox v4 using icebox.c.
 t35
 	Powerman as a pseudo-power controller, direct mapping.
 t36
 	Powerman as a pseudo-power controller, remapped.
-t37-38
-	Test hp3488 using gpib.c
-t39-40
-	Test ics8064 using gpib.c
-t41
-	Test plmpower using plm.c
 t42-t43
 	Test DLI LPC using dli.c	
 t44
 	Test Sun ILOM using ilom.c
 t45
 	Test Rackable Phantom using phantom.c
-t46
-	Test cyclades pm8/pm10 using cyclades.c
 t47
 	Test FreeIPMI ipmipower using ipmipower.c
 t50
