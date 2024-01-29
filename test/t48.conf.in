@@ -1,5 +1,0 @@
-listen "127.0.0.1:10103"
-
-include "@top_srcdir@/etc/devices/vpc.dev"
-device "test0" "vpc" "127.0.0.1:10102"
-node "t[0-15]" "test0"

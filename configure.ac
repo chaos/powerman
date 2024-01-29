@@ -171,7 +171,6 @@ AC_CONFIG_FILES( \
   test/t44.conf \
   test/t46.conf \
   test/t47.conf \
-  test/t48.conf \
   test/t50.conf \
   test/t51.conf \
   test/t53.conf \
