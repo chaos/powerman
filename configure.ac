@@ -149,10 +149,6 @@ AC_CONFIG_FILES( \
   test/t20.conf \
   test/t35.conf \
   test/t36.conf \
-  test/t37.conf \
-  test/t38.conf \
-  test/t39.conf \
-  test/t40.conf \
   test/t41.conf \
   test/t42.conf \
   test/t43.conf \
