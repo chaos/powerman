@@ -1,3 +1,0 @@
-include "@top_srcdir@/etc/devices/icebox3.dev"
-device "i0" "icebox3" "@top_builddir@/test/icebox -p v3 |&"
-node "t[0-9]" "i0"

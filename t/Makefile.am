@@ -24,7 +24,8 @@ TESTSCRIPTS = \
 	t0012-device-delay.t \
 	t0013-baytech-rpc3-nc.t \
 	t0014-baytech-rpc28-nc.t \
-	t0015-baytech-rpc3.t
+	t0015-baytech-rpc3.t \
+	t0016-icebox-v3.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \

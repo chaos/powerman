@@ -26,7 +26,7 @@ TESTS_ENVIRONMENT += "TEST_SRCDIR=$(top_srcdir)/test"
 TESTS_ENVIRONMENT += "TEST_BUILDDIR=$(top_builddir)/test"
 
 TESTS = t19 t20 \
-	t29 t30 t31 t32 t33 t34 t35 t36 t37 t38 t39 t40 t41 \
+	t31 t32 t35 t36 t37 t38 t39 t40 t41 \
 	t42 t43 t44 t46 t47 t50 t51 t52 t53 t54 t55 \
 	t56 t57 t58 t59 t60 t61 t62 t63
 
@@ -88,7 +88,7 @@ redfish_httppower_LDADD = $(common_ldadd)
 check_DATA = \
 	mcr.conf sierra.conf \
 	t19.conf t20.conf \
-	t29.conf t30.conf t31.conf t32.conf t33.conf t34.conf \
+	t31.conf t32.conf \
 	t35.conf t36.conf t37.conf t38.conf t39.conf t40.conf t41.conf \
 	t42.conf t43.conf t44.conf t46.conf t47.conf \
 	t50.conf t51.conf t53.conf t54.conf t55.conf t60.conf \
