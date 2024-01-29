@@ -151,8 +151,6 @@ AC_CONFIG_FILES( \
   test/t22.conf \
   test/t23.conf \
   test/t24.conf \
-  test/t25.conf \
-  test/t26.conf \
   test/t27.conf \
   test/t28.conf \
   test/t29.conf \
