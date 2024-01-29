@@ -12,7 +12,13 @@ TESTSCRIPTS = \
 	t0000-sharness.t \
 	t0001-powerman-client.t \
 	t0002-pluglist.t \
-	t0003-api-client.t
+	t0003-api-client.t \
+	t0004-status-query.t \
+	t0005-telemetry.t \
+	t0006-on-off-cycle.t \
+	t0007-temperature.t \
+	t0008-beacon.t \
+	t0009-reset.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \

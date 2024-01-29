@@ -1,6 +1,0 @@
-#!/bin/sh
-TEST=t15
-$PATH_POWERMAN -S $PATH_POWERMAND -C ${TEST_BUILDDIR}/test.conf \
-  -r t1 -r t[3-5] >$TEST.out 2>$TEST.err
-test $? = 0 || exit 1
-diff $TEST.out ${TEST_SRCDIR}/$TEST.exp >$TEST.diff
