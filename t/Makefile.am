@@ -21,7 +21,8 @@ TESTSCRIPTS = \
 	t0009-reset.t \
 	t0010-device-status.t \
 	t0011-device-timeout.t \
-	t0012-device-delay.t
+	t0012-device-delay.t \
+	t0013-baytech-rpc3-nc.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
