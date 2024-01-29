@@ -14,22 +14,10 @@ The output of each command is compared against expected output.
 
 The tests are summarized here:
 
-t16
-	Check list and device options
-	pm --list \
-           --device-all --query t1 --device-all --query t1 --device test0
-t19
-	Check timeout/reconnect.
-	pm -I --query-all <modified to hang>
-t20
-	Check timeout/reconnect with partial success (32 plugs).
-	pm -I --query t[14-18] <partial hang> --query t[16-31] <wont hang>
 t21-t22
 	Test baytech-rpc3-nc script using baytech.c.
 t23-t24
 	Test baytech-rpc28-nc script using baytech.c.
-t25-t26
-	Ensure that delays are process expeditiously.
 t27-t28
 	Test baytech script using baytech.c.
 t29-t30
@@ -58,8 +46,6 @@ t46
 	Test cyclades pm8/pm10 using cyclades.c
 t47
 	Test FreeIPMI ipmipower using ipmipower.c
-t48
-	Run some simple vpcd tests using sockets.
 t50
 	Test bashfun demo script.
 t51

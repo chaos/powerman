@@ -113,6 +113,43 @@ test_expect_success 'stop powerman daemon' '
 	kill -15 $(cat powermand2.pid) &&
 	wait
 '
+test_expect_success 'create test powerman.conf with device over tcp' '
+	cat >powerman3.conf <<-EOT
+	include "$vpcdev"
+	listen "$testaddr"
+	device "test0" "vpc" "127.0.0.1:10900"
+	node "t[0-15]" "test0"
+	EOT
+'
+test_expect_success 'start device server' '
+	$vpcd -p 10900 &
+'
+test_expect_success 'start powerman daemon and wait for it to start' '
+	$powermand -c powerman3.conf -f &
+	echo $! >powermand3.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -d
+'
+test_expect_success 'powerman -q works' '
+	$powerman -h $testaddr -q >tcp_query.out &&
+	makeoutput "" "t[0-15]" "" >tcp_query.exp &&
+	test_cmp tcp_query.exp tcp_query.out
+'
+test_expect_success 'powerman -Q t1 works' '
+	$powerman -h $testaddr -Q t1 >tcp_query2.out &&
+	makeoutput "" "t1" "" >tcp_query2.exp &&
+	test_cmp tcp_query2.exp tcp_query2.out
+'
+test_expect_success 'powerman -Q t[3-5] works' '
+	$powerman -h $testaddr -Q t[3-5] >tcp_query3.out &&
+	makeoutput "" "t[3-5]" "" >tcp_query3.exp &&
+	test_cmp tcp_query3.exp tcp_query3.out
+'
+# powermand will disconnect from device server, which will cause it to exit
+test_expect_success 'stop powerman daemon and device server' '
+	kill -15 $(cat powermand3.pid) &&
+	wait &&
+	wait
+'
 
 test_done
 
