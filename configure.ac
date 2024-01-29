@@ -147,8 +147,6 @@ AC_CONFIG_FILES( \
   test/sierra.conf \
   test/t19.conf \
   test/t20.conf \
-  test/t31.conf \
-  test/t32.conf \
   test/t35.conf \
   test/t36.conf \
   test/t37.conf \
