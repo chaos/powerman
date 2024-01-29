@@ -1,5 +1,0 @@
-include "@top_srcdir@/etc/devices/baytech-rpc3-nc.dev"
-device "b0" "baytech-rpc3-nc" "@top_builddir@/test/baytech -p rpc3-nc |&"
-device "b1" "baytech-rpc3-nc" "@top_builddir@/test/baytech -p rpc3-de |&"
-node "t[0-7]" "b0"
-node "t[8-15]" "b1"

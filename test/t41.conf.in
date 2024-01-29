@@ -1,4 +1,0 @@
-include "@top_srcdir@/etc/devices/plmpower.dev"
-device "i0" "plmpower" "@top_builddir@/src/plmpower/plmpower -T |&"
-node "t0"  "i0"  "aa.bb.cc"
-node "t1"  "i0"  "G1"
