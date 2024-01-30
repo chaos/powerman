@@ -148,7 +148,6 @@ AC_CONFIG_FILES( \
   test/t54.conf \
   test/t55.conf \
   test/t60.conf \
-  test/t62.conf \
   test/t63.conf \
   test/test.conf \
   test/test4.conf \

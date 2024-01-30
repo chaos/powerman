@@ -35,7 +35,8 @@ TESTSCRIPTS = \
 	t0023-sun-microsystems-ilom.t \
 	t0024-freeipmi.t \
 	t0025-openbmc.t \
-	t0026-llnl-sierra-cluster.t
+	t0026-llnl-sierra-cluster.t \
+	t0027-redfish-httppower.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \

@@ -40,7 +40,7 @@ prompt_loop(void)
                    "\"PowerState\":\"%s\",\n"
                    "}\n",
                    hoststatus ? "On" : "Off");
-        } else if (sscanf(buf, "put redfish/v1/Systems/1/Actions/ComputerSystem.Reset %s",
+        } else if (sscanf(buf, "post redfish/v1/Systems/1/Actions/ComputerSystem.Reset %s",
                           datatmp) == 1) {
             if (strstr (datatmp, "On")) {
                 hoststatus = 1;
