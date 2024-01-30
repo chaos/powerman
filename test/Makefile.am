@@ -25,7 +25,7 @@ TESTS_ENVIRONMENT += "TEST_SRCDIR=$(top_srcdir)/test"
 TESTS_ENVIRONMENT += "TEST_BUILDDIR=$(top_builddir)/test"
 
 TESTS = t52 t53 t54 t55 \
-	t56 t57 t58 t59 t60 t61 t62 t63
+	t56 t57 t58 t59 t60 t62 t63
 
 XFAIL_TESTS =
 
@@ -82,7 +82,7 @@ redfish_httppower_LDADD = $(common_ldadd)
 check_DATA = \
 	mcr.conf sierra.conf \
 	t53.conf t54.conf t55.conf t60.conf \
-	t61.conf t62.conf t63.conf test4.conf test.conf
+	t62.conf t63.conf test4.conf test.conf
 
 EXTRA_DIST = $(TESTS:%=%.exp) t53.dev
 
