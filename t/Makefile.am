@@ -28,7 +28,8 @@ TESTSCRIPTS = \
 	t0016-icebox-v3.t \
 	t0017-icebox-v2.t \
 	t0018-cyclades-pm.t \
-	t0019-insteon-plm.t
+	t0019-insteon-plm.t \
+	t0020-digital-loggers-lpc.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
