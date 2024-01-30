@@ -111,13 +111,13 @@ _prompt_loop(void)
             /* */
         } else if (!strcmp(buf, "status")) {
             for (i = 0; i < num_plugs; i++)
-                printf ("plug %d: %s\n", i + plug_origin,
+                printf ("port%d: %s\n", i + plug_origin,
                         plug[i] ? "on" : "off");
         } else if (sscanf(buf, "status %d", &i) == 1) {
             i -= plug_origin;
             if (i < 0 || i >= num_plugs)
                 break;
-            printf ("plug %d: %s\n", i + plug_origin,
+            printf ("port%d: %s\n", i + plug_origin,
                      plug[i] ? "on" : "off");
         } else if (sscanf(buf, "on %d", &i) == 1) {
             i -= plug_origin;
