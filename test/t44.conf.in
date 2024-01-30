@@ -1,7 +1,0 @@
-include "@top_srcdir@/etc/devices/ilom.dev"
-device "d0" "ilom" "@top_builddir@/test/ilom -p ssh|&"
-device "d1" "ilom" "@top_builddir@/test/ilom -p serial|&"
-device "d2" "ilom" "@top_builddir@/test/ilom -p serial_loggedin|&"
-node "t0" "d0"
-node "t1" "d1"
-node "t2" "d2"

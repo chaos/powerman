@@ -31,7 +31,8 @@ TESTSCRIPTS = \
 	t0019-insteon-plm.t \
 	t0020-digital-loggers-lpc.t \
 	t0021-remote-powerman.t \
-	t0022-bashfun.t
+	t0022-bashfun.t \
+	t0023-sun-microsystems-ilom.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
