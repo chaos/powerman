@@ -28,7 +28,15 @@ TESTSCRIPTS = \
 	t0016-icebox-v3.t \
 	t0017-icebox-v2.t \
 	t0018-cyclades-pm.t \
-	t0019-insteon-plm.t
+	t0019-insteon-plm.t \
+	t0020-digital-loggers-lpc.t \
+	t0021-remote-powerman.t \
+	t0022-bashfun.t \
+	t0023-sun-microsystems-ilom.t \
+	t0024-freeipmi.t \
+	t0025-openbmc.t \
+	t0026-llnl-sierra-cluster.t \
+	t0027-redfish-httppower.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
@@ -42,4 +50,5 @@ check-prep:
 
 EXTRA_DIST= \
 	aggregate-results.sh \
-	sharness.sh
+	sharness.sh \
+	etc/sierra_plugs.conf
