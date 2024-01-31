@@ -38,7 +38,9 @@ TESTSCRIPTS = \
 	t0026-llnl-sierra-cluster.t \
 	t0027-redfish-httppower.t \
 	t0028-issues.t \
-	t0029-redfish.t
+	t0029-redfish.t \
+	t0030-heartbeat-stonith.t \
+	t0031-llnl-mcr-cluster.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
@@ -54,4 +56,5 @@ check-prep:
 EXTRA_DIST= \
 	aggregate-results.sh \
 	sharness.sh \
-	etc/sierra_plugs.conf
+	etc/sierra_plugs.conf \
+	etc/mcr_plugs.conf

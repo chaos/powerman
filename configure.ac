@@ -143,7 +143,6 @@ AC_CONFIG_FILES( \
   man/powermand.8 \
   t/Makefile \
   test/Makefile \
-  test/mcr.conf
   test/test.conf \
   test/test4.conf \
 )

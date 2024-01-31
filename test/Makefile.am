@@ -78,7 +78,6 @@ redfish_httppower_SOURCES = redfish-httppower.c
 redfish_httppower_LDADD = $(common_ldadd)
 
 check_DATA = \
-	mcr.conf \
 	test4.conf test.conf
 
 EXTRA_DIST = $(TESTS:%=%.exp)
