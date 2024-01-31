@@ -7,7 +7,7 @@ test_description='Ensure that delays are processed expeditiously'
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
 vpcd=$SHARNESS_BUILD_DIRECTORY/t/simulators/vpcd
-vpcdev=$SHARNESS_TEST_SRCDIR/../etc/devices/vpc.dev
+vpcdev=$SHARNESS_TEST_SRCDIR/etc/vpc.dev
 
 # Use port = 11000 + test number
 # That way there won't be port conflicts with make -j

@@ -8,9 +8,6 @@ if WITH_PKG_CONFIG
 pkgconfig_DATA = libpowerman.pc
 endif
 
-check_DATA = \
-	devices/vpc.dev
-
 pkgsysconfdir = $(sysconfdir)/powerman
 
 pkgsysconf_DATA = \

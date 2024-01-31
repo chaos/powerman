@@ -9,7 +9,7 @@ powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
 devicesdir=$SHARNESS_TEST_SRCDIR/../etc/devices
 simdir=$SHARNESS_BUILD_DIRECTORY/t/simulators
 vpcd=$simdir/vpcd
-vpcdev=$devicesdir/vpc.dev
+vpcdev=$SHARNESS_TEST_SRCDIR/etc/vpc.dev
 
 # Use port = 11000 + test number
 # That way there won't be port conflicts with make -j

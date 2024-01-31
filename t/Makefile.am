@@ -57,7 +57,9 @@ EXTRA_DIST= \
 	aggregate-results.sh \
 	sharness.sh \
 	etc/sierra_plugs.conf \
-	etc/mcr_plugs.conf
+	etc/mcr_plugs.conf \
+	etc/vpc.dev
+
 
 AM_CFLAGS = @WARNING_CFLAGS@
 
