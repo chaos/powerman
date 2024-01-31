@@ -143,8 +143,6 @@ AC_CONFIG_FILES( \
   man/powermand.8 \
   t/Makefile \
   test/Makefile \
-  test/test.conf \
-  test/test4.conf \
 )
 
 AC_OUTPUT
