@@ -36,7 +36,8 @@ TESTSCRIPTS = \
 	t0024-freeipmi.t \
 	t0025-openbmc.t \
 	t0026-llnl-sierra-cluster.t \
-	t0027-redfish-httppower.t
+	t0027-redfish-httppower.t \
+	t0028-issues.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \

@@ -1,8 +1,0 @@
-#!/bin/sh
-TEST=t54
-#$PATH_POWERMAND -f -c ${TEST_BUILDDIR}/$TEST.conf >$TEST.out 2>&1
-
-$PATH_POWERMAN -Y -S $PATH_POWERMAND -C ${TEST_BUILDDIR}/$TEST.conf \
-    -q  widow-mds1 >$TEST.out 2>$TEST.err
-test $? = 0 || exit 1
-diff $TEST.out ${TEST_SRCDIR}/$TEST.exp >$TEST.diff

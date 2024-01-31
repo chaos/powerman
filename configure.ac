@@ -144,10 +144,6 @@ AC_CONFIG_FILES( \
   t/Makefile \
   test/Makefile \
   test/mcr.conf
-  test/t53.conf \
-  test/t54.conf \
-  test/t55.conf \
-  test/t60.conf \
   test/t63.conf \
   test/test.conf \
   test/test4.conf \
