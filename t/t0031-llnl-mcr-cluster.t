@@ -6,7 +6,7 @@ test_description='Check LLNL MCR config with many icebox v3 devices'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-simdir=$SHARNESS_BUILD_DIRECTORY/test
+simdir=$SHARNESS_BUILD_DIRECTORY/t/simulators
 devicedir=$SHARNESS_TEST_SRCDIR/../etc/devices
 plugconf=$SHARNESS_TEST_SRCDIR/etc/mcr_plugs.conf
 

@@ -6,7 +6,7 @@ test_description='Check Digital Loggers Inc LPC device'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-dli=$SHARNESS_BUILD_DIRECTORY/test/dli
+dli=$SHARNESS_BUILD_DIRECTORY/t/simulators/dli
 dlidev=$SHARNESS_TEST_SRCDIR/../etc/devices/dli.dev
 
 # Use port = 11000 + test number

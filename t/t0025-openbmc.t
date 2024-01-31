@@ -6,7 +6,7 @@ test_description='Check openbmc device'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-openbmc=$SHARNESS_BUILD_DIRECTORY/test/openbmc-httppower
+openbmc=$SHARNESS_BUILD_DIRECTORY/t/simulators/openbmc-httppower
 openbmcdev=$SHARNESS_TEST_SRCDIR/../etc/devices/openbmc.dev
 
 # Use port = 11000 + test number

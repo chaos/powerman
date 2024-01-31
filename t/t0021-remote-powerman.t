@@ -6,7 +6,7 @@ test_description='Check powermand as a power control device'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-vpcd=$SHARNESS_BUILD_DIRECTORY/test/vpcd
+vpcd=$SHARNESS_BUILD_DIRECTORY/t/simulators/vpcd
 vpcdev=$SHARNESS_TEST_SRCDIR/../etc/devices/vpc.dev
 powermandev=$SHARNESS_TEST_SRCDIR/../etc/devices/powerman.dev
 

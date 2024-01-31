@@ -6,7 +6,7 @@ test_description='Check Baytech RPC-3 (not NC) device script'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-baytech=$SHARNESS_BUILD_DIRECTORY/test/baytech
+baytech=$SHARNESS_BUILD_DIRECTORY/t/simulators/baytech
 rpc3dev=$SHARNESS_TEST_SRCDIR/../etc/devices/baytech.dev
 
 # Use port = 11000 + test number

@@ -142,7 +142,6 @@ AC_CONFIG_FILES( \
   man/plmpower.8 \
   man/powermand.8 \
   t/Makefile \
-  test/Makefile \
 )
 
 AC_OUTPUT

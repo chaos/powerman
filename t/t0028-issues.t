@@ -7,7 +7,7 @@ test_description='Check that fixes to issues stay fixed'
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
 devicesdir=$SHARNESS_TEST_SRCDIR/../etc/devices
-simdir=$SHARNESS_BUILD_DIRECTORY/test
+simdir=$SHARNESS_BUILD_DIRECTORY/t/simulators
 vpcd=$simdir/vpcd
 vpcdev=$devicesdir/vpc.dev
 

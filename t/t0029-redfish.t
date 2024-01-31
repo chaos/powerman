@@ -6,7 +6,7 @@ test_description='Check redfishpower devices'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-simdir=$SHARNESS_BUILD_DIRECTORY/test/
+simdir=$SHARNESS_BUILD_DIRECTORY/t/simulators/
 devicesdir=$SHARNESS_TEST_SRCDIR/../etc/devices
 
 # Use port = 11000 + test number

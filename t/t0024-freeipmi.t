@@ -6,7 +6,7 @@ test_description='Check FreeIPMI ipmipower device'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-ipmipower=$SHARNESS_BUILD_DIRECTORY/test/ipmipower
+ipmipower=$SHARNESS_BUILD_DIRECTORY/t/simulators/ipmipower
 ipmipowerdev=$SHARNESS_TEST_SRCDIR/../etc/devices/ipmipower.dev
 
 # Use port = 11000 + test number

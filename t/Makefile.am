@@ -58,3 +58,66 @@ EXTRA_DIST= \
 	sharness.sh \
 	etc/sierra_plugs.conf \
 	etc/mcr_plugs.conf
+
+AM_CFLAGS = @WARNING_CFLAGS@
+
+AM_CPPFLAGS = \
+	-I$(top_srcdir)/src/libcommon \
+	-I$(top_srcdir)/src/liblsd \
+	-I$(top_srcdir)/src/powerman
+
+common_ldadd = \
+	$(top_builddir)/src/liblsd/liblsd.la \
+	$(top_builddir)/src/libcommon/libcommon.la \
+	$(LIBFORKPTY)
+
+check_PROGRAMS = \
+	simulators/vpcd \
+	simulators/baytech \
+	simulators/icebox \
+	simulators/dli \
+	simulators/cyclades \
+	simulators/ipmipower \
+	simulators/redfishpower \
+	simulators/ilom \
+	simulators/lom \
+	simulators/swpdu \
+	simulators/openbmc-httppower \
+	simulators/redfish-httppower
+
+
+simulators_vpcd_SOURCES = simulators/vpcd.c
+simulators_vpcd_LDADD = $(common_ldadd)
+
+simulators_baytech_SOURCES = simulators/baytech.c
+simulators_baytech_LDADD = $(common_ldadd)
+
+simulators_icebox_SOURCES = simulators/icebox.c
+simulators_icebox_LDADD = $(common_ldadd)
+
+simulators_swpdu_SOURCES = simulators/swpdu.c
+simulators_swpdu_LDADD = $(common_ldadd)
+
+simulators_dli_SOURCES = simulators/dli.c
+simulators_dli_LDADD = $(common_ldadd)
+
+simulators_ilom_SOURCES = simulators/ilom.c
+simulators_ilom_LDADD = $(common_ldadd)
+
+simulators_lom_SOURCES = simulators/lom.c
+simulators_lom_LDADD = $(common_ldadd)
+
+simulators_cyclades_SOURCES = simulators/cyclades.c
+simulators_cyclades_LDADD = $(common_ldadd)
+
+simulators_ipmipower_SOURCES = simulators/ipmipower.c
+simulators_ipmipower_LDADD = $(common_ldadd)
+
+simulators_redfishpower_SOURCES = simulators/redfishpower.c
+simulators_redfishpower_LDADD = $(common_ldadd)
+
+simulators_openbmc_httppower_SOURCES = simulators/openbmc-httppower.c
+simulators_openbmc_httppower_LDADD = $(common_ldadd)
+
+simulators_redfish_httppower_SOURCES = simulators/redfish-httppower.c
+simulators_redfish_httppower_LDADD = $(common_ldadd)

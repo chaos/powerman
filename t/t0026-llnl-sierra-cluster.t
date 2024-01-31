@@ -6,8 +6,8 @@ test_description='Check LLNL sierra cluster config with IPMI + PDU'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-swpdu=$SHARNESS_BUILD_DIRECTORY/test/swpdu
-ipmipower=$SHARNESS_BUILD_DIRECTORY/test/ipmipower
+swpdu=$SHARNESS_BUILD_DIRECTORY/t/simulators/swpdu
+ipmipower=$SHARNESS_BUILD_DIRECTORY/t/simulators/ipmipower
 ipmipowerdev=$SHARNESS_TEST_SRCDIR/../etc/devices/ipmipower.dev
 swpdudev=$SHARNESS_TEST_SRCDIR/../etc/devices/swpdu.dev
 plugconf=$SHARNESS_TEST_SRCDIR/etc/sierra_plugs.conf
