@@ -45,7 +45,8 @@ TESTS = \
 	$(TESTSCRIPTS)
 
 dist_check_SCRIPTS = \
-	$(TESTSCRIPTS)
+	$(TESTSCRIPTS) \
+	scripts/pm-sim.sh
 
 check-prep:
 	$(MAKE)

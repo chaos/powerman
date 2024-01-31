@@ -13,7 +13,6 @@ check_PROGRAMS = \
 	redfish-httppower
 
 dist_check_SCRIPTS = \
-	pm-sim \
 	mkconf.pl \
 	$(TESTS)
 
@@ -24,7 +23,7 @@ TESTS_ENVIRONMENT += "PATH_POWERMAN_STONITH=$(top_srcdir)/heartbeat/powerman"
 TESTS_ENVIRONMENT += "TEST_SRCDIR=$(top_srcdir)/test"
 TESTS_ENVIRONMENT += "TEST_BUILDDIR=$(top_builddir)/test"
 
-TESTS = t56 t57 t58 t59
+TESTS =
 
 XFAIL_TESTS =
 
