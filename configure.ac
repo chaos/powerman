@@ -144,7 +144,6 @@ AC_CONFIG_FILES( \
   t/Makefile \
   test/Makefile \
   test/mcr.conf
-  test/t63.conf \
   test/test.conf \
   test/test4.conf \
 )

@@ -24,7 +24,7 @@ TESTS_ENVIRONMENT += "PATH_POWERMAN_STONITH=$(top_srcdir)/heartbeat/powerman"
 TESTS_ENVIRONMENT += "TEST_SRCDIR=$(top_srcdir)/test"
 TESTS_ENVIRONMENT += "TEST_BUILDDIR=$(top_builddir)/test"
 
-TESTS = t56 t57 t58 t59 t63
+TESTS = t56 t57 t58 t59
 
 XFAIL_TESTS =
 
@@ -80,7 +80,7 @@ redfish_httppower_LDADD = $(common_ldadd)
 
 check_DATA = \
 	mcr.conf \
-	t63.conf test4.conf test.conf
+	test4.conf test.conf
 
 EXTRA_DIST = $(TESTS:%=%.exp)
 
