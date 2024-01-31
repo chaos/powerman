@@ -13,7 +13,6 @@ check_PROGRAMS = \
 	redfish-httppower
 
 dist_check_SCRIPTS = \
-	mkconf.pl \
 	$(TESTS)
 
 TESTS_ENVIRONMENT = env
