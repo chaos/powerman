@@ -63,3 +63,5 @@ Makefile
 *.log
 .dirstsamp
 test_*.t
+
+debbuild/*
