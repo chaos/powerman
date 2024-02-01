@@ -152,11 +152,13 @@ int main(int argc, char **argv)
 static void _usage(char *prog)
 {
     printf("Usage: %s [OPTIONS]\n", prog);
-    printf("  -c --conf <filename>   Specify config file path\n");
-    printf("  -d --debug <mask>      Set debug mask [0]\n");
-    printf("  -f --foreground        Don't daemonize\n");
-    printf("  -V --version           Report powerman version\n");
-    printf("  -s --stdio             Talk to client on stdin/stdout\n");
+    printf("  -c,--conf=PATH            Specify config file path\n");
+    printf("  -f,--foreground           Don't daemonize\n");
+    printf("  -s,--stdio                Talk to client on stdin/stdout\n");
+    printf("  -Y,--short-circuit-delay  Change all device delays to zero\n");
+    printf("  -d,--debug=MASK           Enable debug logging\n");
+    printf("  -V,--version              Report powerman version\n");
+    printf("  -h,--help                 Display help\n");
     exit(0);
 }
 
