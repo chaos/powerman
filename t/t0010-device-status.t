@@ -31,16 +31,16 @@ test_expect_success 'powerman -d works' '
 	echo "test0: state=connected reconnects=000 actions=002 type=vpc hosts=t[0-15]" >device.exp &&
 	test_cmp device.exp device.out
 '
-test_expect_success 'run powerman -Q t1' '
-	$powerman -h $testaddr -Q t1 >/dev/null
+test_expect_success 'run powerman -q t1' '
+	$powerman -h $testaddr -q t1 >/dev/null
 '
 test_expect_success 'powerman -d shows additional action' '
 	$powerman -h $testaddr -d >device2.out &&
 	echo "test0: state=connected reconnects=000 actions=003 type=vpc hosts=t[0-15]" >device2.exp &&
 	test_cmp device2.exp device2.out
 '
-test_expect_success 'running powerman -D t1 returns the same thing' '
-	$powerman -h $testaddr -D t1 >device3.out &&
+test_expect_success 'running powerman -d t1 returns the same thing' '
+	$powerman -h $testaddr -d t1 >device3.out &&
 	test_cmp device2.exp device3.out
 '
 # Should this be somewhere else?

@@ -75,8 +75,8 @@ test_expect_success 'start powerman daemon and wait for it to start' '
 	echo $! >powermand.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -d
 '
-test_expect_success 'powerman -Q t[14-18] times out' '
-	test_must_fail $powerman -h $testaddr -Q t[14-18] >query2.out
+test_expect_success 'powerman -q t[14-18] times out' '
+	test_must_fail $powerman -h $testaddr -q t[14-18] >query2.out
 '
 test_expect_success 'and command partially succeeded' '
 	echo test0: action timed out waiting for expected response \
@@ -85,8 +85,8 @@ test_expect_success 'and command partially succeeded' '
 	echo Query completed with errors >>query2.exp &&
 	test_cmp query2.exp query2.out
 '
-test_expect_success 'powerman -Q t[16-31] works' '
-	$powerman -h $testaddr -Q t[16-31] >query3.out &&
+test_expect_success 'powerman -q t[16-31] works' '
+	$powerman -h $testaddr -q t[16-31] >query3.out &&
 	makeoutput "" "t[16-31]" "" >query3.exp &&
 	test_cmp query3.exp query3.out
 '

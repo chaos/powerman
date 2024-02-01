@@ -36,6 +36,10 @@ test_expect_success 'powerman -r t[3-5] works' '
 	echo "Command completed successfully" >reset2.exp &&
 	test_cmp reset2.exp reset2.out
 '
+test_expect_success 'powerman -r with no targets fails with useful error' '
+        test_must_fail $powerman -h $testaddr -r 2>notargets.err &&
+        grep "Command requires targets" notargets.err
+'
 test_expect_success 'stop powerman daemon' '
 	kill -15 $(cat powermand.pid) &&
 	wait

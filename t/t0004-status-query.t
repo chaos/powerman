@@ -37,25 +37,20 @@ test_expect_success 'powerman -q works' '
 	makeoutput "" "t[0-15]" "" >query.exp &&
 	test_cmp query.exp query.out
 '
-test_expect_success 'powerman -Q t1 works' '
-	$powerman -h $testaddr -Q t1 >query2.out &&
+test_expect_success 'powerman -q t1 works' '
+	$powerman -h $testaddr -q t1 >query2.out &&
 	makeoutput "" "t1" "" >query2.exp &&
 	test_cmp query2.exp query2.out
 '
-test_expect_success 'powerman -Q t[3-5] works' '
-	$powerman -h $testaddr -Q t[3-5] >query3.out &&
-	makeoutput "" "t[3-5]" "" >query3.exp &&
-	test_cmp query3.exp query3.out
+test_expect_success 'powerman -q t1 t2 works' '
+	$powerman -h $testaddr -q t1 t2 >query2a.out &&
+	makeoutput "" "t[1-2]" "" >query2a.exp &&
+	test_cmp query2.exp query2.out
 '
 test_expect_success 'powerman -q t[3-5] works' '
-	$powerman -h $testaddr -q t[3-5] >query3b.out &&
-	makeoutput "" "t[3-5]" "" >query3b.exp &&
-	test_cmp query3b.exp query3b.out
-'
-test_expect_success 'powerman -Q t1 t2 works' '
-	$powerman -h $testaddr -Q t1 t2 >query4.out &&
-	makeoutput "" "t[1-2]" "" >query4.exp &&
-	test_cmp query4.exp query4.out
+	$powerman -h $testaddr -q t[3-5] >query3.out &&
+	makeoutput "" "t[3-5]" "" >query3.exp &&
+	test_cmp query3.exp query3.out
 '
 test_expect_success 'stop powerman daemon' '
 	kill -15 $(cat powermand.pid) &&
@@ -99,13 +94,13 @@ test_expect_success 'powerman -q works' '
 	makeoutput "" "t[0-15]" "" >nsa_query.exp &&
 	test_cmp nsa_query.exp nsa_query.out
 '
-test_expect_success 'powerman -Q t1 works' '
-	$powerman -h $testaddr -Q t1 >nsa_query2.out &&
+test_expect_success 'powerman -q t1 works' '
+	$powerman -h $testaddr -q t1 >nsa_query2.out &&
 	makeoutput "" "t1" "" >nsa_query2.exp &&
 	test_cmp nsa_query2.exp nsa_query2.out
 '
-test_expect_success 'powerman -Q t[3-5] works' '
-	$powerman -h $testaddr -Q t[3-5] >nsa_query3.out &&
+test_expect_success 'powerman -q t[3-5] works' '
+	$powerman -h $testaddr -q t[3-5] >nsa_query3.out &&
 	makeoutput "" "t[3-5]" "" >nsa_query3.exp &&
 	test_cmp nsa_query3.exp nsa_query3.out
 '
@@ -134,13 +129,13 @@ test_expect_success 'powerman -q works' '
 	makeoutput "" "t[0-15]" "" >tcp_query.exp &&
 	test_cmp tcp_query.exp tcp_query.out
 '
-test_expect_success 'powerman -Q t1 works' '
-	$powerman -h $testaddr -Q t1 >tcp_query2.out &&
+test_expect_success 'powerman -q t1 works' '
+	$powerman -h $testaddr -q t1 >tcp_query2.out &&
 	makeoutput "" "t1" "" >tcp_query2.exp &&
 	test_cmp tcp_query2.exp tcp_query2.out
 '
-test_expect_success 'powerman -Q t[3-5] works' '
-	$powerman -h $testaddr -Q t[3-5] >tcp_query3.out &&
+test_expect_success 'powerman -q t[3-5] works' '
+	$powerman -h $testaddr -q t[3-5] >tcp_query3.out &&
 	makeoutput "" "t[3-5]" "" >tcp_query3.exp &&
 	test_cmp tcp_query3.exp tcp_query3.out
 '

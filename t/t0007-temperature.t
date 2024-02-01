@@ -48,13 +48,13 @@ test_expect_success 'powerman -t works' '
 	EOT
 	test_cmp query_all.exp query_all.out
 '
-test_expect_success 'powerman -P t13 works' '
-	$powerman -h $testaddr -P t13 >query_t13.out &&
+test_expect_success 'powerman -t t13 works' '
+	$powerman -h $testaddr -t t13 >query_t13.out &&
 	echo "t13: 96" >query_t13.exp &&
 	test_cmp query_t13.exp query_t13.out
 '
-test_expect_success 'powerman -P t[13-15] works' '
-	$powerman -h $testaddr -P t[13-15] >query_set.out &&
+test_expect_success 'powerman -t t[13-15] works' '
+	$powerman -h $testaddr -t t[13-15] >query_set.out &&
 	cat >query_set.exp <<-EOT &&
 	t13: 96
 	t14: 97

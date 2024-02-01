@@ -57,15 +57,23 @@ test_expect_success 'powerman -b shows beacons t[14-15] on' '
 	makeoutput "t[14-15]" "t[0-13]" "" >query3.exp &&
 	test_cmp query3.exp query3.out
 '
-test_expect_success 'powerman -B t13 shows beacon t13 off' '
-	$powerman -h $testaddr -B t13 >query4.out &&
+test_expect_success 'powerman -b t13 shows beacon t13 off' '
+	$powerman -h $testaddr -b t13 >query4.out &&
 	makeoutput "" "t13" "" >query4.exp &&
 	test_cmp query4.exp query4.out
 '
-test_expect_success 'powerman -B t14 shows beacon t14 on' '
-	$powerman -h $testaddr -B t14 >query5.out &&
+test_expect_success 'powerman -b t14 shows beacon t14 on' '
+	$powerman -h $testaddr -b t14 >query5.out &&
 	makeoutput "t14" "" "" >query5.exp &&
 	test_cmp query5.exp query5.out
+'
+test_expect_success 'powerman -f with no targets fails with useful error' '
+	test_must_fail $powerman -h $testaddr -f 2>notargetsf.err &&
+	grep "Command requires targets" notargetsf.err
+'
+test_expect_success 'powerman -u with no targets fails with useful error' '
+	test_must_fail $powerman -h $testaddr -u 2>notargetsu.err &&
+	grep "Command requires targets" notargetsu.err
 '
 test_expect_success 'stop powerman daemon' '
 	kill -15 $(cat powermand.pid) &&
