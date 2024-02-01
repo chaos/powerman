@@ -26,9 +26,6 @@ Provide a synopsis of the command options.
 .I "-V, --version"
 Display the powerman version number and exit.
 
-.B PowerMan
-and exit.
-
 .SH "FILES"
 @X_SBINDIR@/powermand
 .br
