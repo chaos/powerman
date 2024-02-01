@@ -1,3 +1,0 @@
-include "@top_srcdir@/etc/devices/redfishpower-cray-r272z30.dev"
-device "d0" "redfishpower-cray-r272z30" "@top_builddir@/test/redfishpower -h t[0-15]|&"
-node "t[0-15]" "d0"

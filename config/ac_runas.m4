@@ -20,7 +20,7 @@ AC_DEFUN([AC_RUNAS],
 
     AC_MSG_CHECKING(group to run as)
     AC_ARG_WITH(group,
-    AC_HELP_STRING([--with-group=groupname], [group for powerman daemon (daemon)]),
+    AS_HELP_STRING([--with-group=groupname], [group for powerman daemon (daemon)]),
     [       case "${withval}" in
             yes|no)
                     ;;

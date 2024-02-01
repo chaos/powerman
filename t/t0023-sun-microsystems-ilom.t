@@ -6,8 +6,8 @@ test_description='Check Sun Microsystems ilom and lom devices'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-ilom=$SHARNESS_BUILD_DIRECTORY/test/ilom
-lom=$SHARNESS_BUILD_DIRECTORY/test/lom
+ilom=$SHARNESS_BUILD_DIRECTORY/t/simulators/ilom
+lom=$SHARNESS_BUILD_DIRECTORY/t/simulators/lom
 ilomdev=$SHARNESS_TEST_SRCDIR/../etc/devices/ilom.dev
 lomdev=$SHARNESS_TEST_SRCDIR/../etc/devices/lom.dev
 

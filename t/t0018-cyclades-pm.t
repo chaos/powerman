@@ -6,7 +6,7 @@ test_description='Check Cyclades PM8, PM10, PM20, PM42 scripts'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-cyclades=$SHARNESS_BUILD_DIRECTORY/test/cyclades
+cyclades=$SHARNESS_BUILD_DIRECTORY/t/simulators/cyclades
 pm8dev=$SHARNESS_TEST_SRCDIR/../etc/devices/cyclades-pm8.dev
 pm10dev=$SHARNESS_TEST_SRCDIR/../etc/devices/cyclades-pm10.dev
 pm20dev=$SHARNESS_TEST_SRCDIR/../etc/devices/cyclades-pm20.dev

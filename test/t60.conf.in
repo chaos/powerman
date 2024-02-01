@@ -1,3 +1,0 @@
-include "@top_srcdir@/etc/devices/ipmipower.dev"
-device "d0" "ipmipower" "@top_builddir@/test/ipmipower --auth-failure -h t[0-15]|&"
-node "t[0-15]" "d0"

@@ -1,5 +1,0 @@
-Command completed successfully
-powerman-stonith: pm-sim -A -1 t, rc=0
-Command completed successfully
-powerman-stonith: pm-sim -A -0 t, rc=0
-powerman-stonith: pm-sim -A -q t, state=off, rc=0

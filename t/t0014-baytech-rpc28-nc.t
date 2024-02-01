@@ -6,7 +6,7 @@ test_description='Check Baytech RPC-28 NC device script'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-baytech=$SHARNESS_BUILD_DIRECTORY/test/baytech
+baytech=$SHARNESS_BUILD_DIRECTORY/t/simulators/baytech
 rpc28dev=$SHARNESS_TEST_SRCDIR/../etc/devices/baytech-rpc28-nc.dev
 
 # Use port = 11000 + test number

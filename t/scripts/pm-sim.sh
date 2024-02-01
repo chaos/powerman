@@ -17,9 +17,9 @@ t=off
 ropt=0
 sopt=0
 topt=0
-if [ -n "PM_SIMSTATE" ]; then
-	[ -r $PM_SIMSTATE ] && source ${PM_SIMSTATE}
-fi
+
+simstate=$prog.data
+[ -r $simstate ] && source $simstate
 
 PATH=/usr/bin:/bin:$PATH
 
@@ -93,8 +93,6 @@ elif [ "$queryopt" == 1 ]; then
     fi
 fi
 
-if [ -n "$PM_SIMSTATE" ]; then
-    (echo t1=$t1; echo t2=$t2; echo t3=$t3) >$PM_SIMSTATE
-fi
+(echo t1=$t1; echo t2=$t2; echo t3=$t3) >$simstate
 
 exit 0

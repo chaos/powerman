@@ -6,7 +6,7 @@ test_description='Check Linux Networx icebox v2 device script'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-icebox=$SHARNESS_BUILD_DIRECTORY/test/icebox
+icebox=$SHARNESS_BUILD_DIRECTORY/t/simulators/icebox
 iceboxdev=$SHARNESS_TEST_SRCDIR/../etc/devices/icebox.dev
 
 # Use port = 11000 + test number

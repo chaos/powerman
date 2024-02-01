@@ -142,15 +142,6 @@ AC_CONFIG_FILES( \
   man/plmpower.8 \
   man/powermand.8 \
   t/Makefile \
-  test/Makefile \
-  test/mcr.conf
-  test/t53.conf \
-  test/t54.conf \
-  test/t55.conf \
-  test/t60.conf \
-  test/t63.conf \
-  test/test.conf \
-  test/test4.conf \
 )
 
 AC_OUTPUT
