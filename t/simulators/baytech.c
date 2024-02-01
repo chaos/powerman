@@ -14,9 +14,7 @@
 #include "config.h"
 #endif
 #include <stdio.h>
-#if HAVE_GETOPT_H
 #include <getopt.h>
-#endif
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -41,16 +39,10 @@ typedef enum { NONE, RPC3, RPC3_NC, RPC28_NC, RPC3_DE } baytype_t;
 static char *prog;
 
 #define OPTIONS "p:"
-#if HAVE_GETOPT_LONG
-#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
     { "personality", required_argument, 0, 'p' },
     {0, 0, 0, 0},
 };
-#else
-#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
-#endif
-
 
 int
 main(int argc, char *argv[])
@@ -59,7 +51,7 @@ main(int argc, char *argv[])
     baytype_t personality = NONE;
 
     prog = basename(argv[0]);
-    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
+    while ((c = getopt_long(argc, argv, OPTIONS, longopts, NULL)) != -1) {
         switch (c) {
             case 'p':
                 if (strcmp(optarg, "rpc3") == 0)

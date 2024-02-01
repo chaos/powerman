@@ -13,9 +13,7 @@
 #endif
 #include <stdio.h>
 #include <string.h>
-#if HAVE_GETOPT_H
 #include <getopt.h>
-#endif
 #if HAVE_GENDERS_H
 #include <genders.h>
 #endif
@@ -72,8 +70,6 @@ static void _cmd_print(cmd_t *cp);
 static char *prog;
 
 #define OPTIONS "0:1:c:r:f:u:B:blQ:qP:tD:dTxgh:VLZR:"
-#if HAVE_GETOPT_LONG
-#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
     {"on",          required_argument,  0, '1'},
     {"off",         required_argument,  0, '0'},
@@ -100,9 +96,6 @@ static const struct option longopts[] = {
     {"retry-connect", required_argument, 0, 'R'},
     {0, 0, 0, 0},
 };
-#else
-#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
-#endif
 
 int main(int argc, char **argv)
 {
@@ -125,7 +118,7 @@ int main(int argc, char **argv)
     /* Parse options.
      */
     opterr = 0;
-    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
+    while ((c = getopt_long(argc, argv, OPTIONS, longopts, NULL)) != -1) {
         switch (c) {
         case '1':              /* --on */
             _cmd_create(commands, CP_ON, optarg, false);

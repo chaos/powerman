@@ -12,9 +12,7 @@
 #include "config.h"
 #endif
 #include <stdio.h>
-#if HAVE_GETOPT_H
 #include <getopt.h>
-#endif
 #include <stdio.h>
 #include <libgen.h>
 #include <ctype.h>
@@ -106,15 +104,10 @@ static ilomtype_t personality = NONE;
 static char *prog;
 
 #define OPTIONS "p:"
-#if HAVE_GETOPT_LONG
-#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
     { "personality", required_argument, 0, 'p' },
     {0, 0, 0, 0},
 };
-#else
-#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
-#endif
 
 int
 main(int argc, char *argv[])
@@ -122,7 +115,7 @@ main(int argc, char *argv[])
     int c;
 
     prog = basename(argv[0]);
-    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
+    while ((c = getopt_long(argc, argv, OPTIONS, longopts, NULL)) != -1) {
         switch (c) {
             case 'p':
                 if (strcmp(optarg, "ssh") == 0)

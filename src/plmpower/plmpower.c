@@ -26,9 +26,7 @@
 #endif
 #include <stdio.h>
 #include <libgen.h>
-#if HAVE_GETOPT_H
 #include <getopt.h>
-#endif
 #include <string.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -170,8 +168,6 @@ static unsigned long    x10_attempts = 3;
 static int              insteon_tmout = 1000; /* (msec) */
 
 #define OPTIONS "d:Tx:t:S:"
-#if HAVE_GETOPT_LONG
-#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static struct option longopts[] = {
     { "device",         required_argument, 0, 'd' },
     { "testmode",       no_argument,       0, 'T' },
@@ -180,9 +176,6 @@ static struct option longopts[] = {
     { "single-cmd",     required_argument, 0, 'S' },
     {0,0,0,0},
 };
-#else
-#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
-#endif
 
 int
 main(int argc, char *argv[])
@@ -194,7 +187,7 @@ main(int argc, char *argv[])
 
     err_init(basename(argv[0]));
 
-    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != EOF) {
+    while ((c = getopt_long(argc, argv, OPTIONS, longopts, NULL)) != EOF) {
         switch (c) {
             case 'd':   /* --device */
                 device = optarg;
