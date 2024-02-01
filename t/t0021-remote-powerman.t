@@ -38,7 +38,7 @@ test_expect_success 'create controlling powerman.conf' '
 	cat >powerman.conf <<-EOT
 	listen "$testaddr"
 	include "$powermandev"
-	device "p0" "powerman" "$powermand --stdio -c rpowerman.conf -f |&"
+	device "p0" "powerman" "$powermand --stdio -c rpowerman.conf |&"
 	node "t[0-63]"   "p0"
 	EOT
 '

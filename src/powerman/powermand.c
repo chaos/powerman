@@ -103,6 +103,7 @@ int main(int argc, char **argv)
             break;
         case 's': /* --stdio */
             use_stdio = true;
+            daemonize = false;
             break;
         case 'h': /* --help */
         default:
@@ -111,9 +112,6 @@ int main(int argc, char **argv)
             break;
         }
     }
-
-    if (use_stdio && daemonize)
-        err_exit(false, "--stdio should only be used with --foreground");
 
     if (!config_filename)
         config_filename = hsprintf("%s/%s/%s", X_SYSCONFDIR,
