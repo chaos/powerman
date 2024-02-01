@@ -293,14 +293,23 @@ static void _usage(void)
 #endif
     printf("  -h,--server-host host[:port]  Connect to remote server\n");
     printf("  -x,--exprange        Expand host ranges in query response\n");
-    printf("  -T,--telemtery       Show device conversation for debugging\n");
     printf("  -l,--list            List available targets\n");
+    printf("  -V,--version         Show powerman version\n");
+    printf("  -L,--license         Show powerman license\n");
     printf ("The following are not implemented by all devices:\n");
     printf("  -r,--reset targets   Assert hardware reset\n");
     printf("  -f,--flash targets   Turn beacon on\n");
     printf("  -u,--unflash targets Turn beacon off\n");
-    printf("  -b,--beacon targets  Query beacon status\n");
+    printf("  -B,--beacon targets  Query beacon status of targets\n");
+    printf("  -b,--beacon-all      Query beacon status of all targets\n");
     printf("  -P,--temp targets    Query temperature\n");
+    printf("  -t,--temp-all        Query temperature of all targets\n");
+    printf ("For testing/debugging:\n");
+    printf("  -T,--telemtery       Show device conversation for debugging\n");
+    printf("  -R,--retry-connect=N Retry connect to server up to N times\n");
+    printf("  -Z,--dump-cmds       Show powerman protocol requests and exit\n");
+    printf("  -D,--device=NAME     Show statistics of device NAME\n");
+    printf("  -d,--device-all      Show statistics of all devices\n");
     exit(1);
 }
 
