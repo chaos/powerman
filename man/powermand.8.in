@@ -17,6 +17,15 @@ Override the default location of the powerman configuration file
 .I "-f, --foreground"
 Do not daemonize, and send debugging/error messages to stderr instead of syslog.
 .TP
+.I "-s, --stdio"
+Talk to a client on stdin/stdout rather than listening for network connections.
+This is useful for testing new configurations, since the powerman client
+protocol is friendly to humans.
+.TP
+.I "-Y, --short-circuit-delay"
+Ignore all device script delay statements.  This is useful for testing
+with simulated devices, where the delays slow down testing for no benefit.
+.TP
 .I "-d, --debug mask"
 Set mask for debugging output.
 .TP
