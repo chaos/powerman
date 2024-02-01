@@ -203,7 +203,7 @@ int main(int argc, char **argv)
         case 'Z':              /* --dump-cmds */
             dumpcmds = true;
             break;
-        case 'R':              /* --retry-connect=N (sleep 1s after fail) */
+        case 'R':              /* --retry-connect=N (sleep 100ms after fail) */
             errno = 0;
             retry_connect = strtoul (optarg, NULL, 10);
             if (errno != 0 || retry_connect < 1)
