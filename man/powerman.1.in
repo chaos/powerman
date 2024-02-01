@@ -8,8 +8,8 @@ powerman \- power on/off nodes
 .B powerman
 provides power management in a data center or compute cluster environment.
 It performs operations such as power on, power off, and power cycle
-via remote power controller (RPC) devices.
-Target hostnames are mapped to plugs on RPC devices in
+via remote power controller devices.
+Target hostnames are mapped to plugs on devices in
 .I powerman.conf(5).
 .SH OPTIONS
 .TP
@@ -25,7 +25,7 @@ Power cycle targets.
 .I "-q, --query-all"
 Query plug status of all targets.
 Status is not cached;  each time this option is used, powermand
-queries the appropriate RPC's.  Targets connected to RPC's that could
+queries the appropriate devices.  Targets connected to devices that could
 not be contacted (e.g. due to network failure) are reported as
 status "unknown".  If possible, output will be compressed into host
 ranges.
@@ -78,13 +78,13 @@ Query node temperature of targets.
 .I "-t, --temp-all"
 Query node temperature of all targets.
 Temperature information is not interpreted by powerman and is reported
-as received from the RPC on one line per target, prefixed by target name.
+as received from the device on one line per target, prefixed by target name.
 .SH TEST/DEBUG OPTIONS
 The following options may be helpful in the test environment or when debugging
 device scripts.
 .TP
 .I "-T, --telemetry"
-Causes RPC telemetry information to be displayed as commands are processed.
+Causes device telemetry information to be displayed as commands are processed.
 Useful for debugging device scripts.
 .TP
 .I "-R, --retry-connect N"
