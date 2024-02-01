@@ -14,7 +14,7 @@
 void cli_init(void);
 void cli_fini(void);
 
-void cli_start(bool use_stdio, bool one_client);
+void cli_start(bool use_stdio);
 void cli_listen_fds(int **fds, int *len);
 bool cli_server_done(void);
 

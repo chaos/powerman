@@ -1153,13 +1153,14 @@ bool cli_server_done(void)
     return server_done;
 }
 
-void cli_start(bool use_stdio, bool oc)
+void cli_start(bool use_stdio)
 {
-    if (use_stdio)
+    if (use_stdio) {
         _create_client_stdio();
+        one_client = true;
+    }
     else
         _listen_client();
-    one_client = oc;
 }
 
 /*
