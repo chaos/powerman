@@ -46,14 +46,6 @@ ranges.
 .I "-Q, --query targets"
 Query plug status of specific targets.
 .TP
-.I "-n, --soft-all"
-Query soft power status of all targets (if implemented by RPC).
-In this context, a node in the OFF state could be ON at the plug but
-operating in standby power mode.
-.TP
-.I "-N, --soft targets"
-Query soft power status of specific targets (if implemented by RPC).
-.TP
 .I "-b, --beacon-all"
 Query beacon status of all targets (if implemented by RPC).
 .TP
