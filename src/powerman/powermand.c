@@ -48,7 +48,7 @@ static void _noop_handler(int signum);
 static void _exit_handler(int signum);
 static void _select_loop(void);
 
-#define OPTIONS "c:fhd:VsY1"
+#define OPTIONS "c:fhd:VsY"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
@@ -59,7 +59,6 @@ static const struct option longopts[] = {
     {"version",         no_argument,        0, 'V'},
     {"stdio",           no_argument,        0, 's'},
     {"short-circuit-delay", no_argument,    0, 'Y'},
-    {"one-client",      no_argument,        0, '1'},
     {0, 0, 0, 0}
 };
 #else
@@ -73,7 +72,6 @@ int main(int argc, char **argv)
     bool daemonize = true;
     bool use_stdio = false;
     bool short_circuit_delay = false;
-    bool one_client = false;
 
     /* parse command line options */
     err_init(argv[0]);
@@ -105,10 +103,7 @@ int main(int argc, char **argv)
             break;
         case 's': /* --stdio */
             use_stdio = true;
-            one_client = true;
-            break;
-        case '1': /* --one-client */
-            one_client = true;
+            daemonize = false;
             break;
         case 'h': /* --help */
         default:
@@ -117,9 +112,6 @@ int main(int argc, char **argv)
             break;
         }
     }
-
-    if (use_stdio && daemonize)
-        err_exit(false, "--stdio should only be used with --foreground");
 
     if (!config_filename)
         config_filename = hsprintf("%s/%s/%s", X_SYSCONFDIR,
@@ -136,7 +128,7 @@ int main(int argc, char **argv)
     xsignal(SIGINT, _exit_handler);
     xsignal(SIGPIPE, SIG_IGN);
 
-    cli_start(use_stdio, one_client);
+    cli_start(use_stdio);
 
     if (daemonize) {
         char *rundir = hsprintf("%s/powerman", X_RUNSTATEDIR);
@@ -160,12 +152,13 @@ int main(int argc, char **argv)
 static void _usage(char *prog)
 {
     printf("Usage: %s [OPTIONS]\n", prog);
-    printf("  -c --conf <filename>   Specify config file path\n");
-    printf("  -d --debug <mask>      Set debug mask [0]\n");
-    printf("  -f --foreground        Don't daemonize\n");
-    printf("  -V --version           Report powerman version\n");
-    printf("  -s --stdio             Talk to client on stdin/stdout\n");
-    printf("  -1 --one-client        Terminate when client disconnects\n");
+    printf("  -c,--conf=PATH            Specify config file path\n");
+    printf("  -f,--foreground           Don't daemonize\n");
+    printf("  -s,--stdio                Talk to client on stdin/stdout\n");
+    printf("  -Y,--short-circuit-delay  Change all device delays to zero\n");
+    printf("  -d,--debug=MASK           Enable debug logging\n");
+    printf("  -V,--version              Report powerman version\n");
+    printf("  -h,--help                 Display help\n");
     exit(0);
 }
 

@@ -55,8 +55,6 @@ typedef struct {
 static void _push_genders_hosts(hostlist_t targets, char *s);
 #endif
 static int  _connect_to_server_tcp(char *host, char *port, int retries);
-static int  _connect_to_server_pipe(char *server_path, char *config_path,
-                                    bool short_circuit_delays);
 static void _usage(void);
 static void _license(void);
 static void _version(void);
@@ -73,7 +71,7 @@ static void _cmd_print(cmd_t *cp);
 
 static char *prog;
 
-#define OPTIONS "0:1:c:r:f:u:B:blQ:qP:tD:dTxgh:S:C:YVLZIR:"
+#define OPTIONS "0:1:c:r:f:u:B:blQ:qP:tD:dTxgh:VLZR:"
 #if HAVE_GETOPT_LONG
 #define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
@@ -96,13 +94,9 @@ static const struct option longopts[] = {
     {"exprange",    no_argument,        0, 'x'},
     {"genders",     no_argument,        0, 'g'},
     {"server-host", required_argument,  0, 'h'},
-    {"server-path", required_argument,  0, 'S'},
-    {"config-path", required_argument,  0, 'C'},
-    {"short-circuit-delays", no_argument,  0, 'Y'},
     {"version",     no_argument,        0, 'V'},
     {"license",     no_argument,        0, 'L'},
     {"dump-cmds",   no_argument,        0, 'Z'},
-    {"ignore-errs", no_argument,        0, 'I'},
     {"retry-connect", required_argument, 0, 'R'},
     {0, 0, 0, 0},
 };
@@ -119,14 +113,10 @@ int main(int argc, char **argv)
     char *host = DFLT_HOSTNAME;
     bool genders = false;
     bool dumpcmds = false;
-    bool ignore_errs = false;
-    char *server_path = NULL;
-    char *config_path = NULL;
     unsigned long retry_connect = 0;
     List commands;  /* list-o-cmd_t's */
     ListIterator itr;
     cmd_t *cp;
-    bool short_circuit_delays = false;
 
     prog = basename(argv[0]);
     err_init(prog);
@@ -182,9 +172,6 @@ int main(int argc, char **argv)
         case 'd':              /* --device-all */
             _cmd_create(commands, CP_DEVICE_ALL, NULL, false);
             break;
-        case 'Y':              /* --short-circuit-delays */
-            short_circuit_delays = true;
-            break;
         case 'h':              /* --server-host host[:port] */
             if ((p = strchr(optarg, ':'))) {
                 *p++ = '\0';
@@ -213,19 +200,10 @@ int main(int argc, char **argv)
             err_exit(false, "not configured with genders support");
 #endif
             break;
-        case 'S':              /* --server-path */
-            server_path = optarg;
-            break;
-        case 'C':              /* --config-path */
-            config_path = optarg;
-            break;
         case 'Z':              /* --dump-cmds */
             dumpcmds = true;
             break;
-        case 'I':              /* --ignore-errs */
-            ignore_errs = true;
-            break;
-        case 'R':              /* --retry-connect=N (sleep 1s after fail) */
+        case 'R':              /* --retry-connect=N (sleep 100ms after fail) */
             errno = 0;
             retry_connect = strtoul (optarg, NULL, 10);
             if (errno != 0 || retry_connect < 1)
@@ -238,8 +216,6 @@ int main(int argc, char **argv)
         }
     }
     if (list_is_empty(commands))
-        _usage();
-    if (short_circuit_delays && !server_path)
         _usage();
 
     /* For backwards compat with powerman 2.0 and earlier,
@@ -279,11 +255,7 @@ int main(int argc, char **argv)
 
     /* Establish connection to server and start protocol.
      */
-    if (server_path)
-        server_fd = _connect_to_server_pipe(server_path, config_path,
-                                            short_circuit_delays);
-    else
-        server_fd = _connect_to_server_tcp(host, port, retry_connect);
+    server_fd = _connect_to_server_tcp(host, port, retry_connect);
     _process_version(server_fd);
     _expect(server_fd, CP_PROMPT);
 
@@ -292,8 +264,6 @@ int main(int argc, char **argv)
     itr = list_iterator_create(commands);
     while ((cp = list_next(itr))) {
         res = _cmd_execute(cp, server_fd);
-        if (ignore_errs)
-            res = 0;
         if (res != 0)
             break;
     }
@@ -323,14 +293,23 @@ static void _usage(void)
 #endif
     printf("  -h,--server-host host[:port]  Connect to remote server\n");
     printf("  -x,--exprange        Expand host ranges in query response\n");
-    printf("  -T,--telemtery       Show device conversation for debugging\n");
     printf("  -l,--list            List available targets\n");
+    printf("  -V,--version         Show powerman version\n");
+    printf("  -L,--license         Show powerman license\n");
     printf ("The following are not implemented by all devices:\n");
     printf("  -r,--reset targets   Assert hardware reset\n");
     printf("  -f,--flash targets   Turn beacon on\n");
     printf("  -u,--unflash targets Turn beacon off\n");
-    printf("  -b,--beacon targets  Query beacon status\n");
+    printf("  -B,--beacon targets  Query beacon status of targets\n");
+    printf("  -b,--beacon-all      Query beacon status of all targets\n");
     printf("  -P,--temp targets    Query temperature\n");
+    printf("  -t,--temp-all        Query temperature of all targets\n");
+    printf ("For testing/debugging:\n");
+    printf("  -T,--telemtery       Show device conversation for debugging\n");
+    printf("  -R,--retry-connect=N Retry connect to server up to N times\n");
+    printf("  -Z,--dump-cmds       Show powerman protocol requests and exit\n");
+    printf("  -D,--device=NAME     Show statistics of device NAME\n");
+    printf("  -d,--device-all      Show statistics of all devices\n");
     exit(1);
 }
 
@@ -483,41 +462,6 @@ static void _cmd_print(cmd_t *cp)
     assert(cp->sendstr != NULL);
 
     printf("%s%s", cp->sendstr, CP_EOL);
-}
-
-static int _connect_to_server_pipe(char *server_path, char *config_path,
-                                   bool short_circuit_delays)
-{
-    int saved_stderr;
-    char cmd[128];
-    char **argv;
-    pid_t pid;
-    int fd;
-
-    saved_stderr = dup(STDERR_FILENO);
-    if (saved_stderr < 0)
-        err_exit(true, "dup stderr");
-    snprintf(cmd, sizeof(cmd), "powermand -sf -c %s", config_path);
-    argv = argv_create(cmd, "");
-    if (short_circuit_delays)
-        argv = argv_append(argv, "-Y");
-    pid = xforkpty(&fd, NULL, 0);
-    switch (pid) {
-        case -1:
-            err_exit(true, "forkpty error");
-        case 0: /* child */
-            if (dup2(saved_stderr, STDERR_FILENO) < 0)
-                err_exit(true, "dup2 stderr");
-            close(saved_stderr);
-            xcfmakeraw(STDIN_FILENO);
-            execv(server_path, argv);
-            err_exit(true, "exec %s", server_path);
-        default: /* parent */
-            close(saved_stderr);
-            break;
-    }
-    argv_destroy(argv);
-    return fd;
 }
 
 static int _connect_any(struct addrinfo *addr)
