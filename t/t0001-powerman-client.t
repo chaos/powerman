@@ -16,6 +16,20 @@ test_expect_success 'powerman --badopt fails with error on stderr' '
 	grep "Unknown option" badopt.out
 '
 
+test_expect_success 'powerman without an action fails with message on stderr' '
+	test_must_fail $powerman -T 2>noaction.err &&
+	grep "No action was specified" noaction.err
+'
+
+test_expect_success 'powerman --version works' '
+	$powerman --version >version.out &&
+	test $(wc -l <version.out) -eq 1
+'
+test_expect_success 'powerman --license works' '
+	$powerman --license >license.out &&
+	grep GPL license.out
+'
+
 test_done
 
 # vi: set ft=sh

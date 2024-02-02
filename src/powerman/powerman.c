@@ -307,7 +307,7 @@ static void _license(void)
  "For details, see https://github.com/chaos/powerman.\n"
  "\n"
  "SPDX-License-Identifier: GPL-2.0-or-later\n");
-    exit(1);
+    exit(0);
 }
 
 /* Display powerman version and exit.
@@ -315,7 +315,7 @@ static void _license(void)
 static void _version(void)
 {
     printf("%s\n", PACKAGE_VERSION);
-    exit(1);
+    exit(0);
 }
 
 static void _set_command (const char **command, const char *value)
