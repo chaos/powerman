@@ -26,9 +26,9 @@ Power cycle targets.
 Query plug status of targets, if specified, or all targets if not.
 Status is not cached;  each time this option is used, powermand
 queries the appropriate devices.  Targets connected to devices that could
-not be contacted (e.g. due to network failure) are reported as
-status "unknown".  If possible, output will be compressed into host
-ranges.
+not be contacted (e.g. due to network failure) or had some other type of
+error or are reported as status "unknown".  If possible, output will be
+compressed into host ranges.
 .TP
 .I "-l, --list"
 List available targets.  If possible, output will be compressed into
