@@ -40,7 +40,8 @@ TESTSCRIPTS = \
 	t0028-issues.t \
 	t0029-redfish.t \
 	t0030-heartbeat-stonith.t \
-	t0031-llnl-mcr-cluster.t
+	t0031-llnl-mcr-cluster.t \
+	t0032-list.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
