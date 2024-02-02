@@ -64,6 +64,9 @@ Display the powerman version number and exit.
 .I "-L, --license"
 Show powerman license information.
 .TP
+.I "-H, --help"
+Show command usage.
+.TP
 .I "-g, --genders"
 Interpret targets as genders attributes rather than node names.  Each attribute
 is expanded to the list of nodes that have that attribute, then those lists

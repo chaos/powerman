@@ -56,7 +56,7 @@ static void _set_command (const char **command, const char *value);
 
 static char *prog;
 
-#define OPTIONS "01crfubqtldTxgh:VLR:"
+#define OPTIONS "01crfubqtldTxgh:VLR:H"
 static const struct option longopts[] = {
     // command
     {"on",          no_argument,        0, '1'},
@@ -78,6 +78,7 @@ static const struct option longopts[] = {
     {"version",     no_argument,        0, 'V'},
     {"license",     no_argument,        0, 'L'},
     {"retry-connect", required_argument, 0, 'R'},
+    {"help",        no_argument,        0, 'H'},
     {0, 0, 0, 0},
 };
 
@@ -178,8 +179,12 @@ int main(int argc, char **argv)
             if (errno != 0 || retry_connect < 1)
                 err_exit(false, "invalid --retry-connect argument");
             break;
-        default:
+        case 'H':              /* --help */
             _usage();
+            /*NOTREACHED*/
+        default:
+            err_exit(false,
+                     "Unknown option.  Try '--help' for more information.");
             /*NOTREACHED*/
             break;
         }
@@ -287,7 +292,7 @@ static void _usage(void)
 "  -T,--telemtery       Show device conversation for debugging\n"
 "  -R,--retry-connect=N Retry connect to server up to N times\n"
     );
-    exit(1);
+    exit(0);
 }
 
 /* Display powerman license and exit.
