@@ -707,8 +707,9 @@ static void shell(CURLM *mh)
             long curl_timeout_ms;
 
             /* First check if there are any delayedcmds to send or are
-             * waiting.  Setup timeout accordingly if one is
-             * waiting */
+             * waiting.  If there are some ready to send, put to
+             * activecmds.  If not, setup timeout accordingly if one
+             * is waiting */
             if (!list_is_empty(delayedcmds)) {
                 ListIterator itr = list_iterator_create(delayedcmds);
                 struct powermsg *delaypm;
