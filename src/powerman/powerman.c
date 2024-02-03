@@ -321,7 +321,7 @@ static void _version(void)
 static void _set_command (const char **command, const char *value)
 {
     if (*command)
-        err_exit(false, "%s conflicts with %s", value, *command);
+        err_exit(false, "Only one action may be specified");
     *command = value;
 }
 
