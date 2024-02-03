@@ -62,7 +62,6 @@ AC_CHECK_FILES(/dev/ptc)
 # Checks for header files.
 ##
 AC_CHECK_HEADERS( \
-  getopt.h \
   poll.h \
   sys/select.h \
   sys/syscall.h \
@@ -93,7 +92,6 @@ RRA_WITH_SYSTEMD_UNITDIR
 # Checks for library functions.
 ##
 AC_CHECK_FUNCS( \
-  getopt_long \
   cfmakeraw
 )
 AC_SEARCH_LIBS([bind],[socket])

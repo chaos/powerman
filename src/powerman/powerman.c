@@ -13,9 +13,7 @@
 #endif
 #include <stdio.h>
 #include <string.h>
-#if HAVE_GETOPT_H
 #include <getopt.h>
-#endif
 #if HAVE_GENDERS_H
 #include <genders.h>
 #endif
@@ -43,14 +41,6 @@
 #include "argv.h"
 #include "list.h"
 
-#define CMD_MAGIC 0x5565aafd
-typedef struct {
-    int magic;
-    char *fmt;
-    char **argv;
-    char *sendstr;
-} cmd_t;
-
 #if WITH_GENDERS
 static void _push_genders_hosts(hostlist_t targets, char *s);
 #endif
@@ -62,47 +52,35 @@ static int  _process_line(int fd);
 static void _expect(int fd, char *str);
 static int  _process_response(int fd);
 static void _process_version(int fd);
-static void _cmd_create(List cl, char *fmt, char *arg, bool prepend);
-static void _cmd_destroy(cmd_t *cp);
-static void _cmd_append(cmd_t *cp, char *arg);
-static void _cmd_prepare(cmd_t *cp, bool genders);
-static int  _cmd_execute(cmd_t *cp, int fd);
-static void _cmd_print(cmd_t *cp);
+static void _set_command (const char **command, const char *value);
 
 static char *prog;
 
-#define OPTIONS "0:1:c:r:f:u:B:blQ:qP:tD:dTxgh:VLZR:"
-#if HAVE_GETOPT_LONG
-#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
+#define OPTIONS "01crfubqtldTxgh:VLR:H"
 static const struct option longopts[] = {
-    {"on",          required_argument,  0, '1'},
-    {"off",         required_argument,  0, '0'},
-    {"cycle",       required_argument,  0, 'c'},
-    {"reset",       required_argument,  0, 'r'},
-    {"flash",       required_argument,  0, 'f'},
-    {"unflash",     required_argument,  0, 'u'},
-    {"beacon",      required_argument,  0, 'B'},
-    {"beacon-all",  no_argument,        0, 'b'},
+    // command
+    {"on",          no_argument,        0, '1'},
+    {"off",         no_argument,        0, '0'},
+    {"cycle",       no_argument,        0, 'c'},
+    {"reset",       no_argument,        0, 'r'},
+    {"flash",       no_argument,        0, 'f'},
+    {"unflash",     no_argument,        0, 'u'},
+    {"beacon",      no_argument,        0, 'b'},
+    {"query",       no_argument,        0, 'q'},
+    {"temp",        no_argument,        0, 't'},
     {"list",        no_argument,        0, 'l'},
-    {"query",       required_argument,  0, 'Q'},
-    {"query-all",   no_argument,        0, 'q'},
-    {"temp",        required_argument,  0, 'P'},
-    {"temp-all",    no_argument,        0, 't'},
-    {"device",      required_argument,  0, 'D'},
-    {"device-all",  no_argument,        0, 'd'},
+    {"device",      no_argument,        0, 'd'},
+    // options
     {"telemetry",   no_argument,        0, 'T'},
     {"exprange",    no_argument,        0, 'x'},
     {"genders",     no_argument,        0, 'g'},
     {"server-host", required_argument,  0, 'h'},
     {"version",     no_argument,        0, 'V'},
     {"license",     no_argument,        0, 'L'},
-    {"dump-cmds",   no_argument,        0, 'Z'},
     {"retry-connect", required_argument, 0, 'R'},
+    {"help",        no_argument,        0, 'H'},
     {0, 0, 0, 0},
 };
-#else
-#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
-#endif
 
 int main(int argc, char **argv)
 {
@@ -112,65 +90,60 @@ int main(int argc, char **argv)
     char *p, *port = DFLT_PORT;
     char *host = DFLT_HOSTNAME;
     bool genders = false;
-    bool dumpcmds = false;
     unsigned long retry_connect = 0;
-    List commands;  /* list-o-cmd_t's */
-    ListIterator itr;
-    cmd_t *cp;
+    const char *command = NULL;
+    bool telemetry = false;
+    bool exprange = false;
+    hostlist_t targets;
+    bool targets_required = false;
 
     prog = basename(argv[0]);
     err_init(prog);
-    commands = list_create((ListDelF)_cmd_destroy);
+    targets = hostlist_create(NULL);
 
     /* Parse options.
      */
     opterr = 0;
-    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
+    while ((c = getopt_long(argc, argv, OPTIONS, longopts, NULL)) != -1) {
         switch (c) {
         case '1':              /* --on */
-            _cmd_create(commands, CP_ON, optarg, false);
+            _set_command(&command, CP_ON);
+            targets_required = true;
             break;
         case '0':              /* --off */
-            _cmd_create(commands, CP_OFF, optarg, false);
+            _set_command(&command, CP_OFF);
+            targets_required = true;
             break;
         case 'c':              /* --cycle */
-            _cmd_create(commands, CP_CYCLE, optarg, false);
+            _set_command(&command, CP_CYCLE);
+            targets_required = true;
             break;
         case 'r':              /* --reset */
-            _cmd_create(commands, CP_RESET, optarg, false);
+            _set_command(&command, CP_RESET);
+            targets_required = true;
             break;
         case 'l':              /* --list */
-            _cmd_create(commands, CP_NODES, NULL, false);
+            _set_command(&command, CP_NODES);
             break;
-        case 'Q':              /* --query */
-            _cmd_create(commands, CP_STATUS, optarg, false);
-            break;
-        case 'q':              /* --query-all */
-            _cmd_create(commands, CP_STATUS_ALL, NULL, false);
+        case 'q':              /* --query */
+            _set_command(&command, CP_STATUS);
             break;
         case 'f':              /* --flash */
-            _cmd_create(commands, CP_BEACON_ON, optarg, false);
+            _set_command(&command, CP_BEACON_ON);
+            targets_required = true;
             break;
         case 'u':              /* --unflash */
-            _cmd_create(commands, CP_BEACON_OFF, optarg, false);
+            _set_command(&command, CP_BEACON_OFF);
+            targets_required = true;
             break;
-        case 'B':              /* --beacon */
-            _cmd_create(commands, CP_BEACON, optarg, false);
+        case 'b':              /* --beacon */
+            _set_command(&command, CP_BEACON);
             break;
-        case 'b':              /* --beacon-all */;
-            _cmd_create(commands, CP_BEACON_ALL, NULL, false);
+        case 't':              /* --temp */
+            _set_command(&command, CP_TEMP);
             break;
-        case 'P':              /* --temp */
-            _cmd_create(commands, CP_TEMP, optarg, false);
-            break;
-        case 't':              /* --temp-all */
-            _cmd_create(commands, CP_TEMP_ALL, NULL, false);
-            break;
-        case 'D':              /* --device */
-            _cmd_create(commands, CP_DEVICE, optarg, false);
-            break;
-        case 'd':              /* --device-all */
-            _cmd_create(commands, CP_DEVICE_ALL, NULL, false);
+        case 'd':              /* --device */
+            _set_command(&command, CP_DEVICE);
             break;
         case 'h':              /* --server-host host[:port] */
             if ((p = strchr(optarg, ':'))) {
@@ -188,10 +161,10 @@ int main(int argc, char **argv)
             /*NOTREACHED*/
             break;
         case 'T':              /* --telemetry */
-            _cmd_create(commands, CP_TELEMETRY, NULL, true);
+            telemetry = true;
             break;
         case 'x':              /* --exprange */
-            _cmd_create(commands, CP_EXPRANGE, NULL, true);
+            exprange = true;
             break;
         case 'g':              /* --genders */
 #if WITH_GENDERS
@@ -200,58 +173,51 @@ int main(int argc, char **argv)
             err_exit(false, "not configured with genders support");
 #endif
             break;
-        case 'Z':              /* --dump-cmds */
-            dumpcmds = true;
-            break;
         case 'R':              /* --retry-connect=N (sleep 100ms after fail) */
             errno = 0;
             retry_connect = strtoul (optarg, NULL, 10);
             if (errno != 0 || retry_connect < 1)
                 err_exit(false, "invalid --retry-connect argument");
             break;
-        default:
+        case 'H':              /* --help */
             _usage();
+            /*NOTREACHED*/
+        default:
+            err_exit(false,
+                     "Unknown option.  Try '--help' for more information.");
             /*NOTREACHED*/
             break;
         }
     }
-    if (list_is_empty(commands))
-        _usage();
-
-    /* For backwards compat with powerman 2.0 and earlier,
-     * additional arguments are more targets for last command.
+    if (!command)
+        err_exit(false, "No action was specified.");
+    /* Combine free arguments into target hostlist.
+     * If --genders was selected, convert to hosts.
+     * Then convert back to a single hostlist-compressed argument.
+     * If there were no arguments, the result is the empty string.
      */
-    if (optind < argc) {
-        cmd_t *last = NULL;
-
-        itr = list_iterator_create(commands);
-        while ((cp = list_next(itr)))
-            last = cp;
-        list_iterator_destroy(itr);
-        if (last == NULL)
-            _usage();
-        while (optind < argc) {
-            _cmd_append(last, argv[optind]);
-            optind++;
+    while (optind < argc) {
+        if (!genders) {
+            if (!hostlist_push(targets, argv[optind++]))
+                err_exit(false, "hostlist error");
         }
+#if WITH_GENDERS
+        else
+            _push_genders_hosts(targets, argv[optind++]);
+#endif
     }
+    char argument[CP_LINEMAX];
+    if (hostlist_ranged_string(targets, sizeof(argument), argument) == -1)
+        err_exit(false, "hostlist error");
 
-    /* Prepare commands for processing.
+    /* Now that free arguments have been processed,
+     * Fail if 'command' doesn't accept an argument (%s) but there is one,
+     * or if the command requires an argument and there isn't one.
      */
-    itr = list_iterator_create(commands);
-    while ((cp = list_next(itr)))
-        _cmd_prepare(cp, genders);
-    list_iterator_destroy(itr);
-
-    /* Dump commands and exit if requested.
-     */
-    if (dumpcmds) {
-        itr = list_iterator_create(commands);
-        while ((cp = list_next(itr)))
-            _cmd_print(cp);
-        list_iterator_destroy(itr);
-        exit(0);
-    }
+    if (!strstr(command, "%s") && strlen (argument) > 0) // e.g. --nodes
+        err_exit(false, "Command does not accept targets");
+    if (targets_required && strlen (argument) == 0)
+        err_exit(false, "Command requires targets");
 
     /* Establish connection to server and start protocol.
      */
@@ -259,19 +225,37 @@ int main(int argc, char **argv)
     _process_version(server_fd);
     _expect(server_fd, CP_PROMPT);
 
-    /* Execute the commands.
+    /* First send commands that set options.
      */
-    itr = list_iterator_create(commands);
-    while ((cp = list_next(itr))) {
-        res = _cmd_execute(cp, server_fd);
+    if (telemetry) {
+        hfdprintf(server_fd, "%s%s" , CP_TELEMETRY, CP_EOL);
+        res = _process_response(server_fd);
+        _expect(server_fd, CP_PROMPT);
         if (res != 0)
-            break;
+            goto done;
     }
-    list_iterator_destroy(itr);
-    list_destroy(commands);
+    if (exprange) {
+        hfdprintf(server_fd, "%s%s", CP_EXPRANGE, CP_EOL);
+        res = _process_response(server_fd);
+        _expect(server_fd, CP_PROMPT);
+        if (res != 0)
+            goto done;
+    }
+    /* Send the main command.
+     * Use 'command' as the format string if it contains '%s' for an argument.
+     */
+    if (strstr (command, "%s")) {
+        hfdprintf(server_fd, command, argument);
+        hfdprintf(server_fd, CP_EOL);
+    }
+    else
+        hfdprintf(server_fd, "%s%s", command, CP_EOL);
+    res = _process_response(server_fd);
+    _expect(server_fd, CP_PROMPT);
 
     /* Disconnect from server.
      */
+done:
     hfdprintf(server_fd, "%s%s", CP_QUIT, CP_EOL);
     _expect(server_fd, CP_RSP_QUIT);
 
@@ -282,35 +266,33 @@ int main(int argc, char **argv)
  */
 static void _usage(void)
 {
-    printf("Usage: %s [action] [targets]\n", prog);
-    printf("  -1,--on targets      Power on targets\n");
-    printf("  -0,--off targets     Power off targets\n");
-    printf("  -c,--cycle targets   Power cycle targets\n");
-    printf("  -q,--query-all       Query power state of all targets\n");
-    printf("  -Q,--query targets   Query power state of specific targets\n");
+    printf("Usage: %s [options] [command] [targets]\n", prog);
+    printf(
+"Commands:\n"
+"  -1,--on              Power on targets\n"
+"  -0,--off             Power off targets\n"
+"  -c,--cycle           Power cycle targets\n"
+"  -q,--query           Query power state on optional targets\n"
+"  -r,--reset           Assert hardware reset on targets\n"
+"  -f,--flash           Turn beacon on on targets\n"
+"  -u,--unflash         Turn beacon off on targets\n"
+"  -b,--beacon          Query beacon status on optional targets\n"
+"  -P,--temp            Query temperature on optional targets\n"
+"  -l,--list            List available targets\n"
+"  -d,--device          Show status on optional device targets\n"
+"Options:\n"
 #if WITH_GENDERS
-    printf("  -g,--genders         Interpret targets as attributes\n");
+"  -g,--genders         Interpret targets as attributes\n"
 #endif
-    printf("  -h,--server-host host[:port]  Connect to remote server\n");
-    printf("  -x,--exprange        Expand host ranges in query response\n");
-    printf("  -l,--list            List available targets\n");
-    printf("  -V,--version         Show powerman version\n");
-    printf("  -L,--license         Show powerman license\n");
-    printf ("The following are not implemented by all devices:\n");
-    printf("  -r,--reset targets   Assert hardware reset\n");
-    printf("  -f,--flash targets   Turn beacon on\n");
-    printf("  -u,--unflash targets Turn beacon off\n");
-    printf("  -B,--beacon targets  Query beacon status of targets\n");
-    printf("  -b,--beacon-all      Query beacon status of all targets\n");
-    printf("  -P,--temp targets    Query temperature\n");
-    printf("  -t,--temp-all        Query temperature of all targets\n");
-    printf ("For testing/debugging:\n");
-    printf("  -T,--telemtery       Show device conversation for debugging\n");
-    printf("  -R,--retry-connect=N Retry connect to server up to N times\n");
-    printf("  -Z,--dump-cmds       Show powerman protocol requests and exit\n");
-    printf("  -D,--device=NAME     Show statistics of device NAME\n");
-    printf("  -d,--device-all      Show statistics of all devices\n");
-    exit(1);
+"  -h,--server-host host[:port]\n"
+"                       Connect to remote server\n"
+"  -x,--exprange        Expand host ranges in query response\n"
+"  -V,--version         Show powerman version\n"
+"  -L,--license         Show powerman license\n"
+"  -T,--telemtery       Show device conversation for debugging\n"
+"  -R,--retry-connect=N Retry connect to server up to N times\n"
+    );
+    exit(0);
 }
 
 /* Display powerman license and exit.
@@ -325,7 +307,7 @@ static void _license(void)
  "For details, see https://github.com/chaos/powerman.\n"
  "\n"
  "SPDX-License-Identifier: GPL-2.0-or-later\n");
-    exit(1);
+    exit(0);
 }
 
 /* Display powerman version and exit.
@@ -333,7 +315,14 @@ static void _license(void)
 static void _version(void)
 {
     printf("%s\n", PACKAGE_VERSION);
-    exit(1);
+    exit(0);
+}
+
+static void _set_command (const char **command, const char *value)
+{
+    if (*command)
+        err_exit(false, "%s conflicts with %s", value, *command);
+    *command = value;
 }
 
 #if WITH_GENDERS
@@ -362,107 +351,6 @@ static void _push_genders_hosts(hostlist_t targets, char *s)
     }
 }
 #endif
-
-static void _cmd_create(List cl, char *fmt, char *arg, bool prepend)
-{
-    cmd_t *cp = (cmd_t *)xmalloc(sizeof(cmd_t));
-
-    cp->magic = CMD_MAGIC;
-    cp->fmt = fmt;
-    cp->argv = NULL;
-    cp->sendstr = NULL;
-    if (arg)
-        cp->argv = argv_create(arg, "");
-    if (prepend)
-        list_prepend(cl, cp);
-    else
-        list_append(cl, cp);
-}
-
-static void _cmd_destroy(cmd_t *cp)
-{
-    assert(cp->magic == CMD_MAGIC);
-
-    cp->magic = 0;
-    if (cp->sendstr)
-        xfree(cp->sendstr);
-    if (cp->argv)
-        argv_destroy(cp->argv);
-    xfree(cp);
-}
-
-static void _cmd_append(cmd_t *cp, char *arg)
-{
-    assert(cp->magic == CMD_MAGIC);
-    if (cp->argv == NULL) {
-        if (!strcmp(cp->fmt, CP_STATUS_ALL)) {
-            cp->fmt = CP_STATUS;
-            cp->argv = argv_create(arg, "");
-        } else if (!strcmp(cp->fmt, CP_BEACON_ALL)) {
-            cp->fmt = CP_BEACON;
-            cp->argv = argv_create(arg, "");
-        } else if (!strcmp(cp->fmt, CP_DEVICE_ALL)) {
-            cp->fmt = CP_DEVICE;
-            cp->argv = argv_create(arg, "");
-        } else if (!strcmp(cp->fmt, CP_TEMP_ALL)) {
-            cp->fmt = CP_TEMP;
-            cp->argv = argv_create(arg, "");
-        } else
-            err_exit(false, "option takes no arguments");
-    } else
-        cp->argv = argv_append(cp->argv, arg);
-}
-
-static void _cmd_prepare(cmd_t *cp, bool genders)
-{
-    char tmpstr[CP_LINEMAX];
-    hostlist_t hl;
-    int i;
-
-    assert(cp->magic == CMD_MAGIC);
-    assert(cp->sendstr == NULL);
-
-    tmpstr[0] = '\0';
-    if (cp->argv) {
-        hl = hostlist_create(NULL);
-        for (i = 0; i < argv_length(cp->argv); i++) {
-            if (genders) {
-#if WITH_GENDERS
-                _push_genders_hosts(hl, cp->argv[i]);
-#endif
-            } else {
-                if (hostlist_push(hl, cp->argv[i]) == 0)
-                    err_exit(false, "hostlist error");
-            }
-        }
-        if (hostlist_ranged_string(hl, sizeof(tmpstr), tmpstr) == -1)
-            err_exit(false, "hostlist error");
-        hostlist_destroy(hl);
-    }
-    cp->sendstr = hsprintf(cp->fmt, tmpstr);
-}
-
-static int _cmd_execute(cmd_t *cp, int fd)
-{
-    int res;
-
-    assert(cp->magic == CMD_MAGIC);
-    assert(cp->sendstr != NULL);
-
-    hfdprintf(fd, "%s%s", cp->sendstr, CP_EOL);
-    res = _process_response(fd);
-    _expect(fd, CP_PROMPT);
-
-    return res;
-}
-
-static void _cmd_print(cmd_t *cp)
-{
-    assert(cp->magic == CMD_MAGIC);
-    assert(cp->sendstr != NULL);
-
-    printf("%s%s", cp->sendstr, CP_EOL);
-}
 
 static int _connect_any(struct addrinfo *addr)
 {

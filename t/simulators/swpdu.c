@@ -16,9 +16,7 @@
 #include "config.h"
 #endif
 #include <stdio.h>
-#if HAVE_GETOPT_H
 #include <getopt.h>
-#endif
 #include <unistd.h>
 #include <stdlib.h>
 #include <sys/types.h>
@@ -38,15 +36,9 @@ static void _prompt_loop(void);
 static char *prog;
 
 #define OPTIONS "p:"
-#if HAVE_GETOPT_LONG
-#define GETOPT(ac,av,opt,lopt) getopt_long(ac,av,opt,lopt,NULL)
 static const struct option longopts[] = {
     {0, 0, 0, 0},
 };
-#else
-#define GETOPT(ac,av,opt,lopt) getopt(ac,av,opt)
-#endif
-
 
 int
 main(int argc, char *argv[])
@@ -54,7 +46,7 @@ main(int argc, char *argv[])
     int c;
 
     prog = basename(argv[0]);
-    while ((c = GETOPT(argc, argv, OPTIONS, longopts)) != -1) {
+    while ((c = getopt_long(argc, argv, OPTIONS, longopts, NULL)) != -1) {
         switch (c) {
             default:
                 usage();

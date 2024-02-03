@@ -67,6 +67,28 @@ test_expect_success 'powerman -q shows t5 on' '
 	makeoutput "t5" "t[0-4,6-15]" "" >query4.exp &&
 	test_cmp query4.exp query4.out
 '
+test_expect_success 'powerman -1 t14 t15 works' '
+	$powerman -h $testaddr -1 t14 t15 >on5.out &&
+	echo "Command completed successfully" >on5.exp
+'
+test_expect_success 'powerman -q shows t14 t15 on' '
+	$powerman -h $testaddr -q >query5.out &&
+	makeoutput "t[5,14-15]" "t[0-4,6-13]" "" >query5.exp &&
+	test_cmp query5.exp query5.out
+'
+test_expect_success 'powerman -1 with no targets fails with useful error' '
+	test_must_fail $powerman -h $testaddr -1 2>notargets1.err &&
+	grep "Command requires targets" notargets1.err
+'
+test_expect_success 'powerman -0 with no targets fails with useful error' '
+	test_must_fail $powerman -h $testaddr -0 2>notargets0.err &&
+	grep "Command requires targets" notargets0.err
+'
+test_expect_success 'powerman -c with no targets fails with useful error' '
+	test_must_fail $powerman -h $testaddr -c 2>notargetsc.err &&
+	grep "Command requires targets" notargetsc.err
+'
+
 test_expect_success 'stop powerman daemon' '
 	kill -15 $(cat powermand.pid) &&
 	wait

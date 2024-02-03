@@ -85,14 +85,14 @@ test_expect_success 'start powerman daemon and wait for it to start' '
 	echo $! >powermand.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -d >device.out
 '
-test_expect_success 'powerman -Q sierra[0,2-1943] shows all blades off' '
-	$powerman -h $testaddr -Q sierra[0,2-1943] >query_blades.out &&
+test_expect_success 'powerman -q sierra[0,2-1943] shows all blades off' '
+	$powerman -h $testaddr -q sierra[0,2-1943] >query_blades.out &&
 	makeoutput "" "sierra[0,2-1943]" "" >query_blades.exp &&
 	test_cmp query_blades.exp query_blades.out
 '
 # Messy off: line so just verify that "unknown" and "on" are empty
-test_expect_success 'powerman -Q chassis[1-468] shows all chassis off' '
-	$powerman -h $testaddr -Q chassis[1-468] >query_chassis.out &&
+test_expect_success 'powerman -q chassis[1-468] shows all chassis off' '
+	$powerman -h $testaddr -q chassis[1-468] >query_chassis.out &&
 	grep -q "unknown: $" query_chassis.out &&
 	grep -q "on:      $" query_chassis.out
 '
@@ -101,8 +101,8 @@ test_expect_success 'powerman -1 chassis[1-468] works' '
 	echo Command completed successfully >on_chassis.exp &&
 	test_cmp on_chassis.exp on_chassis.out
 '
-test_expect_success 'powerman -Q chassis[1-468] shows all chassis on' '
-	$powerman -h $testaddr -Q chassis[1-468] >query_chassis2.out &&
+test_expect_success 'powerman -q chassis[1-468] shows all chassis on' '
+	$powerman -h $testaddr -q chassis[1-468] >query_chassis2.out &&
 	grep -q "unknown: $" query_chassis2.out &&
 	grep -q "off:     $" query_chassis2.out
 '
@@ -111,8 +111,8 @@ test_expect_success 'powerman -1 sierra[0,2-1943] works' '
 	echo Command completed successfully >on_blades.exp &&
 	test_cmp on_blades.exp on_blades.out
 '
-test_expect_success 'powerman -Q sierra[0,2-1943] shows all blades on' '
-	$powerman -h $testaddr -Q sierra[0,2-1943] >query_blades2.out &&
+test_expect_success 'powerman -q sierra[0,2-1943] shows all blades on' '
+	$powerman -h $testaddr -q sierra[0,2-1943] >query_blades2.out &&
 	makeoutput "sierra[0,2-1943]" "" "" >query_blades2.exp &&
 	test_cmp query_blades2.exp query_blades2.out
 '
@@ -121,8 +121,8 @@ test_expect_success 'powerman -0 sierra[0,2-1943] works' '
 	echo Command completed successfully >off_blades.exp &&
 	test_cmp off_blades.exp off_blades.out
 '
-test_expect_success 'powerman -Q sierra[0,2-1943] shows all blades off' '
-	$powerman -h $testaddr -Q sierra[0,2-1943] >query_blades3.out &&
+test_expect_success 'powerman -q sierra[0,2-1943] shows all blades off' '
+	$powerman -h $testaddr -q sierra[0,2-1943] >query_blades3.out &&
 	makeoutput "" "sierra[0,2-1943]" "" >query_blades3.exp &&
 	test_cmp query_blades3.exp query_blades3.out
 '
@@ -131,8 +131,8 @@ test_expect_success 'powerman -0 chassis[1-468] works' '
 	echo Command completed successfully >off_chassis.exp &&
 	test_cmp off_chassis.exp off_chassis.out
 '
-test_expect_success 'powerman -Q chassis[1-468] shows all chassis off' '
-	$powerman -h $testaddr -Q chassis[1-468] >query_chassis3.out &&
+test_expect_success 'powerman -q chassis[1-468] shows all chassis off' '
+	$powerman -h $testaddr -q chassis[1-468] >query_chassis3.out &&
 	grep -q "unknown: $" query_chassis3.out &&
 	grep -q "on:      $" query_chassis3.out
 '

@@ -1,6 +1,6 @@
 #!/bin/sh
 
-test_description='Test Powerman reset control'
+test_description='Test Powerman list query'
 
 . `dirname $0`/sharness.sh
 
@@ -11,7 +11,7 @@ vpcdev=$SHARNESS_TEST_SRCDIR/etc/vpc.dev
 
 # Use port = 11000 + test number
 # That way there won't be port conflicts with make -j
-testaddr=localhost:11009
+testaddr=localhost:11032
 
 test_expect_success 'create test powerman.conf' '
 	cat >powerman.conf <<-EOT
@@ -24,27 +24,23 @@ test_expect_success 'create test powerman.conf' '
 test_expect_success 'start powerman daemon and wait for it to start' '
 	$powermand -c powerman.conf -f &
 	echo $! >powermand.pid &&
-	$powerman --retry-connect=100 --server-host=$testaddr -q >/dev/null
+	$powerman --retry-connect=100 --server-host=$testaddr -d >/dev/null
 '
-test_expect_success 'powerman -r t1 works' '
-	$powerman -h $testaddr -r t1 >reset1.out &&
-	echo "Command completed successfully" >reset1.exp &&
-	test_cmp reset1.exp reset1.out
+test_expect_success 'powerman -l works' '
+	$powerman -h $testaddr -l >list.out &&
+	echo "t[0-15]" >list.exp &&
+	test_cmp list.exp list.out
 '
-test_expect_success 'powerman -r t[3-5] works' '
-	$powerman -h $testaddr -r t[3-5] >reset2.out &&
-	echo "Command completed successfully" >reset2.exp &&
-	test_cmp reset2.exp reset2.out
+test_expect_success 'powerman -l fails with targets' '
+	test_must_fail $powerman -h $testaddr -l t2 2>list.err
 '
-test_expect_success 'powerman -r with no targets fails with useful error' '
-        test_must_fail $powerman -h $testaddr -r 2>notargets.err &&
-        grep "Command requires targets" notargets.err
+test_expect_success 'and a useful message was printed on stderr' '
+	grep "does not accept targets" list.err
 '
 test_expect_success 'stop powerman daemon' '
 	kill -15 $(cat powermand.pid) &&
 	wait
 '
-
 test_done
 
 # vi: set ft=sh
