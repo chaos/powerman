@@ -128,7 +128,6 @@ AC_CONFIG_FILES( \
   etc/Makefile \
   etc/libpowerman.pc \
   etc/powerman.service \
-  etc/tmpfiles.d/powerman.conf \
   heartbeat/Makefile \
   man/Makefile \
   man/powerman.1 \
