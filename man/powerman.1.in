@@ -82,9 +82,9 @@ Useful for debugging device scripts.
 .I "-R, --retry-connect N"
 Retry connect to server up to N times with a 100ms delay after each failure.
 .TP
-.I "-d, --device[=NAME]"
-Displays device status information for the named device, if specified,
-or all devices if not.
+.I "-d, --device"
+Displays device status information for the device(s) that control the targets,
+if specified, or all devices if not.
 .SH "TARGET SPECIFICATION"
 .B powerman
 target hostnames may be specified as comma separated or space separated

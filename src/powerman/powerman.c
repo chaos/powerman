@@ -279,7 +279,7 @@ static void _usage(void)
 "  -b,--beacon          Query beacon status on optional targets\n"
 "  -P,--temp            Query temperature on optional targets\n"
 "  -l,--list            List available targets\n"
-"  -d,--device          Show status on optional device targets\n"
+"  -d,--device          Show status of devices that control optional targets\n"
 "Options:\n"
 #if WITH_GENDERS
 "  -g,--genders         Interpret targets as attributes\n"
