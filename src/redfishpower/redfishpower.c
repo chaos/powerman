@@ -61,6 +61,11 @@ static char *cyclepostdata = NULL;
 
 #define MS_IN_SEC                1000
 
+enum {
+      STATE_SEND_POWERCMD,      /* stat, on, off */
+      STATE_WAIT_UNTIL_ON_OFF,  /* on, off */
+};
+
 struct powermsg {
     CURLM *mh;                  /* curl multi handle pointer */
 
@@ -72,8 +77,7 @@ struct powermsg {
     char *output;               /* on, off, stat */
     size_t output_len;
 
-    /* flag indicating if we are in the "wait" mode of on or off */
-    int wait_until_on_off;
+    int state;
 
     /* start - when power op started, may be set to start time of a
      * previous message if this is a follow on message.
@@ -157,7 +161,8 @@ static struct powermsg *powermsg_create(CURLM *mh,
                                         const char *path,
                                         const char *postdata,
                                         struct timeval *start,
-                                        long int delay_usec)
+                                        long int delay_usec,
+                                        int state)
 {
     struct powermsg *pm = calloc(1, sizeof(*pm));
     struct timeval now;
@@ -168,6 +173,7 @@ static struct powermsg *powermsg_create(CURLM *mh,
         err_exit(true, "calloc");
 
     pm->mh = mh;
+    pm->state = state;
 
     if ((pm->eh = curl_easy_init()) == NULL)
         err_exit(false, "curl_easy_init failed");
@@ -294,7 +300,8 @@ static struct powermsg *stat_cmd_host(CURLM * mh, char *hostname)
                                           statpath,
                                           NULL,
                                           NULL,
-                                          0);
+                                          0,
+                                          STATE_SEND_POWERCMD);
 
     Curl_easy_setopt((pm->eh, CURLOPT_HTTPGET, 1));
     return pm;
@@ -393,7 +400,8 @@ struct powermsg *power_cmd_host(CURLM * mh,
                                           path,
                                           postdata,
                                           NULL,
-                                          0);
+                                          0,
+                                          STATE_SEND_POWERCMD);
 
     Curl_easy_setopt((pm->eh, CURLOPT_POST, 1));
     Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDS, pm->postdata));
@@ -469,26 +477,9 @@ static void cycle_cmd(List activecmds, CURLM *mh, char **av)
     power_cmd(activecmds, mh, av, "cycle", cyclepath, cyclepostdata);
 }
 
-static void on_off_process(List delayedcmds, struct powermsg *pm)
+static void send_status_poll(List delayedcmds, struct powermsg *pm)
 {
     struct powermsg *nextpm;
-    struct timeval now;
-
-    if (pm->wait_until_on_off) {
-        const char *str;
-        parse_onoff(pm, &str);
-        if (strcmp(str, pm->cmd) == 0) {
-            printf("%s: %s\n", pm->hostname, "ok");
-            return;
-        }
-        /* fallthrough, check again */
-    }
-
-    gettimeofday(&now, NULL);
-    if (timercmp(&now, &pm->timeout, >)) {
-        printf("%s: %s\n", pm->hostname, "timeout");
-        return;
-    }
 
     /* issue a follow on stat to wait until the on/off is complete.
      * note that we set the initial start time of this new command to
@@ -500,11 +491,42 @@ static void on_off_process(List delayedcmds, struct powermsg *pm)
                              statpath,
                              NULL,
                              &pm->start,
-                             STATUS_POLLING_INTERVAL);
+                             STATUS_POLLING_INTERVAL,
+                             STATE_WAIT_UNTIL_ON_OFF);
     Curl_easy_setopt((nextpm->eh, CURLOPT_HTTPGET, 1));
-    nextpm->wait_until_on_off = 1;
     if (!list_append(delayedcmds, nextpm))
         err_exit(true, "list_append");
+}
+
+static void on_off_process(List delayedcmds, struct powermsg *pm)
+{
+    if (pm->state == STATE_SEND_POWERCMD) {
+        /* just sent on or off, now we need for the operation to
+         * complete
+         */
+        send_status_poll(delayedcmds, pm);
+    }
+    else if (pm->state == STATE_WAIT_UNTIL_ON_OFF) {
+        const char *str;
+        struct timeval now;
+
+        parse_onoff(pm, &str);
+        if (strcmp(str, pm->cmd) == 0) {
+            printf("%s: %s\n", pm->hostname, "ok");
+            return;
+        }
+
+        /* check if we've timed out */
+        gettimeofday(&now, NULL);
+        if (timercmp(&now, &pm->timeout, >)) {
+          printf("%s: %s\n", pm->hostname, "timeout");
+          return;
+        }
+
+        /* resend status poll */
+        send_status_poll(delayedcmds, pm);
+    }
+
 }
 
 static void on_process(List delayedcmds, struct powermsg *pm)
