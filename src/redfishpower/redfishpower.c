@@ -54,10 +54,10 @@ static char *cyclepostdata = NULL;
 
 /* in usec
  *
- * wait delay of 1 second may seem long, but testing shows
- * wait ranges from a few seconds to 20 seconds
+ * status polling interval of 1 second may seem long, but testing
+ * shows wait ranges from a few seconds to 20 seconds
  */
-#define WAIT_UNTIL_DELAY      1000000
+#define STATUS_POLLING_INTERVAL  1000000
 
 #define MS_IN_SEC                1000
 
@@ -158,7 +158,7 @@ static struct powermsg *powermsg_create(CURLM *mh,
                                         const char *path,
                                         const char *postdata,
                                         struct timeval *start,
-                                        unsigned long delay_usec)
+                                        long int delay_usec)
 {
     struct powermsg *pm = calloc(1, sizeof(*pm));
     struct timeval now;
@@ -492,7 +492,7 @@ static void on_off_process(List delayedcmds, struct powermsg *pm)
     }
 
     /* issue a follow on stat to wait until the on/off is complete.
-     * note that we initial start time of this new command to
+     * note that we set the initial start time of this new command to
      * the original on/off, so we can timeout correctly
      */
     nextpm = powermsg_create(pm->mh,
@@ -501,7 +501,7 @@ static void on_off_process(List delayedcmds, struct powermsg *pm)
                              statpath,
                              NULL,
                              &pm->start,
-                             WAIT_UNTIL_DELAY);
+                             STATUS_POLLING_INTERVAL);
     Curl_easy_setopt((nextpm->eh, CURLOPT_HTTPGET, 1));
     nextpm->wait_until_on_off = 1;
     if (!list_append(delayedcmds, nextpm))
@@ -707,8 +707,9 @@ static void shell(CURLM *mh)
             long curl_timeout_ms;
 
             /* First check if there are any delayedcmds to send or are
-             * waiting.  Setup timeout accordingly if one is
-             * waiting */
+             * waiting.  If there are some ready to send, put to
+             * activecmds.  If not, setup timeout accordingly if one
+             * is waiting */
             if (!list_is_empty(delayedcmds)) {
                 ListIterator itr = list_iterator_create(delayedcmds);
                 struct powermsg *delaypm;
