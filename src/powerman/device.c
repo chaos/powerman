@@ -1306,7 +1306,6 @@ void dev_destroy(Device * dev)
     int i;
 
     assert(dev->magic == DEV_MAGIC);
-    dev->magic = 0;
 
     if (dev->connect_state == DEV_CONNECTED)
         dev->disconnect(dev);
@@ -1327,6 +1326,7 @@ void dev_destroy(Device * dev)
     cbuf_destroy(dev->to);
     cbuf_destroy(dev->from);
     xregex_match_destroy(dev->xmatch);
+    dev->magic = 0;
     xfree(dev);
 }
 
