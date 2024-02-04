@@ -20,6 +20,10 @@ test_expect_success 'powerman without an action fails with message on stderr' '
 	test_must_fail $powerman -T 2>noaction.err &&
 	grep "No action was specified" noaction.err
 '
+test_expect_success 'powerman with two actions fails with message on stderr' '
+	test_must_fail $powerman -1 -q t0 2>multiaction.err &&
+	grep "Only one action may be specified" multiaction.err
+'
 
 test_expect_success 'powerman --version works' '
 	$powerman --version >version.out &&
