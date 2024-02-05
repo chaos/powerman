@@ -1,6 +1,11 @@
 #!/bin/sh
 
-test_description='Check LLNL sierra cluster config with IPMI + PDU'
+test_description='Check LLNL sierra cluster config with IPMI + PDU
+
+This was a Dell cluster named sierra, circa 2010, not to be confused
+with the IBM cluster named sierra, sited in 2018.
+See also: chaos/powerman#115.
+'
 
 . `dirname $0`/sharness.sh
 
