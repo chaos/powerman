@@ -86,7 +86,6 @@ static Spec *makeSpec(char *name);
 static Spec *findSpec(char *name);
 static int matchSpec(Spec * spec, void *key);
 static void destroySpec(Spec * spec);
-static void _clear_current_spec(void);
 static void makeScript(int com, List stmts);
 static void destroyInterp(Interp *i);
 static Interp *makeInterp(InterpState state, char *str);
@@ -365,7 +364,6 @@ int parse_config_file (char *filename)
         err_exit(true, "%s", filename);
 
     device_specs = list_create((ListDelF) destroySpec);
-    _clear_current_spec();
 
     yyparse();
     fclose(yyin);
@@ -416,18 +414,6 @@ static void destroyPreStmt(PreStmt *p)
     xfree(p);
 }
 
-static void _clear_current_spec(void)
-{
-    int i;
-
-    current_spec.name = NULL;
-    current_spec.plugs = NULL;
-    timerclear(&current_spec.timeout);
-    timerclear(&current_spec.ping_period);
-    for (i = 0; i < NUM_SCRIPTS; i++)
-        current_spec.prescripts[i] = NULL;
-}
-
 static Spec *_copy_current_spec(void)
 {
     Spec *new = (Spec *) xmalloc(sizeof(Spec));
@@ -436,7 +422,7 @@ static Spec *_copy_current_spec(void)
     *new = current_spec;
     for (i = 0; i < NUM_SCRIPTS; i++)
         new->prescripts[i] = current_spec.prescripts[i];
-    _clear_current_spec();
+    memset (&current_spec, 0, sizeof (current_spec));
     return new;
 }
 
