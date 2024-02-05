@@ -84,10 +84,8 @@ void conf_init(char *filename)
         err_exit(false, "%s is not a regular file\n", filename);
 
     /*
-     * Call yacc parser against config file.  The parser calls support
-     * functions below and builds 'dev_devices' (devices.c),
-     * 'conf_cluster', 'conf_specs' (config.c), and various other
-     * conf_* attributes (config.c).
+     * Call yacc parser against config file.
+     * The parser builds 'dev_devices' (devices.c) and 'conf_*' (here).
      */
     parse_config_file(filename);
 
