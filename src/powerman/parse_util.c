@@ -102,6 +102,8 @@ void conf_fini(void)
 {
     if (conf_nodes != NULL)
         hostlist_destroy(conf_nodes);
+    if (conf_listen != NULL)
+        list_destroy(conf_listen);
 }
 
 /*
