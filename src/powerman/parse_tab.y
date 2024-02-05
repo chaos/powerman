@@ -535,9 +535,11 @@ static void destroyStmt(Stmt *stmt)
         break;
     case STMT_FOREACHNODE:
     case STMT_FOREACHPLUG:
+        list_destroy(stmt->u.foreach.stmts);
+        break;
     case STMT_IFON:
     case STMT_IFOFF:
-        list_destroy(stmt->u.foreach.stmts);
+        list_destroy(stmt->u.ifonoff.stmts);
         break;
     default:
         break;
