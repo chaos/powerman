@@ -41,7 +41,7 @@ test_expect_success 'gc#3: make bad config to check error has correct line no' '
 	EOT2
 '
 test_expect_success 'gc#3: correct line number is called out' '
-	test_must_fail $powermand -Y -c powerman_gc3.conf -f 2>gc3.err &&
+	test_must_fail $powermand -Y -c powerman_gc3.conf 2>gc3.err &&
 	grep "parse error: powerman_gc3.dev::5" gc3.err
 '
 
@@ -57,7 +57,7 @@ test_expect_success 'gc#34: create config that triggered duplicate node name' '
 	EOT
 '
 test_expect_success 'gc#34: powermand starts ok' '
-	$powermand -Y -c powerman_gc34.conf -f &
+	$powermand -Y -c powerman_gc34.conf &
 	echo $! >powermand_gc34.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -q
 '
@@ -77,7 +77,7 @@ test_expect_success 'gc#35: create another config that triggered duplicate node 
 	EOT
 '
 test_expect_success 'gc#35: powermand starts ok' '
-	$powermand -Y -c powerman_gc35.conf -f &
+	$powermand -Y -c powerman_gc35.conf &
 	echo $! >powermand_gc35.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -q
 '
@@ -98,7 +98,7 @@ test_expect_success 'issue#14: create config for ipmipower auth parse error' '
 	EOT
 '
 test_expect_success 'issue#14: powermand starts ok and answers query' '
-	$powermand -Y -c powerman_issue14.conf -f &
+	$powermand -Y -c powerman_issue14.conf &
 	echo $! >powermand_issue14.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -q >issue14.out
 '

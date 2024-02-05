@@ -44,7 +44,7 @@ test_expect_success 'create powerman.conf for lom + ilom devices (6 plugs)' '
 	EOT
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -Y -c powerman.conf -f &
+	$powermand -Y -c powerman.conf &
 	echo $! >powermand.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -d
 '

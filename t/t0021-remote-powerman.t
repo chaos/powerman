@@ -43,7 +43,7 @@ test_expect_success 'create controlling powerman.conf' '
 	EOT
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -c powerman.conf -f &
+	$powermand -c powerman.conf &
 	echo $! >powermand.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -d
 '

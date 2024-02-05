@@ -34,7 +34,7 @@ test_expect_success 'create test powerman.conf with cycle of only delay' '
 	EOT
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -c powerman.conf -f &
+	$powermand -c powerman.conf &
 	echo $! >powermand.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -d
 '
@@ -74,7 +74,7 @@ test_expect_success 'create test powerman.conf with cycle of delay + io' '
 	EOT
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -c powerman2.conf -f &
+	$powermand -c powerman2.conf &
 	echo $! >powermand2.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -d
 '

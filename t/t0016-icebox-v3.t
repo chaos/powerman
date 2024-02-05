@@ -28,7 +28,7 @@ test_expect_success 'create powerman.conf with one icebox device (10 plugs)' '
 	EOT
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -Y -c powerman.conf -f &
+	$powermand -Y -c powerman.conf &
 	echo $! >powermand.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -d
 '
@@ -183,7 +183,7 @@ test_expect_success 'create powerman.conf with 16 icebox3 (v4 mode) devices (160
 	EOT
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -Y -c powerman2.conf -f &
+	$powermand -Y -c powerman2.conf &
 	echo $! >powermand2.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -d
 '

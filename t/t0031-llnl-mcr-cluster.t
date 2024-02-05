@@ -159,7 +159,7 @@ test_expect_success 'create powerman.conf for MCR' '
 	EOT
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -Y -c powerman.conf -f >powermand.out 2>powermand.err &
+	$powermand -Y -c powerman.conf >powermand.out 2>powermand.err &
 	echo $! >powermand.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -d >device.out
 '

@@ -28,7 +28,7 @@ test_expect_success 'create test powerman.conf' '
 	EOT
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -c powerman.conf -f &
+	$powermand -c powerman.conf &
 	echo $! >powermand.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -q >/dev/null
 '
@@ -85,7 +85,7 @@ test_expect_success 'create new powerman.conf with no status_all script' '
 	EOT2
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -c powerman2.conf -f &
+	$powermand -c powerman2.conf &
 	echo $! >powermand2.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -q >/dev/null
 '
@@ -120,7 +120,7 @@ test_expect_success 'start device server' '
 	$vpcd -p 10900 &
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -c powerman3.conf -f &
+	$powermand -c powerman3.conf &
 	echo $! >powermand3.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -d
 '

@@ -22,7 +22,7 @@ test_expect_success 'create test powerman.conf' '
 	EOT
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -c powerman.conf -f &
+	$powermand -c powerman.conf &
 	echo $! >powermand.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -q >/dev/null
 '
@@ -84,7 +84,7 @@ test_expect_success 'create test powerman.conf with extra telemetry output < 1K'
 	generate_config_spew 16 >powerman2.conf
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -c powerman2.conf -f &
+	$powermand -c powerman2.conf &
 	echo $! >powermand2.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -q >/dev/null
 '
@@ -105,7 +105,7 @@ test_expect_success 'create test powerman.conf with 1K < telemetry output < 64K'
 	generate_config_spew 512 >powerman3.conf
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -c powerman3.conf -f &
+	$powermand -c powerman3.conf &
 	echo $! >powermand3.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -q >/dev/null
 '
@@ -125,7 +125,7 @@ test_expect_success 'create test powerman.conf with telemetry output > 64K' '
 	generate_config_spew 1024 >powerman4.conf
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -c powerman4.conf -f &
+	$powermand -c powerman4.conf &
 	echo $! >powermand4.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -q >/dev/null
 '
@@ -145,7 +145,7 @@ test_expect_success 'create test powerman.conf with telemetry output > 2*64K' '
 	generate_config_spew 1900 >powerman5.conf
 '
 test_expect_success 'start powerman daemon and wait for it to start' '
-	$powermand -c powerman5.conf -f &
+	$powermand -c powerman5.conf &
 	echo $! >powermand5.pid &&
 	$powerman --retry-connect=100 --server-host=$testaddr -q >/dev/null
 '
