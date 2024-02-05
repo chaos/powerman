@@ -37,8 +37,6 @@ powermand_SOURCES = \
 	client.c \
 	client.h \
 	client_proto.h \
-	daemon.c \
-	daemon.h \
 	debug.c \
 	debug.h \
 	device.c \
