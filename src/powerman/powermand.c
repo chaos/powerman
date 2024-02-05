@@ -17,6 +17,7 @@
 #include <time.h>
 #include <getopt.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <signal.h>
 #include <string.h>
 #include <stdlib.h>
@@ -45,6 +46,8 @@ static void _version(void);
 static void _noop_handler(int signum);
 static void _exit_handler(int signum);
 static void _select_loop(void);
+
+static int exitpipe[2];
 
 #define OPTIONS "c:fhd:VsY"
 static const struct option longopts[] = {
@@ -106,6 +109,11 @@ int main(int argc, char **argv)
         }
     }
 
+    if (pipe (exitpipe) < 0
+        || fcntl (exitpipe[0], F_SETFD, O_CLOEXEC) < 0
+        || fcntl (exitpipe[1], F_SETFD, O_CLOEXEC) < 0)
+        err_exit (true, "could not create pipe for exit signaling");
+
     if (!config_filename)
         config_filename = hsprintf("%s/%s/%s", X_SYSCONFDIR,
                                    "powerman", "powerman.conf");
@@ -139,6 +147,13 @@ int main(int argc, char **argv)
     /* We now have a socket at listener fd running in listen mode */
     /* and a file descriptor for communicating with each device */
     _select_loop();
+
+    (void)close (exitpipe[0]);
+    (void)close (exitpipe[1]);
+
+    cli_fini();
+    dev_fini();
+    conf_fini();
     return 0;
 }
 
@@ -178,9 +193,13 @@ static void _select_loop(void)
 
         cli_pre_poll(pfd);
         dev_pre_poll(pfd);
+        xpollfd_set(pfd, exitpipe[0], XPOLLIN);
 
         xpoll(pfd, timerisset(&tmout) ? &tmout : NULL);
         timerclear(&tmout);
+
+        if (xpollfd_revents(pfd, exitpipe[0]))
+            break;
 
         /*
          * Process activity on client and device fd's.
@@ -201,12 +220,12 @@ static void _noop_handler(int signum)
     /* do nothing */
 }
 
+/* Wake up the select loop so it can exit and allow destructors to be called.
+ */
 static void _exit_handler(int signum)
 {
-    cli_fini();
-    dev_fini();
-    conf_fini();
-    exit(0);
+    if (write (exitpipe[1], "", 1) != 1)
+        err_exit(true, "signal %d: could not write to exit pipe", signum);
 }
 
 /*
