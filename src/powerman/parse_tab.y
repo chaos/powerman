@@ -86,7 +86,6 @@ static Spec *makeSpec(char *name);
 static Spec *findSpec(char *name);
 static int matchSpec(Spec * spec, void *key);
 static void destroySpec(Spec * spec);
-static void _clear_current_spec(void);
 static void makeScript(int com, List stmts);
 static void destroyInterp(Interp *i);
 static Interp *makeInterp(InterpState state, char *str);
@@ -365,7 +364,6 @@ int parse_config_file (char *filename)
         err_exit(true, "%s", filename);
 
     device_specs = list_create((ListDelF) destroySpec);
-    _clear_current_spec();
 
     yyparse();
     fclose(yyin);
@@ -416,27 +414,12 @@ static void destroyPreStmt(PreStmt *p)
     xfree(p);
 }
 
-static void _clear_current_spec(void)
-{
-    int i;
-
-    current_spec.name = NULL;
-    current_spec.plugs = NULL;
-    timerclear(&current_spec.timeout);
-    timerclear(&current_spec.ping_period);
-    for (i = 0; i < NUM_SCRIPTS; i++)
-        current_spec.prescripts[i] = NULL;
-}
-
 static Spec *_copy_current_spec(void)
 {
     Spec *new = (Spec *) xmalloc(sizeof(Spec));
-    int i;
 
     *new = current_spec;
-    for (i = 0; i < NUM_SCRIPTS; i++)
-        new->prescripts[i] = current_spec.prescripts[i];
-    _clear_current_spec();
+    memset (&current_spec, 0, sizeof (current_spec));
     return new;
 }
 
@@ -548,12 +531,15 @@ static void destroyStmt(Stmt *stmt)
         break;
     case STMT_SETPLUGSTATE:
         list_destroy(stmt->u.setplugstate.interps);
+        xfree (stmt->u.setplugstate.plug_name);
         break;
     case STMT_FOREACHNODE:
     case STMT_FOREACHPLUG:
+        list_destroy(stmt->u.foreach.stmts);
+        break;
     case STMT_IFON:
     case STMT_IFOFF:
-        list_destroy(stmt->u.foreach.stmts);
+        list_destroy(stmt->u.ifonoff.stmts);
         break;
     default:
         break;

@@ -84,10 +84,8 @@ void conf_init(char *filename)
         err_exit(false, "%s is not a regular file\n", filename);
 
     /*
-     * Call yacc parser against config file.  The parser calls support
-     * functions below and builds 'dev_devices' (devices.c),
-     * 'conf_cluster', 'conf_specs' (config.c), and various other
-     * conf_* attributes (config.c).
+     * Call yacc parser against config file.
+     * The parser builds 'dev_devices' (devices.c) and 'conf_*' (here).
      */
     parse_config_file(filename);
 
@@ -100,8 +98,12 @@ void conf_init(char *filename)
 /* finalize module */
 void conf_fini(void)
 {
+    if (conf_aliases != NULL)
+        list_destroy(conf_aliases);
     if (conf_nodes != NULL)
         hostlist_destroy(conf_nodes);
+    if (conf_listen != NULL)
+        list_destroy(conf_listen);
 }
 
 /*
