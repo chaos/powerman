@@ -28,12 +28,6 @@
 #define DBG_BUFLEN 1024
 
 static unsigned long dbg_channel_mask = 0;
-static bool dbg_ttyvalid = true;
-
-void dbg_notty(void)
-{
-    dbg_ttyvalid = false;
-}
 
 void dbg_setmask(unsigned long mask)
 {
@@ -81,12 +75,8 @@ void dbg_wrapped(unsigned long channel, const char *fmt, ...)
         vsnprintf(buf, DBG_BUFLEN, fmt, ap); /* overflow ignored on purpose */
         va_end(ap);
 
-        if (dbg_ttyvalid)
-            fprintf(stderr, "%s %s: %s\n",
-                    _time(), _channel_name(channel), buf);
-        else
-            syslog(LOG_DEBUG, "%s: %s",
-                    _channel_name(channel), buf);
+        fprintf(stderr, "%s %s: %s\n",
+                _time(), _channel_name(channel), buf);
     }
 }
 

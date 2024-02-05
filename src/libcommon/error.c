@@ -24,7 +24,6 @@
 #include "error.h"
 
 static char *err_prog = NULL;           /* basename of calling program */
-static bool err_ttyvalid = true;        /* use stderr until told otherwise */
 
 #define ERROR_BUFLEN 1024
 
@@ -38,14 +37,6 @@ void err_init(char *prog)
     err_prog = p ? p + 1 : prog;
 }
 
-/*
- * Accessor function for syslog_enable.
- */
-void err_notty(void)
-{
-    err_ttyvalid = false;
-}
-
 /* helper for err, err_exit */
 static void _verr(bool errno_valid, const char *fmt, va_list ap)
 {
@@ -55,17 +46,10 @@ static void _verr(bool errno_valid, const char *fmt, va_list ap)
     assert(err_prog != NULL);
 
     vsnprintf(buf, ERROR_BUFLEN, fmt, ap);  /* overflow ignored on purpose */
-    if (errno_valid) {
-        if (err_ttyvalid)
-            fprintf(stderr, "%s: %s: %s\n", err_prog, buf, strerror(er));
-        else
-            syslog(LOG_ERR, "%s: %s", buf, strerror(er));
-    } else {
-        if (err_ttyvalid)
-            fprintf(stderr, "%s: %s\n", err_prog, buf);
-        else
-            syslog(LOG_ERR, "%s", buf);
-    }
+    if (errno_valid)
+        fprintf(stderr, "%s: %s: %s\n", err_prog, buf, strerror(er));
+    else
+        fprintf(stderr, "%s: %s\n", err_prog, buf);
 }
 
 /*
