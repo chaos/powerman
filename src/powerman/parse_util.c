@@ -100,6 +100,8 @@ void conf_init(char *filename)
 /* finalize module */
 void conf_fini(void)
 {
+    if (conf_aliases != NULL)
+        list_destroy(conf_aliases);
     if (conf_nodes != NULL)
         hostlist_destroy(conf_nodes);
     if (conf_listen != NULL)
