@@ -531,6 +531,7 @@ static void destroyStmt(Stmt *stmt)
         break;
     case STMT_SETPLUGSTATE:
         list_destroy(stmt->u.setplugstate.interps);
+        xfree (stmt->u.setplugstate.plug_name);
         break;
     case STMT_FOREACHNODE:
     case STMT_FOREACHPLUG:
