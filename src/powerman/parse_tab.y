@@ -417,11 +417,8 @@ static void destroyPreStmt(PreStmt *p)
 static Spec *_copy_current_spec(void)
 {
     Spec *new = (Spec *) xmalloc(sizeof(Spec));
-    int i;
 
     *new = current_spec;
-    for (i = 0; i < NUM_SCRIPTS; i++)
-        new->prescripts[i] = current_spec.prescripts[i];
     memset (&current_spec, 0, sizeof (current_spec));
     return new;
 }
