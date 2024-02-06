@@ -20,12 +20,6 @@ set simultaneously is limited by the file descriptor limit of the
 .B select(2)
 system call.
 .TP
-.I "-f, --hostsfile file"
-Alternate option to
-.I --hostname,
-specify a file with all hosts.  File shall have one host or hostrange
-listed per line.
-.TP
 .I "-H, --header string"
 Set extra HEADER to use.
 .TP
