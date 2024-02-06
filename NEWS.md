@@ -1,6 +1,5 @@
-=========================================================================
-Release Notes for PowerMan version 2.3.27                     14 Dec 2021
-=========================================================================
+powerman-2.3.27 - 14 Dec 2021
+-----------------------------
 
 * Add redfish support for Cray r272z30, Cray windom, and Supermicro
   H12DSG-O-CPU (#55, #47)
@@ -9,17 +8,15 @@ Release Notes for PowerMan version 2.3.27                     14 Dec 2021
 
 * Misc fixes (#54, #52, #50, #46)
 
-=========================================================================
-Release Notes for PowerMan version 2.3.26                     18 Feb 2020
-=========================================================================
+powerman-2.3.26 - 18 Feb 2020
+-----------------------------
 
 * Log power state changes to syslog (Olaf Faaland, PR #37)
 
 * Fix default systemd unit file path for 'make distcheck'
 
-=========================================================================
-Release Notes for PowerMan version 2.3.25                     28 Jan 2019
-=========================================================================
+powerman-2.3.25 - 28 Jan 2019
+-----------------------------
 
 * Add etc/rancid-cisco-poe.dev (Daniel Rich, PR #28)
 
@@ -29,17 +26,15 @@ Release Notes for PowerMan version 2.3.25                     28 Jan 2019
 
 * Fix misinterpretation of error strings in ipmipower.dev.
 
-=========================================================================
-Release Notes for PowerMan version 2.3.24                     23 Oct 2015
-=========================================================================
+powerman-2.3.24 - 23 Oct 2015
+-----------------------------
 
 * Don't package /var/run/powerman; let systemd manage it [TOSS-2987]
 
 * Cleanup: drop trailing whitespace
 
-=========================================================================
-Release Notes for PowerMan version 2.3.23                     08 Jun 2015
-=========================================================================
+powerman-2.3.23 - 08 Jun 2015
+-----------------------------
 
 * Build: silence CC lines, fix AC_LANG_CONFTEST warnings, fix $(EXEEXT)
   warnings.
@@ -55,9 +50,8 @@ Release Notes for PowerMan version 2.3.23                     08 Jun 2015
 * RPM: configure genders, httppower, snmppower, and tcp-wrappers
   unconditionally; update URL.
 
-=========================================================================
-Release Notes for PowerMan version 2.3.22                     01 Jun 2015
-=========================================================================
+powerman-2.3.22 - 01 Jun 2015
+-----------------------------
 
 * Assorted build system fixes to allow 'make distcheck'
   and Koji builds on RHEL 7 to work.
@@ -66,9 +60,8 @@ Release Notes for PowerMan version 2.3.22                     01 Jun 2015
 
 [This release was not distributed as it was incomplete for RHEL 7/Koji]
 
-=========================================================================
-Release Notes for PowerMan version 2.3.21                     29 May 2015
-=========================================================================
+powerman-2.3.21 - 29 May 2015
+-----------------------------
 
 * Added systemd unit file (bacaldwell, gc issue #42)
   SystemVinit script support is dropped.
@@ -77,68 +70,59 @@ Release Notes for PowerMan version 2.3.21                     29 May 2015
 
 * Add raritan-px5523.dev (Daryl Granau, TOSS-2486)
 
-=========================================================================
-Release Notes for PowerMan version 2.3.20                     26 Aug 2014
-=========================================================================
+powerman-2.3.20 - 26 Aug 2014
+-----------------------------
 
 * add dist tag to release (TOSS-2667)
 
 * Minor automake updates
 
-=========================================================================
-Release Notes for PowerMan version 2.3.19                     25 Aug 2014
-=========================================================================
+powerman-2.3.19 - 25 Aug 2014
+-----------------------------
 
 * Added apc8941.dev (TOSS-2658, Tim Randles)
 
-=========================================================================
-Release Notes for PowerMan version 2.3.18                     21 Aug 2014
-=========================================================================
+powerman-2.3.18 - 21 Aug 2014
+-----------------------------
 
 * Stop tracking autotools products
 
 * Add README.md for github move
 
-=========================================================================
-Release Notes for PowerMan version 2.3.17                     27 Mar 2013
-=========================================================================
+powerman-2.3.17 - 27 Mar 2013
+-----------------------------
 
 * Fix powerman-stonith script to handle aliased plugs and
   add regression testing for it (TOSS-1962)
 
-=========================================================================
-Release Notes for PowerMan version 2.3.16                     04 Oct 2012
-=========================================================================
+powerman-2.3.16 - 04 Oct 2012
+-----------------------------
 
 * Fix duplicate node name (issue 35)
   Pulled in another hostlist fix (Mark Grondona)
 
 * Fix powerman stonith OFF should verify plug state (chaos bz 1439)
 
-=========================================================================
-Release Notes for PowerMan version 2.3.15                     05 Sep 2012
-=========================================================================
+powerman-2.3.15 - 05 Sep 2012
+-----------------------------
 
 * Added ipmipower-serial.dev [Al Chu]
 
-=========================================================================
-Release Notes for PowerMan version 2.3.14                     10 Aug 2012
-=========================================================================
+powerman-2.3.14 - 10 Aug 2012
+-----------------------------
 
 * Fix issue 34: duplicate node name in configuration file
   Updated hostlist code to the latest which fixes this issue.
 
-=========================================================================
-Release Notes for PowerMan version 2.3.13                     20 Jun 2012
-=========================================================================
+powerman-2.3.13 - 20 Jun 2012
+-----------------------------
 
 * Updated appro-gb2.dev per Appro
 
 * Add support for Baytech RPC22 (Olof Johansson)
 
-=========================================================================
-Release Notes for PowerMan version 2.3.12                     13 Jan 2012
-=========================================================================
+powerman-2.3.12 - 13 Jan 2012
+-----------------------------
 
 * Add support for Raritan px4316 (chaos bz 1276)
 
@@ -148,9 +132,8 @@ Release Notes for PowerMan version 2.3.12                     13 Jan 2012
 
 * Minor documentation updates
 
-=========================================================================
-Release Notes for PowerMan version 2.3.11                     01 Sep 2011
-=========================================================================
+powerman-2.3.11 - 01 Sep 2011
+-----------------------------
 
 * Update appro-gb2.dev (chaos bug 1218)
 
@@ -165,9 +148,8 @@ Release Notes for PowerMan version 2.3.11                     01 Sep 2011
 
 * Fix line number accounting during parse error reporting (issue 3)
 
-=========================================================================
-Release Notes for PowerMan version 2.3.10                     19 Aug 2011
-=========================================================================
+powerman-2.3.10 - 19 Aug 2011
+-----------------------------
 
 * Updated appro-greenblade.dev (chaos bug 1218)
 
@@ -177,34 +159,30 @@ Release Notes for PowerMan version 2.3.10                     19 Aug 2011
 
 * Added baytech-rpc18d-nc (issue 5)
 
-=========================================================================
-Release Notes for PowerMan version 2.3.9                      25 Feb 2011
-=========================================================================
+powerman-2.3.9 - 25 Feb 2011
+----------------------------
 
 * Add MIB support to snmppower.
 
 * Add eaton-epdu-blue-switched.dev [Paul Anderson].
 
-=========================================================================
-Release Notes for PowerMan version 2.3.8                      24 Feb 2011
-=========================================================================
+powerman-2.3.8 - 24 Feb 2011
+----------------------------
 
 * Add support for SNMP power controllers via 'snmppower' helper.
 
 * Add SNMP dev files for 8-port APC, 8-port Baytech, and 20 port
   Eaton Revelation PDU.
 
-=========================================================================
-Release Notes for PowerMan version 2.3.7                      04 Nov 2010
-=========================================================================
+powerman-2.3.7 - 04 Nov 2010
+----------------------------
 
 * Add support for APC 7900 revision 3 firmware [Py Watson]
 
 * Internal automake cleanup.
 
-=========================================================================
-Release Notes for PowerMan version 2.3.6                      12 Aug 2010
-=========================================================================
+powerman-2.3.6 - 12 Aug 2010
+----------------------------
 
 * Convert several internal buffers from static to dynamic to address
   overflow in query output [chaos bugzilla 1009]
@@ -216,9 +194,8 @@ Release Notes for PowerMan version 2.3.6                      12 Aug 2010
 * Add Support for ranged beacon on/off device scripts, and beacon
   support for ipmipower [Al Chu].
 
-=========================================================================
-Release Notes for PowerMan version 2.3.5                      17 Apr 2009
-=========================================================================
+powerman-2.3.5 - 17 Apr 2009
+----------------------------
 
 * Deprecated undocumented powerman.conf port directive.
 
@@ -233,9 +210,8 @@ Release Notes for PowerMan version 2.3.5                      17 Apr 2009
 
 * Add heartbeat STONITH plugin.
 
-=========================================================================
-Release Notes for PowerMan version 2.3.4                      09 Feb 2009
-=========================================================================
+powerman-2.3.4 - 09 Feb 2009
+----------------------------
 
 * Fix powerman-controlling-powerman config so that status command
   is fast for large configs again.
@@ -244,9 +220,8 @@ Release Notes for PowerMan version 2.3.4                      09 Feb 2009
 
 * Various changes coming from Debian audit [Arnaud Quette].
 
-=========================================================================
-Release Notes for PowerMan version 2.3.1                      01 Dec 2008
-=========================================================================
+powerman-2.3.1 - 01 Dec 2008
+----------------------------
 
 * Initial powerman client API.
 
@@ -260,9 +235,8 @@ Release Notes for PowerMan version 2.3.1                      01 Dec 2008
 
 * Various changes coming from Debian audit [Arnaud Quette].
 
-=========================================================================
-Release Notes for PowerMan version 2.3                        12 Nov 2008
-=========================================================================
+powerman-2.3 - 12 Nov 2008
+--------------------------
 
 * Make init script work on Solaris.
 
@@ -272,9 +246,8 @@ Release Notes for PowerMan version 2.3                        12 Nov 2008
 
 * Added support for Cyclades PM20, PM42.
 
-=========================================================================
-Release Notes for PowerMan version 2.2                        27 Aug 2008
-=========================================================================
+powerman-2.2 - 27 Aug 2008
+--------------------------
 
 * Send a SIGINT to coprocesses rather than just closing file
   descriptors during powermand shutdown.  This is required to 
@@ -311,9 +284,8 @@ Release Notes for PowerMan version 2.2                        27 Aug 2008
 * Enhanced integrated test suite.
   Note: tests all pass on AIX now.
 
-=========================================================================
-Release Notes for PowerMan version 2.1                        18 Jun 2008
-=========================================================================
+powerman-2.1 - 18 Jun 2008
+--------------------------
 
 * Client overhaul.
 
@@ -330,9 +302,8 @@ Release Notes for PowerMan version 2.1                        18 Jun 2008
 * Enhanced integrated test suite.
   Note: all tests do not currently pass on AIX.
 
-=========================================================================
-Release Notes for PowerMan version 2.0                        01 Jun 2008
-=========================================================================
+powerman-2.0 - 01 Jun 2008
+--------------------------
 
 * Autoconf/automake integration.
 
@@ -344,9 +315,8 @@ Release Notes for PowerMan version 2.0                        01 Jun 2008
 
 * Cleanup and refactoring.
 
-=========================================================================
-Release Notes for PowerMan version 1.0.32                     24 Jan 2008
-=========================================================================
+powerman-1.0.32 - 24 Jan 2008
+-----------------------------
 
 * Support for new apc firmware (apcpdu3.dev) [Trent D'Hooge]
 
@@ -357,9 +327,8 @@ Release Notes for PowerMan version 1.0.32                     24 Jan 2008
 
 * Support for APPRO power controller.
 
-=========================================================================
-Release Notes for PowerMan version 1.0.31                     20 Oct 2007
-=========================================================================
+powerman-1.0.31 - 20 Oct 2007
+-----------------------------
 
 (Includes changes in 1.0.29 and 1.0.30)
 
@@ -373,24 +342,21 @@ Release Notes for PowerMan version 1.0.31                     20 Oct 2007
 
 * Minor build/packaging tweaks for building under mock, etc.
 
-=========================================================================
-Release Notes for PowerMan version 1.0.28                     07 May 2007
-=========================================================================
+powerman-1.0.28 - 07 May 2007
+-----------------------------
 
 * Increase "cycle" delays from 2s to 4s on all devices that implement
   cycle as an explicit on,delay,off.
 
-=========================================================================
-Release Notes for PowerMan version 1.0.27                     24 Apr 2007
-=========================================================================
+powerman-1.0.27 - 24 Apr 2007
+-----------------------------
 
 * Add heartbeat stonith module.
 
 * Fix bug in baytech-rpc28-nc device support that affected plugs > 10.
 
-=========================================================================
-Release Notes for PowerMan version 1.0.26                     21 Dec 2006
-=========================================================================
+powerman-1.0.26 - 21 Dec 2006
+-----------------------------
 
 * Support 8-port APC AP7900 and likely AP7901, AP7920, and AP7921.
   [Martin Petersen]
@@ -400,17 +366,15 @@ Release Notes for PowerMan version 1.0.26                     21 Dec 2006
 
 * Add ranged power control support for faster power control w/ ipmipower.
 
-=========================================================================
-Release Notes for PowerMan version 1.0.25                     16 Aug 2006
-=========================================================================
+powerman-1.0.25 - 16 Aug 2006
+-----------------------------
 
 * Support newer baytech RPC-3 firmware.
 
 * Support icebox v4 [Jarod Wilson]
 
-=========================================================================
-Release Notes for PowerMan version 1.0.24                     30 May 2006
-=========================================================================
+powerman-1.0.24 - 30 May 2006
+-----------------------------
 
 * Telnet state machine now works with Digi terminal server in telnet 
   mode and logs ignored telnet option requests.
@@ -437,17 +401,15 @@ Release Notes for PowerMan version 1.0.24                     30 May 2006
 
 * Add support for Cyclades PM10 (cyclades-pm10.dev) [Trent D'Hooge].
 
-=========================================================================
-Release Notes for PowerMan version 1.0.23                     16 Feb 2006
-=========================================================================
+powerman-1.0.23 - 16 Feb 2006
+-----------------------------
 
 * Fix for compilation on Fedora Core 4 [Ben Woodard].
 
 * Spec file changes for Fedora Extras submission [Ben Woodard].
 
-=========================================================================
-PowerMan version 1.0.22                                       12 Oct 2005
-=========================================================================
+powerman-1.0.22 - 12 Oct 2005
+-----------------------------
 
 * Bug fix for powerman -T dumps core on x86_64 [Thayne Harbaugh]
 

@@ -14,6 +14,7 @@ install-data-local:
 
 EXTRA_DIST = \
 	DISCLAIMER \
+	NEWS.md \
 	examples/powerman_el72.spec \
 	config/tap-driver.sh \
 	scripts/debbuild.sh \
