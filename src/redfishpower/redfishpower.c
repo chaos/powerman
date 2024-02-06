@@ -862,7 +862,7 @@ static void shell(CURLM *mh)
 static void usage(void)
 {
     fprintf(stderr,
-      "Usage: redfishpower <--hostname host(s) | --hostsfile file> [OPTIONS]\n"
+      "Usage: redfishpower --hostname host(s) [OPTIONS]\n"
       "  OPTIONS:\n"
       "  -H, --header        Set extra header string\n"
       "  -S, --statpath      Set stat path\n"
