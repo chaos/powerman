@@ -97,7 +97,6 @@ struct powermsg {
 #define OPTIONS "h:H:S:O:F:C:P:G:D:v"
 static struct option longopts[] = {
         {"hostname", required_argument, 0, 'h' },
-        {"hostsfile", required_argument, 0, 'f' },
         {"header", required_argument, 0, 'H' },
         {"statpath", required_argument, 0, 'S' },
         {"onpath", required_argument, 0, 'O' },
@@ -878,43 +877,6 @@ static void usage(void)
     exit(1);
 }
 
-/* copied from xread.c */
-static void _remove_trailing_whitespace(char *s)
-{
-    char *p = s + strlen(s) - 1;
-
-    while (p >= s && isspace(*p))
-        *p-- = '\0';
-}
-
-static void readhostsfile(const char *file)
-{
-    char buf[1024];
-    FILE *stream;
-
-    if (!hosts) {
-        if (!(hosts = hostlist_create(NULL)))
-            err_exit(true, "hostlist_create");
-    }
-
-    if (!(stream = fopen(file, "r")))
-        err_exit(true, "error opening file %s", file);
-
-    while (fgets(buf, 1024, stream)) {
-        _remove_trailing_whitespace(buf);
-        /* ignore empty lines */
-        if (strlen(buf) == 0)
-            continue;
-        /* ignore commented lines */
-        if (buf[0] == '#')
-            continue;
-        if (!hostlist_push(hosts, buf))
-            err_exit(true, "hostlist_push error on %s", optarg);
-    }
-
-    fclose(stream);
-}
-
 int main(int argc, char *argv[])
 {
     CURLM *mh;
@@ -934,9 +896,6 @@ int main(int argc, char *argv[])
                     if (!(hosts = hostlist_create(optarg)))
                         err_exit(true, "hostlist_create error on %s", optarg);
                 }
-                break;
-            case 'f': /* --hostsfile */
-                readhostsfile(optarg);
                 break;
             case 'H': /* --header */
                 header = xstrdup(optarg);
