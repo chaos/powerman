@@ -9,7 +9,7 @@ scripting language.  It communicates with devices natively using telnet,
 raw socket, and serial protocols.  It also can drive virtual power control
 devices via a coprocess interface.  The coprocess mechanism has been used
 to extend *powerman* to communicate with devices using other protocols
-such as SNMP, IPMI, Insteon, X-10, and VXI-11.
+such as SNMP, IPMI, Insteon, and Redfish.
 
 *powerman* can control equipment connected using any combination of the
 above methods and provide unified naming for the equipment and parallel
