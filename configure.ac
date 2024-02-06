@@ -118,6 +118,7 @@ AC_CONFIG_FILES( \
   examples/powerman_el72.spec \
   src/Makefile \
   src/liblsd/Makefile \
+  src/libczmq/Makefile \
   src/libcommon/Makefile \
   src/powerman/Makefile \
   src/httppower/Makefile \

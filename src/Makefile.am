@@ -1,6 +1,7 @@
 SUBDIRS = \
 	libtap \
 	liblsd \
+	libczmq \
 	libcommon \
 	powerman \
 	plmpower
