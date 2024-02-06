@@ -5,6 +5,7 @@
 extend-exclude = [
   "config/*",
   "src/liblsd/*",
+  "src/libczmq/*",
   "t/sharness.sh",
   "t/t0000-sharness.t",
   "t/aggregate-results.sh",
