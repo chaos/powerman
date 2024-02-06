@@ -1,3 +1,58 @@
+powerman-2.4.0 - 06 Feb 2024
+-----------------------------
+
+This release is the result of a concentrated cleanup and modernization
+effort.  The minor version was incremented because some options have
+changed which could affect scripts that drive powerman.
+
+## New features
+ * systemd: run as Type=simple (#114)
+ * redfishpower: output extra error info (#97)
+ * systemd: allow group to be configured and set SHELL in env; add UBNT
+   edge device (#96)
+ * redfishpower: allow timeout to be set by device script (#72)
+
+## Fixes
+ * powermand: fix assertion failure on teardown (#118)
+ * etc: fix logic error in redfishpower cray windom (#70)
+ * redfishpower: check for post data (#66)
+
+## Documentation
+ * improve --device documentation and testing (#116)
+ * Add license text to header files (#93)
+ * Update license headers to SPDX license identifier (#92)
+
+## Cleanup
+ * redfishpower: remove --hostsfile option (#123)
+ * redfishpower: minor cleanup (#117)
+ * cull unused test options and update manual pages (#112)
+ * clean up powerman client options (#113)
+ * improve the powerman client's usage/help output, and minor source cleanup
+   (#95)
+ * reorganize project directories (#86)
+ * drop trailing whitespace from configs, etc (#82)
+ * Fix misleading-indentation error when running make on RHEL9 (#65)
+ * systemd: avoid hardcoded paths and locate pid file under /run (#62)
+
+## CI/Test/build system
+ * testsuite: add valgrind coverage (#120)
+ * testsuite: add clarification to sierra test script (#121)
+ * convert remaining tests to sharness (#111)
+ * convert more tests to sharness (#109)
+ * convert old school power control box tests to sharness (#108)
+ * convert still more tests to the sharness framework (#104)
+ * convert more tests to use the sharness framework (#103)
+ * convert several tests to use the sharness framework (#102)
+ * testsuite: add sharness scripts (#98)
+ * add test deb packaging and fix misc build problems (#91)
+ * testsuite: use TAP for unit tests (#87)
+ * mergify: fix approved-reviews-by typo (#90)
+ * .mergify.yml: Add mergify support (#89)
+ * build: modernize autoconf, fix bison/flex detection (#84)
+ * test: fix redfishpower tests (#71)
+ * testsuite: fix parallel make failure (#64)
+ * require warning-free compilation (#61)
+
 powerman-2.3.27 - 14 Dec 2021
 -----------------------------
 
