@@ -877,25 +877,27 @@ static void usage(void)
     exit(1);
 }
 
+static void init_redfishpower(char *argv[])
+{
+    err_init(basename(argv[0]));
+
+    if (!(hosts = hostlist_create(NULL)))
+        err_exit(true, "hostlist_create error");
+}
+
 int main(int argc, char *argv[])
 {
     CURLM *mh;
     CURLcode ec;
     int c;
 
-    err_init(basename(argv[0]));
+    init_redfishpower(argv);
 
     while ((c = getopt_long(argc, argv, OPTIONS, longopts, NULL)) != EOF) {
         switch (c) {
             case 'h': /* --hostname */
-                if (hosts) {
-                    if (!hostlist_push(hosts, optarg))
-                        err_exit(true, "hostlist_push error on %s", optarg);
-                }
-                else {
-                    if (!(hosts = hostlist_create(optarg)))
-                        err_exit(true, "hostlist_create error on %s", optarg);
-                }
+                if (!hostlist_push(hosts, optarg))
+                    err_exit(true, "hostlist_push error on %s", optarg);
                 break;
             case 'H': /* --header */
                 header = xstrdup(optarg);
@@ -932,7 +934,7 @@ int main(int argc, char *argv[])
     if (optind < argc)
         usage();
 
-    if (!hosts)
+    if (hostlist_count(hosts) == 0)
         usage();
 
     if ((ec = curl_global_init(CURL_GLOBAL_ALL)) != CURLE_OK)
