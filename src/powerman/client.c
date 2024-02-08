@@ -1054,10 +1054,11 @@ void cli_pre_poll(xpollfd_t pfd)
         if (client->fd < 0)
             continue;
 
-        /* always set read set bits so select will unblock if the
+        /* set read set bits so select will unblock if the
          * connection is dropped.
          */
-        xpollfd_set(pfd, client->fd, XPOLLIN);
+        if (!client->client_quit)
+            xpollfd_set(pfd, client->fd, XPOLLIN);
 
         /* need to be in the write set if we are sending anything */
         if (!cbuf_is_empty(client->to)) {
@@ -1096,9 +1097,9 @@ void cli_post_poll(xpollfd_t pfd)
                 err(false, "client poll: hangup");
             if (flags & XPOLLNVAL)
                 err(false, "client poll: fd not open");
-            if (flags & (XPOLLERR | XPOLLHUP | XPOLLNVAL))
+            if (flags & (XPOLLERR | XPOLLNVAL))
                 goto client_dead;
-            if ((flags & XPOLLIN))
+            if (flags & (XPOLLIN | XPOLLHUP))
                 _handle_read(c);
             if ((flags & XPOLLOUT))
                 _handle_write(c);
@@ -1122,7 +1123,7 @@ void cli_post_poll(xpollfd_t pfd)
 
         _handle_input(c);
 
-        if (c->client_quit)
+        if (c->client_quit && c->cmd == NULL)
             goto client_dead;
         continue;
 
