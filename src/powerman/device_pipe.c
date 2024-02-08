@@ -9,8 +9,7 @@
 \************************************************************/
 
 /*
- * Implement connect/disconnect device methods for pipes.
- * Well it started out as a pipe, now actually it's a "coprocess" on a pty.
+ * Implement connect/disconnect device methods for coprocess on a socketpair.
  */
 
 #if HAVE_CONFIG_H
@@ -24,6 +23,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <sys/types.h>
+#include <sys/socket.h>
 #include <sys/wait.h>
 #include <signal.h>
 
@@ -72,42 +72,46 @@ void pipe_destroy(void *data)
     xfree(pd);
 }
 
-/* Start the coprocess using forkpty(3).  */
+/* Start the coprocess.
+ */
 bool pipe_connect(Device * dev)
 {
-    int fd;
+    int fd[2];
     pid_t pid;
     PipeDev *pd = (PipeDev *)dev->data;
-    char ptyname[64];
 
     assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
-    pid = xforkpty(&fd, ptyname, sizeof(ptyname));
+    if (socketpair(PF_LOCAL, SOCK_STREAM, 0, fd) < 0)
+        err_exit(true, "_pipe_connect(%s): socketpair", dev->name);
+    pid = fork();
     if (pid < 0) {
-        err_exit(true, "_pipe_connect(%s): forkpty error", dev->name);
+        err_exit(true, "_pipe_connect(%s): fork", dev->name);
     } else if (pid == 0) {      /* child */
-        xcfmakeraw(STDIN_FILENO);
+        (void)dup2(fd[1], STDIN_FILENO);
+        (void)dup2(fd[1], STDOUT_FILENO);
+        (void)close(fd[1]);
         execv(pd->argv[0], pd->argv);
         err_exit(true, "exec %s", pd->argv[0]);
     } else {                    /* parent */
-        nonblock_set(fd);
+        nonblock_set(fd[0]);
 
-        dev->fd = fd;
+        dev->fd = fd[0];
 
         dev->connect_state = DEV_CONNECTED;
         dev->stat_successful_connects++;
 
         pd->cpid = pid;
 
-        err(false, "_pipe_connect(%s): opened on %s", dev->name, ptyname);
+        err(false, "_pipe_connect(%s): opened", dev->name);
     }
 
     return (dev->connect_state == DEV_CONNECTED);
 }
 
 /*
- * Close down the pipes/pty.
+ * Close down the socketpair.
  */
 void pipe_disconnect(Device * dev)
 {
