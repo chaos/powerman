@@ -8,8 +8,6 @@ noinst_LTLIBRARIES = libcommon.la
 libcommon_la_SOURCES = \
 	argv.c \
 	argv.h \
-	debug.c \
-	debug.h \
 	error.c \
 	error.h \
 	hprintf.c \
