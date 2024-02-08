@@ -27,7 +27,7 @@
 #include <assert.h>
 
 #include "xmalloc.h"
-#include "list.h"
+#include "czmq.h"
 #include "hostlist.h"
 #include "error.h"
 #include "argv.h"
@@ -61,6 +61,15 @@ static char *cyclepostdata = NULL;
 
 #define MS_IN_SEC                1000
 
+#define STATUS_ON      "on"
+#define STATUS_OFF     "off"
+#define STATUS_UNKNOWN "unknown"
+
+enum {
+      STATE_SEND_POWERCMD,      /* stat, on, off */
+      STATE_WAIT_UNTIL_ON_OFF,  /* on, off */
+};
+
 struct powermsg {
     CURLM *mh;                  /* curl multi handle pointer */
 
@@ -72,8 +81,7 @@ struct powermsg {
     char *output;               /* on, off, stat */
     size_t output_len;
 
-    /* flag indicating if we are in the "wait" mode of on or off */
-    int wait_until_on_off;
+    int state;
 
     /* start - when power op started, may be set to start time of a
      * previous message if this is a follow on message.
@@ -85,6 +93,9 @@ struct powermsg {
     struct timeval start;
     struct timeval timeout;
     struct timeval delaystart;
+
+    /* zlistx handle */
+    void *handle;
 };
 
 #define Curl_easy_setopt(args)                                                 \
@@ -157,7 +168,8 @@ static struct powermsg *powermsg_create(CURLM *mh,
                                         const char *path,
                                         const char *postdata,
                                         struct timeval *start,
-                                        long int delay_usec)
+                                        long int delay_usec,
+                                        int state)
 {
     struct powermsg *pm = calloc(1, sizeof(*pm));
     struct timeval now;
@@ -168,6 +180,7 @@ static struct powermsg *powermsg_create(CURLM *mh,
         err_exit(true, "calloc");
 
     pm->mh = mh;
+    pm->state = state;
 
     if ((pm->eh = curl_easy_init()) == NULL)
         err_exit(false, "curl_easy_init failed");
@@ -294,13 +307,14 @@ static struct powermsg *stat_cmd_host(CURLM * mh, char *hostname)
                                           statpath,
                                           NULL,
                                           NULL,
-                                          0);
+                                          0,
+                                          STATE_SEND_POWERCMD);
 
     Curl_easy_setopt((pm->eh, CURLOPT_HTTPGET, 1));
     return pm;
 }
 
-static void stat_cmd(List activecmds, CURLM *mh, char **av)
+static void stat_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
 {
     hostlist_iterator_t itr = NULL;
     char *hostname;
@@ -325,8 +339,8 @@ static void stat_cmd(List activecmds, CURLM *mh, char **av)
 
     while ((hostname = hostlist_next(itr))) {
         struct powermsg *pm = stat_cmd_host(mh, hostname);
-        if (!list_append(activecmds, pm))
-            err_exit(true, "list_append");
+        if (!(pm->handle = zlistx_add_end(activecmds, pm)))
+            err_exit(true, "zlistx_add_end");
         free(hostname);
     }
     hostlist_iterator_destroy(itr);
@@ -356,11 +370,11 @@ static void parse_onoff (struct powermsg *pm, const char **strp)
             else {
                 const char *str = json_string_value(val);
                 if (strcasecmp(str, "On") == 0)
-                    (*strp) = "on";
+                    (*strp) = STATUS_ON;
                 else if (strcasecmp(str, "Off") == 0)
-                    (*strp) = "off";
+                    (*strp) = STATUS_OFF;
                 else
-                    (*strp) = "unknown";
+                    (*strp) = STATUS_UNKNOWN;
             }
         }
         json_decref(o);
@@ -393,7 +407,8 @@ struct powermsg *power_cmd_host(CURLM * mh,
                                           path,
                                           postdata,
                                           NULL,
-                                          0);
+                                          0,
+                                          STATE_SEND_POWERCMD);
 
     Curl_easy_setopt((pm->eh, CURLOPT_POST, 1));
     Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDS, pm->postdata));
@@ -401,7 +416,7 @@ struct powermsg *power_cmd_host(CURLM * mh,
     return pm;
 }
 
-static void power_cmd(List activecmds,
+static void power_cmd(zlistx_t *activecmds,
                       CURLM *mh,
                       char **av,
                       const char *cmd,
@@ -436,15 +451,15 @@ static void power_cmd(List activecmds,
 
     while ((hostname = hostlist_next(itr))) {
         struct powermsg *pm = power_cmd_host(mh, hostname, cmd, path, postdata);
-        if (!list_append(activecmds, pm))
-            err_exit(true, "list_append");
+        if (!(pm->handle = zlistx_add_end(activecmds, pm)))
+            err_exit(true, "zlistx_add_end");
         free(hostname);
     }
     hostlist_iterator_destroy(itr);
     hostlist_destroy(lhosts);
 }
 
-static void on_cmd(List activecmds, CURLM *mh, char **av)
+static void on_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
 {
     if (!statpath) {
         printf("Statpath not setup\n");
@@ -454,7 +469,7 @@ static void on_cmd(List activecmds, CURLM *mh, char **av)
     power_cmd(activecmds, mh, av, "on", onpath, onpostdata);
 }
 
-static void off_cmd(List activecmds, CURLM *mh, char **av)
+static void off_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
 {
     if (!statpath) {
         printf("Statpath not setup\n");
@@ -464,31 +479,14 @@ static void off_cmd(List activecmds, CURLM *mh, char **av)
     power_cmd(activecmds, mh, av, "off", offpath, offpostdata);
 }
 
-static void cycle_cmd(List activecmds, CURLM *mh, char **av)
+static void cycle_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
 {
     power_cmd(activecmds, mh, av, "cycle", cyclepath, cyclepostdata);
 }
 
-static void on_off_process(List delayedcmds, struct powermsg *pm)
+static void send_status_poll(zlistx_t *delayedcmds, struct powermsg *pm)
 {
     struct powermsg *nextpm;
-    struct timeval now;
-
-    if (pm->wait_until_on_off) {
-        const char *str;
-        parse_onoff(pm, &str);
-        if (strcmp(str, pm->cmd) == 0) {
-            printf("%s: %s\n", pm->hostname, "ok");
-            return;
-        }
-        /* fallthrough, check again */
-    }
-
-    gettimeofday(&now, NULL);
-    if (timercmp(&now, &pm->timeout, >)) {
-        printf("%s: %s\n", pm->hostname, "timeout");
-        return;
-    }
 
     /* issue a follow on stat to wait until the on/off is complete.
      * note that we set the initial start time of this new command to
@@ -500,19 +498,50 @@ static void on_off_process(List delayedcmds, struct powermsg *pm)
                              statpath,
                              NULL,
                              &pm->start,
-                             STATUS_POLLING_INTERVAL);
+                             STATUS_POLLING_INTERVAL,
+                             STATE_WAIT_UNTIL_ON_OFF);
     Curl_easy_setopt((nextpm->eh, CURLOPT_HTTPGET, 1));
-    nextpm->wait_until_on_off = 1;
-    if (!list_append(delayedcmds, nextpm))
-        err_exit(true, "list_append");
+    if (!(nextpm->handle = zlistx_add_end(delayedcmds, nextpm)))
+        err_exit(true, "zlistx_add_end");
 }
 
-static void on_process(List delayedcmds, struct powermsg *pm)
+static void on_off_process(zlistx_t *delayedcmds, struct powermsg *pm)
+{
+    if (pm->state == STATE_SEND_POWERCMD) {
+        /* just sent on or off, now we need for the operation to
+         * complete
+         */
+        send_status_poll(delayedcmds, pm);
+    }
+    else if (pm->state == STATE_WAIT_UNTIL_ON_OFF) {
+        const char *str;
+        struct timeval now;
+
+        parse_onoff(pm, &str);
+        if (strcmp(str, pm->cmd) == 0) {
+            printf("%s: %s\n", pm->hostname, "ok");
+            return;
+        }
+
+        /* check if we've timed out */
+        gettimeofday(&now, NULL);
+        if (timercmp(&now, &pm->timeout, >)) {
+          printf("%s: %s\n", pm->hostname, "timeout");
+          return;
+        }
+
+        /* resend status poll */
+        send_status_poll(delayedcmds, pm);
+    }
+
+}
+
+static void on_process(zlistx_t *delayedcmds, struct powermsg *pm)
 {
     on_off_process(delayedcmds, pm);
 }
 
-static void off_process(List delayedcmds, struct powermsg *pm)
+static void off_process(zlistx_t *delayedcmds, struct powermsg *pm)
 {
     on_off_process(delayedcmds, pm);
 }
@@ -611,7 +640,7 @@ static void settimeout(char **av)
   }
 }
 
-static void process_cmd(List activecmds, CURLM *mh, char **av, int *exitflag)
+static void process_cmd(zlistx_t *activecmds, CURLM *mh, char **av, int *exitflag)
 {
     if (av[0] != NULL) {
         if (strcmp(av[0], "help") == 0)
@@ -645,16 +674,9 @@ static void process_cmd(List activecmds, CURLM *mh, char **av, int *exitflag)
     }
 }
 
-static int activecmds_find(void *x, void *key)
+static void cleanup_powermsg(void **x)
 {
-    if (x == key)
-        return 1;
-    return 0;
-}
-
-static void cleanup_powermsg(void *x)
-{
-    struct powermsg *pm = x;
+    struct powermsg *pm = *x;
     if (pm) {
         if (strcmp(pm->cmd, "stat") == 0)
             stat_cleanup(pm);
@@ -669,16 +691,16 @@ static void cleanup_powermsg(void *x)
 
 static void shell(CURLM *mh)
 {
-    struct powermsg *tmp;
-    List activecmds;
-    List delayedcmds;
+    zlistx_t *activecmds;
+    zlistx_t *delayedcmds;
     int exitflag = 0;
 
-    if (!(activecmds = list_create(cleanup_powermsg)))
-        err_exit(true, "list_create");
+    if (!(activecmds = zlistx_new()))
+        err_exit(true, "zlistx_new");
+    zlistx_set_destructor(activecmds, cleanup_powermsg);
 
-    if (!(delayedcmds = list_create(NULL)))
-        err_exit(true, "list_create");
+    if (!(delayedcmds = zlistx_new()))
+        err_exit(true, "zlistx_new");
 
     while (exitflag == 0) {
         CURLMcode mc;
@@ -693,7 +715,7 @@ static void shell(CURLM *mh)
         FD_ZERO(&fdwrite);
         FD_ZERO(&fderror);
 
-        if (list_is_empty(activecmds) && list_is_empty(delayedcmds)) {
+        if (!zlistx_size(activecmds) && !zlistx_size(delayedcmds)) {
             printf("redfishpower> ");
             fflush(stdout);
 
@@ -709,21 +731,22 @@ static void shell(CURLM *mh)
              * waiting.  If there are some ready to send, put to
              * activecmds.  If not, setup timeout accordingly if one
              * is waiting */
-            if (!list_is_empty(delayedcmds)) {
-                ListIterator itr = list_iterator_create(delayedcmds);
-                struct powermsg *delaypm;
+            if (zlistx_size(delayedcmds) > 0) {
+                struct powermsg *delaypm = zlistx_first(delayedcmds);
                 struct timeval delaytimeout;
                 struct timeval now;
                 gettimeofday(&now, NULL);
-                while ((tmp = list_next(itr))) {
-                    if (timercmp(&tmp->delaystart, &now, >))
+                while (delaypm) {
+                    if (timercmp(&delaypm->delaystart, &now, >))
                         break;
-                    list_remove(itr);
-                    if (!list_append(activecmds, tmp))
-                        err_exit(true, "list_append");
+                    zlistx_detach_cur(delayedcmds);
+                    if (!(delaypm->handle = zlistx_add_end(activecmds,
+                                                           delaypm)))
+                        err_exit(true, "zlistx_add_end");
+                    delaypm = zlistx_next(delayedcmds);
                 }
 
-                delaypm = list_peek(delayedcmds);
+                delaypm = zlistx_first(delayedcmds);
                 if (delaypm) {
                     timersub(&delaypm->delaystart, &now, &delaytimeout);
                     timeout.tv_sec = delaytimeout.tv_sec;
@@ -782,7 +805,7 @@ static void shell(CURLM *mh)
                 break;
         }
 
-        if (!list_is_empty(activecmds)) {
+        if (zlistx_size(activecmds) > 0) {
             struct CURLMsg *cmsg;
             int msgq = 0;
             int stillrunning;
@@ -850,19 +873,20 @@ static void shell(CURLM *mh)
                             cycle_process(pm);
                     }
                     fflush(stdout);
-                    list_delete_all(activecmds, activecmds_find, pm);
+                    if (zlistx_delete(activecmds, pm->handle) < 0)
+                        err_exit(false, "zlistx_delete failed to delete");
                 }
             } while (cmsg);
         }
     }
-    list_destroy(activecmds);
-    list_destroy(delayedcmds);
+    zlistx_destroy(&activecmds);
+    zlistx_destroy(&delayedcmds);
 }
 
 static void usage(void)
 {
     fprintf(stderr,
-      "Usage: redfishpower <--hostname host(s) | --hostsfile file> [OPTIONS]\n"
+      "Usage: redfishpower --hostname host(s) [OPTIONS]\n"
       "  OPTIONS:\n"
       "  -H, --header        Set extra header string\n"
       "  -S, --statpath      Set stat path\n"
@@ -877,25 +901,27 @@ static void usage(void)
     exit(1);
 }
 
+static void init_redfishpower(char *argv[])
+{
+    err_init(basename(argv[0]));
+
+    if (!(hosts = hostlist_create(NULL)))
+        err_exit(true, "hostlist_create error");
+}
+
 int main(int argc, char *argv[])
 {
     CURLM *mh;
     CURLcode ec;
     int c;
 
-    err_init(basename(argv[0]));
+    init_redfishpower(argv);
 
     while ((c = getopt_long(argc, argv, OPTIONS, longopts, NULL)) != EOF) {
         switch (c) {
             case 'h': /* --hostname */
-                if (hosts) {
-                    if (!hostlist_push(hosts, optarg))
-                        err_exit(true, "hostlist_push error on %s", optarg);
-                }
-                else {
-                    if (!(hosts = hostlist_create(optarg)))
-                        err_exit(true, "hostlist_create error on %s", optarg);
-                }
+                if (!hostlist_push(hosts, optarg))
+                    err_exit(true, "hostlist_push error on %s", optarg);
                 break;
             case 'H': /* --header */
                 header = xstrdup(optarg);
@@ -932,7 +958,7 @@ int main(int argc, char *argv[])
     if (optind < argc)
         usage();
 
-    if (!hosts)
+    if (hostlist_count(hosts) == 0)
         usage();
 
     if ((ec = curl_global_init(CURL_GLOBAL_ALL)) != CURLE_OK)
