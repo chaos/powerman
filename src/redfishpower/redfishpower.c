@@ -61,6 +61,10 @@ static char *cyclepostdata = NULL;
 
 #define MS_IN_SEC                1000
 
+#define STATUS_ON      "on"
+#define STATUS_OFF     "off"
+#define STATUS_UNKNOWN "unknown"
+
 enum {
       STATE_SEND_POWERCMD,      /* stat, on, off */
       STATE_WAIT_UNTIL_ON_OFF,  /* on, off */
@@ -366,11 +370,11 @@ static void parse_onoff (struct powermsg *pm, const char **strp)
             else {
                 const char *str = json_string_value(val);
                 if (strcasecmp(str, "On") == 0)
-                    (*strp) = "on";
+                    (*strp) = STATUS_ON;
                 else if (strcasecmp(str, "Off") == 0)
-                    (*strp) = "off";
+                    (*strp) = STATUS_OFF;
                 else
-                    (*strp) = "unknown";
+                    (*strp) = STATUS_UNKNOWN;
             }
         }
         json_decref(o);
