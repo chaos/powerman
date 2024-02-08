@@ -31,7 +31,6 @@ TESTSCRIPTS = \
 	t0019-insteon-plm.t \
 	t0020-digital-loggers-lpc.t \
 	t0021-remote-powerman.t \
-	t0022-bashfun.t \
 	t0023-sun-microsystems-ilom.t \
 	t0024-freeipmi.t \
 	t0025-openbmc.t \
