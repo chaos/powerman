@@ -35,7 +35,7 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "xpty.h"
+#include "fdutil.h"
 #include "error.h"
 
 void nonblock_set(int fd)

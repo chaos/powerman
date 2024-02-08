@@ -10,14 +10,14 @@ libcommon_la_SOURCES = \
 	argv.h \
 	error.c \
 	error.h \
+	fdutil.c \
+	fdutil.h \
 	hprintf.c \
 	hprintf.h \
 	xmalloc.c \
 	xmalloc.h \
 	xpoll.c \
 	xpoll.h \
-	xpty.c \
-	xpty.h \
 	xread.c \
 	xread.h \
 	xregex.c \

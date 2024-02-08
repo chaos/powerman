@@ -41,7 +41,7 @@
 #include "error.h"
 #include "debug.h"
 #include "argv.h"
-#include "xpty.h"
+#include "fdutil.h"
 
 typedef struct {
     char **argv;

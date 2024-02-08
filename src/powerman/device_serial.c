@@ -37,7 +37,7 @@
 #include "device_serial.h"
 #include "error.h"
 #include "debug.h"
-#include "xpty.h"
+#include "fdutil.h"
 
 typedef struct {
     char *special;

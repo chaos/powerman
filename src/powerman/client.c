@@ -48,7 +48,7 @@
 #include "hprintf.h"
 #include "arglist.h"
 #include "device_private.h"
-#include "xpty.h"
+#include "fdutil.h"
 #include "powerman.h"
 
 #ifndef HAVE_SOCKLEN_T
