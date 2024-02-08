@@ -48,7 +48,7 @@
 #include "error.h"
 #include "debug.h"
 #include "device_tcp.h"
-#include "xpty.h"
+#include "fdutil.h"
 
 #ifndef HAVE_SOCKLEN_T
 typedef int socklen_t;                  /* socklen_t is uint32_t in Posix.1g */

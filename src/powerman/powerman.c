@@ -36,7 +36,7 @@
 #include "client_proto.h"
 #include "debug.h"
 #include "argv.h"
-#include "xpty.h"
+#include "fdutil.h"
 #include "hprintf.h"
 #include "argv.h"
 #include "list.h"

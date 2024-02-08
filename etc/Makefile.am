@@ -22,7 +22,6 @@ pkgsysconf_DATA = \
 	devices/apcpdu.dev \
 	devices/appro-greenblade.dev \
 	devices/appro-gb2.dev \
-	devices/bashfun.dev \
 	devices/baytech.dev \
 	devices/baytech-snmp.dev \
 	devices/baytech-rpc18d-nc.dev \
