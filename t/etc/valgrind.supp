@@ -1,0 +1,8 @@
+{
+   <liblsd_list_pool>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   fun:list_alloc_aux
+   ...
+}
