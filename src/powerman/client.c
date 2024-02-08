@@ -68,9 +68,7 @@ typedef struct {
     ArgList arglist;            /* argument for query commands */
 } Command;
 
-#define CLI_MAGIC    0xdadadada
 typedef struct {
-    int magic;
     int fd;                     /* file descriptor for the socket */
     int ofd;                    /* separate output file descriptor (if used) */
     char *ip;                   /* IP address of the client's host */
@@ -679,7 +677,6 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
     /* if client has gone away do nothing */
     if (!(c = _find_client(client_id)))
         return;
-    assert(c->magic == CLI_MAGIC);
     assert(c->cmd != NULL);
 
     /* handle errors immediately */
@@ -734,8 +731,6 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
  */
 static void _destroy_client(Client *c)
 {
-    assert(c->magic == CLI_MAGIC);
-
     if (c->fd != NO_FD) {
         dbg(DBG_CLIENT, "_destroy_client: closing fd %d", c->fd);
         if (close(c->fd) < 0)
@@ -886,7 +881,6 @@ static void _create_client_socket(int fd)
 
     /* create client data structure */
     c = (Client *) xmalloc(sizeof(Client));
-    c->magic = CLI_MAGIC;
     c->to = NULL;
     c->from = NULL;
     c->cmd = NULL;
@@ -964,7 +958,6 @@ static void _create_client_stdio(void)
 
     /* create client data structure */
     c = (Client *) xmalloc(sizeof(Client));
-    c->magic = CLI_MAGIC;
     c->cmd = NULL;
     c->client_id = _next_cli_id();
     c->telemetry = false;
@@ -997,7 +990,6 @@ static void _handle_read(Client * c)
     int n;
     int dropped;
 
-    assert(c->magic == CLI_MAGIC);
     n = cbuf_write_from_fd(c->from, c->fd, -1, &dropped);
     if (n < 0) {
         c->client_quit = true;
@@ -1021,7 +1013,6 @@ static void _handle_write(Client * c)
     int n;
     int ofd = c->ofd != NO_FD ? c->ofd : c->fd;
 
-    assert(c->magic == CLI_MAGIC);
     if (c->client_quit)
         nonblock_clr(ofd);
     n = cbuf_read_to_fd(c->to, ofd, -1);

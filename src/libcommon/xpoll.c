@@ -41,9 +41,7 @@
 
 #define XPOLLFD_ALLOC_CHUNK  16
 
-#define XPOLLFD_MAGIC    0x56452334
 struct xpollfd {
-    int             magic;
 #if HAVE_POLL
     unsigned int    nfds;
     unsigned int    ufds_size;
@@ -138,7 +136,6 @@ xpoll(xpollfd_t pfd, struct timeval *tv)
 static void
 _grow_pollfd(xpollfd_t pfd, int n)
 {
-    assert(pfd->magic == XPOLLFD_MAGIC);
     while (pfd->ufds_size < n) {
         pfd->ufds_size += XPOLLFD_ALLOC_CHUNK;
         pfd->ufds = (struct pollfd *)xrealloc((char *)pfd->ufds, sizeof(struct pollfd) * pfd->ufds_size);
@@ -151,7 +148,6 @@ xpollfd_create(void)
 {
     xpollfd_t pfd = (xpollfd_t)xmalloc(sizeof(struct xpollfd));
 
-    pfd->magic = XPOLLFD_MAGIC;
 #if HAVE_POLL
     pfd->ufds_size += XPOLLFD_ALLOC_CHUNK;
     pfd->ufds = (struct pollfd *)xmalloc(sizeof(struct pollfd)*pfd->ufds_size);
@@ -168,8 +164,6 @@ xpollfd_create(void)
 void
 xpollfd_destroy(xpollfd_t pfd)
 {
-    assert(pfd->magic == XPOLLFD_MAGIC);
-    pfd->magic = 0;
 #if HAVE_POLL
     if (pfd->ufds != NULL)
         xfree(pfd->ufds);
@@ -180,7 +174,6 @@ xpollfd_destroy(xpollfd_t pfd)
 void
 xpollfd_zero(xpollfd_t pfd)
 {
-    assert(pfd->magic == XPOLLFD_MAGIC);
 #if HAVE_POLL
     pfd->nfds = 0;
     /*memset(pfd->ufds, 0, sizeof(struct pollfd) * pfd->ufds_size);*/
@@ -197,7 +190,6 @@ xpollfd_set(xpollfd_t pfd, int fd, short events)
 #if HAVE_POLL
     int i;
 
-    assert(pfd->magic == XPOLLFD_MAGIC);
     for (i = 0; i < pfd->nfds; i++) {
         if (pfd->ufds[i].fd == fd) {
             pfd->ufds[i].events |= xflag2flag(events);
@@ -210,7 +202,6 @@ xpollfd_set(xpollfd_t pfd, int fd, short events)
         pfd->ufds[i].events = xflag2flag(events);
     }
 #else
-    assert(pfd->magic == XPOLLFD_MAGIC);
     assert(fd < FD_SETSIZE);
     if (events & XPOLLIN)
         FD_SET(fd, &pfd->rset);
@@ -227,7 +218,6 @@ xpollfd_str(xpollfd_t pfd, char *str, int len)
 #if HAVE_POLL
     int maxfd = -1;
 #endif
-    assert(pfd->magic == XPOLLFD_MAGIC);
 #if HAVE_POLL
     memset(str, '.', len);
     for (i = 0; i < pfd->nfds; i++) {
@@ -271,7 +261,6 @@ xpollfd_revents(xpollfd_t pfd, int fd)
 #if HAVE_POLL
     int i;
 
-    assert(pfd->magic == XPOLLFD_MAGIC);
     for (i = 0; i < pfd->nfds; i++) {
         if (pfd->ufds[i].fd == fd) {
             flags = flag2xflag(pfd->ufds[i].revents);
@@ -279,7 +268,6 @@ xpollfd_revents(xpollfd_t pfd, int fd)
         }
     }
 #else
-    assert(pfd->magic == XPOLLFD_MAGIC);
     if (FD_ISSET(fd, &pfd->rset))
         flags |= XPOLLIN;
     if (FD_ISSET(fd, &pfd->wset))

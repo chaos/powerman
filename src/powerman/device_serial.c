@@ -186,7 +186,6 @@ bool serial_connect(Device * dev)
     int res;
     int n;
 
-    assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 

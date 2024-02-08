@@ -45,9 +45,7 @@
 /*
  * A PreScript is a list of PreStmts.
  */
-#define PRESTMT_MAGIC 0x89786756
 typedef struct {
-    int magic;
     StmtType type;              /* delay/expect/send */
     char *str;                  /* expect string, send fmt, setplugstate plug */
     struct timeval tv;          /* delay value */
@@ -384,7 +382,6 @@ static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
 
     new = (PreStmt *) xmalloc(sizeof(PreStmt));
 
-    new->magic = PRESTMT_MAGIC;
     new->type = type;
     new->mp1 = mp1str ? _strtolong(mp1str) : -1;
     new->mp2 = mp2str ? _strtolong(mp2str) : -1;
@@ -400,8 +397,6 @@ static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
 
 static void destroyPreStmt(PreStmt *p)
 {
-    assert(p->magic == PRESTMT_MAGIC);
-    p->magic = 0;
     if (p->str)
         xfree(p->str);
     p->str = NULL;
@@ -473,7 +468,6 @@ static Interp *makeInterp(InterpState state, char *str)
 {
     Interp *new = (Interp *)xmalloc(sizeof(Interp));
 
-    new->magic = INTERP_MAGIC;
     new->str = xstrdup(str);
     new->re = xregex_create();
     new->state = state;
@@ -483,8 +477,6 @@ static Interp *makeInterp(InterpState state, char *str)
 
 static void destroyInterp(Interp *i)
 {
-    assert(i->magic == INTERP_MAGIC);
-    i->magic = 0;
     xfree(i->str);
     xregex_destroy(i->re);
     xfree(i);
@@ -500,10 +492,8 @@ static List copyInterpList(List il)
 
         itr = list_iterator_create(il);
         while((ip = list_next(itr))) {
-            assert(ip->magic == INTERP_MAGIC);
             icpy = makeInterp(ip->state, ip->str);
             xregex_compile(icpy->re, icpy->str, false);
-            assert(icpy->magic == INTERP_MAGIC);
             list_append(new, icpy);
         }
         list_iterator_destroy(itr);
@@ -553,7 +543,6 @@ static Stmt *makeStmt(PreStmt *p)
     PreStmt *subp;
     ListIterator itr;
 
-    assert(p->magic == PRESTMT_MAGIC);
     stmt = (Stmt *) xmalloc(sizeof(Stmt));
     stmt->type = p->type;
     switch (p->type) {
@@ -580,7 +569,6 @@ static Stmt *makeStmt(PreStmt *p)
         stmt->u.foreach.stmts = list_create((ListDelF) destroyStmt);
         itr = list_iterator_create(p->prestmts);
         while((subp = list_next(itr))) {
-            assert(subp->magic == PRESTMT_MAGIC);
             list_append(stmt->u.foreach.stmts, makeStmt(subp));
         }
         list_iterator_destroy(itr);
@@ -590,7 +578,6 @@ static Stmt *makeStmt(PreStmt *p)
         stmt->u.ifonoff.stmts = list_create((ListDelF) destroyStmt);
         itr = list_iterator_create(p->prestmts);
         while((subp = list_next(itr))) {
-            assert(subp->magic == PRESTMT_MAGIC);
             list_append(stmt->u.ifonoff.stmts, makeStmt(subp));
         }
         list_iterator_destroy(itr);

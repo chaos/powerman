@@ -29,16 +29,11 @@
 #include "hostlist.h"
 #include "pluglist.h"
 
-#define PLUGLISTITR_MAGIC   0xfeedfefe
-#define PLUGLIST_MAGIC      0xfeedb0b
-
 struct pluglist_iterator {
-    int             magic;
     ListIterator    itr;
 };
 
 struct pluglist {
-    int             magic;
     List	        pluglist;
     bool            hardwired;
 };
@@ -69,7 +64,6 @@ PlugList pluglist_create(List plugnames)
 {
     PlugList pl = (PlugList) xmalloc(sizeof(struct pluglist));
 
-    pl->magic = PLUGLIST_MAGIC;
     pl->pluglist = list_create((ListDelF)_destroy_plug);
     pl->hardwired = false;
 
@@ -91,9 +85,7 @@ PlugList pluglist_create(List plugnames)
 void pluglist_destroy(PlugList pl)
 {
     assert(pl != NULL);
-    assert(pl->magic == PLUGLIST_MAGIC);
 
-    pl->magic = 0;
     list_destroy(pl->pluglist);
     xfree(pl);
 }
@@ -163,7 +155,6 @@ pl_err_t pluglist_map(PlugList pl, char *nodelist, char *pluglist)
     pl_err_t res = EPL_SUCCESS;
 
     assert(pl != NULL);
-    assert(pl->magic == PLUGLIST_MAGIC);
     assert(nodelist != NULL);
 
     /* If pluglist is omitted we have one of two cases:
@@ -228,7 +219,6 @@ PlugListIterator pluglist_iterator_create(PlugList pl)
 {
     PlugListIterator itr = (PlugListIterator)xmalloc(sizeof(struct pluglist_iterator));
 
-    itr->magic = PLUGLISTITR_MAGIC;
     itr->itr = list_iterator_create(pl->pluglist);
 
     return itr;
@@ -237,8 +227,6 @@ PlugListIterator pluglist_iterator_create(PlugList pl)
 void pluglist_iterator_destroy(PlugListIterator itr)
 {
     assert(itr != NULL);
-    assert(itr->magic == PLUGLISTITR_MAGIC);
-    itr->magic = 0;
     list_iterator_destroy(itr->itr);
     xfree(itr);
 }
@@ -246,7 +234,6 @@ void pluglist_iterator_destroy(PlugListIterator itr)
 Plug *pluglist_next(PlugListIterator itr)
 {
     assert(itr != NULL);
-    assert(itr->magic == PLUGLISTITR_MAGIC);
 
     return (Plug *)list_next(itr->itr);
 }
@@ -256,7 +243,6 @@ Plug *pluglist_find(PlugList pl, char *name)
     Plug *plug;
 
     assert(pl != NULL);
-    assert(pl->magic == PLUGLIST_MAGIC);
     assert(name != NULL);
 
     plug = _pluglist_find_any(pl, name);
