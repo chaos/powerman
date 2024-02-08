@@ -8,6 +8,7 @@ powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
 vpcd=$SHARNESS_BUILD_DIRECTORY/t/simulators/vpcd
 vpcdev=$SHARNESS_TEST_SRCDIR/etc/vpc.dev
+suppressions=$SHARNESS_TEST_SRCDIR/etc/valgrind.supp
 
 # Use port = 11000 + test number
 # That way there won't be port conflicts with make -j
@@ -27,8 +28,9 @@ test_expect_success 'create test powerman.conf' '
 	alias "a0" "t0"
 	EOT
 '
-test_expect_failure 'run powermand --stdio under valgrind' '
+test_expect_success 'run powermand --stdio under valgrind' '
 	valgrind --tool=memcheck --leak-check=full --error-exitcode=1 \
+	    --gen-suppressions=all --suppressions=$suppressions \
 	    $powermand --stdio -c powerman.conf 2>valgrind.err <<-EOT
 	help
 	EOT
