@@ -526,8 +526,8 @@ static void on_off_process(zlistx_t *delayedcmds, struct powermsg *pm)
         /* check if we've timed out */
         gettimeofday(&now, NULL);
         if (timercmp(&now, &pm->timeout, >)) {
-          printf("%s: %s\n", pm->hostname, "timeout");
-          return;
+            printf("%s: %s\n", pm->hostname, "timeout");
+            return;
         }
 
         /* resend status poll */
