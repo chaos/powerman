@@ -846,7 +846,9 @@ static void shell(CURLM *mh)
                                                   CURLINFO_RESPONSE_CODE,
                                                   &code) != CURLE_OK)
                                 printf("%s: %s\n", pm->hostname, "http error");
-                            if (code == 401)
+                            if (code == 400)
+                                printf("%s: %s\n", pm->hostname, "bad request");
+                            else if (code == 401)
                                 printf("%s: %s\n", pm->hostname, "unauthorized");
                             else if (code == 404)
                                 printf("%s: %s\n", pm->hostname, "not found");
