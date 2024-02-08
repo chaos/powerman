@@ -190,7 +190,6 @@ bool tcp_finish_connect(Device * dev)
 {
     TcpDev *tcp;
 
-    assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_CONNECTING);
 
     tcp = (TcpDev *)dev->data;
@@ -227,7 +226,6 @@ bool tcp_connect(Device * dev)
 {
     TcpDev *tcp;
 
-    assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_NOT_CONNECTED);
     assert(dev->fd == NO_FD);
 
@@ -263,7 +261,6 @@ void tcp_disconnect(Device * dev)
 {
     TcpDev *tcp;
 
-    assert(dev->magic == DEV_MAGIC);
     assert(dev->connect_state == DEV_CONNECTING
            || dev->connect_state == DEV_CONNECTED);
     tcp = (TcpDev *)dev->data;

@@ -35,9 +35,7 @@
 #endif
 
 
-#define PMH_MAGIC 0x44445555
 struct pm_handle_struct {
-    int         pmh_magic;
     int         pmh_fd;
 };
 
@@ -49,9 +47,7 @@ struct list_struct {
     list_free_t         freefun;
 };
 
-#define PMI_MAGIC 0x41a452b5
 struct pm_node_iterator_struct {
-    int                 pmi_magic;
     struct list_struct *pmi_nodes;
     struct list_struct *pmi_pos;
 };
@@ -362,7 +358,6 @@ pm_connect(char *server, void *arg, pm_handle_t *pmhp, int flags)
         return PM_EBADARG;
     if ((pmh = (pm_handle_t)malloc(sizeof(struct pm_handle_struct))) == NULL)
         return PM_ENOMEM;
-    pmh->pmh_magic = PMH_MAGIC;
 
     if ((err = _connect_to_server_tcp(pmh, server, (flags & PM_CONN_INET6)
                                 ? PF_INET6 : PF_UNSPEC)) != PM_ESUCCESS) {
@@ -394,7 +389,6 @@ _node_iterator_create(pm_node_iterator_t *pmip)
 
     if (!(pmi = malloc(sizeof(struct pm_node_iterator_struct))))
         return PM_ENOMEM;
-    pmi->pmi_magic = PMI_MAGIC;
     pmi->pmi_pos = pmi->pmi_nodes = NULL;
     *pmip = pmi;
     return PM_ESUCCESS;
@@ -405,7 +399,6 @@ pm_node_iterator_destroy(pm_node_iterator_t pmi)
 {
     _list_free(&pmi->pmi_nodes);
     pmi->pmi_pos = NULL;
-    pmi->pmi_magic = 0;
     free(pmi);
 }
 
@@ -417,7 +410,7 @@ pm_node_iterator_create(pm_handle_t pmh, pm_node_iterator_t *pmip)
     char *cpy, node[CP_LINEMAX];
     pm_err_t err;
 
-    if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
+    if (pmh == NULL)
         return PM_EBADHAND;
     if ((err = _node_iterator_create(&pmi)) != PM_ESUCCESS)
         return err;
@@ -470,7 +463,7 @@ pm_node_iterator_reset(pm_node_iterator_t pmi)
 void
 pm_disconnect(pm_handle_t pmh)
 {
-    if (pmh != NULL && pmh->pmh_magic == PMH_MAGIC) {
+    if (pmh != NULL) {
         (void)_server_command(pmh, CP_QUIT, NULL, NULL); /* PM_ESERVEREOF */
         (void)close(pmh->pmh_fd);
         free(pmh);
@@ -488,7 +481,7 @@ pm_node_status(pm_handle_t pmh, char *node, pm_node_state_t *statep)
     struct list_struct *resp;
     pm_node_state_t state;
 
-    if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
+    if (pmh == NULL)
         return PM_EBADHAND;
     if ((err = _server_command(pmh, CP_STATUS, node, &resp)) != PM_ESUCCESS)
         return err;
@@ -513,7 +506,7 @@ pm_node_status(pm_handle_t pmh, char *node, pm_node_state_t *statep)
 pm_err_t
 pm_node_on(pm_handle_t pmh, char *node)
 {
-    if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
+    if (pmh == NULL)
         return PM_EBADHAND;
     return _server_command(pmh, CP_ON, node, NULL);
 }
@@ -523,7 +516,7 @@ pm_node_on(pm_handle_t pmh, char *node)
 pm_err_t
 pm_node_off(pm_handle_t pmh, char *node)
 {
-    if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
+    if (pmh == NULL)
         return PM_EBADHAND;
     return _server_command(pmh, CP_OFF, node, NULL);
 }
@@ -533,7 +526,7 @@ pm_node_off(pm_handle_t pmh, char *node)
 pm_err_t
 pm_node_cycle(pm_handle_t pmh, char *node)
 {
-    if (pmh == NULL || pmh->pmh_magic != PMH_MAGIC)
+    if (pmh == NULL)
         return PM_EBADHAND;
     return _server_command(pmh, CP_CYCLE, node, NULL);
 }

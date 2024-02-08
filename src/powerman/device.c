@@ -85,10 +85,8 @@ typedef struct {
  * represents a request to run a particular script on a device, for a set of
  * plugs.  Actions can be enqueued by the client or internally (e.g. login).
  */
-#define ACT_MAGIC 0xb00bb000
 #define MAX_LEVELS 2
 typedef struct {
-    int magic;
     int com;                    /* one of the PM_* above */
     List exec;                  /* stack of ExecCtxs (outer block is first) */
     ActionCB complete_fun;      /* callback for action completion */
@@ -263,7 +261,6 @@ static Action *_create_action(Device * dev, int com, List plugs,
 
     dbg(DBG_ACTION, "_create_action: %d", com);
     act = (Action *) xmalloc(sizeof(Action));
-    act->magic = ACT_MAGIC;
     act->com = com;
     act->complete_fun = complete_fun;
     act->vpf_fun = vpf_fun;
@@ -281,8 +278,6 @@ static Action *_create_action(Device * dev, int com, List plugs,
 
 static void _destroy_action(Action * act)
 {
-    assert(act->magic == ACT_MAGIC);
-    act->magic = 0;
     dbg(DBG_ACTION, "_destroy_action: %d", act->com);
     if (act->exec)
         list_destroy(act->exec);
@@ -1264,7 +1259,6 @@ Device *dev_create(const char *name)
     int i;
 
     dev = (Device *) xmalloc(sizeof(Device));
-    dev->magic = DEV_MAGIC;
     dev->name = xstrdup(name);
     dev->connect_state = DEV_NOT_CONNECTED;
     dev->fd = NO_FD;
@@ -1305,8 +1299,6 @@ void dev_destroy(Device * dev)
 {
     int i;
 
-    assert(dev->magic == DEV_MAGIC);
-
     if (dev->connect_state == DEV_CONNECTED)
         dev->disconnect(dev);
 
@@ -1326,7 +1318,6 @@ void dev_destroy(Device * dev)
     cbuf_destroy(dev->to);
     cbuf_destroy(dev->from);
     xregex_match_destroy(dev->xmatch);
-    dev->magic = 0;
     xfree(dev);
 }
 
@@ -1369,7 +1360,6 @@ static bool _handle_read(Device * dev)
     int n;
     int dropped;
 
-    assert(dev->magic == DEV_MAGIC);
     n = cbuf_write_from_fd(dev->from, dev->fd, -1, &dropped);
     if (n < 0) {
         err(true, "read error on %s", dev->name);
@@ -1393,7 +1383,6 @@ static bool _handle_write(Device * dev)
 {
     int n;
 
-    assert(dev->magic == DEV_MAGIC);
     n = cbuf_read_to_fd(dev->to, dev->fd, -1);
     if (n < 0) {
         err(true, "write error on %s", dev->name);

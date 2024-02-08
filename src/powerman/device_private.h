@@ -46,9 +46,7 @@
 
 #define MAX_MATCH_POS   20
 
-#define INTERP_MAGIC 0x13434550
 typedef struct {
-    int             magic;
     InterpState     state;
     char           *str;
     xregex_t        re;
@@ -101,9 +99,7 @@ typedef List Script;
  */
 typedef enum { DEV_NOT_CONNECTED, DEV_CONNECTING, DEV_CONNECTED } ConnectState;
 
-#define DEV_MAGIC       0xbeefb111
 typedef struct _device {
-    int magic;
     char *name;                 /* name of device */
 
     char *specname;             /* name of specification, e.g. "icebox3" */
