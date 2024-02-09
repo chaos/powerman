@@ -71,8 +71,7 @@ AM_CPPFLAGS = \
 
 common_ldadd = \
 	$(top_builddir)/src/liblsd/liblsd.la \
-	$(top_builddir)/src/libcommon/libcommon.la \
-	$(LIBFORKPTY)
+	$(top_builddir)/src/libcommon/libcommon.la
 
 check_PROGRAMS = \
 	simulators/vpcd \
