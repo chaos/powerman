@@ -56,6 +56,7 @@ pkgsysconf_DATA = \
 	devices/kvm-ssh.dev \
 	devices/openbmc.dev \
 	devices/redfish-supermicro.dev \
+	devices/redfishpower-cray-olympus.dev \
 	devices/redfishpower-cray-r272z30.dev \
 	devices/redfishpower-supermicro.dev \
 	devices/redfishpower-cray-windom.dev \

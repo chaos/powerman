@@ -41,7 +41,8 @@ TESTSCRIPTS = \
 	t0030-heartbeat-stonith.t \
 	t0031-llnl-mcr-cluster.t \
 	t0032-list.t \
-	t0033-valgrind.t
+	t0033-valgrind.t \
+	t0034-llnl-el-capitan-cluster.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
@@ -67,11 +68,13 @@ AM_CFLAGS = @WARNING_CFLAGS@
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/libcommon \
 	-I$(top_srcdir)/src/liblsd \
+	-I$(top_srcdir)/src/libczmq \
 	-I$(top_srcdir)/src/powerman
 
 common_ldadd = \
 	$(top_builddir)/src/liblsd/liblsd.la \
-	$(top_builddir)/src/libcommon/libcommon.la
+	$(top_builddir)/src/libcommon/libcommon.la \
+	$(top_builddir)/src/libczmq/libczmq.la
 
 check_PROGRAMS = \
 	simulators/vpcd \

@@ -1,0 +1,108 @@
+# HPE Cray Shasta EX chassis with EPYC dual-node compute blades
+specification "redfishpower-cray-olympus" {
+        timeout 60
+
+        plug name {
+                "Enclosure"
+                "Perif0"
+                "Perif1"
+                "Perif2"
+                "Perif3"
+                "Perif4"
+                "Perif5"
+                "Perif6"
+                "Perif7"
+                "Blade0"
+                "Blade1"
+                "Blade2"
+                "Blade3"
+                "Blade4"
+                "Blade5"
+                "Blade6"
+                "Blade7"
+                "Node0"
+                "Node1"
+                "Node2"
+                "Node3"
+                "Node4"
+                "Node5"
+                "Node6"
+                "Node7"
+                "Node8"
+                "Node9"
+                "Node10"
+                "Node11"
+                "Node12"
+                "Node13"
+                "Node14"
+                "Node15"
+        }
+
+        script login {
+                expect "redfishpower> "
+                send "auth root:initial0\n"
+                expect "redfishpower> "
+                send "setheader Content-Type:application/json\n"
+                expect "redfishpower> "
+                # setplugs <pluglist> <hostindices> [<parentplug>]
+                send "setplugs Enclosure 0\n"
+                expect "redfishpower> "
+                send "setplugs Perif[0-7],Blade[0-7] 0 Enclosure\n"
+                expect "redfishpower> "
+                send "setplugs Node[0-1] [1-2] Blade0\n"
+                expect "redfishpower> "
+                send "setplugs Node[2-3] [3-4] Blade1\n"
+                expect "redfishpower> "
+                send "setplugs Node[4-5] [5-6] Blade2\n"
+                expect "redfishpower> "
+                send "setplugs Node[6-7] [7-8] Blade3\n"
+                expect "redfishpower> "
+                send "setplugs Node[8-9] [9-10] Blade4\n"
+                expect "redfishpower> "
+                send "setplugs Node[10-11] [11-12] Blade5\n"
+                expect "redfishpower> "
+                send "setplugs Node[12-13] [13-14] Blade6\n"
+                expect "redfishpower> "
+                send "setplugs Node[14-15] [15-16] Blade7\n"
+                expect "redfishpower> "
+                # setpath <pluglist> <type> <path>
+                send "setpath Enclosure,Perif[0-7],Blade[0-7] stat redfish/v1/Chassis/%s\n"
+                expect "redfishpower> "
+                send "setpath Enclosure,Perif[0-7],Blade[0-7] on redfish/v1/Chassis/%s/Actions/Chassis.Reset {\"ResetType\":\"On\"}\n"
+                expect "redfishpower> "
+                send "setpath Enclosure,Perif[0-7],Blade[0-7] off redfish/v1/Chassis/%s/Actions/Chassis.Reset {\"ResetType\":\"ForceOff\"}\n"
+                expect "redfishpower> "
+                send "setpath Node[0-15] stat redfish/v1/Systems/Self\n"
+                expect "redfishpower> "
+                send "setpath Node[0-15] on redfish/v1/Systems/Self/Actions/ComputerSystem.Reset {\"ResetType\":\"On\"}\n"
+                expect "redfishpower> "
+                send "setpath Node[0-15] off redfish/v1/Systems/self/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceOff\"}\n"
+                expect "redfishpower> "
+        }
+        script logout {
+                send "quit\n"
+        }
+        script status_all {
+                send "stat\n"
+                foreachnode {
+                        expect "([^\n:]+): ([^\n]+\n)"
+                        setplugstate $1 $2 on="^on\n" off="^off\n"
+                }
+                expect "redfishpower> "
+        }
+        script on_ranged {
+                send "on %s\n"
+                expect "redfishpower> "
+        }
+        script off_ranged {
+                send "off %s\n"
+                expect "redfishpower> "
+        }
+        script cycle_ranged {
+                send "on %s\n"
+                expect "redfishpower> "
+                send "off %s\n"
+                expect "redfishpower> "
+        }
+}
+# vi:ts=8 sw=8 expandtab
