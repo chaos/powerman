@@ -23,8 +23,7 @@ powerman_SOURCES = \
 powerman_LDADD = \
 	$(top_builddir)/src/liblsd/liblsd.la \
 	$(top_builddir)/src/libcommon/libcommon.la \
-	$(LIBGENDERS) \
-	$(LIBFORKPTY)
+	$(LIBGENDERS)
 
 pm_SOURCES =
 
@@ -38,8 +37,6 @@ powermand_SOURCES = \
 	client.c \
 	client.h \
 	client_proto.h \
-	daemon.c \
-	daemon.h \
 	debug.c \
 	debug.h \
 	device.c \
@@ -63,8 +60,7 @@ powermand_SOURCES = \
 powermand_LDADD = \
 	$(top_builddir)/src/liblsd/liblsd.la \
 	$(top_builddir)/src/libcommon/libcommon.la \
-	$(LIBWRAP) \
-	$(LIBFORKPTY)
+	$(LIBWRAP)
 
 AM_YFLAGS = -d
 

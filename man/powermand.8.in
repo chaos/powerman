@@ -14,9 +14,6 @@ provides power management in a data center or compute cluster environment.
 Override the default location of the powerman configuration file
 .I /etc/powerman/powerman.conf.
 .TP
-.I "-f, --foreground"
-Do not daemonize, and send debugging/error messages to stderr instead of syslog.
-.TP
 .I "-s, --stdio"
 Talk to a client on stdin/stdout rather than listening for network connections.
 This is useful for testing new configurations, since the powerman client

@@ -33,7 +33,6 @@
 #include "xsignal.h"
 #include "pluglist.h"
 #include "device.h"
-#include "daemon.h"
 #include "client.h"
 #include "error.h"
 #include "debug.h"
@@ -49,10 +48,9 @@ static void _select_loop(void);
 
 static int exitpipe[2];
 
-#define OPTIONS "c:fhd:VsY"
+#define OPTIONS "c:hd:VsY"
 static const struct option longopts[] = {
     {"conf",            required_argument,  0, 'c'},
-    {"foreground",      no_argument,        0, 'f'},
     {"help",            no_argument,        0, 'h'},
     {"debug",           required_argument,  0, 'd'},
     {"version",         no_argument,        0, 'V'},
@@ -65,7 +63,6 @@ int main(int argc, char **argv)
 {
     int c;
     char *config_filename = NULL;
-    bool daemonize = true;
     bool use_stdio = false;
     bool short_circuit_delay = false;
 
@@ -79,9 +76,6 @@ int main(int argc, char **argv)
         case 'c': /* --conf */
             if (!config_filename)
                 config_filename = xstrdup(optarg);
-            break;
-        case 'f': /* --foreground */
-            daemonize = false;
             break;
         case 'd': /* --debug */
             {
@@ -99,7 +93,6 @@ int main(int argc, char **argv)
             break;
         case 's': /* --stdio */
             use_stdio = true;
-            daemonize = false;
             break;
         case 'h': /* --help */
         default:
@@ -131,19 +124,6 @@ int main(int argc, char **argv)
 
     cli_start(use_stdio);
 
-    if (daemonize) {
-        char *rundir = hsprintf("%s/powerman", X_RUNSTATEDIR);
-        char *pidfile = hsprintf("%s/powermand.pid", rundir);
-        int *fds, len;
-
-        cli_listen_fds(&fds, &len);
-        daemon_init(fds, len, rundir, pidfile, DAEMON_NAME);
-        xfree(rundir);
-        xfree(pidfile);
-        err_notty();
-        dbg_notty();
-    }
-
     /* We now have a socket at listener fd running in listen mode */
     /* and a file descriptor for communicating with each device */
     _select_loop();
@@ -161,7 +141,6 @@ static void _usage(char *prog)
 {
     printf("Usage: %s [OPTIONS]\n", prog);
     printf("  -c,--conf=PATH            Specify config file path\n");
-    printf("  -f,--foreground           Don't daemonize\n");
     printf("  -s,--stdio                Talk to client on stdin/stdout\n");
     printf("  -Y,--short-circuit-delay  Change all device delays to zero\n");
     printf("  -d,--debug=MASK           Enable debug logging\n");

@@ -7,7 +7,7 @@ Environment=SHELL=/bin/sh
 PrivateTmp=yes
 User=@RUN_AS_USER@
 Group=@RUN_AS_GROUP@
-ExecStart=@X_SBINDIR@/powermand -f
+ExecStart=@X_SBINDIR@/powermand
 
 [Install]
 WantedBy=multi-user.target
