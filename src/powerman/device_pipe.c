@@ -92,9 +92,12 @@ bool pipe_connect(Device * dev)
         (void)dup2(fd[1], STDIN_FILENO);
         (void)dup2(fd[1], STDOUT_FILENO);
         (void)close(fd[1]);
+        (void)close(fd[0]);
         execv(pd->argv[0], pd->argv);
         err_exit(true, "exec %s", pd->argv[0]);
     } else {                    /* parent */
+        (void)close(fd[1]);
+
         nonblock_set(fd[0]);
 
         dev->fd = fd[0];
