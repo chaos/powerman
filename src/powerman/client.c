@@ -640,28 +640,37 @@ static void _telemetry_printf(int client_id, const char *fmt, ...)
     }
 }
 
+/* See chaos/powerman#138.
+ * We don't want these messages syslogged when we run the test suite,
+ * so send them to stderr and when powerman is run as a system service,
+ * systemd redirects stderr to the journal which also usually goes to syslog.
+ */
 static void log_state_change(Client *c)
 {
-    char *action = NULL;
-    char *hosts;
-    char *with_errors = " with errors";
     int level = conf_get_plug_log_level();
+    const char *action;
+    char *hosts;
 
-    if (c->cmd->com == PM_POWER_ON)
-        action = "powered on";
-    if (c->cmd->com == PM_POWER_OFF)
-        action = "powered off";
-    if (c->cmd->com == PM_POWER_CYCLE)
-        action = "power cycled";
-    if (c->cmd->com == PM_RESET)
-        action = "reset";
-
-    if (!action)
-        return;
-
+    switch (c->cmd->com) {
+        case PM_POWER_ON:
+            action = "powered on";
+            break;
+        case PM_POWER_OFF:
+            action = "powered off";
+            break;
+        case PM_POWER_CYCLE:
+            action = "power cycled";
+            break;
+        case PM_RESET:
+            action = "reset";
+            break;
+        default:
+            return;
+    }
     hosts = _xhostlist_ranged_string(c->cmd->hl);
-    syslog(level, "%s %s%s", action, hosts,
-        (c->cmd->error == true ? with_errors : ""));
+    // N.B. systemd journal groks <level> prefix
+    fprintf(stderr, "<%d>%s %s%s\n", level, action, hosts,
+        (c->cmd->error == true ? " with errors" : ""));
     xfree(hosts);
 }
 
@@ -998,7 +1007,7 @@ static void _handle_read(Client * c)
     }
     if (n == 0) {
         c->client_quit = true;
-        err(false, "client read returned EOF");
+        dbg(DBG_CLIENT, "client read returned EOF");
         return;
     }
     if (dropped != 0)
@@ -1093,8 +1102,6 @@ void cli_post_poll(xpollfd_t pfd)
 
             if (flags & XPOLLERR)
                 err(false, "client poll: error");
-            if (flags & XPOLLHUP)
-                err(false, "client poll: hangup");
             if (flags & XPOLLNVAL)
                 err(false, "client poll: fd not open");
             if (flags & (XPOLLERR | XPOLLNVAL))

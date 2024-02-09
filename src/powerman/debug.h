@@ -31,7 +31,6 @@
     { 0, NULL }                             \
 }
 
-void dbg_notty(void);
 void dbg_setmask(unsigned long mask);
 void dbg_wrapped(unsigned long channel, const char *fmt, ...)
     __attribute__ ((format (printf, 2, 3)));

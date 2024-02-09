@@ -15,7 +15,6 @@
 #include <stdarg.h>
 
 void err_init(char *prog);
-void err_notty(void);
 void err_exit(bool errno_valid, const char *fmt, ...)
     __attribute__ ((format (printf, 2, 3)));
 void err(bool errno_valid, const char *fmt, ...)

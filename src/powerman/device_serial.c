@@ -227,7 +227,7 @@ bool serial_connect(Device * dev)
     dev->connect_state = DEV_CONNECTED;
     dev->stat_successful_connects++;
 
-    err(false, "_serial_connect(%s): opened", dev->name);
+    dbg(DBG_DEVICE, "_serial_connect(%s): opened", dev->name);
     return true;
 
 out:
@@ -255,7 +255,7 @@ void serial_disconnect(Device * dev)
         dev->fd = NO_FD;
     }
 
-    err(false, "_serial_disconnect(%s): closed", dev->name);
+    dbg(DBG_DEVICE, "_serial_disconnect(%s): closed", dev->name);
 }
 
 /*

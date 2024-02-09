@@ -206,12 +206,10 @@ bool tcp_finish_connect(Device * dev)
             err(false, "tcp_finish_connect(%s): connection refused", dev->name);
             break;
         case DEV_CONNECTED:
-            if (!tcp->quiet)
-                err(false, "tcp_finish_connect(%s): connected", dev->name);
+            dbg(DBG_DEVICE, "tcp_finish_connect(%s): connected", dev->name);
             break;
         case DEV_CONNECTING:
-            if (!tcp->quiet)
-                err(false, "tcp_finish_connect(%s): connecting", dev->name);
+            dbg(DBG_DEVICE, "tcp_finish_connect(%s): connecting", dev->name);
             break;
     }
     return (dev->connect_state != DEV_NOT_CONNECTED);
@@ -242,12 +240,10 @@ bool tcp_connect(Device * dev)
             err(false, "tcp_connect(%s): connection refused", dev->name);
             break;
         case DEV_CONNECTED:
-            if (!tcp->quiet)
-                err(false, "tcp_connect(%s): connected", dev->name);
+            dbg(DBG_DEVICE, "tcp_connect(%s): connected", dev->name);
             break;
         case DEV_CONNECTING:
-            if (!tcp->quiet)
-                err(false, "tcp_connect(%s): connecting", dev->name);
+            dbg(DBG_DEVICE, "tcp_connect(%s): connecting", dev->name);
             break;
     }
 
@@ -259,11 +255,8 @@ bool tcp_connect(Device * dev)
  */
 void tcp_disconnect(Device * dev)
 {
-    TcpDev *tcp;
-
     assert(dev->connect_state == DEV_CONNECTING
            || dev->connect_state == DEV_CONNECTED);
-    tcp = (TcpDev *)dev->data;
 
     dbg(DBG_DEVICE, "tcp_disconnect: %s on fd %d", dev->name, dev->fd);
 
@@ -274,8 +267,7 @@ void tcp_disconnect(Device * dev)
         dev->fd = NO_FD;
     }
 
-    if (!tcp->quiet)
-        err(false, "tcp_disconnect(%s): disconnected", dev->name);
+    dbg(DBG_DEVICE, "tcp_disconnect(%s): disconnected", dev->name);
 }
 
 void tcp_preprocess(Device *dev)
