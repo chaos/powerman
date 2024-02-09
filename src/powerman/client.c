@@ -1007,7 +1007,7 @@ static void _handle_read(Client * c)
     }
     if (n == 0) {
         c->client_quit = true;
-        err(false, "client read returned EOF");
+        dbg(DBG_CLIENT, "client read returned EOF");
         return;
     }
     if (dropped != 0)
@@ -1102,8 +1102,6 @@ void cli_post_poll(xpollfd_t pfd)
 
             if (flags & XPOLLERR)
                 err(false, "client poll: error");
-            if (flags & XPOLLHUP)
-                err(false, "client poll: hangup");
             if (flags & XPOLLNVAL)
                 err(false, "client poll: fd not open");
             if (flags & (XPOLLERR | XPOLLNVAL))
