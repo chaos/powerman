@@ -107,7 +107,7 @@ bool pipe_connect(Device * dev)
 
         pd->cpid = pid;
 
-        err(false, "_pipe_connect(%s): opened", dev->name);
+        dbg(DBG_DEVICE, "_pipe_connect(%s): opened", dev->name);
     }
 
     return (dev->connect_state == DEV_CONNECTED);
@@ -138,11 +138,19 @@ void pipe_disconnect(Device * dev)
         if (waitpid(pd->cpid, &wstat, 0) < 0)
             err(true, "_pipe_disconnect(%s): wait", dev->name);
         if (WIFEXITED(wstat)) {
-            err(false, "_pipe_disconnect(%s): %s exited with status %d",
-                    dev->name, pd->argv[0], WEXITSTATUS(wstat));
+            if (WEXITSTATUS(wstat) == 0)
+                dbg(DBG_DEVICE, "_pipe_disconnect(%s): %s exited with status 0",
+                        dev->name, pd->argv[0]);
+            else
+                err(false, "_pipe_disconnect(%s): %s exited with status %d",
+                        dev->name, pd->argv[0], WEXITSTATUS(wstat));
         } else if (WIFSIGNALED(wstat)) {
-            err(false, "_pipe_disconnect(%s): %s terminated with signal %d",
-                    dev->name, pd->argv[0], WTERMSIG(wstat));
+            if (WTERMSIG(wstat) == SIGTERM)
+                dbg(DBG_DEVICE, "_pipe_disconnect(%s): %s terminated",
+                        dev->name, pd->argv[0]);
+            else
+                err(false, "_pipe_disconnect(%s): %s terminated with signal %d",
+                        dev->name, pd->argv[0], WTERMSIG(wstat));
         } else {
             err(false, "_pipe_disconnect(%s): %s terminated",
                     dev->name, pd->argv[0]);
