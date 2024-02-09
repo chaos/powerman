@@ -45,6 +45,9 @@ static char *offpostdata = NULL;
 static char *cyclepath = NULL;
 static char *cyclepostdata = NULL;
 
+static int test_mode = 0;
+static zhashx_t *test_power_status = NULL;
+
 /* in seconds */
 #define MESSAGE_TIMEOUT            10
 #define CMD_TIMEOUT_DEFAULT        60
@@ -110,7 +113,7 @@ struct powermsg {
             err_exit(false, "curl_easy_setopt: %s", curl_easy_strerror(_ec));  \
     } while(0)
 
-#define OPTIONS "h:H:S:O:F:C:P:G:D:v"
+#define OPTIONS "h:H:S:O:F:C:P:G:D:Tv"
 static struct option longopts[] = {
         {"hostname", required_argument, 0, 'h' },
         {"header", required_argument, 0, 'H' },
@@ -121,6 +124,7 @@ static struct option longopts[] = {
         {"onpostdata", required_argument, 0, 'P' },
         {"offpostdata", required_argument, 0, 'G' },
         {"cyclepostdata", required_argument, 0, 'D' },
+        {"test-mode", no_argument, 0, 'T' },
         {"verbose", no_argument, 0, 'v' },
         {0,0,0,0},
 };
@@ -196,41 +200,43 @@ static struct powermsg *powermsg_create(CURLM *mh,
     if (postdata)
         pm->postdata = xstrdup(postdata);
 
-    if ((pm->eh = curl_easy_init()) == NULL)
-        err_exit(false, "curl_easy_init failed");
+    if (!test_mode) {
+        if ((pm->eh = curl_easy_init()) == NULL)
+            err_exit(false, "curl_easy_init failed");
 
-    Curl_easy_setopt((pm->eh, CURLOPT_TIMEOUT, MESSAGE_TIMEOUT));
-    Curl_easy_setopt((pm->eh, CURLOPT_FAILONERROR, 1));
+        Curl_easy_setopt((pm->eh, CURLOPT_TIMEOUT, MESSAGE_TIMEOUT));
+        Curl_easy_setopt((pm->eh, CURLOPT_FAILONERROR, 1));
 
-    /* for time being */
-    Curl_easy_setopt((pm->eh, CURLOPT_SSL_VERIFYPEER, 0L));
-    Curl_easy_setopt((pm->eh, CURLOPT_SSL_VERIFYHOST, 0L));
+        /* for time being */
+        Curl_easy_setopt((pm->eh, CURLOPT_SSL_VERIFYPEER, 0L));
+        Curl_easy_setopt((pm->eh, CURLOPT_SSL_VERIFYHOST, 0L));
 
-    if (verbose)
-        Curl_easy_setopt((pm->eh, CURLOPT_VERBOSE, 1L));
+        if (verbose)
+            Curl_easy_setopt((pm->eh, CURLOPT_VERBOSE, 1L));
 
-    if (header) {
-        if (!header_list) {
-            if (!(header_list = curl_slist_append(header_list, header)))
-                err_exit(false, "curl_slist_append");
+        if (header) {
+            if (!header_list) {
+                if (!(header_list = curl_slist_append(header_list, header)))
+                    err_exit(false, "curl_slist_append");
+            }
+            Curl_easy_setopt((pm->eh, CURLOPT_HTTPHEADER, header_list));
         }
-        Curl_easy_setopt((pm->eh, CURLOPT_HTTPHEADER, header_list));
+
+        if (userpwd) {
+            Curl_easy_setopt((pm->eh, CURLOPT_USERPWD, userpwd));
+            Curl_easy_setopt((pm->eh, CURLOPT_HTTPAUTH, CURLAUTH_BASIC));
+        }
+
+        Curl_easy_setopt((pm->eh, CURLOPT_WRITEFUNCTION, output_cb));
+        Curl_easy_setopt((pm->eh, CURLOPT_WRITEDATA, (void *)pm));
+
+        Curl_easy_setopt((pm->eh, CURLOPT_PRIVATE, pm));
+
+        if ((mc = curl_multi_add_handle(pm->mh, pm->eh)) != CURLM_OK)
+            err_exit(false, "curl_multi_add_handle: %s", curl_multi_strerror(mc));
+
+        Curl_easy_setopt((pm->eh, CURLOPT_URL, pm->url));
     }
-
-    if (userpwd) {
-        Curl_easy_setopt((pm->eh, CURLOPT_USERPWD, userpwd));
-        Curl_easy_setopt((pm->eh, CURLOPT_HTTPAUTH, CURLAUTH_BASIC));
-    }
-
-    Curl_easy_setopt((pm->eh, CURLOPT_WRITEFUNCTION, output_cb));
-    Curl_easy_setopt((pm->eh, CURLOPT_WRITEDATA, (void *)pm));
-
-    Curl_easy_setopt((pm->eh, CURLOPT_PRIVATE, pm));
-
-    if ((mc = curl_multi_add_handle(pm->mh, pm->eh)) != CURLM_OK)
-        err_exit(false, "curl_multi_add_handle: %s", curl_multi_strerror(mc));
-
-    Curl_easy_setopt((pm->eh, CURLOPT_URL, pm->url));
 
     if (start) {
         pm->start.tv_sec = start->tv_sec;
@@ -256,7 +262,6 @@ static struct powermsg *powermsg_create(CURLM *mh,
 static void powermsg_destroy(struct powermsg *pm)
 {
     if (pm) {
-        CURLMcode mc;
         if (pm->cmd)
             xfree(pm->cmd);
         if (pm->url)
@@ -264,12 +269,15 @@ static void powermsg_destroy(struct powermsg *pm)
         if (pm->postdata)
             xfree(pm->postdata);
         free(pm->output);
-        Curl_easy_setopt((pm->eh, CURLOPT_URL, ""));
-        if ((mc = curl_multi_remove_handle(pm->mh, pm->eh)) != CURLM_OK)
-            err_exit(false,
-                     "curl_multi_remove_handle: %s",
-                     curl_multi_strerror(mc));
-        curl_easy_cleanup(pm->eh);
+        if (!test_mode) {
+            CURLMcode mc;
+            Curl_easy_setopt((pm->eh, CURLOPT_URL, ""));
+            if ((mc = curl_multi_remove_handle(pm->mh, pm->eh)) != CURLM_OK)
+                err_exit(false,
+                         "curl_multi_remove_handle: %s",
+                         curl_multi_strerror(mc));
+            curl_easy_cleanup(pm->eh);
+        }
         free(pm);
     }
 }
@@ -314,8 +322,8 @@ static struct powermsg *stat_cmd_host(CURLM * mh, char *hostname)
                                           NULL,
                                           0,
                                           STATE_SEND_POWERCMD);
-
-    Curl_easy_setopt((pm->eh, CURLOPT_HTTPGET, 1));
+    if (!test_mode)
+        Curl_easy_setopt((pm->eh, CURLOPT_HTTPGET, 1));
     return pm;
 }
 
@@ -352,7 +360,7 @@ static void stat_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
     hostlist_destroy(lhosts);
 }
 
-static void parse_onoff (struct powermsg *pm, const char **strp)
+static void parse_onoff_response(struct powermsg *pm, const char **strp)
 {
     if (pm->output) {
         json_error_t error;
@@ -388,6 +396,20 @@ static void parse_onoff (struct powermsg *pm, const char **strp)
         (*strp) = "no output error";
 }
 
+static void parse_onoff(struct powermsg *pm, const char **strp)
+{
+    if (!test_mode) {
+        parse_onoff_response(pm, strp);
+        return;
+    }
+    else {
+        char *tmp = zhashx_lookup(test_power_status, pm->hostname);
+        if (!tmp)
+            err_exit(false, "zhashx_lookup on test status failed");
+        (*strp) = tmp;
+    }
+}
+
 static void stat_process (struct powermsg *pm)
 {
     const char *str;
@@ -415,9 +437,11 @@ struct powermsg *power_cmd_host(CURLM * mh,
                                           0,
                                           STATE_SEND_POWERCMD);
 
-    Curl_easy_setopt((pm->eh, CURLOPT_POST, 1));
-    Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDS, pm->postdata));
-    Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDSIZE, strlen(pm->postdata)));
+    if (!test_mode) {
+        Curl_easy_setopt((pm->eh, CURLOPT_POST, 1));
+        Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDS, pm->postdata));
+        Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDSIZE, strlen(pm->postdata)));
+    }
     return pm;
 }
 
@@ -505,7 +529,8 @@ static void send_status_poll(zlistx_t *delayedcmds, struct powermsg *pm)
                              &pm->start,
                              STATUS_POLLING_INTERVAL,
                              STATE_WAIT_UNTIL_ON_OFF);
-    Curl_easy_setopt((nextpm->eh, CURLOPT_HTTPGET, 1));
+    if (!test_mode)
+        Curl_easy_setopt((nextpm->eh, CURLOPT_HTTPGET, 1));
     if (!(nextpm->handle = zlistx_add_end(delayedcmds, nextpm)))
         err_exit(true, "zlistx_add_end");
 }
@@ -517,6 +542,15 @@ static void on_off_process(zlistx_t *delayedcmds, struct powermsg *pm)
          * complete
          */
         send_status_poll(delayedcmds, pm);
+
+        /* in test mode, we simulate that the operation has already
+         * finished */
+        if (test_mode) {
+            if (strcmp(pm->cmd, CMD_ON) == 0)
+                zhashx_update(test_power_status, pm->hostname, STATUS_ON);
+            else /* cmd == CMD_OFF */
+                zhashx_update(test_power_status, pm->hostname, STATUS_OFF);
+        }
     }
     else if (pm->state == STATE_WAIT_UNTIL_ON_OFF) {
         const char *str;
@@ -553,13 +587,29 @@ static void off_process(zlistx_t *delayedcmds, struct powermsg *pm)
 
 static void cycle_process(struct powermsg *pm)
 {
+    if (test_mode)
+        zhashx_update(test_power_status, pm->hostname, STATUS_ON);
     printf("%s: %s\n", pm->hostname, "ok");
+}
+
+static void power_cmd_process(zlistx_t *delayedcmds, struct powermsg *pm)
+{
+    if (strcmp(pm->cmd, CMD_STAT) == 0)
+        stat_process(pm);
+    else if (strcmp(pm->cmd, CMD_ON) == 0)
+        on_process(delayedcmds, pm);
+    else if (strcmp(pm->cmd, CMD_OFF) == 0)
+        off_process(delayedcmds, pm);
+    else if (strcmp(pm->cmd, CMD_CYCLE) == 0)
+        cycle_process(pm);
 }
 
 static void power_cleanup(struct powermsg *pm)
 {
-    Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDS, ""));
-    Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDSIZE, 0));
+    if (!test_mode) {
+        Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDS, ""));
+        Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDSIZE, 0));
+    }
     powermsg_destroy(pm);
 }
 
@@ -593,13 +643,15 @@ static void setheader(char **av)
 {
     if (header) {
         xfree(header);
-        curl_slist_free_all(header_list);
+        if (!test_mode)
+            curl_slist_free_all(header_list);
         header = NULL;
         header_list = NULL;
     }
     if (av[0]) {
         header = xstrdup(av[0]);
-        header_list = curl_slist_append(header_list, header);
+        if (!test_mode)
+            header_list = curl_slist_append(header_list, header);
     }
 }
 
@@ -760,36 +812,56 @@ static void shell(CURLM *mh)
                 }
             }
 
-            if ((mc = curl_multi_timeout(mh, &curl_timeout_ms)) != CURLM_OK)
-                err_exit(false, "curl_multi_timeout: %s", curl_multi_strerror(mc));
-            /* Per documentation, wait incremental time then proceed if timeout < 0 */
-            if (curl_timeout_ms < 0)
-                curl_timeout_ms = INCREMENTAL_WAIT;
-            curl_timeout.tv_sec = curl_timeout_ms / MS_IN_SEC;
-            curl_timeout.tv_usec = (curl_timeout_ms % MS_IN_SEC) * MS_IN_SEC;
+            if (!test_mode) {
+                if ((mc = curl_multi_timeout(mh, &curl_timeout_ms)) != CURLM_OK)
+                    err_exit(false,
+                             "curl_multi_timeout: %s",
+                             curl_multi_strerror(mc));
+                /* Per documentation, wait incremental time then
+                 * proceed if timeout < 0 */
+                if (curl_timeout_ms < 0)
+                    curl_timeout_ms = INCREMENTAL_WAIT;
+                curl_timeout.tv_sec = curl_timeout_ms / MS_IN_SEC;
+                curl_timeout.tv_usec = (curl_timeout_ms % MS_IN_SEC) * MS_IN_SEC;
 
-            /* if timeout previously set, must compare */
-            if (timeoutptr) {
-                /* only compare if curl_timeout_ms > 0, otherwise we'd spin */
-                if (curl_timeout_ms > 0) {
-                    if (timercmp(&curl_timeout, timeoutptr, <)) {
-                        timeoutptr->tv_sec = curl_timeout.tv_sec;
-                        timeoutptr->tv_usec = curl_timeout.tv_usec;
+                /* if timeout previously set, must compare */
+                if (timeoutptr) {
+                    /* only compare if curl_timeout_ms > 0, otherwise
+                     * we'd spin
+                     */
+                    if (curl_timeout_ms > 0) {
+                        if (timercmp(&curl_timeout, timeoutptr, <)) {
+                            timeoutptr->tv_sec = curl_timeout.tv_sec;
+                            timeoutptr->tv_usec = curl_timeout.tv_usec;
+                        }
                     }
                 }
+                else {
+                    timeout.tv_sec = curl_timeout.tv_sec;
+                    timeout.tv_usec = curl_timeout.tv_usec;
+                    timeoutptr = &timeout;
+                }
+
+                if ((mc = curl_multi_fdset(mh,
+                                           &fdread,
+                                           &fdwrite,
+                                           &fderror,
+                                           &maxfd)) != CURLM_OK)
+                    err_exit(false, "curl_multi_fdset: %s", curl_multi_strerror(mc));
             }
             else {
-                timeout.tv_sec = curl_timeout.tv_sec;
-                timeout.tv_usec = curl_timeout.tv_usec;
-                timeoutptr = &timeout;
+                /* in test-mode assume active cmds complete
+                 * "immediately" by setting timeout to 0
+                 *
+                 * otherwise wait delayedcmds timeout or wait forever
+                 * (timeoutptr initialized to NULL)
+                 */
+                if (zlistx_size(activecmds) > 0) {
+                    timeout.tv_sec = 0;
+                    timeout.tv_usec = 0;
+                    timeoutptr = &timeout;
+                }
             }
-
-            if ((mc = curl_multi_fdset(mh,
-                                       &fdread,
-                                       &fdwrite,
-                                       &fderror,
-                                       &maxfd)) != CURLM_OK)
-                err_exit(false, "curl_multi_fdset: %s", curl_multi_strerror(mc));
         }
 
         /* XXX: use curl_multi_poll/wait on newer versions of curl */
@@ -810,7 +882,10 @@ static void shell(CURLM *mh)
                 break;
         }
 
-        if (zlistx_size(activecmds) > 0) {
+        if (zlistx_size(activecmds) == 0)
+            continue;
+
+        if (!test_mode) {
             struct CURLMsg *cmsg;
             int msgq = 0;
             int stillrunning;
@@ -869,21 +944,23 @@ static void shell(CURLM *mh)
                             printf("%s: %s\n", pm->hostname,
                                    curl_easy_strerror(cmsg->data.result));
                     }
-                    else {
-                        if (strcmp(pm->cmd, CMD_STAT) == 0)
-                            stat_process(pm);
-                        else if (strcmp(pm->cmd, CMD_ON) == 0)
-                            on_process(delayedcmds, pm);
-                        else if (strcmp(pm->cmd, CMD_OFF) == 0)
-                            off_process(delayedcmds, pm);
-                        else if (strcmp(pm->cmd, CMD_CYCLE) == 0)
-                            cycle_process(pm);
-                    }
+                    else
+                        power_cmd_process(delayedcmds, pm);
                     fflush(stdout);
                     if (zlistx_delete(activecmds, pm->handle) < 0)
                         err_exit(false, "zlistx_delete failed to delete");
                 }
             } while (cmsg);
+        }
+        else {
+            /* in test mode we assume all activecmds complete immediately */
+            struct powermsg *pm = zlistx_first(activecmds);
+            while (pm) {
+                power_cmd_process(delayedcmds, pm);
+                fflush(stdout);
+                zlistx_detach_cur(activecmds);
+                pm = zlistx_next(activecmds);
+            }
         }
     }
     zlistx_destroy(&activecmds);
@@ -914,11 +991,14 @@ static void init_redfishpower(char *argv[])
 
     if (!(hosts = hostlist_create(NULL)))
         err_exit(true, "hostlist_create error");
+
+    if (!(test_power_status = zhashx_new ()))
+        err_exit(false, "zhashx_new error");
 }
 
 int main(int argc, char *argv[])
 {
-    CURLM *mh;
+    CURLM *mh = NULL;
     CURLcode ec;
     int c;
 
@@ -954,6 +1034,9 @@ int main(int argc, char *argv[])
             case 'D': /* --cyclepostdata */
                 cyclepostdata = xstrdup(optarg);
                 break;
+            case 'T': /* --test-mode */
+                test_mode = 1;
+                break;
             case 'v': /* --verbose */
                 verbose = 1;
                 break;
@@ -968,15 +1051,31 @@ int main(int argc, char *argv[])
     if (hostlist_count(hosts) == 0)
         usage();
 
-    if ((ec = curl_global_init(CURL_GLOBAL_ALL)) != CURLE_OK)
-        err_exit(false, "curl_global_init: %s", curl_easy_strerror(ec));
+    if (!test_mode) {
+        if ((ec = curl_global_init(CURL_GLOBAL_ALL)) != CURLE_OK)
+            err_exit(false, "curl_global_init: %s", curl_easy_strerror(ec));
 
-    if (!(mh = curl_multi_init()))
-        err_exit(false, "curl_multi_init failed");
+        if (!(mh = curl_multi_init()))
+            err_exit(false, "curl_multi_init failed");
+    }
+    else {
+        /* All hosts initially are off for testing */
+        hostlist_iterator_t itr = NULL;
+        char *hostname;
+        if (!(itr = hostlist_iterator_create(hosts)))
+            err_exit(true, "hostlist_iterator_create");
+        while ((hostname = hostlist_next(itr))) {
+            if (zhashx_insert(test_power_status, hostname, STATUS_OFF) < 0)
+                err_exit(false, "zhash_insert failure");
+            free(hostname);
+        }
+        hostlist_iterator_destroy(itr);
+    }
 
     shell(mh);
 
-    curl_multi_cleanup(mh);
+    if (!test_mode)
+        curl_multi_cleanup(mh);
 
     xfree(userpwd);
     hostlist_destroy(hosts);
@@ -987,6 +1086,7 @@ int main(int argc, char *argv[])
     xfree(offpostdata);
     xfree(cyclepath);
     xfree(cyclepostdata);
+    zhashx_destroy(&test_power_status);
     exit(0);
 }
 
