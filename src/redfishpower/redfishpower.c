@@ -182,6 +182,15 @@ static struct powermsg *powermsg_create(CURLM *mh,
     pm->mh = mh;
     pm->state = state;
 
+    pm->cmd = xstrdup(cmd);
+    pm->hostname = xstrdup(hostname);
+
+    pm->url = xmalloc(strlen("https://") + strlen(hostname) + strlen(path) + 2);
+    sprintf(pm->url, "https://%s/%s", hostname, path);
+
+    if (postdata)
+        pm->postdata = xstrdup(postdata);
+
     if ((pm->eh = curl_easy_init()) == NULL)
         err_exit(false, "curl_easy_init failed");
 
@@ -216,15 +225,6 @@ static struct powermsg *powermsg_create(CURLM *mh,
     if ((mc = curl_multi_add_handle(pm->mh, pm->eh)) != CURLM_OK)
         err_exit(false, "curl_multi_add_handle: %s", curl_multi_strerror(mc));
 
-    pm->cmd = xstrdup(cmd);
-    pm->hostname = xstrdup(hostname);
-
-    pm->url = xmalloc(strlen("https://") + strlen(hostname) + strlen(path) + 2);
-    sprintf(pm->url, "https://%s/%s", hostname, path);
-
-    if (postdata)
-        pm->postdata = xstrdup(postdata);
-
     Curl_easy_setopt((pm->eh, CURLOPT_URL, pm->url));
 
     if (start) {
@@ -252,7 +252,6 @@ static void powermsg_destroy(struct powermsg *pm)
 {
     if (pm) {
         CURLMcode mc;
-        Curl_easy_setopt((pm->eh, CURLOPT_URL, ""));
         if (pm->cmd)
             xfree(pm->cmd);
         if (pm->url)
@@ -260,6 +259,7 @@ static void powermsg_destroy(struct powermsg *pm)
         if (pm->postdata)
             xfree(pm->postdata);
         free(pm->output);
+        Curl_easy_setopt((pm->eh, CURLOPT_URL, ""));
         if ((mc = curl_multi_remove_handle(pm->mh, pm->eh)) != CURLM_OK)
             err_exit(false,
                      "curl_multi_remove_handle: %s",
