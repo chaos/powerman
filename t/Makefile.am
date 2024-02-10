@@ -80,7 +80,6 @@ check_PROGRAMS = \
 	simulators/dli \
 	simulators/cyclades \
 	simulators/ipmipower \
-	simulators/redfishpower \
 	simulators/ilom \
 	simulators/lom \
 	simulators/swpdu \
@@ -114,9 +113,6 @@ simulators_cyclades_LDADD = $(common_ldadd)
 
 simulators_ipmipower_SOURCES = simulators/ipmipower.c
 simulators_ipmipower_LDADD = $(common_ldadd)
-
-simulators_redfishpower_SOURCES = simulators/redfishpower.c
-simulators_redfishpower_LDADD = $(common_ldadd)
 
 simulators_openbmc_httppower_SOURCES = simulators/openbmc-httppower.c
 simulators_openbmc_httppower_LDADD = $(common_ldadd)
