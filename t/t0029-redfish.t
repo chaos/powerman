@@ -6,7 +6,7 @@ test_description='Check redfishpower devices'
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
 powerman=$SHARNESS_BUILD_DIRECTORY/src/powerman/powerman
-simdir=$SHARNESS_BUILD_DIRECTORY/t/simulators/
+redfishdir=$SHARNESS_BUILD_DIRECTORY/src/redfishpower
 devicesdir=$SHARNESS_TEST_SRCDIR/../etc/devices
 
 # Use port = 11000 + test number
@@ -24,7 +24,7 @@ test_expect_success 'create powerman.conf for 16 cray redfish nodes' '
 	cat >powerman.conf <<-EOT
 	listen "$testaddr"
 	include "$devicesdir/redfishpower-cray-r272z30.dev"
-	device "d0" "redfishpower-cray-r272z30" "$simdir/redfishpower -h t[0-15] |&"
+	device "d0" "redfishpower-cray-r272z30" "$redfishdir/redfishpower -h t[0-15] --test-mode |&"
 	node "t[0-15]" "d0"
 	EOT
 '
