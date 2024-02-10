@@ -61,6 +61,11 @@ static char *cyclepostdata = NULL;
 
 #define MS_IN_SEC                1000
 
+#define CMD_STAT       "stat"
+#define CMD_ON         "on"
+#define CMD_OFF        "off"
+#define CMD_CYCLE      "cycle"
+
 #define STATUS_ON      "on"
 #define STATUS_OFF     "off"
 #define STATUS_UNKNOWN "unknown"
@@ -303,7 +308,7 @@ static struct powermsg *stat_cmd_host(CURLM * mh, char *hostname)
 {
     struct powermsg *pm = powermsg_create(mh,
                                           hostname,
-                                          "stat",
+                                          CMD_STAT,
                                           statpath,
                                           NULL,
                                           NULL,
@@ -466,7 +471,7 @@ static void on_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
         return;
     }
 
-    power_cmd(activecmds, mh, av, "on", onpath, onpostdata);
+    power_cmd(activecmds, mh, av, CMD_ON, onpath, onpostdata);
 }
 
 static void off_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
@@ -476,12 +481,12 @@ static void off_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
         return;
     }
 
-    power_cmd(activecmds, mh, av, "off", offpath, offpostdata);
+    power_cmd(activecmds, mh, av, CMD_OFF, offpath, offpostdata);
 }
 
 static void cycle_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
 {
-    power_cmd(activecmds, mh, av, "cycle", cyclepath, cyclepostdata);
+    power_cmd(activecmds, mh, av, CMD_CYCLE, cyclepath, cyclepostdata);
 }
 
 static void send_status_poll(zlistx_t *delayedcmds, struct powermsg *pm)
@@ -661,13 +666,13 @@ static void process_cmd(zlistx_t *activecmds, CURLM *mh, char **av, int *exitfla
             setpowerpath(av + 1, &cyclepath, &cyclepostdata);
         else if (strcmp(av[0], "settimeout") == 0)
             settimeout(av + 1);
-        else if (strcmp(av[0], "stat") == 0)
+        else if (strcmp(av[0], CMD_STAT) == 0)
             stat_cmd(activecmds, mh, av + 1);
-        else if (strcmp(av[0], "on") == 0)
+        else if (strcmp(av[0], CMD_ON) == 0)
             on_cmd(activecmds, mh, av + 1);
-        else if (strcmp(av[0], "off") == 0)
+        else if (strcmp(av[0], CMD_OFF) == 0)
             off_cmd(activecmds, mh, av + 1);
-        else if (strcmp(av[0], "cycle") == 0)
+        else if (strcmp(av[0], CMD_CYCLE) == 0)
             cycle_cmd(activecmds, mh, av + 1);
         else
             printf("type \"help\" for a list of commands\n");
@@ -678,13 +683,13 @@ static void cleanup_powermsg(void **x)
 {
     struct powermsg *pm = *x;
     if (pm) {
-        if (strcmp(pm->cmd, "stat") == 0)
+        if (strcmp(pm->cmd, CMD_STAT) == 0)
             stat_cleanup(pm);
-        else if (strcmp(pm->cmd, "on") == 0)
+        else if (strcmp(pm->cmd, CMD_ON) == 0)
             on_cleanup(pm);
-        else if (strcmp(pm->cmd, "off") == 0)
+        else if (strcmp(pm->cmd, CMD_OFF) == 0)
             off_cleanup(pm);
-        else if (strcmp(pm->cmd, "cycle") == 0)
+        else if (strcmp(pm->cmd, CMD_CYCLE) == 0)
             cycle_cleanup(pm);
     }
 }
@@ -865,13 +870,13 @@ static void shell(CURLM *mh)
                                    curl_easy_strerror(cmsg->data.result));
                     }
                     else {
-                        if (strcmp(pm->cmd, "stat") == 0)
+                        if (strcmp(pm->cmd, CMD_STAT) == 0)
                             stat_process(pm);
-                        else if (strcmp(pm->cmd, "on") == 0)
+                        else if (strcmp(pm->cmd, CMD_ON) == 0)
                             on_process(delayedcmds, pm);
-                        else if (strcmp(pm->cmd, "off") == 0)
+                        else if (strcmp(pm->cmd, CMD_OFF) == 0)
                             off_process(delayedcmds, pm);
-                        else if (strcmp(pm->cmd, "cycle") == 0)
+                        else if (strcmp(pm->cmd, CMD_CYCLE) == 0)
                             cycle_process(pm);
                     }
                     fflush(stdout);
