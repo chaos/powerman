@@ -47,7 +47,7 @@ jobs:
     - name: make check
       run: make check
     - name: make distcheck
-      run: make distcheck
+      run: DISTCHECK_CONFIGURE_FLAGS=--with-redfishpower make distcheck
 
   spelling:
     runs-on: ubuntu-20.04
