@@ -43,6 +43,8 @@ static char *header = NULL;
 static struct curl_slist *header_list = NULL;
 static int verbose = 0;
 static char *userpwd = NULL;
+
+/* default paths if host specific ones not set */
 static char *statpath = NULL;
 static char *onpath = NULL;
 static char *onpostdata = NULL;
@@ -155,10 +157,46 @@ void help(void)
     printf("  setonpath path [postdata]\n");
     printf("  setoffpath path [postdata]\n");
     printf("  setplugs plugnames hostindices\n");
+    printf("  setpath plugnames cmd path [postdata]\n");
     printf("  settimeout seconds\n");
     printf("  stat [plugs]\n");
     printf("  on [plugs]\n");
     printf("  off [plugs]\n");
+}
+
+static void get_path(const char *cmd,
+                     const char *plugname,
+                     char **path,
+                     char **postdata)
+{
+    struct plug_data *pd = plugs_get_data(plugs, plugname);
+
+    if (strcmp(cmd, CMD_STAT) == 0) {
+        if (pd && pd->stat)
+            (*path) = pd->stat;
+        else
+            (*path) = statpath;
+    }
+    else if (strcmp(cmd, CMD_ON) == 0) {
+        if (pd && pd->on) {
+            (*path) = pd->on;
+            (*postdata) = pd->onpostdata;
+        }
+        else {
+            (*path) = onpath;
+            (*postdata) = onpostdata;
+        }
+    }
+    else if (strcmp(cmd, CMD_OFF) == 0) {
+        if (pd && pd->off) {
+            (*path) = pd->off;
+            (*postdata) = pd->offpostdata;
+        }
+        else {
+            (*path) = offpath;
+            (*postdata) = offpostdata;
+        }
+    }
 }
 
 static size_t output_cb(void *contents, size_t size, size_t nmemb, void *userp)
@@ -316,9 +354,16 @@ static struct powermsg *stat_cmd_plug(CURLM * mh, char *plugname)
 {
     struct powermsg *pm;
     struct plug_data *pd;
+    char *path = NULL;
 
     if (!(pd = plugs_get_data(plugs, plugname))) {
         printf("plug not mapped: %s\n", plugname);
+        return NULL;
+    }
+
+    get_path(CMD_STAT, plugname, &path, NULL);
+    if (!path) {
+        printf("%s: %s path not set\n", plugname, CMD_STAT);
         return NULL;
     }
 
@@ -326,11 +371,14 @@ static struct powermsg *stat_cmd_plug(CURLM * mh, char *plugname)
                          pd->hostname,
                          plugname,
                          CMD_STAT,
-                         statpath,
+                         path,
                          NULL,
                          NULL,
                          0,
                          STATE_SEND_POWERCMD);
+    if (verbose > 1)
+        printf("DEBUG: %s hostname=%s plugname=%s path=%s\n",
+               CMD_STAT, pd->hostname, plugname, path);
     return pm;
 }
 
@@ -340,11 +388,6 @@ static void stat_cmd(CURLM *mh, char **av)
     char *plugname;
     hostlist_t *plugsptr;
     hostlist_t lplugs = NULL;
-
-    if (!statpath) {
-        printf("Statpath not setup\n");
-        return;
-    }
 
     if (av[0]) {
         if (!(lplugs = hostlist_create(av[0]))) {
@@ -474,15 +517,21 @@ static void stat_cleanup(struct powermsg *pm)
 
 struct powermsg *power_cmd_plug(CURLM * mh,
                                 char *plugname,
-                                const char *cmd,
-                                const char *path,
-                                const char *postdata)
+                                const char *cmd)
 {
     struct powermsg *pm;
     struct plug_data *pd;
+    char *path = NULL;
+    char *postdata = NULL;
 
     if (!(pd = plugs_get_data(plugs, plugname))) {
         printf("plug not mapped: %s\n", plugname);
+        return NULL;
+    }
+
+    get_path(cmd, plugname, &path, &postdata);
+    if (!path) {
+        printf("%s: %s path not set\n", plugname, cmd);
         return NULL;
     }
 
@@ -495,29 +544,20 @@ struct powermsg *power_cmd_plug(CURLM * mh,
                          NULL,
                          0,
                          STATE_SEND_POWERCMD);
+    if (verbose > 1)
+        printf("DEBUG: %s hostname=%s plugname=%s path=%s\n",
+               cmd, pd->hostname, plugname, path);
     return pm;
 }
 
 static void power_cmd(CURLM *mh,
                       char **av,
-                      const char *cmd,
-                      const char *path,
-                      const char *postdata)
+                      const char *cmd)
 {
     hostlist_iterator_t itr;
     char *plugname;
     hostlist_t *plugsptr;
     hostlist_t lplugs = NULL;
-
-    if (!path) {
-        printf("%s path not setup\n", cmd);
-        return;
-    }
-
-    if (!postdata) {
-        printf("%s postdata not setup\n", cmd);
-        return;
-    }
 
     if (av[0]) {
         if (!(lplugs = hostlist_create(av[0]))) {
@@ -539,7 +579,7 @@ static void power_cmd(CURLM *mh,
             free(plugname);
             continue;
         }
-        if (!(pm = power_cmd_plug(mh, plugname, cmd, path, postdata))) {
+        if (!(pm = power_cmd_plug(mh, plugname, cmd))) {
             free(plugname);
             continue;
         }
@@ -554,27 +594,24 @@ static void power_cmd(CURLM *mh,
 
 static void on_cmd(CURLM *mh, char **av)
 {
-    if (!statpath) {
-        printf("Statpath not setup\n");
-        return;
-    }
-
-    power_cmd(mh, av, CMD_ON, onpath, onpostdata);
+    power_cmd(mh, av, CMD_ON);
 }
 
 static void off_cmd(CURLM *mh, char **av)
 {
-    if (!statpath) {
-        printf("Statpath not setup\n");
-        return;
-    }
-
-    power_cmd(mh, av, CMD_OFF, offpath, offpostdata);
+    power_cmd(mh, av, CMD_OFF);
 }
 
 static void send_status_poll(struct powermsg *pm)
 {
     struct powermsg *nextpm;
+    char *path = NULL;
+
+    get_path(CMD_STAT, pm->plugname, &path, NULL);
+    if (!path) {
+        printf("%s: %s path not set\n", pm->plugname, CMD_STAT);
+        return;
+    }
 
     /* issue a follow on stat to wait until the on/off is complete.
      * note that we set the initial start time of this new command to
@@ -587,7 +624,7 @@ static void send_status_poll(struct powermsg *pm)
                              pm->hostname,
                              pm->plugname,
                              pm->cmd,
-                             statpath,
+                             path,
                              NULL,
                              &pm->start,
                              status_polling_interval,
@@ -861,6 +898,44 @@ cleanup:
     hostlist_destroy(hostindices);
 }
 
+static void setpath(char **av)
+{
+    hostlist_t lplugs = NULL;
+    hostlist_iterator_t itr = NULL;
+    char *plugname;
+
+    if (!av[0] || !av[1] || !av[2]) {
+        printf("Usage: setpath <plugnames> <cmd> <path> [<postdata>]\n");
+        return;
+    }
+
+    if (strcmp(av[1], CMD_STAT) != 0
+        && strcmp(av[1], CMD_ON) != 0
+        && strcmp(av[1], CMD_OFF) != 0) {
+        printf("setpath: invalid command specified\n");
+        return;
+    }
+
+    if (!(lplugs = hostlist_create(av[0]))) {
+        printf("setpath: illegal hosts input\n");
+        return;
+    }
+    itr = hostlist_iterator_create(lplugs);
+    while ((plugname = hostlist_next(itr))) {
+        if (!plugs_name_valid(plugs, plugname)) {
+            printf("setpath: unknown plug specified: %s\n", plugname);
+            free(plugname);
+            goto cleanup;
+        }
+        if (plugs_update_path(plugs, plugname, av[1], av[2], av[3]) < 0)
+            err_exit(false, "setpath: plugs_update_path failed");
+        free(plugname);
+    }
+cleanup:
+    hostlist_iterator_destroy(itr);
+    hostlist_destroy(lplugs);
+}
+
 static void settimeout(char **av)
 {
     if (av[0]) {
@@ -896,6 +971,8 @@ static void process_cmd(CURLM *mh, char **av, int *exitflag)
             setpowerpath(av + 1, &offpath, &offpostdata);
         else if (strcmp(av[0], "setplugs") == 0)
             setplugs(av + 1);
+        else if (strcmp(av[0], "setpath") == 0)
+            setpath(av + 1);
         else if (strcmp(av[0], "settimeout") == 0)
             settimeout(av + 1);
         else if (strcmp(av[0], CMD_STAT) == 0)
