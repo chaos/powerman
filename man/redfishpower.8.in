@@ -27,16 +27,16 @@ Set extra HEADER to use.  Typically is Content-Type:application/json.
 Set Redfish path for obtaining power status.  Typically is redfish/v1/Systems/1.
 .TP
 .I "-O, --onpath string"
-Set Redfish path for performing power on.  Typically is redfish/v1/Systems/1/Actions/ComputerSystem.Reset.
+Set default Redfish path for performing power on.  Typically is redfish/v1/Systems/1/Actions/ComputerSystem.Reset.
 .TP
 .I "-F, --offpath string"
-Set Redfish path for performing power off.  Typically is redfish/v1/Systems/1/Actions/ComputerSystem.Reset.
+Set default Redfish path for performing power off.  Typically is redfish/v1/Systems/1/Actions/ComputerSystem.Reset.
 .TP
 .I "-P, --onpostdata string"
-Set Redfish postdata for performing power on.  Typically is {"ResetType":"On"}
+Set default Redfish postdata for performing power on.  Typically is {"ResetType":"On"}
 .TP
 .I "-G, --offpostdata string"
-Set Redfish postdata for performing power off.  Typically is {"ResetType":"ForceOff"}
+Set default Redfish postdata for performing power off.  Typically is {"ResetType":"ForceOff"}
 .TP
 .I "-v, --verbose"
 Increase output verbosity.  Can be specified multiple times.
@@ -52,18 +52,21 @@ over the network in plain text.
 Set extra HEADER to use.  Do not specify data to clear.
 .TP
 .I "setstatpath <path>"
-Set path to obtain power status.
+Set default path to obtain power status.
 .TP
 .I "setonpath <path> [postdata]"
-Set path and optional post data to turn on plug.
+Set default path and optional post data to turn on plug.
 .TP
 .I "setoffpath <path> [postdata]"
-Set path and optional post data to turn off plug.
+Set default path and optional post data to turn off plug.
 .TP
 .I "setplugs plugnames hostindices"
 Associate a plug name with one of the hostnames specified on the
 command line, referred to by its zero origin index.  Can be called
 multiple times to configure all possible plugs.
+.TP
+.I "setpath <plugnames> <cmd> <path> [postdata]"
+Set path for specific plug power command ("stat", "on", "off") and optional post data.
 .TP
 .I "settimeout <seconds>"
 Set command timeout in seconds.
