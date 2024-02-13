@@ -136,10 +136,10 @@ void help(void)
     printf("Valid commands are:\n");
     printf("  auth user:passwd\n");
     printf("  setheader string\n");
-    printf("  setstatpath url\n");
-    printf("  setonpath url [data]\n");
-    printf("  setoffpath url [data]\n");
-    printf("  setcyclepath url [data]\n");
+    printf("  setstatpath path\n");
+    printf("  setonpath path [postdata]\n");
+    printf("  setoffpath path [postdata]\n");
+    printf("  setcyclepath path [postdata]\n");
     printf("  settimeout seconds\n");
     printf("  stat [nodes]\n");
     printf("  on [nodes]\n");

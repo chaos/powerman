@@ -60,13 +60,13 @@ Set extra HEADER to use.  Do not specify data to clear.
 .I "setstatpath <path>"
 Set path to obtain power status.
 .TP
-.I "setonpath <path> [data]"
+.I "setonpath <path> [postdata]"
 Set path and optional post data to turn on node.
 .TP
-.I "setoffpath <path> [data]"
+.I "setoffpath <path> [postdata]"
 Set path and optional post data to turn off node.
 .TP
-.I "setcyclepath <path> [data]"
+.I "setcyclepath <path> [postdata]"
 Set path and optional post data to cycle node.
 .TP
 .I "settimeout <seconds>"
