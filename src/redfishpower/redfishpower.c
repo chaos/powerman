@@ -149,26 +149,26 @@ void help(void)
 
 static size_t output_cb(void *contents, size_t size, size_t nmemb, void *userp)
 {
-  size_t realsize = size * nmemb;
-  struct powermsg *pm = userp;
+    size_t realsize = size * nmemb;
+    struct powermsg *pm = userp;
 
-  if (pm->output) {
-      char *tmp = calloc(1, pm->output_len + realsize + 1);
-      if (!tmp)
-          err_exit(true, "calloc");
-      memcpy(tmp, pm->output, pm->output_len);
-      memcpy(tmp + pm->output_len, contents, realsize);
-      pm->output_len += realsize;
-      free(pm->output);
-      pm->output = tmp;
-  }
-  else {
-      if (!(pm->output = calloc(1, realsize + 1)))
-          err_exit(true, "calloc");
-      memcpy(pm->output, contents, realsize);
-      pm->output_len = realsize;
-  }
-  return realsize;
+    if (pm->output) {
+        char *tmp = calloc(1, pm->output_len + realsize + 1);
+        if (!tmp)
+            err_exit(true, "calloc");
+        memcpy(tmp, pm->output, pm->output_len);
+        memcpy(tmp + pm->output_len, contents, realsize);
+        pm->output_len += realsize;
+        free(pm->output);
+        pm->output = tmp;
+    }
+    else {
+        if (!(pm->output = calloc(1, realsize + 1)))
+            err_exit(true, "calloc");
+        memcpy(pm->output, contents, realsize);
+        pm->output_len = realsize;
+    }
+    return realsize;
 }
 
 static struct powermsg *powermsg_create(CURLM *mh,
@@ -410,7 +410,7 @@ static void parse_onoff(struct powermsg *pm, const char **strp)
     }
 }
 
-static void stat_process (struct powermsg *pm)
+static void stat_process(struct powermsg *pm)
 {
     const char *str;
     parse_onoff(pm, &str);
@@ -683,18 +683,18 @@ static void setpowerpath(char **av, char **path, char **postdata)
 
 static void settimeout(char **av)
 {
-  if (av[0]) {
-      char *endptr;
-      long tmp;
+    if (av[0]) {
+        char *endptr;
+        long tmp;
 
-      errno = 0;
-      tmp = strtol (av[0], &endptr, 10);
-      if (errno
-          || endptr[0] != '\0'
-          || tmp <= 0)
-        printf("invalid timeout specified\n");
-      cmd_timeout = tmp;
-  }
+        errno = 0;
+        tmp = strtol (av[0], &endptr, 10);
+        if (errno
+            || endptr[0] != '\0'
+            || tmp <= 0)
+            printf("invalid timeout specified\n");
+        cmd_timeout = tmp;
+    }
 }
 
 static void process_cmd(zlistx_t *activecmds, CURLM *mh, char **av, int *exitflag)
