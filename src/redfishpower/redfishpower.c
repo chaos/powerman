@@ -675,10 +675,11 @@ static void setpowerpath(char **av, char **path, char **postdata)
         xfree(*postdata);
         *postdata = NULL;
     }
-    if (av[0])
+    if (av[0]) {
         (*path) = xstrdup(av[0]);
-    if (av[1])
-        (*postdata) = xstrdup(av[1]);
+        if (av[1])
+            (*postdata) = xstrdup(av[1]);
+    }
 }
 
 static void settimeout(char **av)
