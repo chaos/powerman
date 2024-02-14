@@ -306,36 +306,6 @@ static void powermsg_destroy(struct powermsg *pm)
     }
 }
 
-/* get hostlist of input hosts, make sure are legal based on initial input */
-static hostlist_t parse_input_hosts(const char *inputhosts)
-{
-    hostlist_t lhosts = NULL;
-    hostlist_iterator_t itr = NULL;
-    char *hostname;
-    hostlist_t rv = NULL;
-
-    if (!(lhosts = hostlist_create(inputhosts))) {
-        printf("illegal hosts input\n");
-        return NULL;
-    }
-    if (!(itr = hostlist_iterator_create(lhosts)))
-        err_exit(true, "hostlist_iterator_create");
-    while ((hostname = hostlist_next(itr))) {
-        if (hostlist_find(hosts, hostname) < 0) {
-            printf("unknown host specified: %s\n", hostname);
-            free(hostname);
-            goto cleanup;
-        }
-        free(hostname);
-    }
-    rv = lhosts;
-cleanup:
-    hostlist_iterator_destroy(itr);
-    if (!rv)
-        hostlist_destroy(lhosts);
-    return rv;
-}
-
 static struct powermsg *stat_cmd_host(CURLM * mh, char *hostname)
 {
     struct powermsg *pm = powermsg_create(mh,
@@ -362,8 +332,10 @@ static void stat_cmd(CURLM *mh, char **av)
     }
 
     if (av[0]) {
-        if (!(lhosts = parse_input_hosts(av[0])))
+        if (!(lhosts = hostlist_create(av[0]))) {
+            printf("illegal hosts input\n");
             return;
+        }
         hostsptr = &lhosts;
     }
     else
@@ -373,7 +345,13 @@ static void stat_cmd(CURLM *mh, char **av)
         err_exit(true, "hostlist_iterator_create");
 
     while ((hostname = hostlist_next(itr))) {
-        struct powermsg *pm = stat_cmd_host(mh, hostname);
+        struct powermsg *pm;
+        if (hostlist_find(hosts, hostname) < 0) {
+            printf("unknown host specified: %s\n", hostname);
+            free(hostname);
+            continue;
+        }
+        pm = stat_cmd_host(mh, hostname);
         powermsg_init_curl(pm);
         if (!(pm->handle = zlistx_add_end(activecmds, pm)))
             err_exit(true, "zlistx_add_end");
@@ -515,8 +493,10 @@ static void power_cmd(CURLM *mh,
     }
 
     if (av[0]) {
-        if (!(lhosts = parse_input_hosts(av[0])))
+        if (!(lhosts = hostlist_create(av[0]))) {
+            printf("illegal hosts input\n");
             return;
+        }
         hostsptr = &lhosts;
     }
     else
@@ -526,7 +506,13 @@ static void power_cmd(CURLM *mh,
         err_exit(true, "hostlist_iterator_create");
 
     while ((hostname = hostlist_next(itr))) {
-        struct powermsg *pm = power_cmd_host(mh, hostname, cmd, path, postdata);
+        struct powermsg *pm;
+        if (hostlist_find(hosts, hostname) < 0) {
+            printf("unknown host specified: %s\n", hostname);
+            free(hostname);
+            continue;
+        }
+        pm = power_cmd_host(mh, hostname, cmd, path, postdata);
         powermsg_init_curl(pm);
         if (!(pm->handle = zlistx_add_end(activecmds, pm)))
             err_exit(true, "zlistx_add_end");
