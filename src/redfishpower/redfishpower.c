@@ -46,7 +46,7 @@ static char *cyclepath = NULL;
 static char *cyclepostdata = NULL;
 
 static int test_mode = 0;
-static zhashx_t *test_power_status = NULL;
+static zhashx_t *test_power_status;
 
 /* in seconds */
 #define MESSAGE_TIMEOUT            10
@@ -329,9 +329,9 @@ static struct powermsg *stat_cmd_host(CURLM * mh, char *hostname)
 
 static void stat_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
 {
-    hostlist_iterator_t itr = NULL;
+    hostlist_iterator_t itr;
     char *hostname;
-    hostlist_t *hostsptr = NULL;
+    hostlist_t *hostsptr;
     hostlist_t lhosts = NULL;
 
     if (!statpath) {
@@ -452,9 +452,9 @@ static void power_cmd(zlistx_t *activecmds,
                       const char *path,
                       const char *postdata)
 {
-    hostlist_iterator_t itr = NULL;
+    hostlist_iterator_t itr;
     char *hostname;
-    hostlist_t *hostsptr = NULL;
+    hostlist_t *hostsptr;
     hostlist_t lhosts = NULL;
 
     if (!path) {
@@ -1060,7 +1060,7 @@ int main(int argc, char *argv[])
     }
     else {
         /* All hosts initially are off for testing */
-        hostlist_iterator_t itr = NULL;
+        hostlist_iterator_t itr;
         char *hostname;
         if (!(itr = hostlist_iterator_create(hosts)))
             err_exit(true, "hostlist_iterator_create");
