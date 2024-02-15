@@ -67,7 +67,7 @@ Set path and optional post data to turn on node.
 Set path and optional post data to turn off node.
 .TP
 .I "setcyclepath <path> [data]"
-Set path and optional post data to turn cycle node.
+Set path and optional post data to cycle node.
 .TP
 .I "settimeout <seconds>"
 Set command timeout in seconds.
@@ -82,7 +82,7 @@ Turn on all nodes or specified subset of nodes.  Will return "ok" after confirma
 Turn off all nodes or specified subset of nodes.  Will return "ok" after confirmation "off" has completed.
 .TP
 .I "cycle [nodes]"
-Turn off all nodes or specified subset of nodes.
+Power cycle all nodes or specified subset of nodes.
 
 .SH "UPDATING REDFISHPOWER DEVICE FILES"
 .LP
