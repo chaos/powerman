@@ -58,6 +58,47 @@ test_expect_success 'stop powerman daemon (failhosts)' '
 	wait
 '
 
+#
+# redfishpower setplugs coverage
+#
+
+test_expect_success 'create powerman.conf for 16 cray redfish nodes (setplugs)' '
+	cat >powerman_setplugs.conf <<-EOT
+	listen "$testaddr"
+	include "$testdevicesdir/redfishpower-setplugs.dev"
+	device "d0" "redfishpower-setplugs" "$redfishdir/redfishpower -h t[0-15] --test-mode |&"
+	node "t[0-15]" "d0" "Node[0-15]"
+	EOT
+'
+test_expect_success 'start powerman daemon and wait for it to start (setplugs)' '
+	$powermand -Y -c powerman_setplugs.conf &
+	echo $! >powermand.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -d
+'
+test_expect_success 'powerman -q shows all off' '
+	$powerman -h $testaddr -q >test_setplugs_query.out &&
+	makeoutput "" "t[0-15]" "" >test_setplugs_query.exp &&
+	test_cmp test_setplugs_query.exp test_setplugs_query.out
+'
+test_expect_success 'powerman -T -q shows plugs are being used' '
+	$powerman -h $testaddr -T -q > test_setplugs_query_T.out &&
+	grep "Node15: off" test_setplugs_query_T.out
+'
+test_expect_success 'powerman -1 t[0-15] works' '
+	$powerman -h $testaddr -1 t[0-15] >test_setplugs_on.out &&
+	echo Command completed successfully >test_setplugs_on.exp &&
+	test_cmp test_setplugs_on.exp test_setplugs_on.out
+'
+test_expect_success 'powerman -q shows all on' '
+	$powerman -h $testaddr -q >test_setplugs_query2.out &&
+	makeoutput "t[0-15]" "" "" >test_setplugs_query2.exp &&
+	test_cmp test_setplugs_query2.exp test_setplugs_query2.out
+'
+test_expect_success 'stop powerman daemon (setplugs)' '
+	kill -15 $(cat powermand.pid) &&
+	wait
+'
+
 test_done
 
 # vi: set ft=sh

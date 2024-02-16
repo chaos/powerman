@@ -60,7 +60,8 @@ EXTRA_DIST= \
 	sharness.sh \
 	etc/sierra_plugs.conf \
 	etc/mcr_plugs.conf \
-	etc/vpc.dev
+	etc/vpc.dev \
+	etc/redfishpower-setplugs.dev
 
 
 AM_CFLAGS = @WARNING_CFLAGS@
