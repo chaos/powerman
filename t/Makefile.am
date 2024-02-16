@@ -61,7 +61,8 @@ EXTRA_DIST= \
 	etc/sierra_plugs.conf \
 	etc/mcr_plugs.conf \
 	etc/vpc.dev \
-	etc/redfishpower-setplugs.dev
+	etc/redfishpower-setplugs.dev \
+	etc/redfishpower-setpath.dev
 
 
 AM_CFLAGS = @WARNING_CFLAGS@
