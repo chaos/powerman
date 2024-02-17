@@ -1037,7 +1037,7 @@ int main(int argc, char *argv[])
                     err_exit(true, "hostlist_push error on %s", optarg);
                 break;
             case 'v': /* --verbose */
-                verbose = 1;
+                verbose++;
                 break;
             default:
                 usage();

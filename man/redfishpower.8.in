@@ -39,7 +39,7 @@ Set Redfish postdata for performing power on.  Typically is {"ResetType":"On"}
 Set Redfish postdata for performing power off.  Typically is {"ResetType":"ForceOff"}
 .TP
 .I "-v, --verbose"
-Increase output verbosity.
+Increase output verbosity.  Can be specified multiple times.
 .SH INTERACTIVE COMMANDS
 The following commands are accepted at the redfishpower> prompt:
 .TP
