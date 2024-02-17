@@ -62,11 +62,15 @@ Set default path and optional post data to turn off plug.
 .TP
 .I "setplugs plugnames hostindices"
 Associate a plug name with one of the hostnames specified on the
-command line, referred to by its zero origin index.  Can be called
-multiple times to configure all possible plugs.
+command line, referred to by its zero origin index. Can be called
+multiple times to configure all possible plugs.  In most
+cases the number of plugs should equal the number of indices.
+Multiple plugs can be mapped to a single host index, which is typically
+used along with plug substitution (see "setpath" command below).
 .TP
 .I "setpath <plugnames> <cmd> <path> [postdata]"
 Set path for specific plug power command ("stat", "on", "off") and optional post data.
+The plug name can be substituted into the URI path by specifying "{{plug}}" in the path.
 .TP
 .I "settimeout <seconds>"
 Set command timeout in seconds.
