@@ -21,7 +21,7 @@ set simultaneously is limited by the file descriptor limit of the
 system call.
 .TP
 .I "-H, --header string"
-Set extra HEADER to use.
+Set extra HEADER to use.  Typically is Content-Type:application/json.
 .TP
 .I "-S, --statpath string"
 Set Redfish path for obtaining power status.  Typically is redfish/v1/Systems/1.
