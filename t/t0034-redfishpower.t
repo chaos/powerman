@@ -170,6 +170,142 @@ test_expect_success 'stop powerman daemon (setpath2)' '
 	wait
 '
 
+#
+# redfishpower plug substitution coverage
+#
+
+test_expect_success 'create powerman.conf for 16 cray redfish nodes (plugsub)' '
+	cat >powerman_plugsub.conf <<-EOT
+	listen "$testaddr"
+	include "$testdevicesdir/redfishpower-plugsub.dev"
+	device "d0" "redfishpower-plugsub" "$redfishdir/redfishpower -h t[0-15] --test-mode |&"
+	node "t[0-15]" "d0" "Node[0-15]"
+	EOT
+'
+test_expect_success 'start powerman daemon and wait for it to start (plugsub)' '
+	$powermand -Y -c powerman_plugsub.conf &
+	echo $! >powermand.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -d
+'
+test_expect_success 'powerman -q shows all off' '
+	$powerman -h $testaddr -q >test_plugsub_query.out &&
+	makeoutput "" "t[0-15]" "" >test_plugsub_query.exp &&
+	test_cmp test_plugsub_query.exp test_plugsub_query.out
+'
+test_expect_success 'powerman -1 t[0-15] works' '
+	$powerman -h $testaddr -1 t[0-15] >test_plugsub_on.out &&
+	echo Command completed successfully >test_plugsub_on.exp &&
+	test_cmp test_plugsub_on.exp test_plugsub_on.out
+'
+test_expect_success 'powerman -q shows all on' '
+	$powerman -h $testaddr -q >test_plugsub_query2.out &&
+	makeoutput "t[0-15]" "" "" >test_plugsub_query2.exp &&
+	test_cmp test_plugsub_query2.exp test_plugsub_query2.out
+'
+test_expect_success 'stop powerman daemon (plugsub)' '
+	kill -15 $(cat powermand.pid) &&
+	wait
+'
+
+# Note, verbose output can mess up the device script's interpretation of power status,
+# so restart powermand with verbose mode to run telemetry specific tests.
+test_expect_success 'create powerman.conf for 16 cray redfish nodes (plugsub2)' '
+	cat >powerman_plugsub2.conf <<-EOT
+	listen "$testaddr"
+	include "$testdevicesdir/redfishpower-plugsub.dev"
+	device "d0" "redfishpower-plugsub" "$redfishdir/redfishpower -h t[0-15] --test-mode -vv |&"
+	node "t[0-15]" "d0" "Node[0-15]"
+	EOT
+'
+test_expect_success 'start powerman daemon and wait for it to start (plugsub2)' '
+	$powermand -Y -c powerman_plugsub2.conf &
+	echo $! >powermand.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -d
+'
+# Note: redfishpower-plugsub.dev sets different paths for different
+# nodes.  Following tests check that correct path has been used.
+test_expect_success 'powerman -T -1 shows correct path being used (t0)' '
+	$powerman -h $testaddr -T -1 t0 > test_plugsub2_on_T1.out &&
+	grep "plugname=Node0" test_plugsub2_on_T1.out | grep "path=" | grep Group0-Node0
+'
+test_expect_success 'powerman -T -1 shows correct path being used (t8)' '
+	$powerman -h $testaddr -T -1 t8 > test_plugsub2_on_T2.out &&
+	grep "plugname=Node8" test_plugsub2_on_T2.out | grep "path=" | grep Default-Node8
+'
+test_expect_success 'stop powerman daemon (plugsub2)' '
+	kill -15 $(cat powermand.pid) &&
+	wait
+'
+
+#
+# redfishpower plug substitution coverage w/ hypothetical blades
+#
+# Blades[0-3] assumed to go through t0
+#
+
+test_expect_success 'create powerman.conf for 16 cray redfish nodes (plugsubB)' '
+	cat >powerman_plugsubB.conf <<-EOT
+	listen "$testaddr"
+	include "$testdevicesdir/redfishpower-plugsub-blades.dev"
+	device "d0" "redfishpower-plugsub-blades" "$redfishdir/redfishpower -h t[0-15] --test-mode |&"
+	node "t[0-15]" "d0" "Node[0-15]"
+	node "blade[0-3]" "d0" "Blade[0-3]"
+	EOT
+'
+test_expect_success 'start powerman daemon and wait for it to start (plugsubB)' '
+	$powermand -Y -c powerman_plugsubB.conf &
+	echo $! >powermand.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -d
+'
+test_expect_success 'powerman -q shows all off' '
+	$powerman -h $testaddr -q >test_plugsubB_query.out &&
+	makeoutput "" "blade[0-3],t[0-15]" "" >test_plugsubB_query.exp &&
+	test_cmp test_plugsubB_query.exp test_plugsubB_query.out
+'
+test_expect_success 'powerman -1 blade[0-3],t[0-15] works' '
+	$powerman -h $testaddr -1 blade[0-3],t[0-15] >test_plugsubB_on.out &&
+	echo Command completed successfully >test_plugsubB_on.exp &&
+	test_cmp test_plugsubB_on.exp test_plugsubB_on.out
+'
+test_expect_success 'powerman -q shows all on' '
+	$powerman -h $testaddr -q >test_plugsubB_query2.out &&
+	makeoutput "blade[0-3],t[0-15]" "" "" >test_plugsubB_query2.exp &&
+	test_cmp test_plugsubB_query2.exp test_plugsubB_query2.out
+'
+test_expect_success 'stop powerman daemon (plugsubB)' '
+	kill -15 $(cat powermand.pid) &&
+	wait
+'
+
+# Note, verbose output can mess up the device script's interpretation of power status,
+# so restart powermand with verbose mode to run telemetry specific tests.
+test_expect_success 'create powerman.conf for 16 cray redfish nodes (plugsubB2)' '
+	cat >powerman_plugsubB2.conf <<-EOT
+	listen "$testaddr"
+	include "$testdevicesdir/redfishpower-plugsub-blades.dev"
+	device "d0" "redfishpower-plugsub-blades" "$redfishdir/redfishpower -h t[0-15] --test-mode -vv |&"
+	node "t[0-15]" "d0" "Node[0-15]"
+	node "blade[0-3]" "d0" "Blade[0-3]"
+	EOT
+'
+test_expect_success 'start powerman daemon and wait for it to start (plugsubB2)' '
+	$powermand -Y -c powerman_plugsubB2.conf &
+	echo $! >powermand.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -d
+'
+test_expect_success 'powerman -T -1 shows correct path being used (t0)' '
+	$powerman -h $testaddr -T -1 t0 > test_plugsubB2_on_T1.out &&
+	grep "plugname=Node0" test_plugsubB2_on_T1.out | grep "path=" | grep Default-Node0
+'
+test_expect_success 'powerman -T -1 shows correct path being used (t8)' '
+	$powerman -h $testaddr -T -1 blade0 > test_plugsubB2_on_T2.out &&
+	grep "plugname=Blade0" test_plugsubB2_on_T2.out | grep "path=" | grep Default-Blade0
+'
+test_expect_success 'stop powerman daemon (plugsubB2)' '
+	kill -15 $(cat powermand.pid) &&
+	wait
+'
+
 test_done
 
 # vi: set ft=sh

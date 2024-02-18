@@ -62,7 +62,9 @@ EXTRA_DIST= \
 	etc/mcr_plugs.conf \
 	etc/vpc.dev \
 	etc/redfishpower-setplugs.dev \
-	etc/redfishpower-setpath.dev
+	etc/redfishpower-setpath.dev \
+	etc/redfishpower-plugsub.dev \
+	etc/redfishpower-plugsub-blades.dev
 
 
 AM_CFLAGS = @WARNING_CFLAGS@
