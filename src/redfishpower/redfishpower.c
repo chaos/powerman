@@ -998,6 +998,22 @@ static void init_redfishpower(char *argv[])
         err_exit(false, "zhashx_new error");
 }
 
+static void cleanup_redfishpower(void)
+{
+    xfree(userpwd);
+    xfree(statpath);
+    xfree(onpath);
+    xfree(onpostdata);
+    xfree(offpath);
+    xfree(offpostdata);
+    xfree(cyclepath);
+    xfree(cyclepostdata);
+
+    hostlist_destroy(hosts);
+
+    zhashx_destroy(&test_power_status);
+}
+
 int main(int argc, char *argv[])
 {
     CURLM *mh = NULL;
@@ -1079,16 +1095,7 @@ int main(int argc, char *argv[])
     if (!test_mode)
         curl_multi_cleanup(mh);
 
-    xfree(userpwd);
-    hostlist_destroy(hosts);
-    xfree(statpath);
-    xfree(onpath);
-    xfree(onpostdata);
-    xfree(offpath);
-    xfree(offpostdata);
-    xfree(cyclepath);
-    xfree(cyclepostdata);
-    zhashx_destroy(&test_power_status);
+    cleanup_redfishpower();
     exit(0);
 }
 
