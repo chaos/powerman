@@ -759,6 +759,7 @@ static void shell(CURLM *mh)
 
     if (!(delayedcmds = zlistx_new()))
         err_exit(true, "zlistx_new");
+    zlistx_set_destructor(delayedcmds, cleanup_powermsg);
 
     while (exitflag == 0) {
         CURLMcode mc;
