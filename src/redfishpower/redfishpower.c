@@ -43,6 +43,14 @@ static char *onpostdata = NULL;
 static char *offpath = NULL;
 static char *offpostdata = NULL;
 
+/* activecmds - power ops to be sent / in progress now */
+static zlistx_t *activecmds = NULL;
+/* delayedcmds - power ops waiting to be sent
+ * - typically holds status polling ops after an on / off, we wait to
+ *   send at a later time.
+ */
+static zlistx_t *delayedcmds = NULL;
+
 static int test_mode = 0;
 static hostlist_t test_fail_power_cmd_hosts;
 static zhashx_t *test_power_status;
@@ -337,7 +345,7 @@ static struct powermsg *stat_cmd_host(CURLM * mh, char *hostname)
     return pm;
 }
 
-static void stat_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
+static void stat_cmd(CURLM *mh, char **av)
 {
     hostlist_iterator_t itr;
     char *hostname;
@@ -481,8 +489,7 @@ struct powermsg *power_cmd_host(CURLM * mh,
     return pm;
 }
 
-static void power_cmd(zlistx_t *activecmds,
-                      CURLM *mh,
+static void power_cmd(CURLM *mh,
                       char **av,
                       const char *cmd,
                       const char *path,
@@ -525,27 +532,27 @@ static void power_cmd(zlistx_t *activecmds,
     hostlist_destroy(lhosts);
 }
 
-static void on_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
+static void on_cmd(CURLM *mh, char **av)
 {
     if (!statpath) {
         printf("Statpath not setup\n");
         return;
     }
 
-    power_cmd(activecmds, mh, av, CMD_ON, onpath, onpostdata);
+    power_cmd(mh, av, CMD_ON, onpath, onpostdata);
 }
 
-static void off_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
+static void off_cmd(CURLM *mh, char **av)
 {
     if (!statpath) {
         printf("Statpath not setup\n");
         return;
     }
 
-    power_cmd(activecmds, mh, av, CMD_OFF, offpath, offpostdata);
+    power_cmd(mh, av, CMD_OFF, offpath, offpostdata);
 }
 
-static void send_status_poll(zlistx_t *delayedcmds, struct powermsg *pm)
+static void send_status_poll(struct powermsg *pm)
 {
     struct powermsg *nextpm;
 
@@ -568,13 +575,13 @@ static void send_status_poll(zlistx_t *delayedcmds, struct powermsg *pm)
         err_exit(true, "zlistx_add_end");
 }
 
-static void on_off_process(zlistx_t *delayedcmds, struct powermsg *pm)
+static void on_off_process(struct powermsg *pm)
 {
     if (pm->state == STATE_SEND_POWERCMD) {
         /* just sent on or off, now we need for the operation to
          * complete
          */
-        send_status_poll(delayedcmds, pm);
+        send_status_poll(pm);
 
         /* in test mode, we simulate that the operation has already
          * finished */
@@ -628,29 +635,29 @@ static void on_off_process(zlistx_t *delayedcmds, struct powermsg *pm)
         }
 
         /* resend status poll */
-        send_status_poll(delayedcmds, pm);
+        send_status_poll(pm);
     }
 
 }
 
-static void on_process(zlistx_t *delayedcmds, struct powermsg *pm)
+static void on_process(struct powermsg *pm)
 {
-    on_off_process(delayedcmds, pm);
+    on_off_process(pm);
 }
 
-static void off_process(zlistx_t *delayedcmds, struct powermsg *pm)
+static void off_process(struct powermsg *pm)
 {
-    on_off_process(delayedcmds, pm);
+    on_off_process(pm);
 }
 
-static void power_cmd_process(zlistx_t *delayedcmds, struct powermsg *pm)
+static void power_cmd_process(struct powermsg *pm)
 {
     if (strcmp(pm->cmd, CMD_STAT) == 0)
         stat_process(pm);
     else if (strcmp(pm->cmd, CMD_ON) == 0)
-        on_process(delayedcmds, pm);
+        on_process(pm);
     else if (strcmp(pm->cmd, CMD_OFF) == 0)
-        off_process(delayedcmds, pm);
+        off_process(pm);
 }
 
 static void power_cleanup(struct powermsg *pm)
@@ -742,7 +749,7 @@ static void settimeout(char **av)
     }
 }
 
-static void process_cmd(zlistx_t *activecmds, CURLM *mh, char **av, int *exitflag)
+static void process_cmd(CURLM *mh, char **av, int *exitflag)
 {
     if (av[0] != NULL) {
         if (strcmp(av[0], "help") == 0)
@@ -762,11 +769,11 @@ static void process_cmd(zlistx_t *activecmds, CURLM *mh, char **av, int *exitfla
         else if (strcmp(av[0], "settimeout") == 0)
             settimeout(av + 1);
         else if (strcmp(av[0], CMD_STAT) == 0)
-            stat_cmd(activecmds, mh, av + 1);
+            stat_cmd(mh, av + 1);
         else if (strcmp(av[0], CMD_ON) == 0)
-            on_cmd(activecmds, mh, av + 1);
+            on_cmd(mh, av + 1);
         else if (strcmp(av[0], CMD_OFF) == 0)
-            off_cmd(activecmds, mh, av + 1);
+            off_cmd(mh, av + 1);
         else
             printf("type \"help\" for a list of commands\n");
     }
@@ -787,17 +794,7 @@ static void cleanup_powermsg(void **x)
 
 static void shell(CURLM *mh)
 {
-    zlistx_t *activecmds;
-    zlistx_t *delayedcmds;
     int exitflag = 0;
-
-    if (!(activecmds = zlistx_new()))
-        err_exit(true, "zlistx_new");
-    zlistx_set_destructor(activecmds, cleanup_powermsg);
-
-    if (!(delayedcmds = zlistx_new()))
-        err_exit(true, "zlistx_new");
-    zlistx_set_destructor(delayedcmds, cleanup_powermsg);
 
     while (exitflag == 0) {
         CURLMcode mc;
@@ -915,7 +912,7 @@ static void shell(CURLM *mh)
             if (fgets(buf, sizeof(buf), stdin)) {
                 char **av;
                 av = argv_create(buf, "");
-                process_cmd(activecmds, mh, av, &exitflag);
+                process_cmd(mh, av, &exitflag);
                 argv_destroy(av);
             } else
                 break;
@@ -986,7 +983,7 @@ static void shell(CURLM *mh)
                                    curl_easy_strerror(cmsg->data.result));
                     }
                     else
-                        power_cmd_process(delayedcmds, pm);
+                        power_cmd_process(pm);
                     fflush(stdout);
                     if (zlistx_delete(activecmds, pm->handle) < 0)
                         err_exit(false, "zlistx_delete failed to delete");
@@ -1000,15 +997,13 @@ static void shell(CURLM *mh)
                 if (hostlist_find(test_fail_power_cmd_hosts, pm->hostname) >= 0)
                     printf("%s: %s\n", pm->hostname, "error");
                 else
-                    power_cmd_process(delayedcmds, pm);
+                    power_cmd_process(pm);
                 fflush(stdout);
                 pm = zlistx_next(activecmds);
             }
             zlistx_purge(activecmds);
         }
     }
-    zlistx_destroy(&activecmds);
-    zlistx_destroy(&delayedcmds);
 }
 
 static void usage(void)
@@ -1034,6 +1029,14 @@ static void init_redfishpower(char *argv[])
     if (!(hosts = hostlist_create(NULL)))
         err_exit(true, "hostlist_create error");
 
+    if (!(activecmds = zlistx_new()))
+        err_exit(true, "zlistx_new");
+    zlistx_set_destructor(activecmds, cleanup_powermsg);
+
+    if (!(delayedcmds = zlistx_new()))
+        err_exit(true, "zlistx_new");
+    zlistx_set_destructor(delayedcmds, cleanup_powermsg);
+
     if (!(test_fail_power_cmd_hosts = hostlist_create(NULL)))
         err_exit(true, "hostlist_create error");
 
@@ -1051,6 +1054,9 @@ static void cleanup_redfishpower(void)
     xfree(offpostdata);
 
     hostlist_destroy(hosts);
+
+    zlistx_destroy(&activecmds);
+    zlistx_destroy(&delayedcmds);
 
     hostlist_destroy(test_fail_power_cmd_hosts);
     zhashx_destroy(&test_power_status);
