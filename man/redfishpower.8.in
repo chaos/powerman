@@ -21,7 +21,7 @@ set simultaneously is limited by the file descriptor limit of the
 system call.
 .TP
 .I "-H, --header string"
-Set extra HEADER to use.
+Set extra HEADER to use.  Typically is Content-Type:application/json.
 .TP
 .I "-S, --statpath string"
 Set Redfish path for obtaining power status.  Typically is redfish/v1/Systems/1.
@@ -60,14 +60,14 @@ Set extra HEADER to use.  Do not specify data to clear.
 .I "setstatpath <path>"
 Set path to obtain power status.
 .TP
-.I "setonpath <path> [data]"
+.I "setonpath <path> [postdata]"
 Set path and optional post data to turn on node.
 .TP
-.I "setoffpath <path> [data]"
+.I "setoffpath <path> [postdata]"
 Set path and optional post data to turn off node.
 .TP
-.I "setcyclepath <path> [data]"
-Set path and optional post data to turn cycle node.
+.I "setcyclepath <path> [postdata]"
+Set path and optional post data to cycle node.
 .TP
 .I "settimeout <seconds>"
 Set command timeout in seconds.
@@ -82,7 +82,7 @@ Turn on all nodes or specified subset of nodes.  Will return "ok" after confirma
 Turn off all nodes or specified subset of nodes.  Will return "ok" after confirmation "off" has completed.
 .TP
 .I "cycle [nodes]"
-Turn off all nodes or specified subset of nodes.
+Power cycle all nodes or specified subset of nodes.
 
 .SH "UPDATING REDFISHPOWER DEVICE FILES"
 .LP

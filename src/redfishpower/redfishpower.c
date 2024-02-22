@@ -46,7 +46,8 @@ static char *cyclepath = NULL;
 static char *cyclepostdata = NULL;
 
 static int test_mode = 0;
-static zhashx_t *test_power_status = NULL;
+static hostlist_t test_fail_power_cmd_hosts;
+static zhashx_t *test_power_status;
 
 /* in seconds */
 #define MESSAGE_TIMEOUT            10
@@ -113,7 +114,7 @@ struct powermsg {
             err_exit(false, "curl_easy_setopt: %s", curl_easy_strerror(_ec));  \
     } while(0)
 
-#define OPTIONS "h:H:S:O:F:C:P:G:D:Tv"
+#define OPTIONS "h:H:S:O:F:C:P:G:D:TEv"
 static struct option longopts[] = {
         {"hostname", required_argument, 0, 'h' },
         {"header", required_argument, 0, 'H' },
@@ -125,6 +126,7 @@ static struct option longopts[] = {
         {"offpostdata", required_argument, 0, 'G' },
         {"cyclepostdata", required_argument, 0, 'D' },
         {"test-mode", no_argument, 0, 'T' },
+        {"test-fail-power-cmd-hosts", required_argument, 0, 'E' },
         {"verbose", no_argument, 0, 'v' },
         {0,0,0,0},
 };
@@ -136,10 +138,10 @@ void help(void)
     printf("Valid commands are:\n");
     printf("  auth user:passwd\n");
     printf("  setheader string\n");
-    printf("  setstatpath url\n");
-    printf("  setonpath url [data]\n");
-    printf("  setoffpath url [data]\n");
-    printf("  setcyclepath url [data]\n");
+    printf("  setstatpath path\n");
+    printf("  setonpath path [postdata]\n");
+    printf("  setoffpath path [postdata]\n");
+    printf("  setcyclepath path [postdata]\n");
     printf("  settimeout seconds\n");
     printf("  stat [nodes]\n");
     printf("  on [nodes]\n");
@@ -149,26 +151,26 @@ void help(void)
 
 static size_t output_cb(void *contents, size_t size, size_t nmemb, void *userp)
 {
-  size_t realsize = size * nmemb;
-  struct powermsg *pm = userp;
+    size_t realsize = size * nmemb;
+    struct powermsg *pm = userp;
 
-  if (pm->output) {
-      char *tmp = calloc(1, pm->output_len + realsize + 1);
-      if (!tmp)
-          err_exit(true, "calloc");
-      memcpy(tmp, pm->output, pm->output_len);
-      memcpy(tmp + pm->output_len, contents, realsize);
-      pm->output_len += realsize;
-      free(pm->output);
-      pm->output = tmp;
-  }
-  else {
-      if (!(pm->output = calloc(1, realsize + 1)))
-          err_exit(true, "calloc");
-      memcpy(pm->output, contents, realsize);
-      pm->output_len = realsize;
-  }
-  return realsize;
+    if (pm->output) {
+        char *tmp = calloc(1, pm->output_len + realsize + 1);
+        if (!tmp)
+            err_exit(true, "calloc");
+        memcpy(tmp, pm->output, pm->output_len);
+        memcpy(tmp + pm->output_len, contents, realsize);
+        pm->output_len += realsize;
+        free(pm->output);
+        pm->output = tmp;
+    }
+    else {
+        if (!(pm->output = calloc(1, realsize + 1)))
+            err_exit(true, "calloc");
+        memcpy(pm->output, contents, realsize);
+        pm->output_len = realsize;
+    }
+    return realsize;
 }
 
 static struct powermsg *powermsg_create(CURLM *mh,
@@ -329,9 +331,9 @@ static struct powermsg *stat_cmd_host(CURLM * mh, char *hostname)
 
 static void stat_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
 {
-    hostlist_iterator_t itr = NULL;
+    hostlist_iterator_t itr;
     char *hostname;
-    hostlist_t *hostsptr = NULL;
+    hostlist_t *hostsptr;
     hostlist_t lhosts = NULL;
 
     if (!statpath) {
@@ -410,7 +412,7 @@ static void parse_onoff(struct powermsg *pm, const char **strp)
     }
 }
 
-static void stat_process (struct powermsg *pm)
+static void stat_process(struct powermsg *pm)
 {
     const char *str;
     parse_onoff(pm, &str);
@@ -452,9 +454,9 @@ static void power_cmd(zlistx_t *activecmds,
                       const char *path,
                       const char *postdata)
 {
-    hostlist_iterator_t itr = NULL;
+    hostlist_iterator_t itr;
     char *hostname;
-    hostlist_t *hostsptr = NULL;
+    hostlist_t *hostsptr;
     hostlist_t lhosts = NULL;
 
     if (!path) {
@@ -675,26 +677,27 @@ static void setpowerpath(char **av, char **path, char **postdata)
         xfree(*postdata);
         *postdata = NULL;
     }
-    if (av[0])
+    if (av[0]) {
         (*path) = xstrdup(av[0]);
-    if (av[1])
-        (*postdata) = xstrdup(av[1]);
+        if (av[1])
+            (*postdata) = xstrdup(av[1]);
+    }
 }
 
 static void settimeout(char **av)
 {
-  if (av[0]) {
-      char *endptr;
-      long tmp;
+    if (av[0]) {
+        char *endptr;
+        long tmp;
 
-      errno = 0;
-      tmp = strtol (av[0], &endptr, 10);
-      if (errno
-          || endptr[0] != '\0'
-          || tmp <= 0)
-        printf("invalid timeout specified\n");
-      cmd_timeout = tmp;
-  }
+        errno = 0;
+        tmp = strtol (av[0], &endptr, 10);
+        if (errno
+            || endptr[0] != '\0'
+            || tmp <= 0)
+            printf("invalid timeout specified\n");
+        cmd_timeout = tmp;
+    }
 }
 
 static void process_cmd(zlistx_t *activecmds, CURLM *mh, char **av, int *exitflag)
@@ -758,6 +761,7 @@ static void shell(CURLM *mh)
 
     if (!(delayedcmds = zlistx_new()))
         err_exit(true, "zlistx_new");
+    zlistx_set_destructor(delayedcmds, cleanup_powermsg);
 
     while (exitflag == 0) {
         CURLMcode mc;
@@ -956,7 +960,10 @@ static void shell(CURLM *mh)
             /* in test mode we assume all activecmds complete immediately */
             struct powermsg *pm = zlistx_first(activecmds);
             while (pm) {
-                power_cmd_process(delayedcmds, pm);
+                if (hostlist_find(test_fail_power_cmd_hosts, pm->hostname) >= 0)
+                    printf("%s: %s\n", pm->hostname, "error");
+                else
+                    power_cmd_process(delayedcmds, pm);
                 fflush(stdout);
                 zlistx_detach_cur(activecmds);
                 pm = zlistx_next(activecmds);
@@ -992,8 +999,28 @@ static void init_redfishpower(char *argv[])
     if (!(hosts = hostlist_create(NULL)))
         err_exit(true, "hostlist_create error");
 
+    if (!(test_fail_power_cmd_hosts = hostlist_create(NULL)))
+        err_exit(true, "hostlist_create error");
+
     if (!(test_power_status = zhashx_new ()))
         err_exit(false, "zhashx_new error");
+}
+
+static void cleanup_redfishpower(void)
+{
+    xfree(userpwd);
+    xfree(statpath);
+    xfree(onpath);
+    xfree(onpostdata);
+    xfree(offpath);
+    xfree(offpostdata);
+    xfree(cyclepath);
+    xfree(cyclepostdata);
+
+    hostlist_destroy(hosts);
+
+    hostlist_destroy(test_fail_power_cmd_hosts);
+    zhashx_destroy(&test_power_status);
 }
 
 int main(int argc, char *argv[])
@@ -1037,6 +1064,10 @@ int main(int argc, char *argv[])
             case 'T': /* --test-mode */
                 test_mode = 1;
                 break;
+            case 'E': /* --test-fail-power-cmd-hosts */
+                if (!hostlist_push(test_fail_power_cmd_hosts, optarg))
+                    err_exit(true, "hostlist_push error on %s", optarg);
+                break;
             case 'v': /* --verbose */
                 verbose = 1;
                 break;
@@ -1060,7 +1091,7 @@ int main(int argc, char *argv[])
     }
     else {
         /* All hosts initially are off for testing */
-        hostlist_iterator_t itr = NULL;
+        hostlist_iterator_t itr;
         char *hostname;
         if (!(itr = hostlist_iterator_create(hosts)))
             err_exit(true, "hostlist_iterator_create");
@@ -1077,16 +1108,7 @@ int main(int argc, char *argv[])
     if (!test_mode)
         curl_multi_cleanup(mh);
 
-    xfree(userpwd);
-    hostlist_destroy(hosts);
-    xfree(statpath);
-    xfree(onpath);
-    xfree(onpostdata);
-    xfree(offpath);
-    xfree(offpostdata);
-    xfree(cyclepath);
-    xfree(cyclepostdata);
-    zhashx_destroy(&test_power_status);
+    cleanup_redfishpower();
     exit(0);
 }
 
