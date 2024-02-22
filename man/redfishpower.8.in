@@ -60,13 +60,15 @@ Set default path and optional post data to turn on plug.
 .I "setoffpath <path> [postdata]"
 Set default path and optional post data to turn off plug.
 .TP
-.I "setplugs plugnames hostindices"
+.I "setplugs plugnames hostindices [parentplug]"
 Associate a plug name with one of the hostnames specified on the
-command line, referred to by its zero origin index. Can be called
-multiple times to configure all possible plugs.  In most
-cases the number of plugs should equal the number of indices.
-Multiple plugs can be mapped to a single host index, which is typically
-used along with plug substitution (see "setpath" command below).
+command line, referred to by its zero origin index.  Optionally set a
+parent to the plug, which must have its power status queried first.
+See HIERARCHY CONFIGURATION below for more details.  Can be called
+multiple times to configure all possible plugs.  In most cases the
+number of plugs should equal the number of indices.  Multiple plugs
+can be mapped to a single host index, which is typically used along
+with plug substitution (see "setpath" command below).
 .TP
 .I "setpath <plugnames> <cmd> <path> [postdata]"
 Set path for specific plug power command ("stat", "on", "off") and optional post data.
@@ -125,6 +127,70 @@ Note that the
 .B powerman
 timeout should account for the combined time of an \fIoff\fR and \fIon\fR
 for the \fIcycle\fR operation.
+
+.SH "HIERARCHY CONFIGURATION"
+Users of
+.B redfishpower
+can configure power control dependencies within the hosts specified on
+the command line.  This is typically necessary for bladed environments
+where a chassis must be powered on before any power control operations can
+be done on a blade.
+.B
+For example, assume a chassis that has two blades, and each blade has two
+nodes underneath it.  These hosts might be configured via the
+.I --hostnames
+option like
+.B "--hostnames chassis,blades[0-1],nodes[0-3]".
+.LP
+The power control dependency hierarchy could be configured in
+.B redfishpower
+via:
+.PP
+.nf
+      script login {
+              send "setplugs Root 0\\n"
+              expect "redfishpower> "
+              send "setplugs Parent[0-1] [1-2] Root\\n"
+              expect "redfishpower> "
+              send "setplugs Leaf[0-1] [3-4] Parent0\\n"
+              expect "redfishpower> "
+              send "setplugs Leaf[2-3] [5-6] Parent1\\n"
+              expect "redfishpower> "
+      }
+.fi
+.LP
+In the above example the plugname "Root" is used for the root node (index 0
+of configured hosts), "Parent[0-1]" is used for the blades (the indexes 1-2),
+the nodes are assigned the plugnames "Leaf[0-3]" (index 3-6).
+"Root" is assigned no parent, "Parent[0-1]" are assigned parent "Root", and
+leaves are assigned parents of "Parent0" or "Parent1" depending on the node.
+.LP
+.B Redfishpower will handle the following when dealing with power control
+dependencies:
+.LP
+When checking power status, the status of a parents/ancestors will
+always be checked first.  If an ancestor is "off", "unknown", or "error",
+all descendants will be defined as "off", "unknown", or "error"
+respectively.  If all ancestors are "on", the power status of the targeted
+children can be checked accordingly.
+.LP
+When powering on, the status of parents/ancestors will be checked
+first.  If an ancestor is not "on", descendants cannot be powered on
+and an appropriate message is output as a result.  If all ancestors
+are "on", the power on to the child can be completed.
+.LP
+When powering off, the status of parents/ancestors will be checked
+first.  If all ancestors are "on", the power off to the child can be
+completed.  If any ancestor is "off", the power off is assumed to be
+successful.
+.LP
+Note that
+.B redfishpower
+does not allow both parents and children to be powered on at the same
+time.  This "phased" power on is highly dependent on hardware
+implementation and has shown itself to be unreliable.  However both
+parents and children can be powered off.  When the ancestor completes
+its power off, it is assumed all children ared powered off as well.
 
 .SH "FILES"
 @X_SBINDIR@/redfishpower
