@@ -46,6 +46,7 @@ static char *cyclepath = NULL;
 static char *cyclepostdata = NULL;
 
 static int test_mode = 0;
+static hostlist_t test_fail_power_cmd_hosts;
 static zhashx_t *test_power_status;
 
 /* in seconds */
@@ -113,7 +114,7 @@ struct powermsg {
             err_exit(false, "curl_easy_setopt: %s", curl_easy_strerror(_ec));  \
     } while(0)
 
-#define OPTIONS "h:H:S:O:F:C:P:G:D:Tv"
+#define OPTIONS "h:H:S:O:F:C:P:G:D:TEv"
 static struct option longopts[] = {
         {"hostname", required_argument, 0, 'h' },
         {"header", required_argument, 0, 'H' },
@@ -125,6 +126,7 @@ static struct option longopts[] = {
         {"offpostdata", required_argument, 0, 'G' },
         {"cyclepostdata", required_argument, 0, 'D' },
         {"test-mode", no_argument, 0, 'T' },
+        {"test-fail-power-cmd-hosts", required_argument, 0, 'E' },
         {"verbose", no_argument, 0, 'v' },
         {0,0,0,0},
 };
@@ -958,7 +960,10 @@ static void shell(CURLM *mh)
             /* in test mode we assume all activecmds complete immediately */
             struct powermsg *pm = zlistx_first(activecmds);
             while (pm) {
-                power_cmd_process(delayedcmds, pm);
+                if (hostlist_find(test_fail_power_cmd_hosts, pm->hostname) >= 0)
+                    printf("%s: %s\n", pm->hostname, "error");
+                else
+                    power_cmd_process(delayedcmds, pm);
                 fflush(stdout);
                 zlistx_detach_cur(activecmds);
                 pm = zlistx_next(activecmds);
@@ -994,6 +999,9 @@ static void init_redfishpower(char *argv[])
     if (!(hosts = hostlist_create(NULL)))
         err_exit(true, "hostlist_create error");
 
+    if (!(test_fail_power_cmd_hosts = hostlist_create(NULL)))
+        err_exit(true, "hostlist_create error");
+
     if (!(test_power_status = zhashx_new ()))
         err_exit(false, "zhashx_new error");
 }
@@ -1011,6 +1019,7 @@ static void cleanup_redfishpower(void)
 
     hostlist_destroy(hosts);
 
+    hostlist_destroy(test_fail_power_cmd_hosts);
     zhashx_destroy(&test_power_status);
 }
 
@@ -1054,6 +1063,10 @@ int main(int argc, char *argv[])
                 break;
             case 'T': /* --test-mode */
                 test_mode = 1;
+                break;
+            case 'E': /* --test-fail-power-cmd-hosts */
+                if (!hostlist_push(test_fail_power_cmd_hosts, optarg))
+                    err_exit(true, "hostlist_push error on %s", optarg);
                 break;
             case 'v': /* --verbose */
                 verbose = 1;
