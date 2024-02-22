@@ -64,7 +64,9 @@ EXTRA_DIST= \
 	etc/redfishpower-setplugs.dev \
 	etc/redfishpower-setpath.dev \
 	etc/redfishpower-plugsub.dev \
-	etc/redfishpower-plugsub-blades.dev
+	etc/redfishpower-plugsub-blades.dev \
+	etc/redfishpower-parents-2-levels.dev \
+	etc/redfishpower-parents-3-levels.dev
 
 
 AM_CFLAGS = @WARNING_CFLAGS@
