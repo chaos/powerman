@@ -965,9 +965,9 @@ static void shell(CURLM *mh)
                 else
                     power_cmd_process(delayedcmds, pm);
                 fflush(stdout);
-                zlistx_detach_cur(activecmds);
                 pm = zlistx_next(activecmds);
             }
+            zlistx_purge(activecmds);
         }
     }
     zlistx_destroy(&activecmds);
