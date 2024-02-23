@@ -173,6 +173,59 @@ static size_t output_cb(void *contents, size_t size, size_t nmemb, void *userp)
     return realsize;
 }
 
+/* called before putting powermsg on activecmds list */
+static void powermsg_init_curl(struct powermsg *pm)
+{
+    CURLMcode mc;
+
+    if (test_mode)
+        return;
+
+    if ((pm->eh = curl_easy_init()) == NULL)
+        err_exit(false, "curl_easy_init failed");
+
+    Curl_easy_setopt((pm->eh, CURLOPT_TIMEOUT, MESSAGE_TIMEOUT));
+    Curl_easy_setopt((pm->eh, CURLOPT_FAILONERROR, 1));
+
+    /* for time being */
+    Curl_easy_setopt((pm->eh, CURLOPT_SSL_VERIFYPEER, 0L));
+    Curl_easy_setopt((pm->eh, CURLOPT_SSL_VERIFYHOST, 0L));
+
+    if (verbose)
+        Curl_easy_setopt((pm->eh, CURLOPT_VERBOSE, 1L));
+
+    if (header) {
+        if (!header_list) {
+            if (!(header_list = curl_slist_append(header_list, header)))
+                err_exit(false, "curl_slist_append");
+        }
+        Curl_easy_setopt((pm->eh, CURLOPT_HTTPHEADER, header_list));
+    }
+
+    if (userpwd) {
+        Curl_easy_setopt((pm->eh, CURLOPT_USERPWD, userpwd));
+        Curl_easy_setopt((pm->eh, CURLOPT_HTTPAUTH, CURLAUTH_BASIC));
+    }
+
+    Curl_easy_setopt((pm->eh, CURLOPT_WRITEFUNCTION, output_cb));
+    Curl_easy_setopt((pm->eh, CURLOPT_WRITEDATA, (void *)pm));
+
+    Curl_easy_setopt((pm->eh, CURLOPT_PRIVATE, pm));
+
+    if ((mc = curl_multi_add_handle(pm->mh, pm->eh)) != CURLM_OK)
+        err_exit(false, "curl_multi_add_handle: %s", curl_multi_strerror(mc));
+
+    Curl_easy_setopt((pm->eh, CURLOPT_URL, pm->url));
+
+    if (pm->postdata) {
+        Curl_easy_setopt((pm->eh, CURLOPT_POST, 1));
+        Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDS, pm->postdata));
+        Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDSIZE, strlen(pm->postdata)));
+    }
+    else
+        Curl_easy_setopt((pm->eh, CURLOPT_HTTPGET, 1));
+}
+
 static struct powermsg *powermsg_create(CURLM *mh,
                                         const char *hostname,
                                         const char *cmd,
@@ -185,7 +238,6 @@ static struct powermsg *powermsg_create(CURLM *mh,
     struct powermsg *pm = calloc(1, sizeof(*pm));
     struct timeval now;
     struct timeval waitdelay = { 0 };
-    CURLMcode mc;
 
     if (!pm)
         err_exit(true, "calloc");
@@ -201,44 +253,6 @@ static struct powermsg *powermsg_create(CURLM *mh,
 
     if (postdata)
         pm->postdata = xstrdup(postdata);
-
-    if (!test_mode) {
-        if ((pm->eh = curl_easy_init()) == NULL)
-            err_exit(false, "curl_easy_init failed");
-
-        Curl_easy_setopt((pm->eh, CURLOPT_TIMEOUT, MESSAGE_TIMEOUT));
-        Curl_easy_setopt((pm->eh, CURLOPT_FAILONERROR, 1));
-
-        /* for time being */
-        Curl_easy_setopt((pm->eh, CURLOPT_SSL_VERIFYPEER, 0L));
-        Curl_easy_setopt((pm->eh, CURLOPT_SSL_VERIFYHOST, 0L));
-
-        if (verbose)
-            Curl_easy_setopt((pm->eh, CURLOPT_VERBOSE, 1L));
-
-        if (header) {
-            if (!header_list) {
-                if (!(header_list = curl_slist_append(header_list, header)))
-                    err_exit(false, "curl_slist_append");
-            }
-            Curl_easy_setopt((pm->eh, CURLOPT_HTTPHEADER, header_list));
-        }
-
-        if (userpwd) {
-            Curl_easy_setopt((pm->eh, CURLOPT_USERPWD, userpwd));
-            Curl_easy_setopt((pm->eh, CURLOPT_HTTPAUTH, CURLAUTH_BASIC));
-        }
-
-        Curl_easy_setopt((pm->eh, CURLOPT_WRITEFUNCTION, output_cb));
-        Curl_easy_setopt((pm->eh, CURLOPT_WRITEDATA, (void *)pm));
-
-        Curl_easy_setopt((pm->eh, CURLOPT_PRIVATE, pm));
-
-        if ((mc = curl_multi_add_handle(pm->mh, pm->eh)) != CURLM_OK)
-            err_exit(false, "curl_multi_add_handle: %s", curl_multi_strerror(mc));
-
-        Curl_easy_setopt((pm->eh, CURLOPT_URL, pm->url));
-    }
 
     if (start) {
         pm->start.tv_sec = start->tv_sec;
@@ -271,7 +285,7 @@ static void powermsg_destroy(struct powermsg *pm)
         if (pm->postdata)
             xfree(pm->postdata);
         free(pm->output);
-        if (!test_mode) {
+        if (!test_mode && pm->eh) {
             CURLMcode mc;
             Curl_easy_setopt((pm->eh, CURLOPT_URL, ""));
             if ((mc = curl_multi_remove_handle(pm->mh, pm->eh)) != CURLM_OK)
@@ -324,8 +338,6 @@ static struct powermsg *stat_cmd_host(CURLM * mh, char *hostname)
                                           NULL,
                                           0,
                                           STATE_SEND_POWERCMD);
-    if (!test_mode)
-        Curl_easy_setopt((pm->eh, CURLOPT_HTTPGET, 1));
     return pm;
 }
 
@@ -354,6 +366,7 @@ static void stat_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
 
     while ((hostname = hostlist_next(itr))) {
         struct powermsg *pm = stat_cmd_host(mh, hostname);
+        powermsg_init_curl(pm);
         if (!(pm->handle = zlistx_add_end(activecmds, pm)))
             err_exit(true, "zlistx_add_end");
         free(hostname);
@@ -438,12 +451,6 @@ struct powermsg *power_cmd_host(CURLM * mh,
                                           NULL,
                                           0,
                                           STATE_SEND_POWERCMD);
-
-    if (!test_mode) {
-        Curl_easy_setopt((pm->eh, CURLOPT_POST, 1));
-        Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDS, pm->postdata));
-        Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDSIZE, strlen(pm->postdata)));
-    }
     return pm;
 }
 
@@ -482,6 +489,7 @@ static void power_cmd(zlistx_t *activecmds,
 
     while ((hostname = hostlist_next(itr))) {
         struct powermsg *pm = power_cmd_host(mh, hostname, cmd, path, postdata);
+        powermsg_init_curl(pm);
         if (!(pm->handle = zlistx_add_end(activecmds, pm)))
             err_exit(true, "zlistx_add_end");
         free(hostname);
@@ -534,8 +542,6 @@ static void send_status_poll(zlistx_t *delayedcmds, struct powermsg *pm)
                              &pm->start,
                              STATUS_POLLING_INTERVAL,
                              STATE_WAIT_UNTIL_ON_OFF);
-    if (!test_mode)
-        Curl_easy_setopt((nextpm->eh, CURLOPT_HTTPGET, 1));
     if (!(nextpm->handle = zlistx_add_end(delayedcmds, nextpm)))
         err_exit(true, "zlistx_add_end");
 }
@@ -611,7 +617,7 @@ static void power_cmd_process(zlistx_t *delayedcmds, struct powermsg *pm)
 
 static void power_cleanup(struct powermsg *pm)
 {
-    if (!test_mode) {
+    if (!test_mode && pm->eh) {
         Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDS, ""));
         Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDSIZE, 0));
     }
@@ -804,6 +810,7 @@ static void shell(CURLM *mh)
                     if (timercmp(&delaypm->delaystart, &now, >))
                         break;
                     zlistx_detach_cur(delayedcmds);
+                    powermsg_init_curl(delaypm);
                     if (!(delaypm->handle = zlistx_add_end(activecmds,
                                                            delaypm)))
                         err_exit(true, "zlistx_add_end");
