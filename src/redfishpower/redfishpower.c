@@ -522,6 +522,9 @@ static void send_status_poll(zlistx_t *delayedcmds, struct powermsg *pm)
     /* issue a follow on stat to wait until the on/off is complete.
      * note that we set the initial start time of this new command to
      * the original on/off, so we can timeout correctly
+     *
+     * in addition, the cmd is the original on/off, indicating the true
+     * purpose of this status query
      */
     nextpm = powermsg_create(pm->mh,
                              pm->hostname,
