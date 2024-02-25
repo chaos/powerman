@@ -32,17 +32,11 @@ Set Redfish path for performing power on.  Typically is redfish/v1/Systems/1/Act
 .I "-F, --offpath string"
 Set Redfish path for performing power off.  Typically is redfish/v1/Systems/1/Actions/ComputerSystem.Reset.
 .TP
-.I "-C, --cyclepath string"
-Set Redfish path for performing power cycle.  Typically is redfish/v1/Systems/1/Actions/ComputerSystem.Reset.
-.TP
 .I "-P, --onpostdata string"
 Set Redfish postdata for performing power on.  Typically is {"ResetType":"On"}
 .TP
 .I "-G, --offpostdata string"
 Set Redfish postdata for performing power off.  Typically is {"ResetType":"ForceOff"}
-.TP
-.I "-D, --cyclepostdata string"
-Set Redfish postdata for performing power cycle.  Typically is {"ResetType":"ForceRestart"}
 .TP
 .I "-v, --verbose"
 Increase output verbosity.
@@ -66,9 +60,6 @@ Set path and optional post data to turn on node.
 .I "setoffpath <path> [postdata]"
 Set path and optional post data to turn off node.
 .TP
-.I "setcyclepath <path> [postdata]"
-Set path and optional post data to cycle node.
-.TP
 .I "settimeout <seconds>"
 Set command timeout in seconds.
 .TP
@@ -80,9 +71,6 @@ Turn on all nodes or specified subset of nodes.  Will return "ok" after confirma
 .TP
 .I "off [nodes]"
 Turn off all nodes or specified subset of nodes.  Will return "ok" after confirmation "off" has completed.
-.TP
-.I "cycle [nodes]"
-Power cycle all nodes or specified subset of nodes.
 
 .SH "UPDATING REDFISHPOWER DEVICE FILES"
 .LP
