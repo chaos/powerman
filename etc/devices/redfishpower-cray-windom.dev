@@ -62,6 +62,7 @@ specification "redfishpower-cray-windom-node0" {
 	script cycle_ranged {
 		send "off %s\n"
 		expect "redfishpower> "
+		delay 2
 		send "on %s\n"
 		expect "redfishpower> "
 	}
@@ -107,6 +108,7 @@ specification "redfishpower-cray-windom-node1" {
 	script cycle_ranged {
 		send "off %s\n"
 		expect "redfishpower> "
+		delay 2
 		send "on %s\n"
 		expect "redfishpower> "
 	}

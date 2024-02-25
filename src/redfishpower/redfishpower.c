@@ -42,8 +42,6 @@ static char *onpath = NULL;
 static char *onpostdata = NULL;
 static char *offpath = NULL;
 static char *offpostdata = NULL;
-static char *cyclepath = NULL;
-static char *cyclepostdata = NULL;
 
 static int test_mode = 0;
 static hostlist_t test_fail_power_cmd_hosts;
@@ -68,7 +66,6 @@ static zhashx_t *test_power_status;
 #define CMD_STAT       "stat"
 #define CMD_ON         "on"
 #define CMD_OFF        "off"
-#define CMD_CYCLE      "cycle"
 
 #define STATUS_ON      "on"
 #define STATUS_OFF     "off"
@@ -83,10 +80,10 @@ struct powermsg {
     CURLM *mh;                  /* curl multi handle pointer */
 
     CURL *eh;                   /* curl easy handle */
-    char *cmd;                  /* "on", "off", "cycle", or "stat" */
+    char *cmd;                  /* "on", "off", or "stat" */
     char *hostname;             /* host we're working with */
-    char *url;                  /* on, off, cycle, stat */
-    char *postdata;             /* on, off, cycle */
+    char *url;                  /* on, off, stat */
+    char *postdata;             /* on, off */
     char *output;               /* on, off, stat */
     size_t output_len;
 
@@ -114,17 +111,15 @@ struct powermsg {
             err_exit(false, "curl_easy_setopt: %s", curl_easy_strerror(_ec));  \
     } while(0)
 
-#define OPTIONS "h:H:S:O:F:C:P:G:D:TEv"
+#define OPTIONS "h:H:S:O:F:P:G:TEv"
 static struct option longopts[] = {
         {"hostname", required_argument, 0, 'h' },
         {"header", required_argument, 0, 'H' },
         {"statpath", required_argument, 0, 'S' },
         {"onpath", required_argument, 0, 'O' },
         {"offpath", required_argument, 0, 'F' },
-        {"cyclepath", required_argument, 0, 'C' },
         {"onpostdata", required_argument, 0, 'P' },
         {"offpostdata", required_argument, 0, 'G' },
-        {"cyclepostdata", required_argument, 0, 'D' },
         {"test-mode", no_argument, 0, 'T' },
         {"test-fail-power-cmd-hosts", required_argument, 0, 'E' },
         {"verbose", no_argument, 0, 'v' },
@@ -141,12 +136,10 @@ void help(void)
     printf("  setstatpath path\n");
     printf("  setonpath path [postdata]\n");
     printf("  setoffpath path [postdata]\n");
-    printf("  setcyclepath path [postdata]\n");
     printf("  settimeout seconds\n");
     printf("  stat [nodes]\n");
     printf("  on [nodes]\n");
     printf("  off [nodes]\n");
-    printf("  cycle [nodes]\n");
 }
 
 static size_t output_cb(void *contents, size_t size, size_t nmemb, void *userp)
@@ -518,11 +511,6 @@ static void off_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
     power_cmd(activecmds, mh, av, CMD_OFF, offpath, offpostdata);
 }
 
-static void cycle_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
-{
-    power_cmd(activecmds, mh, av, CMD_CYCLE, cyclepath, cyclepostdata);
-}
-
 static void send_status_poll(zlistx_t *delayedcmds, struct powermsg *pm)
 {
     struct powermsg *nextpm;
@@ -596,13 +584,6 @@ static void off_process(zlistx_t *delayedcmds, struct powermsg *pm)
     on_off_process(delayedcmds, pm);
 }
 
-static void cycle_process(struct powermsg *pm)
-{
-    if (test_mode)
-        zhashx_update(test_power_status, pm->hostname, STATUS_ON);
-    printf("%s: %s\n", pm->hostname, "ok");
-}
-
 static void power_cmd_process(zlistx_t *delayedcmds, struct powermsg *pm)
 {
     if (strcmp(pm->cmd, CMD_STAT) == 0)
@@ -611,8 +592,6 @@ static void power_cmd_process(zlistx_t *delayedcmds, struct powermsg *pm)
         on_process(delayedcmds, pm);
     else if (strcmp(pm->cmd, CMD_OFF) == 0)
         off_process(delayedcmds, pm);
-    else if (strcmp(pm->cmd, CMD_CYCLE) == 0)
-        cycle_process(pm);
 }
 
 static void power_cleanup(struct powermsg *pm)
@@ -630,11 +609,6 @@ static void on_cleanup(struct powermsg *pm)
 }
 
 static void off_cleanup(struct powermsg *pm)
-{
-    power_cleanup(pm);
-}
-
-static void cycle_cleanup(struct powermsg *pm)
 {
     power_cleanup(pm);
 }
@@ -726,8 +700,6 @@ static void process_cmd(zlistx_t *activecmds, CURLM *mh, char **av, int *exitfla
             setpowerpath(av + 1, &onpath, &onpostdata);
         else if (strcmp(av[0], "setoffpath") == 0)
             setpowerpath(av + 1, &offpath, &offpostdata);
-        else if (strcmp(av[0], "setcyclepath") == 0)
-            setpowerpath(av + 1, &cyclepath, &cyclepostdata);
         else if (strcmp(av[0], "settimeout") == 0)
             settimeout(av + 1);
         else if (strcmp(av[0], CMD_STAT) == 0)
@@ -736,8 +708,6 @@ static void process_cmd(zlistx_t *activecmds, CURLM *mh, char **av, int *exitfla
             on_cmd(activecmds, mh, av + 1);
         else if (strcmp(av[0], CMD_OFF) == 0)
             off_cmd(activecmds, mh, av + 1);
-        else if (strcmp(av[0], CMD_CYCLE) == 0)
-            cycle_cmd(activecmds, mh, av + 1);
         else
             printf("type \"help\" for a list of commands\n");
     }
@@ -753,8 +723,6 @@ static void cleanup_powermsg(void **x)
             on_cleanup(pm);
         else if (strcmp(pm->cmd, CMD_OFF) == 0)
             off_cleanup(pm);
-        else if (strcmp(pm->cmd, CMD_CYCLE) == 0)
-            cycle_cleanup(pm);
     }
 }
 
@@ -993,10 +961,8 @@ static void usage(void)
       "  -S, --statpath      Set stat path\n"
       "  -O, --onpath        Set on path\n"
       "  -F, --offpath       Set off path\n"
-      "  -C, --cyclepath     Set cycle path\n"
       "  -P, --onpostdata    Set on post data\n"
       "  -G, --offpostdata   Set off post data\n"
-      "  -D, --cyclepostdata Set cycle post data\n"
       "  -v, --verbose       Increase output verbosity\n"
     );
     exit(1);
@@ -1024,8 +990,6 @@ static void cleanup_redfishpower(void)
     xfree(onpostdata);
     xfree(offpath);
     xfree(offpostdata);
-    xfree(cyclepath);
-    xfree(cyclepostdata);
 
     hostlist_destroy(hosts);
 
@@ -1059,17 +1023,11 @@ int main(int argc, char *argv[])
             case 'F': /* --offpath */
                 offpath = xstrdup(optarg);
                 break;
-            case 'C': /* --cyclepath */
-                cyclepath = xstrdup(optarg);
-                break;
             case 'P': /* --onpostdata */
                 onpostdata = xstrdup(optarg);
                 break;
             case 'G': /* --offpostdata */
                 offpostdata = xstrdup(optarg);
-                break;
-            case 'D': /* --cyclepostdata */
-                cyclepostdata = xstrdup(optarg);
                 break;
             case 'T': /* --test-mode */
                 test_mode = 1;

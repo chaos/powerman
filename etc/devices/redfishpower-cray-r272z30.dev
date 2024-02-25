@@ -29,8 +29,6 @@ specification "redfishpower-cray-r272z30" {
 		expect "redfishpower> "
 		send "setoffpath redfish/v1/Systems/Self/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceOff\"}\n"
 		expect "redfishpower> "
-		send "setcyclepath redfish/v1/Systems/Self/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceRestart\"}\n"
-		expect "redfishpower> "
 		send "settimeout 60\n"
 		expect "redfishpower> "
 	}
@@ -54,7 +52,10 @@ specification "redfishpower-cray-r272z30" {
 		expect "redfishpower> "
 	}
 	script cycle_ranged {
-		send "cycle %s\n"
+		send "off %s\n"
+		expect "redfishpower> "
+		delay 2
+		send "on %s\n"
 		expect "redfishpower> "
 	}
 }
