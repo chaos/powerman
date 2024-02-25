@@ -109,23 +109,6 @@ Several paths the authors have seen include:
 .PP
 .B # curl -s -u USER:PASS -k -X GET https://<node>/redfish/v1/Systems/Self
 .LP
-To discover if \fIcycle\fR is supported, a path similar to the following might
-be found:
-.PP
-.B # curl -s -u USER:PASS -k -X GET https://<node>/redfish/v1/Systems/Node0/ResetActionInfo
-.LP
-If \fIcycle\fR (i.e. \fIForceRestart\fR) is not available, the
-\fIcycle_ranged\fR script could be replaced with.
-.PP
-.nf
-      script cycle_ranged {
-              send "off %s\\n"
-              expect "redfishpower> "
-              send "on %s\\n"
-              expect "redfishpower> "
-      }
-.fi
-.LP
 Internally within
 .B redfishpower,
 an \fIon\fR or \fIoff\fR command will not return until the
@@ -138,10 +121,10 @@ necessary, it should be increased at the top of the specification file
 (via \fItimeout\fR) and the login section of device file (via
 \fIsettimeout\fR).
 .LP
-Note that if \fIcycle_ranged\fR is scripted as an \fIoff\fR followed by an
-\fIon\fR, the
+Note that the
 .B powerman
-timeout should account for the combined time of both.
+timeout should account for the combined time of an \fIoff\fR and \fIon\fR
+for the \fIcycle\fR operation.
 
 .SH "FILES"
 @X_SBINDIR@/redfishpower
