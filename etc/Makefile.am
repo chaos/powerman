@@ -59,6 +59,7 @@ pkgsysconf_DATA = \
 	devices/redfishpower-cray-r272z30.dev \
 	devices/redfishpower-supermicro.dev \
 	devices/redfishpower-cray-windom.dev \
+	devices/redfishpower-hpe-cray-supercomputing-ex-chassis.dev \
 	devices/phantom.dev \
 	devices/plmpower.dev \
 	devices/powerman.dev \
