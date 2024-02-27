@@ -683,8 +683,12 @@ static int _enqueue_targeted_actions(Device * dev, int com, hostlist_t hl,
     pluglist_iterator_destroy(itr);
 
     /* Try _all version of script.
+     *
+     * - use if action is a query, unless no singlet version exists
+     *   (i.e. if there is no singlet version, we have to use the _all
+     *   version)
      */
-    if (all || _is_query_action(com)) {
+    if (all || (_is_query_action(com) && dev->scripts[com] == NULL)) {
         int ncom = _get_all_script(dev, com);
 
         if (ncom != -1) {
