@@ -184,7 +184,7 @@ static void powermsg_init_curl(struct powermsg *pm)
     Curl_easy_setopt((pm->eh, CURLOPT_SSL_VERIFYPEER, 0L));
     Curl_easy_setopt((pm->eh, CURLOPT_SSL_VERIFYHOST, 0L));
 
-    if (verbose)
+    if (verbose > 2)
         Curl_easy_setopt((pm->eh, CURLOPT_VERBOSE, 1L));
 
     if (header) {
