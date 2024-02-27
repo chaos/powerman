@@ -394,8 +394,12 @@ static void parse_onoff_response(struct powermsg *pm, const char **strp)
                     (*strp) = STATUS_ON;
                 else if (strcasecmp(str, "Off") == 0)
                     (*strp) = STATUS_OFF;
-                else
+                else {
                     (*strp) = STATUS_UNKNOWN;
+                    if (verbose)
+                        printf("%s: unknown status - %s\n",
+                               pm->hostname,str);
+                }
             }
         }
         json_decref(o);
