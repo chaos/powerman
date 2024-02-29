@@ -78,6 +78,7 @@ typedef struct {
     ListIterator stmtitr;       /* next stmt in block */
     Stmt *cur;                  /* current stmt */
     PlugListIterator plugitr;   /* used by foreach */
+    PlugList pluglist;          /* pluglist if foreach is ranged */
     bool processing;            /* flag used by stmts, ifon/ifoff */
 } ExecCtx;
 
@@ -229,6 +230,8 @@ static void _destroy_exec_ctx(ExecCtx *e)
     e->cur = NULL;
     if (e->plugs)
         list_destroy(e->plugs);
+    if (e->pluglist)
+        pluglist_destroy(e->pluglist);
     e->plugs = NULL;
     xfree(e);
 }
@@ -596,6 +599,10 @@ static int _get_ranged_script(Device * dev, int com)
         if (dev->scripts[PM_RESET_RANGED])
             new = PM_RESET_RANGED;
         break;
+    case PM_STATUS_PLUGS:
+        if (dev->scripts[PM_STATUS_PLUGS_RANGED])
+            new = PM_STATUS_PLUGS_RANGED;
+        break;
     case PM_BEACON_ON:
         if (dev->scripts[PM_BEACON_ON_RANGED])
             new = PM_BEACON_ON_RANGED;
@@ -937,8 +944,18 @@ static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
     Plug *plug = NULL;
 
     /* we store a plug iterator in the ExecCtx */
-    if (e->plugitr == NULL)
-        e->plugitr = pluglist_iterator_create(dev->plugs);
+    if (e->plugitr == NULL) {
+        if (act->com == PM_STATUS_PLUGS_RANGED) {
+            assert(e->plugs);
+            if (!e->pluglist) {
+                if (!(e->pluglist = pluglist_copy_from_list(e->plugs)))
+                    goto cleanup;
+            }
+            e->plugitr = pluglist_iterator_create(e->pluglist);
+        }
+        else
+            e->plugitr = pluglist_iterator_create(dev->plugs);
+    }
 
     /* Each time the inner block is executed, its argument will be
      * a new plug name.  Pick that up here.

@@ -142,6 +142,7 @@ delay           return TOK_DELAY;
 login           return TOK_LOGIN;
 logout          return TOK_LOGOUT;
 status          return TOK_STATUS;
+status_ranged   return TOK_STATUS_RANGED;
 status_all      return TOK_STATUS_ALL;
 on              return TOK_ON;
 on_ranged       return TOK_ON_RANGED;
