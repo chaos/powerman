@@ -30,8 +30,8 @@ specification "ipmipower" {
 	script logout {
 		send "quit\n"
 	}
-	script status_all {
-		send "stat\n"
+	script status_ranged {
+		send "stat %s\n"
 		foreachnode {
 			expect "([^\n:]+): ([^\n]+\n)"
 			setplugstate $1 $2 on="^on\n" off="^off\n"
