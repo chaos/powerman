@@ -80,8 +80,9 @@ Executed prior to disconnect.
 Get device in a state so login script will work
 (though hopefully disconnecting will do that too).
 .TP
-.I "status_all, status[%s]"
-Obtain plug state for all plugs or only the specified plug.
+.I "status_all, status_ranged[%s], status[%s]"
+Obtain plug state for all plugs, a range of plugs, or only the
+specified plug.
 .TP
 .I "on_all, on_ranged[%s], on[%s]"
 Power on all plugs, a range of plugs, or the specified plug.
