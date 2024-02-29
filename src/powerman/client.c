@@ -364,6 +364,35 @@ static void _client_query_device_reply(Client * c, char *arg)
 }
 
 /*
+ * Reply to client power command (on/off/cycle/reset/beacon on/beacon off)
+ */
+static void _client_power_status_reply(Client * c, bool error)
+{
+    Arg *arg;
+    ArgListIterator itr;
+    int error_found = 0;
+
+    assert(c->cmd != NULL);
+
+    /* N.B. if result is RT_NONE, device script does not
+     * specify setresult interpretation.
+     */
+    itr = arglist_iterator_create(c->cmd->arglist);
+    while ((arg = arglist_next(itr))) {
+        if (arg->result == RT_UNKNOWN) {
+            error_found++;
+            break;
+        }
+    }
+    arglist_iterator_destroy(itr);
+
+    if (c->cmd->error || error_found)
+        _client_printf(c, CP_ERR_COM_COMPLETE);
+    else
+        _client_printf(c, CP_RSP_COM_COMPLETE);
+}
+
+/*
  * Reply to client request for plug/soft status.
  */
 static void _client_query_status_reply(Client * c, bool error)
@@ -717,10 +746,7 @@ static void _act_finish(int client_id, ActError acterr, const char *fmt, ...)
         case PM_BEACON_OFF:        /* unflash */
         case PM_POWER_CYCLE:       /* cycle */
         case PM_RESET:             /* reset */
-            if (c->cmd->error)
-                _client_printf(c, CP_ERR_COM_COMPLETE);
-            else
-                _client_printf(c, CP_RSP_COM_COMPLETE);
+            _client_power_status_reply(c, c->cmd->error);
             break;
         default:
             assert(false);

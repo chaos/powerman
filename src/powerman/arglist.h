@@ -17,11 +17,16 @@
 #define PM_ARGLIST_H
 
 typedef enum { ST_UNKNOWN, ST_OFF, ST_ON } InterpState;
+/* result not required to be set after power operation,
+ * result defaults to RT_NONE in that case.
+ */
+typedef enum { RT_NONE, RT_UNKNOWN, RT_SUCCESS } InterpResult;
 
 typedef struct {
     char *node;                 /* node name (in) */
     char *val;                  /* value as returned by the device (out) */
     InterpState state;          /* interpreted value, if appropriate (out) */
+    InterpResult result;        /* interpreted result, if appropriate (out) */
 } Arg;
 
 typedef struct arglist_iterator *ArgListIterator;
