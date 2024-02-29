@@ -49,10 +49,11 @@ typedef struct {
     StmtType type;              /* delay/expect/send */
     char *str;                  /* expect string, send fmt, setplugstate plug */
     struct timeval tv;          /* delay value */
-    int mp1;                    /* setplugstate plug match position */
-    int mp2;                    /* setplugstate state match position */
+    int mp1;                    /* setplugstate/result plug match position */
+    int mp2;                    /* setplugstate/result state/result match position */
     List prestmts;              /* subblock */
     List state_interps;         /* interpretations for setplugstate */
+    List result_interps;        /* interpretations for setresult */
 } PreStmt;
 typedef List PreScript;
 
@@ -79,7 +80,7 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
 /* device config */
 static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
                       char *mp1str, char *mp2str, List prestmts,
-                      List plugstate_interps);
+                      List plugstate_interps, List result_interps);
 static void destroyPreStmt(PreStmt *p);
 static Spec *makeSpec(char *name);
 static Spec *findSpec(char *name);
@@ -89,6 +90,9 @@ static void makeScript(int com, List stmts);
 static void destroyStateInterp(StateInterp *i);
 static StateInterp *makeStateInterp(InterpState state, char *str);
 static List copyStateInterpList(List ilist);
+static void destroyResultInterp(ResultInterp *i);
+static ResultInterp *makeResultInterp(InterpResult result, char *str);
+static List copyResultInterpList(List ilist);
 
 /* utility functions */
 static void _errormsg(char *msg);
@@ -115,7 +119,7 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 %token TOK_RESET TOK_RESET_RANGED TOK_RESET_ALL TOK_PING TOK_SPEC
 
 /* script statements */
-%token TOK_EXPECT TOK_SETPLUGSTATE TOK_SEND TOK_DELAY
+%token TOK_EXPECT TOK_SETPLUGSTATE TOK_SETRESULT TOK_SEND TOK_DELAY
 %token TOK_FOREACHPLUG TOK_FOREACHNODE TOK_IFOFF TOK_IFON
 
 /* other device configuration stuff */
@@ -129,6 +133,7 @@ static Spec current_spec;             /* Holds a Spec as it is built */
 /* general */
 %token TOK_MATCHPOS TOK_STRING_VAL TOK_NUMERIC_VAL TOK_YES TOK_NO
 %token TOK_BEGIN TOK_END TOK_UNRECOGNIZED TOK_EQUALS
+%token TOK_SUCCESS
 
 %%
 /* Grammar Rules for the powerman.conf config file */
@@ -292,36 +297,45 @@ stmt_list       : stmt_list stmt {
 }
 ;
 stmt            : TOK_EXPECT TOK_STRING_VAL {
-    $$ = (char *)makePreStmt(STMT_EXPECT, $2, NULL, NULL, NULL, NULL, NULL);
+    $$ = (char *)makePreStmt(STMT_EXPECT, $2, NULL, NULL, NULL, NULL, NULL,
+                             NULL);
 }               | TOK_SEND TOK_STRING_VAL {
-    $$ = (char *)makePreStmt(STMT_SEND, $2, NULL, NULL, NULL, NULL, NULL);
+    $$ = (char *)makePreStmt(STMT_SEND, $2, NULL, NULL, NULL, NULL, NULL, NULL);
 }               | TOK_DELAY TOK_NUMERIC_VAL {
-    $$ = (char *)makePreStmt(STMT_DELAY, NULL, $2, NULL, NULL, NULL, NULL);
+    $$ = (char *)makePreStmt(STMT_DELAY, NULL, $2, NULL, NULL, NULL, NULL, NULL);
 }               | TOK_SETPLUGSTATE TOK_STRING_VAL regmatch {
-    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, $2, NULL, NULL, $3, NULL, NULL);
+    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, $2, NULL, NULL, $3, NULL, NULL,
+                             NULL);
 }               | TOK_SETPLUGSTATE TOK_STRING_VAL regmatch state_interp_list {
     $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, $2, NULL, NULL, $3, NULL,
-                             (List)$4);
+                             (List)$4, NULL);
 }               | TOK_SETPLUGSTATE regmatch regmatch {
-    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, $2, $3, NULL, NULL);
+    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, $2, $3, NULL, NULL,
+                             NULL);
 }               | TOK_SETPLUGSTATE regmatch regmatch state_interp_list {
-    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, $2, $3, NULL,(List)$4);
+    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, $2, $3, NULL,
+                             (List)$4, NULL);
 }               | TOK_SETPLUGSTATE regmatch {
-    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL, $2, NULL, NULL);
+    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL, $2, NULL, NULL,
+                             NULL);
 }               | TOK_SETPLUGSTATE regmatch state_interp_list {
-    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL,$2,NULL,(List)$3);
+    $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL,$2,NULL,
+                             (List)$3, NULL);
+}               | TOK_SETRESULT regmatch regmatch result_interp_list {
+    $$ = (char *)makePreStmt(STMT_SETRESULT, NULL, NULL, $2, $3, NULL,
+                             NULL, (List)$4);
 }               | TOK_FOREACHNODE stmt_block {
     $$ = (char *)makePreStmt(STMT_FOREACHNODE, NULL, NULL, NULL, NULL,
-                             (List)$2, NULL);
+                             (List)$2, NULL, NULL);
 }               | TOK_FOREACHPLUG stmt_block {
     $$ = (char *)makePreStmt(STMT_FOREACHPLUG, NULL, NULL, NULL, NULL,
-                             (List)$2, NULL);
+                             (List)$2, NULL, NULL);
 }               | TOK_IFOFF stmt_block {
     $$ = (char *)makePreStmt(STMT_IFOFF, NULL, NULL, NULL, NULL,
-                             (List)$2, NULL);
+                             (List)$2, NULL, NULL);
 }               | TOK_IFON stmt_block {
     $$ = (char *)makePreStmt(STMT_IFON, NULL, NULL, NULL, NULL,
-                             (List)$2, NULL);
+                             (List)$2, NULL, NULL);
 }
 ;
 state_interp_list       : state_interp_list state_interp {
@@ -336,6 +350,18 @@ state_interp            : TOK_ON TOK_EQUALS TOK_STRING_VAL {
     $$ = (char *)makeStateInterp(ST_ON, $3);
 }                 | TOK_OFF TOK_EQUALS TOK_STRING_VAL {
     $$ = (char *)makeStateInterp(ST_OFF, $3);
+}
+;
+result_interp_list       : result_interp_list result_interp {
+    list_append((List)$1, $2);
+    $$ = $1;
+}               | result_interp {
+    $$ = (char *)list_create((ListDelF)destroyResultInterp);
+    list_append((List)$$, $1);
+}
+;
+result_interp            : TOK_SUCCESS TOK_EQUALS TOK_STRING_VAL {
+    $$ = (char *)makeResultInterp(RT_SUCCESS, $3);
 }
 ;
 regmatch          : TOK_MATCHPOS TOK_NUMERIC_VAL {
@@ -375,10 +401,10 @@ int parse_config_file (char *filename)
 }
 
 /* makePreStmt(type, str, tv, mp1(plug), mp2(stat/node), prestmts,
- *             state_interps */
+ *             state_interps, result_interps */
 static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
                       char *mp1str, char *mp2str, List prestmts,
-                      List state_interps)
+                      List state_interps, List result_interps)
 {
     PreStmt *new;
 
@@ -393,6 +419,7 @@ static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
         _doubletotv(&new->tv, _strtodouble(tvstr));
     new->prestmts = prestmts;
     new->state_interps = state_interps;
+    new->result_interps = result_interps;
 
     return new;
 }
@@ -408,6 +435,9 @@ static void destroyPreStmt(PreStmt *p)
     if (p->state_interps)
         list_destroy(p->state_interps);
     p->state_interps = NULL;
+    if (p->result_interps)
+        list_destroy(p->result_interps);
+    p->result_interps = NULL;
     xfree(p);
 }
 
@@ -504,6 +534,44 @@ static List copyStateInterpList(List il)
     return new;
 }
 
+static ResultInterp *makeResultInterp(InterpResult result, char *str)
+{
+    ResultInterp *new = (ResultInterp *)xmalloc(sizeof(ResultInterp));
+
+    new->str = xstrdup(str);
+    new->re = xregex_create();
+    new->result = result;
+
+    return new;
+}
+
+static void destroyResultInterp(ResultInterp *i)
+{
+    xfree(i->str);
+    xregex_destroy(i->re);
+    xfree(i);
+}
+
+static List copyResultInterpList(List il)
+{
+    ListIterator itr;
+    ResultInterp *ip, *icpy;
+    List new = list_create((ListDelF) destroyResultInterp);
+
+    if (il != NULL) {
+
+        itr = list_iterator_create(il);
+        while((ip = list_next(itr))) {
+            icpy = makeResultInterp(ip->result, ip->str);
+            xregex_compile(icpy->re, icpy->str, false);
+            list_append(new, icpy);
+        }
+        list_iterator_destroy(itr);
+    }
+
+    return new;
+}
+
 /**
  ** Powerman.conf stuff.
  **/
@@ -524,6 +592,9 @@ static void destroyStmt(Stmt *stmt)
     case STMT_SETPLUGSTATE:
         list_destroy(stmt->u.setplugstate.interps);
         xfree (stmt->u.setplugstate.plug_name);
+        break;
+    case STMT_SETRESULT:
+        list_destroy(stmt->u.setresult.interps);
         break;
     case STMT_FOREACHNODE:
     case STMT_FOREACHPLUG:
@@ -562,6 +633,11 @@ static Stmt *makeStmt(PreStmt *p)
         else
             stmt->u.setplugstate.plug_mp = p->mp1;
         stmt->u.setplugstate.interps = copyStateInterpList(p->state_interps);
+        break;
+    case STMT_SETRESULT:
+        stmt->u.setresult.stat_mp = p->mp2;
+        stmt->u.setresult.plug_mp = p->mp1;
+        stmt->u.setresult.interps = copyResultInterpList(p->result_interps);
         break;
     case STMT_DELAY:
         stmt->u.delay.tv = p->tv;
