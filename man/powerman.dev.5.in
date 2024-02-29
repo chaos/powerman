@@ -82,9 +82,6 @@ Get device in a state so login script will work
 .TP
 .I "status_all, status[%s]"
 Obtain plug state for all plugs or only the specified plug.
-When all plugs of a device are involved in a plug status query,
-the status_all script, if defined, will be called in preference to the
-status script; otherwise the status script is called for each plug.
 .TP
 .I "on_all, on_ranged[%s], on[%s]"
 Power on all plugs, a range of plugs, or the specified plug.
