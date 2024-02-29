@@ -33,6 +33,9 @@ typedef enum { EPL_SUCCESS, EPL_DUPNODE, EPL_UNKPLUG, EPL_DUPPLUG,
  */
 PlugList          pluglist_create(List plugnames);
 
+/* Create a PlugList, copying plugs from an existing list of plugs */
+PlugList          pluglist_copy_from_list(List plugs);
+
 /* Destroy a PlugList and its Plugs
  */
 void              pluglist_destroy(PlugList pl);
