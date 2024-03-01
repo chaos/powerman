@@ -587,9 +587,10 @@ static void on_off_process(zlistx_t *delayedcmds, struct powermsg *pm)
     }
     else if (pm->state == STATE_WAIT_UNTIL_ON_OFF) {
         const char *status_str;
+        const char *rstatus_str;
         struct timeval now;
 
-        parse_onoff(pm, &status_str, NULL);
+        parse_onoff(pm, &status_str, &rstatus_str);
         if (strcmp(status_str, pm->cmd) == 0) {
             printf("%s: %s\n", pm->hostname, "ok");
             return;
@@ -598,7 +599,31 @@ static void on_off_process(zlistx_t *delayedcmds, struct powermsg *pm)
         /* check if we've timed out */
         gettimeofday(&now, NULL);
         if (timercmp(&now, &pm->timeout, >)) {
-            printf("%s: %s\n", pm->hostname, "timeout");
+            /* if target is not what it should be, this is unexpected, likely
+             * hardware problem */
+            if ((strcmp(pm->cmd, CMD_ON) == 0
+                 && strcmp(status_str, STATUS_OFF) == 0)
+                || (strcmp(pm->cmd, CMD_OFF) == 0
+                    && strcmp(status_str, STATUS_ON) == 0))
+                printf("%s: timeout - unexpected %s\n",
+                       pm->hostname, status_str);
+            /* if still powering on/off, this is the "normal" timeout
+             * scenario, timeout should be increased
+             */
+            else if ((strcmp(pm->cmd, CMD_ON) == 0
+                      && strcmp(rstatus_str, STATUS_POWERING_ON) == 0)
+                     || (strcmp(pm->cmd, CMD_OFF) == 0
+                         && strcmp(rstatus_str, STATUS_POWERING_OFF) == 0))
+                printf("%s: timeout - %s still in progress\n",
+                       pm->hostname, pm->cmd);
+            else {
+                if (verbose)
+                    printf("%s: timeout - unknown status %s\n",
+                           pm->hostname, rstatus_str);
+                else
+                    printf("%s: timeout\n",
+                           pm->hostname);
+            }
             return;
         }
 
