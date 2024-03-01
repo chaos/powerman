@@ -67,9 +67,12 @@ static zhashx_t *test_power_status;
 #define CMD_ON         "on"
 #define CMD_OFF        "off"
 
-#define STATUS_ON      "on"
-#define STATUS_OFF     "off"
-#define STATUS_UNKNOWN "unknown"
+#define STATUS_ON           "on"
+#define STATUS_OFF          "off"
+#define STATUS_PAUSED       "Paused"
+#define STATUS_POWERING_ON  "PoweringOn"
+#define STATUS_POWERING_OFF "PoweringOff"
+#define STATUS_UNKNOWN      "unknown"
 
 enum {
       STATE_SEND_POWERCMD,      /* stat, on, off */
@@ -368,14 +371,21 @@ static void stat_cmd(zlistx_t *activecmds, CURLM *mh, char **av)
     hostlist_destroy(lhosts);
 }
 
-static void parse_onoff_response(struct powermsg *pm, const char **strp)
+/* status_strp - on, off, unknown
+ * rstatus_strp - on, off, paused, poweringoff, poweringon, unknown
+ */
+static void parse_onoff_response(struct powermsg *pm,
+                                 const char **status_strp,
+                                 const char **rstatus_strp)
 {
     if (pm->output) {
         json_error_t error;
         json_t *o;
 
         if (!(o = json_loads(pm->output, 0, &error))) {
-            (*strp) = "parse error";
+            (*status_strp) = "parse error";
+            if (rstatus_strp)
+                (*rstatus_strp) = "parse error";
             if (verbose)
                 printf("%s: parse response error %s\n",
                        pm->hostname,
@@ -384,49 +394,69 @@ static void parse_onoff_response(struct powermsg *pm, const char **strp)
         else {
             json_t *val = json_object_get(o, "PowerState");
             if (!val) {
-                (*strp) = "no powerstate";
+                (*status_strp) = "no powerstate";
                 if (verbose)
                     printf("%s: no PowerState\n", pm->hostname);
             }
             else {
                 const char *str = json_string_value(val);
-                if (strcasecmp(str, "On") == 0)
-                    (*strp) = STATUS_ON;
-                else if (strcasecmp(str, "Off") == 0)
-                    (*strp) = STATUS_OFF;
+                if (strcasecmp(str, "On") == 0) {
+                    (*status_strp) = STATUS_ON;
+                    if (rstatus_strp)
+                        (*rstatus_strp) = STATUS_ON;
+                }
+                else if (strcasecmp(str, "Off") == 0) {
+                    (*status_strp) = STATUS_OFF;
+                    if (rstatus_strp)
+                        (*rstatus_strp) = STATUS_OFF;
+                }
                 else {
-                    (*strp) = STATUS_UNKNOWN;
+                    (*status_strp) = STATUS_UNKNOWN;
+                    if (rstatus_strp) {
+                        if (strcasecmp(str, "Paused") == 0)
+                            (*rstatus_strp) = STATUS_PAUSED;
+                        else if (strcasecmp(str, "PoweringOff") == 0)
+                            (*rstatus_strp) = STATUS_POWERING_OFF;
+                        else if (strcasecmp(str, "PoweringOn") == 0)
+                            (*rstatus_strp) = STATUS_POWERING_ON;
+                        else
+                            (*rstatus_strp) = STATUS_UNKNOWN;
+                    }
                     if (verbose)
                         printf("%s: unknown status - %s\n",
-                               pm->hostname,str);
+                               pm->hostname, str);
                 }
             }
         }
         json_decref(o);
     }
     else
-        (*strp) = "no output error";
+        (*status_strp) = "no output error";
 }
 
-static void parse_onoff(struct powermsg *pm, const char **strp)
+static void parse_onoff(struct powermsg *pm,
+                        const char **status_strp,
+                        const char **rstatus_strp)
 {
     if (!test_mode) {
-        parse_onoff_response(pm, strp);
+        parse_onoff_response(pm, status_strp, rstatus_strp);
         return;
     }
     else {
         char *tmp = zhashx_lookup(test_power_status, pm->hostname);
         if (!tmp)
             err_exit(false, "zhashx_lookup on test status failed");
-        (*strp) = tmp;
+        (*status_strp) = tmp;
+        if (rstatus_strp)
+            (*rstatus_strp) = tmp;
     }
 }
 
 static void stat_process(struct powermsg *pm)
 {
-    const char *str;
-    parse_onoff(pm, &str);
-    printf("%s: %s\n", pm->hostname, str);
+    const char *status_str;
+    parse_onoff(pm, &status_str, NULL);
+    printf("%s: %s\n", pm->hostname, status_str);
 }
 
 static void stat_cleanup(struct powermsg *pm)
@@ -556,11 +586,12 @@ static void on_off_process(zlistx_t *delayedcmds, struct powermsg *pm)
         }
     }
     else if (pm->state == STATE_WAIT_UNTIL_ON_OFF) {
-        const char *str;
+        const char *status_str;
+        const char *rstatus_str;
         struct timeval now;
 
-        parse_onoff(pm, &str);
-        if (strcmp(str, pm->cmd) == 0) {
+        parse_onoff(pm, &status_str, &rstatus_str);
+        if (strcmp(status_str, pm->cmd) == 0) {
             printf("%s: %s\n", pm->hostname, "ok");
             return;
         }
@@ -568,7 +599,31 @@ static void on_off_process(zlistx_t *delayedcmds, struct powermsg *pm)
         /* check if we've timed out */
         gettimeofday(&now, NULL);
         if (timercmp(&now, &pm->timeout, >)) {
-            printf("%s: %s\n", pm->hostname, "timeout");
+            /* if target is not what it should be, this is unexpected, likely
+             * hardware problem */
+            if ((strcmp(pm->cmd, CMD_ON) == 0
+                 && strcmp(status_str, STATUS_OFF) == 0)
+                || (strcmp(pm->cmd, CMD_OFF) == 0
+                    && strcmp(status_str, STATUS_ON) == 0))
+                printf("%s: timeout - unexpected %s\n",
+                       pm->hostname, status_str);
+            /* if still powering on/off, this is the "normal" timeout
+             * scenario, timeout should be increased
+             */
+            else if ((strcmp(pm->cmd, CMD_ON) == 0
+                      && strcmp(rstatus_str, STATUS_POWERING_ON) == 0)
+                     || (strcmp(pm->cmd, CMD_OFF) == 0
+                         && strcmp(rstatus_str, STATUS_POWERING_OFF) == 0))
+                printf("%s: timeout - %s still in progress\n",
+                       pm->hostname, pm->cmd);
+            else {
+                if (verbose)
+                    printf("%s: timeout - unknown status %s\n",
+                           pm->hostname, rstatus_str);
+                else
+                    printf("%s: timeout\n",
+                           pm->hostname);
+            }
             return;
         }
 
