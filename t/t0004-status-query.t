@@ -145,6 +145,72 @@ test_expect_success 'stop powerman daemon and device server' '
 	wait &&
 	wait
 '
+test_expect_success 'create new powerman.conf with both status and status_all script' '
+	cat >powerman4.conf <<-EOT4
+	specification "vpc" {
+	    timeout 	5.0
+	    plug name { "0" "1" "2" "3" "4" "5" "6" "7" "8"
+	                "9" "10" "11" "12" "13" "14" "15" }
+	    script login {
+	        send "login\n"
+	        expect "[0-9]* OK\n"
+	        expect "[0-9]* vpc> "
+	    }
+	    script logout {
+	        send "logoff\n"
+	        expect "[0-9]* OK\n"
+	    }
+	    script status {
+	        send "stat %s\n"
+	        expect "plug ([0-9]+): (ON|OFF)\n"
+	        setplugstate \$1 \$2 on="ON" off="OFF"
+	        expect "[0-9]* OK\n"
+	        expect "[0-9]* vpc> "
+	    }
+	    script status_all {
+		send "stat *\n"
+		foreachplug {
+			expect "plug ([0-9]+): (ON|OFF)\n"
+			setplugstate \$1 \$2 on="ON" off="OFF"
+		}
+		expect "[0-9]* OK\n"
+		expect "[0-9]* vpc> "
+	    }
+	}
+	listen "$testaddr"
+	device "test0" "vpc" "$vpcd |&"
+	node "t[0-15]" "test0"
+	EOT4
+'
+test_expect_success 'start powerman daemon and wait for it to start' '
+	$powermand -c powerman4.conf &
+	echo $! >powermand4.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -q >/dev/null
+'
+test_expect_success 'powerman -q works' '
+	$powerman -h $testaddr -q >all_query.out &&
+	makeoutput "" "t[0-15]" "" >all_query.exp &&
+	test_cmp all_query.exp all_query.out
+'
+test_expect_success 'powerman -q uses status_all script on all plugs' '
+	$powerman -h $testaddr -T -q >all_queryT.out &&
+	count=`grep "stat" all_queryT.out | wc -l` &&
+	test $count = 1
+'
+test_expect_success 'powerman -q t[1-15] works' '
+	$powerman -h $testaddr -q t[1-15] >most_query.out &&
+	makeoutput "" "t[1-15]" "" >most_query.exp &&
+	test_cmp most_query.exp most_query.out
+'
+test_expect_success 'powerman -q uses status script on not all plugs' '
+	$powerman -h $testaddr -T -q t[1-15] >most_queryT.out &&
+	count=`grep "stat" most_queryT.out | wc -l` &&
+	test $count = 15
+'
+test_expect_success 'stop powerman daemon' '
+	kill -15 $(cat powermand4.pid) &&
+	wait
+'
 
 test_done
 
