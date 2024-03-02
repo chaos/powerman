@@ -305,6 +305,7 @@ _prompt_loop(void)
                 continue;
             }
             printf("plug %d: %d\n", i, temp[i]);
+            goto ok;
         }
         if (strcmp(buf, "temp *") == 0) {               /* temp * */
             for (i = 0; i < NUM_PLUGS; i++)
