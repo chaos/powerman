@@ -38,12 +38,6 @@ specification "swpdu" {
 		}
 		expect "swpdu> "
 	}
-	script status {
-		send "status %s\r\n"
-		expect "port([0-9]+)[^\n]*(on|off|unknown|^n)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "swpdu> "
-	}
 	script on {
 		send "on %s\r\n"
 		expect "swpdu> "

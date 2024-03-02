@@ -44,18 +44,6 @@ specification "sr5110" {
 		}
 		expect "-iSCB> "
 	}
-	script status {
-		send "pmnode %s\r"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "-iSCB> "
-	}
-	script status_beacon {
-		send "pmled %s\r"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "-iSCB> "
-	}
 	script on {
 		send "power on %s\r"
 		expect "-iSCB> "
@@ -117,18 +105,6 @@ specification "sr5110_gpu" {
 			expect "node([0-9]+): (on|off|n/a)"
 			setplugstate $1 $2 on="on" off="off"
 		}
-		expect "-iSCB> "
-	}
-	script status {
-		send "pmnode %s\r"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "-iSCB> "
-	}
-	script status_beacon {
-		send "pmled %s\r"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
 		expect "-iSCB> "
 	}
 	script on {
@@ -195,18 +171,6 @@ specification "sr8116" {
 		}
 		expect "-iSCB> "
 	}
-	script status {
-		send "pmnode %s\r"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "-iSCB> "
-	}
-	script status_beacon {
-		send "pmled %s\r"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "-iSCB> "
-	}
 	script on {
 		send "power on %s\r"
 		expect "-iSCB> "
@@ -270,18 +234,6 @@ specification "sr8116_gpu" {
 		}
 		expect "-iSCB> "
 	}
-	script status {
-		send "pmnode %s\r"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "-iSCB> "
-	}
-	script status_beacon {
-		send "pmled %s\r"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "-iSCB> "
-	}
 	script on {
 		send "power on %s\r"
 		expect "-iSCB> "
@@ -343,18 +295,6 @@ specification "sr8104" {
 			expect "node([0-9]+): (on|off|n/a)"
 			setplugstate $1 $2 on="on" off="off"
 		}
-		expect "-iSCB> "
-	}
-	script status {
-		send "pmnode %s\r"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "-iSCB> "
-	}
-	script status_beacon {
-		send "pmled %s\r"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
 		expect "-iSCB> "
 	}
 	script on {

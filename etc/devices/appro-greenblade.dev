@@ -48,20 +48,6 @@ specification "iscb-gb" {
 		expect "ok"
 		expect "iSCB-[0-9]+:[0-9]> "
 	}
-	script status {
-		send "pmnode %s\r\n"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "ok"
-		expect "iSCB-[0-9]+:[0-9]> "
-	}
-	script status_beacon {
-		send "pmled %s\r\n"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "ok"
-		expect "iSCB-[0-9]+:[0-9]> "
-	}
 	script on {
 		send "on %s\r\n"
 		expect "ok"
@@ -138,20 +124,6 @@ specification "iscb-gbgpu" {
 		expect "ok"
 		expect "iSCB-[0-9]+:[0-9]> "
 	}
-	script status {
-		send "pmnode %s\r\n"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "ok"
-		expect "iSCB-[0-9]+:[0-9]> "
-	}
-	script status_beacon {
-		send "pmled %s\r\n"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "ok"
-		expect "iSCB-[0-9]+:[0-9]> "
-	}
 	script on {
 		send "on %s\r\n"
 		expect "ok"
@@ -225,20 +197,6 @@ specification "iscb-hybrid" {
 			expect "node([0-9]+): (on|off|n/a)"
 			setplugstate $1 $2 on="on" off="off"
 		}
-		expect "ok"
-		expect "iSCB-[0-9]+:[0-9]> "
-	}
-	script status {
-		send "pmnode %s\r\n"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
-		expect "ok"
-		expect "iSCB-[0-9]+:[0-9]> "
-	}
-	script status_beacon {
-		send "pmled %s\r\n"
-		expect "node([0-9]+): (on|off|n/a)"
-		setplugstate $1 $2 on="on" off="off"
 		expect "ok"
 		expect "iSCB-[0-9]+:[0-9]> "
 	}
