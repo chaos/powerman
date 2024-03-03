@@ -80,6 +80,7 @@ static zhashx_t *test_power_status;
  */
 #define STATUS_POLLING_INTERVAL_DEFAULT  1000000
 
+#define USEC_IN_SEC              1000000
 #define MS_IN_SEC                1000
 
 #define STATUS_ON           "on"
@@ -169,6 +170,7 @@ void help(void)
     printf("  setplugs plugnames hostindices [<parentplug]]\n");
     printf("  setpath plugnames cmd path [postdata]\n");
     printf("  settimeout seconds\n");
+    printf("  setstatuspollinginterval seconds\n");
     printf("  stat [plugs]\n");
     printf("  on [plugs]\n");
     printf("  off [plugs]\n");
@@ -1327,6 +1329,23 @@ static void settimeout(char **av)
     }
 }
 
+static void setstatuspollinginterval(char **av)
+{
+  if (av[0]) {
+      char *endptr;
+      long tmp;
+
+      errno = 0;
+      tmp = strtol (av[0], &endptr, 10);
+      if (errno
+          || endptr[0] != '\0'
+          || tmp <= 0
+          || (tmp > (LONG_MAX / USEC_IN_SEC)))
+          printf("invalid status polling interval specified\n");
+      status_polling_interval = tmp * USEC_IN_SEC;
+  }
+}
+
 static void process_cmd(CURLM *mh, char **av, int *exitflag)
 {
     if (av[0] != NULL) {
@@ -1350,6 +1369,8 @@ static void process_cmd(CURLM *mh, char **av, int *exitflag)
             setpath(av + 1);
         else if (strcmp(av[0], "settimeout") == 0)
             settimeout(av + 1);
+        else if (strcmp(av[0], "setstatuspollinginterval") == 0)
+            setstatuspollinginterval(av + 1);
         else if (strcmp(av[0], CMD_STAT) == 0)
             stat_cmd(mh, av + 1);
         else if (strcmp(av[0], CMD_ON) == 0)
