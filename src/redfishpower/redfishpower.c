@@ -75,7 +75,8 @@ static zhashx_t *test_power_status;
 /* in usec
  *
  * status polling interval of 1 second may seem long, but testing
- * shows wait ranges from a few seconds to 20 seconds
+ * shows wait for on/off to complete ranges from a few seconds to 50
+ * seconds
  */
 #define STATUS_POLLING_INTERVAL_DEFAULT  1000000
 
