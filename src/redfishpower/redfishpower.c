@@ -121,10 +121,13 @@ struct powermsg {
      * timeout - when the overall power command times out
      *
      * delaystart - if message should be sent after a wait
+     *
+     * poll_count - number of poll attempts
      */
     struct timeval start;
     struct timeval timeout;
     struct timeval delaystart;
+    int poll_count;
 
     /* zlistx handle */
     void *handle;
@@ -319,6 +322,7 @@ static struct powermsg *powermsg_create(CURLM *mh,
                                         const char *postdata,
                                         struct timeval *start,
                                         long int delay_usec,
+                                        int poll_count,
                                         int output_result,
                                         int state)
 {
@@ -364,6 +368,9 @@ static struct powermsg *powermsg_create(CURLM *mh,
         waitdelay.tv_usec = delay_usec;
         timeradd(&now, &waitdelay, &pm->delaystart);
     }
+
+    pm->poll_count = poll_count;
+
     return pm;
 }
 
@@ -417,6 +424,7 @@ static struct powermsg *stat_cmd_plug(CURLM * mh,
                          path,
                          NULL,
                          NULL,
+                         0,
                          0,
                          output_result,
                          STATE_SEND_POWERCMD);
@@ -769,6 +777,7 @@ struct powermsg *power_cmd_plug(CURLM * mh,
                          postdata,
                          NULL,
                          0,
+                         0,
                          OUTPUT_RESULT,
                          STATE_SEND_POWERCMD);
     if (verbose > 1)
@@ -940,12 +949,37 @@ static void send_status_poll(struct powermsg *pm)
 {
     struct powermsg *nextpm;
     char *path = NULL;
+    long int poll_delay;
 
     get_path(CMD_STAT, pm->plugname, &path, NULL);
     if (!path) {
         printf("%s: %s path not set\n", pm->plugname, CMD_STAT);
         return;
     }
+
+    /* testing a range of hardware shows that the amount of time it
+     * takes to complete an on/off falls into two bands.  Either it
+     * completes in the 3-6 second range OR it takes 20-50 seconds.
+     *
+     * To get the best turn around time for the quick end of that range
+     * and avoid excessive polling on the other end, we will do a slightly
+     * altered 'exponential backoff' delay.
+     *
+     * We delay 1 second each of the first 4 polls.
+     * We delay 2 seconds for the 5th and 6th poll.
+     * We delay 4 seconds afterwards.
+     *
+     * Special note, testing shows that powering on a "on" node can
+     * also lead to a temporary entrance into the "PoweringOn" state.
+     * So we also want a quick turnaround for that case, which is
+     * typically only 1-2 seconds.
+     */
+    if (pm->poll_count < 4)
+        poll_delay = status_polling_interval;
+    else if (pm->poll_count < 6)
+        poll_delay = status_polling_interval * 2;
+    else
+        poll_delay = status_polling_interval * 4;
 
     /* issue a follow on stat to wait until the on/off is complete.
      * note that we set the initial start time of this new command to
@@ -962,7 +996,8 @@ static void send_status_poll(struct powermsg *pm)
                              path,
                              NULL,
                              &pm->start,
-                             status_polling_interval,
+                             poll_delay,
+                             pm->poll_count + 1,
                              OUTPUT_RESULT,
                              STATE_WAIT_UNTIL_ON_OFF);
     if (!(nextpm->handle = zlistx_add_end(delayedcmds, nextpm)))
