@@ -1134,7 +1134,7 @@ int main(int argc, char *argv[])
             err_exit(true, "hostlist_iterator_create");
         while ((hostname = hostlist_next(itr))) {
             if (zhashx_insert(test_power_status, hostname, STATUS_OFF) < 0)
-                err_exit(false, "zhash_insert failure");
+                err_exit(false, "zhashx_insert failure");
             free(hostname);
         }
         hostlist_iterator_destroy(itr);
