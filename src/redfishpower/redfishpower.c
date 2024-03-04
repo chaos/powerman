@@ -164,39 +164,63 @@ void help(void)
     printf("  off [plugs]\n");
 }
 
+static char *calc_path(const char *lpath, const char *plugname)
+{
+    char *ptr;
+
+    /* assumption, at most one {{plug}} in path */
+    if ((ptr = strstr(lpath, "{{plug}}"))) {
+        /* +1 for NUL, -8 for {{plug}}, + strlen(plugname) */
+        char *tmp = xmalloc(strlen(lpath) + 1 - 8 + strlen(plugname));
+        int prefixlen = ptr - lpath;
+        strncpy(tmp, lpath, prefixlen);
+        strcpy(tmp + prefixlen, plugname);
+        strcpy(tmp + prefixlen + strlen(plugname), ptr + 8);
+        return tmp;
+    }
+    return xstrdup(lpath);
+}
+
 static void get_path(const char *cmd,
                      const char *plugname,
                      char **path,
                      char **postdata)
 {
     struct plug_data *pd = plugs_get_data(plugs, plugname);
+    char *lpath = NULL;
+    char *lpostdata = NULL;
 
     if (strcmp(cmd, CMD_STAT) == 0) {
         if (pd && pd->stat)
-            (*path) = pd->stat;
+            lpath = pd->stat;
         else
-            (*path) = statpath;
+            lpath = statpath;
     }
     else if (strcmp(cmd, CMD_ON) == 0) {
         if (pd && pd->on) {
-            (*path) = pd->on;
-            (*postdata) = pd->onpostdata;
+            lpath = pd->on;
+            lpostdata = pd->onpostdata;
         }
         else {
-            (*path) = onpath;
-            (*postdata) = onpostdata;
+            lpath = onpath;
+            lpostdata = onpostdata;
         }
     }
     else if (strcmp(cmd, CMD_OFF) == 0) {
         if (pd && pd->off) {
-            (*path) = pd->off;
-            (*postdata) = pd->offpostdata;
+            lpath = pd->off;
+            lpostdata = pd->offpostdata;
         }
         else {
-            (*path) = offpath;
-            (*postdata) = offpostdata;
+            lpath = offpath;
+            lpostdata = offpostdata;
         }
     }
+
+    if (lpath)
+        (*path) = calc_path(lpath, plugname);
+    if (lpostdata)
+        (*postdata) = xstrdup(lpostdata);
 }
 
 static size_t output_cb(void *contents, size_t size, size_t nmemb, void *userp)
@@ -379,6 +403,7 @@ static struct powermsg *stat_cmd_plug(CURLM * mh, char *plugname)
     if (verbose > 1)
         printf("DEBUG: %s hostname=%s plugname=%s path=%s\n",
                CMD_STAT, pd->hostname, plugname, path);
+    free(path);
     return pm;
 }
 
@@ -547,6 +572,8 @@ struct powermsg *power_cmd_plug(CURLM * mh,
     if (verbose > 1)
         printf("DEBUG: %s hostname=%s plugname=%s path=%s\n",
                cmd, pd->hostname, plugname, path);
+    free(path);
+    free(postdata);
     return pm;
 }
 
@@ -631,6 +658,7 @@ static void send_status_poll(struct powermsg *pm)
                              STATE_WAIT_UNTIL_ON_OFF);
     if (!(nextpm->handle = zlistx_add_end(delayedcmds, nextpm)))
         err_exit(true, "zlistx_add_end");
+    free(path);
 }
 
 static void on_off_process(struct powermsg *pm)
@@ -847,10 +875,9 @@ static void setplugs(char **av)
     hostlist_t lplugs = NULL;
     hostlist_t hostindices = NULL;
     int plugcount, hostindexcount;
-    hostlist_iterator_t lplugsitr = NULL;
-    hostlist_iterator_t hostindicesitr = NULL;
     char *plug;
     char *hostindexstr;
+    int i;
 
     if (!av[0] || !av[1]) {
         printf("Usage: setplugs <plugnames> <hostindices>\n");
@@ -868,32 +895,51 @@ static void setplugs(char **av)
 
     plugcount = hostlist_count(lplugs);
     hostindexcount = hostlist_count(hostindices);
-    if (plugcount != hostindexcount) {
-        printf("setplugs: plugs count not equal to host index count");
-        goto cleanup;
-    }
-
-    if (!(lplugsitr = hostlist_iterator_create(lplugs)))
-        err_exit(true, "hostlist_iterator_create");
-    if (!(hostindicesitr = hostlist_iterator_create(hostindices)))
-        err_exit(true, "hostlist_iterator_create");
 
     /* if user is electing to configure their own plugs, we must remove
      * all of the initial ones configured in setup_hosts()
      */
     remove_initial_plugs();
 
-    while ((plug = hostlist_next(lplugsitr))
-           && (hostindexstr = hostlist_next(hostindicesitr))) {
-        if (setup_plug(plug, hostindexstr) < 0)
+    if (plugcount != hostindexcount) {
+        /* special case, user will use plug substitution */
+        if (plugcount > 1 && hostindexcount == 1) {
+            if (!(hostindexstr = hostlist_nth(hostindices, 0)))
+                err_exit(false, "setplugs: hostlist_nth contains no indices");
+            for (i = 0; i < plugcount; i++) {
+                if (!(plug = hostlist_nth(lplugs, i)))
+                    err_exit(false, "setplugs: hostlist_nth plugs");
+                if (setup_plug(plug, hostindexstr) < 0) {
+                    free(plug);
+                    free(hostindexstr);
+                    goto cleanup;
+                }
+                free(plug);
+            }
+            free(hostindexstr);
+        }
+        else {
+            printf("setplugs: plugs count not equal to host index count\n");
             goto cleanup;
-        free(plug);
-        free(hostindexstr);
+        }
+    }
+    else {
+        for (i = 0; i < plugcount; i++) {
+            if (!(plug = hostlist_nth(lplugs, i)))
+                err_exit(false, "setplugs: hostlist_nth plugs");
+            if (!(hostindexstr = hostlist_nth(hostindices, i)))
+                err_exit(false, "setplugs: hostlist_nth indices");
+            if (setup_plug(plug, hostindexstr) < 0) {
+                free(plug);
+                free(hostindexstr);
+                goto cleanup;
+            }
+            free(plug);
+            free(hostindexstr);
+        }
     }
 
 cleanup:
-    hostlist_iterator_destroy(lplugsitr);
-    hostlist_iterator_destroy(hostindicesitr);
     hostlist_destroy(lplugs);
     hostlist_destroy(hostindices);
 }
