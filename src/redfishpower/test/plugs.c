@@ -167,12 +167,144 @@ static void path_tests(void)
     plugs_destroy(p);
 }
 
+static void hierarchy_tests(void)
+{
+    plugs_t *p;
+    struct plug_data *pd;
+    char *plug;
+    int ret;
+
+    p = plugs_create();
+    if (!p)
+        BAIL_OUT("plugs_create");
+
+    /*
+     * simple 3 level binary tree with 7 nodes.
+     *
+     * note that for these tests the hostname is basically irrelevant
+     */
+    plugs_add(p, "node0", "foo0", NULL);
+    plugs_add(p, "node1", "foo1", "node0");
+    plugs_add(p, "node2", "foo2", "node0");
+    plugs_add(p, "node3", "foo3", "node1");
+    plugs_add(p, "node4", "foo4", "node1");
+    plugs_add(p, "node5", "foo5", "node2");
+    plugs_add(p, "node6", "foo6", "node2");
+
+    pd = plugs_get_data(p, "node0");
+    ok(pd->parent == NULL,
+       "no parent for node0 configured");
+    pd = plugs_get_data(p, "node1");
+    ok(strcmp(pd->parent, "node0") == 0,
+       "parent of node1 is node0");
+    pd = plugs_get_data(p, "node3");
+    ok(strcmp(pd->parent, "node1") == 0,
+       "parent of node3 is node1");
+
+    /* plugs_find_root_parent tests */
+
+    plug = plugs_find_root_parent(p, "node0");
+    ok(strcmp(plug, "node0") == 0,
+       "plugs_find_root_parent finds correct root for node0");
+    plug = plugs_find_root_parent(p, "node1");
+    ok(strcmp(plug, "node0") == 0,
+       "plugs_find_root_parent finds correct root for node1");
+    plug = plugs_find_root_parent(p, "node2");
+    ok(strcmp(plug, "node0") == 0,
+       "plugs_find_root_parent finds correct root for node2");
+    plug = plugs_find_root_parent(p, "node3");
+    ok(strcmp(plug, "node0") == 0,
+       "plugs_find_root_parent finds correct root for node3");
+    plug = plugs_find_root_parent(p, "node4");
+    ok(strcmp(plug, "node0") == 0,
+       "plugs_find_root_parent finds correct root for node4");
+    plug = plugs_find_root_parent(p, "node5");
+    ok(strcmp(plug, "node0") == 0,
+       "plugs_find_root_parent finds correct root for node5");
+    plug = plugs_find_root_parent(p, "node6");
+    ok(strcmp(plug, "node0") == 0,
+       "plugs_find_root_parent finds correct root for node6");
+
+    /* plugs_is_descendant tests */
+
+    ret = plugs_is_descendant(p, "node0", "node0");
+    ok(ret == 0,
+       "plugs_is_descendant, node0 is not descendant of node0 ");
+    ret = plugs_is_descendant(p, "node0", "node1");
+    ok(ret == 0,
+       "plugs_is_descendant, node1 is not descendant of node0 ");
+    ret = plugs_is_descendant(p, "node0", "node3");
+    ok(ret == 0,
+       "plugs_is_descendant, node1 is not descendant of node0 ");
+
+    ret = plugs_is_descendant(p, "node1", "node0");
+    ok(ret == 1,
+       "plugs_is_descendant, node1 is descendant of node0 ");
+    ret = plugs_is_descendant(p, "node3", "node0");
+    ok(ret == 1,
+       "plugs_is_descendant, node3 is descendant of node0 ");
+    ret = plugs_is_descendant(p, "node5", "node0");
+    ok(ret == 1,
+       "plugs_is_descendant, node5 is descendant of node0 ");
+
+    ret = plugs_is_descendant(p, "node2", "node1");
+    ok(ret == 0,
+       "plugs_is_descendant, node2 is not descendant of node1 ");
+    ret = plugs_is_descendant(p, "node3", "node1");
+    ok(ret == 1,
+       "plugs_is_descendant, node3 is descendant of node1 ");
+    ret = plugs_is_descendant(p, "node4", "node1");
+    ok(ret == 1,
+       "plugs_is_descendant, node4 is descendant of node1 ");
+    ret = plugs_is_descendant(p, "node5", "node1");
+    ok(ret == 0,
+       "plugs_is_descendant, node5 is not descendant of node1 ");
+
+    ret = plugs_is_descendant(p, "node2", "node3");
+    ok(ret == 0,
+       "plugs_is_descendant, node2 is not descendant of node3 ");
+    ret = plugs_is_descendant(p, "node3", "node3");
+    ok(ret == 0,
+       "plugs_is_descendant, node3 is not descendant of node3 ");
+    ret = plugs_is_descendant(p, "node5", "node3");
+    ok(ret == 0,
+       "plugs_is_descendant, node5 is not descendant of node3 ");
+
+    /* plugs_child_of_ancestor tests */
+
+    plug = plugs_child_of_ancestor(p, "node0", "node0");
+    ok(plug == NULL,
+       "plugs_child_of_ancestor no child of node0 from node0");
+    plug = plugs_child_of_ancestor(p, "node1", "node1");
+    ok(plug == NULL,
+       "plugs_child_of_ancestor no child of node1 from node1");
+    plug = plugs_child_of_ancestor(p, "node2", "node3");
+    ok(plug == NULL,
+       "plugs_child_of_ancestor no child of node3 from node2");
+
+    plug = plugs_child_of_ancestor(p, "node1", "node0");
+    ok(strcmp(plug, "node1") == 0,
+       "plugs_child_of_ancestor child of node0 starting from node1 is node1");
+    plug = plugs_child_of_ancestor(p, "node2", "node0");
+    ok(strcmp(plug, "node2") == 0,
+       "plugs_child_of_ancestor child of node0 starting from node2 is node2");
+    plug = plugs_child_of_ancestor(p, "node3", "node0");
+    ok(strcmp(plug, "node1") == 0,
+       "plugs_child_of_ancestor child of node0 starting from node3 is node1");
+    plug = plugs_child_of_ancestor(p, "node5", "node0");
+    ok(strcmp(plug, "node2") == 0,
+       "plugs_child_of_ancestor child of node0 starting from node5 is node2");
+
+    plugs_destroy(p);
+}
+
 int main(int argc, char *argv[])
 {
     plan(NO_PLAN);
 
     basic_tests();
     path_tests();
+    hierarchy_tests();
 
     done_testing();
 }
