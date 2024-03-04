@@ -26,6 +26,8 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "plugs.h"
+
 #include "xmalloc.h"
 #include "czmq.h"
 #include "hostlist.h"
@@ -33,6 +35,7 @@
 #include "argv.h"
 
 static hostlist_t hosts = NULL;
+static plugs_t *plugs = NULL;
 static char *header = NULL;
 static struct curl_slist *header_list = NULL;
 static int verbose = 0;
@@ -93,6 +96,7 @@ struct powermsg {
     CURL *eh;                   /* curl easy handle */
     char *cmd;                  /* "on", "off", or "stat" */
     char *hostname;             /* host we're working with */
+    char *plugname;             /* plugname, in some cases == hostname */
     char *url;                  /* on, off, stat */
     char *postdata;             /* on, off */
     char *output;               /* on, off, stat */
@@ -152,9 +156,9 @@ void help(void)
     printf("  setonpath path [postdata]\n");
     printf("  setoffpath path [postdata]\n");
     printf("  settimeout seconds\n");
-    printf("  stat [nodes]\n");
-    printf("  on [nodes]\n");
-    printf("  off [nodes]\n");
+    printf("  stat [plugs]\n");
+    printf("  on [plugs]\n");
+    printf("  off [plugs]\n");
 }
 
 static size_t output_cb(void *contents, size_t size, size_t nmemb, void *userp)
@@ -236,6 +240,7 @@ static void powermsg_init_curl(struct powermsg *pm)
 
 static struct powermsg *powermsg_create(CURLM *mh,
                                         const char *hostname,
+                                        const char *plugname,
                                         const char *cmd,
                                         const char *path,
                                         const char *postdata,
@@ -255,6 +260,7 @@ static struct powermsg *powermsg_create(CURLM *mh,
 
     pm->cmd = xstrdup(cmd);
     pm->hostname = xstrdup(hostname);
+    pm->plugname = xstrdup(plugname);
 
     pm->url = xmalloc(strlen("https://") + strlen(hostname) + strlen(path) + 2);
     sprintf(pm->url, "https://%s/%s", hostname, path);
@@ -306,25 +312,34 @@ static void powermsg_destroy(struct powermsg *pm)
     }
 }
 
-static struct powermsg *stat_cmd_host(CURLM * mh, char *hostname)
+static struct powermsg *stat_cmd_plug(CURLM * mh, char *plugname)
 {
-    struct powermsg *pm = powermsg_create(mh,
-                                          hostname,
-                                          CMD_STAT,
-                                          statpath,
-                                          NULL,
-                                          NULL,
-                                          0,
-                                          STATE_SEND_POWERCMD);
+    struct powermsg *pm;
+    struct plug_data *pd;
+
+    if (!(pd = plugs_get_data(plugs, plugname))) {
+        printf("plug not mapped: %s\n", plugname);
+        return NULL;
+    }
+
+    pm = powermsg_create(mh,
+                         pd->hostname,
+                         plugname,
+                         CMD_STAT,
+                         statpath,
+                         NULL,
+                         NULL,
+                         0,
+                         STATE_SEND_POWERCMD);
     return pm;
 }
 
 static void stat_cmd(CURLM *mh, char **av)
 {
     hostlist_iterator_t itr;
-    char *hostname;
-    hostlist_t *hostsptr;
-    hostlist_t lhosts = NULL;
+    char *plugname;
+    hostlist_t *plugsptr;
+    hostlist_t lplugs = NULL;
 
     if (!statpath) {
         printf("Statpath not setup\n");
@@ -332,33 +347,36 @@ static void stat_cmd(CURLM *mh, char **av)
     }
 
     if (av[0]) {
-        if (!(lhosts = hostlist_create(av[0]))) {
+        if (!(lplugs = hostlist_create(av[0]))) {
             printf("illegal hosts input\n");
             return;
         }
-        hostsptr = &lhosts;
+        plugsptr = &lplugs;
     }
     else
-        hostsptr = &hosts;
+        plugsptr = plugs_hostlist(plugs);
 
-    if (!(itr = hostlist_iterator_create(*hostsptr)))
+    if (!(itr = hostlist_iterator_create(*plugsptr)))
         err_exit(true, "hostlist_iterator_create");
 
-    while ((hostname = hostlist_next(itr))) {
+    while ((plugname = hostlist_next(itr))) {
         struct powermsg *pm;
-        if (hostlist_find(hosts, hostname) < 0) {
-            printf("unknown host specified: %s\n", hostname);
-            free(hostname);
+        if (!plugs_name_valid(plugs, plugname)) {
+            printf("unknown plug specified: %s\n", plugname);
+            free(plugname);
             continue;
         }
-        pm = stat_cmd_host(mh, hostname);
+        if (!(pm = stat_cmd_plug(mh, plugname))) {
+            free(plugname);
+            continue;
+        }
         powermsg_init_curl(pm);
         if (!(pm->handle = zlistx_add_end(activecmds, pm)))
             err_exit(true, "zlistx_add_end");
-        free(hostname);
+        free(plugname);
     }
     hostlist_iterator_destroy(itr);
-    hostlist_destroy(lhosts);
+    hostlist_destroy(lplugs);
 }
 
 /* status_strp - on, off, unknown
@@ -378,7 +396,7 @@ static void parse_onoff_response(struct powermsg *pm,
                 (*rstatus_strp) = "parse error";
             if (verbose)
                 printf("%s: parse response error %s\n",
-                       pm->hostname,
+                       pm->plugname,
                        error.text);
         }
         else {
@@ -386,7 +404,7 @@ static void parse_onoff_response(struct powermsg *pm,
             if (!val) {
                 (*status_strp) = "no powerstate";
                 if (verbose)
-                    printf("%s: no PowerState\n", pm->hostname);
+                    printf("%s: no PowerState\n", pm->plugname);
             }
             else {
                 const char *str = json_string_value(val);
@@ -414,7 +432,7 @@ static void parse_onoff_response(struct powermsg *pm,
                     }
                     if (verbose)
                         printf("%s: unknown status - %s\n",
-                               pm->hostname, str);
+                               pm->plugname, str);
                 }
             }
         }
@@ -433,7 +451,7 @@ static void parse_onoff(struct powermsg *pm,
         return;
     }
     else {
-        char *tmp = zhashx_lookup(test_power_status, pm->hostname);
+        char *tmp = zhashx_lookup(test_power_status, pm->plugname);
         if (!tmp)
             err_exit(false, "zhashx_lookup on test status failed");
         (*status_strp) = tmp;
@@ -446,7 +464,7 @@ static void stat_process(struct powermsg *pm)
 {
     const char *status_str;
     parse_onoff(pm, &status_str, NULL);
-    printf("%s: %s\n", pm->hostname, status_str);
+    printf("%s: %s\n", pm->plugname, status_str);
 }
 
 static void stat_cleanup(struct powermsg *pm)
@@ -454,20 +472,29 @@ static void stat_cleanup(struct powermsg *pm)
     powermsg_destroy(pm);
 }
 
-struct powermsg *power_cmd_host(CURLM * mh,
-                                char *hostname,
+struct powermsg *power_cmd_plug(CURLM * mh,
+                                char *plugname,
                                 const char *cmd,
                                 const char *path,
                                 const char *postdata)
 {
-    struct powermsg *pm = powermsg_create(mh,
-                                          hostname,
-                                          cmd,
-                                          path,
-                                          postdata,
-                                          NULL,
-                                          0,
-                                          STATE_SEND_POWERCMD);
+    struct powermsg *pm;
+    struct plug_data *pd;
+
+    if (!(pd = plugs_get_data(plugs, plugname))) {
+        printf("plug not mapped: %s\n", plugname);
+        return NULL;
+    }
+
+    pm = powermsg_create(mh,
+                         pd->hostname,
+                         plugname,
+                         cmd,
+                         path,
+                         postdata,
+                         NULL,
+                         0,
+                         STATE_SEND_POWERCMD);
     return pm;
 }
 
@@ -478,9 +505,9 @@ static void power_cmd(CURLM *mh,
                       const char *postdata)
 {
     hostlist_iterator_t itr;
-    char *hostname;
-    hostlist_t *hostsptr;
-    hostlist_t lhosts = NULL;
+    char *plugname;
+    hostlist_t *plugsptr;
+    hostlist_t lplugs = NULL;
 
     if (!path) {
         printf("%s path not setup\n", cmd);
@@ -493,33 +520,36 @@ static void power_cmd(CURLM *mh,
     }
 
     if (av[0]) {
-        if (!(lhosts = hostlist_create(av[0]))) {
+        if (!(lplugs = hostlist_create(av[0]))) {
             printf("illegal hosts input\n");
             return;
         }
-        hostsptr = &lhosts;
+        plugsptr = &lplugs;
     }
     else
-        hostsptr = &hosts;
+        plugsptr = plugs_hostlist(plugs);
 
-    if (!(itr = hostlist_iterator_create(*hostsptr)))
+    if (!(itr = hostlist_iterator_create(*plugsptr)))
         err_exit(true, "hostlist_iterator_create");
 
-    while ((hostname = hostlist_next(itr))) {
+    while ((plugname = hostlist_next(itr))) {
         struct powermsg *pm;
-        if (hostlist_find(hosts, hostname) < 0) {
-            printf("unknown host specified: %s\n", hostname);
-            free(hostname);
+        if (!plugs_name_valid(plugs, plugname)) {
+            printf("unknown plug specified: %s\n", plugname);
+            free(plugname);
             continue;
         }
-        pm = power_cmd_host(mh, hostname, cmd, path, postdata);
+        if (!(pm = power_cmd_plug(mh, plugname, cmd, path, postdata))) {
+            free(plugname);
+            continue;
+        }
         powermsg_init_curl(pm);
         if (!(pm->handle = zlistx_add_end(activecmds, pm)))
             err_exit(true, "zlistx_add_end");
-        free(hostname);
+        free(plugname);
     }
     hostlist_iterator_destroy(itr);
-    hostlist_destroy(lhosts);
+    hostlist_destroy(lplugs);
 }
 
 static void on_cmd(CURLM *mh, char **av)
@@ -555,6 +585,7 @@ static void send_status_poll(struct powermsg *pm)
      */
     nextpm = powermsg_create(pm->mh,
                              pm->hostname,
+                             pm->plugname,
                              pm->cmd,
                              statpath,
                              NULL,
@@ -577,9 +608,9 @@ static void on_off_process(struct powermsg *pm)
          * finished */
         if (test_mode) {
             if (strcmp(pm->cmd, CMD_ON) == 0)
-                zhashx_update(test_power_status, pm->hostname, STATUS_ON);
+                zhashx_update(test_power_status, pm->plugname, STATUS_ON);
             else /* cmd == CMD_OFF */
-                zhashx_update(test_power_status, pm->hostname, STATUS_OFF);
+                zhashx_update(test_power_status, pm->plugname, STATUS_OFF);
         }
     }
     else if (pm->state == STATE_WAIT_UNTIL_ON_OFF) {
@@ -589,7 +620,7 @@ static void on_off_process(struct powermsg *pm)
 
         parse_onoff(pm, &status_str, &rstatus_str);
         if (strcmp(status_str, pm->cmd) == 0) {
-            printf("%s: %s\n", pm->hostname, "ok");
+            printf("%s: %s\n", pm->plugname, "ok");
             return;
         }
 
@@ -603,7 +634,7 @@ static void on_off_process(struct powermsg *pm)
                 || (strcmp(pm->cmd, CMD_OFF) == 0
                     && strcmp(status_str, STATUS_ON) == 0))
                 printf("%s: timeout - unexpected %s\n",
-                       pm->hostname, status_str);
+                       pm->plugname, status_str);
             /* if still powering on/off, this is the "normal" timeout
              * scenario, timeout should be increased
              */
@@ -612,14 +643,14 @@ static void on_off_process(struct powermsg *pm)
                      || (strcmp(pm->cmd, CMD_OFF) == 0
                          && strcmp(rstatus_str, STATUS_POWERING_OFF) == 0))
                 printf("%s: timeout - %s still in progress\n",
-                       pm->hostname, pm->cmd);
+                       pm->plugname, pm->cmd);
             else {
                 if (verbose)
                     printf("%s: timeout - unknown status %s\n",
-                           pm->hostname, rstatus_str);
+                           pm->plugname, rstatus_str);
                 else
                     printf("%s: timeout\n",
-                           pm->hostname);
+                           pm->plugname);
             }
             return;
         }
@@ -943,7 +974,7 @@ static void shell(CURLM *mh)
                     if (cmsg->data.result != 0) {
                         if (cmsg->data.result == CURLE_COULDNT_CONNECT
                             || cmsg->data.result == CURLE_OPERATION_TIMEDOUT)
-                            printf("%s: %s\n", pm->hostname, "network error");
+                            printf("%s: %s\n", pm->plugname, "network error");
                         else if (cmsg->data.result == CURLE_HTTP_RETURNED_ERROR) {
                             /* N.B. curl returns this error code for all response
                              * codes >= 400.  So gotta dig in more.
@@ -953,23 +984,23 @@ static void shell(CURLM *mh)
                             if (curl_easy_getinfo(cmsg->easy_handle,
                                                   CURLINFO_RESPONSE_CODE,
                                                   &code) != CURLE_OK)
-                                printf("%s: %s\n", pm->hostname, "http error");
+                                printf("%s: %s\n", pm->plugname, "http error");
                             if (code == 400)
-                                printf("%s: %s\n", pm->hostname, "bad request");
+                                printf("%s: %s\n", pm->plugname, "bad request");
                             else if (code == 401)
-                                printf("%s: %s\n", pm->hostname, "unauthorized");
+                                printf("%s: %s\n", pm->plugname, "unauthorized");
                             else if (code == 404)
-                                printf("%s: %s\n", pm->hostname, "not found");
+                                printf("%s: %s\n", pm->plugname, "not found");
                             else
                                 printf("%s: %s (%ld)\n",
-                                       pm->hostname,
+                                       pm->plugname,
                                        "http error",
                                        code);
                         }
                         else
-                            printf("%s: %s\n", pm->hostname, "error");
+                            printf("%s: %s\n", pm->plugname, "error");
                         if (verbose)
-                            printf("%s: %s\n", pm->hostname,
+                            printf("%s: %s\n", pm->plugname,
                                    curl_easy_strerror(cmsg->data.result));
                     }
                     else
@@ -985,7 +1016,7 @@ static void shell(CURLM *mh)
             struct powermsg *pm = zlistx_first(activecmds);
             while (pm) {
                 if (hostlist_find(test_fail_power_cmd_hosts, pm->hostname) >= 0)
-                    printf("%s: %s\n", pm->hostname, "error");
+                    printf("%s: %s\n", pm->plugname, "error");
                 else
                     power_cmd_process(pm);
                 fflush(stdout);
@@ -1032,6 +1063,9 @@ static void init_redfishpower(char *argv[])
 
     if (!(test_power_status = zhashx_new ()))
         err_exit(false, "zhashx_new error");
+
+    if (!(plugs = plugs_create()))
+        err_exit(true, "plugs_create");
 }
 
 static void cleanup_redfishpower(void)
@@ -1050,6 +1084,26 @@ static void cleanup_redfishpower(void)
 
     hostlist_destroy(test_fail_power_cmd_hosts);
     zhashx_destroy(&test_power_status);
+
+    plugs_destroy(plugs);
+}
+
+static void setup_hosts(void)
+{
+    hostlist_iterator_t itr;
+    char *hostname;
+
+    if (!(itr = hostlist_iterator_create(hosts)))
+        err_exit(true, "hostlist_iterator_create");
+
+    /* initially all hosts on the command line are made the plugnames
+     */
+    while ((hostname = hostlist_next(itr))) {
+        plugs_add(plugs, hostname, hostname);
+        free(hostname);
+    }
+
+    hostlist_iterator_destroy(itr);
 }
 
 int main(int argc, char *argv[])
@@ -1105,6 +1159,8 @@ int main(int argc, char *argv[])
     if (hostlist_count(hosts) == 0)
         usage();
 
+    setup_hosts();
+
     if (!test_mode) {
         if ((ec = curl_global_init(CURL_GLOBAL_ALL)) != CURLE_OK)
             err_exit(false, "curl_global_init: %s", curl_easy_strerror(ec));
@@ -1114,14 +1170,15 @@ int main(int argc, char *argv[])
     }
     else {
         /* All hosts initially are off for testing */
+        hostlist_t *lplugs = plugs_hostlist(plugs);
         hostlist_iterator_t itr;
-        char *hostname;
-        if (!(itr = hostlist_iterator_create(hosts)))
+        char *plugname;
+        if (!(itr = hostlist_iterator_create(*lplugs)))
             err_exit(true, "hostlist_iterator_create");
-        while ((hostname = hostlist_next(itr))) {
-            if (zhashx_insert(test_power_status, hostname, STATUS_OFF) < 0)
+        while ((plugname = hostlist_next(itr))) {
+            if (zhashx_insert(test_power_status, plugname, STATUS_OFF) < 0)
                 err_exit(false, "zhashx_insert failure");
-            free(hostname);
+            free(plugname);
         }
         hostlist_iterator_destroy(itr);
 
