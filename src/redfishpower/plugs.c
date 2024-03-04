@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "redfishpower_defs.h"
 #include "plugs.h"
 
 #include "xmalloc.h"

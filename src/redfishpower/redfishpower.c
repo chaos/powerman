@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <assert.h>
 
+#include "redfishpower_defs.h"
 #include "plugs.h"
 
 #include "xmalloc.h"
@@ -75,10 +76,6 @@ static zhashx_t *test_power_status;
 #define STATUS_POLLING_INTERVAL_DEFAULT  1000000
 
 #define MS_IN_SEC                1000
-
-#define CMD_STAT       "stat"
-#define CMD_ON         "on"
-#define CMD_OFF        "off"
 
 #define STATUS_ON           "on"
 #define STATUS_OFF          "off"
