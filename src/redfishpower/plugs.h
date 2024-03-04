@@ -16,6 +16,7 @@
 struct plug_data {
     char *plugname;
     char *hostname;
+    char *parent;               /* NULL if no parent */
 
     /* paths */
     char *stat;
@@ -33,7 +34,10 @@ plugs_t *plugs_create(void);
 
 void plugs_destroy(plugs_t *p);
 
-void plugs_add(plugs_t *p, const char *plugname, const char *hostname);
+void plugs_add(plugs_t *p,
+               const char *plugname,
+               const char *hostname,
+               const char *parent);
 
 void plugs_remove(plugs_t *p, const char *plugname);
 
@@ -50,6 +54,23 @@ int plugs_update_path(plugs_t *p,
                       const char *postdata);
 
 int plugs_name_valid(plugs_t *p, const char *plugname);
+
+/* hierarchy
+ * - assumption, user does not introduce loops in config
+ */
+
+/* find deepest ancestor parent for this plugname */
+char *plugs_find_root_parent(plugs_t *p, const char *plugname);
+
+/* is plugname a descendant of ancestor */
+int plugs_is_descendant(plugs_t *p,
+                        const char *plugname,
+                        const char *ancestor);
+
+/* find child of ancestor, starting at plugname */
+char *plugs_child_of_ancestor(plugs_t *p,
+                              const char *plugname,
+                              const char *ancestor);
 
 #endif /* REDFISHPOWER_PLUGS_H */
 

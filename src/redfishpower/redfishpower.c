@@ -860,7 +860,7 @@ static int setup_plug(const char *plugname, const char *hostindexstr)
         return -1;
     }
 
-    plugs_add(plugs, plugname, host);
+    plugs_add(plugs, plugname, host, NULL);
 
     /* initialize plug to "off" for testing */
     if (test_mode)
@@ -1331,7 +1331,7 @@ static void setup_hosts(void)
     /* initially all hosts on the command line are made the plugnames
      */
     while ((hostname = hostlist_next(itr))) {
-        plugs_add(plugs, hostname, hostname);
+        plugs_add(plugs, hostname, hostname, NULL);
         free(hostname);
     }
 

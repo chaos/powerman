@@ -34,8 +34,8 @@ static void basic_tests(void)
     ok(count == 0,
        "plugs_count returns 0 plugs before we added any");
 
-    plugs_add(p, "blade0", "node0");
-    plugs_add(p, "blade1", "node1");
+    plugs_add(p, "blade0", "node0", NULL);
+    plugs_add(p, "blade1", "node1", NULL);
 
     count = plugs_count(p);
     ok(count == 2,
@@ -83,7 +83,7 @@ static void basic_tests(void)
 
     /* overwrite works */
 
-    plugs_add(p, "blade0", "nodeX");
+    plugs_add(p, "blade0", "nodeX", NULL);
 
     ok(hostlist_count(*hl) == 1,
        "hostlist contains 1 plugs");
@@ -108,8 +108,8 @@ static void path_tests(void)
     if (!p)
         BAIL_OUT("plugs_create");
 
-    plugs_add(p, "blade0", "node0");
-    plugs_add(p, "blade1", "node1");
+    plugs_add(p, "blade0", "node0", NULL);
+    plugs_add(p, "blade1", "node1", NULL);
 
     ret = plugs_update_path(p, "blade0", "stat", "statpath0", NULL);
     ok(ret == 0,
