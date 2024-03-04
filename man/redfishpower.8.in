@@ -55,22 +55,22 @@ Set extra HEADER to use.  Do not specify data to clear.
 Set path to obtain power status.
 .TP
 .I "setonpath <path> [postdata]"
-Set path and optional post data to turn on node.
+Set path and optional post data to turn on plug.
 .TP
 .I "setoffpath <path> [postdata]"
-Set path and optional post data to turn off node.
+Set path and optional post data to turn off plug.
 .TP
 .I "settimeout <seconds>"
 Set command timeout in seconds.
 .TP
-.I "stat [nodes]"
-Get power status of all nodes or specified subset of nodes.
+.I "stat [plugs]"
+Get power status of all plugs or specified subset of plugs.
 .TP
-.I "on [nodes]"
-Turn on all nodes or specified subset of nodes.  Will return "ok" after confirmation "on" has completed.
+.I "on [plugs]"
+Turn on all plugs or specified subset of plugs.  Will return "ok" after confirmation "on" has completed.
 .TP
-.I "off [nodes]"
-Turn off all nodes or specified subset of nodes.  Will return "ok" after confirmation "off" has completed.
+.I "off [plugs]"
+Turn off all plugs or specified subset of plugs.  Will return "ok" after confirmation "off" has completed.
 
 .SH "UPDATING REDFISHPOWER DEVICE FILES"
 .LP
