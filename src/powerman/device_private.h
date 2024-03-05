@@ -50,7 +50,7 @@ typedef struct {
     InterpState     state;
     char           *str;
     xregex_t        re;
-} Interp;
+} StateInterp;
 
 /*
  * A Script is a list of Stmts.

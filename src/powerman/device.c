@@ -1074,7 +1074,7 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
         if (str && plug && plug->node) {
             InterpState state = ST_UNKNOWN;
             ListIterator itr;
-            Interp *i;
+            StateInterp *i;
             Arg *arg;
 
             itr = list_iterator_create(e->cur->u.setplugstate.interps);
