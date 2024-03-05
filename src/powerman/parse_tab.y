@@ -52,7 +52,7 @@ typedef struct {
     int mp1;                    /* setplugstate plug match position */
     int mp2;                    /* setplugstate state match position */
     List prestmts;              /* subblock */
-    List interps;               /* interpretations for setplugstate */
+    List state_interps;         /* interpretations for setplugstate */
 } PreStmt;
 typedef List PreScript;
 
@@ -78,16 +78,17 @@ static void makeDevice(char *devstr, char *specstr, char *hoststr,
 
 /* device config */
 static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
-                      char *mp1str, char *mp2str, List prestmts, List interps);
+                      char *mp1str, char *mp2str, List prestmts,
+                      List plugstate_interps);
 static void destroyPreStmt(PreStmt *p);
 static Spec *makeSpec(char *name);
 static Spec *findSpec(char *name);
 static int matchSpec(Spec * spec, void *key);
 static void destroySpec(Spec * spec);
 static void makeScript(int com, List stmts);
-static void destroyInterp(Interp *i);
-static Interp *makeInterp(InterpState state, char *str);
-static List copyInterpList(List ilist);
+static void destroyStateInterp(StateInterp *i);
+static StateInterp *makeStateInterp(InterpState state, char *str);
+static List copyStateInterpList(List ilist);
 
 /* utility functions */
 static void _errormsg(char *msg);
@@ -298,16 +299,16 @@ stmt            : TOK_EXPECT TOK_STRING_VAL {
     $$ = (char *)makePreStmt(STMT_DELAY, NULL, $2, NULL, NULL, NULL, NULL);
 }               | TOK_SETPLUGSTATE TOK_STRING_VAL regmatch {
     $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, $2, NULL, NULL, $3, NULL, NULL);
-}               | TOK_SETPLUGSTATE TOK_STRING_VAL regmatch interp_list {
+}               | TOK_SETPLUGSTATE TOK_STRING_VAL regmatch state_interp_list {
     $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, $2, NULL, NULL, $3, NULL,
                              (List)$4);
 }               | TOK_SETPLUGSTATE regmatch regmatch {
     $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, $2, $3, NULL, NULL);
-}               | TOK_SETPLUGSTATE regmatch regmatch interp_list {
+}               | TOK_SETPLUGSTATE regmatch regmatch state_interp_list {
     $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, $2, $3, NULL,(List)$4);
 }               | TOK_SETPLUGSTATE regmatch {
     $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL, $2, NULL, NULL);
-}               | TOK_SETPLUGSTATE regmatch interp_list {
+}               | TOK_SETPLUGSTATE regmatch state_interp_list {
     $$ = (char *)makePreStmt(STMT_SETPLUGSTATE, NULL, NULL, NULL,$2,NULL,(List)$3);
 }               | TOK_FOREACHNODE stmt_block {
     $$ = (char *)makePreStmt(STMT_FOREACHNODE, NULL, NULL, NULL, NULL,
@@ -323,18 +324,18 @@ stmt            : TOK_EXPECT TOK_STRING_VAL {
                              (List)$2, NULL);
 }
 ;
-interp_list       : interp_list interp {
+state_interp_list       : state_interp_list state_interp {
     list_append((List)$1, $2);
     $$ = $1;
-}               | interp {
-    $$ = (char *)list_create((ListDelF)destroyInterp);
+}               | state_interp {
+    $$ = (char *)list_create((ListDelF)destroyStateInterp);
     list_append((List)$$, $1);
 }
 ;
-interp            : TOK_ON TOK_EQUALS TOK_STRING_VAL {
-    $$ = (char *)makeInterp(ST_ON, $3);
+state_interp            : TOK_ON TOK_EQUALS TOK_STRING_VAL {
+    $$ = (char *)makeStateInterp(ST_ON, $3);
 }                 | TOK_OFF TOK_EQUALS TOK_STRING_VAL {
-    $$ = (char *)makeInterp(ST_OFF, $3);
+    $$ = (char *)makeStateInterp(ST_OFF, $3);
 }
 ;
 regmatch          : TOK_MATCHPOS TOK_NUMERIC_VAL {
@@ -373,10 +374,11 @@ int parse_config_file (char *filename)
     return 0;
 }
 
-/* makePreStmt(type, str, tv, mp1(plug), mp2(stat/node), prestmts, interps */
+/* makePreStmt(type, str, tv, mp1(plug), mp2(stat/node), prestmts,
+ *             state_interps */
 static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
                       char *mp1str, char *mp2str, List prestmts,
-                      List interps)
+                      List state_interps)
 {
     PreStmt *new;
 
@@ -390,7 +392,7 @@ static PreStmt *makePreStmt(StmtType type, char *str, char *tvstr,
     if (tvstr)
         _doubletotv(&new->tv, _strtodouble(tvstr));
     new->prestmts = prestmts;
-    new->interps = interps;
+    new->state_interps = state_interps;
 
     return new;
 }
@@ -403,9 +405,9 @@ static void destroyPreStmt(PreStmt *p)
     if (p->prestmts)
         list_destroy(p->prestmts);
     p->prestmts = NULL;
-    if (p->interps)
-        list_destroy(p->interps);
-    p->interps = NULL;
+    if (p->state_interps)
+        list_destroy(p->state_interps);
+    p->state_interps = NULL;
     xfree(p);
 }
 
@@ -464,9 +466,9 @@ static void makeScript(int com, List stmts)
     current_spec.prescripts[com] = stmts;
 }
 
-static Interp *makeInterp(InterpState state, char *str)
+static StateInterp *makeStateInterp(InterpState state, char *str)
 {
-    Interp *new = (Interp *)xmalloc(sizeof(Interp));
+    StateInterp *new = (StateInterp *)xmalloc(sizeof(StateInterp));
 
     new->str = xstrdup(str);
     new->re = xregex_create();
@@ -475,24 +477,24 @@ static Interp *makeInterp(InterpState state, char *str)
     return new;
 }
 
-static void destroyInterp(Interp *i)
+static void destroyStateInterp(StateInterp *i)
 {
     xfree(i->str);
     xregex_destroy(i->re);
     xfree(i);
 }
 
-static List copyInterpList(List il)
+static List copyStateInterpList(List il)
 {
     ListIterator itr;
-    Interp *ip, *icpy;
-    List new = list_create((ListDelF) destroyInterp);
+    StateInterp *ip, *icpy;
+    List new = list_create((ListDelF) destroyStateInterp);
 
     if (il != NULL) {
 
         itr = list_iterator_create(il);
         while((ip = list_next(itr))) {
-            icpy = makeInterp(ip->state, ip->str);
+            icpy = makeStateInterp(ip->state, ip->str);
             xregex_compile(icpy->re, icpy->str, false);
             list_append(new, icpy);
         }
@@ -559,7 +561,7 @@ static Stmt *makeStmt(PreStmt *p)
             stmt->u.setplugstate.plug_name = xstrdup(p->str);
         else
             stmt->u.setplugstate.plug_mp = p->mp1;
-        stmt->u.setplugstate.interps = copyInterpList(p->interps);
+        stmt->u.setplugstate.interps = copyStateInterpList(p->state_interps);
         break;
     case STMT_DELAY:
         stmt->u.delay.tv = p->tv;
