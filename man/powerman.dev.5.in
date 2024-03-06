@@ -161,6 +161,12 @@ the second argument, result in the plug state being set to off or on.
 Yes we are applying regexes to regmatches!
 If no off or on strings are provided, state will be unknown.
 .TP
+.I "setresult <regmatch> <regmatch> success=<string>"
+Set the result state.  The first argument, a <regmatch> from the
+previous expect which contains the plug name.  The success string is
+a compiled regex, which if it matches the second argument, results in
+the power operation being successful for this plug.
+.TP
 .I "ifoff, ifon"
 Script statements enclosed in an ifon/ifoff block are conditional
 executed based on the state of the plug passed in as an argument.
