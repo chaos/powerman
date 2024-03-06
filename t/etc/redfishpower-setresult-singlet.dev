@@ -1,0 +1,72 @@
+# Variant of redfishpower-cray-r272z30.dev that covers use setresult
+# with "singlet" script variants
+specification "redfishpower-setresult" {
+	timeout 	60
+
+	script login {
+		expect "redfishpower> "
+		send "auth USER:PASS\n"
+		expect "redfishpower> "
+		send "setheader Content-Type:application/json\n"
+		expect "redfishpower> "
+		send "setstatpath redfish/v1/Systems/Self\n"
+		expect "redfishpower> "
+		send "setonpath redfish/v1/Systems/Self/Actions/ComputerSystem.Reset {\"ResetType\":\"On\"}\n"
+		expect "redfishpower> "
+		send "setoffpath redfish/v1/Systems/Self/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceOff\"}\n"
+		expect "redfishpower> "
+		send "settimeout 60\n"
+		expect "redfishpower> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status_all {
+		send "stat\n"
+		foreachnode {
+			expect "([^\n:]+): ([^\n]+\n)"
+			setplugstate $1 $2 on="^on\n" off="^off\n"
+		}
+		expect "redfishpower> "
+	}
+	script on {
+		send "on %s\n"
+                expect "([^\n:]+): ([^\n]+\n)"
+		setresult $1 $2 success="^ok\n"
+		expect "redfishpower> "
+	}
+	script off {
+		send "off %s\n"
+		expect "([^\n:]+): ([^\n]+\n)"
+		setresult $1 $2 success="^ok\n"
+		expect "redfishpower> "
+	}
+	# fake cycle for coverage testing, just does "on"
+	script cycle {
+		send "on %s\n"
+		expect "([^\n:]+): ([^\n]+\n)"
+		setresult $1 $2 success="^ok\n"
+		expect "redfishpower> "
+	}
+	# fake reset for coverage testing, just does "on"
+	script reset {
+		send "on %s\n"
+		expect "([^\n:]+): ([^\n]+\n)"
+		setresult $1 $2 success="^ok\n"
+		expect "redfishpower> "
+	}
+	# fake beacon on for coverage testing, just does "on"
+	script beacon_on {
+		send "on %s\n"
+		expect "([^\n:]+): ([^\n]+\n)"
+		setresult $1 $2 success="^ok\n"
+		expect "redfishpower> "
+	}
+	# fake beacon off for coverage testing, just does "off"
+	script beacon_off {
+		send "off %s\n"
+		expect "([^\n:]+): ([^\n]+\n)"
+		setresult $1 $2 success="^ok\n"
+		expect "redfishpower> "
+	}
+}
