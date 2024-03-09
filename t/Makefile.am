@@ -43,7 +43,8 @@ TESTSCRIPTS = \
 	t0032-list.t \
 	t0033-valgrind.t \
 	t0034-redfishpower.t \
-	t0035-power-result.t
+	t0035-power-result.t \
+	t0036-diag.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
