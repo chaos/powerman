@@ -48,6 +48,7 @@
 #define CP_BEACON_OFF "unflash %s"
 #define CP_TELEMETRY  "telemetry"
 #define CP_EXPRANGE   "exprange"
+#define CP_DIAG       "diag"
 
 /*
  * Responses -
@@ -67,6 +68,7 @@
 #define CP_RSP_QRY_COMPLETE "103 Query complete"                    CP_EOL
 #define CP_RSP_TELEMETRY    "104 Telemetry %s"                      CP_EOL
 #define CP_RSP_EXPRANGE     "105 Hostrange expansion %s"            CP_EOL
+#define CP_RSP_DIAG         "106 Diag %s"                           CP_EOL
 
 /* failure 2xx */
 #define CP_ERR_UNKNOWN      "201 Unknown command"                   CP_EOL
@@ -108,6 +110,7 @@
 #define CP_INFO_NODES       "306 %s"                                CP_EOL
 #define CP_INFO_XNODES      "307 %s"                                CP_EOL
 #define CP_INFO_ACTERROR    "308 %s"                                CP_EOL
+#define CP_INFO_DIAG        "309 %s: %s"                            CP_EOL
 
 #endif  /* PM_CLIENT_PROTO_H */
 
