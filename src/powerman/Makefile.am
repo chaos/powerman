@@ -2,6 +2,7 @@ AM_CFLAGS = @WARNING_CFLAGS@
 
 AM_CPPFLAGS = \
 	-I$(top_srcdir)/src/liblsd \
+	-I$(top_srcdir)/src/libczmq \
 	-I$(top_srcdir)/src/libcommon
 
 bin_PROGRAMS = \
@@ -59,6 +60,7 @@ powermand_SOURCES = \
 
 powermand_LDADD = \
 	$(top_builddir)/src/liblsd/liblsd.la \
+	$(top_builddir)/src/libczmq/libczmq.la \
 	$(top_builddir)/src/libcommon/libcommon.la \
 	$(LIBWRAP)
 
