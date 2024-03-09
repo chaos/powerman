@@ -85,6 +85,10 @@ Retry connect to server up to N times with a 100ms delay after each failure.
 .I "-d, --device"
 Displays device status information for the device(s) that control the targets,
 if specified, or all devices if not.
+.Tp
+.I "-D, --diag"
+Display diagnostic errors for power control failures.  Not available
+on all devices.
 .SH "TARGET SPECIFICATION"
 .B powerman
 target hostnames may be specified as comma separated or space separated
