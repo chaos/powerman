@@ -50,6 +50,7 @@
 #include "device_private.h"
 #include "fdutil.h"
 #include "powerman.h"
+#include "czmq.h"
 
 #ifndef HAVE_SOCKLEN_T
 typedef int socklen_t;                  /* socklen_t is uint32_t in Posix.1g */
@@ -80,6 +81,7 @@ typedef struct {
     int client_id;              /* client identifier */
     bool telemetry;             /* client wants telemetry debugging info */
     bool exprange;              /* client wants host ranges expanded */
+    bool diag;                  /* client wants extra node error diagnostics */
     bool client_quit;           /* set true after client quit command */
 } Client;
 
@@ -363,6 +365,49 @@ static void _client_query_device_reply(Client * c, char *arg)
     _client_printf(c, CP_RSP_QRY_COMPLETE);
 }
 
+/* zhashx_destructor_fn */
+void hostlist_destroy_wrapper(void **data)
+{
+    if (data) {
+        hostlist_t hl = *data;
+        hostlist_destroy(hl);
+    }
+}
+
+static void store_diag_result(zhashx_t *results, Arg *arg)
+{
+    hostlist_t hl;
+    if (!(hl = zhashx_lookup(results, arg->val))) {
+        if (!(hl = hostlist_create(NULL)))
+            err_exit(false, "hostlist_create");
+        zhashx_insert(results, arg->val, hl);
+    }
+    hostlist_push(hl, arg->node);
+}
+
+static void return_diag_results(Client *c, zhashx_t *results)
+{
+    zlistx_t *keys = zhashx_keys(results);
+    char *str;
+    if (!keys)
+        err_exit(false, "zhashx_keys");
+    str = zlistx_first(keys);
+    while (str) {
+        char *hosts;
+        char strbuf[1024 + 1] = {0};
+        hostlist_t hl = zhashx_lookup(results, str);
+        assert(hl);
+        hosts = _xhostlist_ranged_string(hl);
+        snprintf(strbuf, 1024, "%s", str);
+        /* remove trailing carriage return or newline */
+        strbuf[strcspn(strbuf, "\r\n")] = '\0';
+        _client_printf(c, CP_INFO_DIAG, hosts, strbuf);
+        str = zlistx_next(keys);
+        xfree(hosts);
+    }
+    zlistx_destroy(&keys);
+}
+
 /*
  * Reply to client power command (on/off/cycle/reset/beacon on/beacon off)
  */
@@ -371,6 +416,7 @@ static void _client_power_status_reply(Client * c, bool error)
     Arg *arg;
     ArgListIterator itr;
     int error_found = 0;
+    zhashx_t *results = NULL;
 
     assert(c->cmd != NULL);
 
@@ -381,15 +427,27 @@ static void _client_power_status_reply(Client * c, bool error)
     while ((arg = arglist_next(itr))) {
         if (arg->result == RT_UNKNOWN) {
             error_found++;
-            break;
+            if (c->diag) {
+                if (!results) {
+                    if (!(results = zhashx_new()))
+                        err_exit(false, "zhashx_new");
+                    zhashx_set_destructor(results, hostlist_destroy_wrapper);
+                }
+                store_diag_result(results, arg);
+            }
         }
     }
     arglist_iterator_destroy(itr);
+
+    if (c->diag && results)
+        return_diag_results(c, results);
 
     if (c->cmd->error || error_found)
         _client_printf(c, CP_ERR_COM_COMPLETE);
     else
         _client_printf(c, CP_RSP_COM_COMPLETE);
+
+    zhashx_destroy(&results);
 }
 
 /*
@@ -594,6 +652,9 @@ static void _parse_input(Client * c, char *input)
     } else if (!strncasecmp(str, CP_EXPRANGE, strlen(CP_EXPRANGE))) {
         c->exprange = !c->exprange;                     /* exprange */
         _client_printf(c, CP_RSP_EXPRANGE, c->exprange ? "ON" : "OFF");
+    } else if (!strncasecmp(str, CP_DIAG, strlen(CP_DIAG))) {
+        c->diag = !c->diag;                     /* diag */
+        _client_printf(c, CP_RSP_DIAG, c->diag ? "ON" : "OFF");
     } else if (!strncasecmp(str, CP_QUIT, strlen(CP_QUIT))) {
         c->client_quit = true;
         _client_printf(c, CP_RSP_QUIT);                 /* quit */
