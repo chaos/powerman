@@ -42,7 +42,8 @@ TESTSCRIPTS = \
 	t0031-llnl-mcr-cluster.t \
 	t0032-list.t \
 	t0033-valgrind.t \
-	t0034-power-result.t
+	t0034-power-result.t \
+	t0035-diag.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
