@@ -16,6 +16,15 @@
 struct plug_data {
     char *plugname;
     char *hostname;
+
+    /* paths */
+    char *stat;
+    char *on;
+    char *onpostdata;
+    char *off;
+    char *offpostdata;
+    char *cycle;
+    char *cyclepostdata;
 };
 
 typedef struct plugs plugs_t;
@@ -33,6 +42,12 @@ int plugs_count(plugs_t *p);
 struct plug_data *plugs_get_data(plugs_t *p, const char *plugname);
 
 hostlist_t *plugs_hostlist(plugs_t *p);
+
+int plugs_update_path(plugs_t *p,
+                      const char *plugname,
+                      const char *cmd,
+                      const char *path,
+                      const char *postdata);
 
 int plugs_name_valid(plugs_t *p, const char *plugname);
 

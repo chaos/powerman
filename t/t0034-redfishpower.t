@@ -99,6 +99,77 @@ test_expect_success 'stop powerman daemon (setplugs)' '
 	wait
 '
 
+#
+# redfishpower setpath coverage
+#
+
+test_expect_success 'create powerman.conf for 16 cray redfish nodes (setpath)' '
+	cat >powerman_setpath.conf <<-EOT
+	listen "$testaddr"
+	include "$testdevicesdir/redfishpower-setpath.dev"
+	device "d0" "redfishpower-setpath" "$redfishdir/redfishpower -h t[0-15] --test-mode |&"
+	node "t[0-15]" "d0" "Node[0-15]"
+	EOT
+'
+test_expect_success 'start powerman daemon and wait for it to start (setpath' '
+	$powermand -Y -c powerman_setpath.conf &
+	echo $! >powermand.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -d
+'
+test_expect_success 'powerman -q shows all off' '
+	$powerman -h $testaddr -q >test_setpath_query.out &&
+	makeoutput "" "t[0-15]" "" >test_setpath_query.exp &&
+	test_cmp test_setpath_query.exp test_setpath_query.out
+'
+test_expect_success 'powerman -1 t[0-15] works' '
+	$powerman -h $testaddr -1 t[0-15] >test_setpath_on.out &&
+	echo Command completed successfully >test_setpath_on.exp &&
+	test_cmp test_setpath_on.exp test_setpath_on.out
+'
+test_expect_success 'powerman -q shows all on' '
+	$powerman -h $testaddr -q >test_setpath_query2.out &&
+	makeoutput "t[0-15]" "" "" >test_setpath_query2.exp &&
+	test_cmp test_setpath_query2.exp test_setpath_query2.out
+'
+test_expect_success 'stop powerman daemon (setpath)' '
+	kill -15 $(cat powermand.pid) &&
+	wait
+'
+
+# Note, verbose output can mess up the device script's interpretation of power status,
+# so restart powermand with verbose mode to run telemetry specific tests.
+test_expect_success 'create powerman.conf for 16 cray redfish nodes (setpath2)' '
+	cat >powerman_setpath2.conf <<-EOT
+	listen "$testaddr"
+	include "$testdevicesdir/redfishpower-setpath.dev"
+	device "d0" "redfishpower-setpath" "$redfishdir/redfishpower -h t[0-15] --test-mode -vv |&"
+	node "t[0-15]" "d0" "Node[0-15]"
+	EOT
+'
+test_expect_success 'start powerman daemon and wait for it to start (setpath2)' '
+	$powermand -Y -c powerman_setpath2.conf &
+	echo $! >powermand.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -d
+'
+# Note: redfishpower-setpath.dev sets different paths for different
+# nodes.  Following tests check that correct path has been used.
+test_expect_success 'powerman -T -1 shows correct path being used (t0)' '
+	$powerman -h $testaddr -T -1 t0 > test_setpath2_on_T1.out &&
+	grep "plugname=Node0" test_setpath2_on_T1.out | grep "path=" | grep Group0
+'
+test_expect_success 'powerman -T -1 shows correct path being used (t5)' '
+	$powerman -h $testaddr -T -1 t5 > test_setpath2_on_T2.out &&
+	grep "plugname=Node5" test_setpath2_on_T2.out | grep "path=" | grep Group1
+'
+test_expect_success 'powerman -T -1 shows correct path being used (t10)' '
+	$powerman -h $testaddr -T -1 t10 > test_setpath2_on_T3.out &&
+	grep "plugname=Node10" test_setpath2_on_T3.out | grep "path=" | grep Default
+'
+test_expect_success 'stop powerman daemon (setpath2)' '
+	kill -15 $(cat powermand.pid) &&
+	wait
+'
+
 test_done
 
 # vi: set ft=sh

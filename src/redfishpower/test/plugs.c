@@ -98,11 +98,81 @@ static void basic_tests(void)
     plugs_destroy(p);
 }
 
+static void path_tests(void)
+{
+    plugs_t *p;
+    struct plug_data *pd;
+    int ret;
+
+    p = plugs_create();
+    if (!p)
+        BAIL_OUT("plugs_create");
+
+    plugs_add(p, "blade0", "node0");
+    plugs_add(p, "blade1", "node1");
+
+    ret = plugs_update_path(p, "blade0", "stat", "statpath0", NULL);
+    ok(ret == 0,
+       "plugs_update_path of stat path works on blade0");
+    ret = plugs_update_path(p, "blade0", "on", "onpath0", "onpostdata0");
+    ok(ret == 0,
+       "plugs_update_path of on path works on blade0");
+    /* intionally leave no postdata for off for testing */
+    ret = plugs_update_path(p, "blade0", "off", "offpath0", NULL);
+    ok(ret == 0,
+       "plugs_update_path of off path works on blade0");
+
+    ret = plugs_update_path(p, "blade1", "stat", "statpath1", NULL);
+    ok(ret == 0,
+       "plugs_update_path of stat path works on blade1");
+    ret = plugs_update_path(p, "blade1", "on", "onpath1", "onpostdata1");
+    ok(ret == 0,
+       "plugs_update_path of on path works on blade1");
+    /* intionally leave no postdata for off for testing */
+    ret = plugs_update_path(p, "blade1", "off", "offpath1", NULL);
+    ok(ret == 0,
+       "plugs_update_path of off path works on blade1");
+
+    ret = plugs_update_path(p, "foof", "stat", "statpath", NULL);
+    ok(ret == -1,
+       "plugs_update_path of invalid plug fails");
+    ret = plugs_update_path(p, "blade0", "foof", "statpath", NULL);
+    ok(ret == -1,
+       "plugs_update_path of invalid cmd fails");
+
+    pd = plugs_get_data(p, "blade0");
+    ok(strcmp(pd->stat, "statpath0") == 0,
+       "blade0 has correct stat path");
+    ok(strcmp(pd->on, "onpath0") == 0,
+       "blade0 has correct on path");
+    ok(strcmp(pd->onpostdata, "onpostdata0") == 0,
+       "blade0 has correct on postdata");
+    ok(strcmp(pd->off, "offpath0") == 0,
+       "blade0 has correct off path");
+    ok(pd->offpostdata == NULL,
+       "blade0 has no off postdata");
+
+    pd = plugs_get_data(p, "blade1");
+    ok(strcmp(pd->stat, "statpath1") == 0,
+       "blade1 has correct stat path");
+    ok(strcmp(pd->on, "onpath1") == 0,
+       "blade1 has correct on path");
+    ok(strcmp(pd->onpostdata, "onpostdata1") == 0,
+       "blade1 has correct on postdata");
+    ok(strcmp(pd->off, "offpath1") == 0,
+       "blade1 has correct off path");
+    ok(pd->offpostdata == NULL,
+       "blade1 has no off postdata");
+
+    plugs_destroy(p);
+}
+
 int main(int argc, char *argv[])
 {
     plan(NO_PLAN);
 
     basic_tests();
+    path_tests();
 
     done_testing();
 }

@@ -9,6 +9,7 @@ sbin_PROGRAMS = redfishpower
 
 redfishpower_SOURCES = \
 	redfishpower.c \
+	redfishpower_defs.h \
 	plugs.h \
 	plugs.c
 

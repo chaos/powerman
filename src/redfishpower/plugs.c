@@ -15,6 +15,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
+#include "redfishpower_defs.h"
 #include "plugs.h"
 
 #include "xmalloc.h"
@@ -42,6 +43,11 @@ static void plug_data_destroy(struct plug_data *pd)
     if (pd) {
         xfree(pd->plugname);
         xfree(pd->hostname);
+        xfree(pd->stat);
+        xfree(pd->on);
+        xfree(pd->onpostdata);
+        xfree(pd->off);
+        xfree(pd->offpostdata);
         xfree(pd);
     }
 }
@@ -110,6 +116,51 @@ struct plug_data *plugs_get_data(plugs_t *p, const char *plugname)
 hostlist_t *plugs_hostlist(plugs_t *p)
 {
     return &p->plugs;
+}
+
+int plugs_update_path(plugs_t *p,
+                      const char *plugname,
+                      const char *cmd,
+                      const char *path,
+                      const char *postdata)
+{
+    struct plug_data *pd;
+    char **cmdptr = NULL;
+    char **postdataptr = NULL;
+
+    if (!(pd = plugs_get_data(p, plugname)))
+        return -1;
+
+    if (strcmp(cmd, CMD_STAT) == 0) {
+        cmdptr = &pd->stat;
+    }
+    else if (strcmp(cmd, CMD_ON) == 0) {
+        cmdptr = &pd->on;
+        postdataptr = &pd->onpostdata;
+    }
+    else if (strcmp(cmd, CMD_OFF) == 0) {
+        cmdptr = &pd->off;
+        postdataptr = &pd->offpostdata;
+    }
+    else
+        return -1;
+
+    if (*cmdptr) {
+        free(*cmdptr);
+        (*cmdptr) = NULL;
+    }
+    if (postdataptr && *postdataptr) {
+        free(*postdataptr);
+        (*postdataptr) = NULL;
+    }
+
+    if (path) {
+        (*cmdptr) = xstrdup(path);
+        if (postdataptr && postdata)
+            (*postdataptr) = xstrdup(postdata);
+    }
+
+    return 0;
 }
 
 int plugs_name_valid(plugs_t *p, const char *plugname)
