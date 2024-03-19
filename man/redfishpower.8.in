@@ -60,6 +60,11 @@ Set path and optional post data to turn on plug.
 .I "setoffpath <path> [postdata]"
 Set path and optional post data to turn off plug.
 .TP
+.I "setplugs plugnames hostindices"
+Associate a plug name with one of the hostnames specified on the
+command line, referred to by its zero origin index Can be called
+multiple times to configure all possible plugs.
+.TP
 .I "settimeout <seconds>"
 Set command timeout in seconds.
 .TP

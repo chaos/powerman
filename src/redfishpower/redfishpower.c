@@ -36,6 +36,8 @@
 
 static hostlist_t hosts = NULL;
 static plugs_t *plugs = NULL;
+/* flag to indicate if we wiped initial plugs */
+static int initial_plugs_setup = 0;
 static char *header = NULL;
 static struct curl_slist *header_list = NULL;
 static int verbose = 0;
@@ -155,6 +157,7 @@ void help(void)
     printf("  setstatpath path\n");
     printf("  setonpath path [postdata]\n");
     printf("  setoffpath path [postdata]\n");
+    printf("  setplugs plugnames hostindices\n");
     printf("  settimeout seconds\n");
     printf("  stat [plugs]\n");
     printf("  on [plugs]\n");
@@ -754,6 +757,113 @@ static void setpowerpath(char **av, char **path, char **postdata)
     }
 }
 
+static void remove_initial_plugs(void)
+{
+    hostlist_iterator_t itr;
+    char *hostname;
+
+    if (!initial_plugs_setup)
+        return;
+
+    if (!(itr = hostlist_iterator_create(hosts)))
+        err_exit(true, "hostlist_iterator_create");
+
+    while ((hostname = hostlist_next(itr))) {
+        plugs_remove(plugs, hostname);
+        free(hostname);
+    }
+
+    hostlist_iterator_destroy(itr);
+    initial_plugs_setup = 0;
+    return;
+}
+
+static int setup_plug(const char *plugname, const char *hostindexstr)
+{
+    char *host;
+    char *endptr;
+    int hostindex;
+
+    errno = 0;
+    hostindex = strtol (hostindexstr, &endptr, 10);
+    if (errno
+        || endptr[0] != '\0'
+        || hostindex < 0) {
+        printf("setplugs: invalid hostindex %s specified\n", hostindexstr);
+        return -1;
+    }
+
+    if (!(host = hostlist_nth(hosts, hostindex))) {
+        printf("setplugs: hostindex %d out of range\n", hostindex);
+        return -1;
+    }
+
+    plugs_add(plugs, plugname, host);
+
+    /* initialize plug to "off" for testing */
+    if (test_mode)
+        zhashx_insert(test_power_status, plugname, STATUS_OFF);
+
+    free(host);
+    return 0;
+}
+
+static void setplugs(char **av)
+{
+    hostlist_t lplugs = NULL;
+    hostlist_t hostindices = NULL;
+    int plugcount, hostindexcount;
+    hostlist_iterator_t lplugsitr = NULL;
+    hostlist_iterator_t hostindicesitr = NULL;
+    char *plug;
+    char *hostindexstr;
+
+    if (!av[0] || !av[1]) {
+        printf("Usage: setplugs <plugnames> <hostindices>\n");
+        return;
+    }
+
+    if (!(lplugs = hostlist_create(av[0]))) {
+        printf("setplugs: illegal plugnames input\n");
+        goto cleanup;
+    }
+    if (!(hostindices = hostlist_create(av[1]))) {
+        printf("setplugs: illegal hostindices input\n");
+        goto cleanup;
+    }
+
+    plugcount = hostlist_count(lplugs);
+    hostindexcount = hostlist_count(hostindices);
+    if (plugcount != hostindexcount) {
+        printf("setplugs: plugs count not equal to host index count");
+        goto cleanup;
+    }
+
+    if (!(lplugsitr = hostlist_iterator_create(lplugs)))
+        err_exit(true, "hostlist_iterator_create");
+    if (!(hostindicesitr = hostlist_iterator_create(hostindices)))
+        err_exit(true, "hostlist_iterator_create");
+
+    /* if user is electing to configure their own plugs, we must remove
+     * all of the initial ones configured in setup_hosts()
+     */
+    remove_initial_plugs();
+
+    while ((plug = hostlist_next(lplugsitr))
+           && (hostindexstr = hostlist_next(hostindicesitr))) {
+        if (setup_plug(plug, hostindexstr) < 0)
+            goto cleanup;
+        free(plug);
+        free(hostindexstr);
+    }
+
+cleanup:
+    hostlist_iterator_destroy(lplugsitr);
+    hostlist_iterator_destroy(hostindicesitr);
+    hostlist_destroy(lplugs);
+    hostlist_destroy(hostindices);
+}
+
 static void settimeout(char **av)
 {
     if (av[0]) {
@@ -787,6 +897,8 @@ static void process_cmd(CURLM *mh, char **av, int *exitflag)
             setpowerpath(av + 1, &onpath, &onpostdata);
         else if (strcmp(av[0], "setoffpath") == 0)
             setpowerpath(av + 1, &offpath, &offpostdata);
+        else if (strcmp(av[0], "setplugs") == 0)
+            setplugs(av + 1);
         else if (strcmp(av[0], "settimeout") == 0)
             settimeout(av + 1);
         else if (strcmp(av[0], CMD_STAT) == 0)
@@ -1104,6 +1216,8 @@ static void setup_hosts(void)
     }
 
     hostlist_iterator_destroy(itr);
+
+    initial_plugs_setup = 1;
 }
 
 int main(int argc, char *argv[])
