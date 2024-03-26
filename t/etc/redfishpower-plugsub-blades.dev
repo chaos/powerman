@@ -1,0 +1,54 @@
+# Variant of redfishpower-cray-r272z30.dev that covers use of plug
+# substitution and the assumption of blades.
+#
+# Notes:
+# - hypothetical blades go through Node0
+# - for easier grepping in tests, simplify paths
+specification "redfishpower-plugsub-blades" {
+	timeout 	60
+
+	script login {
+		expect "redfishpower> "
+		send "auth USER:PASS\n"
+		expect "redfishpower> "
+		send "setheader Content-Type:application/json\n"
+		expect "redfishpower> "
+		send "setplugs Node[0-15] [0-15]\n"
+		expect "redfishpower> "
+		send "setplugs Blade[0-3] 0\n"
+		expect "redfishpower> "
+		send "setstatpath redfish/Default-{{plug}}/Stat\n"
+		expect "redfishpower> "
+		send "setonpath redfish/Default-{{plug}}/Reset {\"ResetType\":\"On\"}\n"
+		expect "redfishpower> "
+		send "setoffpath redfish/Default-{{plug}}/Reset {\"ResetType\":\"ForceOff\"}\n"
+		expect "redfishpower> "
+		send "setcyclepath redfish/Default-{{plug}}/Reset {\"ResetType\":\"ForceRestart\"}\n"
+		expect "redfishpower> "
+		send "settimeout 60\n"
+		expect "redfishpower> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status_all {
+		send "stat\n"
+		foreachnode {
+			expect "([^\n:]+): ([^\n]+\n)"
+			setplugstate $1 $2 on="^on\n" off="^off\n"
+		}
+		expect "redfishpower> "
+	}
+	script on_ranged {
+		send "on %s\n"
+		expect "redfishpower> "
+	}
+	script off_ranged {
+		send "off %s\n"
+		expect "redfishpower> "
+	}
+	script cycle_ranged {
+		send "cycle %s\n"
+		expect "redfishpower> "
+	}
+}

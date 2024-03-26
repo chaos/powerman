@@ -1,0 +1,62 @@
+# Variant of redfishpower-cray-r272z30.dev that covers use of plug
+# substitution.
+#
+# Notes:
+# - for easier grepping in tests, simplify paths
+# - different paths for different chunks of nodes/plugs
+# - no plug specific paths set for Node[8-15], will use defaults
+#   set via setstatpath, setonpath, etc.
+specification "redfishpower-plugsub" {
+	timeout 	60
+
+	script login {
+		expect "redfishpower> "
+		send "auth USER:PASS\n"
+		expect "redfishpower> "
+		send "setheader Content-Type:application/json\n"
+		expect "redfishpower> "
+		send "setplugs Node[0-15] [0-15]\n"
+		expect "redfishpower> "
+		send "setpath Node[0-7] stat redfish/Group0\n"
+		expect "redfishpower> "
+		send "setpath Node[0-7] on redfish/Group0-{{plug}}/Reset {\"ResetType\":\"On\"}\n"
+		expect "redfishpower> "
+		send "setpath Node[0-7] off redfish/Group0-{{plug}}/Reset {\"ResetType\":\"ForceOff\"}\n"
+		expect "redfishpower> "
+		send "setpath Node[0-7] cycle redfish/Group0-{{plug}}/Reset {\"ResetType\":\"ForceRestart\"}\n"
+		expect "redfishpower> "
+		send "setstatpath redfish/Default\n"
+		expect "redfishpower> "
+		send "setonpath redfish/Default-{{plug}}/Reset {\"ResetType\":\"On\"}\n"
+		expect "redfishpower> "
+		send "setoffpath redfish/Default-{{plug}}/Reset {\"ResetType\":\"ForceOff\"}\n"
+		expect "redfishpower> "
+		send "setcyclepath redfish/Default-{{plug}}/Reset {\"ResetType\":\"ForceRestart\"}\n"
+		expect "redfishpower> "
+		send "settimeout 60\n"
+		expect "redfishpower> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status_all {
+		send "stat\n"
+		foreachnode {
+			expect "([^\n:]+): ([^\n]+\n)"
+			setplugstate $1 $2 on="^on\n" off="^off\n"
+		}
+		expect "redfishpower> "
+	}
+	script on_ranged {
+		send "on %s\n"
+		expect "redfishpower> "
+	}
+	script off_ranged {
+		send "off %s\n"
+		expect "redfishpower> "
+	}
+	script cycle_ranged {
+		send "cycle %s\n"
+		expect "redfishpower> "
+	}
+}
