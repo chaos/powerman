@@ -370,6 +370,9 @@ static void powermsg_destroy(struct powermsg *pm)
 {
     if (pm) {
         xfree(pm->cmd);
+        xfree(pm->hostname);
+        xfree(pm->plugname);
+        xfree(pm->parent);
         xfree(pm->url);
         xfree(pm->postdata);
         free(pm->output);
