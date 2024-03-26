@@ -77,6 +77,10 @@ The plug name can be substituted into the URI path by specifying "{{plug}}" in t
 .I "settimeout <seconds>"
 Set command timeout in seconds.
 .TP
+.I "setstatuspollinginterval <seconds>"
+Set status polling interval in seconds.  This is the polling interval
+to determine an on/off command has completed.
+.TP
 .I "stat [plugs]"
 Get power status of all plugs or specified subset of plugs.
 .TP
