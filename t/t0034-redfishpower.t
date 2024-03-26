@@ -677,6 +677,56 @@ test_expect_success 'stop powerman daemon (parents3Lbad)' '
 	wait
 '
 
+#
+# valgrind
+#
+
+if valgrind --version; then
+	test_set_prereq HAVE_VALGRIND
+fi
+
+# test input largely follows Cray EX chassis
+test_expect_success HAVE_VALGRIND 'create redfishpower test input' '
+	cat >redfishpower.in <<-EOT
+	auth USER:PASS
+	setheader Content-Type:application/json
+	setplugs Enclosure 0
+	setplugs Perif[0-7],Blade[0-7] 0 Enclosure
+	setplugs Node[0-1] [1-2] Blade0
+	setplugs Node[2-3] [3-4] Blade1
+	setplugs Node[4-5] [5-6] Blade2
+	setplugs Node[6-7] [7-8] Blade3
+	setplugs Node[8-9] [9-10] Blade4
+	setplugs Node[10-11] [11-12] Blade5
+	setplugs Node[12-13] [13-14] Blade6
+	setplugs Node[14-15] [15-16] Blade7
+	setpath Enclosure,Perif[0-7],Blade[0-7] stat redfish/v1/Chassis/{{plug}}
+	setpath Enclosure,Perif[0-7],Blade[0-7] on redfish/v1/Chassis/{{plug}}/Actions/Chassis.Reset {\"ResetType\":\"On\"}
+	setpath Enclosure,Perif[0-7],Blade[0-7] off redfish/v1/Chassis/{{plug}}/Actions/Chassis.Reset {\"ResetType\":\"ForceOff\"}
+	setpath Node[0-15] stat redfish/v1/Systems/Node0
+	setpath Node[0-15] on redfish/v1/Systems/Node0/Actions/ComputerSystem.Reset {\"ResetType\":\"On\"}
+	setpath Node[0-15] off redfish/v1/Systems/Node0/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceOff\"}
+	settimeout 60
+	stat
+	stat Enclosure,Perif[0-7],Blade[0-7],Node[0-15]
+	on Enclosure,Perif[0-7],Blade[0-7],Node[0-15]
+	on Enclosure
+	on Perif[0-7],Blade[0-7]
+	on Node[0-15]
+	stat
+	stat Enclosure,Perif[0-7],Blade[0-7],Node[0-15]
+	off Node[0-15]
+	off Perif[0-7],Blade[0-7]
+	off Enclosure
+	EOT
+'
+
+test_expect_success HAVE_VALGRIND 'run redfishpower under valgrind' '
+	cat redfishpower.in | valgrind --tool=memcheck --leak-check=full \
+	    --error-exitcode=1 --gen-suppressions=all \
+	    $redfishdir/redfishpower -h cmm0,t[0-15] --test-mode
+'
+
 test_done
 
 # vi: set ft=sh
