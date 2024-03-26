@@ -56,7 +56,7 @@ static void _set_command (const char **command, const char *value);
 
 static char *prog;
 
-#define OPTIONS "01crfubqtldTxgh:VLR:H"
+#define OPTIONS "01crfubqtldTxgh:VLR:DH"
 static const struct option longopts[] = {
     // command
     {"on",          no_argument,        0, '1'},
@@ -78,6 +78,7 @@ static const struct option longopts[] = {
     {"version",     no_argument,        0, 'V'},
     {"license",     no_argument,        0, 'L'},
     {"retry-connect", required_argument, 0, 'R'},
+    {"diag",        no_argument,        0, 'D'},
     {"help",        no_argument,        0, 'H'},
     {0, 0, 0, 0},
 };
@@ -96,6 +97,7 @@ int main(int argc, char **argv)
     bool exprange = false;
     hostlist_t targets;
     bool targets_required = false;
+    bool diag = false;
 
     prog = basename(argv[0]);
     err_init(prog);
@@ -179,6 +181,9 @@ int main(int argc, char **argv)
             if (errno != 0 || retry_connect < 1)
                 err_exit(false, "invalid --retry-connect argument");
             break;
+        case 'D':              /* --diag */
+            diag = true;
+            break;
         case 'H':              /* --help */
             _usage();
             /*NOTREACHED*/
@@ -241,6 +246,13 @@ int main(int argc, char **argv)
         if (res != 0)
             goto done;
     }
+    if (diag) {
+        hfdprintf(server_fd, "%s%s", CP_DIAG, CP_EOL);
+        res = _process_response(server_fd);
+        _expect(server_fd, CP_PROMPT);
+        if (res != 0)
+            goto done;
+    }
     /* Send the main command.
      * Use 'command' as the format string if it contains '%s' for an argument.
      */
@@ -291,6 +303,7 @@ static void _usage(void)
 "  -L,--license         Show powerman license\n"
 "  -T,--telemtery       Show device conversation for debugging\n"
 "  -R,--retry-connect=N Retry connect to server up to N times\n"
+"  -D,--diag            Output diagnostics if available\n"
     );
     exit(0);
 }
@@ -402,6 +415,8 @@ static bool _suppress(int num)
     if (strtol(CP_RSP_TELEMETRY, NULL, 10) == num)
         return true;
     if (strtol(CP_RSP_EXPRANGE, NULL, 10) == num)
+        return true;
+    if (strtol(CP_RSP_DIAG, NULL, 10) == num)
         return true;
     return false;
 }

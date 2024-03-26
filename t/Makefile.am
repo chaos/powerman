@@ -42,7 +42,9 @@ TESTSCRIPTS = \
 	t0031-llnl-mcr-cluster.t \
 	t0032-list.t \
 	t0033-valgrind.t \
-	t0034-redfishpower.t
+	t0034-redfishpower.t \
+	t0035-power-result.t \
+	t0036-diag.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
@@ -66,7 +68,10 @@ EXTRA_DIST= \
 	etc/redfishpower-plugsub.dev \
 	etc/redfishpower-plugsub-blades.dev \
 	etc/redfishpower-parents-2-levels.dev \
-	etc/redfishpower-parents-3-levels.dev
+	etc/redfishpower-parents-3-levels.dev \
+	etc/redfishpower-setresult-all.dev \
+	etc/redfishpower-setresult-range.dev \
+	etc/redfishpower-setresult-singlet.dev
 
 
 AM_CFLAGS = @WARNING_CFLAGS@
