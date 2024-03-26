@@ -30,11 +30,14 @@ struct plugs {
 };
 
 static struct plug_data *plug_data_create(const char *plugname,
-                                          const char *hostname)
+                                          const char *hostname,
+                                          const char *parent)
 {
     struct plug_data *pd = (struct plug_data *)xmalloc(sizeof(*pd));
     pd->plugname = xstrdup(plugname);
     pd->hostname = xstrdup(hostname);
+    if (parent)
+        pd->parent = xstrdup(parent);
     return pd;
 }
 
@@ -43,6 +46,7 @@ static void plug_data_destroy(struct plug_data *pd)
     if (pd) {
         xfree(pd->plugname);
         xfree(pd->hostname);
+        xfree(pd->parent);
         xfree(pd->stat);
         xfree(pd->on);
         xfree(pd->onpostdata);
@@ -86,14 +90,17 @@ void plugs_destroy(plugs_t *p)
     }
 }
 
-void plugs_add(plugs_t *p, const char *plugname, const char *hostname)
+void plugs_add(plugs_t *p,
+               const char *plugname,
+               const char *hostname,
+               const char *parent)
 {
     struct plug_data *pd;
     if (hostlist_find(p->plugs, plugname) < 0) {
         if (hostlist_push(p->plugs, plugname) == 0)
             err_exit(false, "hostlist_push failed");
     }
-    pd = plug_data_create(plugname, hostname);
+    pd = plug_data_create(plugname, hostname, parent);
     zhashx_update(p->plug_map, plugname, pd);
 }
 
@@ -168,6 +175,46 @@ int plugs_name_valid(plugs_t *p, const char *plugname)
     if (hostlist_find(p->plugs, plugname) < 0)
         return 0;
     return 1;
+}
+
+char *plugs_find_root_parent(plugs_t *p, const char *plugname)
+{
+    struct plug_data *pd = zhashx_lookup(p->plug_map, plugname);
+    if (!pd)
+        return NULL;
+    do {
+        if (!pd->parent)
+            return pd->plugname;
+        if (!(pd = zhashx_lookup(p->plug_map, pd->parent)))
+            return NULL;
+    } while (pd);
+    /* NOT REACHED */
+    return NULL;
+}
+
+int plugs_is_descendant(plugs_t *p,
+                        const char *plugname,
+                        const char *ancestor)
+{
+    return plugs_child_of_ancestor(p, plugname, ancestor) ? 1 : 0;
+}
+
+char *plugs_child_of_ancestor(plugs_t *p,
+                              const char *plugname,
+                              const char *ancestor)
+{
+    struct plug_data *pd = zhashx_lookup(p->plug_map, plugname);
+    if (!pd)
+        return NULL;
+
+    while (pd->parent) {
+        if (strcmp(pd->parent, ancestor) == 0)
+            return pd->plugname;
+        if (!(pd = zhashx_lookup(p->plug_map, pd->parent)))
+            return NULL;
+    }
+
+    return NULL;
 }
 
 /*

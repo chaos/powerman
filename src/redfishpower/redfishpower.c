@@ -58,6 +58,8 @@ static zlistx_t *activecmds = NULL;
  *   send at a later time.
  */
 static zlistx_t *delayedcmds = NULL;
+/* waitcmds - power ops waiting for a parent check to be completed */
+static zlistx_t *waitcmds = NULL;
 
 static int test_mode = 0;
 static hostlist_t test_fail_power_cmd_hosts;
@@ -85,6 +87,10 @@ static zhashx_t *test_power_status;
 #define STATUS_POWERING_ON  "PoweringOn"
 #define STATUS_POWERING_OFF "PoweringOff"
 #define STATUS_UNKNOWN      "unknown"
+#define STATUS_ERROR        "error"
+
+#define OUTPUT_RESULT  1
+#define NO_OUTPUT      0
 
 enum {
       STATE_SEND_POWERCMD,      /* stat, on, off */
@@ -98,10 +104,13 @@ struct powermsg {
     char *cmd;                  /* "on", "off", or "stat" */
     char *hostname;             /* host we're working with */
     char *plugname;             /* plugname, in some cases == hostname */
+    char *parent;               /* parent, NULL if no parent */
     char *url;                  /* on, off, stat */
     char *postdata;             /* on, off */
     char *output;               /* on, off, stat */
     size_t output_len;
+
+    int output_result;          /* output result or not */
 
     int state;
 
@@ -156,7 +165,7 @@ void help(void)
     printf("  setstatpath path\n");
     printf("  setonpath path [postdata]\n");
     printf("  setoffpath path [postdata]\n");
-    printf("  setplugs plugnames hostindices\n");
+    printf("  setplugs plugnames hostindices [<parentplug]]\n");
     printf("  setpath plugnames cmd path [postdata]\n");
     printf("  settimeout seconds\n");
     printf("  stat [plugs]\n");
@@ -303,11 +312,13 @@ static void powermsg_init_curl(struct powermsg *pm)
 static struct powermsg *powermsg_create(CURLM *mh,
                                         const char *hostname,
                                         const char *plugname,
+                                        const char *parent,
                                         const char *cmd,
                                         const char *path,
                                         const char *postdata,
                                         struct timeval *start,
                                         long int delay_usec,
+                                        int output_result,
                                         int state)
 {
     struct powermsg *pm = calloc(1, sizeof(*pm));
@@ -323,6 +334,10 @@ static struct powermsg *powermsg_create(CURLM *mh,
     pm->cmd = xstrdup(cmd);
     pm->hostname = xstrdup(hostname);
     pm->plugname = xstrdup(plugname);
+    if (parent)
+        pm->parent = xstrdup(parent);
+
+    pm->output_result = output_result;
 
     pm->url = xmalloc(strlen("https://") + strlen(hostname) + strlen(path) + 2);
     sprintf(pm->url, "https://%s/%s", hostname, path);
@@ -374,7 +389,9 @@ static void powermsg_destroy(struct powermsg *pm)
     }
 }
 
-static struct powermsg *stat_cmd_plug(CURLM * mh, char *plugname)
+static struct powermsg *stat_cmd_plug(CURLM * mh,
+                                      char *plugname,
+                                      int output_result)
 {
     struct powermsg *pm;
     struct plug_data *pd;
@@ -394,17 +411,75 @@ static struct powermsg *stat_cmd_plug(CURLM * mh, char *plugname)
     pm = powermsg_create(mh,
                          pd->hostname,
                          plugname,
+                         pd->parent,
                          CMD_STAT,
                          path,
                          NULL,
                          NULL,
                          0,
+                         output_result,
                          STATE_SEND_POWERCMD);
     if (verbose > 1)
         printf("DEBUG: %s hostname=%s plugname=%s path=%s\n",
                CMD_STAT, pd->hostname, plugname, path);
     free(path);
     return pm;
+}
+
+/* is parent plugname already active?
+ * - if command is "on"/"off"/"stat" and plugname command is "stat',
+ *   counts as active
+ * - if command is "off" and plugname being turned off, counts as active
+ *
+ * - note, we do not support command "on" and plugname being turned on is "on.
+ * see notes in phased_power_on_check().
+ */
+static int plugname_active(const char *plugname, const char *cmd)
+{
+    struct powermsg *pm = zlistx_first(activecmds);
+    while (pm) {
+        if (strcmp(pm->plugname, plugname) == 0) {
+            if (strcmp(pm->cmd, CMD_STAT) == 0)
+                return 1;
+            else if (strcmp(cmd, CMD_OFF) == 0
+                     && strcmp(pm->cmd, CMD_OFF) == 0)
+                return 1;
+        }
+        pm = zlistx_next(activecmds);
+    }
+    return 0;
+}
+
+static void send_initial_parent_queries(CURLM *mh)
+{
+    /* Only send out one query for identical ancestors */
+    struct powermsg *pm = zlistx_first(waitcmds);
+    while (pm) {
+        char *root_plugname = plugs_find_root_parent(plugs, pm->plugname);
+        assert(root_plugname);
+        int is_active = plugname_active(root_plugname, pm->cmd);
+        /* if not active, that means no active attempts to on/off/stat
+         * the root plugname, so we need to stat it now
+         */
+        if (!is_active) {
+            struct powermsg *rootpm;
+            /* no_output, we do not output this query result since it
+             * is only to determine if we should perform power op
+             */
+            rootpm = stat_cmd_plug(mh, root_plugname, NO_OUTPUT);
+            if (!rootpm)
+                goto next;
+            powermsg_init_curl(rootpm);
+            if (!(rootpm->handle = zlistx_add_end(activecmds, rootpm)))
+                err_exit(true, "zlistx_add_end");
+            if (verbose > 1)
+                fprintf(stderr,
+                        "DEBUG: parent query hostname=%s plugname=%s\n",
+                        rootpm->hostname, rootpm->plugname);
+        }
+    next:
+        pm = zlistx_next(waitcmds);
+    }
 }
 
 static void stat_cmd(CURLM *mh, char **av)
@@ -434,15 +509,25 @@ static void stat_cmd(CURLM *mh, char **av)
             free(plugname);
             continue;
         }
-        if (!(pm = stat_cmd_plug(mh, plugname))) {
+        if (!(pm = stat_cmd_plug(mh, plugname, OUTPUT_RESULT))) {
             free(plugname);
             continue;
         }
-        powermsg_init_curl(pm);
-        if (!(pm->handle = zlistx_add_end(activecmds, pm)))
-            err_exit(true, "zlistx_add_end");
+        if (pm->parent) {
+            if (!(pm->handle = zlistx_add_end(waitcmds, pm)))
+                err_exit(true, "zlistx_add_end");
+        }
+        else {
+            powermsg_init_curl(pm);
+            if (!(pm->handle = zlistx_add_end(activecmds, pm)))
+                err_exit(true, "zlistx_add_end");
+        }
         free(plugname);
     }
+
+    if (zlistx_size(waitcmds) > 0)
+        send_initial_parent_queries(mh);
+
     hostlist_iterator_destroy(itr);
     hostlist_destroy(lplugs);
 }
@@ -528,11 +613,125 @@ static void parse_onoff(struct powermsg *pm,
     }
 }
 
+static void process_waiters(CURLM *mh,
+                            const char *ancestor,
+                            const char *status_str)
+{
+    struct powermsg *pm;
+
+    /* first pass - deal with descendants that will be removed from
+     * waitcmds (either removed outright or moved to activecmds)
+     */
+    pm = zlistx_first(waitcmds);
+    while (pm) {
+        int descendant = plugs_is_descendant(plugs, pm->plugname, ancestor);
+        if (descendant) {
+            if (strcmp(status_str, STATUS_ON) != 0) {
+                if (verbose > 1)
+                    fprintf(stderr,
+                            "DEBUG: descendant: "
+                            "%s hostname=%s plugname=%s status=%s\n",
+                            pm->cmd, pm->hostname, pm->plugname, status_str);
+
+                if (pm->output_result) {
+                    /* for stat if ancestor is off/unknown/error, the child is
+                     * defined as off/unknown/error
+                     *
+                     * for off, if ancestor is off, we consider
+                     * operation a success
+                     *
+                     * otherwise can't do operation
+                     */
+                    if (strcmp(pm->cmd, CMD_STAT) == 0)
+                        printf("%s: %s\n", pm->plugname, status_str);
+                    else if (strcmp(pm->cmd, CMD_OFF) == 0
+                             && strcmp(status_str, STATUS_OFF) == 0)
+                        printf("%s: %s\n", pm->plugname, "ok");
+                    else
+                        printf("%s: ancestor %s\n", pm->plugname, status_str);
+                }
+
+                /* this power op is now done */
+                zlistx_detach_cur(waitcmds);
+                powermsg_destroy(pm);
+            }
+            else {
+                /* if ancestor is direct parent, move waiter to active list */
+                if (strcmp(pm->parent, ancestor) == 0) {
+                    if (verbose > 1)
+                        fprintf(stderr,
+                                "DEBUG: %s hostname=%s plugname=%s "
+                                "moved to activecmds\n",
+                                pm->cmd, pm->hostname, pm->plugname);
+                    zlistx_detach_cur(waitcmds);
+                    powermsg_init_curl(pm);
+                    if (!(pm->handle = zlistx_add_end(activecmds, pm)))
+                        err_exit(true, "zlistx_add_end");
+                }
+            }
+        }
+        pm = zlistx_next(waitcmds);
+    }
+
+    /* second loop only deals w/ STATUS_ON, so we can give up now if
+     * not on */
+    if (strcmp(status_str, STATUS_ON) != 0)
+        return;
+
+    /* second pass - remaining descendants on waitcmds do not have
+     * direct parent == ancestor, so we have to status query
+     * the child of that ancestor.
+     *
+     * This has to be done as a second pass because we need to
+     * previous loop to finish moving all possible power ops on
+     * waitcmds to the activecmds list before we scan it with
+     * plugname_active().
+     */
+    pm = zlistx_first(waitcmds);
+    while (pm) {
+        int descendant = plugs_is_descendant(plugs, pm->plugname, ancestor);
+        if (descendant) {
+            /* status query the child of that ancestor */
+            char *child = plugs_child_of_ancestor(plugs, pm->plugname, ancestor);
+            assert(child);
+            int is_active = plugname_active(child, pm->cmd);
+            /* if not active, that means no active attempts to on/off/stat
+             * the child plugname, so we need to stat it now
+             */
+            if (!is_active) {
+                struct powermsg *childpm;
+                /* no_output, we do not output this query result since it
+                 * is only to determine if we should perform power op
+                 */
+                childpm = stat_cmd_plug(mh, child, NO_OUTPUT);
+                if (!childpm)
+                    goto next;
+                powermsg_init_curl(childpm);
+                if (!(childpm->handle = zlistx_add_end(activecmds, childpm)))
+                    err_exit(true, "zlistx_add_end");
+                if (verbose > 1)
+                    fprintf(stderr,
+                            "DEBUG: parent query hostname=%s plugname=%s\n",
+                            childpm->hostname, childpm->plugname);
+            }
+        }
+    next:
+        pm = zlistx_next(waitcmds);
+    }
+}
+
 static void stat_process(struct powermsg *pm)
 {
     const char *status_str;
     parse_onoff(pm, &status_str, NULL);
-    printf("%s: %s\n", pm->plugname, status_str);
+    if (pm->output_result)
+        printf("%s: %s\n", pm->plugname, status_str);
+    if (verbose > 1)
+        fprintf(stderr,
+                "DEBUG: %s hostname=%s plugname=%s status=%s\n",
+                pm->cmd, pm->hostname, pm->plugname, status_str);
+
+    process_waiters(pm->mh, pm->plugname, status_str);
 }
 
 static void stat_cleanup(struct powermsg *pm)
@@ -563,11 +762,13 @@ struct powermsg *power_cmd_plug(CURLM * mh,
     pm = powermsg_create(mh,
                          pd->hostname,
                          plugname,
+                         pd->parent,
                          cmd,
                          path,
                          postdata,
                          NULL,
                          0,
+                         OUTPUT_RESULT,
                          STATE_SEND_POWERCMD);
     if (verbose > 1)
         printf("DEBUG: %s hostname=%s plugname=%s path=%s\n",
@@ -575,6 +776,96 @@ struct powermsg *power_cmd_plug(CURLM * mh,
     free(path);
     free(postdata);
     return pm;
+}
+
+/* We do not allow "phased" power on, where we power on a
+ * parent, wait for it to finish, then power on a child.
+ *
+ * It ultimately proved too difficult to be done consistently well.
+ * In many cases, you cannot power on a child after a parent.  There
+ * must be a delay as the parent "sets itself up".  The delay can be
+ * unknown.  Testing on some hardware has shown itself to last
+ * multiple minutes.
+ *
+ * Hypothetically, we could try powering on a child multiple times
+ * until we succeed or some global timeout is reached.  However, this
+ * proves difficult, as there are varying degrees of errors that are
+ * returned from that power on and it is difficult to ascertain which
+ * errors are "good" vs "bad".  e.g. is a connection timeout permanent
+ * b/c a child is missing?  or is a connection timeout temporary?
+ *
+ * So we simply don't allow it.  Powering on different levels
+ * is left to users.
+ */
+static void phased_power_on_check(const char *cmd)
+{
+    struct powermsg **allpm;
+    struct powermsg *pm;
+    int total = 0;
+    int i = 0;
+    int cancel = 0;
+
+    if (strcmp(cmd, CMD_ON) != 0)
+        return;
+
+    total += zlistx_size(activecmds);
+    total += zlistx_size(waitcmds);
+
+    assert(total > 0);
+
+    /* single target can't be an ancestor of anyone else */
+    if (total == 1)
+        return;
+
+    /* we need to compare every target to every other target, an array
+     * is easier for this than the lists.
+     */
+
+    allpm = (struct powermsg **)xmalloc(sizeof(*allpm) * total);
+
+    pm = zlistx_first(activecmds);
+    while (pm) {
+        allpm[i++] = pm;
+        pm = zlistx_next(activecmds);
+    }
+
+    pm = zlistx_first(waitcmds);
+    while (pm) {
+        allpm[i++] = pm;
+        pm = zlistx_next(waitcmds);
+    }
+
+    for (i = 0; i < (total - 1); i++) {
+        struct powermsg *pm1 = allpm[i];
+        for (int j = i + 1; j < total; j++) {
+            struct powermsg *pm2 = allpm[j];
+            int d1 = plugs_is_descendant(plugs, pm1->plugname, pm2->plugname);
+            int d2 = plugs_is_descendant(plugs, pm2->plugname, pm1->plugname);
+            if (d1 || d2) {
+                cancel++;
+                break;
+            }
+        }
+    }
+
+    if (cancel) {
+        pm = zlistx_first(activecmds);
+        while (pm) {
+            printf("%s: %s\n", pm->plugname, "cannot turn on parent and child");
+            pm = zlistx_next(activecmds);
+        }
+        zlistx_purge(activecmds);
+
+        pm = zlistx_first(waitcmds);
+        while (pm) {
+            printf("%s: %s\n", pm->plugname, "cannot turn on parent and child");
+            pm = zlistx_next(waitcmds);
+        }
+        zlistx_purge(waitcmds);
+    }
+
+    free(allpm);
+    return;
 }
 
 static void power_cmd(CURLM *mh,
@@ -610,11 +901,26 @@ static void power_cmd(CURLM *mh,
             free(plugname);
             continue;
         }
-        powermsg_init_curl(pm);
-        if (!(pm->handle = zlistx_add_end(activecmds, pm)))
-            err_exit(true, "zlistx_add_end");
+        if (pm->parent) {
+            if (!(pm->handle = zlistx_add_end(waitcmds, pm)))
+                err_exit(true, "zlistx_add_end");
+        }
+        else {
+            powermsg_init_curl(pm);
+            if (!(pm->handle = zlistx_add_end(activecmds, pm)))
+                err_exit(true, "zlistx_add_end");
+        }
         free(plugname);
     }
+
+    /* if there are queries waiting for a parent check first, handle
+     * here
+     */
+    if (zlistx_size(waitcmds) > 0) {
+        phased_power_on_check(cmd);
+        send_initial_parent_queries(mh);
+    }
+
     hostlist_iterator_destroy(itr);
     hostlist_destroy(lplugs);
 }
@@ -650,11 +956,13 @@ static void send_status_poll(struct powermsg *pm)
     nextpm = powermsg_create(pm->mh,
                              pm->hostname,
                              pm->plugname,
+                             pm->parent,
                              pm->cmd,
                              path,
                              NULL,
                              &pm->start,
                              status_polling_interval,
+                             OUTPUT_RESULT,
                              STATE_WAIT_UNTIL_ON_OFF);
     if (!(nextpm->handle = zlistx_add_end(delayedcmds, nextpm)))
         err_exit(true, "zlistx_add_end");
@@ -674,8 +982,24 @@ static void on_off_process(struct powermsg *pm)
         if (test_mode) {
             if (strcmp(pm->cmd, CMD_ON) == 0)
                 zhashx_update(test_power_status, pm->plugname, STATUS_ON);
-            else /* cmd == CMD_OFF */
+            else { /* cmd == CMD_OFF */
+                zlistx_t *keys;
+                char *name;
                 zhashx_update(test_power_status, pm->plugname, STATUS_OFF);
+                /* all children automatically become off too */
+                if (!(keys = zhashx_keys(test_power_status)))
+                    err_exit(false, "zhashx_keys");
+                name = zlistx_first(keys);
+                while (name) {
+                    int descendant = plugs_is_descendant(plugs,
+                                                         name,
+                                                         pm->plugname);
+                    if (descendant)
+                        zhashx_update(test_power_status, name, STATUS_OFF);
+                    name = zlistx_next(keys);
+                }
+                zlistx_destroy(&keys);
+            }
         }
     }
     else if (pm->state == STATE_WAIT_UNTIL_ON_OFF) {
@@ -686,6 +1010,7 @@ static void on_off_process(struct powermsg *pm)
         parse_onoff(pm, &status_str, &rstatus_str);
         if (strcmp(status_str, pm->cmd) == 0) {
             printf("%s: %s\n", pm->plugname, "ok");
+            process_waiters(pm->mh, pm->plugname, status_str);
             return;
         }
 
@@ -717,6 +1042,7 @@ static void on_off_process(struct powermsg *pm)
                     printf("%s: timeout\n",
                            pm->plugname);
             }
+            process_waiters(pm->mh, pm->plugname, STATUS_ERROR);
             return;
         }
 
@@ -840,7 +1166,9 @@ static void remove_initial_plugs(void)
     return;
 }
 
-static int setup_plug(const char *plugname, const char *hostindexstr)
+static int setup_plug(const char *plugname,
+                      const char *hostindexstr,
+                      const char *parent)
 {
     char *host;
     char *endptr;
@@ -860,7 +1188,7 @@ static int setup_plug(const char *plugname, const char *hostindexstr)
         return -1;
     }
 
-    plugs_add(plugs, plugname, host);
+    plugs_add(plugs, plugname, host, parent);
 
     /* initialize plug to "off" for testing */
     if (test_mode)
@@ -880,7 +1208,7 @@ static void setplugs(char **av)
     int i;
 
     if (!av[0] || !av[1]) {
-        printf("Usage: setplugs <plugnames> <hostindices>\n");
+        printf("Usage: setplugs <plugnames> <hostindices> [<parentplug>]]\n");
         return;
     }
 
@@ -909,7 +1237,7 @@ static void setplugs(char **av)
             for (i = 0; i < plugcount; i++) {
                 if (!(plug = hostlist_nth(lplugs, i)))
                     err_exit(false, "setplugs: hostlist_nth plugs");
-                if (setup_plug(plug, hostindexstr) < 0) {
+                if (setup_plug(plug, hostindexstr, av[2]) < 0) {
                     free(plug);
                     free(hostindexstr);
                     goto cleanup;
@@ -929,7 +1257,7 @@ static void setplugs(char **av)
                 err_exit(false, "setplugs: hostlist_nth plugs");
             if (!(hostindexstr = hostlist_nth(hostindices, i)))
                 err_exit(false, "setplugs: hostlist_nth indices");
-            if (setup_plug(plug, hostindexstr) < 0) {
+            if (setup_plug(plug, hostindexstr, av[2]) < 0) {
                 free(plug);
                 free(hostindexstr);
                 goto cleanup;
@@ -1062,7 +1390,9 @@ static void shell(CURLM *mh)
         FD_ZERO(&fdwrite);
         FD_ZERO(&fderror);
 
-        if (!zlistx_size(activecmds) && !zlistx_size(delayedcmds)) {
+        if (!zlistx_size(activecmds)
+            && !zlistx_size(delayedcmds)
+            && !zlistx_size(waitcmds)) {
             printf("redfishpower> ");
             fflush(stdout);
 
@@ -1234,6 +1564,10 @@ static void shell(CURLM *mh)
                         if (verbose)
                             printf("%s: %s\n", pm->plugname,
                                    curl_easy_strerror(cmsg->data.result));
+
+                        process_waiters(mh,
+                                        pm->plugname,
+                                        STATUS_ERROR);
                     }
                     else
                         power_cmd_process(pm);
@@ -1245,16 +1579,49 @@ static void shell(CURLM *mh)
         }
         else {
             /* in test mode we assume all activecmds complete immediately */
-            struct powermsg *pm = zlistx_first(activecmds);
+
+            /* process_waiters() can traverse and append to the
+             * activecmds list (it can also be called within
+             * power_cmd_process()), thus disrupt the zlistx cursor.
+             *
+             * Copy all current activecmds into a new list and delete
+             * them from activecmds at the end.
+             */
+            zlistx_t *cpy = zlistx_new();
+            struct powermsg *pm;
+            if (!cpy)
+                err_exit(true, "zlistx_new");
+
+            pm = zlistx_first(activecmds);
             while (pm) {
-                if (hostlist_find(test_fail_power_cmd_hosts, pm->hostname) >= 0)
+                /* do not save handle, we want handle for activecmds list */
+                if (!zlistx_add_end(cpy, pm))
+                    err_exit(true, "zlistx_add_end");
+                pm = zlistx_next(activecmds);
+            }
+
+            pm = zlistx_first(cpy);
+            while (pm) {
+                if (hostlist_find(test_fail_power_cmd_hosts, pm->hostname) >= 0) {
                     printf("%s: %s\n", pm->plugname, "error");
+                    process_waiters(mh,
+                                    pm->plugname,
+                                    STATUS_ERROR);
+                }
                 else
                     power_cmd_process(pm);
                 fflush(stdout);
-                pm = zlistx_next(activecmds);
+                pm = zlistx_next(cpy);
             }
-            zlistx_purge(activecmds);
+
+            pm = zlistx_first(cpy);
+            while (pm) {
+                if (zlistx_delete(activecmds, pm->handle) < 0)
+                    err_exit(false, "zlistx_delete failed to delete");
+                pm = zlistx_next(cpy);
+            }
+
+            zlistx_destroy(&cpy);
         }
     }
 }
@@ -1290,6 +1657,10 @@ static void init_redfishpower(char *argv[])
         err_exit(true, "zlistx_new");
     zlistx_set_destructor(delayedcmds, cleanup_powermsg);
 
+    if (!(waitcmds = zlistx_new()))
+        err_exit(true, "zlistx_new");
+    zlistx_set_destructor(delayedcmds, cleanup_powermsg);
+
     if (!(test_fail_power_cmd_hosts = hostlist_create(NULL)))
         err_exit(true, "hostlist_create error");
 
@@ -1313,6 +1684,7 @@ static void cleanup_redfishpower(void)
 
     zlistx_destroy(&activecmds);
     zlistx_destroy(&delayedcmds);
+    zlistx_destroy(&waitcmds);
 
     hostlist_destroy(test_fail_power_cmd_hosts);
     zhashx_destroy(&test_power_status);
@@ -1331,7 +1703,7 @@ static void setup_hosts(void)
     /* initially all hosts on the command line are made the plugnames
      */
     while ((hostname = hostlist_next(itr))) {
-        plugs_add(plugs, hostname, hostname);
+        plugs_add(plugs, hostname, hostname, NULL);
         free(hostname);
     }
 

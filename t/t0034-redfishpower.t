@@ -306,6 +306,377 @@ test_expect_success 'stop powerman daemon (plugsubB2)' '
 	wait
 '
 
+#
+# redfishpower parent coverage (2 levels)
+#
+# - t0 is the parent of t[1-15]
+#
+
+test_expect_success 'create powerman.conf for 16 cray redfish nodes (parents2L)' '
+	cat >powerman_parents2L.conf <<-EOT
+	listen "$testaddr"
+	include "$testdevicesdir/redfishpower-parents-2-levels.dev"
+	device "d0" "redfishpower-parents-2-levels" "$redfishdir/redfishpower -h t[0-15] --test-mode |&"
+	node "t[0-15]" "d0" "Node[0-15]"
+	EOT
+'
+test_expect_success 'start powerman daemon and wait for it to start (parents2L)' '
+	$powermand -Y -c powerman_parents2L.conf &
+	echo $! >powermand.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -d
+'
+test_expect_success 'powerman -q shows all off' '
+	$powerman -h $testaddr -q >test_parents2L_query1.out &&
+	makeoutput "" "t[0-15]" "" >test_parents2L_query1.exp &&
+	test_cmp test_parents2L_query1.exp test_parents2L_query1.out
+'
+# test children can't be turned on if parent off
+test_expect_success 'powerman -1 t[1-15] completes' '
+	$powerman -h $testaddr -1 t[1-15] >test_parents2L_on1.out &&
+	echo Command completed successfully >test_parents2L_on1.exp &&
+	test_cmp test_parents2L_on1.exp test_parents2L_on1.out &&
+	$powerman -h $testaddr -T -1 t[1-15] >test_parents2L_on1T.out &&
+	grep "ancestor off" test_parents2L_on1T.out
+'
+test_expect_success 'powerman -q shows all off still' '
+	$powerman -h $testaddr -q >test_parents2L_query2.out &&
+	makeoutput "" "t[0-15]" "" >test_parents2L_query2.exp &&
+	test_cmp test_parents2L_query2.exp test_parents2L_query2.out
+'
+# test children can be turned on if parent on
+test_expect_success 'powerman -1 t0 completes' '
+	$powerman -h $testaddr -1 t0 >test_parents2L_on2.out &&
+	echo Command completed successfully >test_parents2L_on2.exp &&
+	test_cmp test_parents2L_on2.exp test_parents2L_on2.out
+'
+test_expect_success 'powerman -q shows t0 on' '
+	$powerman -h $testaddr -q >test_parents2L_query3.out &&
+	makeoutput "t0" "t[1-15]" "" >test_parents2L_query3.exp &&
+	test_cmp test_parents2L_query3.exp test_parents2L_query3.out
+'
+test_expect_success 'powerman -1 t[1-15] completes' '
+	$powerman -h $testaddr -1 t[1-15] >test_parents2L_on3.out &&
+	echo Command completed successfully >test_parents2L_on3.exp &&
+	test_cmp test_parents2L_on3.exp test_parents2L_on3.out
+'
+test_expect_success 'powerman -q shows all on' '
+	$powerman -h $testaddr -q >test_parents2L_query4.out &&
+	makeoutput "t[0-15]" "" "" >test_parents2L_query4.exp &&
+	test_cmp test_parents2L_query4.exp test_parents2L_query4.out
+'
+# turn everything off by group
+test_expect_success 'powerman -0 t[1-15] completes' '
+	$powerman -h $testaddr -0 t[1-15] >test_parents2L_off1.out &&
+	echo Command completed successfully >test_parents2L_off1.exp &&
+	test_cmp test_parents2L_off1.exp test_parents2L_off1.out
+'
+test_expect_success 'powerman -q shows t0 on' '
+	$powerman -h $testaddr -q >test_parents2L_query5.out &&
+	makeoutput "t0" "t[1-15]" "" >test_parents2L_query5.exp &&
+	test_cmp test_parents2L_query5.exp test_parents2L_query5.out
+'
+test_expect_success 'powerman -0 t0 completes' '
+	$powerman -h $testaddr -0 t0 >test_parents2L_off2.out &&
+	echo Command completed successfully >test_parents2L_off2.exp &&
+	test_cmp test_parents2L_off2.exp test_parents2L_off2.out
+'
+test_expect_success 'powerman -q shows all off' '
+	$powerman -h $testaddr -q >test_parents2L_query6.out &&
+	makeoutput "" "t[0-15]" "" >test_parents2L_query6.exp &&
+	test_cmp test_parents2L_query6.exp test_parents2L_query6.out
+'
+# turn off nodes with parent off succeeds
+test_expect_success 'powerman -0 t[1-15] completes' '
+	$powerman -h $testaddr -0 t[1-15] >test_parents2L_off3.out &&
+	echo Command completed successfully >test_parents2L_off3.exp &&
+	test_cmp test_parents2L_off3.exp test_parents2L_off3.out &&
+	$powerman -h $testaddr -T -0 t[1-15] >test_parents2L_off3T.out &&
+	grep "Node1" test_parents2L_off3T.out | grep "ok"
+'
+# turn on parents & children at same time fails
+test_expect_success 'powerman -1 t[0-15] completes but doesnt work' '
+	$powerman -h $testaddr -1 t[0-15] >test_parents2L_on4.out &&
+	echo Command completed successfully >test_parents2L_on4.exp &&
+	test_cmp test_parents2L_on4.exp test_parents2L_on4.out &&
+	$powerman -h $testaddr -T -1 t[0-15] >test_parents2L_on4T.out &&
+	grep "cannot turn on parent" test_parents2L_on4T.out
+'
+test_expect_success 'powerman -1 t8,t0 completes but doesnt work' '
+	$powerman -h $testaddr -1 t[8,0] >test_parents2L_on5.out &&
+	echo Command completed successfully >test_parents2L_on5.exp &&
+	test_cmp test_parents2L_on5.exp test_parents2L_on5.out &&
+	$powerman -h $testaddr -T -1 t[8,0] >test_parents2L_on5T.out &&
+	grep "cannot turn on parent" test_parents2L_on5T.out
+'
+# turn on everything
+test_expect_success 'powerman -0 t0 and then t[1-15] completes' '
+	$powerman -h $testaddr -1 t0 >test_parents2L_on6.out &&
+	echo Command completed successfully >test_parents2L_on6.exp &&
+	test_cmp test_parents2L_on6.exp test_parents2L_on6.out &&
+	$powerman -h $testaddr -1 t[1-15] >test_parents2L_on6B.out &&
+	echo Command completed successfully >test_parents2L_on6B.exp &&
+	test_cmp test_parents2L_on6B.exp test_parents2L_on6B.out
+'
+test_expect_success 'powerman -q shows t[0-15] on' '
+	$powerman -h $testaddr -q >test_parents2L_query7.out &&
+	makeoutput "t[0-15]" "" "" >test_parents2L_query7.exp &&
+	test_cmp test_parents2L_query7.exp test_parents2L_query7.out
+'
+# turn off everything at same time, dependencies handled
+test_expect_success 'powerman -0 t[0-15] completes' '
+	$powerman -h $testaddr -0 t0 >test_parents2L_off3.out &&
+	echo Command completed successfully >test_parents2L_off3.exp &&
+	test_cmp test_parents2L_off3.exp test_parents2L_off3.out
+'
+test_expect_success 'powerman -q shows all off' '
+	$powerman -h $testaddr -q >test_parents2L_query8.out &&
+	makeoutput "" "t[0-15]" "" >test_parents2L_query8.exp &&
+	test_cmp test_parents2L_query8.exp test_parents2L_query8.out
+'
+test_expect_success 'stop powerman daemon (parents2L)' '
+	kill -15 $(cat powermand.pid) &&
+	wait
+'
+
+#
+# redfishpower parent coverage (3 levels)
+#
+# - t0 is the parent of t[1-3]
+# - t1 is the parent of t[4-7]
+# - t2 is the parent of t[8-11]
+# - t3 is the parent of t[12-15]
+#
+
+test_expect_success 'create powerman.conf for 16 cray redfish nodes (parents3L)' '
+	cat >powerman_parents3L.conf <<-EOT
+	listen "$testaddr"
+	include "$testdevicesdir/redfishpower-parents-3-levels.dev"
+	device "d0" "redfishpower-parents-3-levels" "$redfishdir/redfishpower -h t[0-15] --test-mode |&"
+	node "t[0-15]" "d0" "Node[0-15]"
+	EOT
+'
+test_expect_success 'start powerman daemon and wait for it to start (parents3L)' '
+	$powermand -Y -c powerman_parents3L.conf &
+	echo $! >powermand.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -d
+'
+test_expect_success 'powerman -q shows all off' '
+	$powerman -h $testaddr -q >test_parents3L_query1.out &&
+	makeoutput "" "t[0-15]" "" >test_parents3L_query1.exp &&
+	test_cmp test_parents3L_query1.exp test_parents3L_query1.out
+'
+# test children can't be turned on if parent off
+test_expect_success 'powerman -1 t[1-3] completes but doesnt work' '
+	$powerman -h $testaddr -1 t[1-3] >test_parents3L_on1.out &&
+	echo Command completed successfully >test_parents3L_on1.exp &&
+	test_cmp test_parents3L_on1.exp test_parents3L_on1.out &&
+	$powerman -h $testaddr -T -1 t[1-3] >test_parents3L_on1T.out &&
+	grep "ancestor off" test_parents3L_on1T.out
+'
+test_expect_success 'powerman -1 t[4-15] completes but doesnt work' '
+	$powerman -h $testaddr -1 t[4-15] >test_parents3L_on2.out &&
+	echo Command completed successfully >test_parents3L_on2.exp &&
+	test_cmp test_parents3L_on2.exp test_parents3L_on2.out &&
+	$powerman -h $testaddr -T -1 t[4-15] >test_parents3L_on2T.out &&
+	grep "ancestor off" test_parents3L_on2T.out
+'
+test_expect_success 'powerman -q shows all off still' '
+	$powerman -h $testaddr -q >test_parents3L_query2.out &&
+	makeoutput "" "t[0-15]" "" >test_parents3L_query2.exp &&
+	test_cmp test_parents3L_query2.exp test_parents3L_query2.out
+'
+# test level 2 children can be turned on if parent on
+test_expect_success 'powerman -1 t0 completes' '
+	$powerman -h $testaddr -1 t0 >test_parents3L_on3.out &&
+	echo Command completed successfully >test_parents3L_on3.exp &&
+	test_cmp test_parents3L_on3.exp test_parents3L_on3.out
+'
+test_expect_success 'powerman -q shows t0 on' '
+	$powerman -h $testaddr -q >test_parents3L_query3.out &&
+	makeoutput "t0" "t[1-15]" "" >test_parents3L_query3.exp &&
+	test_cmp test_parents3L_query3.exp test_parents3L_query3.out
+'
+test_expect_success 'powerman -1 t1 completes' '
+	$powerman -h $testaddr -1 t1 >test_parents3L_on4.out &&
+	echo Command completed successfully >test_parents3L_on4.exp &&
+	test_cmp test_parents3L_on4.exp test_parents3L_on4.out
+'
+test_expect_success 'powerman -q shows t[0-1] on' '
+	$powerman -h $testaddr -q >test_parents3L_query4.out &&
+	makeoutput "t[0-1]" "t[2-15]" "" >test_parents3L_query4.exp &&
+	test_cmp test_parents3L_query4.exp test_parents3L_query4.out
+'
+# test level 3 children can be turned on if parents on
+test_expect_success 'powerman -1 t[4-15] completes' '
+	$powerman -h $testaddr -1 t[4-15] >test_parents3L_on5.out &&
+	echo Command completed successfully >test_parents3L_on5.exp &&
+	test_cmp test_parents3L_on5.exp test_parents3L_on5.out
+'
+test_expect_success 'powerman -q shows t[0-1,4-7] on' '
+	$powerman -h $testaddr -q >test_parents3L_query5.out &&
+	makeoutput "t[0-1,4-7]" "t[2-3,8-15]" "" >test_parents3L_query5.exp &&
+	test_cmp test_parents3L_query5.exp test_parents3L_query5.out
+'
+# test level 2 & 3 children cannot be turned on together
+test_expect_success 'powerman -1 t[2-3,8-15] completes but doesnt work' '
+	$powerman -h $testaddr -1 t[2-3,8-15] >test_parents3L_on6.out &&
+	echo Command completed successfully >test_parents3L_on6.exp &&
+	test_cmp test_parents3L_on6.exp test_parents3L_on6.out &&
+	$powerman -h $testaddr -T -1 t[2-3,8-15] >test_parents3L_on6T.out &&
+	grep "cannot turn on parent and child" test_parents3L_on6T.out
+'
+test_expect_success 'powerman -1 t[8-10,2,11-15,3] completes but doesnt work' '
+	$powerman -h $testaddr -1 t[8-10,2,11-15,3] >test_parents3L_on7.out &&
+	echo Command completed successfully >test_parents3L_on7.exp &&
+	test_cmp test_parents3L_on7.exp test_parents3L_on7.out &&
+	$powerman -h $testaddr -T -1 t[8-10,2,11-15,3] >test_parents3L_on7T.out &&
+	grep "cannot turn on parent and child" test_parents3L_on7T.out
+'
+test_expect_success 'powerman -q shows t[0-1,4-7] on' '
+	$powerman -h $testaddr -q >test_parents3L_query6.out &&
+	makeoutput "t[0-1,4-7]" "t[2-3,8-15]" "" >test_parents3L_query6.exp &&
+	test_cmp test_parents3L_query6.exp test_parents3L_query6.out
+'
+# turn on t2
+test_expect_success 'powerman -1 t2 completes' '
+	$powerman -h $testaddr -1 t2 >test_parents3L_on8.out &&
+	echo Command completed successfully >test_parents3L_on8.exp &&
+	test_cmp test_parents3L_on8.exp test_parents3L_on8.out
+'
+test_expect_success 'powerman -q shows t[0-2,4-7] on' '
+	$powerman -h $testaddr -q >test_parents3L_query7.out &&
+	makeoutput "t[0-2,4-7]" "t[3,8-15]" "" >test_parents3L_query7.exp &&
+	test_cmp test_parents3L_query7.exp test_parents3L_query7.out
+'
+# turn on level 2 & 3 nodes that are not dependent on each other works
+test_expect_success 'powerman -1 t[3,8-11] completes' '
+	$powerman -h $testaddr -1 t[3,8-11] >test_parents3L_on9.out &&
+	echo Command completed successfully >test_parents3L_on9.exp &&
+	test_cmp test_parents3L_on9.exp test_parents3L_on9.out
+'
+test_expect_success 'powerman -q shows t[0-11] on' '
+	$powerman -h $testaddr -q >test_parents3L_query8.out &&
+	makeoutput "t[0-11]" "t[12-15]" "" >test_parents3L_query8.exp &&
+	test_cmp test_parents3L_query8.exp test_parents3L_query8.out
+'
+# turn everything off level 2 nodes, some have children some don't
+test_expect_success 'powerman -0 t[2-3] completes' '
+	$powerman -h $testaddr -0 t[2-3] >test_parents3L_off1.out &&
+	echo Command completed successfully >test_parents3L_off1.exp &&
+	test_cmp test_parents3L_off1.exp test_parents3L_off1.out
+'
+test_expect_success 'powerman -q shows t[0-1,4-7] on' '
+	$powerman -h $testaddr -q >test_parents3L_query9.out &&
+	makeoutput "t[0-1,4-7]" "t[2-3,8-15]" "" >test_parents3L_query9.exp &&
+	test_cmp test_parents3L_query9.exp test_parents3L_query9.out
+'
+# turn everything else off
+test_expect_success 'powerman -0 t0 completes' '
+	$powerman -h $testaddr -0 t0 >test_parents3L_off2.out &&
+	echo Command completed successfully >test_parents3L_off2.exp &&
+	test_cmp test_parents3L_off2.exp test_parents3L_off2.out
+'
+test_expect_success 'powerman -q shows all off' '
+	$powerman -h $testaddr -q >test_parents3L_query10.out &&
+	makeoutput "" "t[0-15]" "" >test_parents3L_query10.exp &&
+	test_cmp test_parents3L_query10.exp test_parents3L_query10.out
+'
+# turn everything on
+test_expect_success 'powerman turn on everything' '
+	$powerman -h $testaddr -1 t0 >test_parents3L_on10A.out &&
+	echo Command completed successfully >test_parents3L_on10A.exp &&
+	test_cmp test_parents3L_on10A.exp test_parents3L_on10A.out &&
+	$powerman -h $testaddr -1 t[1-3] >test_parents3L_on10B.out &&
+	echo Command completed successfully >test_parents3L_on10B.exp &&
+	test_cmp test_parents3L_on10B.exp test_parents3L_on10B.out &&
+	$powerman -h $testaddr -1 t[4-15] >test_parents3L_on10C.out &&
+	echo Command completed successfully >test_parents3L_on10C.exp &&
+	test_cmp test_parents3L_on10C.exp test_parents3L_on10C.out
+'
+test_expect_success 'powerman -q shows t[0-15] on' '
+	$powerman -h $testaddr -q >test_parents3L_query11.out &&
+	makeoutput "t[0-15]" "" "" >test_parents3L_query11.exp &&
+	test_cmp test_parents3L_query11.exp test_parents3L_query11.out
+'
+# turn off everything at same time, dependencies handled
+test_expect_success 'powerman -0 t[0-15] completes' '
+	$powerman -h $testaddr -0 t0 >test_parents3L_off3.out &&
+	echo Command completed successfully >test_parents3L_off3.exp &&
+	test_cmp test_parents3L_off3.exp test_parents3L_off3.out
+'
+test_expect_success 'powerman -q shows all off' '
+	$powerman -h $testaddr -q >test_parents3L_query11.out &&
+	makeoutput "" "t[0-15]" "" >test_parents3L_query11.exp &&
+	test_cmp test_parents3L_query11.exp test_parents3L_query11.out
+'
+test_expect_success 'stop powerman daemon (parents3L)' '
+	kill -15 $(cat powermand.pid) &&
+	wait
+'
+
+#
+# redfishpower parent coverage (3 levels) w/ node that always fails
+#
+# - t0 is the parent of t[1-3]
+# - t1 is the parent of t[4-7]
+# - t2 is the parent of t[8-11]
+# - t3 is the parent of t[12-15]
+#
+
+test_expect_success 'create powerman.conf for 16 cray redfish nodes (parents3Lbad)' '
+	cat >powerman_parents3Lbad.conf <<-EOT
+	listen "$testaddr"
+	include "$testdevicesdir/redfishpower-parents-3-levels.dev"
+	device "d0" "redfishpower-parents-3-levels" "$redfishdir/redfishpower -h t[0-15] --test-mode --test-fail-power-cmd-hosts=t3 |&"
+	node "t[0-15]" "d0" "Node[0-15]"
+	EOT
+'
+test_expect_success 'start powerman daemon and wait for it to start (parents3Lbad)' '
+	$powermand -Y -c powerman_parents3Lbad.conf &
+	echo $! >powermand.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -d
+'
+# Note, t0 is off, so everything below it is defined as off
+test_expect_success 'powerman -q shows all off' '
+	$powerman -h $testaddr -q >test_parents3Lbad_query1.out &&
+	makeoutput "" "t[0-15]" "" >test_parents3Lbad_query1.exp &&
+	test_cmp test_parents3Lbad_query1.exp test_parents3Lbad_query1.out
+'
+# try turning everything on
+test_expect_success 'powerman turn on everything' '
+	$powerman -h $testaddr -1 t0 >test_parents3Lbad_on1A.out &&
+	echo Command completed successfully >test_parents3Lbad_on1A.exp &&
+	test_cmp test_parents3Lbad_on1A.exp test_parents3Lbad_on1A.out &&
+	$powerman -h $testaddr -1 t[1-3] >test_parents3Lbad_on1B.out &&
+	echo Command completed successfully >test_parents3Lbad_on1B.exp &&
+	test_cmp test_parents3Lbad_on1B.exp test_parents3Lbad_on1B.out &&
+	$powerman -h $testaddr -1 t[4-15] >test_parents3Lbad_on1C.out &&
+	echo Command completed successfully >test_parents3Lbad_on1C.exp &&
+	test_cmp test_parents3Lbad_on1C.exp test_parents3Lbad_on1C.out
+'
+test_expect_success 'powerman -q shows t[0-2,4-11] on, t3 and children unknown' '
+	$powerman -h $testaddr -q >test_parents3Lbad_query2.out &&
+	makeoutput "t[0-2,4-11]" "" "t[3,12-15]" >test_parents3Lbad_query2.exp &&
+	test_cmp test_parents3Lbad_query2.exp test_parents3Lbad_query2.out
+'
+# try turning on some children of the bad node
+test_expect_success 'powerman -1 t[12-15] completes' '
+	$powerman -h $testaddr -1 t[12-15] >test_parents3Lbad_on2.out &&
+	echo Command completed successfully >test_parents3Lbad_on2.exp &&
+	test_cmp test_parents3Lbad_on2.exp test_parents3Lbad_on2.out &&
+	$powerman -h $testaddr -T -1 t[12-15] >test_parents3Lbad_on2T.out &&
+	grep "Node12" test_parents3Lbad_on2T.out | grep "ancestor error"
+'
+test_expect_success 'powerman -q shows t[0-2,4-11] on, t3 and children unknown' '
+	$powerman -h $testaddr -q >test_parents3Lbad_query3.out &&
+	makeoutput "t[0-2,4-11]" "" "t[3,12-15]" >test_parents3Lbad_query3.exp &&
+	test_cmp test_parents3Lbad_query3.exp test_parents3Lbad_query3.out
+'
+test_expect_success 'stop powerman daemon (parents3Lbad)' '
+	kill -15 $(cat powermand.pid) &&
+	wait
+'
+
 test_done
 
 # vi: set ft=sh
