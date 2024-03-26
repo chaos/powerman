@@ -1659,7 +1659,7 @@ static void init_redfishpower(char *argv[])
 
     if (!(waitcmds = zlistx_new()))
         err_exit(true, "zlistx_new");
-    zlistx_set_destructor(delayedcmds, cleanup_powermsg);
+    zlistx_set_destructor(waitcmds, cleanup_powermsg);
 
     if (!(test_fail_power_cmd_hosts = hostlist_create(NULL)))
         err_exit(true, "hostlist_create error");
