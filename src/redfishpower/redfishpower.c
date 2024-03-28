@@ -369,12 +369,9 @@ static struct powermsg *powermsg_create(CURLM *mh,
 static void powermsg_destroy(struct powermsg *pm)
 {
     if (pm) {
-        if (pm->cmd)
-            xfree(pm->cmd);
-        if (pm->url)
-            xfree(pm->url);
-        if (pm->postdata)
-            xfree(pm->postdata);
+        xfree(pm->cmd);
+        xfree(pm->url);
+        xfree(pm->postdata);
         free(pm->output);
         if (!test_mode && pm->eh) {
             CURLMcode mc;
