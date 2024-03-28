@@ -1101,13 +1101,11 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
 
             if ((arg = arglist_find(act->arglist, plug->node))) {
                 arg->state = state;
-                if (arg->val)
-                    xfree(arg->val);
+                xfree(arg->val);
                 arg->val = xstrdup(str);
             }
         }
-        if (str)
-            xfree(str);
+        xfree(str);
         /* if no match, do nothing */
         xfree(plug_name);
     }
