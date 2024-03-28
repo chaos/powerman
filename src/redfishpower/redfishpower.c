@@ -369,12 +369,12 @@ static struct powermsg *powermsg_create(CURLM *mh,
 static void powermsg_destroy(struct powermsg *pm)
 {
     if (pm) {
-        if (pm->cmd)
-            xfree(pm->cmd);
-        if (pm->url)
-            xfree(pm->url);
-        if (pm->postdata)
-            xfree(pm->postdata);
+        xfree(pm->cmd);
+        xfree(pm->hostname);
+        xfree(pm->plugname);
+        xfree(pm->parent);
+        xfree(pm->url);
+        xfree(pm->postdata);
         free(pm->output);
         if (!test_mode && pm->eh) {
             CURLMcode mc;
@@ -1659,7 +1659,7 @@ static void init_redfishpower(char *argv[])
 
     if (!(waitcmds = zlistx_new()))
         err_exit(true, "zlistx_new");
-    zlistx_set_destructor(delayedcmds, cleanup_powermsg);
+    zlistx_set_destructor(waitcmds, cleanup_powermsg);
 
     if (!(test_fail_power_cmd_hosts = hostlist_create(NULL)))
         err_exit(true, "hostlist_create error");
