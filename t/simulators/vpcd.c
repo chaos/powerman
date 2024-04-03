@@ -323,8 +323,10 @@ _prompt_loop(void)
             goto ok;
         }
         if (strcmp(buf, "on *") == 0) {                 /* on * */
-            for (i = 0; i < NUM_PLUGS; i++)
+            for (i = 0; i < NUM_PLUGS; i++) {
                 plug[i] = 1;
+                printf("%d: OK\n", i);
+            }
             goto ok;
         }
         if (sscanf(buf, "on %d", &i) == 1) {           /* on <plugnum> */
@@ -333,6 +335,7 @@ _prompt_loop(void)
                 continue;
             }
             plug[i] = 1;
+            printf("%d: OK\n", i);
             goto ok;
         }
         if (sscanf(buf, "on %s", range) == 1) {           /* on <range> */
@@ -346,16 +349,20 @@ _prompt_loop(void)
                 int plugnum = atoi(p);
                 if (plugnum < 0 || plugnum >= NUM_PLUGS)
                     printf("%d BADVAL: %d\n", seq, plugnum);
-                else
+                else {
                     plug[plugnum] = 1;
+                    printf("%d: OK\n", plugnum);
+                }
                 free(p);
             }
             hostlist_destroy(hl);
             goto ok;
         }
         if (strcmp(buf, "off *") == 0) {                /* off * */
-            for (i = 0; i < NUM_PLUGS; i++)
+            for (i = 0; i < NUM_PLUGS; i++) {
                 plug[i] = 0;
+                printf("%d: OK\n", i);
+            }
             goto ok;
         }
         if (sscanf(buf, "off %d", &i) == 1) {          /* off <plugnum> */
@@ -364,6 +371,7 @@ _prompt_loop(void)
                 continue;
             }
             plug[i] = 0;
+            printf("%d: OK\n", i);
             goto ok;
         }
         if (sscanf(buf, "off %s", range) == 1) {          /* off <range> */
@@ -377,8 +385,10 @@ _prompt_loop(void)
                 int plugnum = atoi(p);
                 if (plugnum < 0 || plugnum >= NUM_PLUGS)
                     printf("%d BADVAL: %d\n", seq, plugnum);
-                else
+                else {
                     plug[plugnum] = 0;
+                    printf("%d: OK\n", plugnum);
+                }
                 free(p);
             }
             hostlist_destroy(hl);
