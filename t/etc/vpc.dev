@@ -19,7 +19,7 @@ specification "vpc" {
 	script status_all {
 		send "stat *\n"
 		foreachplug {
-			expect "plug ([0-9]+): (ON|OFF)\n"
+			expect "plug ([0-9]+): (ON|OFF|ERROR)\n"
 			setplugstate $1 $2 on="ON" off="OFF"
 		}
 		expect "[0-9]* OK\n"
@@ -27,7 +27,7 @@ specification "vpc" {
 	}
 	script on {
 		send "on %s\n"
-		expect "([0-9]+): (OK)\n"
+		expect "([0-9]+): (OK|ERROR)\n"
 		setresult $1 $2 success="OK"
 		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
@@ -35,7 +35,7 @@ specification "vpc" {
 	script on_ranged {
 		send "on %s\n"
                 foreachplug {
-			expect "([0-9]+): (OK)\n"
+			expect "([0-9]+): (OK|ERROR)\n"
 			setresult $1 $2 success="OK"
                 }
 		expect "[0-9]* OK\n"
@@ -44,7 +44,7 @@ specification "vpc" {
 	script on_all {
 		send "on *\n"
                 foreachplug {
-			expect "([0-9]+): (OK)\n"
+			expect "([0-9]+): (OK|ERROR)\n"
 			setresult $1 $2 success="OK"
                 }
 		expect "[0-9]* OK\n"
@@ -52,7 +52,7 @@ specification "vpc" {
 	}
 	script off {
 		send "off %s\n"
-		expect "([0-9]+): (OK)\n"
+		expect "([0-9]+): (OK|ERROR)\n"
 		setresult $1 $2 success="OK"
 		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
@@ -60,7 +60,7 @@ specification "vpc" {
 	script off_ranged {
 		send "off %s\n"
                 foreachplug {
-			expect "([0-9]+): (OK)\n"
+			expect "([0-9]+): (OK|ERROR)\n"
 			setresult $1 $2 success="OK"
                 }
 		expect "[0-9]* OK\n"
@@ -69,7 +69,7 @@ specification "vpc" {
 	script off_all {
 		send "off *\n"
                 foreachplug {
-			expect "([0-9]+): (OK)\n"
+			expect "([0-9]+): (OK|ERROR)\n"
 			setresult $1 $2 success="OK"
                 }
 		expect "[0-9]* OK\n"
@@ -115,7 +115,7 @@ specification "vpc" {
         script status_beacon_all {
                 send "beacon *\n"
                 foreachplug {
-                        expect "plug ([0-9]+): (ON|OFF)\n"
+                        expect "plug ([0-9]+): (ON|OFF|ERROR)\n"
                         setplugstate $1 $2 on="ON" off="OFF"
                 }
                 expect "[0-9]* OK\n"
