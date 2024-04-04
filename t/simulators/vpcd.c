@@ -41,7 +41,8 @@ static int plug[NUM_PLUGS];
 static int beacon[NUM_PLUGS];
 static int temp[NUM_PLUGS];
 static int logged_in = 0;
-static int bad_plug = -1;
+static int bad_plugs[NUM_PLUGS];
+static int bad_plugs_count = 0;
 
 static char *prog;
 
@@ -66,7 +67,7 @@ main(int argc, char *argv[])
                 port = xstrdup(optarg);
                 break;
             case 'b':   /* --bad-plug n */
-                bad_plug = atoi(optarg);
+                bad_plugs[bad_plugs_count++] = atoi(optarg);
                 break;
             default:
                 usage();
@@ -253,6 +254,18 @@ _spew(int lines)
         _spew_one(i);
 }
 
+static int is_bad_plug(int n)
+{
+    if (bad_plugs_count) {
+        int i;
+        for (i = 0; i < bad_plugs_count; i++) {
+            if (bad_plugs[i] == n)
+                return 1;
+        }
+    }
+    return 0;
+}
+
 static void
 _prompt_loop(void)
 {
@@ -286,13 +299,13 @@ _prompt_loop(void)
                 printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
-            str = bad_plug != i ? plug[i] ? "ON" : "OFF" : "ERROR";
+            str = !is_bad_plug(i) ? plug[i] ? "ON" : "OFF" : "ERROR";
             printf("plug %d: %s\n", i, str);
             goto ok;
         }
         if (strcmp(buf, "stat *") == 0) {               /* stat * */
             for (i = 0; i < NUM_PLUGS; i++) {
-                str = bad_plug != i ? plug[i] ? "ON" : "OFF" : "ERROR";
+                str = !is_bad_plug(i) ? plug[i] ? "ON" : "OFF" : "ERROR";
                 printf("plug %d: %s\n", i, str);
             }
             goto ok;
@@ -302,13 +315,13 @@ _prompt_loop(void)
                 printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
-            str = bad_plug != i ? beacon[i] ? "ON" : "OFF" : "ERROR";
+            str = !is_bad_plug(i) ? beacon[i] ? "ON" : "OFF" : "ERROR";
             printf("plug %d: %s\n", i, str);
             goto ok;
         }
         if (strcmp(buf, "beacon *") == 0) {             /* beacon * */
             for (i = 0; i < NUM_PLUGS; i++) {
-                str = bad_plug != i ? beacon[i] ? "ON" : "OFF" : "ERROR";
+                str = !is_bad_plug(i) ? beacon[i] ? "ON" : "OFF" : "ERROR";
                 printf("plug %d: %s\n", i, str);
             }
             goto ok;
@@ -318,7 +331,7 @@ _prompt_loop(void)
                 printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
-            if (bad_plug != i)
+            if (!is_bad_plug(i))
                 printf("plug %d: %d\n", i, temp[i]);
             else
                 printf("plug %d: ERROR\n", i);
@@ -326,7 +339,7 @@ _prompt_loop(void)
         }
         if (strcmp(buf, "temp *") == 0) {               /* temp * */
             for (i = 0; i < NUM_PLUGS; i++) {
-                if (bad_plug != i)
+                if (!is_bad_plug(i))
                     printf("plug %d: %d\n", i, temp[i]);
                 else
                     printf("plug %d: ERROR\n", i);
@@ -344,7 +357,7 @@ _prompt_loop(void)
         if (strcmp(buf, "on *") == 0) {                 /* on * */
             for (i = 0; i < NUM_PLUGS; i++) {
                 plug[i] = 1;
-                printf("%d: %s\n", i, bad_plug != i ? "OK" : "ERROR");
+                printf("%d: %s\n", i, !is_bad_plug(i) ? "OK" : "ERROR");
             }
             goto ok;
         }
@@ -354,7 +367,7 @@ _prompt_loop(void)
                 continue;
             }
             plug[i] = 1;
-            printf("%d: %s\n", i, bad_plug != i ? "OK" : "ERROR");
+            printf("%d: %s\n", i, !is_bad_plug(i) ? "OK" : "ERROR");
             goto ok;
         }
         if (sscanf(buf, "on %s", range) == 1) {           /* on <range> */
@@ -370,7 +383,7 @@ _prompt_loop(void)
                     printf("%d BADVAL: %d\n", seq, plugnum);
                 else {
                     plug[plugnum] = 1;
-                    str = bad_plug != plugnum ? "OK" : "ERROR";
+                    str = !is_bad_plug(plugnum) ? "OK" : "ERROR";
                     printf("%d: %s\n", plugnum, str);
                 }
                 free(p);
@@ -381,7 +394,7 @@ _prompt_loop(void)
         if (strcmp(buf, "off *") == 0) {                /* off * */
             for (i = 0; i < NUM_PLUGS; i++) {
                 plug[i] = 0;
-                printf("%d: %s\n", i, bad_plug != i ? "OK" : "ERROR");
+                printf("%d: %s\n", i, !is_bad_plug(i) ? "OK" : "ERROR");
             }
             goto ok;
         }
@@ -391,7 +404,7 @@ _prompt_loop(void)
                 continue;
             }
             plug[i] = 0;
-            printf("%d: %s\n", i, bad_plug != i ? "OK" : "ERROR");
+            printf("%d: %s\n", i, !is_bad_plug(i) ? "OK" : "ERROR");
             goto ok;
         }
         if (sscanf(buf, "off %s", range) == 1) {          /* off <range> */
@@ -407,7 +420,7 @@ _prompt_loop(void)
                     printf("%d BADVAL: %d\n", seq, plugnum);
                 else {
                     plug[plugnum] = 0;
-                    str = bad_plug != plugnum ? "OK" : "ERROR";
+                    str = !is_bad_plug(plugnum) ? "OK" : "ERROR";
                     printf("%d: %s\n", plugnum, str);
                 }
                 free(p);
@@ -420,7 +433,7 @@ _prompt_loop(void)
                 printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
-            if (bad_plug == i)
+            if (is_bad_plug(i))
                 printf("%d: ERROR\n", i);
             else
                 beacon[i] = 1;
@@ -431,7 +444,7 @@ _prompt_loop(void)
                 printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
-            if (bad_plug == i)
+            if (is_bad_plug(i))
                 printf("%d: ERROR\n", i);
             else
                 beacon[i] = 0;
