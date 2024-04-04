@@ -50,6 +50,18 @@ static Plug *_create_plug(char *name)
     return plug;
 }
 
+static Plug *_copy_plug(Plug *p)
+{
+    Plug *plug = (Plug *) xmalloc(sizeof(Plug));
+
+    assert(p != NULL);
+
+    plug->name = p->name ? xstrdup(p->name) : NULL;
+    plug->node = p->node ? xstrdup(p->node) : NULL;
+
+    return plug;
+}
+
 static void _destroy_plug(Plug *plug)
 {
     assert(plug != NULL);
@@ -75,6 +87,29 @@ PlugList pluglist_create(List plugnames)
         itr = list_iterator_create(plugnames);
         while ((name = list_next(itr)))
             list_append(pl->pluglist, _create_plug(name));
+        list_iterator_destroy(itr);
+        pl->hardwired = true;
+    }
+
+    return pl;
+}
+
+PlugList pluglist_copy_from_list(List plugs)
+{
+    PlugList pl = (PlugList) xmalloc(sizeof(struct pluglist));
+
+    pl->pluglist = list_create((ListDelF)_destroy_plug);
+    pl->hardwired = false;
+
+    /* create plug from each plug in list */
+    if (plugs) {
+        ListIterator itr;
+        Plug *p;
+
+        itr = list_iterator_create(plugs);
+        while ((p = list_next(itr))) {
+            list_append(pl->pluglist, _copy_plug(p));
+        }
         list_iterator_destroy(itr);
         pl->hardwired = true;
     }

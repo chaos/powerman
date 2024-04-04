@@ -78,6 +78,7 @@ typedef struct {
     ListIterator stmtitr;       /* next stmt in block */
     Stmt *cur;                  /* current stmt */
     PlugListIterator plugitr;   /* used by foreach */
+    PlugList pluglist;          /* pluglist if foreach is ranged */
     bool processing;            /* flag used by stmts, ifon/ifoff */
 } ExecCtx;
 
@@ -104,6 +105,7 @@ static bool _process_stmt(Device *dev, Action *act, ExecCtx *e,
 static bool _process_ifonoff(Device *dev, Action *act, ExecCtx *e);
 static bool _process_foreach(Device *dev, Action *act, ExecCtx *e);
 static bool _process_setplugstate(Device * dev, Action *act, ExecCtx *e);
+static bool _process_setresult(Device * dev, Action *act, ExecCtx *e);
 static bool _process_expect(Device * dev, Action *act, ExecCtx *e);
 static bool _process_send(Device * dev, Action *act, ExecCtx *e);
 static bool _process_delay(Device * dev, Action *act, ExecCtx *e,
@@ -229,6 +231,8 @@ static void _destroy_exec_ctx(ExecCtx *e)
     e->cur = NULL;
     if (e->plugs)
         list_destroy(e->plugs);
+    if (e->pluglist)
+        pluglist_destroy(e->pluglist);
     e->plugs = NULL;
     xfree(e);
 }
@@ -932,6 +936,9 @@ bool _process_stmt(Device *dev, Action *act, ExecCtx *e,
     case STMT_SETPLUGSTATE:
         finished = _process_setplugstate(dev, act, e);
         break;
+    case STMT_SETRESULT:
+        finished = _process_setresult(dev, act, e);
+        break;
     case STMT_DELAY:
         finished = _process_delay(dev, act, e, timeout);
         break;
@@ -954,8 +961,23 @@ static bool _process_foreach(Device *dev, Action *act, ExecCtx *e)
     Plug *plug = NULL;
 
     /* we store a plug iterator in the ExecCtx */
-    if (e->plugitr == NULL)
-        e->plugitr = pluglist_iterator_create(dev->plugs);
+    if (e->plugitr == NULL) {
+        if (act->com == PM_POWER_ON_RANGED
+            || act->com == PM_POWER_OFF_RANGED
+            || act->com == PM_POWER_CYCLE_RANGED
+            || act->com == PM_RESET_RANGED
+            || act->com == PM_BEACON_ON_RANGED
+            || act->com == PM_BEACON_OFF_RANGED) {
+            assert(e->plugs);
+            if (!e->pluglist) {
+                if (!(e->pluglist = pluglist_copy_from_list(e->plugs)))
+                    goto cleanup;
+            }
+            e->plugitr = pluglist_iterator_create(e->pluglist);
+        }
+        else
+            e->plugitr = pluglist_iterator_create(dev->plugs);
+    }
 
     /* Each time the inner block is executed, its argument will be
      * a new plug name.  Pick that up here.
@@ -1087,7 +1109,7 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
         if (str && plug && plug->node) {
             InterpState state = ST_UNKNOWN;
             ListIterator itr;
-            Interp *i;
+            StateInterp *i;
             Arg *arg;
 
             itr = list_iterator_create(e->cur->u.setplugstate.interps);
@@ -1101,13 +1123,57 @@ static bool _process_setplugstate(Device *dev, Action *act, ExecCtx *e)
 
             if ((arg = arglist_find(act->arglist, plug->node))) {
                 arg->state = state;
-                if (arg->val)
-                    xfree(arg->val);
+                xfree(arg->val);
                 arg->val = xstrdup(str);
             }
         }
-        if (str)
-            xfree(str);
+        xfree(str);
+        /* if no match, do nothing */
+        xfree(plug_name);
+    }
+
+    return finished;
+}
+
+static bool _process_setresult(Device *dev, Action *act, ExecCtx *e)
+{
+    bool finished = true;
+    char *plug_name;
+
+    /*
+     * Usage: setresult regex regexstatus interps
+     */
+    plug_name = xregex_match_sub_strdup(dev->xmatch,
+                                        e->cur->u.setresult.plug_mp);
+
+    /* if no plug name, do nothing */
+    if (plug_name) {
+        char *str = xregex_match_sub_strdup(dev->xmatch,
+                                            e->cur->u.setresult.stat_mp);
+        Plug *plug = pluglist_find(dev->plugs, plug_name);
+
+        if (str && plug && plug->node) {
+            InterpResult result = RT_UNKNOWN;
+            ListIterator itr;
+            ResultInterp *i;
+            Arg *arg;
+
+            itr = list_iterator_create(e->cur->u.setresult.interps);
+            while ((i = list_next(itr))) {
+                if (xregex_exec(i->re, str, NULL)) {
+                    result = i->result;
+                    break;
+                }
+            }
+            list_iterator_destroy(itr);
+
+            if ((arg = arglist_find(act->arglist, plug->node))) {
+                arg->result = result;
+                xfree(arg->val);
+                arg->val = xstrdup(str);
+            }
+        }
+        xfree(str);
         /* if no match, do nothing */
         xfree(plug_name);
     }

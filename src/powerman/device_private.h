@@ -50,7 +50,13 @@ typedef struct {
     InterpState     state;
     char           *str;
     xregex_t        re;
-} Interp;
+} StateInterp;
+
+typedef struct {
+    InterpResult    result;
+    char           *str;
+    xregex_t        re;
+} ResultInterp;
 
 /*
  * A Script is a list of Stmts.
@@ -59,6 +65,7 @@ typedef enum {
     STMT_SEND,
     STMT_EXPECT,
     STMT_SETPLUGSTATE,
+    STMT_SETRESULT,
     STMT_DELAY,
     STMT_FOREACHPLUG,
     STMT_FOREACHNODE,
@@ -81,6 +88,11 @@ typedef struct {
             int stat_mp;        /* regex subexp match pos of plug status */
             List interps;       /* list of possible interpretations */
         } setplugstate;
+        struct {                /* SETRESULT (regexs refer to prev expect) */
+            int plug_mp;        /* regex subexp match pos of plug name if not */
+            int stat_mp;        /* regex subexp match pos of plug status */
+            List interps;       /* list of possible interpretations */
+        } setresult;
         struct {                /* DELAY */
             struct timeval tv;  /* delay at this point in the script */
         } delay;
