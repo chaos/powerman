@@ -37,20 +37,20 @@ test_expect_success 'powerman -q shows all nodes off' '
 	makeoutput "" "t[0-15]" "" >query1.exp &&
 	test_cmp query1.exp query1.out
 '
-test_expect_success 'powerman -1 t4 works' '
-	$powerman -h $testaddr -1 t4 >on4.out &&
-	echo "Command completed successfully" >on4.exp &&
-	test_cmp on4.exp on4.out
+test_expect_success 'powerman -1 t4 works, check singlet script called' '
+	$powerman -h $testaddr -T -1 t4 >on4.out &&
+	grep send on4.out | grep "on 4" &&
+	tail -n1 on4.out | grep "Command completed successfully"
 '
 test_expect_success 'powerman -q shows t4 is on' '
 	$powerman -h $testaddr -q >query2.out &&
 	makeoutput "t4" "t[0-3,5-15]" "" >query2.exp &&
 	test_cmp query2.exp query2.out
 '
-test_expect_success 'powerman -0 t4 works' '
-	$powerman -h $testaddr -0 t4 >off4.out &&
-	echo "Command completed successfully" >off4.exp &&
-	test_cmp off4.exp off4.out
+test_expect_success 'powerman -0 t4 works, check singlet script called' '
+	$powerman -h $testaddr -T -0 t4 >off4.out &&
+	grep send off4.out | grep "off 4" &&
+	tail -n1 off4.out | grep "Command completed successfully"
 '
 test_expect_success 'powerman -q shows all nodes off' '
 	$powerman -h $testaddr -q >query3.out &&
@@ -67,14 +67,25 @@ test_expect_success 'powerman -q shows t5 on' '
 	makeoutput "t5" "t[0-4,6-15]" "" >query4.exp &&
 	test_cmp query4.exp query4.out
 '
-test_expect_success 'powerman -1 t14 t15 works' '
-	$powerman -h $testaddr -1 t14 t15 >on5.out &&
-	echo "Command completed successfully" >on5.exp
+test_expect_success 'powerman -1 t14 t15 works, check ranged script called' '
+	$powerman -h $testaddr -T -1 t14 t15 >on5.out &&
+	grep send on5.out | grep "on \[14\-15\]" &&
+	tail -n1 on5.out | grep "Command completed successfully"
 '
 test_expect_success 'powerman -q shows t14 t15 on' '
 	$powerman -h $testaddr -q >query5.out &&
 	makeoutput "t[5,14-15]" "t[0-4,6-13]" "" >query5.exp &&
 	test_cmp query5.exp query5.out
+'
+test_expect_success 'powerman -1 t[0-15] works, check all script called' '
+	$powerman -h $testaddr -T -1 t[0-15] >on6.out &&
+	grep send on6.out | grep "on \*" &&
+	tail -n1 on6.out | grep "Command completed successfully"
+'
+test_expect_success 'powerman -q shows all on' '
+	$powerman -h $testaddr -q >query6.out &&
+	makeoutput "t[0-15]" "" "" >query6.exp &&
+	test_cmp query6.exp query6.out
 '
 test_expect_success 'powerman -1 with no targets fails with useful error' '
 	test_must_fail $powerman -h $testaddr -1 2>notargets1.err &&

@@ -682,20 +682,33 @@ static int _enqueue_targeted_actions(Device * dev, int com, hostlist_t hl,
     }
     pluglist_iterator_destroy(itr);
 
+    /* special case, if singlet script available and we're only
+     * targeting one plug, use singlet script over other possible
+     * choices below.
+     */
+    if (dev->scripts[com] != NULL && list_count(new_acts) == 1) {
+        while ((act = list_pop(new_acts))) {
+            list_append(dev->acts, act);
+            count++;
+        }
+    }
+
     /* Try _all version of script.
      *
      * - use if action is a query, unless no singlet version exists
      *   (i.e. if there is no singlet version, we have to use the _all
      *   version)
      */
-    if (all || (_is_query_action(com) && dev->scripts[com] == NULL)) {
-        int ncom = _get_all_script(dev, com);
+    if (count == 0) {
+        if (all || (_is_query_action(com) && dev->scripts[com] == NULL)) {
+            int ncom = _get_all_script(dev, com);
 
-        if (ncom != -1) {
-            act = _create_action(dev, ncom, NULL, complete_fun,
-                                 vpf_fun, client_id, arglist);
-            list_append(dev->acts, act);
-            count++;
+            if (ncom != -1) {
+                act = _create_action(dev, ncom, NULL, complete_fun,
+                                     vpf_fun, client_id, arglist);
+                list_append(dev->acts, act);
+                count++;
+            }
         }
     }
 
@@ -713,7 +726,7 @@ static int _enqueue_targeted_actions(Device * dev, int com, hostlist_t hl,
         }
     }
 
-    /* _all and _ranged didn't work, try singlet.
+    /* _all and _ranged didn't work, we must use singlet version
      */
     if (count == 0) {
         while ((act = list_pop(new_acts))) {

@@ -30,6 +30,11 @@ specification "vpc" {
 		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
+	script on_ranged {
+		send "on %s\n"
+		expect "[0-9]* OK\n"
+		expect "[0-9]* vpc> "
+	}
 	script on_all {
 		send "on *\n"
 		expect "[0-9]* OK\n"
@@ -40,12 +45,26 @@ specification "vpc" {
 		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
+	script off_ranged {
+		send "off %s\n"
+		expect "[0-9]* OK\n"
+		expect "[0-9]* vpc> "
+	}
 	script off_all {
 		send "off *\n"
 		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}
 	script cycle {
+		send "off %s\n"
+		expect "[0-9]* OK\n"
+		expect "[0-9]* vpc> "
+		delay 1.0
+		send "on %s\n"
+		expect "[0-9]* OK\n"
+		expect "[0-9]* vpc> "
+	}
+	script cycle_ranged {
 		send "off %s\n"
 		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
@@ -93,6 +112,11 @@ specification "vpc" {
         }
 	script reset_all {
 		send "reset *\n"
+		expect "[0-9]* OK\n"
+		expect "[0-9]* vpc> "
+	}
+	script reset_ranged {
+		send "reset %s\n"
 		expect "[0-9]* OK\n"
 		expect "[0-9]* vpc> "
 	}

@@ -27,6 +27,7 @@
 #include "xmalloc.h"
 #include "xread.h"
 #include "xpoll.h"
+#include "hostlist.h"
 
 static void usage(void);
 static void _noop_handler(int signum);
@@ -253,6 +254,7 @@ _prompt_loop(void)
     int seq, i;
     char buf[128];
     char prompt[128];
+    char range[128];
 
     for (seq = 0;; seq++) {
         snprintf(prompt, sizeof(prompt), "%d vpc> ", seq);
@@ -320,6 +322,11 @@ _prompt_loop(void)
             _spew(i);
             goto ok;
         }
+        if (strcmp(buf, "on *") == 0) {                 /* on * */
+            for (i = 0; i < NUM_PLUGS; i++)
+                plug[i] = 1;
+            goto ok;
+        }
         if (sscanf(buf, "on %d", &i) == 1) {           /* on <plugnum> */
             if (i < 0 || i >= NUM_PLUGS) {
                 printf("%d BADVAL: %d\n", seq, i);
@@ -328,12 +335,53 @@ _prompt_loop(void)
             plug[i] = 1;
             goto ok;
         }
+        if (sscanf(buf, "on %s", range) == 1) {           /* on <range> */
+            hostlist_t hl = hostlist_create(range);
+            if (!hl) {
+                fprintf(stderr, "hostlist_create failed\n");
+                exit(1);
+            }
+            for (i = 0; i < hostlist_count(hl); i++) {
+                char *p = hostlist_nth(hl, i);
+                int plugnum = atoi(p);
+                if (plugnum < 0 || plugnum >= NUM_PLUGS)
+                    printf("%d BADVAL: %d\n", seq, plugnum);
+                else
+                    plug[plugnum] = 1;
+                free(p);
+            }
+            hostlist_destroy(hl);
+            goto ok;
+        }
+        if (strcmp(buf, "off *") == 0) {                /* off * */
+            for (i = 0; i < NUM_PLUGS; i++)
+                plug[i] = 0;
+            goto ok;
+        }
         if (sscanf(buf, "off %d", &i) == 1) {          /* off <plugnum> */
             if (i < 0 || i >= NUM_PLUGS) {
                 printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
             plug[i] = 0;
+            goto ok;
+        }
+        if (sscanf(buf, "off %s", range) == 1) {          /* off <range> */
+            hostlist_t hl = hostlist_create(range);
+            if (!hl) {
+                fprintf(stderr, "hostlist_create failed\n");
+                exit(1);
+            }
+            for (i = 0; i < hostlist_count(hl); i++) {
+                char *p = hostlist_nth(hl, i);
+                int plugnum = atoi(p);
+                if (plugnum < 0 || plugnum >= NUM_PLUGS)
+                    printf("%d BADVAL: %d\n", seq, plugnum);
+                else
+                    plug[plugnum] = 0;
+                free(p);
+            }
+            hostlist_destroy(hl);
             goto ok;
         }
         if (sscanf(buf, "flash %d", &i) == 1) {        /* flash <plugnum> */
@@ -352,21 +400,15 @@ _prompt_loop(void)
             beacon[i] = 0;
             goto ok;
         }
-        if (strcmp(buf, "on *") == 0) {                 /* on * */
-            for (i = 0; i < NUM_PLUGS; i++)
-                plug[i] = 1;
-            goto ok;
-        }
-        if (strcmp(buf, "off *") == 0) {                /* off * */
-            for (i = 0; i < NUM_PLUGS; i++)
-                plug[i] = 0;
-            goto ok;
-        }
         if (sscanf(buf, "reset %d", &i) == 1) {         /* reset <plugnum> */
             if (i < 0 || i >= NUM_PLUGS) {
                 printf("%d BADVAL: %d\n", seq, i);
                 continue;
             }
+            sleep(1); /* noop */
+            goto ok;
+        }
+        if (sscanf(buf, "reset %s", range) == 1) {      /* reset <range> */
             sleep(1); /* noop */
             goto ok;
         }
