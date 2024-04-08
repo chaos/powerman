@@ -406,6 +406,12 @@ static bool _suppress(int num)
     return false;
 }
 
+static FILE *getstream(int num)
+{
+    /* diagnostic output goes to stderr */
+    return (num == 309) ? stderr : stdout;
+}
+
 /* Get a line from the socket and display on stdout.
  * Return the numerical portion of the response.
  */
@@ -419,7 +425,7 @@ static int _process_line(int fd)
         num = -1;
     if (strlen(buf) > 4) {
         if (!_suppress(num))
-            printf("%s\n", buf + 4);
+            fprintf(getstream(num), "%s\n", buf + 4);
     } else
         err_exit(false, "unexpected response from server");
     xfree(buf);

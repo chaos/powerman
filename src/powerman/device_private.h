@@ -157,13 +157,16 @@ typedef void (*ActionCB) (int client_id, ActError acterr, const char *fmt, ...)
     __attribute__ ((format (printf, 3, 4)));
 typedef void (*VerbosePrintf) (int client_id, const char *fmt, ...)
     __attribute__ ((format (printf, 2, 3)));
+typedef void (*DiagPrintf) (int client_id, const char *fmt, ...)
+    __attribute__ ((format (printf, 2, 3)));
 
 #define MIN_DEV_BUF     1024
 #define MAX_DEV_BUF     1024*64
 
 void dev_add(Device * dev);
 int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
-        VerbosePrintf vpf_fun, int client_id, ArgList arglist);
+                        VerbosePrintf vpf_fun, DiagPrintf dpf_fun,
+                        int client_id, ArgList arglist);
 bool dev_check_actions(int com, hostlist_t hl);
 
 Device *dev_create(const char *name);

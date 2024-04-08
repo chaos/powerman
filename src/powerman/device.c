@@ -92,6 +92,7 @@ typedef struct {
     List exec;                  /* stack of ExecCtxs (outer block is first) */
     ActionCB complete_fun;      /* callback for action completion */
     VerbosePrintf vpf_fun;      /* callback for device telemetry */
+    DiagPrintf dpf_fun;         /* callback for device diagnostics */
     int client_id;              /* client id so completion can find client */
     ActError errnum;            /* errno for action */
     struct timeval time_stamp;  /* time stamp for timeouts */
@@ -120,13 +121,14 @@ static int _get_all_script(Device * dev, int com);
 static int _get_ranged_script(Device * dev, int com);
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
                             ActionCB complete_fun, VerbosePrintf vpf_fun,
-                            int client_id, ArgList arglist);
+                            DiagPrintf dpf_fun, int client_id, ArgList arglist);
 static Action *_create_action(Device * dev, int com, List plugs,
                               ActionCB complete_fun, VerbosePrintf vpf_fun,
-                              int client_id, ArgList arglist);
+                              DiagPrintf dpf_fun, int client_id, ArgList arglist);
 static int _enqueue_targeted_actions(Device * dev, int com, hostlist_t hl,
                                      ActionCB complete_fun,
                                      VerbosePrintf vpf_fun,
+                                     DiagPrintf dpf_fun,
                                      int client_id, ArgList arglist);
 static char *_getregex_buf(cbuf_t b, xregex_t re, xregex_match_t xm);
 static bool _command_needs_device(Device * dev, hostlist_t hl);
@@ -258,7 +260,7 @@ static void _rewind_action(Action *act)
 
 static Action *_create_action(Device * dev, int com, List plugs,
                               ActionCB complete_fun, VerbosePrintf vpf_fun,
-                              int client_id, ArgList arglist)
+                              DiagPrintf dpf_fun, int client_id, ArgList arglist)
 {
     Action *act;
     ExecCtx *e;
@@ -268,6 +270,7 @@ static Action *_create_action(Device * dev, int com, List plugs,
     act->com = com;
     act->complete_fun = complete_fun;
     act->vpf_fun = vpf_fun;
+    act->dpf_fun = dpf_fun;
     act->client_id = client_id;
 
     act->exec = list_create((ListDelF)_destroy_exec_ctx);
@@ -465,7 +468,8 @@ bool dev_check_actions(int com, hostlist_t hl)
  * actions "check in".
  */
 int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
-        VerbosePrintf vpf_fun, int client_id, ArgList arglist)
+                        VerbosePrintf vpf_fun, DiagPrintf dpf_fun,
+                        int client_id, ArgList arglist)
 {
     Device *dev;
     ListIterator itr;
@@ -480,7 +484,7 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
             continue;                               /* unimplemented script */
         if (hl && !_command_needs_device(dev, hl))
             continue;                               /* uninvolved device */
-        count = _enqueue_actions(dev, com, hl, complete_fun, vpf_fun,
+        count = _enqueue_actions(dev, com, hl, complete_fun, vpf_fun, dpf_fun,
                 client_id, arglist);
         if (count > 0 && dev->connect_state != DEV_CONNECTED)
             dev->retry_count = 0;   /* expedite retries on this device since */
@@ -493,7 +497,7 @@ int dev_enqueue_actions(int com, hostlist_t hl, ActionCB complete_fun,
 
 static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
                             ActionCB complete_fun, VerbosePrintf vpf_fun,
-                            int client_id, ArgList arglist)
+                            DiagPrintf dpf_fun, int client_id, ArgList arglist)
 {
     Action *act;
     int count = 0;
@@ -506,15 +510,15 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
             _rewind_action(act);
             dbg(DBG_ACTION, "resetting iterator for non-login action");
         }
-        act = _create_action(dev, com, NULL, complete_fun, vpf_fun,
+        act = _create_action(dev, com, NULL, complete_fun, vpf_fun, dpf_fun,
                 client_id, arglist);
         list_prepend(dev->acts, act);
         count++;
         break;
     case PM_LOG_OUT:
     case PM_PING:
-        act = _create_action(dev, com, NULL, complete_fun, vpf_fun, client_id,
-                arglist);
+        act = _create_action(dev, com, NULL, complete_fun, vpf_fun, dpf_fun,
+                             client_id, arglist);
         list_append(dev->acts, act);
         count++;
         break;
@@ -529,7 +533,7 @@ static int _enqueue_actions(Device * dev, int com, hostlist_t hl,
     case PM_STATUS_TEMP:
     case PM_STATUS_BEACON:
         count += _enqueue_targeted_actions(dev, com, hl, complete_fun,
-                                           vpf_fun, client_id, arglist);
+                                           vpf_fun, dpf_fun, client_id, arglist);
         break;
     default:
         assert(false);
@@ -634,6 +638,7 @@ static bool _is_query_action(int com)
 static int _enqueue_targeted_actions(Device * dev, int com, hostlist_t hl,
                                      ActionCB complete_fun,
                                      VerbosePrintf vpf_fun,
+                                     DiagPrintf dpf_fun,
                                      int client_id, ArgList arglist)
 {
     List new_acts = list_create((ListDelF) _destroy_action);
@@ -680,7 +685,7 @@ static int _enqueue_targeted_actions(Device * dev, int com, hostlist_t hl,
             }
 
             act = _create_action(dev, com, plugs, complete_fun, vpf_fun,
-                        client_id, arglist);
+                                 dpf_fun, client_id, arglist);
             list_append(new_acts, act);
         }
     }
@@ -709,7 +714,7 @@ static int _enqueue_targeted_actions(Device * dev, int com, hostlist_t hl,
 
             if (ncom != -1) {
                 act = _create_action(dev, ncom, NULL, complete_fun,
-                                     vpf_fun, client_id, arglist);
+                                     vpf_fun, dpf_fun, client_id, arglist);
                 list_append(dev->acts, act);
                 count++;
             }
@@ -723,7 +728,7 @@ static int _enqueue_targeted_actions(Device * dev, int com, hostlist_t hl,
 
         if (ncom != -1) {
             act = _create_action(dev, ncom, ranged_plugs, complete_fun,
-                                 vpf_fun, client_id, arglist);
+                                 vpf_fun, dpf_fun, client_id, arglist);
             list_append(dev->acts, act);
             used_ranged_plugs++;
             count++;
@@ -750,7 +755,7 @@ cleanup:
  */
 static void _enqueue_login(Device *dev)
 {
-    _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, 0, NULL);
+    _enqueue_actions(dev, PM_LOG_IN, NULL, NULL, NULL, NULL, 0, NULL);
 }
 
 
@@ -1172,6 +1177,14 @@ static bool _process_setresult(Device *dev, Action *act, ExecCtx *e)
                 xfree(arg->val);
                 arg->val = xstrdup(str);
             }
+
+            if (result != RT_SUCCESS) {
+                char strbuf[1024];
+                snprintf(strbuf, sizeof(strbuf), "%s", arg->val);
+                /* remove trailing carriage return or newline */
+                strbuf[strcspn(strbuf, "\r\n")] = '\0';
+                act->dpf_fun(act->client_id, "%s: %s", arg->node, strbuf);
+            }
         }
         xfree(str);
         /* if no match, do nothing */
@@ -1410,7 +1423,7 @@ static void _enqueue_ping(Device * dev, struct timeval *timeout)
 
     if (dev->scripts[PM_PING] != NULL && timerisset(&dev->ping_period)) {
         if (_timeout(&dev->last_ping, &dev->ping_period, &timeleft)) {
-            _enqueue_actions(dev, PM_PING, NULL, NULL, NULL, 0, NULL);
+            _enqueue_actions(dev, PM_PING, NULL, NULL, NULL, NULL, 0, NULL);
             if (gettimeofday(&dev->last_ping, NULL) < 0)
                 err_exit(true, "gettimeofday");
             dbg(DBG_ACTION, "%s: enqeuuing ping", dev->name);

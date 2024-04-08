@@ -108,6 +108,7 @@
 #define CP_INFO_NODES       "306 %s"                                CP_EOL
 #define CP_INFO_XNODES      "307 %s"                                CP_EOL
 #define CP_INFO_ACTERROR    "308 %s"                                CP_EOL
+#define CP_INFO_DIAG        "309 %s"                                CP_EOL
 
 #endif  /* PM_CLIENT_PROTO_H */
 
