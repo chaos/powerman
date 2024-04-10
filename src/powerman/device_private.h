@@ -153,8 +153,10 @@ typedef struct _device {
 
 typedef enum { ACT_ESUCCESS, ACT_EEXPFAIL, ACT_EABORT, ACT_ECONNECTTIMEOUT,
                ACT_ELOGINTIMEOUT } ActError;
-typedef void (*ActionCB) (int client_id, ActError acterr, const char *fmt, ...);
-typedef void (*VerbosePrintf) (int client_id, const char *fmt, ...);
+typedef void (*ActionCB) (int client_id, ActError acterr, const char *fmt, ...)
+    __attribute__ ((format (printf, 3, 4)));
+typedef void (*VerbosePrintf) (int client_id, const char *fmt, ...)
+    __attribute__ ((format (printf, 2, 3)));
 
 #define MIN_DEV_BUF     1024
 #define MAX_DEV_BUF     1024*64
