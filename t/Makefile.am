@@ -45,7 +45,8 @@ TESTSCRIPTS = \
 	t0034-redfishpower.t \
 	t0035-power-result.t \
 	t0036-diagnostics.t \
-	t0037-cray-ex.t
+	t0037-cray-ex.t \
+	t0038-cray-ex-rabbit.t
 
 # make check runs these TAP tests directly (both scripts and programs)
 TESTS = \
