@@ -60,6 +60,7 @@ pkgsysconf_DATA = \
 	devices/redfishpower-supermicro.dev \
 	devices/redfishpower-cray-windom.dev \
 	devices/redfishpower-cray-ex.dev \
+	devices/redfishpower-cray-ex-rabbit.dev \
 	devices/phantom.dev \
 	devices/plmpower.dev \
 	devices/powerman.dev \
