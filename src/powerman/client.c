@@ -103,6 +103,7 @@ static void _create_client_socket(int fd);
 static void _create_client_stdio(void);
 static void _act_finish(int client_id, ActError acterr, const char *fmt, ...);
 static void _telemetry_printf(int client_id, const char *fmt, ...);
+static void _diag_printf(int client_id, const char *fmt, ...);
 #if HAVE_TCP_WRAPPERS
 /* tcp wrappers support */
 extern int hosts_ctl(char *daemon, char *client_name, char *client_addr,
@@ -636,7 +637,7 @@ static void _parse_input(Client * c, char *input)
         dbg(DBG_CLIENT, "_parse_input: enqueuing actions");
         cmd->pending = dev_enqueue_actions(cmd->com, cmd->hl, _act_finish,
                 c->telemetry ? _telemetry_printf : NULL,
-                c->client_id, cmd->arglist);
+                _diag_printf, c->client_id, cmd->arglist);
         if (cmd->pending == 0) {
             _client_printf(c, CP_ERR_UNIMPL);
             _destroy_command(cmd);
@@ -665,6 +666,24 @@ static void _telemetry_printf(int client_id, const char *fmt, ...)
         str = hvsprintf(fmt, ap);
         va_end(ap);
         _client_printf(c, CP_INFO_TELEMETRY, str);
+        xfree(str);
+    }
+}
+
+/*
+ * Callback for device diagnostics
+ */
+static void _diag_printf(int client_id, const char *fmt, ...)
+{
+    va_list ap;
+    Client *c;
+    char *str;
+
+    if ((c = _find_client(client_id))) {
+        va_start(ap, fmt);
+        str = hvsprintf(fmt, ap);
+        va_end(ap);
+        _client_printf(c, CP_INFO_DIAG, str);
         xfree(str);
     }
 }
