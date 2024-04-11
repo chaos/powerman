@@ -651,8 +651,16 @@ static void process_waiters(CURLM *mh,
                     else if (strcmp(pm->cmd, CMD_OFF) == 0
                              && strcmp(status_str, STATUS_OFF) == 0)
                         printf("%s: %s\n", pm->plugname, "ok");
-                    else
-                        printf("%s: ancestor %s\n", pm->plugname, status_str);
+                    else {
+                        struct plug_data *pd = plugs_get_data(plugs, ancestor);
+                        printf("%s: cannot perform %s, dependency %s"
+                               " (host=%s plug=%s)\n",
+                               pm->plugname,
+                               pm->cmd,
+                               status_str,
+                               pd->hostname,
+                               pd->plugname);
+                    }
                 }
 
                 /* this power op is now done */

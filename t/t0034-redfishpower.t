@@ -336,7 +336,7 @@ test_expect_success 'powerman -1 t[1-15] completes' '
 	echo Command completed successfully >test_parents2L_on1.exp &&
 	test_cmp test_parents2L_on1.exp test_parents2L_on1.out &&
 	$powerman -h $testaddr -T -1 t[1-15] >test_parents2L_on1T.out &&
-	grep "ancestor off" test_parents2L_on1T.out
+	grep "cannot perform on, dependency off" test_parents2L_on1T.out
 '
 test_expect_success 'powerman -q shows all off still' '
 	$powerman -h $testaddr -q >test_parents2L_query2.out &&
@@ -471,14 +471,14 @@ test_expect_success 'powerman -1 t[1-3] completes but doesnt work' '
 	echo Command completed successfully >test_parents3L_on1.exp &&
 	test_cmp test_parents3L_on1.exp test_parents3L_on1.out &&
 	$powerman -h $testaddr -T -1 t[1-3] >test_parents3L_on1T.out &&
-	grep "ancestor off" test_parents3L_on1T.out
+	grep "cannot perform on, dependency off" test_parents3L_on1T.out
 '
 test_expect_success 'powerman -1 t[4-15] completes but doesnt work' '
 	$powerman -h $testaddr -1 t[4-15] >test_parents3L_on2.out &&
 	echo Command completed successfully >test_parents3L_on2.exp &&
 	test_cmp test_parents3L_on2.exp test_parents3L_on2.out &&
 	$powerman -h $testaddr -T -1 t[4-15] >test_parents3L_on2T.out &&
-	grep "ancestor off" test_parents3L_on2T.out
+	grep "cannot perform on, dependency off" test_parents3L_on2T.out
 '
 test_expect_success 'powerman -q shows all off still' '
 	$powerman -h $testaddr -q >test_parents3L_query2.out &&
@@ -665,7 +665,7 @@ test_expect_success 'powerman -1 t[12-15] completes' '
 	echo Command completed successfully >test_parents3Lbad_on2.exp &&
 	test_cmp test_parents3Lbad_on2.exp test_parents3Lbad_on2.out &&
 	$powerman -h $testaddr -T -1 t[12-15] >test_parents3Lbad_on2T.out &&
-	grep "Node12" test_parents3Lbad_on2T.out | grep "ancestor error"
+	grep "Node12" test_parents3Lbad_on2T.out | grep "cannot perform on, dependency error"
 '
 test_expect_success 'powerman -q shows t[0-2,4-11] on, t3 and children unknown' '
 	$powerman -h $testaddr -q >test_parents3Lbad_query3.out &&
