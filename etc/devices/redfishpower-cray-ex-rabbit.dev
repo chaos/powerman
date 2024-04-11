@@ -1,0 +1,159 @@
+# This is a variant of the cray-ex chassis populated with rabbit
+# storage hardware. Refer to cray-ex for info specific to that
+# chassis.
+#
+# - Set your system's username/password in the login section of
+#   each specification below.
+#
+# - Assuming all blades are populated with nodes, switch slots 0-3 are
+#   populated with switches, and switch slots 4 & 7 are populated by a
+#   rabbit, configure in Powerman like below.
+#
+#   N.B. A rabbit takes up 4 switch slots but only utilizes power from
+#   slots 4 & 7.  Slot 4 powers storage/drives, slot 7 powers processor.
+#
+#   Take special notice to the order of hosts listed with `-h` as the
+#   order matters (plugnames are mapped to hosts via indices).  The cmm
+#   should be listed first with the 16 nodes second.
+#
+#   include "/etc/powerman/redfishpower-cray-ex-rabbit.dev"
+#   device "chassis0" "cray-ex" "/usr/sbin/redfishpower -h cmm0,pmynode[0-15],rabbit |&"
+#   node "cmm0,myperif[0-3],rabbit-storage,rabbit-blade,myblade[0-7],mynode[0-15],rabbit" "chassis0" "Enclosure,Perif[0-4,7],Blade[0-7],Node[0-16]"
+#
+# - If your chassis is not fully populated, put placeholder hosts in
+#   the redfishpower hosts configuration.  Adjust plugs when
+#   configuring specific targets.  For example, let's say blades[4-7]
+#   are not populated (thus nodes[8-15] also do not exist).
+#
+#   device "chassis0" "cray-ex" "/usr/sbin/redfishpower -h cmm0,pnode[0-7],unused[0-7],rabbit |&"
+#   node "cmm0,myperif[0-3],rabbit-storage,rabbit-blade,myblade[0-3],mynode[0-7],rabbit" "chassis0" "Enclosure,Perif[0-4.7],Blade[0-3],Node[0-7,16]"
+#
+
+specification "cray-ex-rabbit" {
+	timeout 	100
+
+	plug name {
+		"Enclosure"
+		"Perif0"
+		"Perif1"
+		"Perif2"
+		"Perif3"
+		"Perif4"
+		# "Perif5" storage hardware - no power control
+		# "Perif6" storage hardware - no power control
+		"Perif7"
+		"Blade0"
+		"Blade1"
+		"Blade2"
+		"Blade3"
+		"Blade4"
+		"Blade5"
+		"Blade6"
+		"Blade7"
+		"Node0"
+		"Node1"
+		"Node2"
+		"Node3"
+		"Node4"
+		"Node5"
+		"Node6"
+		"Node7"
+		"Node8"
+		"Node9"
+		"Node10"
+		"Node11"
+		"Node12"
+		"Node13"
+		"Node14"
+		"Node15"
+                # Node16 is slotted into Perif7
+		"Node16"
+	}
+
+	script login {
+		expect "redfishpower> "
+		send "auth USER:PASS\n"
+		expect "redfishpower> "
+		send "setheader Content-Type:application/json\n"
+		expect "redfishpower> "
+		# setplugs plugnames hostindices [parentplug]
+		send "setplugs Enclosure 0\n"
+		expect "redfishpower> "
+		send "setplugs Perif[0-4,7],Blade[0-7] 0 Enclosure\n"
+		expect "redfishpower> "
+		send "setplugs Node[0-1] [1-2] Blade0\n"
+		expect "redfishpower> "
+		send "setplugs Node[2-3] [3-4] Blade1\n"
+		expect "redfishpower> "
+		send "setplugs Node[4-5] [5-6] Blade2\n"
+		expect "redfishpower> "
+		send "setplugs Node[6-7] [7-8] Blade3\n"
+		expect "redfishpower> "
+		send "setplugs Node[8-9] [9-10] Blade4\n"
+		expect "redfishpower> "
+		send "setplugs Node[10-11] [11-12] Blade5\n"
+		expect "redfishpower> "
+		send "setplugs Node[12-13] [13-14] Blade6\n"
+		expect "redfishpower> "
+		send "setplugs Node[14-15] [15-16] Blade7\n"
+		expect "redfishpower> "
+		send "setplugs Node16 17 Perif7\n"
+		expect "redfishpower> "
+		# setpath <plugnames> <cmd> <path> [postdata]
+		send "setpath Enclosure,Perif[0-4,7],Blade[0-7] stat redfish/v1/Chassis/{{plug}}\n"
+		expect "redfishpower> "
+		send "setpath Enclosure,Perif[0-4,7],Blade[0-7] on redfish/v1/Chassis/{{plug}}/Actions/Chassis.Reset {\"ResetType\":\"On\"}\n"
+		expect "redfishpower> "
+		send "setpath Enclosure,Perif[0-4,7],Blade[0-7] off redfish/v1/Chassis/{{plug}}/Actions/Chassis.Reset {\"ResetType\":\"ForceOff\"}\n"
+		expect "redfishpower> "
+		send "setpath Node[0-16] stat redfish/v1/Systems/Node0\n"
+		expect "redfishpower> "
+		send "setpath Node[0-16] on redfish/v1/Systems/Node0/Actions/ComputerSystem.Reset {\"ResetType\":\"On\"}\n"
+		expect "redfishpower> "
+		send "setpath Node[0-16] off redfish/v1/Systems/Node0/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceOff\"}\n"
+		expect "redfishpower> "
+		# settimeout <seconds> - on/off operations fail on expiration
+		send "settimeout 75\n"
+		expect "redfishpower> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status {
+		send "stat %s\n"
+		expect "([^\n:]+): ([^\n]+\n)"
+		setplugstate $1 $2 on="^on\n" off="^off\n"
+		expect "redfishpower> "
+	}
+	script status_all {
+		send "stat\n"
+		foreachnode {
+			expect "([^\n:]+): ([^\n]+\n)"
+			setplugstate $1 $2 on="^on\n" off="^off\n"
+		}
+		expect "redfishpower> "
+	}
+	script on_ranged {
+		send "on %s\n"
+		foreachnode {
+			expect "([^\n:]+): ([^\n]+\n)"
+			setresult $1 $2 success="^ok\n"
+		}
+		expect "redfishpower> "
+	}
+	script off_ranged {
+		send "off %s\n"
+		foreachnode {
+			expect "([^\n:]+): ([^\n]+\n)"
+			setresult $1 $2 success="^ok\n"
+		}
+		expect "redfishpower> "
+	}
+	script cycle_ranged {
+		send "off %s\n"
+		expect "redfishpower> "
+		delay 2
+		send "on %s\n"
+		expect "redfishpower> "
+	}
+}
