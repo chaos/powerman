@@ -2,8 +2,9 @@
 # storage hardware. Refer to cray-ex for info specific to that
 # chassis.
 #
-# - Set your system's username/password in the login section of
-#   each specification below.
+# - If necessary, set your system's username/password in the login
+#   section of each specification below.  By default, a manufacturer
+#   default is set below.
 #
 # - Assuming all blades are populated with nodes, switch slots 0-3 are
 #   populated with switches, and switch slots 4 & 7 are populated by a
@@ -72,7 +73,7 @@ specification "cray-ex-rabbit" {
 
 	script login {
 		expect "redfishpower> "
-		send "auth USER:PASS\n"
+		send "auth operator:initial0_op\n"
 		expect "redfishpower> "
 		send "setheader Content-Type:application/json\n"
 		expect "redfishpower> "
