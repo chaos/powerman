@@ -6,8 +6,9 @@
 # section "UPDATING REDFISHPOWER DEVICE FILES" in redfishpower(8) for
 # additional tips.
 #
-# - Set your system's username/password in the login section of
-#   each specification below.
+# - If necessary, set your system's username/password in the login
+#   section of each specification below.  By default, a manufacturer
+#   default is set below.
 #
 # - Assuming all blades are populated with nodes and all switches are
 #   populated, configure in Powerman like below.
@@ -69,7 +70,7 @@ specification "cray-ex" {
 
 	script login {
 		expect "redfishpower> "
-		send "auth USER:PASS\n"
+		send "auth operator:initial0_op\n"
 		expect "redfishpower> "
 		send "setheader Content-Type:application/json\n"
 		expect "redfishpower> "
