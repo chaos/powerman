@@ -43,6 +43,7 @@ static char *header = NULL;
 static struct curl_slist *header_list = NULL;
 static int verbose = 0;
 static char *userpwd = NULL;
+static int userpwd_set_on_cmdline = 0;
 
 /* default paths if host specific ones not set */
 static char *statpath = NULL;
@@ -135,10 +136,11 @@ struct powermsg {
             err_exit(false, "curl_easy_setopt: %s", curl_easy_strerror(_ec));  \
     } while(0)
 
-#define OPTIONS "h:H:S:O:F:P:G:TEv"
+#define OPTIONS "h:A:H:S:O:F:P:G:TEv"
 static struct option longopts[] = {
         {"hostname", required_argument, 0, 'h' },
         {"header", required_argument, 0, 'H' },
+        {"auth", required_argument, 0, 'A' },
         {"statpath", required_argument, 0, 'S' },
         {"onpath", required_argument, 0, 'O' },
         {"offpath", required_argument, 0, 'F' },
@@ -1148,6 +1150,8 @@ static void auth(char **av)
         printf("Usage: auth user:passwd\n");
         return;
     }
+    if (userpwd_set_on_cmdline)
+        return;
     if (userpwd)
         xfree(userpwd);
     userpwd = xstrdup(av[0]);
@@ -1763,6 +1767,23 @@ static void setup_hosts(void)
     initial_plugs_setup = 1;
 }
 
+/* From David Wheeler's Secure Programming Guide
+ * - do not want compiler to optimize away memset()
+ */
+static void *secure_memset(void *s, int c, size_t n)
+{
+  volatile char *p;
+
+  if (!s || !n)
+    return (NULL);
+
+  p = s;
+  while (n--)
+    *p++=c;
+
+  return (s);
+}
+
 int main(int argc, char *argv[])
 {
     CURLM *mh = NULL;
@@ -1779,6 +1800,11 @@ int main(int argc, char *argv[])
                 break;
             case 'H': /* --header */
                 header = xstrdup(optarg);
+                break;
+            case 'A': /* -- auth */
+                userpwd = xstrdup(optarg);
+                userpwd_set_on_cmdline = 1;
+                secure_memset(optarg, '\0', strlen(optarg));
                 break;
             case 'S': /* --statpath */
                 statpath = xstrdup(optarg);
