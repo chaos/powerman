@@ -1,5 +1,5 @@
 powerman-2.4.0 - 06 Feb 2024
------------------------------
+----------------------------
 
 This release is the result of a concentrated cleanup and modernization
 effort.  The minor version was incremented because some options have
