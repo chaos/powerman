@@ -1,3 +1,61 @@
+powerman-2.4.1 - 12 Apr 2024
+----------------------------
+
+This release represents a focused effort to support a large Cray EX system
+including adding support in redfishpower to handle the power hierarchy
+of Chassis/Blade/Node sensibly, and to better handle expected failure modes.
+
+Powerman now supports the ability for a device script to match error output
+and fail immediately.  Prior to this release, the only way to get powerman
+to fail was to not provide expected successful output and run out the device
+timeout.
+
+## New features
+
+ * redfishpower: support auth setup on command line (#181)
+ * set default Cray EX authentication (#179)
+ * add device file for Cray EX w/ Rabbit (#177)
+ * add redfishpower HPE Cray EX chassis device file (#173)
+ * powerman: support error diagnostics with setresult (#172)
+ * redfishpower: add more details on hierarchy errors (#174)
+ * powerman: support new setresult directive (#168)
+ * powerman: use singlet script if targeting one plug (#170)
+ * redfishpower: support plug parents (#164)
+ * redfishpower: support plug substitution (#159)
+ * redfishpower: support setpath configuration  (#158)
+ * redfishpower: support setplugs configuration (#157)
+ * redfishpower: refactor internals to use plugs (#160)
+ * redfishpower: always do off/delay/on for power cycle (#149)
+ * redfishpower: send http request after cmd active (#146)
+ * powermand: don't daemonize and drop -f,--foreground option (#141)
+ * libczmq: add containers from the CZMQ project (#124)
+
+## Fixes
+
+ * redfishpower: adapt status polling interval (#167)
+ * redfishpower: fix memleaks and test under valgrind (#169)
+ * powerman: when status and status_all are defined, use status_all only
+   on full pluglist (#156)
+ * redfishpower: add extra timeout debug information (#154)
+ * redfishpower: adjust verbosity output (#151)
+ * reduce log noise (#140)
+ * don't allocate a pseudo-terminal for each coprocess (#135)
+ * redfishpower: handle http 400 error (#132)
+
+## Cleanup
+
+ * drop antiquated memory protection magic (#136)
+ * redfishpower: cleanup & refactoring (#134)
+
+## CI/Test/build system
+
+ * configure.ac: build helper executables by default (#180)
+ * test a huge cray-ex configuration (#127)
+ * redfishpower: reduce polling interval in test mode (#155)
+ * redfishpower: add option to test host errors  (#145)
+ * redfishpower: support test mode (#143)
+ * enable valgrind test with suppressions (#137)
+
 powerman-2.4.0 - 06 Feb 2024
 ----------------------------
 
