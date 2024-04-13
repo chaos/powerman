@@ -23,6 +23,11 @@ system call.
 .I "-H, --header string"
 Set extra HEADER to use.  Typically is Content-Type:application/json.
 .TP
+.I "-A, --auth user:pass"
+Authenticate with the specified user and password, specified in the
+form "user:pass".  If specified on the command line, it cannot be set
+at the prompt with the "auth" command.
+.TP
 .I "-S, --statpath string"
 Set Redfish path for obtaining power status.  Typically is redfish/v1/Systems/1.
 .TP

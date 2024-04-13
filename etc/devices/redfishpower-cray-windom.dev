@@ -9,7 +9,8 @@
 #   node "node3" "redfishpower0" "pnode3"
 #   node "node4" "redfishpower1" "pnode4"
 #
-# - Set your system's username/password in the login section below
+# - If necessary, set your system's username/password via redfishpower's
+#   --auth option.
 #
 # - This device specification was tested on a Cray Windom.
 #

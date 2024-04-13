@@ -2,9 +2,8 @@
 # storage hardware. Refer to cray-ex for info specific to that
 # chassis.
 #
-# - If necessary, set your system's username/password in the login
-#   section of each specification below.  By default, a manufacturer
-#   default is set below.
+# - If necessary, set your system's username/password via redfishpower's
+#   --auth option.
 #
 # - Assuming all blades are populated with nodes, switch slots 0-3 are
 #   populated with switches, and switch slots 4 & 7 are populated by a

@@ -6,9 +6,8 @@
 # section "UPDATING REDFISHPOWER DEVICE FILES" in redfishpower(8) for
 # additional tips.
 #
-# - If necessary, set your system's username/password in the login
-#   section of each specification below.  By default, a manufacturer
-#   default is set below.
+# - If necessary, set your system's username/password via redfishpower's
+#   --auth option.
 #
 # - Assuming all blades are populated with nodes and all switches are
 #   populated, configure in Powerman like below.

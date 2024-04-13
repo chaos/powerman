@@ -6,7 +6,8 @@
 #   node "node1" "redfishpower" "pnode1"
 #   node "node2" "redfishpower" "pnode2"
 #
-# - Set your system's username/password in the login section below
+# - If necessary, set your system's username/password via redfishpower's
+#   --auth option.
 #
 # - This device specification was tested on a Cray with Gigabyte R272-Z30.
 #
