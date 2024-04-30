@@ -52,6 +52,11 @@ by
 below.  The latter is the total command timeout, which may involve
 multiple messages and a polling of power status.
 .TP
+.I "-o, --resolve-hosts"
+Resolve host and pass IP address to libcurl instead of hostname.  This
+works around a DNS race in libcurl versions less than 7.66.  Users
+hitting the DNS race may see "Timeout was reached" errors.
+.TP
 .I "-v, --verbose"
 Increase output verbosity.  Can be specified multiple times.
 .SH INTERACTIVE COMMANDS
