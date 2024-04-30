@@ -1868,6 +1868,12 @@ int main(int argc, char *argv[])
          * lets put it to a millisecond.
          */
         status_polling_interval = 1000;
+
+        /* output settings of command line options that can't be tested in test mode */
+        if (header)
+            fprintf(stderr, "command line option: header = %s\n", header);
+        if (userpwd)
+            fprintf(stderr, "command line option: auth = %s\n", userpwd);
     }
 
     shell(mh);

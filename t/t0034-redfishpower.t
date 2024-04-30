@@ -678,6 +678,21 @@ test_expect_success 'stop powerman daemon (parents3Lbad)' '
 '
 
 #
+# options
+#
+# libcurl specific and not testable under test-mode, so we just check the options work
+#
+
+test_expect_success 'header option setting appears to work' '
+	echo "quit" | $redfishdir/redfishpower -h t[0-15] --test-mode --header="my content header" 2> header.err
+	grep "header = my content header" header.err
+'
+test_expect_success 'auth option setting appears to work' '
+	echo "quit" | $redfishdir/redfishpower -h t[0-15] --test-mode --auth="foo:bar" 2> auth.err
+	grep "auth = foo:bar" auth.err
+'
+
+#
 # valgrind
 #
 
