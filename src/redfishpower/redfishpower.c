@@ -67,7 +67,7 @@ static hostlist_t test_fail_power_cmd_hosts;
 static zhashx_t *test_power_status;
 
 /* in seconds */
-#define MESSAGE_TIMEOUT            10
+#define MESSAGE_TIMEOUT            5
 #define CMD_TIMEOUT_DEFAULT        60
 
 /* Per documentation, wait incremental time then proceed if timeout < 0 */
@@ -268,6 +268,8 @@ static void powermsg_init_curl(struct powermsg *pm)
     if ((pm->eh = curl_easy_init()) == NULL)
         err_exit(false, "curl_easy_init failed");
 
+    /* Per documentation, CURLOPT_TIMEOUT overrides
+     * CURLOPT_CONNECTTIMEOUT */
     Curl_easy_setopt((pm->eh, CURLOPT_TIMEOUT, MESSAGE_TIMEOUT));
     Curl_easy_setopt((pm->eh, CURLOPT_FAILONERROR, 1));
 
