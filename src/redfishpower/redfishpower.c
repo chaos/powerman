@@ -67,7 +67,7 @@ static hostlist_t test_fail_power_cmd_hosts;
 static zhashx_t *test_power_status;
 
 /* in seconds */
-#define MESSAGE_TIMEOUT            10
+#define MESSAGE_TIMEOUT_DEFAULT    5
 #define CMD_TIMEOUT_DEFAULT        60
 
 /* Per documentation, wait incremental time then proceed if timeout < 0 */
@@ -136,7 +136,7 @@ struct powermsg {
             err_exit(false, "curl_easy_setopt: %s", curl_easy_strerror(_ec));  \
     } while(0)
 
-#define OPTIONS "h:A:H:S:O:F:P:G:TEv"
+#define OPTIONS "h:A:H:S:O:F:P:G:m:TEv"
 static struct option longopts[] = {
         {"hostname", required_argument, 0, 'h' },
         {"header", required_argument, 0, 'H' },
@@ -146,6 +146,7 @@ static struct option longopts[] = {
         {"offpath", required_argument, 0, 'F' },
         {"onpostdata", required_argument, 0, 'P' },
         {"offpostdata", required_argument, 0, 'G' },
+        {"message-timeout", required_argument, 0, 'm' },
         {"test-mode", no_argument, 0, 'T' },
         {"test-fail-power-cmd-hosts", required_argument, 0, 'E' },
         {"verbose", no_argument, 0, 'v' },
@@ -157,6 +158,7 @@ static time_t cmd_timeout = CMD_TIMEOUT_DEFAULT;
  * so use 'long int' instead
  */
 static long int status_polling_interval = STATUS_POLLING_INTERVAL_DEFAULT;
+static long message_timeout = MESSAGE_TIMEOUT_DEFAULT;
 
 void help(void)
 {
@@ -268,7 +270,9 @@ static void powermsg_init_curl(struct powermsg *pm)
     if ((pm->eh = curl_easy_init()) == NULL)
         err_exit(false, "curl_easy_init failed");
 
-    Curl_easy_setopt((pm->eh, CURLOPT_TIMEOUT, MESSAGE_TIMEOUT));
+    /* Per documentation, CURLOPT_TIMEOUT overrides
+     * CURLOPT_CONNECTTIMEOUT */
+    Curl_easy_setopt((pm->eh, CURLOPT_TIMEOUT, message_timeout));
     Curl_easy_setopt((pm->eh, CURLOPT_FAILONERROR, 1));
 
     /* for time being */
@@ -1230,7 +1234,7 @@ static int setup_plug(const char *plugname,
     int hostindex;
 
     errno = 0;
-    hostindex = strtol (hostindexstr, &endptr, 10);
+    hostindex = strtol(hostindexstr, &endptr, 10);
     if (errno
         || endptr[0] != '\0'
         || hostindex < 0) {
@@ -1372,7 +1376,7 @@ static void settimeout(char **av)
         long tmp;
 
         errno = 0;
-        tmp = strtol (av[0], &endptr, 10);
+        tmp = strtol(av[0], &endptr, 10);
         if (errno
             || endptr[0] != '\0'
             || tmp <= 0)
@@ -1685,13 +1689,14 @@ static void usage(void)
     fprintf(stderr,
       "Usage: redfishpower --hostname host(s) [OPTIONS]\n"
       "  OPTIONS:\n"
-      "  -H, --header        Set extra header string\n"
-      "  -S, --statpath      Set stat path\n"
-      "  -O, --onpath        Set on path\n"
-      "  -F, --offpath       Set off path\n"
-      "  -P, --onpostdata    Set on post data\n"
-      "  -G, --offpostdata   Set off post data\n"
-      "  -v, --verbose       Increase output verbosity\n"
+      "  -H, --header          Set extra header string\n"
+      "  -S, --statpath        Set stat path\n"
+      "  -O, --onpath          Set on path\n"
+      "  -F, --offpath         Set off path\n"
+      "  -P, --onpostdata      Set on post data\n"
+      "  -G, --offpostdata     Set off post data\n"
+      "  -m, --message-timeout Set message timeout\n"
+      "  -v, --verbose         Increase output verbosity\n"
     );
     exit(1);
 }
@@ -1788,6 +1793,7 @@ int main(int argc, char *argv[])
     CURLM *mh = NULL;
     CURLcode ec;
     int c;
+    char *endptr;
 
     init_redfishpower(argv);
 
@@ -1819,6 +1825,14 @@ int main(int argc, char *argv[])
                 break;
             case 'G': /* --offpostdata */
                 offpostdata = xstrdup(optarg);
+                break;
+            case 'm': /* --message-timeout */
+                errno = 0;
+                message_timeout = strtol(optarg, &endptr, 10);
+                if (errno
+                    || endptr[0] != '\0'
+                    || message_timeout <= 0)
+                    err_exit(false, "invalid message timeout specified\n");
                 break;
             case 'T': /* --test-mode */
                 test_mode = 1;
@@ -1868,6 +1882,14 @@ int main(int argc, char *argv[])
          * lets put it to a millisecond.
          */
         status_polling_interval = 1000;
+
+        /* output settings of command line options that can't be tested in test mode */
+        if (header)
+            fprintf(stderr, "command line option: header = %s\n", header);
+        if (userpwd)
+            fprintf(stderr, "command line option: auth = %s\n", userpwd);
+        if (message_timeout != MESSAGE_TIMEOUT_DEFAULT)
+            fprintf(stderr, "command line option: message timeout = %ld\n", message_timeout);
     }
 
     shell(mh);
