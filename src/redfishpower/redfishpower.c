@@ -23,6 +23,10 @@
 #include <limits.h>
 #include <sys/time.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <netdb.h>
+#include <arpa/inet.h>
 #include <errno.h>
 #include <assert.h>
 
@@ -41,6 +45,7 @@ static plugs_t *plugs = NULL;
 static int initial_plugs_setup = 0;
 static char *header = NULL;
 static struct curl_slist *header_list = NULL;
+static int resolve_hosts = 0;
 static int verbose = 0;
 static char *userpwd = NULL;
 static int userpwd_set_on_cmdline = 0;
@@ -88,6 +93,13 @@ static zhashx_t *test_power_status;
 
 #define OUTPUT_RESULT  1
 #define NO_OUTPUT      0
+
+/* achu: max length IPv6 is 45 chars, add +1 for NUL
+ * ABCD:ABCD:ABCD:ABCD:ABCD:ABCD:192.168.100.200
+ */
+#ifndef INET6_ADDRSTRLEN
+#define INET6_ADDRSTRLEN 46
+#endif
 
 enum {
       STATE_SEND_POWERCMD,      /* stat, on, off */
@@ -147,6 +159,7 @@ static struct option longopts[] = {
         {"onpostdata", required_argument, 0, 'P' },
         {"offpostdata", required_argument, 0, 'G' },
         {"message-timeout", required_argument, 0, 'm' },
+        {"resolve-hosts", no_argument, 0, 'o' },
         {"test-mode", no_argument, 0, 'T' },
         {"test-fail-power-cmd-hosts", required_argument, 0, 'E' },
         {"verbose", no_argument, 0, 'v' },
@@ -314,6 +327,61 @@ static void powermsg_init_curl(struct powermsg *pm)
         Curl_easy_setopt((pm->eh, CURLOPT_HTTPGET, 1));
 }
 
+static char *resolve_hosts_url(const char *hostname, const char *path)
+{
+    char *url;
+    char ipstr[INET6_ADDRSTRLEN] = {0};
+    size_t len;
+    struct addrinfo *ai;
+    struct addrinfo *res = NULL;
+    int ret;
+
+    if ((ret = getaddrinfo(hostname, NULL, NULL, &res)))
+        err_exit(false, "getaddrinfo: %s", gai_strerror (ret));
+
+    for (ai = res; ai != NULL; ai = ai->ai_next) {
+        if (ai->ai_family == AF_INET) {
+            struct sockaddr_in addr;
+
+            memcpy(&addr, ai->ai_addr, ai->ai_addrlen);
+
+            if (!inet_ntop (AF_INET,
+                            &addr.sin_addr,
+                            ipstr,
+                            INET6_ADDRSTRLEN))
+                err_exit(true, "inet_ntop");
+
+            len = strlen("https://") + strlen(ipstr) + strlen(path) + 2;
+            url = xmalloc(len);
+            sprintf(url, "https://%s/%s", ipstr, path);
+            goto out;
+        }
+        else if (ai->ai_family == AF_INET6) {
+            struct sockaddr_in6 addr6;
+
+            memcpy(&addr6, ai->ai_addr, ai->ai_addrlen);
+
+            if (!inet_ntop (AF_INET6,
+                            &addr6.sin6_addr,
+                            ipstr,
+                            INET6_ADDRSTRLEN))
+                err_exit(true, "inet_ntop");
+
+            len = strlen("https://") + strlen(ipstr) + strlen(path) + 2;
+            url = xmalloc(len);
+            sprintf(url, "https://%s/%s", ipstr, path);
+            goto out;
+        }
+    }
+
+    /* couldn't find? use host */
+    url = xmalloc(strlen("https://") + strlen(hostname) + strlen(path) + 2);
+    sprintf(url, "https://%s/%s", hostname, path);
+out:
+    freeaddrinfo(res);
+    return url;
+}
+
 static struct powermsg *powermsg_create(CURLM *mh,
                                         const char *hostname,
                                         const char *plugname,
@@ -345,8 +413,12 @@ static struct powermsg *powermsg_create(CURLM *mh,
 
     pm->output_result = output_result;
 
-    pm->url = xmalloc(strlen("https://") + strlen(hostname) + strlen(path) + 2);
-    sprintf(pm->url, "https://%s/%s", hostname, path);
+    if (resolve_hosts)
+        pm->url = resolve_hosts_url(hostname, path);
+    else {
+        pm->url = xmalloc(strlen("https://") + strlen(hostname) + strlen(path) + 2);
+        sprintf(pm->url, "https://%s/%s", hostname, path);
+    }
 
     if (postdata)
         pm->postdata = xstrdup(postdata);
@@ -1696,6 +1768,7 @@ static void usage(void)
       "  -P, --onpostdata      Set on post data\n"
       "  -G, --offpostdata     Set off post data\n"
       "  -m, --message-timeout Set message timeout\n"
+      "  -o, --resolve-hosts   Resolve host to IP before passing to libcurl\n"
       "  -v, --verbose         Increase output verbosity\n"
     );
     exit(1);
@@ -1834,6 +1907,9 @@ int main(int argc, char *argv[])
                     || message_timeout <= 0)
                     err_exit(false, "invalid message timeout specified\n");
                 break;
+            case 'o': /* --resolve_hosts */
+                resolve_hosts = 1;
+                break;
             case 'T': /* --test-mode */
                 test_mode = 1;
                 break;
@@ -1890,6 +1966,8 @@ int main(int argc, char *argv[])
             fprintf(stderr, "command line option: auth = %s\n", userpwd);
         if (message_timeout != MESSAGE_TIMEOUT_DEFAULT)
             fprintf(stderr, "command line option: message timeout = %ld\n", message_timeout);
+        fprintf(stderr, "command line option: resolve-hosts = %s\n",
+                resolve_hosts ? "set" : "not set");
     }
 
     shell(mh);
