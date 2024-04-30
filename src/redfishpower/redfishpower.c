@@ -1230,7 +1230,7 @@ static int setup_plug(const char *plugname,
     int hostindex;
 
     errno = 0;
-    hostindex = strtol (hostindexstr, &endptr, 10);
+    hostindex = strtol(hostindexstr, &endptr, 10);
     if (errno
         || endptr[0] != '\0'
         || hostindex < 0) {
@@ -1372,7 +1372,7 @@ static void settimeout(char **av)
         long tmp;
 
         errno = 0;
-        tmp = strtol (av[0], &endptr, 10);
+        tmp = strtol(av[0], &endptr, 10);
         if (errno
             || endptr[0] != '\0'
             || tmp <= 0)
