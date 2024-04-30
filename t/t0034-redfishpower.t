@@ -691,6 +691,10 @@ test_expect_success 'auth option setting appears to work' '
 	echo "quit" | $redfishdir/redfishpower -h t[0-15] --test-mode --auth="foo:bar" 2> auth.err
 	grep "auth = foo:bar" auth.err
 '
+test_expect_success 'message timeout option setting appears to work' '
+	echo "quit" | $redfishdir/redfishpower -h t[0-15] --test-mode --message-timeout=33 2> message_timeout.err
+	grep "message timeout = 33" message_timeout.err
+'
 
 #
 # valgrind
