@@ -695,6 +695,10 @@ test_expect_success 'message timeout option setting appears to work' '
 	echo "quit" | $redfishdir/redfishpower -h t[0-15] --test-mode --message-timeout=33 2> message_timeout.err
 	grep "message timeout = 33" message_timeout.err
 '
+test_expect_success 'resolve-hosts option setting appears to work' '
+	echo "quit" | $redfishdir/redfishpower -h t[0-15] --test-mode --resolve-hosts 2> resolve_hosts.err
+	grep "resolve-hosts = set" resolve_hosts.err
+'
 
 #
 # valgrind
