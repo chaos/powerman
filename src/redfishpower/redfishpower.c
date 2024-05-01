@@ -71,6 +71,8 @@ static int test_mode = 0;
 static hostlist_t test_fail_power_cmd_hosts;
 static zhashx_t *test_power_status;
 
+static zhashx_t *resolve_hosts_cache = NULL;
+
 /* in seconds */
 #define MESSAGE_TIMEOUT_DEFAULT    5
 #define CMD_TIMEOUT_DEFAULT        60
@@ -335,6 +337,14 @@ static char *resolve_hosts_url(const char *hostname, const char *path)
     struct addrinfo *ai;
     struct addrinfo *res = NULL;
     int ret;
+    char *ptr;
+
+    if ((ptr = zhashx_lookup(resolve_hosts_cache, hostname))) {
+        len = strlen("https://") + strlen(ptr) + strlen(path) + 2;
+        url = xmalloc(len);
+        sprintf(url, "https://%s/%s", ptr, path);
+        return url;
+    }
 
     if ((ret = getaddrinfo(hostname, NULL, NULL, &res)))
         err_exit(false, "getaddrinfo: %s", gai_strerror (ret));
@@ -351,6 +361,9 @@ static char *resolve_hosts_url(const char *hostname, const char *path)
                             INET6_ADDRSTRLEN))
                 err_exit(true, "inet_ntop");
 
+            if (zhashx_insert(resolve_hosts_cache, hostname, xstrdup(ipstr)) < 0)
+                err_exit(false, "zhashx_insert");
+
             len = strlen("https://") + strlen(ipstr) + strlen(path) + 2;
             url = xmalloc(len);
             sprintf(url, "https://%s/%s", ipstr, path);
@@ -366,6 +379,9 @@ static char *resolve_hosts_url(const char *hostname, const char *path)
                             ipstr,
                             INET6_ADDRSTRLEN))
                 err_exit(true, "inet_ntop");
+
+            if (zhashx_insert(resolve_hosts_cache, hostname, xstrdup(ipstr)) < 0)
+                err_exit(false, "zhashx_insert");
 
             len = strlen("https://") + strlen(ipstr) + strlen(path) + 2;
             url = xmalloc(len);
@@ -1774,6 +1790,14 @@ static void usage(void)
     exit(1);
 }
 
+static void free_wrapper(void **item)
+{
+    if (item) {
+        free(*item);
+        *item = NULL;
+    }
+}
+
 static void init_redfishpower(char *argv[])
 {
     err_init(basename(argv[0]));
@@ -1801,6 +1825,10 @@ static void init_redfishpower(char *argv[])
 
     if (!(plugs = plugs_create()))
         err_exit(true, "plugs_create");
+
+    if (!(resolve_hosts_cache = zhashx_new ()))
+        err_exit(false, "zhashx_new error");
+    zhashx_set_destructor(resolve_hosts_cache, free_wrapper);
 }
 
 static void cleanup_redfishpower(void)
@@ -1822,6 +1850,8 @@ static void cleanup_redfishpower(void)
     zhashx_destroy(&test_power_status);
 
     plugs_destroy(plugs);
+
+    zhashx_destroy(&resolve_hosts_cache);
 }
 
 static void setup_hosts(void)
