@@ -45,7 +45,7 @@ Set default Redfish postdata for performing power off.  Typically is {"ResetType
 .TP
 .I "-m, --message-timeout seconds"
 Set message timeout, the timeout most notably associated with
-connection timeouts or name resolution timeouts.  Default is 5
+connection timeouts or name resolution timeouts.  Default is 10
 seconds.  Note that this different than the command timeout specified
 by
 .B settimeout

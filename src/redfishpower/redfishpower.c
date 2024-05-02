@@ -74,7 +74,7 @@ static zhashx_t *test_power_status;
 static zhashx_t *resolve_hosts_cache = NULL;
 
 /* in seconds */
-#define MESSAGE_TIMEOUT_DEFAULT    5
+#define MESSAGE_TIMEOUT_DEFAULT    10
 #define CMD_TIMEOUT_DEFAULT        60
 
 /* Per documentation, wait incremental time then proceed if timeout < 0 */
