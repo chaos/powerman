@@ -55,7 +55,9 @@ multiple messages and a polling of power status.
 .I "-o, --resolve-hosts"
 Resolve host and pass IP address to libcurl instead of hostname.  This
 works around a DNS race in libcurl versions less than 7.66.  Users
-hitting the DNS race may see "Timeout was reached" errors.
+hitting the DNS race may see "Timeout was reached" errors.  Note that all
+resolved host lookups will be permanently cached, it is assumed the IP
+address of hosts will never change.
 .TP
 .I "-v, --verbose"
 Increase output verbosity.  Can be specified multiple times.
