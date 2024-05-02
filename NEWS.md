@@ -1,3 +1,21 @@
+powerman-2.4.2 - 02 May 2024
+----------------------------
+
+More tuning for the large Cray EX system, and a work-around for
+a libcurl bug on RHEL 8.
+
+## New features
+
+ * redfishpower: cache host resolution lookups (#190)
+ * redfishpower: support new --resolve-hosts option (#188)
+ * redfishpower: support message timeout config (#186)
+
+## FIxes
+
+ * redfishpower: increase default message timeout (#191)
+ * redfishpower: output more detailed error messages (#183)
+
+
 powerman-2.4.1 - 12 Apr 2024
 ----------------------------
 
