@@ -106,6 +106,12 @@ test_expect_success 'powerman -q shows all off' '
 	makeoutput "" "$ALLSTR" "" >query5.exp &&
 	test_cmp query5.exp query5.out
 '
+test_expect_success 'powerman -q works with giant input' '
+	nodes=$(echo elcap\[$(seq -s, 0 2 16382)\]) &&
+	$powerman -h $testaddr -q $nodes >query6.out &&
+	makeoutput "" "$nodes" "" >query6.exp &&
+	test_cmp query6.exp query6.out
+'
 test_expect_success 'stop powerman daemon' '
 	kill -15 $(cat powermand.pid) &&
 	wait
