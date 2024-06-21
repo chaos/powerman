@@ -71,7 +71,8 @@ EXTRA_DIST= \
 	etc/redfishpower-plugsub.dev \
 	etc/redfishpower-plugsub-blades.dev \
 	etc/redfishpower-parents-2-levels.dev \
-	etc/redfishpower-parents-3-levels.dev
+	etc/redfishpower-parents-3-levels.dev \
+	data/el_cap_every_other_node.txt
 
 
 AM_CFLAGS = @WARNING_CFLAGS@
