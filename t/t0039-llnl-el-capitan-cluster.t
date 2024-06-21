@@ -106,6 +106,12 @@ test_expect_success 'powerman -q shows all off' '
 	makeoutput "" "$ALLSTR" "" >query5.exp &&
 	test_cmp query5.exp query5.out
 '
+test_expect_success 'powerman -q works with giant input' '
+	nodes=$(cat $SHARNESS_TEST_SRCDIR/data/el_cap_every_other_node.txt) &&
+	$powerman -h $testaddr -q $nodes >query6.out &&
+	makeoutput "" "$nodes" "" >query6.exp &&
+	test_cmp query6.exp query6.out
+'
 test_expect_success 'stop powerman daemon' '
 	kill -15 $(cat powermand.pid) &&
 	wait
