@@ -1,3 +1,12 @@
+powerman-2.4.3 - 11 Jul 2024
+----------------------------
+
+Command lines can be very long on a big system.
+
+## Fixes
+
+ * powerman: increase maximum line length
+
 powerman-2.4.2 - 02 May 2024
 ----------------------------
 
