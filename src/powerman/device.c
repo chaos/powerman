@@ -1178,7 +1178,7 @@ static bool _process_setresult(Device *dev, Action *act, ExecCtx *e)
                 arg->val = xstrdup(str);
             }
 
-            if (result != RT_SUCCESS) {
+            if (arg && result != RT_SUCCESS) {
                 char strbuf[1024];
                 snprintf(strbuf, sizeof(strbuf), "%s", arg->val);
                 /* remove trailing carriage return or newline */
