@@ -88,7 +88,7 @@ typedef struct {
  */
 #define MAX_LEVELS 2
 typedef struct {
-    int com;                    /* one of the PM_* above */
+    int com;                    /* one of the PM_* script types */
     List exec;                  /* stack of ExecCtxs (outer block is first) */
     ActionCB complete_fun;      /* callback for action completion */
     VerbosePrintf vpf_fun;      /* callback for device telemetry */
@@ -1178,7 +1178,7 @@ static bool _process_setresult(Device *dev, Action *act, ExecCtx *e)
                 arg->val = xstrdup(str);
             }
 
-            if (result != RT_SUCCESS) {
+            if (arg && result != RT_SUCCESS) {
                 char strbuf[1024];
                 snprintf(strbuf, sizeof(strbuf), "%s", arg->val);
                 /* remove trailing carriage return or newline */

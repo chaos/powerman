@@ -1520,6 +1520,39 @@ static void cleanup_powermsg(void **x)
     }
 }
 
+static void output_curl_error(struct CURLMsg *cmsg, struct powermsg *pm)
+{
+    if (cmsg->data.result == CURLE_HTTP_RETURNED_ERROR) {
+        /* N.B. curl returns this error code for all response
+         * codes >= 400.  So gotta dig in more.
+         */
+        long code;
+
+        if (curl_easy_getinfo(cmsg->easy_handle,
+                              CURLINFO_RESPONSE_CODE,
+                              &code) != CURLE_OK)
+            printf("%s: %s\n", pm->plugname, "http error");
+        if (code == 400)
+            printf("%s: %s\n", pm->plugname, "bad request");
+        else if (code == 401)
+            printf("%s: %s\n", pm->plugname, "unauthorized");
+        else if (code == 404)
+            printf("%s: %s\n", pm->plugname, "not found");
+        else
+            printf("%s: %s (%ld)\n",
+                   pm->plugname,
+                   "http error",
+                   code);
+    }
+    else
+        printf("%s: %s\n",
+               pm->plugname,
+               curl_easy_strerror(cmsg->data.result));
+    if (verbose)
+        printf("%s: %s\n", pm->plugname,
+               curl_easy_strerror(cmsg->data.result));
+}
+
 static void shell(CURLM *mh)
 {
     int exitflag = 0;
@@ -1681,36 +1714,8 @@ static void shell(CURLM *mh)
                         err_exit(false, "private data not set in easy handle");
 
                     if (cmsg->data.result != 0) {
-                        if (cmsg->data.result == CURLE_HTTP_RETURNED_ERROR) {
-                            /* N.B. curl returns this error code for all response
-                             * codes >= 400.  So gotta dig in more.
-                             */
-                            long code;
-
-                            if (curl_easy_getinfo(cmsg->easy_handle,
-                                                  CURLINFO_RESPONSE_CODE,
-                                                  &code) != CURLE_OK)
-                                printf("%s: %s\n", pm->plugname, "http error");
-                            if (code == 400)
-                                printf("%s: %s\n", pm->plugname, "bad request");
-                            else if (code == 401)
-                                printf("%s: %s\n", pm->plugname, "unauthorized");
-                            else if (code == 404)
-                                printf("%s: %s\n", pm->plugname, "not found");
-                            else
-                                printf("%s: %s (%ld)\n",
-                                       pm->plugname,
-                                       "http error",
-                                       code);
-                        }
-                        else
-                            printf("%s: %s\n",
-                                   pm->plugname,
-                                   curl_easy_strerror(cmsg->data.result));
-                        if (verbose)
-                            printf("%s: %s\n", pm->plugname,
-                                   curl_easy_strerror(cmsg->data.result));
-
+                        if (pm->output_result)
+                            output_curl_error (cmsg, pm);
                         process_waiters(mh,
                                         pm->plugname,
                                         STATUS_ERROR);
@@ -1749,7 +1754,8 @@ static void shell(CURLM *mh)
             pm = zlistx_first(cpy);
             while (pm) {
                 if (hostlist_find(test_fail_power_cmd_hosts, pm->hostname) >= 0) {
-                    printf("%s: %s\n", pm->plugname, "error");
+                    if (pm->output_result)
+                        printf("%s: %s\n", pm->plugname, "error");
                     process_waiters(mh,
                                     pm->plugname,
                                     STATUS_ERROR);
