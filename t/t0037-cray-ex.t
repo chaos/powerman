@@ -295,6 +295,38 @@ test_expect_success 'stop powerman daemon (crayexU)' '
 	wait
 '
 
+#
+# redfishpower hpe cray supercomputing ex chassis test - parent failure
+# see issue #197
+#
+
+test_expect_success 'create powerman.conf for chassis w/ 16 redfish nodes (crayexfail)' '
+	cat >powerman_cray_ex_fail.conf <<-EOT
+	listen "$testaddr"
+	include "$devicesdir/redfishpower-cray-ex.dev"
+	device "d0" "cray-ex" "$redfishdir/redfishpower -h cmm0,t[0-15] --test-mode --test-fail-power-cmd-hosts=cmm0 |&"
+	node "cmm0,perif[0-7],blade[0-7],t[0-15]" "d0"
+	EOT
+'
+test_expect_success 'start powerman daemon and wait for it to start (crayexfail)' '
+	$powermand -Y -c powerman_cray_ex_fail.conf &
+	echo $! >powermand.pid &&
+	$powerman --retry-connect=100 --server-host=$testaddr -d
+'
+test_expect_success 'powerman -q shows all unknown' '
+	$powerman -h $testaddr -q >test_crayexfail_query1.out &&
+	makeoutput "" "" "blade[0-7],cmm0,perif[0-7],t[0-15]" >test_crayexfail_query1.exp &&
+	test_cmp test_crayexfail_query1.exp test_crayexfail_query1.out
+'
+test_expect_success 'powerman -1 t0 dependency error (parent error)' '
+	test_must_fail $powerman -h $testaddr -1 t0 >test_crayexfail_on1.out 2>test_crayexfail_on1.err &&
+	grep "cannot perform on, dependency error" test_crayexfail_on1.err
+'
+test_expect_success 'stop powerman daemon (crayexfail)' '
+	kill -15 $(cat powermand.pid) &&
+	wait
+'
+
 test_done
 
 # vi: set ft=sh
