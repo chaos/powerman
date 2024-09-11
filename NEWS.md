@@ -1,3 +1,14 @@
+powerman-2.4.4 - 11 Sep 2024
+----------------------------
+
+Fix segfault affecting systems with power control hierarchy.
+
+## Fixes
+
+ * powerman: fix segfault if unspecified host reports status
+ * redfishpower: do not report errors on dependent hosts
+ * Update hostlist library to fix potential array out of bounds error.
+
 powerman-2.4.3 - 11 Jul 2024
 ----------------------------
 
