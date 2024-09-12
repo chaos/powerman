@@ -1332,8 +1332,8 @@ static bool _process_delay(Device *dev, Action *act, ExecCtx *e,
     /* first time */
     if (!e->processing) {
         if (act->vpf_fun)
-            act->vpf_fun(act->client_id, "delay(%s): %ld.%-6.6ld", dev->name,
-                    delay.tv_sec, delay.tv_usec);
+            act->vpf_fun(act->client_id, "delay(%s): %lld.%-6.6lld", dev->name,
+                    (long long int)delay.tv_sec, (long long int)delay.tv_usec);
         e->processing = true;
         if (gettimeofday(&act->delay_start, NULL) < 0)
             err_exit(true, "gettimeofday");
