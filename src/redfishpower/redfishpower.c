@@ -2002,8 +2002,8 @@ int main(int argc, char *argv[])
             fprintf(stderr, "command line option: auth = %s\n", userpwd);
         if (message_timeout != MESSAGE_TIMEOUT_DEFAULT)
             fprintf(stderr, "command line option: message timeout = %ld\n", message_timeout);
-        fprintf(stderr, "command line option: resolve-hosts = %s\n",
-                resolve_hosts ? "set" : "not set");
+        if (resolve_hosts)
+            fprintf(stderr, "command line option: resolve-hosts set\n");
     }
 
     shell(mh);
