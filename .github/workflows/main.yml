@@ -44,7 +44,7 @@ jobs:
            --with-tcp-wrappers
     - name: make
       run: make
-    - name: make check
+    - name: GITHUB_CI=t make check
       run: make check
     - name: make distcheck
       run: DISTCHECK_CONFIGURE_FLAGS=--with-redfishpower make distcheck

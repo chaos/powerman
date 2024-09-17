@@ -4,6 +4,12 @@ test_description='Check LLNL El Capitan config'
 
 . `dirname $0`/sharness.sh
 
+# Setting the --long option or TEST_LONG=t fulfills the EXPENSIVE prereq
+if ! test_have_prereq EXPENSIVE && ! test -n "$GITHUB_CI"; then
+	skip_all='skipping large scale El Capitan test'
+	test_done
+fi
+
 ulimit -n 2048
 
 powermand=$SHARNESS_BUILD_DIRECTORY/src/powerman/powermand
