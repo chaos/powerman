@@ -101,8 +101,8 @@ static long _strtolong(char *str);
 static double _strtodouble(char *str);
 static void _doubletotv(struct timeval *tv, double val);
 
-extern int yylex();
-void yyerror();
+extern int yylex(void);
+void yyerror(const char *msg);
 
 
 static List device_specs = NULL;      /* list of Spec's */
@@ -836,7 +836,7 @@ static void _warnmsg(char *msg)
     err(false, "warning: %s: %s::%d", msg, scanner_file(), scanner_line());
 }
 
-void yyerror()
+void yyerror(const char *msg)
 {
     _errormsg("parse error");
 }
