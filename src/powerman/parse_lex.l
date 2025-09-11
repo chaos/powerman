@@ -27,7 +27,7 @@ extern YYSTYPE yylval;
 #include "xmalloc.h"
 #include "error.h"
 #include "parse_util.h"
-extern void yyerror();
+extern void yyerror(const char *);
 
 #define YY_NO_INPUT /* silence compiler warnings about unused input() */
 #define MAX_INCLUDE_DEPTH 10
@@ -109,7 +109,7 @@ static List line_ptrs;
         *string_buf_ptr++ = '\v';
     }
     "\n" {
-        yyerror();
+        yyerror(NULL);
     }
     \\[0-9][0-9][0-9] {
         *string_buf_ptr++ = strtol(&yytext[1], NULL, 8);
