@@ -9,7 +9,7 @@ jobs:
     strategy:
       matrix:
         cc: [gcc, clang]
-        os: [ubuntu-latest, ubuntu-20.04]
+        os: [ubuntu-latest, ubuntu-22.04]
 
     steps:
     - uses: actions/checkout@v2
@@ -50,7 +50,7 @@ jobs:
       run: DISTCHECK_CONFIGURE_FLAGS=--with-redfishpower make distcheck
 
   spelling:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
     - name: Check Spelling
