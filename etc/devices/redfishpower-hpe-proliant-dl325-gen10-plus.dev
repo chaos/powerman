@@ -1,0 +1,62 @@
+# Support for Redfish Rest Interface
+#
+# Powerman.conf should look something like this:
+#   include "/etc/powerman/redfishpower-hpe-proliant-dl325-gen10-plus.dev"
+#   device "redfishpower" "redfishpower-hpe-proliant-dl325-gen10-plus" "/usr/sbin/redfishpower -h pnode[1-2] |&"
+#   node "node1" "redfishpower" "pnode1"
+#   node "node2" "redfishpower" "pnode2"
+#
+# - If necessary, set your system's username/password via redfishpower's
+#   --auth option.
+#
+# - This device specification was tested on a EAS3 HP ProLiant DL325 node.
+#
+# - CAUTION: If you intend to use this file as the basis for a different
+#   Redfish system, read the section "UPDATING REDFISHPOWER DEVICE FILES"
+#   in redfishpower(8).
+#
+specification "redfishpower-hpe-proliant-dl325-gen10-plus" {
+	timeout 	60
+
+	script login {
+		expect "redfishpower> "
+		send "auth USER:PASS\n"
+		expect "redfishpower> "
+		send "setheader Content-Type:application/json\n"
+		expect "redfishpower> "
+		send "setstatpath redfish/v1/Systems/1\n"
+		expect "redfishpower> "
+		send "setonpath redfish/v1/Systems/1/Actions/ComputerSystem.Reset {\"ResetType\":\"On\"}\n"
+		expect "redfishpower> "
+		send "setoffpath redfish/v1/Systems/1/Actions/ComputerSystem.Reset {\"ResetType\":\"ForceOff\"}\n"
+		expect "redfishpower> "
+		send "settimeout 60\n"
+		expect "redfishpower> "
+	}
+	script logout {
+		send "quit\n"
+	}
+	script status_all {
+		send "stat\n"
+		foreachnode {
+			expect "([^\n:]+): ([^\n]+\n)"
+			setplugstate $1 $2 on="^on\n" off="^off\n"
+		}
+		expect "redfishpower> "
+	}
+	script on_ranged {
+		send "on %s\n"
+		expect "redfishpower> "
+	}
+	script off_ranged {
+		send "off %s\n"
+		expect "redfishpower> "
+	}
+	script cycle_ranged {
+		send "off %s\n"
+		expect "redfishpower> "
+		delay 2
+		send "on %s\n"
+		expect "redfishpower> "
+	}
+}

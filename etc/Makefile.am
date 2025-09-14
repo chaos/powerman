@@ -61,6 +61,7 @@ pkgsysconf_DATA = \
 	devices/redfishpower-cray-windom.dev \
 	devices/redfishpower-cray-ex.dev \
 	devices/redfishpower-cray-ex-rabbit.dev \
+	devices/redfishpower-hpe-proliant-dl325-gen10-plus.dev \
 	devices/phantom.dev \
 	devices/plmpower.dev \
 	devices/powerman.dev \
