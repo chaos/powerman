@@ -288,7 +288,7 @@ static void powermsg_init_curl(struct powermsg *pm)
     /* Per documentation, CURLOPT_TIMEOUT overrides
      * CURLOPT_CONNECTTIMEOUT */
     Curl_easy_setopt((pm->eh, CURLOPT_TIMEOUT, message_timeout));
-    Curl_easy_setopt((pm->eh, CURLOPT_FAILONERROR, 1));
+    Curl_easy_setopt((pm->eh, CURLOPT_FAILONERROR, 1L));
 
     /* for time being */
     Curl_easy_setopt((pm->eh, CURLOPT_SSL_VERIFYPEER, 0L));
@@ -321,12 +321,12 @@ static void powermsg_init_curl(struct powermsg *pm)
     Curl_easy_setopt((pm->eh, CURLOPT_URL, pm->url));
 
     if (pm->postdata) {
-        Curl_easy_setopt((pm->eh, CURLOPT_POST, 1));
+        Curl_easy_setopt((pm->eh, CURLOPT_POST, 1L));
         Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDS, pm->postdata));
         Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDSIZE, strlen(pm->postdata)));
     }
     else
-        Curl_easy_setopt((pm->eh, CURLOPT_HTTPGET, 1));
+        Curl_easy_setopt((pm->eh, CURLOPT_HTTPGET, 1L));
 }
 
 static char *resolve_hosts_url(const char *hostname, const char *path)
@@ -1221,7 +1221,7 @@ static void power_cleanup(struct powermsg *pm)
 {
     if (!test_mode && pm->eh) {
         Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDS, ""));
-        Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDSIZE, 0));
+        Curl_easy_setopt((pm->eh, CURLOPT_POSTFIELDSIZE, 0L));
     }
     powermsg_destroy(pm);
 }

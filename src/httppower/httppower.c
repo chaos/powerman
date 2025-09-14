@@ -88,7 +88,7 @@ void post(CURL *h, char **av)
     }
 
     if (postdata && url_ptr) {
-        curl_easy_setopt(h, CURLOPT_POST, 1);
+        curl_easy_setopt(h, CURLOPT_POST, 1L);
         curl_easy_setopt(h, CURLOPT_URL, url_ptr);
         curl_easy_setopt(h, CURLOPT_POSTFIELDS, postdata);
         curl_easy_setopt(h, CURLOPT_POSTFIELDSIZE, strlen (postdata));
@@ -96,7 +96,7 @@ void post(CURL *h, char **av)
             printf("Error: %s\n", errbuf);
         curl_easy_setopt(h, CURLOPT_URL, "");
         curl_easy_setopt(h, CURLOPT_POSTFIELDS, "");
-        curl_easy_setopt(h, CURLOPT_POSTFIELDSIZE, 0);
+        curl_easy_setopt(h, CURLOPT_POSTFIELDSIZE, 0L);
     } else
         printf("Nothing to post!\n");
 
@@ -137,7 +137,7 @@ void put(CURL *h, char **av)
     }
 
     if (putdata && url_ptr) {
-        curl_easy_setopt(h, CURLOPT_UPLOAD, 1);
+        curl_easy_setopt(h, CURLOPT_UPLOAD, 1L);
         curl_easy_setopt(h, CURLOPT_URL, url_ptr);
         curl_easy_setopt(h, CURLOPT_READFUNCTION, put_read_cb);
         pcd.data = putdata;
@@ -147,7 +147,7 @@ void put(CURL *h, char **av)
         if (curl_easy_perform(h) != 0)
             printf("Error: %s\n", errbuf);
         curl_easy_setopt(h, CURLOPT_URL, "");
-        curl_easy_setopt(h, CURLOPT_UPLOAD, 0);
+        curl_easy_setopt(h, CURLOPT_UPLOAD, 0L);
     } else
         printf("Nothing to put!\n");
 
@@ -162,7 +162,7 @@ void get(CURL *h, char **av)
     char *myurl = _make_url(av[0]);
 
     if (myurl) {
-        curl_easy_setopt(h, CURLOPT_HTTPGET, 1);
+        curl_easy_setopt(h, CURLOPT_HTTPGET, 1L);
         curl_easy_setopt(h, CURLOPT_URL, myurl);
         if (curl_easy_perform(h) != 0)
             printf("Error: %s\n", errbuf);
@@ -324,9 +324,9 @@ main(int argc, char *argv[])
     if ((h = curl_easy_init()) == NULL)
         err_exit(false, "curl_easy_init failed");
 
-    curl_easy_setopt(h, CURLOPT_TIMEOUT, 5);
+    curl_easy_setopt(h, CURLOPT_TIMEOUT, 5L);
     curl_easy_setopt(h, CURLOPT_ERRORBUFFER, errbuf);
-    curl_easy_setopt(h, CURLOPT_FAILONERROR, 1);
+    curl_easy_setopt(h, CURLOPT_FAILONERROR, 1L);
 
     /* for time being */
     curl_easy_setopt(h, CURLOPT_SSL_VERIFYPEER, 0L);
