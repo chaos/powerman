@@ -193,7 +193,7 @@ void help(void)
 
 static char *calc_path(const char *lpath, const char *plugname)
 {
-    char *ptr;
+    const char *ptr;
 
     /* assumption, at most one {{plug}} in path */
     if ((ptr = strstr(lpath, "{{plug}}"))) {
