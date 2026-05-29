@@ -1400,13 +1400,13 @@ static int _parse_single_range(const char *str, struct _range *range)
     if (!orig)
         seterrno_ret(ENOMEM, 0);
 
-    if ((p = strchr(str, '-'))) {
+    if ((p = strchr(orig, '-'))) {
         *p++ = '\0';
         if (*p == '-')     /* do NOT allow negative numbers */
             goto error;
     }
-    range->lo = strtoul(str, &q, 10);
-    if (q == str)
+    range->lo = strtoul(orig, &q, 10);
+    if (q == orig)
         goto error;
 
     range->hi = (p && *p) ? strtoul(p, &q, 10) : range->lo;
@@ -1423,8 +1423,8 @@ static int _parse_single_range(const char *str, struct _range *range)
         seterrno_ret(ERANGE, 0);
     }
 
+    range->width = strlen(orig);
     free(orig);
-    range->width = strlen(str);
     return 1;
 
   error:
